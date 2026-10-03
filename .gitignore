@@ -1,0 +1,37 @@
+*.iml
+.kotlin
+.gradle
+**/build/
+xcuserdata
+!src/**/build/
+local.properties
+.idea
+.DS_Store
+captures
+.externalNativeBuild
+.cxx
+node_modules/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+local.properties
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+
+# IDE and generated files
+.idea/
+.vscode/
+.DS_Store
+.gradle/
+.kotlin/
+**/build/
