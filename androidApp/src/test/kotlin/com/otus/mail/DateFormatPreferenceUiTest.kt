@@ -1,0 +1,65 @@
+package com.otus.mail
+
+import androidx.activity.compose.setContent
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import com.otus.mail.app.App
+import com.otus.mail.core.dateformat.AndroidDateFormatPreferenceStore
+import com.otus.mail.core.dateformat.DateFormatPreference
+import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class DateFormatPreferenceUiTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun changingThePreferenceUpdatesAnOpenDatePickerAndItsAppliedPill() {
+        val settings = DateFormatSettingsState(initialPreference = DateFormatPreference.DayMonthYearDots)
+        compose.runOnUiThread { compose.activity.setContent { App(settings) } }
+        openDatePicker()
+        compose.onNodeWithText("Last 7 days").performClick()
+        val start = LocalDate.now().minusDays(6)
+        val first = start.format(DateTimeFormatter.ofPattern("dd.MM.uuuu"))
+        compose.onNodeWithText("$first → Today").assertIsDisplayed()
+        compose.runOnIdle { settings.select(DateFormatPreference.MonthDayYearSlashes) }
+        val next = start.format(DateTimeFormatter.ofPattern("MM/dd/uuuu"))
+        compose.onNodeWithText("$next → Today").assertIsDisplayed()
+        compose.onNodeWithText("Last 7 days").assertIsSelected()
+        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("$next–Today").performScrollTo().performClick()
+        compose.onNodeWithText("$next → Today").assertIsDisplayed()
+        compose.onNodeWithText("Last 7 days").assertIsSelected()
+    }
+
+    @Test
+    fun productionEntryPointRestoresTheSavedChoiceOnActivityRecreation() {
+        AndroidDateFormatPreferenceStore(compose.activity).write(DateFormatPreference.DayMonthYearSlashes)
+        compose.activityRule.scenario.recreate()
+        openDatePicker()
+        compose.onNodeWithText("Last 7 days").performClick()
+        val start = LocalDate.now().minusDays(6).format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))
+        compose.onNodeWithText("$start → Today").assertIsDisplayed()
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithText("$start → Today").assertIsDisplayed()
+    }
+
+    private fun openDatePicker() {
+        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.onNodeWithText("Date").performClick()
+    }
+}
