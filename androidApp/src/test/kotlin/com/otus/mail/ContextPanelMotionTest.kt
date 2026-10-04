@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -13,6 +14,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.otus.mail.designsystem.components.ChipPlacement
 import com.otus.mail.designsystem.components.ContextPanel
 import com.otus.mail.designsystem.elements.Chip
@@ -36,7 +39,46 @@ class ContextPanelMotionTest {
     private var taps = 0
 
     @Test
-    fun surfaceAndPillsMoveThroughIntermediatePositionsInBothDirections() {
+    fun cutoutKeepsItsRoundedCapAboveTheRail() {
+        expanded.value = true
+        showPanel(chipOffset = (-12).dp)
+        val density = compose.activity.resources.displayMetrics.density
+        val railTop = surfaceBottom() - (48f / 2 * density).toInt()
+        val pill = compose.onNodeWithText("People").fetchSemanticsNode().boundsInRoot
+        val bitmap = snapshot()
+        assertEquals(
+            "The cutout stays rounded instead of clipping flat at the rail top",
+            OtusColors.bgRegular.toArgb(),
+            bitmap.getPixel(pill.center.x.toInt(), railTop - 2),
+        )
+        bitmap.recycle()
+    }
+
+    @Test
+    fun changingModesNeverCutsAnOutgoingNotchAboveTheRestingRail() {
+        showPanel()
+        val resting = compose.onNodeWithText("Unread").fetchSemanticsNode().boundsInRoot
+        val density = compose.activity.resources.displayMetrics.density
+        val x = resting.center.x.toInt()
+        val y = (resting.center.y - (48f / 2 + 2) * density).toInt()
+        compose.mainClock.autoAdvance = false
+        listOf(true, false, true).forEach { target ->
+            changeMode(target)
+            repeat(20) { frame ->
+                compose.mainClock.advanceTimeByFrame()
+                val bitmap = snapshot()
+                assertEquals(
+                    "No departing pill may carve a second, raised notch in frame $frame toward $target",
+                    OtusColors.bgDark.toArgb(),
+                    bitmap.getPixel(x, y),
+                )
+                bitmap.recycle()
+            }
+        }
+    }
+
+    @Test
+    fun surfaceResizesWhileBothPillGroupsKeepTheSameVerticalAnchor() {
         showPanel()
         val closed = surfaceBottom()
         val originalPill =
@@ -53,11 +95,13 @@ class ContextPanelMotionTest {
                 .onNodeWithText("People")
                 .fetchSemanticsNode()
                 .positionInRoot.y
-        assertTrue(
+        assertEquals(
+            originalPill,
             compose
                 .onNodeWithText("Unread")
                 .fetchSemanticsNode()
-                .positionInRoot.y < originalPill,
+                .positionInRoot.y,
+            0.5f,
         )
         compose.mainClock.advanceTimeBy(400)
         val open = surfaceBottom()
@@ -67,7 +111,7 @@ class ContextPanelMotionTest {
                 .fetchSemanticsNode()
                 .positionInRoot.y
         assertTrue("The surface grows through intermediate heights", growing > closed && growing < open)
-        assertTrue("Incoming pills move into place", enteringPill > restingPill)
+        assertEquals("Incoming pills share the resting rail anchor", restingPill, enteringPill, 0.5f)
         changeMode(false)
         compose.mainClock.advanceTimeBy(64)
         val shrinking = surfaceBottom()
@@ -79,12 +123,13 @@ class ContextPanelMotionTest {
         compose.mainClock.advanceTimeBy(400)
         assertTrue("The surface shrinks through intermediate heights", shrinking > closed && shrinking < open)
         assertEquals(closed, surfaceBottom())
-        assertTrue(
-            returningPill <
-                compose
-                    .onNodeWithText("Unread")
-                    .fetchSemanticsNode()
-                    .positionInRoot.y,
+        assertEquals(
+            returningPill,
+            compose
+                .onNodeWithText("Unread")
+                .fetchSemanticsNode()
+                .positionInRoot.y,
+            0.5f,
         )
     }
 
@@ -119,7 +164,7 @@ class ContextPanelMotionTest {
         compose.waitForIdle()
     }
 
-    private fun showPanel() {
+    private fun showPanel(chipOffset: Dp = 0.dp) {
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
@@ -129,7 +174,15 @@ class ContextPanelMotionTest {
                             chips = {
                                 transition(expanded.value) { mode ->
                                     // Reuse the item key to check that disposing one group preserves the other.
-                                    item("filter") { Chip(if (mode) "People" else "Unread", { taps++ }) }
+                                    item(
+                                        "filter",
+                                    ) {
+                                        Chip(
+                                            if (mode) "People" else "Unread",
+                                            { taps++ },
+                                            Modifier.offset(y = chipOffset),
+                                        )
+                                    }
                                 }
                             },
                         ) { BasicText("Header") }

@@ -12,20 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.dp
-import com.otus.mail.designsystem.elements.LocalControlVisualBounds
 import com.otus.mail.designsystem.theme.MotionTokens
 import com.otus.mail.designsystem.theme.PanelTokens
 import com.otus.mail.designsystem.theme.panelTextStyle
@@ -43,26 +34,24 @@ fun ContextPanel(
     chips: @Composable ContextPanelScope.() -> Unit = {},
     content: @Composable () -> Unit,
 ) {
-    val overlap by animateFloatAsState(
-        targetValue = if (placement == ChipPlacement.Overlapping) 1f else 0f,
-        animationSpec = tween(PanelTokens.MODE_TRANSITION_MILLIS, easing = MotionTokens.standard),
-        label = "Panel surface expansion",
-    )
+    val overlap =
+        animateFloatAsState(
+            targetValue = if (placement == ChipPlacement.Overlapping) 1f else 0f,
+            animationSpec = tween(PanelTokens.MODE_TRANSITION_MILLIS, easing = MotionTokens.standard),
+            label = "Panel surface expansion",
+        )
     val geometry = remember { PanelLayoutState() }
     val scope = remember(geometry) { ContextPanelScope(geometry) }
     val scroll = rememberScrollState()
-    var origin by remember { mutableStateOf(Offset.Zero) }
-    var headerHeight by remember { mutableStateOf(0f) }
-    var railHeight by remember { mutableStateOf(0f) }
     Box(
         modifier
             .fillMaxWidth()
-            .onGloballyPositioned { origin = it.positionInRoot() }
-            .panelSurface(geometry, origin, headerHeight, railHeight, overlap),
+            .onGloballyPositioned(geometry::trackPanel)
+            .panelSurface(geometry) { overlap.value },
     ) {
         Column {
             PanelHeader(
-                Modifier.onSizeChanged { headerHeight = it.height.toFloat() },
+                Modifier.onGloballyPositioned(geometry::trackHeader),
                 navigation,
                 content,
             )
@@ -78,17 +67,14 @@ fun ContextPanel(
                             } else {
                                 0.dp
                             },
-                    ).onSizeChanged { railHeight = it.height.toFloat() }
+                    ).onGloballyPositioned(geometry::trackRail)
                     .padding(horizontal = PanelTokens.panelInset),
                 horizontalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PanelChipRail(Modifier.weight(1f), geometry, scroll) { scope.chips() }
                 if (trailingAction != null) {
-                    DisposableEffect(Unit) { onDispose { geometry.items.remove(ActionKey) } }
-                    CompositionLocalProvider(
-                        LocalControlVisualBounds provides { geometry.items[ActionKey] = it },
-                    ) { trailingAction() }
+                    scope.item(ActionKey) { trailingAction() }
                 }
             }
         }
@@ -109,11 +95,14 @@ private fun PanelHeader(
     ) {
         navigation?.invoke()
         Box(
-            Modifier.weight(1f).padding(
-                start = if (navigation == null) PanelTokens.panelInset else PanelTokens.iconGap,
-                top = PanelTokens.panelInset,
-                bottom = PanelTokens.panelInset,
-            ),
+            Modifier
+                .weight(1f)
+                .padding(
+                    start = if (navigation == null) PanelTokens.panelInset else PanelTokens.iconGap,
+                    top = PanelTokens.panelInset,
+                    bottom = PanelTokens.panelInset,
+                ).heightIn(min = PanelTokens.touchTarget),
+            contentAlignment = Alignment.CenterStart,
         ) { ProvideTextStyle(panelTextStyle()) { content() } }
     }
 }
