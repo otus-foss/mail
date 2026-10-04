@@ -10,7 +10,6 @@ local.properties
 captures
 .externalNativeBuild
 .cxx
-node_modules/
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
@@ -35,3 +34,7 @@ local.properties
 .gradle/
 .kotlin/
 **/build/
+
+.venv/
+__pycache__/
+.ruff_cache/

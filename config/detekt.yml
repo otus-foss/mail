@@ -1,0 +1,23 @@
+build:
+  maxIssues: 0
+config:
+  validation: true
+  warningsAsErrors: true
+complexity:
+  LongMethod:
+    threshold: 60
+  LargeClass:
+    threshold: 300
+  LongParameterList:
+    functionThreshold: 8
+    constructorThreshold: 8
+  NestedBlockDepth:
+    threshold: 4
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ["Composable"]
+style:
+  WildcardImport:
+    active: true
+  MagicNumber:
+    excludes: ["**/designsystem/theme/**", "**/*Test.kt"]
