@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+  <style name="OtusTheme" parent="android:style/Theme.Material.NoActionBar">
+    <item name="android:windowBackground">@color/otus_bg_regular</item>
+    <item name="android:colorBackground">@color/otus_bg_regular</item>
+    <item name="android:textColorPrimary">@color/otus_text_1</item>
+    <item name="android:colorAccent">@color/otus_accent_regular</item>
+    <item name="android:windowLightStatusBar">false</item>
+  </style>
+</resources>
