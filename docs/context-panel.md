@@ -15,9 +15,14 @@ whether the content is a title, a search field, or metadata. Use `transition(exp
 inside the chip builder when replacing a two-mode pill group. Place each pill inside `item(...)`
 within that group so its cutout follows the animated layout.
 
-The main row is at least 60 dp tall and grows with its content. Chips use a horizontally scrolling
-row; the trailing action remains outside the scrolling viewport. The surface subtracts pill shapes,
-clipped to the viewport, using Compose paths. The holes reveal the actual background. Scroll-edge
+The main row has a 48 dp content slot and 8 dp top and bottom padding. Its 64 dp minimum height is
+derived from those shared tokens. Plain titles, the search prompt, and search input use the same
+centered content slot, so their text baselines and the leading icon stay fixed across modes and when
+the clear button appears. Prompt text stays on one line; larger text can grow the shared header.
+Chips use a horizontally scrolling
+row; the trailing action remains outside the scrolling viewport. The surface erases rounded pill
+shapes in an isolated drawing layer, clipped horizontally to the viewport. The holes reveal the
+actual background. Scroll-edge
 fades use an alpha mask rather than a painted background color. RTL reverses the fades and mirrors
 the back chevron. Overscroll stretch is disabled on the chip rail: stretching that layer independently
 would move the pills away from the panel cutouts during a held edge drag. Normal scrolling and
@@ -39,9 +44,17 @@ Inbox node: `19:386`.
 - The panel sizes to its content and does not preserve the inbox frame's unused 278 px height.
 - Inbox/search mode changes keep one panel surface. Its lower edge expands and contracts over
   220 ms as the pills become overlapping or detached. Header content crossfades and resizes.
-  Pill groups fade and slide in the direction of the mode change, with animated group dimensions.
-  Every moving pill reports its position for its cutout; outgoing and incoming groups have distinct
-  item keys so interrupted transitions cannot remove another group's cutouts. The filter button
+  Pill groups crossfade around the same vertical rail anchor, with animated group dimensions.
+  Outgoing pills do not slide up into the header. Their moving cutouts previously created a second,
+  higher contour that appeared to jump back down when the incoming group took over, even though both
+  groups' coordinates moved smoothly. Keeping the vertical anchor removes that contour change.
+  Cutouts clip only at the horizontal scroll edges, so moving rounded caps can extend above the rail
+  without becoming flat rectangles. Header, rail, viewport, and pill coordinates are resolved together
+  in panel-local space during drawing. Layout callbacks retain live coordinates and invalidate drawing;
+  they do not send rectangle or size snapshots back through composition. Each pill group and its
+  cutouts share one fade value, so an invisible exiting group leaves no opaque holes that snap away
+  when it is disposed. Outgoing and incoming groups have distinct item keys, so interrupted transitions
+  cannot remove another group's cutouts. The filter button
   remains outside the moving rail. Transitions can reverse, and system animation duration scaling applies.
 
 ## Playground and checks
@@ -53,6 +66,12 @@ Search accepts text and submits a local demo status; filters and chip selections
 Run `./gradlew checkAll :androidApp:testDebugUnitTest`.
 Local Android UI tests use Robolectric native graphics and write screenshots to
 `androidApp/build/reports/context-panel/`. They complement actual device checks, not replace them.
+Header tests compare icon bounds and text baselines throughout mode transitions, typing, clearing,
+and enlarged text, including plain titles supplied directly to the reusable panel.
+Motion regression tests inspect every frame while the parent moves and the header resizes, verify
+that changing modes cannot carve a raised notch above the rail, and check that disposing a faded pill
+cannot abruptly change the mask. Pixel 9a recordings cover expansion,
+contraction, and interrupted transitions at normal and reduced speeds.
 iOS builds and runtime testing require macOS/Xcode.
 
 ## Press feedback

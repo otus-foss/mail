@@ -51,6 +51,7 @@ fun InboxPanel(
     ) {
         AnimatedContent(
             targetState = searching,
+            contentAlignment = Alignment.CenterStart,
             transitionSpec = {
                 (
                     fadeIn(tween(PanelTokens.MODE_TRANSITION_MILLIS)) togetherWith

@@ -44,7 +44,7 @@ fun PickerSearch(
                 value,
                 onChange,
                 placeholder,
-                Modifier.weight(1f).padding(SheetTokens.gap),
+                Modifier.weight(1f).padding(horizontal = SheetTokens.gap),
                 onSearch = { focus.clearFocus() },
             )
             if (value.isNotEmpty()) {

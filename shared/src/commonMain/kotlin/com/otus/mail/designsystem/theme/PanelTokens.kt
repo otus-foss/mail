@@ -5,7 +5,6 @@ import androidx.compose.ui.unit.sp
 
 internal object PanelTokens {
     const val MODE_TRANSITION_MILLIS = 220
-    val chipMotionDistance = 12.dp
     val touchTarget = 48.dp
     val chipHeight = 36.dp
     val iconSize = 20.dp
@@ -14,7 +13,7 @@ internal object PanelTokens {
     val iconGap = 4.dp
     val chipGap = 6.dp
     val panelInset = 8.dp
-    val headerHeight = 60.dp
+    val headerHeight = touchTarget + panelInset * 2
     val panelRadius = 22.dp
     val detachedGap = 0.dp
     val cutoutGap = 2.dp

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.PanelTokens
 import com.otus.mail.designsystem.theme.panelTextStyle
@@ -32,6 +33,12 @@ fun SearchPrompt(
             .controlPressFeedback(interactions),
         contentAlignment = Alignment.CenterStart,
     ) {
-        Text("Tap to search", style = panelTextStyle(), color = OtusColors.text2)
+        Text(
+            "Tap to search",
+            style = panelTextStyle(),
+            color = OtusColors.text2,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
