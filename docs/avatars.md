@@ -11,8 +11,8 @@ image types. It resolves an `AvatarRequest(accountKey, email, name)` in this ord
 3. Generated initials, with an email-derived index for the app's named theme colors.
 
 Every result includes the generated fallback. Image decoding failures also display this fallback.
-Email matching trims whitespace and lowercases the domain. The local part remains case-sensitive;
-dots and plus tags are preserved. Names do not determine contact identity. Changing a display name
+Email matching trims whitespace and ignores case in the whole address, because real mail servers
+treat `John@` and `john@` as one mailbox. Dots and plus tags are preserved. Names do not determine contact identity. Changing a display name
 changes initials without changing the address's color.
 
 `AvatarOptions.externalContactImages`, `domainIcons`, and `domainIconProxy` default to false. Embedded contact
@@ -52,16 +52,23 @@ Cancellation propagates and stops work from an obsolete inbox refresh.
 `InboxFeedState` publishes messages before resolving avatars, deduplicates sender lookups within
 each login, and updates both inbox rows and the people picker. UI components receive values only.
 The design-system `Avatar` draws a supplied bitmap or initials; it never fetches an image.
-Android decoding downsamples to at most 256 pixels on the longest edge and refuses dimensions above
-4096. iOS decoding also refuses dimensions above 4096. Unsupported or malformed images retain initials.
+`rememberAvatarImage` decodes off the main thread and keeps the 64 most recently decoded images.
+Concurrent rows share a pending decode, and every row adopts its result even if the cache fills
+before that row's effect starts. Remaining rows retry when the decoding row leaves composition.
+Rows scrolling back into view reuse their bitmap. Android and iOS (ImageIO thumbnails) decode at most
+256 pixels on the longest edge and refuse dimensions above 4096. Unsupported or malformed images
+retain initials.
 Generated backgrounds use `accentDark`, `bgLight`, and `bgDark`, with `text1` initials.
 
 ## Caching and domain icons
 
 The service keeps up to 64 account/email/options entries for five minutes, including misses. It
-coalesces concurrent requests for the same key and bounds lookups to four concurrent operations.
-Clearing the cache prevents in-flight results from repopulating it. Names are excluded from cache
-keys so callers always get initials for the current display name. Images are capped at 512 KiB each,
+coalesces concurrent requests for the same key, so unrelated senders do not share a lookup lock.
+At most eight lookups fetch at once, and the direct website-icon attempts share an 8-second limit.
+Clearing the cache prevents in-flight results from repopulating it, including lookups waiting for
+a fetch permit. Each lookup captures its cache generation before joining the fetch queue.
+Names are excluded from cache keys so callers always get initials for the current display name.
+Images are capped at 512 KiB each,
 so the default encoded-image cache is bounded to 32 MiB. Callers must not mutate returned image bytes.
 
 Mail tries HTTPS `apple-touch-icon.png`, `favicon.png`, and `favicon.ico` on the sender's exact

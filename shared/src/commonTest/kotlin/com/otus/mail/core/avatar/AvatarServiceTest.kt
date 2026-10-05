@@ -94,7 +94,7 @@ class AvatarServiceTest {
             service.resolve(request, AvatarOptions(externalContactImages = true))
             service.resolve(request.copy(email = "ada+work@company.example"))
             service.resolve(request.copy(email = "Ada@company.example"))
-            assertEquals(5, calls.size)
+            assertEquals(4, calls.size)
             assertEquals("AA", service.resolve(request.copy(name = "Augusta Ada")).fallback.initials)
         }
 
@@ -188,6 +188,7 @@ class AvatarServiceTest {
         assertEquals("A", generatedAvatar("", "ada@company.example").initials)
         assertEquals("?", generatedAvatar("", "").initials)
         assertNotEquals(avatarEmailKey("a.da@company.example"), avatarEmailKey("ada@company.example"))
+        assertEquals(original, generatedAvatar("Ada Lovelace", "Ada@Company.Example"))
     }
 
     @Test

@@ -49,17 +49,20 @@ class JmapContactPhotoSourceTest {
         }
 
     @Test
-    fun serverEmailSearchResultsMustMatchTheExactAddress() =
+    fun serverEmailSearchResultsMustMatchTheAddressIgnoringCase() =
         runTest {
-            for (address in listOf("grace+tag@example.org", "Grace@example.org", "other@example.org")) {
+            for (address in listOf("grace+tag@example.org", "g.race@example.org", "other@example.org")) {
                 val fixture = ContactFixture(cardEmail = address)
                 assertNull(fixture.source.photo(request, false))
                 assertEquals(0, fixture.downloads)
             }
-            assertContentEquals(
-                byteArrayOf(1, 2, 3),
-                ContactFixture(cardEmail = "grace@EXAMPLE.ORG").source.photo(request, false)?.bytes,
-            )
+            for (address in listOf("grace@EXAMPLE.ORG", "Grace@example.org")) {
+                assertContentEquals(
+                    byteArrayOf(1, 2, 3),
+                    ContactFixture(cardEmail = address).source.photo(request, false)?.bytes,
+                    address,
+                )
+            }
         }
 
     @Test

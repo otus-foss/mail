@@ -55,12 +55,11 @@ fun interface DomainIconSource {
     suspend fun icon(domain: String): AvatarImage?
 }
 
-/** Keep local parts intact: removing dots or plus tags would merge different people's addresses. */
-fun avatarEmailKey(email: String): String {
-    val trimmed = email.trim()
-    val at = trimmed.lastIndexOf('@')
-    return if (at < 0) trimmed else trimmed.take(at) + "@" + trimmed.substring(at + 1).lowercase()
-}
+/**
+ * Case-insensitive, because real mail servers treat `John@` and `john@` as one mailbox. Dots and plus
+ * tags stay: removing them would merge different people's addresses.
+ */
+fun avatarEmailKey(email: String): String = email.trim().lowercase()
 
 /** Stable across Kotlin platforms, independent of contact availability and display-name changes. */
 fun generatedAvatar(
