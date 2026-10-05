@@ -22,6 +22,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.mail.core.dateformat.DateFormatter
+import com.otus.mail.designsystem.components.PullToRefresh
 import com.otus.mail.designsystem.theme.InboxTokens
 import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.panelTextStyle
@@ -44,6 +45,7 @@ fun InboxScreen(
     dateFormatter: DateFormatter = remember { DateFormatter() },
     onOpenNavigation: () -> Unit = {},
     status: InboxStatus = InboxStatus(),
+    onRefresh: () -> Unit = {},
 ) {
     val state = rememberSaveable(saver = InboxState.Saver) { InboxState() }
     var filter by rememberSaveable { mutableStateOf<InboxFilter?>(null) }
@@ -81,7 +83,7 @@ fun InboxScreen(
                     onOpenNavigation = onOpenNavigation,
                 ),
             )
-            Box(Modifier.weight(1f)) {
+            PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
                 InboxResults(messages, status, state, dateFormatter, onOpen = { openId = it.id })
             }
         }

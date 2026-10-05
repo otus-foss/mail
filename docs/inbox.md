@@ -21,6 +21,13 @@ remain separate work. No provider requests are made.
 - Empty inbox and no-result states are distinct. Clearing search and filters restores the default
   Inbox scope. Message rows can show a read-only plain-text preview; opening does not mark mail read.
 - Search mode, query, and filters use saveable screen state. There is no saved message store.
+- Pulling the message area down past a fixed 80 dp threshold reloads the inbox, in both Inbox and
+  search modes. The design-system `PullToRefresh` component uses Compose Material's pull gesture
+  with the `RefreshIndicator` element: a pill-styled `bgDark` circle with a `strokeBgDark` outline
+  that slides down with the pull, with a `text1` arc that grows and turns with the distance and
+  spins while the feed loads. A confirming haptic plays when a pull triggers the reload. Short
+  pulls spring back without loading. The element draws its own arc because Material's indicator
+  is an elevated surface, which the dark theme lightens and shades.
 
 ## Boundaries
 

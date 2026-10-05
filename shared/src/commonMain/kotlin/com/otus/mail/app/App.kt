@@ -49,6 +49,7 @@ fun App(
                             dateFormatter,
                             openNavigation,
                             InboxStatus(accounts.accounts.isNotEmpty(), feed.loading, feed.notice),
+                            onRefresh = feed::refresh,
                         )
                     }
 
