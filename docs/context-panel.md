@@ -20,7 +20,10 @@ derived from those shared tokens. Plain titles, the search prompt, and search in
 centered content slot, so their text baselines and the leading icon stay fixed across modes and when
 the clear button appears. Prompt text stays on one line; larger text can grow the shared header.
 Chips use a horizontally scrolling
-row; the trailing action remains outside the scrolling viewport. The surface erases rounded pill
+row; the trailing action remains outside the scrolling viewport. Detached pills and the trailing
+action span the panel's full width, aligned with its outer edges. Overlapping pills sit 8 dp inside
+the panel, clear of its rounded corners; this inset follows the surface animation, so pills never
+jump sideways between modes. The surface erases rounded pill
 shapes in an isolated drawing layer, clipped horizontally to the viewport. The holes reveal the
 actual background. Scroll-edge
 fades use an alpha mask rather than a painted background color. RTL reverses the fades and mirrors
@@ -51,11 +54,21 @@ Inbox node: `19:386`.
   Cutouts clip only at the horizontal scroll edges, so moving rounded caps can extend above the rail
   without becoming flat rectangles. Header, rail, viewport, and pill coordinates are resolved together
   in panel-local space during drawing. Layout callbacks retain live coordinates and invalidate drawing;
-  they do not send rectangle or size snapshots back through composition. Each pill group and its
-  cutouts share one fade value, so an invisible exiting group leaves no opaque holes that snap away
-  when it is disposed. Outgoing and incoming groups have distinct item keys, so interrupted transitions
-  cannot remove another group's cutouts. The filter button
-  remains outside the moving rail. Transitions can reverse, and system animation duration scaling applies.
+  they do not send rectangle or size snapshots back through composition.
+- Cutouts are opaque geometry that always sits on its pill; they are never blended by opacity.
+  Opacity-weighted erasing showed half-visible contours of both pill groups during a swap, which
+  read as the mask jumping. A cutout switches on or off only in a drawn frame where the surface does
+  not cover it, so the change is invisible: entering pills get their full cutout before the edge
+  descends onto them, and leaving pills keep theirs until the edge has lifted off. When a pill enters
+  or leaves while the surface already covers it, its cutout grows or shrinks with the pill's fade and
+  reaches its target exactly when the fade does. Future pill effects should move or scale the pill;
+  the cutout follows because it is derived from the pill's drawn bounds.
+- The chip rail's scroll container spans the viewport, so a resizing pill group cannot clip pills at
+  its animated width. Edge fades follow how far visible pills actually extend past each viewport edge,
+  so they grow and shrink continuously instead of switching on and off.
+- Outgoing and incoming groups have distinct item keys, so interrupted transitions cannot remove
+  another group's cutouts. The filter button remains outside the moving rail. Transitions can
+  reverse, and system animation duration scaling applies.
 
 ## Playground and checks
 
@@ -69,9 +82,12 @@ Local Android UI tests use Robolectric native graphics and write screenshots to
 Header tests compare icon bounds and text baselines throughout mode transitions, typing, clearing,
 and enlarged text, including plain titles supplied directly to the reusable panel.
 Motion regression tests inspect every frame while the parent moves and the header resizes, verify
-that changing modes cannot carve a raised notch above the rail, and check that disposing a faded pill
-cannot abruptly change the mask. Pixel 9a recordings cover expansion,
-contraction, and interrupted transitions at normal and reduced speeds.
+that changing modes cannot carve a raised notch above the rail, and draw every frame of pill-group
+swaps, as a device does. They check that an entering cutout opens as soon as the edge reaches its
+pill, that no cutout pops into a covering surface or lingers as a translucent notch, and that pills
+are not clipped while their group resizes. Pixel 9a recordings of the current implementation cover
+inbox ↔ search expansion and contraction at normal speed; interrupted and reduced-speed runs were
+not repeated on the device for this version.
 iOS builds and runtime testing require macOS/Xcode.
 
 ## Press feedback

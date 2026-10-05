@@ -56,12 +56,10 @@ internal class PanelLayoutState {
         gap: Float,
         border: Float,
     ): PanelFrame? {
-        revision
-        val parent = panel?.takeIf { it.isAttached } ?: return null
-        val headerBounds = parent.boundsOf(header) ?: return null
-        val railBounds = parent.boundsOf(rail) ?: return null
-        val clip = parent.boundsOf(viewport) ?: return null
-        val bottom = headerBounds.bottom + (railBounds.center.y - headerBounds.bottom) * overlap
+        val anchors = anchors() ?: return null
+        val parent = anchors.panel
+        val clip = anchors.viewport
+        val bottom = anchors.header.bottom + (anchors.rail.center.y - anchors.header.bottom) * overlap
         val holes =
             items.mapNotNull { (id, item) ->
                 val scrolling = id != ActionKey
@@ -75,19 +73,38 @@ internal class PanelLayoutState {
 
     /** Distance that visible rail pills extend past each viewport edge, independent of scroll extent. */
     fun railOverflow(): RailOverflow {
-        revision
-        val parent = panel?.takeIf { it.isAttached } ?: return RailOverflow(0f, 0f)
-        val clip = parent.boundsOf(viewport) ?: return RailOverflow(0f, 0f)
+        val anchors = anchors() ?: return RailOverflow(0f, 0f)
+        val clip = anchors.viewport
         val pills =
             items.mapNotNull { (id, item) ->
-                parent.boundsOf(item.coordinates).takeIf { id != ActionKey && item.visibility.value() > 0f }
+                anchors.panel.boundsOf(item.coordinates).takeIf { id != ActionKey && item.visibility.value() > 0f }
             }
         return RailOverflow(
             left = (clip.left - (pills.minOfOrNull { it.left } ?: clip.left)).coerceAtLeast(0f),
             right = ((pills.maxOfOrNull { it.right } ?: clip.right) - clip.right).coerceAtLeast(0f),
         )
     }
+
+    private fun anchors(): PanelAnchors? {
+        revision
+        val parent = panel?.takeIf { it.isAttached } ?: return null
+        val headerBounds = parent.boundsOf(header)
+        val railBounds = parent.boundsOf(rail)
+        val clip = parent.boundsOf(viewport)
+        return if (headerBounds != null && railBounds != null && clip != null) {
+            PanelAnchors(parent, headerBounds, railBounds, clip)
+        } else {
+            null
+        }
+    }
 }
+
+private data class PanelAnchors(
+    val panel: LayoutCoordinates,
+    val header: Rect,
+    val rail: Rect,
+    val viewport: Rect,
+)
 
 /** A pill's fade value and whether its group is entering or staying, rather than leaving. */
 internal class PillVisibility(
