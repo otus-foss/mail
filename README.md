@@ -56,6 +56,34 @@ Read [AGENTS.md](AGENTS.md), [architecture](docs/architecture.md), and
 [quality checks](docs/quality.md). UI follows elements → components → screens. Install the tools in the quality guide and
 run `./gradlew checkAll` before submitting changes. Use `./gradlew formatAll` to format.
 
+## Commit messages
+
+Use `type(scope): short action`, a blank line, and 1–8 bullets explaining the changes:
+
+```text
+feat(inbox): add avatars
+
+- Show contact photos beside inbox senders.
+- Fall back to initials when a photo is unavailable.
+```
+
+Use lowercase types and scopes, start the subject with an imperative verb, and aim for a title
+of at most 72 characters without a final period. Apply the unslop skill to the entire message
+when available. Keep the wording plain and describe only changes in the commit.
+
+Enable the versioned `commit-msg` hook once per checkout, including new clones. Run this from
+the repository root with Python 3.11+ installed:
+
+```sh
+git config --local core.hooksPath .githooks
+```
+
+The hook rejects invalid title syntax, missing separators, and bodies outside the 1–8 bullet
+limit. Review wording and the title-length target manually. Git-generated merge messages and
+temporary autosquash messages are exempt; final squash messages follow the rules. CI tests the
+checker but does not inspect commit history or install local hooks.
+See [the full commit rules](AGENTS.md#commit-messages) and [hook details](docs/quality.md#commit-message-review).
+
 ## Inbox and reusable controls
 
 See [Inbox](docs/inbox.md) for the default screen and search scope, and

@@ -68,6 +68,61 @@ failure-tolerant CI to make a change pass. Fix violations. A rule change needs a
 in `docs/decisions/` and a corresponding check/test update; do not silently weaken policy. Tool
 versions must be pinned.
 
+## Commit messages
+
+Use this format for authored commits and squash commit messages:
+
+```text
+type(scope): short action
+
+- Explain a concrete change.
+- Explain another change or why it was needed.
+```
+
+- Always include a type and scope. Use lowercase for both; use kebab-case for multiword scopes.
+- Choose the type by the purpose of the change: `feat` for new behavior, `fix` for a bug,
+  `refactor` for restructuring without behavior changes, `perf` for performance work,
+  `docs` for documentation, `test` for tests, `build` for dependencies or build tooling,
+  `ci` for automation, `chore` for other maintenance, and `revert` for undoing a commit.
+- Name the affected area in the scope, such as `inbox`, `accounts`, `avatars`, `design-system`,
+  `jmap`, `calendar`, `android`, `ios`, or `build`. Scopes are open-ended. Choose the most
+  specific area that describes the whole commit; split unrelated changes into separate commits.
+- Start the subject with a lowercase imperative verb, such as `add`, `fix`, `remove`, or
+  `simplify`. Preserve the spelling of code identifiers. Aim for at most 72 characters in the
+  entire title, and omit a final period. Avoid vague subjects such as `update stuff`.
+- Leave one blank line after the title. Require 1–8 body bullets, each starting with `- `.
+  Explain what changed; include the reason when it helps. Use only as many bullets as needed.
+  Do not pad the body, repeat the title, or turn it into a file inventory.
+- Describe only changes in the commit. Mention checks only if they actually ran, and report
+  their result accurately. Do not claim planned behavior or unverified performance gains.
+- Apply the `unslop` skill to the entire message when available. Always use plain, concrete
+  wording without filler, decorative emojis, or AI stock phrases. Keep the required syntax.
+- For a breaking change, put `!` after the scope and explain the impact and required migration
+  in the bullets. Optional issue references or `BREAKING CHANGE:` footers follow the bullets,
+  separated by a blank line; they do not count toward the bullet limit.
+
+Example:
+
+```text
+feat(inbox): add avatars
+
+- Show contact photos beside inbox senders.
+- Fall back to initials when a photo is unavailable.
+```
+
+Enable the versioned `commit-msg` hook once per checkout, including new clones:
+
+```sh
+git config --local core.hooksPath .githooks
+```
+
+Run the command from this repository's root. The hook needs Python 3.11+ and rejects invalid
+title syntax, missing separators, and bodies outside the 1–8 bullet limit. Review wording,
+imperative verbs, breaking-change explanations, and the
+72-character target manually. Git-generated merge messages and temporary autosquash messages are
+exempt; the final squash message must follow the rules. CI tests the checker but does not inspect
+commit history. See [the decision](docs/decisions/0004-commit-messages.md).
+
 ## Agent workflow
 
 Inspect existing patterns first. Make focused changes, run the relevant checks, and report any
