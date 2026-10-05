@@ -13,7 +13,9 @@ import com.otus.mail.designsystem.resources.symbol_calendar_add_on
 import com.otus.mail.designsystem.resources.symbol_inbox
 import com.otus.mail.designsystem.resources.symbol_person
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 @Composable
 fun SearchFilterChip(
@@ -58,10 +60,11 @@ private fun filterLabel(
                 val first = LocalDate.parse(start)
                 val last = LocalDate.parse(search.dateEnd ?: start)
                 val today = currentLocalDate()
-                if (first == last) {
-                    dateFormatter.formatRelative(first, today)
-                } else {
-                    dateFormatter.formatRelativeRange(first, last, today, separator = "–")
+                when {
+                    first == today.minus(6, DateTimeUnit.DAY) && last == today -> "This week"
+                    first == today.minus(29, DateTimeUnit.DAY) && last == today -> "This month"
+                    first == last -> dateFormatter.formatRelative(first, today)
+                    else -> dateFormatter.formatRelativeRange(first, last, today, separator = "–")
                 }
             } else {
                 filter.title

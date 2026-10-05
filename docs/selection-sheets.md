@@ -81,9 +81,10 @@ Screen criteria, open filter, draft selections, and picker query survive activit
   The ranges include today and the previous six or 29 days, respectively. A shortcut uses the active
   blue fill and border when its complete range matches the draft, including manual date selection.
   Clearing or changing the range updates the highlight. Clear + Apply removes date restrictions.
-  The draft summary and applied date pill show Today and Yesterday for matching device-local dates;
-  other dates use the selected display format. A single-day pill shows one label, and a range labels
-  each endpoint independently. Stored dates and filtering remain ISO-based.
+  The draft summary shows Today and Yesterday for matching device-local dates; other dates use the
+  selected display format. Applied date pills show Today, This week, or This month when the selected
+  dates match those shortcuts. Other single dates show one label, and other ranges label each endpoint
+  independently. Stored dates and filtering remain ISO-based.
   A week can contain dates from adjacent months, with one uninterrupted range band across the boundary.
 - **Filters:** unread and attachment switches also use draft/Apply behavior.
 
