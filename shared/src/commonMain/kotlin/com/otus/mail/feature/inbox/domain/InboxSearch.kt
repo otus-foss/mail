@@ -44,7 +44,7 @@ private fun matchesFilters(
         (search.dateStart == null || message.received.date >= search.dateStart) &&
         (search.dateEnd == null || message.received.date <= search.dateEnd) &&
         (search.mailboxes.isEmpty() || search.mailboxes.any { it.matches(message.location) }) &&
-        (search.accounts.isEmpty() || message.location.account in search.accounts)
+        (search.accounts.isEmpty() || message.location.accountId in search.accounts)
 
 /** A null account scopes the mailbox name across accounts, as used by the default Inbox. */
 data class MailboxScope(
@@ -52,5 +52,5 @@ data class MailboxScope(
     val name: String,
 ) {
     fun matches(location: MailLocation): Boolean =
-        location.mailbox == name && (account == null || location.account == account)
+        location.mailbox == name && (account == null || location.accountId == account)
 }

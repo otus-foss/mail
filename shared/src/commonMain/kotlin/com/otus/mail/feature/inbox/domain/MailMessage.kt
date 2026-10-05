@@ -29,6 +29,9 @@ data class ReceivedAt(
 data class MailLocation(
     val mailbox: String,
     val account: String,
+    /** Stable login identity; the display name is not unique. */
+    val accountId: String = account,
+    val accountDetail: String = "",
 )
 
 data class MailAttributes(

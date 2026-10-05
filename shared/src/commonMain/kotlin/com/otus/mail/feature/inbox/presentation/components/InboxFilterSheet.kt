@@ -110,7 +110,7 @@ private fun InboxSearch.selectionCount(
         }
 
         InboxFilter.Mailboxes -> {
-            messages.map { it.location }.distinct().count { location ->
+            messages.map { it.location }.distinctBy { it.accountId to it.mailbox }.count { location ->
                 mailboxes.any { it.matches(location) }
             }
         }

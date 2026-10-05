@@ -65,14 +65,15 @@ private fun LazyListScope.mailboxChoices(
     draft: InboxSearch,
     onChange: (InboxSearch) -> Unit,
 ) {
+    val accounts = messages.associate { it.location.accountId to it.location }
     val mailboxes =
         messages
-            .map { MailboxScope(it.location.account, it.location.mailbox) }
+            .map { MailboxScope(it.location.accountId, it.location.mailbox) }
             .distinct()
             .sortedWith(compareBy({ it.account }, { it.name }))
     val groups =
         mailboxes
-            .filter { it.name.contains(needle, true) || it.account.orEmpty().contains(needle, true) }
+            .filter { it.name.contains(needle, true) || accounts[it.account]?.account.orEmpty().contains(needle, true) }
             .groupBy { it.account }
     val expanded =
         mailboxes
@@ -81,7 +82,15 @@ private fun LazyListScope.mailboxChoices(
             }.toSet()
     if (groups.isEmpty()) item { EmptyChoices(mailboxes.isEmpty(), "No inboxes available yet.") }
     groups.forEach { (account, choices) ->
-        item { Text(account.orEmpty(), Modifier.padding(top = SheetTokens.gap), color = OtusColors.text2) }
+        item {
+            val location = accounts[account]
+            val label =
+                listOfNotNull(
+                    location?.account,
+                    location?.accountDetail?.takeIf { it.isNotBlank() },
+                ).joinToString(" · ")
+            Text(label, Modifier.padding(top = SheetTokens.gap), color = OtusColors.text2)
+        }
         items(choices) { scope ->
             SelectionRow(scope.name, scope in expanded, { onChange(draft.copy(mailboxes = expanded.toggled(scope))) })
         }
@@ -94,14 +103,15 @@ private fun LazyListScope.accountChoices(
     draft: InboxSearch,
     onChange: (InboxSearch) -> Unit,
 ) {
-    val accounts = messages.map { it.location.account }.distinct().sorted()
-    val matches = accounts.filter { it.contains(needle, true) }
+    val accounts = messages.map { it.location }.distinctBy { it.accountId }.sortedBy { it.account }
+    val matches = accounts.filter { it.account.contains(needle, true) || it.accountDetail.contains(needle, true) }
     if (matches.isEmpty()) item { EmptyChoices(accounts.isEmpty(), "No accounts connected.") }
-    items(matches, key = { it }) { account ->
+    items(matches, key = { it.accountId }) { account ->
         SelectionRow(
-            account,
-            account in draft.accounts,
-            { onChange(draft.copy(accounts = draft.accounts.toggled(account))) },
+            account.account,
+            account.accountId in draft.accounts,
+            { onChange(draft.copy(accounts = draft.accounts.toggled(account.accountId))) },
+            subtitle = account.accountDetail.takeIf { it.isNotBlank() },
         )
     }
 }
