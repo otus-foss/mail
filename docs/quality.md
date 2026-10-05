@@ -89,6 +89,29 @@ may still occur.
 The independent repositories follow the same quality policy and agent rules. Keep them
 aligned when modifying suite policy. No cross-checkout dependency is required to run any gate.
 
+## Commit message review
+
+Enable the versioned `commit-msg` hook once per checkout:
+
+```sh
+git config --local core.hooksPath .githooks
+```
+
+The hook uses Python 3.11+ to reject invalid title syntax, missing blank separators, and bodies
+outside the 1–8 bullet limit. Optional footers follow a blank line after the bullets. Footers
+begin with a token such as `Refs: #123`, `Closes #123`, or `BREAKING CHANGE: ...`; multiline
+footer text is allowed. Wrapped bullet lines start with at least two spaces. The checker ignores
+editor comments according to Git's configured comment character.
+
+Review the message against [the commit rules](../AGENTS.md#commit-messages) for clear wording,
+imperative verbs, accurate claims, breaking-change explanations, and the 72-character title target.
+Git-generated merge messages are exempt during a merge. Temporary `fixup!`, `squash!`, and
+`amend!` messages are exempt; review the final squash message before committing it.
+
+`checkAll` and portable CI run the checker's regression tests, including Git rejection in a
+temporary repository. They do not inspect commit history or install local hooks. New clones must
+enable the hook with the command above. See [the decision](decisions/0004-commit-messages.md).
+
 ## Tool references
 
 - [Spotless](https://github.com/diffplug/spotless/tree/main/plugin-gradle)
