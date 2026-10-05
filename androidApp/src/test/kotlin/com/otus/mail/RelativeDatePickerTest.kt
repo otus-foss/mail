@@ -64,7 +64,7 @@ class RelativeDatePickerTest {
     }
 
     @Test
-    fun yesterdaySingleDatePillAndOlderRangeKeepTheChosenFormat() {
+    fun yesterdaySingleDateAndWeekPresetUseRelativeLabels() {
         val yesterday = LocalDate.now().minusDays(1).toString()
         compose.onNodeWithContentDescription(yesterday).performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(400)
@@ -82,7 +82,7 @@ class RelativeDatePickerTest {
         compose.onNodeWithText("$start → Today").assertIsDisplayed()
         compose.onNodeWithText("Apply").performClick()
         compose
-            .onNodeWithText("$start–Today")
+            .onNodeWithText("This week")
             .assertIsOn()
             .performScrollTo()
             .assertIsDisplayed()

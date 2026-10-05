@@ -33,8 +33,12 @@ removal and a final newline. It does not enforce full syntax-specific formatting
 structure. See decision 0002 for the deliberate removal of the JavaScript tooling stack.
 Generated Gradle wrappers, Xcode project files, caches, and build output are excluded.
 
-Swift formatting/lint and iOS compilation require the separate macOS workflow below; they are
+Swift formatting/lint and the full iOS app build require the separate macOS workflow below; they are
 not included in `formatAll` or `checkAll`.
+
+Shared Kotlin iOS source compilation can also run on Linux with
+`./gradlew :shared:compileKotlinIosSimulatorArm64 :shared:compileKotlinIosArm64`.
+This checks the Kotlin sources and platform bindings; it does not link or run the Xcode app.
 
 On macOS install `nicklockwood/SwiftFormat@0.63.1` and `realm/SwiftLint@0.65.1` via Mint, then run:
 
@@ -46,7 +50,9 @@ mint run swiftlint lint --strict
 
 The CI `quality` workflow runs portable checks, Android lint/debug assembly and local UI tests, and Swift
 formatting/lint plus a simulator build. The simulator build verifies compilation without device
-signing; JMAP iOS storage tests also run through `:jmap:iosSimulatorArm64Test`.
+signing and targets `arm64`, matching the configured Apple Silicon simulator framework; JMAP iOS
+storage tests also run through `:jmap:iosSimulatorArm64Test`. Android setup installs `platform-tools`
+and the pinned platform/build-tools packages rather than the removed legacy `tools` package.
 
 ## File-length limits and exceptions
 
