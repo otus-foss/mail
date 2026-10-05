@@ -58,3 +58,6 @@ run `./gradlew checkAll` before submitting changes. Use `./gradlew formatAll` to
 
 See [Inbox](docs/inbox.md) for the default screen and search scope, and
 [Context panel](docs/context-panel.md) for the reusable API and component test playground.
+
+See [sender and attendee avatars](docs/avatars.md) for the reusable contact-photo, optional domain-icon,
+and generated-avatar service.

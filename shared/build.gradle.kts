@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -38,8 +39,18 @@ kotlin {
             implementation(libs.compose.resources)
             implementation(libs.navigation.event.compose)
             implementation(libs.kotlinx.datetime)
+            api(projects.jmap)
+            implementation(libs.ktor.client.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
         }
-        commonTest.dependencies { implementation(kotlin("test")) }
+        androidMain.dependencies { implementation(libs.ktor.client.okhttp) }
+        iosMain.dependencies { implementation(libs.ktor.client.darwin) }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.ktor.client.mock)
+            implementation(libs.kotlinx.coroutines.test)
+        }
     }
 }
 

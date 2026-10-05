@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.avatar.ResolvedAvatar
+
 /** Portable, supplied message data. No account connection or persistence is implied. */
 data class MailMessage(
     val id: String,
@@ -14,6 +16,8 @@ data class MailMessage(
 data class MailSender(
     val name: String,
     val address: String,
+    val accountKey: String = "",
+    val avatar: ResolvedAvatar? = null,
 )
 
 /** ISO calendar date (YYYY-MM-DD) and 24-hour time (HH:mm), supplied by the data source. */

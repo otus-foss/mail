@@ -15,7 +15,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.designsystem.elements.Avatar
 import com.otus.mail.designsystem.theme.InboxTokens
 import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -35,11 +34,7 @@ fun MessageRow(
             .padding(InboxTokens.rowPadding),
         horizontalArrangement = Arrangement.spacedBy(InboxTokens.itemGap),
     ) {
-        Avatar(
-            message.sender.name
-                .take(1)
-                .uppercase(),
-        )
+        SenderAvatar(message.sender)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(InboxTokens.detailGap)) {
             Row(horizontalArrangement = Arrangement.spacedBy(InboxTokens.detailGap)) {
                 Text(
