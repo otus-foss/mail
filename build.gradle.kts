@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
+    alias(libs.plugins.kotlinSerialization) apply false
 }
 
 spotless {
@@ -37,7 +38,7 @@ tasks.register<JavaExec>("detekt") {
     mainClass.set("io.gitlab.arturbosch.detekt.cli.Main")
     args(
         "--input",
-        "shared/src,androidApp/src",
+        "jmap/src,shared/src,androidApp/src",
         "--config",
         "config/detekt.yml",
         "--build-upon-default-config",
@@ -100,6 +101,7 @@ tasks.register("checkAll") {
         ":androidApp:assembleDebug",
         ":androidApp:testDebugUnitTest",
         ":shared:testAndroidHostTest",
+        ":jmap:testAndroidHostTest",
     )
 }
 
