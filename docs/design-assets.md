@@ -17,3 +17,7 @@ Both licenses ship in the app's Compose resource files directory. Resource names
 source identity. Android theme-tint references are removed and the white path fill is made
 explicit for the multiplatform XML parser; the `Icon` composable applies the named theme tint. The original Figma icons were intentionally replaced by Material Symbols Rounded
 at the user's request. Theme colors remain the supplied Otus palette.
+
+The bundled Public Suffix List supports website-domain avatar lookup. Its ASCII-normalized snapshot
+and MPL 2.0 license ship in the Compose resource files directory. This is protocol data, not artwork;
+see [avatars](avatars.md) for the upstream version, source hash, and update requirements.

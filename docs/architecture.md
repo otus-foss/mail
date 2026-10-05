@@ -56,3 +56,11 @@ require review. Promote important boundaries to Gradle modules as the system gro
 The Android host currently uses the system placeholder icon. Production launcher artwork is a
 separate design task. Application backup is disabled until account-data backup requirements are
 defined.
+
+## Avatar service
+
+The portable account-scoped avatar resolver and its injected contact/image contracts live in
+`core/avatar`. App wiring supplies sources; presentation resolves photos before passing bitmap or
+initial values to design-system elements. Mail resolves senders progressively after inbox loading.
+Calendar exposes the same service for future attendees. See [avatars](avatars.md) for the contract,
+cache limits, privacy options, repository-copy ownership, and deferred work.

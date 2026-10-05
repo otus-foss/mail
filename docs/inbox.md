@@ -36,7 +36,8 @@ inspected `19:386` / `19:322` panel variants. The frame does not contain a popul
 the separate row reference defines that layout. The empty-state copy/layout is new.
 
 Material Symbols Rounded remains the approved icon family. The Figma row's black avatar and
-`#2A5E96` label border are outside the approved palette: the avatar uses `bgDark`, and metadata uses
+`#2A5E96` label border are outside the approved palette: generated avatars use named dark background
+tokens with `text1` initials, and metadata uses
 named text tokens rather than introducing that border color. Text is allowed sufficient height at
 large font scales instead of reproducing Figma's clipped 48 px row. Root Inbox now reserves a
 left chevron for the planned sidebar navigation. The prototype's compose/bulk toolbar
@@ -57,3 +58,7 @@ opens the search field, requests focus and the software keyboard, and reveals th
 pills. The trailing button opens the filter sheet in both inbox and search modes.
 The default leading icon is a mirrored left chevron reserved for sidebar navigation. It remains
 disabled until the sidebar is implemented. In search mode, the chevron still closes search.
+
+Sender rows and the people picker accept resolved contact or website images. Generated initials
+remain visible when no image is supplied or image decoding fails. See [avatars](avatars.md) for
+the reusable service, capability checks, account isolation, and external-image options.

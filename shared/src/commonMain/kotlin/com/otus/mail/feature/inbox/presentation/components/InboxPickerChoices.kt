@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.mail.designsystem.elements.Avatar
 import com.otus.mail.designsystem.elements.SelectionRow
 import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.SheetTokens
@@ -54,12 +53,7 @@ private fun LazyListScope.peopleChoices(
             { onChange(draft.copy(senders = draft.senders.toggled(person.address))) },
             subtitle = person.address,
             leading = {
-                Avatar(
-                    person.name
-                        .ifBlank { person.address }
-                        .take(1)
-                        .uppercase(),
-                )
+                SenderAvatar(person)
             },
         )
     }
