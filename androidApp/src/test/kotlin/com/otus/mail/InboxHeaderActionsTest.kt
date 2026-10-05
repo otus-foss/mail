@@ -5,8 +5,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -66,11 +66,11 @@ class InboxHeaderActionsTest {
     }
 
     @Test
-    fun navigationChevronIsReservedAndSearchBackReturnsToPrompt() {
-        compose.onNodeWithContentDescription("Open navigation").assertIsDisplayed().assertIsNotEnabled()
+    fun navigationChevronIsAvailableAndSearchBackReturnsToPrompt() {
+        compose.onNodeWithContentDescription("Open navigation").assertIsDisplayed().assertIsEnabled()
         compose.onNodeWithText("Tap to search").performClick()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.onNodeWithText("Tap to search").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Open navigation").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Open navigation").assertIsEnabled()
     }
 }

@@ -37,7 +37,12 @@ fun InboxBody(
     if (messages.isEmpty()) {
         emptyContent()
     } else {
-        LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(InboxTokens.pageInset)) {
+        // Rows span the control panel's width; their own padding aligns their content.
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(vertical = InboxTokens.pageInset),
+        ) {
             items(messages, key = { it.id }) { MessageRow(it, dateFormatter) { onOpen(it) } }
         }
     }
@@ -48,6 +53,7 @@ internal fun InboxEmptyState(
     searching: Boolean,
     hasMessages: Boolean,
     filtered: Boolean,
+    connected: Boolean,
     onReset: () -> Unit,
 ) {
     Box(Modifier.fillMaxSize().padding(InboxTokens.contentInset), contentAlignment = Alignment.Center) {
@@ -70,10 +76,10 @@ internal fun InboxEmptyState(
                 textAlign = TextAlign.Center,
             )
             Text(
-                if (hasMessages) {
-                    "Try another search or clear your filters."
-                } else {
-                    "Your messages will appear here once an account is connected."
+                when {
+                    hasMessages -> "Try another search or clear your filters."
+                    connected -> "New messages will appear here."
+                    else -> "Connect an account in Settings to see your mail."
                 },
                 color = OtusColors.text2,
                 textAlign = TextAlign.Center,

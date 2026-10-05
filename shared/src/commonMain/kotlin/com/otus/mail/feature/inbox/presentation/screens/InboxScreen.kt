@@ -29,17 +29,21 @@ import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
+import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.components.InboxBody
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxFilter
 import com.otus.mail.feature.inbox.presentation.components.InboxFilterSheet
 import com.otus.mail.feature.inbox.presentation.components.InboxPanel
+import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.MessagePreview
 
 @Composable
 fun InboxScreen(
     messages: List<MailMessage>,
     dateFormatter: DateFormatter = remember { DateFormatter() },
+    onOpenNavigation: () -> Unit = {},
+    status: InboxStatus = InboxStatus(),
 ) {
     val state = rememberSaveable(saver = InboxState.Saver) { InboxState() }
     var filter by rememberSaveable { mutableStateOf<InboxFilter?>(null) }
@@ -65,17 +69,20 @@ fun InboxScreen(
             InboxPanel(
                 state.searching,
                 state.search,
-                state::update,
-                { searching -> if (searching) state.startSearch() else closeSearch() },
-                {
-                    focus.clearFocus()
-                    filter = it
-                },
-                { focus.clearFocus() },
                 dateFormatter,
+                InboxPanelActions(
+                    onChange = state::update,
+                    onSearchingChange = { searching -> if (searching) state.startSearch() else closeSearch() },
+                    onFilter = {
+                        focus.clearFocus()
+                        filter = it
+                    },
+                    onSubmit = { focus.clearFocus() },
+                    onOpenNavigation = onOpenNavigation,
+                ),
             )
             Box(Modifier.weight(1f)) {
-                InboxResults(messages, state, dateFormatter, onOpen = { openId = it.id })
+                InboxResults(messages, status, state, dateFormatter, onOpen = { openId = it.id })
             }
         }
         filter?.let { selected ->
@@ -88,6 +95,7 @@ fun InboxScreen(
 @Composable
 private fun InboxResults(
     messages: List<MailMessage>,
+    status: InboxStatus,
     state: InboxState,
     dateFormatter: DateFormatter,
     onOpen: (MailMessage) -> Unit,
@@ -98,14 +106,29 @@ private fun InboxResults(
     val listState = if (state.searching) searchScroll else inboxScroll
     LaunchedEffect(state.search) { listState.scrollToItem(0) }
     val noun = if (state.searching) "result" else "message"
-    val countLabel = "${results.size} $noun${if (results.size == 1) "" else "s"}"
+    val countLabel =
+        if (status.loading &&
+            messages.isEmpty()
+        ) {
+            "Loading…"
+        } else {
+            "${results.size} $noun${if (results.size == 1) "" else "s"}"
+        }
     Column {
         Text(
             countLabel,
-            Modifier.padding(horizontal = InboxTokens.contentInset, vertical = InboxTokens.rowPadding),
+            Modifier.padding(horizontal = InboxTokens.rowPadding, vertical = InboxTokens.rowPadding),
             color = OtusColors.text2,
             fontSize = InboxTokens.metadataSize,
         )
+        status.notice?.let {
+            Text(
+                it,
+                Modifier.padding(horizontal = InboxTokens.rowPadding),
+                color = OtusColors.text2,
+                fontSize = InboxTokens.metadataSize,
+            )
+        }
         Box(Modifier.weight(1f)) {
             InboxBody(
                 results,
@@ -113,7 +136,7 @@ private fun InboxResults(
                 dateFormatter,
                 onOpen,
                 emptyContent = {
-                    InboxEmptyState(state.searching, messages.isNotEmpty(), state.search.isFiltered) {
+                    InboxEmptyState(state.searching, messages.isNotEmpty(), state.search.isFiltered, status.connected) {
                         state.update(InboxSearch())
                     }
                 },
