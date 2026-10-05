@@ -26,7 +26,7 @@ Gradle automatically uses the repository's Python virtual environment when prese
 | --- | --- |
 | `formatAll` | Spotless/ktlint Kotlin and Gradle formatting, project text whitespace, Ruff fixes/formatting |
 | `qualityCheck` | Spotless, detekt, architecture/file-length checks and regression tests, Ruff lint/format |
-| `checkAll` | Everything in qualityCheck, Android lint, debug assembly, domain tests, and local Android UI tests |
+| `checkAll` | Everything in qualityCheck, Android lint, debug assembly, domain and JMAP host tests, and local Android UI tests |
 
 Project text formatting covers Markdown, YAML, JSON, XML/plist, and TOML with trailing-whitespace
 removal and a final newline. It does not enforce full syntax-specific formatting or Markdown
@@ -46,7 +46,7 @@ mint run swiftlint lint --strict
 
 The CI `quality` workflow runs portable checks, Android lint/debug assembly and local UI tests, and Swift
 formatting/lint plus a simulator build. The simulator build verifies compilation without device
-signing; runtime simulator tests are added with actual behavior tests.
+signing; JMAP iOS storage tests also run through `:jmap:iosSimulatorArm64Test`.
 
 ## File-length limits and exceptions
 
