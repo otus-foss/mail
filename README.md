@@ -2,8 +2,10 @@
 
 Kotlin Multiplatform + Compose app for Android and iOS, intended as the mail client in the Otus JMAP
 suite. Mail starts with an empty inbox and working local search/filter UI over supplied messages.
-No sample mail is shipped. JMAP discovery, authentication, synchronization, and account connection
-are not implemented yet.
+No sample mail is shipped. JMAP account connection and a limited inbox snapshot are implemented.
+Persistent synchronization, sending, contact management, and calendar operations remain unimplemented.
+Read-only JMAP contact-photo lookup is available for sender avatars.
+See [JMAP](docs/jmap.md) for supported behavior and test coverage.
 
 ## Structure
 
@@ -57,7 +59,9 @@ run `./gradlew checkAll` before submitting changes. Use `./gradlew formatAll` to
 ## Inbox and reusable controls
 
 See [Inbox](docs/inbox.md) for the default screen and search scope, and
-[Context panel](docs/context-panel.md) for the reusable API and component test playground.
+[Context panel](docs/context-panel.md) for the reusable API and component test playground, and
+[Sidebar](docs/sidebar.md) for page navigation, and [Settings](docs/settings.md) for subpages and
+JMAP account setup, and [JMAP](docs/jmap.md) for the protocol client.
 
 See [sender and attendee avatars](docs/avatars.md) for the reusable contact-photo, optional domain-icon,
 and generated-avatar service.

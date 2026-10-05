@@ -13,6 +13,7 @@ dependencies {
     testImplementation(libs.compose.material)
     testImplementation(libs.androidx.compose.ui.test)
     testImplementation(libs.kotlinx.datetime)
+    testImplementation(libs.ktor.client.mock)
 }
 
 android {

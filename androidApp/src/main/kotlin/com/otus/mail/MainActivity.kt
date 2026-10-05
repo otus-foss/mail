@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightNavigationBars = false
         }
         val dateFormatState = DateFormatSettingsState(AndroidDateFormatPreferenceStore(this))
-        setContent { App(dateFormatState) }
+        val services = (application as OtusMailApplication).services
+        setContent { App(dateFormatState, services) }
     }
 }

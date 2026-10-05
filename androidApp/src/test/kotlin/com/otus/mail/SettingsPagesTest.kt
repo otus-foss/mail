@@ -1,0 +1,87 @@
+package com.otus.mail
+
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class SettingsPagesTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun dateFormatShowsTheCurrentChoiceAndChangesItInAPopup() {
+        openSettings()
+        compose.onNodeWithText("Date format: Use device format").assertIsDisplayed()
+        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Date format").assertIsDisplayed()
+        compose.onNodeWithText("YYYY-MM-DD").assertDoesNotExist()
+        compose.onNodeWithText("Date format").performClick()
+        compose.onNodeWithText("YYYY-MM-DD").performClick()
+        compose.onNodeWithContentDescription("Dismiss Date format").assertDoesNotExist()
+        compose.onNodeWithText("YYYY-MM-DD", substring = true).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Date format: YYYY-MM-DD").assertIsDisplayed()
+    }
+
+    @Test
+    fun dismissingTheDateFormatPopupKeepsTheChoice() {
+        openSettings()
+        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Date format").performClick()
+        compose.onNodeWithContentDescription("Close").performClick()
+        compose.onNodeWithText("Use device format", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun systemBackLeavesASubpageForSettings() {
+        openSettings()
+        compose.onNodeWithText("Email accounts").performClick()
+        compose.onNodeWithText("Add a JMAP account").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Appearance & behavior").assertIsDisplayed()
+    }
+
+    @Test
+    fun accountSetupResolvesTheJmapSessionBeforeConnecting() {
+        openSettings()
+        compose.onNodeWithText("Email accounts").performClick()
+        val server = compose.onNodeWithContentDescription("Server")
+        server.performTextInput("http://mail.example.com")
+        compose.onNodeWithText("JMAP requires a secure connection. Use https://.").assertIsDisplayed()
+        compose.onNodeWithText("Connect").assertIsNotEnabled()
+        server.performTextReplacement("Mail.Example.com")
+        compose.onNodeWithText("Connects to https://mail.example.com/.well-known/jmap").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Username").performTextInput("me@example.com")
+        compose.onNodeWithContentDescription("Password").performTextInput("app-password")
+        compose
+            .onNodeWithContentDescription(
+                "Password",
+            ).assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
+        compose.onNodeWithText("Connect").assertIsEnabled()
+    }
+
+    private fun openSettings() {
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNode(hasText("Settings") and isSelectable()).performClick()
+        compose.onNodeWithText("Email accounts").assertIsDisplayed()
+    }
+}

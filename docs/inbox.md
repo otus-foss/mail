@@ -56,9 +56,21 @@ Physical Android device and iOS runtime testing remain separate platform checks.
 The default header shows a tappable "Tap to search" prompt in a minimum 48 dp target. Tapping it
 opens the search field, requests focus and the software keyboard, and reveals the search filter
 pills. The trailing button opens the filter sheet in both inbox and search modes.
-The default leading icon is a mirrored left chevron reserved for sidebar navigation. It remains
-disabled until the sidebar is implemented. In search mode, the chevron still closes search.
+The default leading icon is a mirrored left chevron that opens the sidebar. In search mode, the
+chevron still closes search.
 
-Sender rows and the people picker accept resolved contact or website images. Generated initials
-remain visible when no image is supplied or image decoding fails. See [avatars](avatars.md) for
-the reusable service, capability checks, account isolation, and external-image options.
+## Page width
+
+Content spans the context panel's width: the page has an 8 dp inset and full-width elements, such as
+message rows, Settings rows, fields, and buttons, use it directly. Free-standing text, such as the
+message count, section captions, and notes (`PageNote`), lines up with the text inside those rows.
+
+## Connected account identity
+
+Account and mailbox filters use the stable saved login ID. Display names and account details are
+separate, so two accounts called the same name remain independently selectable. The picker shows
+the username and server below each account name. Renaming an account does not change filter identity.
+
+Sender avatars now resolve contact photos after messages appear. The people picker uses the same
+resolved sender values. Generated initials remain visible while loading or if image decoding fails.
+See [avatars](avatars.md) for the capability checks, account isolation, and external-image options.

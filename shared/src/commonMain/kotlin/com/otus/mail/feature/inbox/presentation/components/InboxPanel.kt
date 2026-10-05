@@ -33,15 +33,17 @@ import com.otus.mail.feature.inbox.domain.InboxSearch
 fun InboxPanel(
     searching: Boolean,
     search: InboxSearch,
-    onChange: (InboxSearch) -> Unit,
-    onSearchingChange: (Boolean) -> Unit,
-    onFilter: (InboxFilter) -> Unit,
-    onSubmit: () -> Unit,
     dateFormatter: DateFormatter,
+    actions: InboxPanelActions,
 ) {
+    val onChange = actions.onChange
+    val onSearchingChange = actions.onSearchingChange
+    val onFilter = actions.onFilter
+    val onSubmit = actions.onSubmit
+    val onOpenNavigation = actions.onOpenNavigation
     ContextPanel(
         placement = if (searching) ChipPlacement.Overlapping else ChipPlacement.Below,
-        navigation = { InboxNavigation(searching) { onSearchingChange(false) } },
+        navigation = { InboxNavigation(searching, onOpenNavigation) { onSearchingChange(false) } },
         trailingAction = {
             IconButton("Open filters", { onFilter(InboxFilter.More) }) {
                 Symbol(Res.drawable.symbol_filter_list)
@@ -72,6 +74,7 @@ fun InboxPanel(
 @Composable
 private fun InboxNavigation(
     searching: Boolean,
+    onOpenNavigation: () -> Unit,
     onCloseSearch: () -> Unit,
 ) {
     if (searching) {
@@ -79,7 +82,7 @@ private fun InboxNavigation(
             Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
         }
     } else {
-        IconButton("Open navigation", {}, enabled = false, outlined = false) {
+        IconButton("Open navigation", onOpenNavigation, outlined = false) {
             Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
         }
     }

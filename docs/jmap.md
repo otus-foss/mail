@@ -2,7 +2,7 @@
 
 JMAP lives in the `:jmap` Gradle module (`com.otus.jmap`): a provider-independent client for
 RFC 8620 (core) plus login storage. It has no UI and no app code, so Otus Mail and Otus Calendar can
-both use it. Application-specific models, account screens, and inbox integration are separate work.
+both use it. Mail-specific types live in the Mail app. Developed and checked against Stalwart.
 
 ## Module rules
 
@@ -12,8 +12,8 @@ both use it. Application-specific models, account screens, and inbox integration
 - The architecture check enforces: package root `com.otus.jmap`; no Compose or lifecycle; no
   references to `com.otus.mail` or `com.otus.calendar`; no platform APIs in common code. File length,
   suppression, wildcard-import, detekt, and ktlint rules apply as everywhere else.
-- The module is included independently in this repository. Application wiring and cross-repository
-  distribution are separate decisions; see [Reuse in Calendar](#reuse-in-calendar).
+- Mail uses it as `api(projects.jmap)` from `:shared`. How Calendar consumes it across repositories
+  is undecided; see [Reuse in Calendar](#reuse-in-calendar).
 
 ## API
 
@@ -42,9 +42,9 @@ both use it. Application-specific models, account screens, and inbox integration
 | Threat | Mitigation |
 | --- | --- |
 | Credentials sent in clear | Every URL must be https: the session URL, each redirect, and `apiUrl`. `JmapPolicy.allowInsecureHttp` exists only for local test servers. |
-| Credentials leaked by a redirect | Credentials go only to the origin the user entered and origins the user approved. A redirect elsewhere stops with `RedirectedElsewhere` before credentials are sent there; callers must obtain approval and retry with the trusted origin. The same rule applies to `apiUrl`. |
+| Credentials leaked by a redirect | Credentials go only to the origin the user entered and origins the user approved. A redirect elsewhere stops with `RedirectedElsewhere` before anything is sent there; Mail asks the user and stores the approval with the login. The same rule applies to `apiUrl`. |
 | Hostile or broken responses | Responses are capped at 16 MiB. Every envelope element is validated; any malformed data becomes `NotJmap`. Nothing a server sends makes the client throw anything other than `JmapException`. |
-| Secrets in logs or crash reports | `JmapAuth` and `LoginSecret` redact secrets. Secrets are not readable through public API; only headers are built from them. |
+| Secrets in logs or crash reports | `JmapAuth`, `LoginSecret`, and drafts print `***`. Secrets are not readable through public API; only headers are built from them. |
 | Secrets at rest (Android) | AES-256-GCM with a non-exportable Android Keystore key; fresh IV per value; one synchronous commit per change; app backup disabled. |
 | Secrets at rest (iOS) | Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`; replacement uses `SecItemUpdate`, and deletion errors preserve account metadata. |
 | Unreadable stored data | A list that cannot be decoded is copied aside before it could be overwritten. An undecryptable secret is reported as `CredentialsUnavailable`, never as a server rejection. |
@@ -61,18 +61,21 @@ only), OAuth, and sharing logins between the two installed apps.
 | 3.6.1 | Request-level problem details become `RequestFailed(type)` | `JmapDiscoveryTest` |
 | 3.6.2 | Method-level errors become `MethodError(type)` for that call only | `JmapRequestTest` |
 | 3.7 | Result references | `JmapRequestTest` |
-| 5.1, 5.2, 5.5 | `/get`, `/changes`, `/query` | `JmapRequestTest`, `JmapFailureTest` |
+| 5.1, 5.2, 5.5 | `/get`, `/changes`, `/query` | `JmapRequestTest`, Mail tests |
 | 6.2 | Bounded authenticated blob downloads through the advertised URI template, with trusted-origin checks | `JmapDownloadTest` |
 | RFC 7617 | Basic credentials; a colon in the username is rejected | `JmapLoginTest` |
 
 Not implemented yet: `/set`, `/queryChanges`, `/copy`, uploads, push (section 7),
 and request limits such as `maxCallsInRequest`.
 
-## Application integration
+## Mail on top of it
 
-Applications supply the platform HTTP engine and define protocol objects using `JmapType`.
-Use `accountFor` for the needed capability, and handle missing capabilities explicitly.
-UI, mail-specific models, synchronization, and account connection screens are not part of this module.
+`core/mail` defines `MailboxType` and `EmailType` (RFC 8621). Connecting fetches the session, checks
+the mail account with a `Mailbox/get`, and saves the login; reconnecting the same user replaces it.
+The inbox finds the mailbox with role `inbox`, then runs `Email/query` and `Email/get` in one request
+(newest 50, text bodies up to 20 000 bytes per part). Each login loads in parallel and fails alone,
+with a reason. `OtusMailApplication` owns one `MailServices` per process. Mail and the first release
+use the same storage names, so earlier accounts keep working.
 
 ## Reuse in Calendar
 
@@ -88,7 +91,7 @@ lives here. Installed apps keep separate login storage.
 connection-cache tests, and Android preference-store tests with an injected cipher. It is required
 by `checkAll` and Android CI. Tests cover explicit and implicit responses, method-name mismatches,
 network failures and cancellation, capability checks, changes, account replacement, storage failures,
-and corrupt-list preservation.
+and corrupt-list preservation. App tests also cover storage-error recovery and same-named accounts.
 
 `./gradlew :jmap:iosSimulatorArm64Test` runs in macOS CI. The iOS store tests inject the native
 Keychain boundary to exercise failed updates/additions/deletions while checking preserved metadata
@@ -101,6 +104,10 @@ OTUS_JMAP_TEST_URL=http://127.0.0.1:8080/.well-known/jmap OTUS_JMAP_TEST_USER=ad
 OTUS_JMAP_TEST_PASSWORD=… OTUS_JMAP_TEST_INSECURE=1 ./gradlew :jmap:testAndroidHostTest --rerun-tasks
 ```
 
-The opt-in integration tests verify session discovery, mail access, and wrong-password rejection.
-They are not configured in CI. iOS code and test sources compile to klibs on Linux; linking and
-running simulator tests, including the Keychain adapter tests, require macOS/Xcode.
+It passed against Stalwart 0.16.24 in bootstrap mode (session discovery, `Mailbox/get`, wrong
+password). Bootstrap mode cannot query mail, so the inbox was checked on a device with a real
+account. CI does not run it yet. Complete iOS builds and runtime checks, including the Keychain,
+require macOS/Xcode.
+
+Contact-photo lookup now uses RFC 9610 and the blob-download API. See [avatars](avatars.md) for
+capability discovery, exact email matching, public-image options, and generated fallbacks.

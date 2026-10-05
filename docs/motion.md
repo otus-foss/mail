@@ -10,6 +10,9 @@ Cross-repository library distribution remains undecided.
 | `enter` | (0.2, 0, 0, 1) | Incoming content decelerates into position |
 | `exit` | (0.4, 0, 1, 1) | Outgoing content accelerates away |
 
+The [sidebar](sidebar.md) opens over 300 ms with `enter` and closes over 220 ms with `exit`; one
+progress value drives its slide and scrim, so reversing mid-way stays continuous.
+
 `designsystem/elements/AnimatedText` takes text, numeric order, a modifier, and typography.
 Increasing order slides upward; decreasing order slides downward. Incoming text slides from one
 text height away and fades in over 260 ms. Outgoing text slides away and fades out over 180 ms.
