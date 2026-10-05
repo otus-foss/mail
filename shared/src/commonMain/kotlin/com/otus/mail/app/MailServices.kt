@@ -4,8 +4,11 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.avatar.AvatarCacheConfig
 import com.otus.mail.core.avatar.AvatarService
+import com.otus.mail.core.avatar.AvatarStore
 import com.otus.mail.core.avatar.DomainIconSource
+import com.otus.mail.core.avatar.EmptyAvatarStore
 import com.otus.mail.core.avatar.HttpAvatarImageLoader
 import com.otus.mail.core.avatar.JmapContactPhotoSource
 import com.otus.mail.core.avatar.PublicSuffixDomainResolver
@@ -22,6 +25,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
  */
 class MailServices(
     logins: LoginStore = InMemoryLoginStore(),
+    avatarStore: AvatarStore = EmptyAvatarStore,
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     private val client by lazy(createClient)
@@ -36,9 +40,12 @@ class MailServices(
                 DomainIconSource { domain ->
                     avatarImages.load("https://icons.duckduckgo.com/ip3/$domain.ico")
                 },
+            cacheConfig = AvatarCacheConfig(store = avatarStore),
         )
     }
-    internal val accounts: AccountRepository by lazy { JmapAccountRepository(client, connections, logins) }
+    internal val accounts: AccountRepository by lazy {
+        JmapAccountRepository(client, connections, logins, onAccountChanged = avatars::removeAccount)
+    }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins) }
 }
 

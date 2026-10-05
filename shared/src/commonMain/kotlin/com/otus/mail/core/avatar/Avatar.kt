@@ -43,6 +43,9 @@ fun interface ContactPhotoSource {
 fun interface AvatarImageLoader {
     /** Fetch public images without any account credentials. */
     suspend fun load(url: String): AvatarImage?
+
+    /** Optional discovery of larger raster icons declared in a public website's HTML. */
+    suspend fun websiteIcon(domain: String): AvatarImage? = null
 }
 
 fun interface AvatarDomainResolver {

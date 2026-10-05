@@ -31,7 +31,7 @@ val result = service.resolve(
 ```
 
 Use an app-private, stable login ID for `accountKey`, never the display name or a password. Call
-`service.clear()` after account changes or a contact refresh. Create one service per app process;
+`service.removeAccount(loginId)` after logout or reconnect, and `service.clear()` for an explicit contact refresh. Ordinary inbox reloads retain the cache. Create one service per app process;
 close an explicitly owned `HttpAvatarImageLoader` when its owning scope ends.
 
 ## Mail integration
@@ -49,8 +49,11 @@ External contact URLs require the separate option. PNG, JPEG, and WebP contact i
 Missing capabilities, permissions, images, or optional request failures leave the generated avatar.
 Cancellation propagates and stops work from an obsolete inbox refresh.
 
-`InboxFeedState` publishes messages before resolving avatars, deduplicates sender lookups within
-each login, and updates both inbox rows and the people picker. UI components receive values only.
+`InboxFeedState` restores local avatars before publishing refreshed messages, then resolves new
+senders progressively. Reloading does not clear avatars or replace known photos with initials.
+Lookups are deduplicated by normalized email within each login, and results update both inbox rows
+and the people picker. New senders at a known domain immediately reuse its icon while their own
+contact lookup runs. UI components receive values only.
 The design-system `Avatar` draws a supplied bitmap or initials; it never fetches an image.
 `rememberAvatarImage` decodes off the main thread and keeps the 64 most recently decoded images.
 Concurrent rows share a pending decode, and every row adopts its result even if the cache fills
@@ -62,19 +65,30 @@ Generated backgrounds use `accentDark`, `bgLight`, and `bgDark`, with `text1` in
 
 ## Caching and domain icons
 
-The service keeps up to 64 account/email/options entries for five minutes, including misses. It
-coalesces concurrent requests for the same key, so unrelated senders do not share a lookup lock.
-At most eight lookups fetch at once, and the direct website-icon attempts share an 8-second limit.
-Clearing the cache prevents in-flight results from repopulating it, including lookups waiting for
-a fetch permit. Each lookup captures its cache generation before joining the fetch queue.
-Names are excluded from cache keys so callers always get initials for the current display name.
-Images are capped at 512 KiB each,
-so the default encoded-image cache is bounded to 32 MiB. Callers must not mutate returned image bytes.
+The service keeps up to 64 recently used contact/domain records in memory. Contact keys include the
+login, normalized email and external-image policy. Website icons use the exact hostname and proxy
+policy, shared across senders and accounts. Two addresses at `proton.me` fetch the website icon once;
+their individual contact photos still take priority and remain separate. Display names never enter
+cache keys, so initials always follow the current name.
 
-Mail tries HTTPS `apple-touch-icon.png`, `favicon.png`, and `favicon.ico` on the sender's exact
-hostname first. If none succeeds, it tries the same paths on the registrable website domain from
-the bundled Public Suffix List. For example, `email.openai.com` falls back to `openai.com`. An exact
-root hostname is fetched only once. Multi-label suffixes such as `co.uk`, private hosting suffixes
+Android and iOS entry points supply `FileAvatarStore` in the app's private cache directory. It survives
+process restarts and uses hashed filenames, atomic record replacement, a 32 MiB disk limit and at most
+256 records. Every image is capped at 512 KiB. Successful images are reused for 30 days; missing
+images are retried after five minutes. Existing images remain visible during an expired/offline
+lookup. The OS may reclaim cache files. Removing or reconnecting an account deletes its private
+contact records while retaining public website icons. Callers must not mutate image bytes.
+
+Concurrent lookups share a pending result for each contact or domain key. At most eight fetches run
+at once. Cancellation of the owner lets waiting callers retry. Cache invalidation also covers
+lookups waiting for a fetch permit and prevents old results from repopulating memory or disk.
+
+Mail first reads a bounded portion of the website's HTML and tries advertised raster icon links,
+prioritizing larger declared sizes and Apple touch icons. Relative links use the final website URL
+after redirects. This finds Proton's 180 px touch icon rather than enlarging the 32 px proxy favicon.
+If discovery fails, it tries HTTPS `apple-touch-icon.png`, `favicon.png`, and `favicon.ico` on the
+sender's exact hostname, then on its registrable website domain from the bundled Public Suffix List.
+All direct website attempts together have an 8-second budget. For example, `email.openai.com` falls
+back to `openai.com`. An exact root hostname is fetched only once. Multi-label suffixes such as `co.uk`, private hosting suffixes
 such as `github.io`, wildcards, and exceptions are respected. Bare public suffixes, IP literals,
 internal hosts, and malformed hostnames retain initials. Shared mail providers such as `proton.me`
 are eligible for a website logo; this identifies the provider, not the individual sender.
@@ -103,18 +117,20 @@ ICO display depends on the platform decoder; Android tests cover PNG and bitmap-
 
 The public loader follows at most three redirects, checking each target for HTTPS, a public
 hostname, and absence of URL credentials. Relative paths and public CDN redirects are supported.
-It refuses credential-bearing URLs, SVG/HTML responses, oversized bodies, and non-HTTPS URLs.
+Image loads refuse credential-bearing URLs, SVG/HTML responses, oversized bodies, and non-HTTPS
+URLs. Website discovery reads at most 64 KiB of HTML; it never executes scripts or displays HTML.
 The entire load, including redirects, times out after five seconds. Domain icons represent a website or organization;
-they are not proof that a sender is authentic. There is no persistent image cache or offline contact sync.
+they are not proof that a sender is authentic. The image cache supports offline display; it does not
+synchronize contacts offline.
 
 ## Reuse across repositories
 
-Mail and Calendar contain aligned copies of `Avatar.kt`, `AvatarService.kt`, `AvatarDomains.kt`, and
-`HttpAvatarImageLoader.kt`, and `PublicSuffixDomainResolver.kt` under their own `core/avatar`
-package, with the same common behavior tests and Public Suffix List resources.
-Only package names differ. Each app also owns its bitmap decoder and avatar element. Both repositories
+Mail and Calendar each own their `core/avatar` implementation and Public Suffix List resource.
+Mail additionally persists contact/domain images, discovers advertised website icons, and restores
+images before inbox reloads. These changes have not been copied into Calendar, whose attendee
+integration is still deferred. Each app also owns its bitmap decoder and avatar element. Both repositories
 build independently, with no sibling-checkout dependency, publishing pipeline, or shared credentials.
-Keep the portable files and tests aligned when changing the service contract.
+Keep shared contract changes explicit when maintaining the repository copies.
 
 Mail supplies the JMAP adapter. Calendar can inject its future contact repository through
 `ContactPhotoSource`; calendar accounts and attendee screens remain unimplemented. The Mail adapter
@@ -130,9 +146,12 @@ cross-repository library distribution is chosen.
 Common tests cover resolution priority, account/options isolation, missing capabilities, exact email
 matching, address-book permissions, blobs/data URIs/external URLs, website-domain resolution,
 provider icons, icon-cache options and domain-only requests, cache expiry/eviction/invalidation,
-cancellation, credential isolation, redirects, and response-size limits. Inbox tests verify that
-messages appear before photos, repeated senders share a result, and Mail enables domain fallbacks.
+cancellation, credential isolation, redirects, and response-size limits. Persistent-cache tests cover
+process recreation, bounded disk usage, corrupt records and account removal. Inbox tests verify local
+restoration before network work, sharing icons with new senders, and retaining image identity when
+bytes are restored from disk after memory eviction.
 Android rendering tests cover downsampled PNG photos, PNG- and bitmap-encoded ICO favicons, and
-malformed data. Physical Android validation confirmed images on both Proton sender rows, the OpenAI
-logo, and two other live sender-domain icons in the inbox. The Proton images' source was not
-instrumented; real-server contact-photo source verification and iOS runtime validation remain open.
+malformed data. Pixel 9a validation confirmed that the stored Proton domain icon is 180 × 180 px,
+remains sharp in the inbox, and survives a process restart. A full pull-to-refresh recording kept
+avatars visible throughout the reload, and the stored domain images were reused without rewriting
+their files. iOS compilation and runtime validation require macOS/Xcode and remain unrun.
