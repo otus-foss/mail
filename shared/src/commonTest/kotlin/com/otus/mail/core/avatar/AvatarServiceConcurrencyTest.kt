@@ -112,6 +112,37 @@ class AvatarServiceConcurrencyTest {
             assertEquals(AvatarOrigin.Domain, result.origin)
         }
 
+    @Test
+    fun clearingDuringContactLookupAlsoInvalidatesItsLaterDomainLookup() =
+        runTest {
+            val release = CompletableDeferred<Unit>()
+            val entered = CompletableDeferred<Unit>()
+            var calls = 0
+            val service =
+                AvatarService(
+                    contacts =
+                        ContactPhotoSource { _, _ ->
+                            entered.complete(Unit)
+                            release.await()
+                            null
+                        },
+                    images =
+                        AvatarImageLoader {
+                            calls++
+                            image
+                        },
+                )
+            val request = AvatarRequest("work", "ada@company.example")
+            val options = AvatarOptions(domainIcons = true)
+            val pending = async { service.resolve(request, options) }
+            entered.await()
+            service.clear()
+            release.complete(Unit)
+            pending.await()
+            service.resolve(request, options)
+            assertEquals(2, calls)
+        }
+
     private companion object {
         const val SENDERS = 16
         const val FETCH_LIMIT = 8

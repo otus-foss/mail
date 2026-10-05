@@ -109,9 +109,7 @@ class AvatarServiceTest {
                         calls++
                         null
                     },
-                    maxEntries = 1,
-                    cacheMillis = 100,
-                    nowMillis = { now },
+                    cacheConfig = AvatarCacheConfig(maxEntries = 1, cacheMillis = 100, nowMillis = { now }),
                 )
             service.resolve(request)
             service.resolve(request)

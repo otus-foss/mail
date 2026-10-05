@@ -28,6 +28,7 @@ class JmapAccountRepository(
     private val client: JmapClient,
     private val connections: JmapConnections,
     private val logins: LoginStore,
+    private val onAccountChanged: suspend (String) -> Unit = {},
 ) : AccountRepository {
     override suspend fun accounts(): List<ConnectedAccount> = storage { logins.logins().map { it.toConnected() } }
 
@@ -50,6 +51,7 @@ class JmapAccountRepository(
     override suspend fun remove(id: String) {
         storage { logins.remove(id) }
         connections.forget(id)
+        onAccountChanged(id)
     }
 
     private suspend fun <T> storage(read: () -> T): T =
@@ -94,6 +96,7 @@ class JmapAccountRepository(
                 ).also { logins.save(it, draft.password) }
             }
         connections.forget(login.id)
+        onAccountChanged(login.id)
         return ConnectOutcome.Connected(login.toConnected())
     }
 }

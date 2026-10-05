@@ -6,6 +6,9 @@ import androidx.compose.runtime.setValue
 import com.otus.mail.core.avatar.AvatarOptions
 import com.otus.mail.core.avatar.AvatarRequest
 import com.otus.mail.core.avatar.AvatarService
+import com.otus.mail.core.avatar.ResolvedAvatar
+import com.otus.mail.core.avatar.avatarEmailKey
+import com.otus.mail.core.avatar.generatedAvatar
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -45,7 +48,7 @@ class InboxFeedState(
                 loading = true
                 try {
                     val snapshot = source.inbox()
-                    messages = snapshot.messages
+                    messages = withCachedAvatars(snapshot.messages)
                     notice = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
                 } catch (expected: InboxStorageException) {
                     notice = "Couldn't load saved accounts. Try again in Settings."
@@ -56,25 +59,54 @@ class InboxFeedState(
             }
     }
 
-    /** Publish the inbox first. Optional photos update rows without blocking mail or showing errors. */
+    /** Restore local images before publishing; new senders still resolve progressively. */
+    private suspend fun withCachedAvatars(incoming: List<MailMessage>): List<MailMessage> {
+        val service = avatars ?: return incoming
+        val previous =
+            messages.associate {
+                (it.sender.accountKey to avatarEmailKey(it.sender.address)) to
+                    it.sender.avatar
+            }
+        val restored = mutableMapOf<Pair<String, String>, ResolvedAvatar?>()
+        return incoming.map { message ->
+            val sender = message.sender
+            val key = sender.accountKey to avatarEmailKey(sender.address)
+            if (key !in restored) {
+                val cached = service.cached(AvatarRequest(sender.accountKey, sender.address), avatarOptions)
+                restored[key] = keepIdenticalImage(cached, previous[key])
+            }
+            val avatar = restored[key]?.copy(fallback = generatedAvatar(sender.name, sender.address))
+            message.copy(sender = sender.copy(avatar = avatar))
+        }
+    }
+
+    /** Optional network photos update rows without blocking mail or showing errors. */
     private suspend fun resolveAvatars() {
         val service = avatars ?: return
-        service.clear()
-        val senders = messages.map { it.sender }.distinctBy { it.accountKey to it.address }
+        val senders = messages.map { it.sender }.distinctBy { it.accountKey to avatarEmailKey(it.address) }
         coroutineScope {
             senders.forEach { sender ->
                 launch {
-                    val avatar =
+                    val resolved =
                         service.resolve(
                             AvatarRequest(sender.accountKey, sender.address, sender.name),
                             avatarOptions,
                         )
+                    val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved
                     messages =
                         messages.map { message ->
                             if (message.sender.accountKey == sender.accountKey &&
-                                message.sender.address == sender.address
+                                avatarEmailKey(message.sender.address) == avatarEmailKey(sender.address)
                             ) {
-                                message.copy(sender = message.sender.copy(avatar = avatar))
+                                val updated =
+                                    avatar.copy(
+                                        fallback =
+                                            generatedAvatar(
+                                                message.sender.name,
+                                                message.sender.address,
+                                            ),
+                                    )
+                                message.copy(sender = message.sender.copy(avatar = updated))
                             } else {
                                 message
                             }
@@ -83,6 +115,15 @@ class InboxFeedState(
             }
         }
     }
+}
+
+/** Disk restoration may allocate new bytes. Keep a displayed image's identity when its content matches. */
+private fun keepIdenticalImage(
+    current: ResolvedAvatar?,
+    previous: ResolvedAvatar?,
+): ResolvedAvatar? {
+    val image = previous?.image ?: return current
+    return if (current?.image?.bytes?.contentEquals(image.bytes) == true) current.copy(image = image) else current
 }
 
 private fun UnavailableAccount.notice(): String =
