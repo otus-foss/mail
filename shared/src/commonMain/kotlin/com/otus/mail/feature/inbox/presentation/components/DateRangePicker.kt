@@ -43,7 +43,7 @@ internal fun DateRangePicker(
     val listState = rememberLazyListState(weeks.indexOf(initialMonth))
     val scope = rememberCoroutineScope()
     val goToMonth: (LocalDate) -> Unit = { month ->
-        scope.launch { listState.animateScrollToItem(weeks.indexOf(month)) }
+        scope.launch { listState.animateScrollToItem(weeks.indexOf(LocalDate(month.year, month.month, 1))) }
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val controlsHeight = maxHeight * CalendarTokens.CONTROLS_HEIGHT_FRACTION
