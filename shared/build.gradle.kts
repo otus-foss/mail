@@ -51,6 +51,7 @@ kotlin {
             implementation(libs.ktor.client.mock)
             implementation(libs.kotlinx.coroutines.test)
         }
+        getByName("androidHostTest").dependencies { implementation(libs.robolectric) }
     }
 }
 
