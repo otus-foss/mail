@@ -2,9 +2,6 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.core.dateformat.currentLocalDate
-import com.otus.mail.core.dateformat.formatRelative
-import com.otus.mail.core.dateformat.formatRelativeRange
 import com.otus.mail.designsystem.elements.Chip
 import com.otus.mail.designsystem.elements.Symbol
 import com.otus.mail.designsystem.resources.Res
@@ -13,9 +10,6 @@ import com.otus.mail.designsystem.resources.symbol_calendar_add_on
 import com.otus.mail.designsystem.resources.symbol_inbox
 import com.otus.mail.designsystem.resources.symbol_person
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.minus
 
 @Composable
 fun SearchFilterChip(
@@ -55,20 +49,7 @@ private fun filterLabel(
         }
 
         InboxFilter.Date -> {
-            val start = search.dateStart
-            if (start != null) {
-                val first = LocalDate.parse(start)
-                val last = LocalDate.parse(search.dateEnd ?: start)
-                val today = currentLocalDate()
-                when {
-                    first == today.minus(6, DateTimeUnit.DAY) && last == today -> "This week"
-                    first == today.minus(29, DateTimeUnit.DAY) && last == today -> "This month"
-                    first == last -> dateFormatter.formatRelative(first, today)
-                    else -> dateFormatter.formatRelativeRange(first, last, today, separator = "–")
-                }
-            } else {
-                filter.title
-            }
+            dateFilterLabel(search, dateFormatter)
         }
 
         InboxFilter.Mailboxes -> {

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasClickAction
@@ -159,10 +160,11 @@ class CalendarDragTest {
         compose.onNodeWithText(relativeIsoRange(start.toString(), today.toString())).assertIsDisplayed()
         compose.onNodeWithText("Apply").performClick()
         compose
-            .onNodeWithText(
-                relativeIsoRange(start.toString(), today.toString(), "–"),
-            ).performScrollTo()
-            .assertIsDisplayed()
+            .onNodeWithText("This month")
+            .assertIsOn()
+            .performScrollTo()
+            .performClick()
+        compose.onNodeWithText(relativeIsoRange(start.toString(), today.toString())).assertIsDisplayed()
     }
 
     @Test

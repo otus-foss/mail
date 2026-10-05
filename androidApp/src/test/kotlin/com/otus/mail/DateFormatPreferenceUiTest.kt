@@ -41,7 +41,7 @@ class DateFormatPreferenceUiTest {
         compose.onNodeWithText("$next → Today").assertIsDisplayed()
         compose.onNodeWithText("Last 7 days").assertIsSelected()
         compose.onNodeWithText("Apply").performClick()
-        compose.onNodeWithText("$next–Today").performScrollTo().performClick()
+        compose.onNodeWithText("This week").performScrollTo().performClick()
         compose.onNodeWithText("$next → Today").assertIsDisplayed()
         compose.onNodeWithText("Last 7 days").assertIsSelected()
     }

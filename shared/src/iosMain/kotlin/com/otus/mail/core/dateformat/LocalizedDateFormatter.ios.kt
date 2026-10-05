@@ -8,6 +8,8 @@ import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSLocale
 import platform.Foundation.NSTimeZone
 import platform.Foundation.currentLocale
+import platform.Foundation.dateWithTimeIntervalSince1970
+import platform.Foundation.localeIdentifier
 import platform.Foundation.timeZoneForSecondsFromGMT
 
 actual fun currentDateLocaleIdentifier(): String = NSLocale.currentLocale.localeIdentifier
@@ -21,7 +23,7 @@ internal actual fun createLocalizedDateFormatter(localeIdentifier: String): Loca
             setLocalizedDateFormatFromTemplate("yyyyMMdd")
         }
     return LocalizedDateFormatter { date: LocalDate ->
-        formatter.stringFromDate(NSDate(timeIntervalSince1970 = date.toEpochDays() * SECONDS_PER_DAY))
+        formatter.stringFromDate(NSDate.dateWithTimeIntervalSince1970(date.toEpochDays() * SECONDS_PER_DAY))
     }
 }
 

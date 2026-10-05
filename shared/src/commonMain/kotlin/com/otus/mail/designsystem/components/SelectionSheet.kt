@@ -54,7 +54,7 @@ fun SelectionSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val density = LocalDensity.current
-    Dialog(onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    Dialog(onDismiss, properties = selectionSheetDialogProperties()) {
         CompositionLocalProvider(LocalDensity provides density) {
             Box(Modifier.fillMaxSize()) {
                 Box(
@@ -110,6 +110,9 @@ fun SelectionSheet(
         }
     }
 }
+
+/** Android's window-inset option is absent from the iOS dialog API. */
+internal expect fun selectionSheetDialogProperties(): DialogProperties
 
 @Composable
 private fun SheetHeading(
