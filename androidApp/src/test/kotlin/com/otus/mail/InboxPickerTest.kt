@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -90,6 +91,18 @@ class InboxPickerTest {
         compose.onNodeWithContentDescription("From Alex").performClick()
         compose.onNodeWithText("Clear").performClick()
         compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("2 results").assertIsDisplayed()
+    }
+
+    @Test
+    fun doubleTappingClearAppliesClearedSelectionAndCloses() {
+        compose.onNodeWithText("People").performClick()
+        compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
+        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("1 result").assertIsDisplayed()
+        compose.onNodeWithContentDescription("From Alex").performClick()
+        compose.onNodeWithText("Clear").performTouchInput { doubleClick() }
+        compose.onNodeWithText("Clear").assertDoesNotExist()
         compose.onNodeWithText("2 results").assertIsDisplayed()
     }
 

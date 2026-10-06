@@ -44,7 +44,8 @@ larger displays. This modal has no drag handle or swipe-to-dismiss gesture.
 
 Opening a sheet copies the applied criteria into a saveable draft. Row presses only change that
 draft. Apply commits it and closes; dismissal discards it. Clear resets only the current filter
-in the draft. Picker search does not clear selections, and reopening resets its local query.
+in the draft. Double-tapping Clear also applies the cleared draft and closes the sheet.
+Picker search does not clear selections, and reopening resets its local query.
 Screen criteria, open filter, draft selections, and picker query survive activity recreation.
 
 - **People / From:** match sender name or address within the picker, with multiple sender choices,
@@ -105,7 +106,8 @@ conversion remains part of the future data adapter.
 ## Validation
 
 `./gradlew checkAll` covers domain combinations and inclusive ranges, UI draft/apply/dismiss,
-independent search and multi-selection, date selection, held/reverse/cancelled range drags, and small-screen/large-text layouts.
+independent search and multi-selection, single-person and multiple-person pill summaries,
+double-tap Clear, date selection, held/reverse/cancelled range drags, and small-screen/large-text layouts.
 Calendar checks cover unique consecutive dates, mixed-month and mixed-year rows, leap years,
 navigation bounds, month markers, and range selection across a year boundary within one row.
 Picker screenshots are written to `androidApp/build/reports/pickers/` by local Robolectric tests.
