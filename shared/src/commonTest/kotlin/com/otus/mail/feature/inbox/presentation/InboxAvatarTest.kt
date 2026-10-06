@@ -224,6 +224,31 @@ class InboxAvatarTest {
             assertEquals(1, iconCalls)
         }
 
+    @Test
+    fun accountAddressResolvesItsOwnAvatarForEveryMessageInTheAccount() =
+        runTest {
+            val image = AvatarImage(byteArrayOf(2))
+            val avatars =
+                AvatarService(
+                    ContactPhotoSource { request, _ ->
+                        image.takeIf {
+                            request.email ==
+                                "me@work.example"
+                        }
+                    },
+                )
+            val location = MailLocation("Inbox", "Work", accountAddress = "me@work.example")
+            val source =
+                object : MailSource {
+                    override suspend fun inbox() =
+                        InboxSnapshot(listOf(message("one"), message("two")).map { it.copy(location = location) })
+                }
+            val feed = InboxFeedState(source, this, avatars)
+            feed.refresh()
+            testScheduler.runCurrent()
+            assertTrue(feed.messages.all { it.location.accountAvatar?.image === image })
+        }
+
     private fun message(id: String) =
         MailMessage(
             id,

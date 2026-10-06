@@ -9,10 +9,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.otus.mail.core.avatar.generatedAvatar
+import com.otus.mail.designsystem.elements.Avatar
 import com.otus.mail.designsystem.elements.SelectionRow
+import com.otus.mail.designsystem.elements.rememberAvatarImage
 import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailboxScope
 
@@ -70,30 +74,29 @@ private fun LazyListScope.mailboxChoices(
         messages
             .map { MailboxScope(it.location.accountId, it.location.mailbox) }
             .distinct()
-            .sortedWith(compareBy({ it.account }, { it.name }))
-    val groups =
-        mailboxes
-            .filter { it.name.contains(needle, true) || accounts[it.account]?.account.orEmpty().contains(needle, true) }
-            .groupBy { it.account }
+            .sortedWith(compareBy({ accounts[it.account]?.account }, { it.name }))
+    val matches =
+        mailboxes.filter { scope ->
+            val location = accounts[scope.account]
+            scope.name.contains(needle, true) ||
+                location?.account.orEmpty().contains(needle, true) ||
+                location?.accountAddress.orEmpty().contains(needle, true)
+        }
     val expanded =
         mailboxes
             .filter { option ->
                 draft.mailboxes.any { it.name == option.name && (it.account == null || it.account == option.account) }
             }.toSet()
-    if (groups.isEmpty()) item { EmptyChoices(mailboxes.isEmpty(), "No inboxes available yet.") }
-    groups.forEach { (account, choices) ->
-        item {
-            val location = accounts[account]
-            val label =
-                listOfNotNull(
-                    location?.account,
-                    location?.accountDetail?.takeIf { it.isNotBlank() },
-                ).joinToString(" · ")
-            Text(label, Modifier.padding(top = SheetTokens.gap), color = OtusColors.text2)
-        }
-        items(choices) { scope ->
-            SelectionRow(scope.name, scope in expanded, { onChange(draft.copy(mailboxes = expanded.toggled(scope))) })
-        }
+    if (matches.isEmpty()) item { EmptyChoices(mailboxes.isEmpty(), "No inboxes available yet.") }
+    items(matches, key = { "${it.account}/${it.name}" }) { scope ->
+        val location = accounts[scope.account]
+        SelectionRow(
+            scope.name,
+            scope in expanded,
+            { onChange(draft.copy(mailboxes = expanded.toggled(scope))) },
+            subtitle = location?.let { it.accountAddress.ifBlank { it.account } },
+            leading = { location?.let { AccountAvatar(it) } },
+        )
     }
 }
 
@@ -104,19 +107,28 @@ private fun LazyListScope.accountChoices(
     onChange: (InboxSearch) -> Unit,
 ) {
     val accounts = messages.map { it.location }.distinctBy { it.accountId }.sortedBy { it.account }
-    val matches = accounts.filter { it.account.contains(needle, true) || it.accountDetail.contains(needle, true) }
+    val matches = accounts.filter { it.account.contains(needle, true) || it.accountAddress.contains(needle, true) }
     if (matches.isEmpty()) item { EmptyChoices(accounts.isEmpty(), "No accounts connected.") }
     items(matches, key = { it.accountId }) { account ->
         SelectionRow(
             account.account,
             account.accountId in draft.accounts,
             { onChange(draft.copy(accounts = draft.accounts.toggled(account.accountId))) },
-            subtitle = account.accountDetail.takeIf { it.isNotBlank() },
+            // The account name defaults to its address; show the address only when it adds something.
+            subtitle = account.accountAddress.takeIf { it.isNotBlank() && !it.equals(account.account, true) },
+            leading = { AccountAvatar(account) },
         )
     }
 }
 
 private fun <T> Set<T>.toggled(value: T): Set<T> = if (value in this) this - value else this + value
+
+@Composable
+private fun AccountAvatar(location: MailLocation) {
+    val avatar = location.accountAvatar
+    val fallback = avatar?.fallback ?: generatedAvatar(location.account, location.accountAddress)
+    Avatar(fallback.initials, image = rememberAvatarImage(avatar?.image?.bytes), colorIndex = fallback.colorIndex)
+}
 
 @Composable
 private fun EmptyChoices(

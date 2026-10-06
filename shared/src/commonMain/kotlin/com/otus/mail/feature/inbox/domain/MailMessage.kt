@@ -31,7 +31,9 @@ data class MailLocation(
     val account: String,
     /** Stable login identity; the display name is not unique. */
     val accountId: String = account,
-    val accountDetail: String = "",
+    /** The address the account signs in with, used to show it once and look up its avatar. */
+    val accountAddress: String = "",
+    val accountAvatar: ResolvedAvatar? = null,
 )
 
 data class MailAttributes(

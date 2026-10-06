@@ -21,7 +21,6 @@ import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
-import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
@@ -96,8 +95,7 @@ class JmapMailSource(
             }
         val local = zone()
         return jmapDecoding {
-            val detail = "${login.username} · ${Url(login.sessionUrl).host}"
-            emails.list.map { it.toMessage(login.id, login.name, INBOX_NAME, local, detail) }
+            emails.list.map { it.toMessage(login.id, login.name, INBOX_NAME, local, login.username) }
         }
     }
 

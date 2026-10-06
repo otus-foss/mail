@@ -55,7 +55,10 @@ class InboxFeedState(
                 } finally {
                     loading = false
                 }
-                resolveAvatars()
+                coroutineScope {
+                    launch { resolveAccountAvatars() }
+                    resolveAvatars()
+                }
             }
     }
 
@@ -67,6 +70,7 @@ class InboxFeedState(
                 (it.sender.accountKey to avatarEmailKey(it.sender.address)) to
                     it.sender.avatar
             }
+        val accounts = messages.associate { it.location.accountId to it.location.accountAvatar }
         val restored = mutableMapOf<Pair<String, String>, ResolvedAvatar?>()
         return incoming.map { message ->
             val sender = message.sender
@@ -76,7 +80,36 @@ class InboxFeedState(
                 restored[key] = keepIdenticalImage(cached, previous[key])
             }
             val avatar = restored[key]?.copy(fallback = generatedAvatar(sender.name, sender.address))
-            message.copy(sender = sender.copy(avatar = avatar))
+            val location = message.location.copy(accountAvatar = accounts[message.location.accountId])
+            message.copy(sender = sender.copy(avatar = avatar), location = location)
+        }
+    }
+
+    /** Each account's own address resolves like a sender, for the inbox picker. */
+    private suspend fun resolveAccountAvatars() {
+        val service = avatars ?: return
+        val accounts =
+            messages
+                .map {
+                    it.location
+                }.distinctBy { it.accountId }
+                .filter { it.accountAddress.isNotBlank() }
+        coroutineScope {
+            accounts.forEach { account ->
+                launch {
+                    val request = AvatarRequest(account.accountId, account.accountAddress, account.account)
+                    val resolved = service.resolve(request, avatarOptions)
+                    val avatar = keepIdenticalImage(resolved, account.accountAvatar) ?: resolved
+                    messages =
+                        messages.map { message ->
+                            if (message.location.accountId == account.accountId) {
+                                message.copy(location = message.location.copy(accountAvatar = avatar))
+                            } else {
+                                message
+                            }
+                        }
+                }
+            }
         }
     }
 
