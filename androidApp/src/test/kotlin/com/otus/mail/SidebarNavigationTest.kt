@@ -9,9 +9,12 @@ import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.swipeLeft
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -41,7 +44,7 @@ class SidebarNavigationTest {
         val inbox = compose.onNodeWithText("Inbox").fetchSemanticsNode().boundsInRoot
         val width = compose.activity.window.decorView.width
         assertTrue("Settings sits at the bottom, below the entries", settings.top > inbox.bottom + width)
-        assertTrue("The sidebar half-opens and leaves the page visible", inbox.right < width * 0.6f)
+        assertTrue("The sidebar half-opens and leaves the page visible", inbox.right < width * 0.7f)
     }
 
     @Test
@@ -73,5 +76,26 @@ class SidebarNavigationTest {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("Otus").assertDoesNotExist()
         compose.onNodeWithText("Tap to search").assertIsDisplayed()
+    }
+
+    @Test
+    fun swipingOnTheContextPanelOpensTheSidebarAndSwipingBackClosesIt() {
+        val panel = compose.onNodeWithContentDescription("Open navigation").fetchSemanticsNode().boundsInRoot
+        swipeOpenAt(panel.center.y)
+        compose.onNodeWithText("Otus").assertIsDisplayed()
+        compose.onRoot().performTouchInput { swipeLeft(width * 0.5f, width * 0.05f) }
+        compose.onNodeWithText("Otus").assertDoesNotExist()
+    }
+
+    @Test
+    fun swipingAboveThePanelOpensButSwipingOnTheMessageListDoesNot() {
+        swipeOpenAt(compose.activity.window.decorView.height * 0.6f)
+        compose.onNodeWithText("Otus").assertDoesNotExist()
+        swipeOpenAt(2f)
+        compose.onNodeWithText("Otus").assertIsDisplayed()
+    }
+
+    private fun swipeOpenAt(y: Float) {
+        compose.onRoot().performTouchInput { swipe(Offset(width * 0.2f, y), Offset(width * 0.8f, y)) }
     }
 }

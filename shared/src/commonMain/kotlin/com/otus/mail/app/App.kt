@@ -12,6 +12,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.otus.mail.designsystem.components.SidebarSwipeArea
+import com.otus.mail.designsystem.components.rememberSidebarState
 import com.otus.mail.designsystem.theme.OtusTheme
 import com.otus.mail.feature.accounts.presentation.AccountsState
 import com.otus.mail.feature.accounts.presentation.screens.AccountSetupScreen
@@ -21,6 +23,7 @@ import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
 import com.otus.mail.feature.settings.presentation.screens.AppearanceSettingsScreen
 import com.otus.mail.feature.settings.presentation.screens.SettingsScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun App(
@@ -29,7 +32,7 @@ fun App(
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
     var page by rememberSaveable { mutableStateOf(MailPage.Inbox) }
-    var navigationOpen by rememberSaveable { mutableStateOf(false) }
+    val sidebar = rememberSidebarState()
     val scope = rememberCoroutineScope()
     val feed = remember(services) { InboxFeedState(services.mail, scope, services.avatars) }
     val accounts = remember(services) { AccountsState(services.accounts, scope, onChange = feed::refresh) }
@@ -37,49 +40,51 @@ fun App(
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) feed.refresh() }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
-    val openNavigation = { navigationOpen = true }
+    val openNavigation: () -> Unit = { scope.launch { sidebar.open() } }
     val back = { page = page.parent ?: page }
     OtusTheme {
         Box(Modifier.fillMaxSize()) {
-            pages.SaveableStateProvider(page.name) {
-                when (page) {
-                    MailPage.Inbox -> {
-                        InboxScreen(
-                            feed.messages,
-                            dateFormatter,
-                            openNavigation,
-                            InboxStatus(accounts.accounts.isNotEmpty(), feed.loading, feed.notice),
-                            onRefresh = feed::refresh,
-                        )
-                    }
+            // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
+            SidebarSwipeArea(sidebar, enabled = page.parent == null) {
+                pages.SaveableStateProvider(page.name) {
+                    when (page) {
+                        MailPage.Inbox -> {
+                            InboxScreen(
+                                feed.messages,
+                                dateFormatter,
+                                openNavigation,
+                                InboxStatus(accounts.accounts.isNotEmpty(), feed.loading, feed.notice),
+                                onRefresh = feed::refresh,
+                            )
+                        }
 
-                    MailPage.Settings -> {
-                        SettingsScreen(
-                            dateFormatState,
-                            accountsSummary = accountsSummary(accounts.accounts.size),
-                            onOpenNavigation = openNavigation,
-                            onOpenAccounts = { page = MailPage.EmailAccounts },
-                            onOpenAppearance = { page = MailPage.Appearance },
-                        )
-                    }
+                        MailPage.Settings -> {
+                            SettingsScreen(
+                                dateFormatState,
+                                accountsSummary = accountsSummary(accounts.accounts.size),
+                                onOpenNavigation = openNavigation,
+                                onOpenAccounts = { page = MailPage.EmailAccounts },
+                                onOpenAppearance = { page = MailPage.Appearance },
+                            )
+                        }
 
-                    MailPage.EmailAccounts -> {
-                        AccountSetupScreen(accounts, onBack = back)
-                    }
+                        MailPage.EmailAccounts -> {
+                            AccountSetupScreen(accounts, onBack = back)
+                        }
 
-                    MailPage.Appearance -> {
-                        AppearanceSettingsScreen(dateFormatState, onBack = back)
+                        MailPage.Appearance -> {
+                            AppearanceSettingsScreen(dateFormatState, onBack = back)
+                        }
                     }
                 }
             }
             MailSidebar(
-                open = navigationOpen,
+                sidebar,
                 current = page.destination,
                 onSelect = {
                     page = MailPage.of(it)
-                    navigationOpen = false
+                    scope.launch { sidebar.close() }
                 },
-                onDismiss = { navigationOpen = false },
             )
         }
     }

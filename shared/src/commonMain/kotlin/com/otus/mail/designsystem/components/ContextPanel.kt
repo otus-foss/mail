@@ -46,6 +46,7 @@ fun ContextPanel(
     Box(
         modifier
             .fillMaxWidth()
+            .sidebarOpenZone()
             .onGloballyPositioned(geometry::trackPanel)
             .panelSurface(geometry) { overlap.value },
     ) {
