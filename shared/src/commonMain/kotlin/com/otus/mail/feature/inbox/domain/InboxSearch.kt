@@ -46,6 +46,16 @@ private fun matchesFilters(
         (search.mailboxes.isEmpty() || search.mailboxes.any { it.matches(message.location) }) &&
         (search.accounts.isEmpty() || message.location.accountId in search.accounts)
 
+/** Senders for the filtered addresses; addresses no longer in [messages] keep a bare address. */
+fun selectedSenders(
+    messages: List<MailMessage>,
+    addresses: Set<String>,
+): List<MailSender> {
+    if (addresses.isEmpty()) return emptyList()
+    val known = messages.map { it.sender }.filter { it.address in addresses }.associateBy { it.address }
+    return addresses.map { known[it] ?: MailSender("", it) }
+}
+
 /** A null account scopes the mailbox name across accounts, as used by the default Inbox. */
 data class MailboxScope(
     val account: String?,

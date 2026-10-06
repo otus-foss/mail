@@ -9,19 +9,21 @@ import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_attach_file
 import com.otus.mail.designsystem.resources.symbol_mark_email_unread
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.domain.MailSender
 
 @Composable
 internal fun ContextPanelScope.InboxPanelChips(
     searching: Boolean,
     search: InboxSearch,
     dateFormatter: DateFormatter,
+    senders: List<MailSender>,
     onChange: (InboxSearch) -> Unit,
     onFilter: (InboxFilter) -> Unit,
 ) {
     transition(searching) { mode ->
         if (mode) {
             InboxFilter.entries.filter { it != InboxFilter.More }.forEach { filter ->
-                item(filter) { SearchFilterChip(filter, search, dateFormatter) { onFilter(filter) } }
+                item(filter) { SearchFilterChip(filter, search, dateFormatter, senders) { onFilter(filter) } }
             }
         } else {
             item("unread") {

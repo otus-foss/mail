@@ -21,10 +21,14 @@ import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.PanelTokens
 import com.otus.mail.designsystem.theme.panelTextStyle
 
-/** A compact pill inside a non-overlapping, minimum 48 dp touch target. */
+/**
+ * A compact pill inside a non-overlapping, minimum 48 dp touch target.
+ *
+ * A null [label] shows only [leading]; give the chip a content description through [modifier].
+ */
 @Composable
 fun Chip(
-    label: String,
+    label: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     selected: Boolean = false,
@@ -63,11 +67,13 @@ fun Chip(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 leading?.invoke()
-                Text(
-                    label,
-                    style = panelTextStyle().copy(color = androidx.compose.ui.graphics.Color.Unspecified),
-                    maxLines = 1,
-                )
+                if (label != null) {
+                    Text(
+                        label,
+                        style = panelTextStyle().copy(color = androidx.compose.ui.graphics.Color.Unspecified),
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }

@@ -10,14 +10,20 @@ import com.otus.mail.designsystem.resources.symbol_calendar_add_on
 import com.otus.mail.designsystem.resources.symbol_inbox
 import com.otus.mail.designsystem.resources.symbol_person
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.domain.MailSender
 
 @Composable
 fun SearchFilterChip(
     filter: InboxFilter,
     search: InboxSearch,
     dateFormatter: DateFormatter,
+    senders: List<MailSender>,
     onClick: () -> Unit,
 ) {
+    if (filter == InboxFilter.People && senders.isNotEmpty()) {
+        PeopleFilterChip(senders, onClick)
+        return
+    }
     val selected =
         when (filter) {
             InboxFilter.People -> search.senders.isNotEmpty()

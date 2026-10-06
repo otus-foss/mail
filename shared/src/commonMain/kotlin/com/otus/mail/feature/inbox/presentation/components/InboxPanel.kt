@@ -28,6 +28,7 @@ import com.otus.mail.designsystem.resources.symbol_close
 import com.otus.mail.designsystem.resources.symbol_filter_list
 import com.otus.mail.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.domain.MailSender
 
 @Composable
 fun InboxPanel(
@@ -35,6 +36,7 @@ fun InboxPanel(
     search: InboxSearch,
     dateFormatter: DateFormatter,
     actions: InboxPanelActions,
+    selectedSenders: List<MailSender> = emptyList(),
 ) {
     val onChange = actions.onChange
     val onSearchingChange = actions.onSearchingChange
@@ -49,7 +51,7 @@ fun InboxPanel(
                 Symbol(Res.drawable.symbol_filter_list)
             }
         },
-        chips = { InboxPanelChips(searching, search, dateFormatter, onChange, onFilter) },
+        chips = { InboxPanelChips(searching, search, dateFormatter, selectedSenders, onChange, onFilter) },
     ) {
         AnimatedContent(
             targetState = searching,
