@@ -2,18 +2,17 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import com.otus.mail.designsystem.components.Sidebar
+import com.otus.mail.designsystem.components.SidebarState
 import com.otus.mail.designsystem.elements.SidebarEntry
 
 @Composable
 internal fun MailSidebar(
-    open: Boolean,
+    state: SidebarState,
     current: MailDestination,
     onSelect: (MailDestination) -> Unit,
-    onDismiss: () -> Unit,
 ) {
     Sidebar(
-        open = open,
-        onDismiss = onDismiss,
+        state,
         title = "Otus",
         footer = { MailSidebarEntry(MailDestination.Settings, current, onSelect) },
     ) {
