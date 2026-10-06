@@ -22,10 +22,14 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
@@ -41,8 +45,14 @@ import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.PanelTokens
 import com.otus.mail.designsystem.theme.SheetTokens
 import com.otus.mail.designsystem.theme.panelTextStyle
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
-/** Modal shell. The caller owns drafts; dismissing never applies them. */
+/**
+ * Modal shell. The caller owns drafts; dismissing never applies them.
+ * A second Clear tap within the double-tap timeout also calls [onApply], applying the cleared draft.
+ */
 @Composable
 fun SelectionSheet(
     title: String,
@@ -54,6 +64,7 @@ fun SelectionSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val density = LocalDensity.current
+    val clear = rememberRepeatedClear(onClear, onApply)
     Dialog(onDismiss, properties = selectionSheetDialogProperties()) {
         CompositionLocalProvider(LocalDensity provides density) {
             Box(Modifier.fillMaxSize()) {
@@ -93,7 +104,7 @@ fun SelectionSheet(
                                 search?.invoke()
                                 Column(Modifier.weight(1f), content = content)
                                 Row(horizontalArrangement = Arrangement.spacedBy(SheetTokens.gap)) {
-                                    ActionButton("Clear", onClear, Modifier.weight(1f))
+                                    ActionButton("Clear", clear, Modifier.weight(1f))
                                     ActionButton(
                                         "Apply",
                                         onApply,
@@ -107,6 +118,25 @@ fun SelectionSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Clears on every tap; a quick second tap also applies the cleared draft. */
+@Composable
+private fun rememberRepeatedClear(
+    onClear: () -> Unit,
+    onApply: () -> Unit,
+): () -> Unit {
+    val timeout = LocalViewConfiguration.current.doubleTapTimeoutMillis.milliseconds
+    var lastClear by remember { mutableStateOf<TimeMark?>(null) }
+    return {
+        onClear()
+        if (lastClear?.let { it.elapsedNow() <= timeout } == true) {
+            lastClear = null
+            onApply()
+        } else {
+            lastClear = TimeSource.Monotonic.markNow()
         }
     }
 }
