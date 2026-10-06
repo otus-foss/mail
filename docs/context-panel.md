@@ -20,11 +20,11 @@ derived from those shared tokens. Plain titles, the search prompt, and search in
 centered content slot, so their text baselines and the leading icon stay fixed across modes and when
 the clear button appears. Prompt text stays on one line; larger text can grow the shared header.
 Chips use a horizontally scrolling
-row; the trailing action remains outside the scrolling viewport. Detached pills and the trailing
-action span the panel's full width, aligned with its outer edges. Overlapping pills sit 8 dp inside
-the panel, clear of its rounded corners; this inset follows the surface animation, so pills never
-jump sideways between modes. The surface erases rounded pill
-shapes in an isolated drawing layer, clipped horizontally to the viewport. The holes reveal the
+row; the trailing action remains outside the scrolling viewport. Detached and overlapping pill rows
+span the panel's full width, aligned with its outer edges. The scrolling viewport has no fixed
+8 dp side inset, so pills and their cutouts reach the panel edge while scrolling. The trailing
+action stays fixed at the opposite edge. The surface subtracts rounded pill shapes from its path,
+clipped horizontally to the viewport. The holes reveal the
 actual background. Scroll-edge
 fades use an alpha mask rather than a painted background color. RTL reverses the fades and mirrors
 the back chevron. Overscroll stretch is disabled on the chip rail: stretching that layer independently
