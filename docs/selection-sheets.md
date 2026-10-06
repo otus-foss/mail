@@ -92,7 +92,9 @@ Screen criteria, open filter, draft selections, and picker query survive activit
 - **Filters:** unread and attachment switches also use draft/Apply behavior.
 
 Selections are ORed within each category and ANDed across categories and the mail query.
-Search pills summarize applied selections. An empty message source shows honest empty lists;
+Search pills summarize applied selections. The default Inbox scope and unrestricted account scope
+show "All" beside their respective icons without a selection highlight. Accessibility labels
+distinguish "All inboxes" from "All accounts". An empty message source shows honest empty lists;
 no demonstration contacts, accounts, or messages are shipped.
 
 Calendar rows are at least 48 dp tall and grow with text. Seven equal-width columns fit the sheet
