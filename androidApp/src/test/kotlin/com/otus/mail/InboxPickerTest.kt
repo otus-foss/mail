@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
@@ -64,7 +65,8 @@ class InboxPickerTest {
         compose.onNodeWithContentDescription("Clear picker search").performClick()
         screenshot("people")
         compose.onNodeWithText("Apply").performClick()
-        compose.onNodeWithText("From · 2").assertIsDisplayed()
+        compose.onNodeWithContentDescription("From 2 people").assertIsDisplayed().assert(!hasText("Alex"))
+        chipScreenshot("From 2 people", "people-chip-multiple")
         compose.onNodeWithText("Meeting").assertIsDisplayed()
         compose.onNodeWithText("2 results").assertIsDisplayed()
     }
@@ -79,11 +81,13 @@ class InboxPickerTest {
         compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
         compose.onNodeWithText("Apply").performClick()
         compose.onNodeWithText("1 result").assertIsDisplayed()
-        compose.onNodeWithText("From · 1").performClick()
+        compose.onNodeWithContentDescription("From Alex").assert(hasText("Alex"))
+        chipScreenshot("From Alex", "people-chip-single")
+        compose.onNodeWithContentDescription("From Alex").performClick()
         compose.onNodeWithText("Clear").performClick()
         compose.onNodeWithContentDescription("Dismiss selection").performTouchInput { click(Offset(center.x, 10f)) }
         compose.onNodeWithText("1 result").assertIsDisplayed()
-        compose.onNodeWithText("From · 1").performClick()
+        compose.onNodeWithContentDescription("From Alex").performClick()
         compose.onNodeWithText("Clear").performClick()
         compose.onNodeWithText("Apply").performClick()
         compose.onNodeWithText("2 results").assertIsDisplayed()
@@ -164,6 +168,29 @@ class InboxPickerTest {
         compose.onNodeWithText("Apply").assertIsDisplayed()
         screenshot("people-large-text")
         compose.onNodeWithContentDescription("Close selection").performClick()
+    }
+
+    private fun chipScreenshot(
+        description: String,
+        name: String,
+    ) {
+        val bounds = compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInWindow
+        val bitmap =
+            compose.runOnIdle {
+                val view = compose.activity.window.decorView
+                val full = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+                view.draw(Canvas(full))
+                Bitmap.createBitmap(
+                    full,
+                    bounds.left.toInt(),
+                    bounds.top.toInt(),
+                    bounds.width.toInt(),
+                    bounds.height.toInt(),
+                )
+            }
+        val file = File("build/reports/pickers/$name.png")
+        requireNotNull(file.parentFile).mkdirs()
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     private fun screenshot(name: String) {

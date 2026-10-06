@@ -29,6 +29,7 @@ import com.otus.mail.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.searchMessages
+import com.otus.mail.feature.inbox.domain.selectedSenders
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.components.InboxBody
@@ -82,6 +83,7 @@ fun InboxScreen(
                     onSubmit = { focus.clearFocus() },
                     onOpenNavigation = onOpenNavigation,
                 ),
+                remember(messages, state.search.senders) { selectedSenders(messages, state.search.senders) },
             )
             PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
                 InboxResults(messages, status, state, dateFormatter, onOpen = { openId = it.id })

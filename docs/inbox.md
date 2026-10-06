@@ -81,3 +81,8 @@ the username and server below each account name. Renaming an account does not ch
 Sender avatars now resolve contact photos after messages appear. The people picker uses the same
 resolved sender values. Generated initials remain visible while loading or if image decoding fails.
 See [avatars](avatars.md) for the capability checks, account isolation, and external-image options.
+
+Selected-person pills reuse those avatars. One sender shows an avatar and first name; multiple
+senders show up to four overlapping avatars and a count for additional senders. The accessibility
+label retains the sender's full name or the selected count. Selected addresses that are no longer
+in the supplied messages still have an initials fallback.

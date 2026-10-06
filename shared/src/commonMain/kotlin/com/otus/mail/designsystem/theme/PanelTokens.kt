@@ -8,6 +8,8 @@ internal object PanelTokens {
     val touchTarget = 48.dp
     val chipHeight = 36.dp
     val iconSize = 20.dp
+    val chipAvatarOverlap = 6.dp
+    const val CHIP_AVATAR_LIMIT = 4
     val navigationIconSize = 32.dp
     val chipPadding = 10.dp
     val iconGap = 4.dp

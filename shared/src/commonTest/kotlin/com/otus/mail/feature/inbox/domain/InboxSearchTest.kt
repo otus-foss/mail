@@ -100,4 +100,10 @@ class InboxSearchTest {
     }
 
     private fun results(search: InboxSearch): List<String> = searchMessages(messages, search).map { it.id }
+
+    @Test
+    fun selectedSendersResolveNamesAndKeepUnknownAddresses() {
+        val senders = selectedSenders(messages, setOf("alex@example.com", "gone@example.com"))
+        assertEquals(listOf(MailSender("Alex", "alex@example.com"), MailSender("", "gone@example.com")), senders)
+    }
 }
