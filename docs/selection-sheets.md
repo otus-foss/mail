@@ -51,10 +51,12 @@ Screen criteria, open filter, draft selections, and picker query survive activit
 - **People / From:** match sender name or address within the picker, with multiple sender choices,
   avatar initials, and email subtitles. Filtering is by sender, not recipient. Sender choices
   come from all supplied messages, not only the currently filtered results. JMAP Contacts is deferred.
-- **Inboxes:** searchable mailbox choices grouped by account. Selection includes account identity;
+- **Inboxes:** searchable mailbox choices sorted by account name, with an account avatar and
+  address on each row. Search matches mailbox names, account names, and addresses. Selection includes account identity;
   matching mailbox names in different accounts are separate choices. The initial Inbox scope
   matches Inbox across accounts. Clear + Apply means all supplied mailboxes.
-- **Accounts:** searchable multiple account choices. No selection means all accounts. The pill
+- **Accounts:** searchable multiple account choices with account avatars. Show the address beneath
+  the account name only when it differs. No selection means all accounts. The pill
   now says Accounts rather than the Figma label Mails to make its purpose explicit.
 - **Date:** regular seven-column calendar with plain day numbers, a continuous rectangular
   range band, and softly squared endpoints. Only exposed endpoint edges have rounded corners;

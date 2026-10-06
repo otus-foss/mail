@@ -74,9 +74,11 @@ message count, section captions, and notes (`PageNote`), lines up with the text 
 
 ## Connected account identity
 
-Account and mailbox filters use the stable saved login ID. Display names and account details are
-separate, so two accounts called the same name remain independently selectable. The picker shows
-the username and server below each account name. Renaming an account does not change filter identity.
+Account and mailbox filters use the stable saved login ID. Display names and sign-in addresses are
+separate, so two accounts called the same name remain independently selectable. Mailbox rows show
+the account avatar and address. Account rows show the avatar and include the address only when it
+differs from the account name. Renaming an account does not change filter identity. Account avatars
+use the same resolver as senders and stay visible during an inbox refresh.
 
 Sender avatars now resolve contact photos after messages appear. The people picker uses the same
 resolved sender values. Generated initials remain visible while loading or if image decoding fails.

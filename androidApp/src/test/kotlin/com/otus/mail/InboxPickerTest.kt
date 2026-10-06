@@ -132,6 +132,8 @@ class InboxPickerTest {
     fun mailboxSearchKeepsAccountIdentityAndAccountsHaveTheirOwnSearch() {
         compose.onNodeWithText("Inboxes").performClick()
         compose.onNodeWithText("2 selected").assertIsDisplayed()
+        compose.onNodeWithText("me@work.example").assertIsDisplayed()
+        screenshot("inboxes")
         compose.onNodeWithContentDescription("Search inboxes…").performTextInput("Personal")
         compose.onNode(hasText("Inbox") and isToggleable()).performClick()
         compose.onNodeWithText("Apply").performClick()
@@ -227,7 +229,7 @@ class InboxPickerTest {
                 "Meeting design",
                 "",
                 ReceivedAt("2026-10-02", "10:00"),
-                MailLocation("Inbox", "Work"),
+                MailLocation("Inbox", "Work", accountAddress = "me@work.example"),
             ),
             MailMessage(
                 "sam",
@@ -235,7 +237,7 @@ class InboxPickerTest {
                 "Meeting plans",
                 "",
                 ReceivedAt("2026-10-05", "10:00"),
-                MailLocation("Inbox", "Personal"),
+                MailLocation("Inbox", "Personal", accountAddress = "me@home.example"),
             ),
         )
 }

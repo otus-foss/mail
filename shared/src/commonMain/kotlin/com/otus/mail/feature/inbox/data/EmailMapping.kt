@@ -16,7 +16,7 @@ internal fun EmailObject.toMessage(
     account: String,
     mailbox: String,
     zone: TimeZone,
-    accountDetail: String = "",
+    accountAddress: String = "",
 ): MailMessage {
     val sender = from?.firstOrNull()
     val local = Instant.parse(receivedAt).toLocalDateTime(zone)
@@ -32,7 +32,7 @@ internal fun EmailObject.toMessage(
         subject = subject.orEmpty(),
         body = text.ifBlank { preview },
         received = ReceivedAt(local.date.toString(), "${local.hour.twoDigits()}:${local.minute.twoDigits()}"),
-        location = MailLocation(mailbox, account, accountId, accountDetail),
+        location = MailLocation(mailbox, account, accountId, accountAddress),
         attributes =
             MailAttributes(
                 unread = keywords[SEEN] != true,
