@@ -15,14 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.offset
 import com.otus.mail.designsystem.theme.MotionTokens
 import com.otus.mail.designsystem.theme.PanelTokens
 import com.otus.mail.designsystem.theme.panelTextStyle
-import kotlin.math.roundToInt
 
 /** Placement is independent of whether the header contains a title, input, or richer content. */
 enum class ChipPlacement { Below, Overlapping }
@@ -70,8 +67,7 @@ fun ContextPanel(
                             } else {
                                 0.dp
                             },
-                    ).onGloballyPositioned(geometry::trackRail)
-                    .railInset { overlap.value },
+                    ).onGloballyPositioned(geometry::trackRail),
                 horizontalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -85,17 +81,6 @@ fun ContextPanel(
 }
 
 internal object ActionKey
-
-/**
- * Detached pills span the panel's full width; overlapping pills sit inside its edge, clear of the
- * rounded corners. The inset follows the surface animation, so pills never jump sideways.
- */
-private fun Modifier.railInset(overlap: () -> Float): Modifier =
-    layout { measurable, constraints ->
-        val inset = (PanelTokens.panelInset.toPx() * overlap()).roundToInt()
-        val placeable = measurable.measure(constraints.offset(horizontal = -inset * 2))
-        layout(placeable.width + inset * 2, placeable.height) { placeable.placeRelative(inset, 0) }
-    }
 
 @Composable
 private fun PanelHeader(
