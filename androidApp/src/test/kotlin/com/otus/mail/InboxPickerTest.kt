@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
@@ -130,7 +131,7 @@ class InboxPickerTest {
 
     @Test
     fun mailboxSearchKeepsAccountIdentityAndAccountsHaveTheirOwnSearch() {
-        compose.onNodeWithText("Inboxes").performClick()
+        compose.onNodeWithContentDescription("All inboxes").assertIsOff().performClick()
         compose.onNodeWithText("2 selected").assertIsDisplayed()
         compose.onNodeWithText("me@work.example").assertIsDisplayed()
         screenshot("inboxes")
@@ -139,7 +140,7 @@ class InboxPickerTest {
         compose.onNodeWithText("Apply").performClick()
         compose.onNodeWithText("1 result").assertIsDisplayed()
         compose.onNodeWithText("Meeting design").assertIsDisplayed()
-        compose.onNodeWithText("Accounts").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("All accounts").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Search accounts…").performTextInput("Personal")
         compose.onNode(hasText("Personal") and isToggleable()).performClick()
         screenshot("accounts")

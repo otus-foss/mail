@@ -51,7 +51,7 @@ class InboxHeaderActionsTest {
         compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused()
         compose.onNodeWithText("People").assertIsDisplayed()
         compose.onNodeWithText("Date").assertIsDisplayed()
-        compose.onNodeWithText("Accounts").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("All accounts").performScrollTo().assertIsDisplayed()
         compose.runOnIdle { assertTrue("Opening search requests the software keyboard", keyboardRequested) }
     }
 
