@@ -19,6 +19,7 @@ import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import kotlinx.coroutines.Dispatchers
@@ -32,14 +33,14 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
-/** Loads each login's inbox, newest first. Logins load in parallel and fail alone. */
+/** Loads each login's inbox, or one folder, newest first. Logins load in parallel and fail alone. */
 class JmapMailSource(
     private val connections: JmapConnections,
     private val logins: LoginStore,
     private val limit: Int = DEFAULT_LIMIT,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
 ) : MailSource {
-    override suspend fun inbox(): InboxSnapshot {
+    override suspend fun messages(scope: MailScope): InboxSnapshot {
         val saved =
             withContext(Dispatchers.IO) {
                 try {
@@ -48,41 +49,51 @@ class JmapMailSource(
                     throw InboxStorageException(error)
                 }
             }
-        val results = coroutineScope { saved.map { async { load(it) } }.awaitAll() }
+        val selected = if (scope is MailScope.Folder) saved.filter { it.id == scope.accountId } else saved
+        val results = coroutineScope { selected.map { async { load(it, scope) } }.awaitAll() }
         return InboxSnapshot(
             messages = results.filterIsInstance<AccountLoad.Loaded>().flatMap { it.messages },
             unavailable = results.filterIsInstance<AccountLoad.Failed>().map { it.account },
         )
     }
 
-    private suspend fun load(login: JmapLogin): AccountLoad =
+    private suspend fun load(
+        login: JmapLogin,
+        scope: MailScope,
+    ): AccountLoad =
         try {
             val connection = connections.connection(login)
             val accountId = connection.session().accountFor(JmapCapability.MAIL)
             if (accountId == null) {
                 AccountLoad.Failed(UnavailableAccount(login.name, InboxFailure.NoMail))
             } else {
-                AccountLoad.Loaded(loadInbox(connection, login, accountId))
+                AccountLoad.Loaded(loadMailbox(connection, login, accountId, scope))
             }
         } catch (error: JmapException) {
             AccountLoad.Failed(UnavailableAccount(login.name, error.toInboxFailure()))
         }
 
-    private suspend fun loadInbox(
+    private suspend fun loadMailbox(
         connection: JmapConnection,
         login: JmapLogin,
         accountId: String,
+        scope: MailScope,
     ): List<MailMessage> {
         val mailboxes =
             connection
                 .call(
                     GetMethod(MailboxType, accountId, properties = listOf("id", "name", "role")),
                 ).list
-        // Located by role, not name: servers name and translate the inbox differently.
-        val inbox = mailboxes.firstOrNull { it.role == INBOX_ROLE } ?: return emptyList()
+        // The inbox is located by role, not name: servers name and translate it differently.
+        val mailbox =
+            when (scope) {
+                MailScope.Inbox -> mailboxes.firstOrNull { it.role == INBOX_ROLE }
+                is MailScope.Folder -> mailboxes.firstOrNull { it.id == scope.folderId }
+            } ?: return emptyList()
+        val name = if (scope == MailScope.Inbox) INBOX_NAME else mailbox.name
         val emails =
             connection.request {
-                val query = call(QueryMethod(EmailType, accountId, inMailbox(inbox.id), NEWEST_FIRST, limit))
+                val query = call(QueryMethod(EmailType, accountId, inMailbox(mailbox.id), NEWEST_FIRST, limit))
                 call(
                     GetMethod(
                         EmailType,
@@ -95,7 +106,7 @@ class JmapMailSource(
             }
         val local = zone()
         return jmapDecoding {
-            emails.list.map { it.toMessage(login.id, login.name, INBOX_NAME, local, login.username) }
+            emails.list.map { it.toMessage(login.id, login.name, name, local, login.username, mailbox.id) }
         }
     }
 

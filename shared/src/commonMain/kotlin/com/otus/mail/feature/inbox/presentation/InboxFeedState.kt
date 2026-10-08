@@ -12,6 +12,7 @@ import com.otus.mail.core.avatar.generatedAvatar
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import kotlinx.coroutines.CoroutineScope
@@ -19,7 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-/** Loaded inbox messages. A refresh replaces any refresh still in flight. */
+/** Loaded messages of the unified inbox or one folder. A refresh replaces any refresh still in flight. */
 class InboxFeedState(
     private val source: MailSource,
     private val scope: CoroutineScope,
@@ -30,6 +31,7 @@ class InboxFeedState(
             domainIcons = true,
             domainIconProxy = true,
         ),
+    private val mailScope: MailScope = MailScope.Inbox,
 ) {
     var messages by mutableStateOf(emptyList<MailMessage>())
         private set
@@ -41,13 +43,18 @@ class InboxFeedState(
         private set
     private var job: Job? = null
 
+    /** Shows [text] in place of the last load's notice, such as a failed change. */
+    fun report(text: String) {
+        notice = text
+    }
+
     fun refresh() {
         job?.cancel()
         job =
             scope.launch {
                 loading = true
                 try {
-                    val snapshot = source.inbox()
+                    val snapshot = source.messages(mailScope)
                     messages = withCachedAvatars(snapshot.messages)
                     notice = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
                 } catch (expected: InboxStorageException) {

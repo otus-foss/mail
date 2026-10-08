@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.PanelTokens
@@ -25,7 +27,10 @@ import com.otus.mail.designsystem.theme.SidebarTokens
 import com.otus.mail.designsystem.theme.panelTextStyle
 import org.jetbrains.compose.resources.DrawableResource
 
-/** One destination row: icon, then name. The current destination is highlighted. */
+/**
+ * One destination row: icon, then name, then an optional [badge] such as an unread count. Nested
+ * entries are indented by [depth]. The current destination is highlighted.
+ */
 @Composable
 fun SidebarEntry(
     label: String,
@@ -33,6 +38,8 @@ fun SidebarEntry(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    depth: Int = 0,
+    badge: String? = null,
 ) {
     val interactions = remember { MutableInteractionSource() }
     val shape = RoundedCornerShape(SidebarTokens.entryRadius)
@@ -59,8 +66,36 @@ fun SidebarEntry(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SidebarTokens.entryPadding),
         ) {
-            Symbol(icon)
-            Text(label, style = panelTextStyle(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Box(Modifier.padding(start = SidebarTokens.nestIndent * depth)) { Symbol(icon) }
+            Text(
+                label,
+                Modifier.weight(1f),
+                style = panelTextStyle(),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            badge?.let { Text(it, style = panelTextStyle(), color = OtusColors.text2, maxLines = 1) }
         }
     }
+}
+
+/** A caption that groups the entries below it, such as one account's folders. */
+@Composable
+fun SidebarHeading(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text,
+        modifier
+            .fillMaxWidth()
+            .padding(top = SidebarTokens.headingTopGap)
+            .padding(horizontal = SidebarTokens.entryPadding)
+            .semantics { heading() },
+        style = panelTextStyle(),
+        fontSize = SidebarTokens.headingSize,
+        color = OtusColors.text2,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }

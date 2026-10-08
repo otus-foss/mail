@@ -12,6 +12,7 @@ import com.otus.mail.feature.accounts.domain.ConnectOutcome
 import com.otus.mail.feature.accounts.domain.JmapAccountDraft
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import com.otus.mail.feature.inbox.domain.InboxStorageException
+import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -48,7 +49,7 @@ class AccountStorageFailureTest {
     fun inboxAccountReadFailureExposesDomainError() =
         runTest {
             store.failRead = true
-            assertFailsWith<InboxStorageException> { JmapMailSource(connections, store).inbox() }
+            assertFailsWith<InboxStorageException> { JmapMailSource(connections, store).messages(MailScope.Inbox) }
         }
 }
 

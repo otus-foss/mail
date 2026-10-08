@@ -20,6 +20,7 @@ import org.jetbrains.compose.resources.DrawableResource
 fun SearchFilterChip(
     filter: InboxFilter,
     search: InboxSearch,
+    defaultSearch: InboxSearch,
     dateFormatter: DateFormatter,
     senders: List<MailSender>,
     onClick: () -> Unit,
@@ -28,10 +29,10 @@ fun SearchFilterChip(
         PeopleFilterChip(senders, onClick)
         return
     }
-    // The default inbox and account scopes cover everything, so they read "All" without a highlight.
+    // The page's default mailbox scope and every account cover everything, so they read "All" without a highlight.
     val coversAll =
         when (filter) {
-            InboxFilter.Mailboxes -> search.mailboxes == InboxSearch().mailboxes
+            InboxFilter.Mailboxes -> search.mailboxes == defaultSearch.mailboxes
             InboxFilter.Accounts -> search.accounts.isEmpty()
             else -> false
         }

@@ -47,6 +47,8 @@ rules: no UI, no app code, explicit API. See [JMAP](jmap.md). Shared package nam
 across Git repositories. Cross-app library ownership and
 distribution remain undecided. Accounts, contacts, and settings are expected feature areas; Mail and
 Calendar add their own domain features as implemented.
+Mail's `feature/folders` holds folders and the Sieve rules that file into them; see
+[Folders and rules](folders.md).
 
 The architecture checker enforces paths, package alignment, UI locations, import/reference
 boundaries, and selected forbidden APIs. It is a source-level guard, not a Kotlin type resolver:

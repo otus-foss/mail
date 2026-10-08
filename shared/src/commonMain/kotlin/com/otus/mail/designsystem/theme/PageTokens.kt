@@ -14,4 +14,7 @@ internal object PageTokens {
     val sectionGap = 24.dp
     val captionSize = 14.sp
     val dialogMaxWidth = 420.dp
+
+    /** Each nesting level of a tree row moves its icon this far toward the trailing edge. */
+    val nestIndent = 16.dp
 }

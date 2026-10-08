@@ -11,6 +11,8 @@ data class MailMessage(
     val received: ReceivedAt,
     val location: MailLocation,
     val attributes: MailAttributes = MailAttributes(),
+    /** The server's Email id; [id] adds the account so ids from different accounts never collide. */
+    val emailId: String = "",
 )
 
 data class MailSender(
@@ -34,6 +36,8 @@ data class MailLocation(
     /** The address the account signs in with, used to show it once and look up its avatar. */
     val accountAddress: String = "",
     val accountAvatar: ResolvedAvatar? = null,
+    /** The server's id for [mailbox]; empty for supplied messages. */
+    val mailboxId: String = "",
 )
 
 data class MailAttributes(

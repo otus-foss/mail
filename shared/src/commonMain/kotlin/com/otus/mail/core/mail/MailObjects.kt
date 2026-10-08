@@ -25,11 +25,37 @@ val EMAIL_PROPERTIES =
         "bodyValues",
     )
 
+/** Mailbox properties folders request (RFC 8621, section 2). */
+val MAILBOX_PROPERTIES =
+    listOf("id", "name", "parentId", "role", "sortOrder", "totalEmails", "unreadEmails", "myRights")
+
 @Serializable
 data class MailboxObject(
     val id: String,
     val name: String = "",
+    val parentId: String? = null,
     val role: String? = null,
+    val sortOrder: Long = 0,
+    val totalEmails: Long = 0,
+    val unreadEmails: Long = 0,
+    val myRights: MailboxRights = MailboxRights(),
+)
+
+/** What the user may do with a mailbox (RFC 8621, section 2). Missing rights read as allowed; the server decides. */
+@Serializable
+data class MailboxRights(
+    val mayAddItems: Boolean = true,
+    val mayCreateChild: Boolean = true,
+    val mayRename: Boolean = true,
+    val mayDelete: Boolean = true,
+)
+
+/** The mail account capability's limits (RFC 8621, section 1.3.1). */
+@Serializable
+data class MailCapability(
+    val mayCreateTopLevelMailbox: Boolean = true,
+    val maxMailboxDepth: Long? = null,
+    val maxSizeMailboxName: Long? = null,
 )
 
 @Serializable

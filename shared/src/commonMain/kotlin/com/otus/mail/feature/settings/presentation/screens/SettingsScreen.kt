@@ -6,6 +6,8 @@ import com.otus.mail.designsystem.elements.ActionRow
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_alternate_email
 import com.otus.mail.designsystem.resources.symbol_chevron_right
+import com.otus.mail.designsystem.resources.symbol_folder
+import com.otus.mail.designsystem.resources.symbol_rule_folder
 import com.otus.mail.designsystem.resources.symbol_tune
 import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
 
@@ -16,6 +18,8 @@ fun SettingsScreen(
     onOpenNavigation: () -> Unit,
     onOpenAccounts: () -> Unit,
     onOpenAppearance: () -> Unit,
+    onOpenFolders: () -> Unit,
+    onOpenRules: () -> Unit,
 ) {
     PageScaffold("Settings", navigationLabel = "Open navigation", onNavigation = onOpenNavigation) {
         ActionRow(
@@ -32,6 +36,22 @@ fun SettingsScreen(
             Res.drawable.symbol_chevron_right,
             summary = "Date format: ${dateFormat.preference.patternLabel}",
             icon = Res.drawable.symbol_tune,
+            mirrorTrailingInRtl = true,
+        )
+        ActionRow(
+            "Folders",
+            onOpenFolders,
+            Res.drawable.symbol_chevron_right,
+            summary = "Create, rename, and nest folders",
+            icon = Res.drawable.symbol_folder,
+            mirrorTrailingInRtl = true,
+        )
+        ActionRow(
+            "Rules",
+            onOpenRules,
+            Res.drawable.symbol_chevron_right,
+            summary = "Move arriving mail into folders",
+            icon = Res.drawable.symbol_rule_folder,
             mirrorTrailingInRtl = true,
         )
     }

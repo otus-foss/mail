@@ -26,12 +26,13 @@ import com.otus.mail.designsystem.components.PullToRefresh
 import com.otus.mail.designsystem.theme.InboxTokens
 import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.panelTextStyle
-import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.selectedSenders
+import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
+import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.InboxBody
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxFilter
@@ -47,8 +48,13 @@ fun InboxScreen(
     onOpenNavigation: () -> Unit = {},
     status: InboxStatus = InboxStatus(),
     onRefresh: () -> Unit = {},
+    context: InboxContext = InboxContext(),
+    messageActions: MessageActions? = null,
 ) {
-    val state = rememberSaveable(saver = InboxState.Saver) { InboxState() }
+    val state =
+        rememberSaveable(saver = InboxState.saver(context.defaultSearch)) {
+            InboxState(defaultSearch = context.defaultSearch)
+        }
     var filter by rememberSaveable { mutableStateOf<InboxFilter?>(null) }
     var openId by rememberSaveable { mutableStateOf<String?>(null) }
     val focus = LocalFocusManager.current
@@ -73,6 +79,7 @@ fun InboxScreen(
                 state.searching,
                 state.search,
                 dateFormatter,
+                context,
                 InboxPanelActions(
                     onChange = state::update,
                     onSearchingChange = { searching -> if (searching) state.startSearch() else closeSearch() },
@@ -86,13 +93,13 @@ fun InboxScreen(
                 remember(messages, state.search.senders) { selectedSenders(messages, state.search.senders) },
             )
             PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
-                InboxResults(messages, status, state, dateFormatter, onOpen = { openId = it.id })
+                InboxResults(messages, status, state, dateFormatter, context, onOpen = { openId = it.id })
             }
         }
         filter?.let { selected ->
             InboxFilterSheet(selected, messages, state.search, dateFormatter, state::update) { filter = null }
         }
-        messages.firstOrNull { it.id == openId }?.let { MessagePreview(it) { openId = null } }
+        messages.firstOrNull { it.id == openId }?.let { MessagePreview(it, messageActions) { openId = null } }
     }
 }
 
@@ -102,6 +109,7 @@ private fun InboxResults(
     status: InboxStatus,
     state: InboxState,
     dateFormatter: DateFormatter,
+    context: InboxContext,
     onOpen: (MailMessage) -> Unit,
 ) {
     val results = remember(messages, state.search) { searchMessages(messages, state.search) }
@@ -140,9 +148,14 @@ private fun InboxResults(
                 dateFormatter,
                 onOpen,
                 emptyContent = {
-                    InboxEmptyState(state.searching, messages.isNotEmpty(), state.search.isFiltered, status.connected) {
-                        state.update(InboxSearch())
-                    }
+                    InboxEmptyState(
+                        context.emptyTitle,
+                        state.searching,
+                        messages.isNotEmpty(),
+                        state.filtered,
+                        status.connected,
+                        onReset = state::reset,
+                    )
                 },
             )
         }

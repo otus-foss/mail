@@ -4,7 +4,9 @@ Kotlin Multiplatform + Compose app for Android and iOS, intended as the mail cli
 suite. Mail starts with an empty inbox and working local search/filter UI over supplied messages.
 No sample mail is shipped. JMAP account connection and a limited inbox snapshot are implemented.
 Persistent synchronization, sending, contact management, and calendar operations remain unimplemented.
-Read-only JMAP contact-photo lookup is available for sender avatars.
+Read-only JMAP contact-photo lookup is available for sender avatars. Folders (JMAP mailboxes) can
+be browsed and managed, and Sieve rules (RFC 9661) file arriving mail into them on servers that
+support it; see [Folders and rules](docs/folders.md).
 See [JMAP](docs/jmap.md) for supported behavior and test coverage.
 
 ## Structure

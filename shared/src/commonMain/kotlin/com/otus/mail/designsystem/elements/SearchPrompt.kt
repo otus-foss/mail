@@ -20,6 +20,7 @@ import com.otus.mail.designsystem.theme.panelTextStyle
 
 @Composable
 fun SearchPrompt(
+    label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -34,7 +35,7 @@ fun SearchPrompt(
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
-            "Tap to search",
+            label,
             style = panelTextStyle(),
             color = OtusColors.text2,
             maxLines = 1,
