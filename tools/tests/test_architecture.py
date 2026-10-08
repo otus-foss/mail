@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check_architecture import library_violations, violations
+from check_architecture import violations
 
 
 class ArchitectureTests(unittest.TestCase):
@@ -120,30 +120,3 @@ class ArchitectureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-class LibraryTests(unittest.TestCase):
-    def check(self, package, body, source_set="commonMain"):
-        path = (
-            Path(f"jmap/src/{source_set}/kotlin/com/otus/jmap") / package.replace(".", "/") / "X.kt"
-        )
-        name = "com.otus.jmap" + (f".{package}" if package else "")
-        return library_violations(path, f"package {name}\n{body}")
-
-    def test_library_code_is_allowed_networking(self):
-        self.assertEqual(self.check("", "import io.ktor.client.HttpClient"), [])
-
-    def test_library_cannot_use_compose(self):
-        self.assertTrue(self.check("", "import androidx.compose.runtime.Composable"))
-
-    def test_library_cannot_reach_app_code(self):
-        self.assertTrue(self.check("login", "import com.otus.mail.app.App"))
-        self.assertTrue(self.check("", "fun x() = com.otus.calendar.app.App()"))
-
-    def test_library_common_code_cannot_use_platform_apis(self):
-        self.assertTrue(self.check("", "import android.content.Context"))
-        self.assertEqual(self.check("login", "import android.content.Context", "androidMain"), [])
-
-    def test_library_package_must_match_its_namespace(self):
-        path = Path("jmap/src/commonMain/kotlin/com/otus/jmap/X.kt")
-        self.assertTrue(library_violations(path, "package com.otus.mail.core\n"))

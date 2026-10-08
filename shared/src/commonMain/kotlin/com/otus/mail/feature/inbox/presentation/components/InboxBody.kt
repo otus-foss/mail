@@ -17,13 +17,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.designsystem.elements.Symbol
+import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_inbox
 import com.otus.mail.designsystem.resources.symbol_search
 import com.otus.mail.designsystem.theme.InboxTokens
-import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.feature.inbox.domain.MailMessage
 
 @Composable

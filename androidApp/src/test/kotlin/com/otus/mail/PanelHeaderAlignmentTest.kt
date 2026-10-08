@@ -16,10 +16,10 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
-import com.otus.mail.designsystem.components.ContextPanel
-import com.otus.mail.designsystem.elements.IconButton
-import com.otus.mail.designsystem.elements.SearchField
-import com.otus.mail.designsystem.theme.OtusTheme
+import com.otus.designsystem.components.ContextPanel
+import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.SearchField
+import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

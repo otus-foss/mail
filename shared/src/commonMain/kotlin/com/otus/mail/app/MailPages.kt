@@ -3,7 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import com.otus.mail.core.dateformat.DateFormatter
+import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.accounts.presentation.screens.AccountSetupScreen
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen

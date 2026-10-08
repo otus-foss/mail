@@ -1,9 +1,9 @@
 package com.otus.mail
 
 import android.app.Application
+import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.AndroidLoginStore
 import com.otus.mail.app.MailServices
-import com.otus.mail.core.avatar.FileAvatarStore
 import java.io.File
 
 /** Owns process-wide services, so activity recreation does not open new network clients. */

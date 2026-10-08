@@ -19,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.otus.mail.designsystem.theme.OtusColors
-import com.otus.mail.designsystem.theme.PanelTokens
-import com.otus.mail.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.theme.SheetTokens
 import kotlinx.datetime.LocalDate
 
 /** Fixed navigation and weekdays above continuous, Monday-based week rows. */

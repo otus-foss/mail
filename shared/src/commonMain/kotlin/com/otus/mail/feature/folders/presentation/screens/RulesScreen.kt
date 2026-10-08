@@ -8,10 +8,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.mail.designsystem.components.PageNote
-import com.otus.mail.designsystem.components.PageSection
-import com.otus.mail.designsystem.components.Subpage
-import com.otus.mail.designsystem.elements.ActionButton
+import com.otus.designsystem.components.PageNote
+import com.otus.designsystem.components.PageSection
+import com.otus.designsystem.components.Subpage
+import com.otus.designsystem.elements.ActionButton
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.AccountRules
 import com.otus.mail.feature.folders.domain.RuleAvailability

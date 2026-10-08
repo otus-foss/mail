@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.core.dateformat.DateFormatPreference
-import com.otus.mail.core.dateformat.DateFormatter
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test

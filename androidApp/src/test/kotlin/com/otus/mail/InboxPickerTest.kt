@@ -24,9 +24,9 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
-import com.otus.mail.core.dateformat.DateFormatPreference
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.designsystem.theme.OtusTheme
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender

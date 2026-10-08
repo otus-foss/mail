@@ -14,9 +14,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.otus.mail.core.dateformat.DateFormatter
+import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.InboxTokens
-import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.feature.inbox.domain.MailMessage
 
 @Composable

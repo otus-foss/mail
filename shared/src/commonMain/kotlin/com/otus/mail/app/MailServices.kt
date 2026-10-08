@@ -1,17 +1,17 @@
 package com.otus.mail.app
 
+import com.otus.avatar.AvatarCacheConfig
+import com.otus.avatar.AvatarService
+import com.otus.avatar.AvatarStore
+import com.otus.avatar.DomainIconSource
+import com.otus.avatar.EmptyAvatarStore
+import com.otus.avatar.HttpAvatarImageLoader
+import com.otus.avatar.JmapContactPhotoSource
+import com.otus.avatar.PublicSuffixDomainResolver
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.core.avatar.AvatarCacheConfig
-import com.otus.mail.core.avatar.AvatarService
-import com.otus.mail.core.avatar.AvatarStore
-import com.otus.mail.core.avatar.DomainIconSource
-import com.otus.mail.core.avatar.EmptyAvatarStore
-import com.otus.mail.core.avatar.HttpAvatarImageLoader
-import com.otus.mail.core.avatar.JmapContactPhotoSource
-import com.otus.mail.core.avatar.PublicSuffixDomainResolver
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.accounts.data.JmapAccountRepository
 import com.otus.mail.feature.accounts.domain.AccountRepository

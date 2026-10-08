@@ -7,12 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.otus.mail.core.avatar.generatedAvatar
-import com.otus.mail.designsystem.elements.Avatar
-import com.otus.mail.designsystem.elements.Chip
-import com.otus.mail.designsystem.elements.rememberAvatarImage
-import com.otus.mail.designsystem.theme.OtusColors
-import com.otus.mail.designsystem.theme.PanelTokens
+import com.otus.avatar.generatedAvatar
+import com.otus.designsystem.elements.Avatar
+import com.otus.designsystem.elements.Chip
+import com.otus.designsystem.elements.rememberAvatarImage
+import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.MailSender
 
 /** One selected sender shows avatar and first name; several show overlapping avatars only. */

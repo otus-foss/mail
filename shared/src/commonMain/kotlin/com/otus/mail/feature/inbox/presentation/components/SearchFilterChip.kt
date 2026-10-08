@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.designsystem.elements.Chip
-import com.otus.mail.designsystem.elements.Symbol
+import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.elements.Chip
+import com.otus.designsystem.elements.Symbol
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_alternate_email
 import com.otus.mail.designsystem.resources.symbol_calendar_add_on
