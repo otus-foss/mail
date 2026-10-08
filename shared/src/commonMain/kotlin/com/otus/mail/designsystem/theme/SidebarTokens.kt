@@ -14,6 +14,11 @@ internal object SidebarTokens {
     val entryRadius = 16.dp
     val titleSize = 22.sp
     val titleLineHeight = 28.sp
+
+    /** Each nesting level moves an entry's icon and name this far toward the trailing edge. */
+    val nestIndent = 16.dp
+    val headingSize = 14.sp
+    val headingTopGap = 12.dp
     const val SCRIM_ALPHA = 0.65f
 
     /** A swipe released faster than this, per second, opens or closes the sidebar regardless of position. */

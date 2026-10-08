@@ -13,11 +13,31 @@ data class InboxSnapshot(
     val unavailable: List<UnavailableAccount> = emptyList(),
 )
 
+/** Which messages to load: every account's inbox, or one folder of one account. */
+sealed interface MailScope {
+    data object Inbox : MailScope
+
+    /** [accountId] is the login; [folderId] is the server's mailbox id. */
+    data class Folder(
+        val accountId: String,
+        val folderId: String,
+    ) : MailScope
+}
+
 interface MailSource {
-    suspend fun inbox(): InboxSnapshot
+    suspend fun messages(scope: MailScope): InboxSnapshot
 }
 
 /** Saved account metadata could not be read. Existing inbox data should be retained. */
 class InboxStorageException(
     cause: Throwable,
 ) : Exception("Inbox account storage is unavailable.", cause)
+
+/** Files messages into folders on the server. */
+interface MessageMover {
+    /** Moves [message] from its mailbox into [folderId] of the same account; false when the server refused. */
+    suspend fun move(
+        message: MailMessage,
+        folderId: String,
+    ): Boolean
+}

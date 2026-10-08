@@ -29,8 +29,18 @@ both use it. Mail-specific types live in the Mail app. Developed and checked aga
   `responses(call)` exposes every response in wire order, including implicit calls and errors;
   an implicit failure does not replace the explicit method's result.
 - Typed methods for any data type (RFC 8620, section 5): `GetMethod`, `QueryMethod`, `ChangesMethod`,
-  with `JmapType(name, capability, serializer)`. Result references (section 3.7) chain calls in one
-  request: `JmapIds.Result(query.resultOf("/ids"))`. Subclass `JmapMethod` for anything else.
+  and `SetMethod`, with `JmapType(name, capability, serializer)`. Result references (section 3.7) chain
+  calls in one request: `JmapIds.Result(query.resultOf("/ids"))`. Subclass `JmapMethod` for anything else.
+- `SetMethod` sends creations, patches, and destructions as JSON, with optional `ifInState` and
+  type-specific arguments. `SetResult` keeps each object's outcome; `SetError` carries `type`,
+  `description`, `properties`, and `existingId`. Refer to an object created earlier in the same
+  request as `#creationId`. A `stateMismatch` fails the whole call as `MethodError`.
+- `upload(accountId, bytes, mediaType)` stores a blob through the session's `uploadUrl` (section 6.1)
+  with the same https and trusted-origin checks as downloads. Redirects are not followed. A blob over
+  the advertised `maxSizeUpload` throws `UploadTooLarge` before anything is sent.
+- `JmapSession.capabilityObjects` and `JmapAccount.capabilityObjects` keep each capability's object,
+  such as the core limits (`maxObjectsInSet`, `maxSizeUpload`), the mail limits, or the supported Sieve
+  extensions. Apps decode the parts they need; malformed values read as unknown.
 - Before sending, the client checks every capability against the session and each call's account,
   and throws `Unsupported` instead of sending a request the server cannot serve.
 - Logins (`com.otus.jmap.login`): `JmapLogin` identifies a server and user, not a JMAP account.
@@ -62,11 +72,14 @@ only), OAuth, and sharing logins between the two installed apps.
 | 3.6.2 | Method-level errors become `MethodError(type)` for that call only | `JmapRequestTest` |
 | 3.7 | Result references | `JmapRequestTest` |
 | 5.1, 5.2, 5.5 | `/get`, `/changes`, `/query` | `JmapRequestTest`, Mail tests |
+| 5.3 | `/set` creations, patches, destructions, `ifInState`, creation references, per-object errors | `JmapSetTest` |
+| 6.1 | Authenticated uploads through the advertised URI template, within `maxSizeUpload` | `JmapUploadTest` |
 | 6.2 | Bounded authenticated blob downloads through the advertised URI template, with trusted-origin checks | `JmapDownloadTest` |
 | RFC 7617 | Basic credentials; a colon in the username is rejected | `JmapLoginTest` |
 
-Not implemented yet: `/set`, `/queryChanges`, `/copy`, uploads, push (section 7),
-and request limits such as `maxCallsInRequest`.
+Not implemented yet: `/queryChanges`, `/copy`, Blob/upload (RFC 9404), push (section 7), and
+request limits such as `maxCallsInRequest`. `maxObjectsInSet` is read, and Mail batches large
+moves within it.
 
 ## Mail on top of it
 
@@ -76,6 +89,10 @@ The inbox finds the mailbox with role `inbox`, then runs `Email/query` and `Emai
 (newest 50, text bodies up to 20 000 bytes per part). Each login loads in parallel and fails alone,
 with a reason. `OtusMailApplication` owns one `MailServices` per process. Mail and the first release
 use the same storage names, so earlier accounts keep working.
+
+Folders use `Mailbox/get` and `Mailbox/set`; rules manage one Sieve script with `SieveScript/get`
+and `SieveScript/set` (RFC 9661, `JmapCapability.SIEVE`) after uploading it as a blob. Messages move
+with `Email/set` patches. See [Folders and rules](folders.md).
 
 ## Reuse in Calendar
 
@@ -105,7 +122,8 @@ OTUS_JMAP_TEST_PASSWORD=… OTUS_JMAP_TEST_INSECURE=1 ./gradlew :jmap:testAndroi
 ```
 
 It passed against Stalwart 0.16.24 in bootstrap mode (session discovery, `Mailbox/get`, wrong
-password). Bootstrap mode cannot query mail, so the inbox was checked on a device with a real
+password). A third test creates and deletes a mailbox and uploads a blob; it has not been run
+against a server yet. Bootstrap mode cannot query mail, so the inbox was checked on a device with a real
 account. CI does not run it yet. Complete iOS builds and runtime checks, including the Keychain,
 require macOS/Xcode.
 

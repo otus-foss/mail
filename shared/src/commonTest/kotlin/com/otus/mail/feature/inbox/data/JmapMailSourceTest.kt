@@ -7,6 +7,7 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginSecret
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -48,7 +49,7 @@ class JmapMailSourceTest {
     fun inboxMessagesAreMappedForTheExistingInbox() =
         runTest {
             val store = InMemoryLoginStore().apply { save(login, "secret") }
-            val snapshot = source(store).inbox()
+            val snapshot = source(store).messages(MailScope.Inbox)
             assertTrue(snapshot.unavailable.isEmpty())
             val (first, second) = snapshot.messages
             assertEquals("ada/m1", first.id)
@@ -67,6 +68,37 @@ class JmapMailSourceTest {
         }
 
     @Test
+    fun aFolderLoadsOnlyItsAccountAndKeepsItsName() =
+        runTest {
+            val queried = mutableListOf<String>()
+            val folderApi = { body: String ->
+                queried += body
+                if ("Mailbox/get" in body) {
+                    """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
+                        {"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
+                } else {
+                    """{"methodResponses": [["Email/query", {"ids": ["m1"]}, "c0"],
+                        ["Email/get", {"state": "e", "list": [{"id": "m1", "subject": "Order",
+                         "receivedAt": "2026-10-04T09:30:00Z"}]}, "c1"]]}"""
+                }
+            }
+            val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")
+            val store =
+                InMemoryLoginStore().apply {
+                    save(login, "secret")
+                    save(other, "wrong")
+                }
+            val client = JmapClient(stalwartLike(api = folderApi))
+            val source = JmapMailSource(JmapConnections(client, store), store, zone = { TimeZone.UTC })
+            val snapshot = source.messages(MailScope.Folder("ada", "r"))
+            assertTrue(snapshot.unavailable.isEmpty(), "Other accounts are not loaded for a folder")
+            val message = snapshot.messages.single()
+            assertEquals("Receipts", message.location.mailbox)
+            assertEquals("r", message.location.mailboxId)
+            assertTrue(queried.any { "\"inMailbox\":\"r\"" in it })
+        }
+
+    @Test
     fun aLoginThatFailsIsReportedWithoutHidingOthers() =
         runTest {
             val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")
@@ -75,7 +107,7 @@ class JmapMailSourceTest {
                     save(login, "secret")
                     save(other, "wrong")
                 }
-            val snapshot = source(store).inbox()
+            val snapshot = source(store).messages(MailScope.Inbox)
             assertEquals(listOf(UnavailableAccount("Grace", InboxFailure.SignInRejected)), snapshot.unavailable)
             assertEquals(2, snapshot.messages.size)
         }
@@ -88,7 +120,7 @@ class JmapMailSourceTest {
                 JmapMailSource(
                     JmapConnections(JmapClient(stalwartLike()), withoutSecret),
                     withoutSecret,
-                ).inbox()
+                ).messages(MailScope.Inbox)
             assertEquals(listOf(UnavailableAccount("Ada", InboxFailure.CredentialsUnavailable)), snapshot.unavailable)
         }
 }

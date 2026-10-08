@@ -31,10 +31,16 @@ that zone, so pages need no extra wiring.
 
 ## Mail destinations
 
-`app/MailDestination` lists sidebar entries that exist: Inbox and Settings. Settings subpages stay
-under the Settings entry; see [Settings](settings.md). Each page keeps its saved state, such as an
-inbox search, while another page is shown. JMAP mailboxes are expected to become entries once accounts are connected; that is not
-implemented.
+`app/MailPage` lists every page; pages without a parent are sidebar destinations. The unified Inbox
+comes first, then each account's folders under the account name, then Settings at the bottom.
+Folders are indented by nesting and show their unread count; system folders have their own symbol.
+With one account, its inbox is the unified Inbox and is not listed again; its subfolders move up a
+level. Settings subpages stay under the Settings entry; see [Settings](settings.md) and
+[Folders and rules](folders.md). Each page, including each folder, keeps its saved state, such as a
+search, while another page is shown.
+
+`SidebarEntry` takes an optional nesting `depth` and `badge`; `SidebarHeading` captions a group of
+entries. Both stay free of Mail knowledge.
 
 ## Calendar
 

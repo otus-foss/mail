@@ -9,10 +9,7 @@ data class InboxSearch(
     val dateEnd: String? = null,
     val mailboxes: Set<MailboxScope> = setOf(MailboxScope(null, "Inbox")),
     val accounts: Set<String> = emptySet(),
-) {
-    val isFiltered: Boolean
-        get() = this != InboxSearch()
-}
+)
 
 /** All whitespace-separated terms must match; terms can match different message fields. */
 fun searchMessages(

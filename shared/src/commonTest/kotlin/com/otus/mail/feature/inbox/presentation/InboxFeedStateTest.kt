@@ -4,6 +4,7 @@ import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.ReceivedAt
@@ -34,7 +35,7 @@ class InboxFeedStateTest {
             var fail = false
             val source =
                 object : MailSource {
-                    override suspend fun inbox(): InboxSnapshot {
+                    override suspend fun messages(scope: MailScope): InboxSnapshot {
                         if (fail) throw InboxStorageException(IllegalStateException("read failed"))
                         return InboxSnapshot(listOf(message))
                     }
@@ -62,7 +63,7 @@ class InboxFeedStateTest {
             var cancelled = false
             val source =
                 object : MailSource {
-                    override suspend fun inbox(): InboxSnapshot {
+                    override suspend fun messages(scope: MailScope): InboxSnapshot {
                         if (++calls == 1) {
                             try {
                                 awaitCancellation()

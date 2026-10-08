@@ -15,8 +15,14 @@ import com.otus.mail.core.avatar.PublicSuffixDomainResolver
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.accounts.data.JmapAccountRepository
 import com.otus.mail.feature.accounts.domain.AccountRepository
+import com.otus.mail.feature.folders.data.JmapFolderRepository
+import com.otus.mail.feature.folders.data.JmapRuleRepository
+import com.otus.mail.feature.folders.domain.FolderRepository
+import com.otus.mail.feature.folders.domain.RuleRepository
 import com.otus.mail.feature.inbox.data.JmapMailSource
+import com.otus.mail.feature.inbox.data.JmapMessageMover
 import com.otus.mail.feature.inbox.domain.MailSource
+import com.otus.mail.feature.inbox.domain.MessageMover
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 
 /**
@@ -47,6 +53,9 @@ class MailServices(
         JmapAccountRepository(client, connections, logins, onAccountChanged = avatars::removeAccount)
     }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins) }
+    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins) }
+    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins) }
+    internal val rules: RuleRepository by lazy { JmapRuleRepository(connections, logins) }
 }
 
 @OptIn(ExperimentalResourceApi::class)

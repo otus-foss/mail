@@ -15,6 +15,7 @@ import com.otus.mail.feature.inbox.domain.MailSender
 internal fun ContextPanelScope.InboxPanelChips(
     searching: Boolean,
     search: InboxSearch,
+    defaultSearch: InboxSearch,
     dateFormatter: DateFormatter,
     senders: List<MailSender>,
     onChange: (InboxSearch) -> Unit,
@@ -23,7 +24,9 @@ internal fun ContextPanelScope.InboxPanelChips(
     transition(searching) { mode ->
         if (mode) {
             InboxFilter.entries.filter { it != InboxFilter.More }.forEach { filter ->
-                item(filter) { SearchFilterChip(filter, search, dateFormatter, senders) { onFilter(filter) } }
+                item(
+                    filter,
+                ) { SearchFilterChip(filter, search, defaultSearch, dateFormatter, senders) { onFilter(filter) } }
             }
         } else {
             item("unread") {

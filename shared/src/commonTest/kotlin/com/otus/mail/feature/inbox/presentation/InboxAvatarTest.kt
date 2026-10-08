@@ -12,6 +12,7 @@ import com.otus.mail.core.avatar.StoredAvatar
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.ReceivedAt
@@ -43,7 +44,7 @@ class InboxAvatarTest {
                 )
             val source =
                 object : MailSource {
-                    override suspend fun inbox() = InboxSnapshot(listOf(message("one")))
+                    override suspend fun messages(scope: MailScope) = InboxSnapshot(listOf(message("one")))
                 }
             val feed = InboxFeedState(source, this, avatars)
             feed.refresh()
@@ -84,7 +85,7 @@ class InboxAvatarTest {
             val messages = listOf(message("one"), message("two"))
             val source =
                 object : MailSource {
-                    override suspend fun inbox() = InboxSnapshot(messages)
+                    override suspend fun messages(scope: MailScope) = InboxSnapshot(messages)
                 }
             val feed = InboxFeedState(source, this, avatars)
             feed.refresh()
@@ -124,7 +125,7 @@ class InboxAvatarTest {
             var incoming = listOf(message("one"))
             val source =
                 object : MailSource {
-                    override suspend fun inbox() = InboxSnapshot(incoming)
+                    override suspend fun messages(scope: MailScope) = InboxSnapshot(incoming)
                 }
             val feed = InboxFeedState(source, this, avatars)
             feed.refresh()
@@ -202,7 +203,7 @@ class InboxAvatarTest {
                 )
             val source =
                 object : MailSource {
-                    override suspend fun inbox() = InboxSnapshot(listOf(message("one")))
+                    override suspend fun messages(scope: MailScope) = InboxSnapshot(listOf(message("one")))
                 }
             val feed = InboxFeedState(source, this, avatars)
             feed.refresh()
@@ -240,7 +241,7 @@ class InboxAvatarTest {
             val location = MailLocation("Inbox", "Work", accountAddress = "me@work.example")
             val source =
                 object : MailSource {
-                    override suspend fun inbox() =
+                    override suspend fun messages(scope: MailScope) =
                         InboxSnapshot(listOf(message("one"), message("two")).map { it.copy(location = location) })
                 }
             val feed = InboxFeedState(source, this, avatars)

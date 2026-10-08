@@ -6,7 +6,7 @@ Icons use the upstream default weight, unfilled, 24 px optical size, displayed i
 
 - Source: https://github.com/google/material-design-icons/tree/737e3324305806514d7909874fa1818ae1808232/symbols/android
 - License: Apache 2.0, bundled as `material_symbols_LICENSE.txt`.
-- Icons: chevron_left, search, notifications, person, calendar_add_on, inbox, alternate_email, filter_list, attach_file, close, mark_email_unread, settings, chevron_right, tune, unfold_more.
+- Icons: chevron_left, search, notifications, person, calendar_add_on, inbox, alternate_email, filter_list, attach_file, close, mark_email_unread, settings, chevron_right, tune, unfold_more, folder, create_new_folder, send, draft, delete, archive, report, edit, drive_file_move, rule_folder, add, arrow_upward, arrow_downward.
 
 Figtree Regular is used by the context panel elements, matching the Figma typography.
 

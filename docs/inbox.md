@@ -88,3 +88,15 @@ Selected-person pills reuse those avatars. One sender shows an avatar and first 
 senders show up to four overlapping avatars and a count for additional senders. The accessibility
 label retains the sender's full name or the selected count. Selected addresses that are no longer
 in the supplied messages still have an initials fallback.
+
+## Folder pages and message actions
+
+A folder opened from the sidebar uses the same screen. `InboxContext` gives it its default scope
+(every message of that folder, not the Inbox scope), its search prompt ("Search <folder>"), and its
+empty-state title. Closing search and clearing filters return to that default; the mailbox pill
+reads "All" for it. `MailSource.messages(MailScope)` loads either every account's inbox or one
+folder of one account. Messages keep their server id and mailbox id so they can be moved.
+
+An open message can offer **Move** and **Rule for sender** through `MessageActions`, which app
+wiring builds from the loaded folders and rules. A move that the server refuses leaves the message
+in place and shows a notice. See [Folders and rules](folders.md).

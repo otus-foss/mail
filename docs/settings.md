@@ -4,13 +4,15 @@ Implemented in common Compose code for Mail. Settings is a sidebar destination w
 
 ## Pages
 
-- **Settings** lists two subpages as `ActionRow`s, each with an icon, a summary, and a chevron.
+- **Settings** lists four subpages as `ActionRow`s, each with an icon, a summary, and a chevron.
 - **Email accounts** (`feature/accounts`) lists connected accounts and connects new ones with a JMAP
   server, username, and password or app password. It supports compatible JMAP mail servers with
   HTTP Basic authentication, such as Stalwart; no provider-specific behavior exists.
 - **Appearance & behavior** shows the current date format with an example date. Tapping it opens a
   `ChoiceDialog` with every format; choosing one applies it and closes, dismissing changes nothing.
   Dark mode is the only color mode, so there is no theme choice.
+- **Folders** and **Rules** manage each account's folders and the rules that file arriving mail;
+  see [Folders and rules](folders.md).
 
 ## Reusable pieces
 
@@ -18,6 +20,9 @@ Implemented in common Compose code for Mail. Settings is a sidebar destination w
 - `Subpage` (component): a `PageScaffold` whose chevron and the system back gesture call `onBack`.
 - `PageSection` (component): a captioned group of rows.
 - `ChoiceDialog` (component): single-choice popup over a scrim.
+- `DialogFrame` (component): the shared popup frame with a title and close button.
+- `ActionDialog` and `InputDialog` (components): a confirmation or menu of `DialogAction`s, and a
+  popup with one validated text field.
 - `ActionRow`, `InputField`, and `InputKind` (elements).
 
 App wiring owns the page (`app/MailPage`): subpages name their parent and belong to the Settings

@@ -50,6 +50,7 @@ fun InboxBody(
 
 @Composable
 internal fun InboxEmptyState(
+    emptyTitle: String,
     searching: Boolean,
     hasMessages: Boolean,
     filtered: Boolean,
@@ -70,7 +71,7 @@ internal fun InboxEmptyState(
                 when {
                     searching && !hasMessages -> "Nothing to search yet"
                     filtered -> "No matching messages"
-                    else -> "Your inbox is empty"
+                    else -> emptyTitle
                 },
                 fontSize = InboxTokens.subjectSize,
                 textAlign = TextAlign.Center,
