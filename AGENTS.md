@@ -131,6 +131,7 @@ not add tests that merely repeat constants or implementation details. Update arc
 boundaries change.
 
 Each app is a separate Git repository. Never assume a sibling checkout or parent docs are available
-in CI. Shared-library distribution is undecided. Do not create a third repository or publish
-libraries without a concrete task. Check JMAP specifications and advertised server capabilities
-before implementing protocol behavior.
+in CI. Code shared with Calendar lives in otus-meta and arrives here as a pinned release; see
+`docs/shared-libraries.md`. Change shared code there, release it, then update the pinned version
+here. Check JMAP specifications and advertised server capabilities before implementing protocol
+behavior.

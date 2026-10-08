@@ -38,7 +38,7 @@ tasks.register<JavaExec>("detekt") {
     mainClass.set("io.gitlab.arturbosch.detekt.cli.Main")
     args(
         "--input",
-        "jmap/src,shared/src,androidApp/src",
+        "shared/src,androidApp/src",
         "--config",
         "config/detekt.yml",
         "--build-upon-default-config",
@@ -101,7 +101,6 @@ tasks.register("checkAll") {
         ":androidApp:assembleDebug",
         ":androidApp:testDebugUnitTest",
         ":shared:testAndroidHostTest",
-        ":jmap:testAndroidHostTest",
     )
 }
 

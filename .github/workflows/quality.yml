@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+# The shared Otus libraries download from otus-meta's GitHub Packages registry.
+env:
+  ORG_GRADLE_PROJECT_otusMetaUsername: ${{ github.repository_owner }}
+  ORG_GRADLE_PROJECT_otusMetaPassword: ${{ secrets.OTUS_META_PACKAGES_TOKEN }}
+
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -43,7 +48,7 @@ jobs:
           packages: platform-tools
       - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
       - run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
-      - run: ./gradlew :androidApp:lintDebug :androidApp:assembleDebug :androidApp:testDebugUnitTest :shared:testAndroidHostTest :jmap:testAndroidHostTest --console=plain
+      - run: ./gradlew :androidApp:lintDebug :androidApp:assembleDebug :androidApp:testDebugUnitTest :shared:testAndroidHostTest --console=plain
 
   ios:
     runs-on: macos-15
@@ -58,7 +63,6 @@ jobs:
       - run: mint bootstrap
       - run: mint run swiftformat --lint iosApp
       - run: mint run swiftlint lint --strict
-      - run: ./gradlew :jmap:iosSimulatorArm64Test --console=plain
       - name: Compile iOS simulator app
         run: >-
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug -sdk

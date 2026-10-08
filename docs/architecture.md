@@ -4,7 +4,6 @@ Both Otus repositories use the same conventions. Their package roots are `com.ot
 `com.otus.calendar`.
 
 ```text
-jmap/                               Mail only: shared JMAP client and login storage (see jmap.md)
 androidApp/                         Android lifecycle and entry point
   src/main/kotlin/<package>/
 iosApp/                             Swift host and Xcode project
@@ -42,10 +41,10 @@ Design-system elements/components and feature components are driven by values an
 ViewModels and navigation are connected at screen entry points. Networking, persistence, and
 synchronization do not belong inside UI components.
 
-Mail's `:jmap` module holds the provider-independent JMAP client and login storage with stricter
-rules: no UI, no app code, explicit API. See [JMAP](jmap.md). Shared package names do not share code
-across Git repositories. Cross-app library ownership and
-distribution remain undecided. Accounts, contacts, and settings are expected feature areas; Mail and
+The provider-independent JMAP client and login storage come from the `com.otus:jmap` library in
+otus-meta. See [JMAP](jmap.md) and [shared libraries](shared-libraries.md). Code shared with
+Calendar moves to otus-meta when both apps need it; other shared package names do not share code
+across Git repositories. Accounts, contacts, and settings are expected feature areas; Mail and
 Calendar add their own domain features as implemented.
 Mail's `feature/folders` holds folders and the Sieve rules that file into them; see
 [Folders and rules](folders.md).

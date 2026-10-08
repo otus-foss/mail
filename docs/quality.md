@@ -50,8 +50,8 @@ mint run swiftlint lint --strict
 
 The CI `quality` workflow runs portable checks, Android lint/debug assembly and local UI tests, and Swift
 formatting/lint plus a simulator build. The simulator build verifies compilation without device
-signing and targets `arm64`, matching the configured Apple Silicon simulator framework; JMAP iOS
-storage tests also run through `:jmap:iosSimulatorArm64Test`. Android setup installs `platform-tools`
+signing and targets `arm64`, matching the configured Apple Silicon simulator framework. The JMAP
+library's own tests, including its iOS storage tests, run in otus-meta. Android setup installs `platform-tools`
 and the pinned platform/build-tools packages rather than the removed legacy `tools` package.
 
 ## File-length limits and exceptions
