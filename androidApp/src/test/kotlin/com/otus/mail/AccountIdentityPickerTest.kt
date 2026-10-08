@@ -4,8 +4,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.designsystem.theme.OtusTheme
+import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage

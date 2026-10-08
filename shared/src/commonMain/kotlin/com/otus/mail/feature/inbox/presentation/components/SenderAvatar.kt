@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.mail.core.avatar.generatedAvatar
-import com.otus.mail.designsystem.elements.Avatar
-import com.otus.mail.designsystem.elements.rememberAvatarImage
+import com.otus.avatar.generatedAvatar
+import com.otus.designsystem.elements.Avatar
+import com.otus.designsystem.elements.rememberAvatarImage
 import com.otus.mail.feature.inbox.domain.MailSender
 
 @Composable

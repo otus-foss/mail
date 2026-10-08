@@ -14,9 +14,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.mail.designsystem.components.ChoiceDialog
+import com.otus.designsystem.components.ChoiceDialog
+import com.otus.designsystem.theme.OtusColors
 import com.otus.mail.designsystem.theme.InboxTokens
-import com.otus.mail.designsystem.theme.OtusColors
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget

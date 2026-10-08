@@ -20,7 +20,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
-import com.otus.mail.core.dateformat.DateFormatter
+import com.otus.dateformat.DateFormatter
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule

@@ -4,7 +4,6 @@ Both Otus repositories use the same conventions. Their package roots are `com.ot
 `com.otus.calendar`.
 
 ```text
-jmap/                               Mail only: shared JMAP client and login storage (see jmap.md)
 androidApp/                         Android lifecycle and entry point
   src/main/kotlin/<package>/
 iosApp/                             Swift host and Xcode project
@@ -12,10 +11,7 @@ shared/src/
   commonMain/kotlin/<package>/
     app/                            App.kt, wiring, navigation
     core/                           Protocol/storage/platform contracts and infrastructure
-    designsystem/
-      theme/                        Named design tokens and theme
-      elements/                     Small branded UI primitives
-      components/                   Feature-independent compositions
+    designsystem/theme/             Mail-only tokens; shared ones come from com.otus:designsystem
     feature/<feature>/
       domain/                       Models, contracts, business behavior
       data/                         Repository implementations, local/remote adapters
@@ -42,10 +38,10 @@ Design-system elements/components and feature components are driven by values an
 ViewModels and navigation are connected at screen entry points. Networking, persistence, and
 synchronization do not belong inside UI components.
 
-Mail's `:jmap` module holds the provider-independent JMAP client and login storage with stricter
-rules: no UI, no app code, explicit API. See [JMAP](jmap.md). Shared package names do not share code
-across Git repositories. Cross-app library ownership and
-distribution remain undecided. Accounts, contacts, and settings are expected feature areas; Mail and
+The provider-independent JMAP client and login storage come from the `com.otus:jmap` library in
+otus-meta. See [JMAP](jmap.md) and [shared libraries](shared-libraries.md). Code shared with
+Calendar moves to otus-meta when both apps need it; other shared package names do not share code
+across Git repositories. Accounts, contacts, and settings are expected feature areas; Mail and
 Calendar add their own domain features as implemented.
 Mail's `feature/folders` holds folders and the Sieve rules that file into them; see
 [Folders and rules](folders.md).
@@ -61,8 +57,15 @@ defined.
 
 ## Avatar service
 
-The portable account-scoped avatar resolver and its injected contact/image contracts live in
-`core/avatar`. App wiring supplies sources; presentation resolves photos before passing bitmap or
-initial values to design-system elements. Mail resolves senders progressively after inbox loading.
-Calendar exposes the same service for future attendees. See [avatars](avatars.md) for the contract,
-cache limits, privacy options, repository-copy ownership, and deferred work.
+The portable account-scoped avatar resolver comes from the `com.otus:avatar` library. App wiring
+supplies sources; presentation resolves photos before passing bitmap or initial values to
+design-system elements. Mail resolves senders progressively after inbox loading. See
+[avatars](avatars.md) for Mail's wiring.
+
+## Shared libraries
+
+The design system (`com.otus.designsystem`), date formatting (`com.otus.dateformat`), avatars
+(`com.otus.avatar`), and the JMAP client (`com.otus.jmap`) come from otus-meta; see
+[shared libraries](shared-libraries.md). Mail keeps feature-specific tokens such as `InboxTokens`
+in its own `designsystem/theme`. A new reusable element or component belongs in otus-meta's design
+system, not here.

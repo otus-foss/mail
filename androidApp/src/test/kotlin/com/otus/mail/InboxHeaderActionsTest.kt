@@ -13,7 +13,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.otus.mail.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertTrue
 import org.junit.Rule

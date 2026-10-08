@@ -1,10 +1,10 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.designsystem.components.ContextPanelScope
-import com.otus.mail.designsystem.elements.Chip
-import com.otus.mail.designsystem.elements.Symbol
+import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.components.ContextPanelScope
+import com.otus.designsystem.elements.Chip
+import com.otus.designsystem.elements.Symbol
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_attach_file
 import com.otus.mail.designsystem.resources.symbol_mark_email_unread
