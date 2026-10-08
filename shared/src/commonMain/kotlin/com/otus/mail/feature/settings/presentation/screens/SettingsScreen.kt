@@ -1,8 +1,8 @@
 package com.otus.mail.feature.settings.presentation.screens
 
 import androidx.compose.runtime.Composable
-import com.otus.mail.designsystem.components.PageScaffold
-import com.otus.mail.designsystem.elements.ActionRow
+import com.otus.designsystem.components.PageScaffold
+import com.otus.designsystem.elements.ActionRow
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_alternate_email
 import com.otus.mail.designsystem.resources.symbol_chevron_right

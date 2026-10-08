@@ -7,6 +7,9 @@ uses:
 | Library | Version catalog entry |
 | --- | --- |
 | `com.otus:jmap` | `libs.otus.jmap` |
+| `com.otus:avatar` | `libs.otus.avatar` |
+| `com.otus:dateformat` | `libs.otus.dateformat` |
+| `com.otus:designsystem` | `libs.otus.designsystem` |
 
 All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.toml`.
 

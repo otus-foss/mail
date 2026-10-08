@@ -21,11 +21,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.designsystem.components.PullToRefresh
+import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.components.PullToRefresh
+import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.designsystem.theme.InboxTokens
-import com.otus.mail.designsystem.theme.OtusColors
-import com.otus.mail.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.selectedSenders

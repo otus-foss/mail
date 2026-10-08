@@ -5,8 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
+import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
-import com.otus.mail.core.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
 
 class MainActivity : ComponentActivity() {

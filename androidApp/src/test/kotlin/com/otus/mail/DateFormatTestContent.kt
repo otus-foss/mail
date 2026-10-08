@@ -2,10 +2,10 @@ package com.otus.mail
 
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.remember
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatter
+import com.otus.dateformat.formatRelative
 import com.otus.mail.app.App
-import com.otus.mail.core.dateformat.DateFormatPreference
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.core.dateformat.formatRelative
 import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
 import kotlinx.datetime.LocalDate
 

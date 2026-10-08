@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.designsystem.theme.CalendarTokens
+import com.otus.designsystem.theme.CalendarTokens
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month

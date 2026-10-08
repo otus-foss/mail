@@ -20,9 +20,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
-import com.otus.mail.core.dateformat.DateFormatPreference
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.designsystem.theme.OtusTheme
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

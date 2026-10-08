@@ -1,16 +1,16 @@
 package com.otus.mail.feature.welcome.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.mail.designsystem.components.ChipPlacement
-import com.otus.mail.designsystem.components.ContextPanel
-import com.otus.mail.designsystem.elements.Chip
-import com.otus.mail.designsystem.elements.IconButton
-import com.otus.mail.designsystem.elements.Symbol
+import com.otus.designsystem.components.ChipPlacement
+import com.otus.designsystem.components.ContextPanel
+import com.otus.designsystem.elements.Chip
+import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_chevron_left
 import com.otus.mail.designsystem.resources.symbol_filter_list
 import com.otus.mail.designsystem.resources.symbol_search
-import com.otus.mail.designsystem.theme.PanelTokens
 
 @Composable
 fun PanelDemo(

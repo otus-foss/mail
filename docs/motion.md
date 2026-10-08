@@ -1,7 +1,7 @@
 # Motion
 
-Motion lives in common Kotlin code. `designsystem/theme/MotionTokens` owns the suite's cubic
-Bézier curves. Keep their values aligned between the independent Mail and Calendar repositories.
+Motion lives in common Kotlin code. The shared design system's `theme/MotionTokens` owns the suite's
+cubic Bézier curves, so Mail and Calendar use the same values once both depend on it.
 Cross-repository library distribution remains undecided.
 
 | Token | Bézier control points | Use |
@@ -13,7 +13,7 @@ Cross-repository library distribution remains undecided.
 The [sidebar](sidebar.md) opens over 300 ms with `enter` and closes over 220 ms with `exit`; one
 progress value drives its slide and scrim, so reversing mid-way stays continuous.
 
-`designsystem/elements/AnimatedText` takes text, numeric order, a modifier, and typography.
+The shared `elements/AnimatedText` takes text, numeric order, a modifier, and typography.
 Increasing order slides upward; decreasing order slides downward. Incoming text slides from one
 text height away and fades in over 260 ms. Outgoing text slides away and fades out over 180 ms.
 The element clips motion to its bounds and exposes only the latest label to accessibility.

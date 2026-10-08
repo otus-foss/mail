@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.core.dateformat.DateFormatter
-import com.otus.mail.core.dateformat.currentLocalDate
-import com.otus.mail.core.dateformat.formatRelative
-import com.otus.mail.core.dateformat.formatRelativeRange
+import com.otus.dateformat.DateFormatter
+import com.otus.dateformat.currentLocalDate
+import com.otus.dateformat.formatRelative
+import com.otus.dateformat.formatRelativeRange
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate

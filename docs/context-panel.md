@@ -1,7 +1,8 @@
 # Context panel
 
-Implemented in common Compose code for Mail. `ContextPanel` lives in
-`designsystem/components`; `Chip`, `IconButton`, `SearchField`, and `Symbol` are elements.
+Implemented in common Compose code. `ContextPanel` lives in the shared design system's
+`components` (`com.otus.designsystem`, from otus-meta); `Chip`, `IconButton`, `SearchField`, and
+`Symbol` are elements.
 The production inbox and test-only welcome playground own their state and supply values and callbacks. No account, search,
 networking, storage, or navigation services are implemented by these controls.
 

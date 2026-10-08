@@ -11,10 +11,7 @@ shared/src/
   commonMain/kotlin/<package>/
     app/                            App.kt, wiring, navigation
     core/                           Protocol/storage/platform contracts and infrastructure
-    designsystem/
-      theme/                        Named design tokens and theme
-      elements/                     Small branded UI primitives
-      components/                   Feature-independent compositions
+    designsystem/theme/             Mail-only tokens; shared ones come from com.otus:designsystem
     feature/<feature>/
       domain/                       Models, contracts, business behavior
       data/                         Repository implementations, local/remote adapters
@@ -60,8 +57,15 @@ defined.
 
 ## Avatar service
 
-The portable account-scoped avatar resolver and its injected contact/image contracts live in
-`core/avatar`. App wiring supplies sources; presentation resolves photos before passing bitmap or
-initial values to design-system elements. Mail resolves senders progressively after inbox loading.
-Calendar exposes the same service for future attendees. See [avatars](avatars.md) for the contract,
-cache limits, privacy options, repository-copy ownership, and deferred work.
+The portable account-scoped avatar resolver comes from the `com.otus:avatar` library. App wiring
+supplies sources; presentation resolves photos before passing bitmap or initial values to
+design-system elements. Mail resolves senders progressively after inbox loading. See
+[avatars](avatars.md) for Mail's wiring.
+
+## Shared libraries
+
+The design system (`com.otus.designsystem`), date formatting (`com.otus.dateformat`), avatars
+(`com.otus.avatar`), and the JMAP client (`com.otus.jmap`) come from otus-meta; see
+[shared libraries](shared-libraries.md). Mail keeps feature-specific tokens such as `InboxTokens`
+in its own `designsystem/theme`. A new reusable element or component belongs in otus-meta's design
+system, not here.
