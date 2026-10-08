@@ -1,7 +1,7 @@
 # Shared libraries
 
 Code that Mail and Calendar both use lives in
-[otus-meta](https://github.com/reazndev/otus-meta) and arrives here as a pinned release. Mail
+[otus-meta](https://git.hilfikers.com/florian.ruby/otus-meta) and arrives here as a pinned release. Mail
 uses:
 
 | Library | Version catalog entry |
@@ -20,6 +20,12 @@ is deferred. See [the component inventory](component-inventory.md) for ownership
 All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.toml`.
 
 ## Token setup
+
+Forgejo is the primary Git host, but released artifacts remain on GitHub Packages during
+the cutover. After the pinned version and every platform variant have been verified on
+Forgejo, `otusMetaRegistry` can select its Maven URL in private Gradle properties. Use
+credentials for that registry. Forgejo CI selects it through the `OTUS_META_REGISTRY_URL`
+variable. See [hosting and CI](hosting.md). An SSH key does not authenticate Maven downloads.
 
 GitHub Packages requires a token to download Maven packages, even for read access. Create a classic
 token with the `read:packages` scope and add it to `~/.gradle/gradle.properties`, never to this
@@ -43,7 +49,7 @@ scopes package access to the repository that published it, so CI cannot use its 
    property.
 
 `main` must always build from a released version. See
-[otus-meta's consuming guide](https://github.com/reazndev/otus-meta/blob/main/docs/consuming.md)
+[otus-meta's consuming guide](https://git.hilfikers.com/florian.ruby/otus-meta/src/branch/main/docs/consuming.md)
 for details.
 
 Meta is the central owner of visual elements, reusable components, tokens, and symbols.
