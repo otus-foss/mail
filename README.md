@@ -1,5 +1,9 @@
 # Otus Mail
 
+Development, pull requests, and new issues use
+[otus-mail on Forgejo](https://git.hilfikers.com/florian.ruby/otus-mail).
+GitHub is a secondary copy. See [hosting and CI](docs/hosting.md) for the cutover status.
+
 Kotlin Multiplatform + Compose app for Android and iOS, intended as the mail client in the Otus JMAP
 suite. Mail starts with an empty inbox and working local search/filter UI over supplied messages.
 No sample mail is shipped. JMAP account connection and a limited inbox snapshot are implemented.

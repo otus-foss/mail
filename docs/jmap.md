@@ -3,7 +3,7 @@
 Mail uses the `com.otus:jmap` library from otus-meta: a provider-independent client for RFC 8620
 (core) plus protected login storage. Its API, security rules, protocol coverage, and tests are
 documented in
-[otus-meta's JMAP guide](https://github.com/reazndev/otus-meta/blob/main/docs/jmap.md). This
+[otus-meta's JMAP guide](https://git.hilfikers.com/florian.ruby/otus-meta/src/branch/main/docs/jmap.md). This
 guide covers what Mail builds on top of it.
 
 ## Mail on top of it
