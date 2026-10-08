@@ -46,6 +46,11 @@ public sealed class JmapException(
         public val limitBytes: Long,
     ) : JmapException("The response exceeded $limitBytes bytes.")
 
+    /** The blob is larger than the server's advertised `maxSizeUpload`; nothing was sent. */
+    public class UploadTooLarge(
+        public val limitBytes: Long,
+    ) : JmapException("The upload exceeds the server's $limitBytes-byte limit.")
+
     /** The server or account lacks a capability the request needs. */
     public class Unsupported(
         public val capability: String,

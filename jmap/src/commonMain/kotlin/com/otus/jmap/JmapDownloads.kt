@@ -7,7 +7,6 @@ import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Url
 import io.ktor.http.contentLength
-import io.ktor.http.encodeURLParameter
 import io.ktor.utils.io.readBuffer
 import kotlinx.io.IOException
 import kotlinx.io.readByteArray
@@ -57,12 +56,8 @@ internal class JmapDownloads(
         mediaType: String,
     ): Url {
         val template = session.downloadUrl ?: throw JmapException.NotJmap("no blob download endpoint")
-        val expanded = expandDownload(template, accountId, blobId, mediaType)
-        val target = urls.resolve(urls.parse(session.sessionUrl), expanded)
-        if (target.origin() !in session.trustedOrigins) {
-            throw JmapException.RedirectedElsewhere(target.host, target.origin())
-        }
-        return target
+        val values = mapOf("accountId" to accountId, "blobId" to blobId, "type" to mediaType, "name" to "avatar")
+        return urls.trustedTarget(session, expandUriTemplate(template, values))
     }
 }
 
@@ -71,21 +66,4 @@ private fun checkBlobSize(
     limit: Long,
 ) {
     if (size > limit) throw JmapException.ResponseTooLarge(limit)
-}
-
-/** RFC 6570 level 1. Encode each value before substitution, including slashes and URI delimiters. */
-private fun expandDownload(
-    template: String,
-    accountId: String,
-    blobId: String,
-    type: String,
-): String {
-    val values = mapOf("accountId" to accountId, "blobId" to blobId, "type" to type, "name" to "avatar")
-    val expanded =
-        Regex("\\{([^{}]+)}").replace(template) { match ->
-            values[match.groupValues[1]]?.encodeURLParameter()
-                ?: throw JmapException.NotJmap("unknown download template variable")
-        }
-    if ('{' in expanded || '}' in expanded) throw JmapException.NotJmap("invalid download template")
-    return expanded
 }

@@ -1,7 +1,10 @@
 package com.otus.jmap
 
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assume.assumeNotNull
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -43,6 +46,25 @@ class ServerIntegrationTest {
                     .distinct()
                     .size,
             )
+        }
+
+    /** Leaves nothing behind: the mailbox is deleted again and an unused blob expires on the server. */
+    @Test
+    fun createsAndDeletesAMailboxAndUploadsABlob() =
+        runTest {
+            assumeNotNull(url)
+            val connection = JmapConnection(client, requireNotNull(url), JmapAuth.Basic(user, password))
+            val session = connection.session()
+            val account =
+                requireNotNull(session.accountFor(JmapCapability.MAIL)) { "Integration server must offer mail" }
+            val folder = JsonObject(mapOf("name" to JsonPrimitive("otus-integration-${Random.nextLong().toULong()}")))
+            val created = connection.call(SetMethod(MAILBOX, account, create = mapOf("n" to folder)))
+            val id = requireNotNull(created.createdId("n")) { "Not created: ${created.firstError}" }
+            val removal = mapOf("onDestroyRemoveEmails" to JsonPrimitive(false))
+            val destroyed = connection.call(SetMethod(MAILBOX, account, destroy = listOf(id), extra = removal))
+            assertEquals(listOf(id), destroyed.destroyed)
+            val blob = connection.upload(account, "require \"fileinto\";\r\n".encodeToByteArray(), "application/sieve")
+            assertTrue(blob.blobId.isNotEmpty())
         }
 
     @Test
