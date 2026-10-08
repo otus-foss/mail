@@ -1,7 +1,7 @@
 package com.otus.mail.feature.settings.presentation
 
-import com.otus.mail.core.dateformat.DateFormatPreference
-import com.otus.mail.core.dateformat.DateFormatPreferenceStore
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatPreferenceStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

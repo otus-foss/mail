@@ -1,6 +1,7 @@
 # Sidebar
 
-Implemented in common Compose code for Mail. `Sidebar` lives in `designsystem/components`;
+Implemented in common Compose code for Mail. `Sidebar` lives in the shared design system's
+`components` (`com.otus.designsystem`, from otus-meta);
 `SidebarEntry` is an element. Neither knows about Mail: the caller supplies the title, entries,
 footer, and a `SidebarState`. App wiring owns the current page and the `SidebarState`.
 `SidebarSwipeArea` wraps the page and handles swipe-to-open; `ContextPanel` marks the bottom of

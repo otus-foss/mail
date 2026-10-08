@@ -14,7 +14,7 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.mail.designsystem.theme.PanelTokens
+import com.otus.designsystem.theme.PanelTokens
 
 @Composable
 fun DemoScaffold(content: @Composable ColumnScope.() -> Unit) {

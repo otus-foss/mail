@@ -18,6 +18,8 @@ All UI follows **elements → components → screens**.
 
 - `designsystem/elements`: small branded primitives, such as buttons, fields, and avatars.
 - `designsystem/components`: reusable compositions without feature knowledge.
+- Shared elements, components, and tokens come from otus-meta's `com.otus.designsystem`. Add new
+  reusable ones there; keep only Mail-specific tokens in Mail's `designsystem/theme`.
 - `feature/<name>/presentation/components`: feature-specific compositions.
 - `feature/<name>/presentation/screens`: complete views, named `*Screen.kt`.
 - `app`: root composition, dependency wiring, and navigation only.

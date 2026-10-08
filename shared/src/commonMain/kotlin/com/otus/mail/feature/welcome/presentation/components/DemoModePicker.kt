@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.mail.designsystem.elements.Chip
+import com.otus.designsystem.elements.Chip
 
 @Composable
 fun DemoModePicker(

@@ -16,11 +16,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.otus.mail.designsystem.components.ChipPlacement
-import com.otus.mail.designsystem.components.ContextPanel
-import com.otus.mail.designsystem.elements.Chip
-import com.otus.mail.designsystem.theme.OtusColors
-import com.otus.mail.designsystem.theme.OtusTheme
+import com.otus.designsystem.components.ChipPlacement
+import com.otus.designsystem.components.ContextPanel
+import com.otus.designsystem.elements.Chip
+import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.theme.OtusTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
