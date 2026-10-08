@@ -39,7 +39,7 @@ kotlin {
             implementation(libs.compose.resources)
             implementation(libs.navigation.event.compose)
             implementation(libs.kotlinx.datetime)
-            api(projects.jmap)
+            api(libs.otus.jmap)
             implementation(libs.ktor.client.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)

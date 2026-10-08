@@ -11,15 +11,6 @@ SKIP = {"build", ".gradle", ".git", ".venv"}
 LAYERS = {"app", "core", "designsystem", "feature"}
 PLATFORM_APIS = ("android.", "java.", "javax.", "platform.")
 DATA_APIS = ("io.ktor.", "app.cash.sqldelight.", "androidx.room.", "okhttp3.")
-LIBRARY_BASE = "com.otus.jmap"
-LIBRARY_FOLDER = "jmap/src"
-# The shared JMAP library must stay usable by every Otus app: no UI and no app code.
-LIBRARY_FORBIDDEN = (
-    "androidx.compose.",
-    "androidx.lifecycle.",
-    "com.otus.mail",
-    "com.otus.calendar",
-)
 
 
 def source_code(text: str) -> str:
@@ -131,20 +122,6 @@ def violations(path: Path, text: str, base: str) -> list[str]:
     return sorted(set(errors))
 
 
-def library_violations(path: Path, text: str) -> list[str]:
-    errors = violations(path, text, LIBRARY_BASE)
-    if path.suffix != ".kt":
-        return errors
-    code = source_code(text)
-    if any(re.search(r"(?<![\w.])" + re.escape(api), code) for api in LIBRARY_FORBIDDEN):
-        errors.append("the JMAP library cannot depend on UI or app code")
-    if "commonMain" in path.parts and any(
-        re.search(r"(?<![\w.])" + re.escape(api), code) for api in PLATFORM_APIS
-    ):
-        errors.append("platform-only API in commonMain")
-    return sorted(set(errors))
-
-
 def main() -> int:
     settings = (ROOT / "settings.gradle.kts").read_text()
     app = re.search(r'rootProject.name\s*=\s*"otus-(mail|calendar)"', settings)
@@ -159,13 +136,6 @@ def main() -> int:
             relative = path.relative_to(ROOT)
             for error in violations(relative, path.read_text(), f"com.otus.{app.group(1)}"):
                 failures.append(f"{relative}: {error}")
-    for path in sorted((ROOT / LIBRARY_FOLDER).rglob("*.kt")):
-        if set(path.parts) & SKIP:
-            continue
-        relative = path.relative_to(ROOT)
-        failures.extend(
-            f"{relative}: {error}" for error in library_violations(relative, path.read_text())
-        )
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
