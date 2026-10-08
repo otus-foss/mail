@@ -19,7 +19,8 @@ All UI follows **elements → components → screens**.
 - `designsystem/elements`: small branded primitives, such as buttons, fields, and avatars.
 - `designsystem/components`: reusable compositions without feature knowledge.
 - Shared elements, components, and tokens come from otus-meta's `com.otus.designsystem`. Add new
-  reusable ones there; keep only Mail-specific tokens in Mail's `designsystem/theme`.
+  elements, reusable components, visual tokens, and symbol resources there, even if only Mail
+  currently uses them. Mail keeps feature adapters and screens. See decision 0008 in Meta.
 - `feature/<name>/presentation/components`: feature-specific compositions.
 - `feature/<name>/presentation/screens`: complete views, named `*Screen.kt`.
 - `app`: root composition, dependency wiring, and navigation only.
@@ -57,8 +58,8 @@ immutable UI state, explicit constructor dependencies, and small focused files. 
 wrapper types, factories, generic base ViewModels, and speculative abstractions. Name files after
 their primary responsibility. Package declarations must match the source path.
 
-Keep colors in `designsystem/theme` and refer to named tokens. Feature UI belongs with its feature
-until there is concrete reuse. Create folders with real code rather than placeholder files. Keep
+Keep colors and all visual tokens in Meta's `designsystem/theme` and refer to named tokens.
+Feature UI belongs with its feature; reusable rendering belongs in Meta. Create folders with real code rather than placeholder files. Keep
 handwritten Kotlin files at most 300 lines and Swift files at most 200 lines, including tests,
 comments, and blank lines. Aim for 100–200 lines for typical UI files. Split by responsibility
 first. The only permitted file-size exception is a first-line

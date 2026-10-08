@@ -4,13 +4,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.elements.SearchField
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_alternate_email
-import com.otus.mail.designsystem.resources.symbol_attach_file
-import com.otus.mail.designsystem.resources.symbol_calendar_add_on
-import com.otus.mail.designsystem.resources.symbol_inbox
-import com.otus.mail.designsystem.resources.symbol_notifications
-import com.otus.mail.designsystem.resources.symbol_person
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_alternate_email
+import com.otus.designsystem.resources.symbol_attach_file
+import com.otus.designsystem.resources.symbol_calendar_add_on
+import com.otus.designsystem.resources.symbol_inbox
+import com.otus.designsystem.resources.symbol_notifications
+import com.otus.designsystem.resources.symbol_person
 import org.jetbrains.compose.resources.DrawableResource
 
 enum class PanelDemoMode { Inbox, Search, Metadata }

@@ -22,7 +22,7 @@ def source_code(text: str) -> str:
     )
 
 
-def violations(path: Path, text: str, base: str) -> list[str]:
+def violations(path: Path, text: str, base: str, *, central_ui: bool = False) -> list[str]:
     errors = file_length_violations(path, text)
     code = source_code(text)
     parts = path.parts
@@ -63,6 +63,8 @@ def violations(path: Path, text: str, base: str) -> list[str]:
         len(location) < 2 or location[1] not in {"elements", "components", "theme"}
     ):
         errors.append("designsystem code belongs in elements/components/theme")
+    if central_ui and location[:1] == ["designsystem"]:
+        errors.append("visual elements, components, and tokens belong in otus-meta")
     # Includes fully qualified code references as well as imported types.
     references = re.findall(r"\b" + re.escape(base) + r"\.([A-Za-z_][\w.]*)", code)
     current_package = suffix
@@ -129,12 +131,21 @@ def main() -> int:
         print("Cannot determine Otus application namespace", file=sys.stderr)
         return 1
     failures = []
+    if app.group(1) == "mail":
+        drawables = ROOT / "shared/src/commonMain/composeResources/drawable"
+        if any(path.is_file() for path in drawables.rglob("*")):
+            failures.append("visual drawable resources belong in otus-meta/designsystem")
     for folder in ("shared/src", "androidApp/src", "iosApp"):
         for path in sorted((ROOT / folder).rglob("*")):
             if path.suffix not in {".kt", ".swift"} or set(path.parts) & SKIP:
                 continue
             relative = path.relative_to(ROOT)
-            for error in violations(relative, path.read_text(), f"com.otus.{app.group(1)}"):
+            for error in violations(
+                relative,
+                path.read_text(),
+                f"com.otus.{app.group(1)}",
+                central_ui=app.group(1) == "mail",
+            ):
                 failures.append(f"{relative}: {error}")
     if failures:
         print("\n".join(failures), file=sys.stderr)

@@ -6,7 +6,7 @@ import com.otus.dateformat.IosDateFormatPreferenceStore
 import com.otus.jmap.login.IosLoginStore
 import com.otus.mail.app.App
 import com.otus.mail.app.MailServices
-import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
+import com.otus.settings.presentation.DateFormatSettingsState
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDomainMask

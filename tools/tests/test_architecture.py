@@ -114,6 +114,33 @@ class ArchitectureTests(unittest.TestCase):
         self.assertTrue(self.check("designsystem.elements", "val color = Color(0xFF202021)"))
         self.assertFalse(self.check("designsystem.theme", "val color = Color(0xFF202021)"))
 
+    def test_central_ui_rejects_app_tokens_and_elements(self):
+        for layer in ("elements", "components", "theme"):
+            path = Path(
+                f"shared/src/commonMain/kotlin/com/otus/mail/designsystem/{layer}/Example.kt"
+            )
+            errors = violations(
+                path,
+                f"package com.otus.mail.designsystem.{layer}",
+                "com.otus.mail",
+                central_ui=True,
+            )
+            self.assertIn("visual elements, components, and tokens belong in otus-meta", errors)
+
+    def test_central_ui_allows_feature_adapters_using_meta(self):
+        path = Path(
+            "shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/Example.kt"
+        )
+        self.assertFalse(
+            violations(
+                path,
+                "package com.otus.mail.feature.inbox.presentation.components\n"
+                "import com.otus.designsystem.components.ContentRow",
+                "com.otus.mail",
+                central_ui=True,
+            )
+        )
+
     def test_suppression_is_rejected(self):
         self.assertTrue(self.check("core.jmap", '@Suppress("ALL")\nfun x() {}'))
 

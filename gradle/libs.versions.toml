@@ -1,5 +1,5 @@
 [versions]
-otus-meta = "0.2.1"
+otus-meta = "0.3.0"
 agp = "9.1.1"
 kotlin = "2.4.10"
 compose-multiplatform = "1.11.1"
@@ -23,6 +23,8 @@ otus-jmap = { module = "com.otus:jmap", version.ref = "otus-meta" }
 otus-avatar = { module = "com.otus:avatar", version.ref = "otus-meta" }
 otus-dateformat = { module = "com.otus:dateformat", version.ref = "otus-meta" }
 otus-designsystem = { module = "com.otus:designsystem", version.ref = "otus-meta" }
+otus-settings = { module = "com.otus:settings", version.ref = "otus-meta" }
+otus-accounts = { module = "com.otus:accounts", version.ref = "otus-meta" }
 kotlinx-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }

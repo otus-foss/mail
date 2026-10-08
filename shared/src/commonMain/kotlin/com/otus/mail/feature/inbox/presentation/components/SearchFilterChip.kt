@@ -7,11 +7,11 @@ import androidx.compose.ui.semantics.semantics
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.elements.Chip
 import com.otus.designsystem.elements.Symbol
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_alternate_email
-import com.otus.mail.designsystem.resources.symbol_calendar_add_on
-import com.otus.mail.designsystem.resources.symbol_inbox
-import com.otus.mail.designsystem.resources.symbol_person
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_alternate_email
+import com.otus.designsystem.resources.symbol_calendar_add_on
+import com.otus.designsystem.resources.symbol_inbox
+import com.otus.designsystem.resources.symbol_person
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailSender
 import org.jetbrains.compose.resources.DrawableResource

@@ -15,9 +15,9 @@ import com.otus.designsystem.elements.ActionButton
 import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.InputField
 import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.theme.PageTokens
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_close
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.RuleField
 import com.otus.mail.feature.folders.domain.RuleOperator

@@ -1,13 +1,13 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_archive
-import com.otus.mail.designsystem.resources.symbol_delete
-import com.otus.mail.designsystem.resources.symbol_draft
-import com.otus.mail.designsystem.resources.symbol_folder
-import com.otus.mail.designsystem.resources.symbol_inbox
-import com.otus.mail.designsystem.resources.symbol_report
-import com.otus.mail.designsystem.resources.symbol_send
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_archive
+import com.otus.designsystem.resources.symbol_delete
+import com.otus.designsystem.resources.symbol_draft
+import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.resources.symbol_inbox
+import com.otus.designsystem.resources.symbol_report
+import com.otus.designsystem.resources.symbol_send
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderNameProblem
 import org.jetbrains.compose.resources.DrawableResource
