@@ -4,7 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.unit.toSize
-import com.otus.mail.designsystem.theme.CalendarTokens
+import com.otus.designsystem.theme.CalendarTokens
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus

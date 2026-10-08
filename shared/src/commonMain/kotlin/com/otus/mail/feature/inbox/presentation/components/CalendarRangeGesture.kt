@@ -15,7 +15,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
-import com.otus.mail.designsystem.theme.CalendarTokens
+import com.otus.designsystem.theme.CalendarTokens
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch

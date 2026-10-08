@@ -3,7 +3,7 @@ package com.otus.mail.feature.welcome.presentation.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import com.otus.mail.designsystem.elements.SearchField
+import com.otus.designsystem.elements.SearchField
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_alternate_email
 import com.otus.mail.designsystem.resources.symbol_attach_file

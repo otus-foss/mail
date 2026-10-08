@@ -1,14 +1,14 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.core.avatar.AvatarCacheConfig
-import com.otus.mail.core.avatar.AvatarCacheKey
-import com.otus.mail.core.avatar.AvatarImage
-import com.otus.mail.core.avatar.AvatarImageLoader
-import com.otus.mail.core.avatar.AvatarOrigin
-import com.otus.mail.core.avatar.AvatarService
-import com.otus.mail.core.avatar.AvatarStore
-import com.otus.mail.core.avatar.ContactPhotoSource
-import com.otus.mail.core.avatar.StoredAvatar
+import com.otus.avatar.AvatarCacheConfig
+import com.otus.avatar.AvatarCacheKey
+import com.otus.avatar.AvatarImage
+import com.otus.avatar.AvatarImageLoader
+import com.otus.avatar.AvatarOrigin
+import com.otus.avatar.AvatarService
+import com.otus.avatar.AvatarStore
+import com.otus.avatar.ContactPhotoSource
+import com.otus.avatar.StoredAvatar
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage

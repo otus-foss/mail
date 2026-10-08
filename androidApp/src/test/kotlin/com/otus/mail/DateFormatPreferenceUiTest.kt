@@ -8,9 +8,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import com.otus.dateformat.AndroidDateFormatPreferenceStore
+import com.otus.dateformat.DateFormatPreference
 import com.otus.mail.app.App
-import com.otus.mail.core.dateformat.AndroidDateFormatPreferenceStore
-import com.otus.mail.core.dateformat.DateFormatPreference
 import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
 import org.junit.Rule
 import org.junit.Test
