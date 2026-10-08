@@ -49,8 +49,9 @@ mint run swiftlint lint --strict
 ```
 
 The CI `quality` workflow runs portable checks, Android lint/debug assembly and local UI tests, and Swift
-formatting/lint plus a simulator build. The simulator build verifies compilation without device
-signing and targets `arm64`, matching the configured Apple Silicon simulator framework; JMAP iOS
+formatting/lint plus a simulator build. The iOS job runs on macOS 15 with Xcode 26.3; Compose
+Multiplatform links symbols from the iOS 26 SDK, so Xcode 16 cannot link the app. The simulator
+build verifies compilation without device signing and targets `arm64`, matching the configured Apple Silicon simulator framework; JMAP iOS
 storage tests also run through `:jmap:iosSimulatorArm64Test`. Android setup installs `platform-tools`
 and the pinned platform/build-tools packages rather than the removed legacy `tools` package.
 
