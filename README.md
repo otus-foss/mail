@@ -37,7 +37,7 @@ for measured results and test limitations.
 
 ## iOS
 
-On macOS, install Xcode and JDK 21. Open `iosApp/iosApp.xcodeproj`, select an iPhone simulator and
+On macOS, install Xcode 26 or newer and JDK 21. Open `iosApp/iosApp.xcodeproj`, select an iPhone simulator and
 run. For a physical device, set `TEAM_ID` in `iosApp/Configuration/Config.xcconfig` and configure
 signing. Xcode builds the shared Kotlin framework automatically. Targets: iOS ARM64 devices and
 Apple Silicon simulators, iOS 15.3+.
