@@ -7,6 +7,7 @@ import io.ktor.http.URLParserException
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
 import io.ktor.http.contentLength
+import io.ktor.http.encodeURLParameter
 import io.ktor.http.takeFrom
 import io.ktor.utils.io.readBuffer
 import kotlinx.io.readByteArray
@@ -23,6 +24,18 @@ internal class JmapUrls(
         base: Url,
         reference: String,
     ): Url = checked(build(reference) { takeFrom(base).takeFrom(reference) }, reference)
+
+    /** Resolves an expanded session template, refusing origins that may not receive credentials. */
+    fun trustedTarget(
+        session: JmapSession,
+        expanded: String,
+    ): Url {
+        val target = resolve(parse(session.sessionUrl), expanded)
+        if (target.origin() !in session.trustedOrigins) {
+            throw JmapException.RedirectedElsewhere(target.host, target.origin())
+        }
+        return target
+    }
 
     private fun build(
         text: String,
@@ -81,4 +94,18 @@ internal suspend fun HttpResponse.limitedText(limit: Long): String {
     val bytes = bodyAsChannel().readBuffer(limit + 1).readByteArray()
     if (bytes.size > limit) throw JmapException.ResponseTooLarge(limit)
     return bytes.decodeToString()
+}
+
+/** RFC 6570 level 1. Encode each value before substitution, including slashes and URI delimiters. */
+internal fun expandUriTemplate(
+    template: String,
+    values: Map<String, String>,
+): String {
+    val expanded =
+        Regex("\\{([^{}]+)}").replace(template) { match ->
+            values[match.groupValues[1]]?.encodeURLParameter()
+                ?: throw JmapException.NotJmap("unknown URI template variable")
+        }
+    if ('{' in expanded || '}' in expanded) throw JmapException.NotJmap("invalid URI template")
+    return expanded
 }

@@ -41,6 +41,15 @@ public class JmapClient(
         maxBytes: Long,
     ): JmapBlob = JmapDownloads(http, urls, policy).download(session, auth, accountId, blobId, mediaType, maxBytes)
 
+    /** Authenticated blob upload (RFC 8620, section 6.1), within the server's `maxSizeUpload`. */
+    public suspend fun upload(
+        session: JmapSession,
+        auth: JmapAuth,
+        accountId: String,
+        bytes: ByteArray,
+        mediaType: String,
+    ): JmapUpload = JmapUploads(http, urls, policy).upload(session, auth, accountId, bytes, mediaType)
+
     /**
      * Fetches the session at [url], following redirects such as `/.well-known/jmap` (section 2.2).
      * Credentials only go to the origin of [url] and to [trustedOrigins]; a redirect elsewhere throws
@@ -103,18 +112,6 @@ public class JmapClient(
         return jmapDecoding { parseResponse(decode(response)) }
     }
 
-    /** Checks the session and each call's account before anything is sent. */
-    private fun checkSupported(
-        session: JmapSession,
-        calls: List<JmapCall<*>>,
-        using: Set<String>,
-    ) {
-        val missing =
-            using.firstOrNull { it !in session.capabilities }
-                ?: calls.firstOrNull { it.lacksAccountCapability(session) }?.method?.capability
-        if (missing != null) throw JmapException.Unsupported(missing)
-    }
-
     private fun parseSession(
         url: Url,
         response: RawResponse,
@@ -130,12 +127,20 @@ public class JmapClient(
             capabilities = dto.capabilities.keys,
             accounts =
                 dto.accounts.mapValues { (_, account) ->
-                    JmapAccount(account.name, account.isPersonal, account.isReadOnly, account.accountCapabilities.keys)
+                    JmapAccount(
+                        account.name,
+                        account.isPersonal,
+                        account.isReadOnly,
+                        account.accountCapabilities.keys,
+                        account.accountCapabilities.capabilityObjects(),
+                    )
                 },
             primaryAccounts = dto.primaryAccounts,
             state = dto.state,
             trustedOrigins = trusted,
             downloadUrl = dto.downloadUrl,
+            uploadUrl = dto.uploadUrl,
+            capabilityObjects = dto.capabilities.capabilityObjects(),
         )
     }
 
@@ -184,6 +189,18 @@ public class JmapClient(
     private companion object {
         val REDIRECT_STATUSES = setOf(301, 302, 303, 307, 308)
     }
+}
+
+/** Checks the session and each call's account before anything is sent. */
+private fun checkSupported(
+    session: JmapSession,
+    calls: List<JmapCall<*>>,
+    using: Set<String>,
+) {
+    val missing =
+        using.firstOrNull { it !in session.capabilities }
+            ?: calls.firstOrNull { it.lacksAccountCapability(session) }?.method?.capability
+    if (missing != null) throw JmapException.Unsupported(missing)
 }
 
 private fun JmapCall<*>.lacksAccountCapability(session: JmapSession): Boolean {

@@ -36,6 +36,12 @@ public class JmapConnection(
         maxBytes: Long,
     ): JmapBlob = client.download(session(), auth, accountId, blobId, mediaType, maxBytes)
 
+    public suspend fun upload(
+        accountId: String,
+        bytes: ByteArray,
+        mediaType: String,
+    ): JmapUpload = client.upload(session(), auth, accountId, bytes, mediaType)
+
     /** One request; read any call's result from the response. */
     public suspend fun send(build: JmapRequestBuilder.() -> Unit): JmapResponse =
         exchange(JmapRequestBuilder().apply(build).calls)

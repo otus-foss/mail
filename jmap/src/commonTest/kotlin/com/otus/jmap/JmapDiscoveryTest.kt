@@ -25,6 +25,32 @@ class JmapDiscoveryTest {
         }
 
     @Test
+    fun capabilityObjectsAndTheUploadTemplateAreKept() =
+        runTest {
+            val engine =
+                MockEngine {
+                    json(
+                        """{"capabilities": {"urn:ietf:params:jmap:core": {"maxObjectsInSet": 500,
+                           "maxSizeUpload": "huge"}, "urn:example:odd": true},
+                           "accounts": {"d1": {"name": "Ada", "accountCapabilities": {
+                             "urn:ietf:params:jmap:sieve": {"sieveExtensions": ["fileinto", "mailboxid"]}}}},
+                           "apiUrl": "/jmap/", "uploadUrl": "/upload/{accountId}/"}""",
+                    )
+                }
+            val session = JmapClient(engine).session(wellKnown, ADA)
+            assertEquals("/upload/{accountId}/", session.uploadUrl)
+            assertEquals(500, session.maxObjectsInSet)
+            assertEquals(null, session.maxSizeUpload, "A malformed limit reads as unknown")
+            assertEquals(emptyMap(), session.capabilityObjects.getValue("urn:example:odd"))
+            val sieve =
+                session.accounts
+                    .getValue("d1")
+                    .capabilityObjects
+                    .getValue(JmapCapability.SIEVE)
+            assertTrue("mailboxid" in sieve.getValue("sieveExtensions").toString())
+        }
+
+    @Test
     fun credentialsNeverReachAnotherHostWithoutConsent() =
         runTest {
             val requests = mutableListOf<Recorded>()
