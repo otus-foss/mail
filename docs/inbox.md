@@ -1,8 +1,9 @@
 # Inbox and local search
 
-Inbox is Mail's default start page. The production app supplies an empty message list and contains
-no sample messages. Account setup, JMAP discovery/authentication, synchronization, and persistence
-remain separate work. No provider requests are made.
+Inbox is Mail's default start page. Without connected accounts it is empty; no sample messages
+are shipped. Shared account setup verifies JMAP discovery and authentication. Mail loads up to
+50 messages per connected account from the server on launch and refresh. Message persistence
+and incremental synchronization remain separate work.
 
 ## Implemented
 
@@ -15,8 +16,8 @@ remain separate work. No provider requests are made.
 - Unread, attachment, multiple senders, inclusive date ranges, account-specific mailboxes, and
   multiple accounts combine with the query. Inbox is the default scope. Custom selection sheets
   have independent picker search and draft/Clear/Apply behavior. See [selection sheets](selection-sheets.md).
-- Results sort newest first using source-provided ISO dates and 24-hour times. The eventual data
-  adapter must supply these normalized values and explicit mailbox/account identifiers. This is
+- Results sort newest first using ISO dates and 24-hour times normalized by the JMAP data
+  adapter, which also supplies mailbox/account identifiers. This is
   local search over supplied messages, not an implementation of JMAP Email/query semantics.
 - Empty inbox and no-result states are distinct. Clearing search and filters restores the default
   Inbox scope. Message rows can show a read-only plain-text preview; opening does not mark mail read.
@@ -33,8 +34,8 @@ remain separate work. No provider requests are made.
 
 `feature/inbox/domain` owns message values and matching. `presentation` owns screen input state.
 Feature components receive values/callbacks; they reuse the design-system panel, pills, input,
-icons, and avatar. App wiring supplies messages to `InboxScreen`. A repository abstraction can be
-introduced with a real data source rather than adding an unused implementation now.
+icons, and avatar from Meta. App wiring connects `InboxFeedState` to the domain's `MailSource`
+contract and the `JmapMailSource` data implementation, then supplies messages to `InboxScreen`.
 
 ## Design reference and adaptations
 

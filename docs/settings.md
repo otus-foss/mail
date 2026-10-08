@@ -1,8 +1,8 @@
 # Settings
 
 Implemented through the shared `settings` and `accounts` libraries from otus-meta, with
-Mail-specific destination entries in `app/MailSettings.kt`. The extraction is unreleased 0.3.0
-and currently uses the local composite build. Settings is a sidebar destination with subpages.
+Mail-specific destination entries in `app/MailSettings.kt`. Mail pins both libraries to Meta
+0.3.0. Settings is a sidebar destination with subpages.
 
 ## Pages
 

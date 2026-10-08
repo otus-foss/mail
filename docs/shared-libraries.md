@@ -13,10 +13,9 @@ uses:
 | `com.otus:settings` | `libs.otus.settings` |
 | `com.otus:accounts` | `libs.otus.accounts` |
 
-The current extraction prepares 0.3.0, which is not published yet. Until it is released,
-this branch requires the documented local composite build. Do not merge the version bump
-into main before publishing the libraries and checking the published variants. Calendar
-is unchanged. See [the component inventory](component-inventory.md) for ownership.
+Mail pins Meta 0.3.0 for all six libraries. Local source substitution is optional development
+configuration; normal builds download the pinned GitHub Packages artifacts. Calendar adoption
+is deferred. See [the component inventory](component-inventory.md) for ownership and release state.
 
 All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.toml`.
 
@@ -50,7 +49,7 @@ for details.
 Meta is the central owner of visual elements, reusable components, tokens, and symbols.
 Mail retains feature screens and adapters. Message, folder, and rule rows and empty states
 use shared `ContentRow`, `DetailRow`, and `EmptyState`; all symbols and `InboxTokens` come
-from `designsystem`. These additions are part of the local, unpublished 0.3.0 extraction.
+from `designsystem`. These additions are included in Meta 0.3.0.
 
 ## Checking a release candidate without source substitution
 
