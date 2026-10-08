@@ -3,8 +3,9 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import com.otus.accounts.domain.AccountService
+import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
-import com.otus.mail.feature.accounts.presentation.screens.AccountSetupScreen
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
 import com.otus.mail.feature.folders.presentation.screens.RulesScreen
@@ -13,9 +14,9 @@ import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
-import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
-import com.otus.mail.feature.settings.presentation.screens.AppearanceSettingsScreen
-import com.otus.mail.feature.settings.presentation.screens.SettingsScreen
+import com.otus.settings.presentation.DateFormatSettingsState
+import com.otus.settings.presentation.screens.AppearanceSettingsScreen
+import com.otus.settings.presentation.screens.SettingsScreen
 
 @Composable
 internal fun MailPageContent(
@@ -41,18 +42,13 @@ internal fun MailPageContent(
 
         MailPage.Settings -> {
             SettingsScreen(
-                dateFormatState,
-                accountsSummary = accountsSummary(states.accounts.accounts.size),
+                entries = mailSettingsEntries(dateFormatState, states.accounts.accounts.size, navigation),
                 onOpenNavigation = navigation.openSidebar,
-                onOpenAccounts = { navigation.go(MailPage.EmailAccounts) },
-                onOpenAppearance = { navigation.go(MailPage.Appearance) },
-                onOpenFolders = { navigation.go(MailPage.Folders) },
-                onOpenRules = { navigation.go(MailPage.Rules) },
             )
         }
 
         MailPage.EmailAccounts -> {
-            AccountSetupScreen(states.accounts, onBack = back)
+            AccountSetupScreen(states.accounts, "Email accounts", AccountService.Mail, onBack = back)
         }
 
         MailPage.Appearance -> {
@@ -124,11 +120,4 @@ private fun rememberMessageActions(
 ): MessageActions =
     remember(states, feed, navigation) {
         states.messageActions(feed) { accountId -> navigation.go(MailPage.RuleEditor(accountId, null)) }
-    }
-
-private fun accountsSummary(count: Int): String =
-    when (count) {
-        0 -> "Connect a JMAP server"
-        1 -> "1 account connected"
-        else -> "$count accounts connected"
     }

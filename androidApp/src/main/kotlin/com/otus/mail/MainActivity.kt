@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
-import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
+import com.otus.settings.presentation.DateFormatSettingsState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

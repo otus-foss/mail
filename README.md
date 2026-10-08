@@ -98,3 +98,10 @@ JMAP account setup, and [JMAP](docs/jmap.md) for the protocol client.
 
 See [sender and attendee avatars](docs/avatars.md) for the reusable contact-photo, optional domain-icon,
 and generated-avatar service.
+
+See [the component inventory](docs/component-inventory.md) for shared UI and the Mail-specific compositions that remain.
+
+Meta is the central owner of visual elements, reusable components, tokens, and symbols.
+Mail retains feature screens and adapters. Message, folder, and rule rows and empty states
+use shared `ContentRow`, `DetailRow`, and `EmptyState`; all symbols and `InboxTokens` come
+from `designsystem`. These additions are included in Meta 0.3.0.

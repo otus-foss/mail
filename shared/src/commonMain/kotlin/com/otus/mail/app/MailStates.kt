@@ -1,6 +1,6 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.accounts.presentation.AccountsState
+import com.otus.accounts.presentation.AccountsState
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState

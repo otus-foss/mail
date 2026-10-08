@@ -22,11 +22,11 @@ import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.SearchField
 import com.otus.designsystem.elements.SearchPrompt
 import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_chevron_left
+import com.otus.designsystem.resources.symbol_close
+import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.theme.PanelTokens
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_chevron_left
-import com.otus.mail.designsystem.resources.symbol_close
-import com.otus.mail.designsystem.resources.symbol_filter_list
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.InboxContext
