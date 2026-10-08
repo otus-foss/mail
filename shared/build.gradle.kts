@@ -43,6 +43,8 @@ kotlin {
             api(libs.otus.avatar)
             api(libs.otus.dateformat)
             api(libs.otus.designsystem)
+            api(libs.otus.settings)
+            api(libs.otus.accounts)
             implementation(libs.ktor.client.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)

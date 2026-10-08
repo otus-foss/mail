@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.rememberSidebarState
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.settings.presentation.DateFormatSettingsState
+import com.otus.settings.presentation.DateFormatSettingsState
 import kotlinx.coroutines.launch
 
 @Composable

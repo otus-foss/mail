@@ -15,9 +15,9 @@ import com.otus.designsystem.elements.ActionButton
 import com.otus.designsystem.elements.ActionRow
 import com.otus.designsystem.elements.InputField
 import com.otus.designsystem.elements.SelectionRow
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_folder
-import com.otus.mail.designsystem.resources.symbol_unfold_more
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.resources.symbol_unfold_more
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.domain.INBOX_ROLE

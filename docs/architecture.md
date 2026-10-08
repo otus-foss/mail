@@ -11,7 +11,6 @@ shared/src/
   commonMain/kotlin/<package>/
     app/                            App.kt, wiring, navigation
     core/                           Protocol/storage/platform contracts and infrastructure
-    designsystem/theme/             Mail-only tokens; shared ones come from com.otus:designsystem
     feature/<feature>/
       domain/                       Models, contracts, business behavior
       data/                         Repository implementations, local/remote adapters
@@ -41,8 +40,9 @@ synchronization do not belong inside UI components.
 The provider-independent JMAP client and login storage come from the `com.otus:jmap` library in
 otus-meta. See [JMAP](jmap.md) and [shared libraries](shared-libraries.md). Code shared with
 Calendar moves to otus-meta when both apps need it; other shared package names do not share code
-across Git repositories. Accounts, contacts, and settings are expected feature areas; Mail and
-Calendar add their own domain features as implemented.
+across Git repositories. Shared account setup and settings screens now come from otus-meta in the unreleased 0.3.0
+extraction. Mail supplies their state, persistence, service requirement, and destinations in
+app wiring. Mail-specific inbox, folder, and rule screens stay here. Calendar is unchanged.
 Mail's `feature/folders` holds folders and the Sieve rules that file into them; see
 [Folders and rules](folders.md).
 
@@ -65,7 +65,11 @@ design-system elements. Mail resolves senders progressively after inbox loading.
 ## Shared libraries
 
 The design system (`com.otus.designsystem`), date formatting (`com.otus.dateformat`), avatars
-(`com.otus.avatar`), and the JMAP client (`com.otus.jmap`) come from otus-meta; see
-[shared libraries](shared-libraries.md). Mail keeps feature-specific tokens such as `InboxTokens`
-in its own `designsystem/theme`. A new reusable element or component belongs in otus-meta's design
-system, not here.
+(`com.otus.avatar`), JMAP client (`com.otus.jmap`), settings (`com.otus.settings`), and accounts
+(`com.otus.accounts`) come from otus-meta; see
+[shared libraries](shared-libraries.md). All visual tokens, including `InboxTokens`, and symbol resources live in Meta.
+A new element or reusable component belongs in Meta even when Mail is its only current consumer.
+Mail feature adapters supply domain-derived labels, values, and callbacks to shared renderers.
+The checker rejects local production design-system code and drawable resources.
+
+See [the component inventory](component-inventory.md) for every Otus UI declaration and its owner.

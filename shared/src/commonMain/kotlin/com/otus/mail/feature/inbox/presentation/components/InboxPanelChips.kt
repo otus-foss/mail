@@ -5,9 +5,9 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ContextPanelScope
 import com.otus.designsystem.elements.Chip
 import com.otus.designsystem.elements.Symbol
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_attach_file
-import com.otus.mail.designsystem.resources.symbol_mark_email_unread
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_attach_file
+import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailSender
 

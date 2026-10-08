@@ -1,5 +1,8 @@
 package com.otus.mail.app
 
+import com.otus.accounts.data.JmapAccountRepository
+import com.otus.accounts.domain.AccountRepository
+import com.otus.accounts.domain.AccountService
 import com.otus.avatar.AvatarCacheConfig
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
@@ -13,8 +16,6 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.feature.accounts.data.JmapAccountRepository
-import com.otus.mail.feature.accounts.domain.AccountRepository
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
@@ -50,7 +51,13 @@ class MailServices(
         )
     }
     internal val accounts: AccountRepository by lazy {
-        JmapAccountRepository(client, connections, logins, onAccountChanged = avatars::removeAccount)
+        JmapAccountRepository(
+            client,
+            connections,
+            logins,
+            AccountService.Mail,
+            onAccountChanged = avatars::removeAccount,
+        )
     }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins) }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins) }

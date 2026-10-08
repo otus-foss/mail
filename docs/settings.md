@@ -1,11 +1,13 @@
 # Settings
 
-Implemented in common Compose code for Mail. Settings is a sidebar destination with subpages.
+Implemented through the shared `settings` and `accounts` libraries from otus-meta, with
+Mail-specific destination entries in `app/MailSettings.kt`. The extraction is unreleased 0.3.0
+and currently uses the local composite build. Settings is a sidebar destination with subpages.
 
 ## Pages
 
 - **Settings** lists four subpages as `ActionRow`s, each with an icon, a summary, and a chevron.
-- **Email accounts** (`feature/accounts`) lists connected accounts and connects new ones with a JMAP
+- **Email accounts** (`com.otus.accounts`) lists connected accounts and connects new ones with a JMAP
   server, username, and password or app password. It supports compatible JMAP mail servers with
   HTTP Basic authentication, such as Stalwart; no provider-specific behavior exists.
 - **Appearance & behavior** shows the current date format with an example date. Tapping it opens a
@@ -46,7 +48,7 @@ metadata cannot be read.
 
 ## Checks
 
-`JmapServerAddressTest` covers address resolution and that drafts never print passwords.
+The account library's `JmapServerAddressTest` covers address resolution and that drafts never print passwords.
 `SettingsPagesTest` covers the popup, dismissal, subpage back navigation, server hints, and password
 semantics. `AccountConnectionTest` covers connecting, listing, and the filled inbox. Settings pages were checked on a Pixel 9a; iOS runtime
 validation requires macOS/Xcode.

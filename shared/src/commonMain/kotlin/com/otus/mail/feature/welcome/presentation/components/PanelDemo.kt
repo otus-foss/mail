@@ -6,11 +6,11 @@ import com.otus.designsystem.components.ContextPanel
 import com.otus.designsystem.elements.Chip
 import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_chevron_left
+import com.otus.designsystem.resources.symbol_filter_list
+import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.theme.PanelTokens
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_chevron_left
-import com.otus.mail.designsystem.resources.symbol_filter_list
-import com.otus.mail.designsystem.resources.symbol_search
 
 @Composable
 fun PanelDemo(

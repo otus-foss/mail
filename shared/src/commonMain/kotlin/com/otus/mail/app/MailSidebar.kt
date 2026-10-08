@@ -5,9 +5,9 @@ import com.otus.designsystem.components.Sidebar
 import com.otus.designsystem.components.SidebarState
 import com.otus.designsystem.elements.SidebarEntry
 import com.otus.designsystem.elements.SidebarHeading
-import com.otus.mail.designsystem.resources.Res
-import com.otus.mail.designsystem.resources.symbol_inbox
-import com.otus.mail.designsystem.resources.symbol_settings
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_inbox
+import com.otus.designsystem.resources.symbol_settings
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.folderTree
