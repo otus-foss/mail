@@ -12,11 +12,11 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
-import com.otus.mail.designsystem.elements.CalendarDay
-import com.otus.mail.designsystem.elements.CalendarDaySelection
-import com.otus.mail.designsystem.elements.calendarMonthBackground
-import com.otus.mail.designsystem.theme.CalendarTokens
-import com.otus.mail.designsystem.theme.PanelTokens
+import com.otus.designsystem.elements.CalendarDay
+import com.otus.designsystem.elements.CalendarDaySelection
+import com.otus.designsystem.elements.calendarMonthBackground
+import com.otus.designsystem.theme.CalendarTokens
+import com.otus.designsystem.theme.PanelTokens
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil

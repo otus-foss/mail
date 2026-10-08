@@ -18,12 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import com.otus.mail.designsystem.elements.Symbol
-import com.otus.mail.designsystem.elements.controlPressFeedback
+import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.elements.controlPressFeedback
+import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_drive_file_move
-import com.otus.mail.designsystem.theme.OtusColors
-import com.otus.mail.designsystem.theme.SheetTokens
 import com.otus.mail.feature.folders.domain.MailRule
 import com.otus.mail.feature.folders.presentation.summary
 import com.otus.mail.feature.folders.presentation.title

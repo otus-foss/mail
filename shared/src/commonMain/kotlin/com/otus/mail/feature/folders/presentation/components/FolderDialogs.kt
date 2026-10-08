@@ -2,10 +2,10 @@ package com.otus.mail.feature.folders.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import com.otus.mail.designsystem.components.ActionDialog
-import com.otus.mail.designsystem.components.ChoiceDialog
-import com.otus.mail.designsystem.components.DialogAction
-import com.otus.mail.designsystem.components.InputDialog
+import com.otus.designsystem.components.ActionDialog
+import com.otus.designsystem.components.ChoiceDialog
+import com.otus.designsystem.components.DialogAction
+import com.otus.designsystem.components.InputDialog
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn

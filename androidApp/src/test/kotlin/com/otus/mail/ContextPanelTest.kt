@@ -21,8 +21,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
-import com.otus.mail.designsystem.theme.OtusColors
-import com.otus.mail.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.welcome.presentation.screens.WelcomeScreen
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals

@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.avatar.ResolvedAvatar
+import com.otus.avatar.ResolvedAvatar
 
 /** Portable, supplied message data. No account connection or persistence is implied. */
 data class MailMessage(

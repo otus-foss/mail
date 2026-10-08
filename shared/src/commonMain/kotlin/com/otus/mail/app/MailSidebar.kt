@@ -1,10 +1,10 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
-import com.otus.mail.designsystem.components.Sidebar
-import com.otus.mail.designsystem.components.SidebarState
-import com.otus.mail.designsystem.elements.SidebarEntry
-import com.otus.mail.designsystem.elements.SidebarHeading
+import com.otus.designsystem.components.Sidebar
+import com.otus.designsystem.components.SidebarState
+import com.otus.designsystem.elements.SidebarEntry
+import com.otus.designsystem.elements.SidebarHeading
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.designsystem.resources.symbol_inbox
 import com.otus.mail.designsystem.resources.symbol_settings

@@ -6,10 +6,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.otus.mail.designsystem.components.ActionDialog
-import com.otus.mail.designsystem.components.DialogAction
-import com.otus.mail.designsystem.components.PageNote
-import com.otus.mail.designsystem.components.Subpage
+import com.otus.designsystem.components.ActionDialog
+import com.otus.designsystem.components.DialogAction
+import com.otus.designsystem.components.PageNote
+import com.otus.designsystem.components.Subpage
 import com.otus.mail.feature.folders.domain.ruleProblem
 import com.otus.mail.feature.folders.domain.without
 import com.otus.mail.feature.folders.presentation.FoldersState
