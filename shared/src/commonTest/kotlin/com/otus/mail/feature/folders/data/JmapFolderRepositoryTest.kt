@@ -74,10 +74,12 @@ class JmapFolderRepositoryTest {
                 )
             reasons.forEach { (refusal, expected) ->
                 val (key, type) = refusal
+                // RFC 8620 5.3: the refusal is keyed by the submitted creation or folder ID.
+                val id = if (key == "notCreated") "folder" else folder.id
                 val repository =
                     repository {
                         """{"methodResponses": [["Mailbox/set", {"newState": "m",
-                           "$key": {"x": {"type": "$type"}}}, "c0"]]}"""
+                           "$key": {"$id": {"type": "$type"}}}, "c0"]]}"""
                     }
                 val outcome =
                     when (key) {

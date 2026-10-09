@@ -11,7 +11,9 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -78,6 +80,8 @@ class CalendarDragTest {
         compose.onNodeWithText("2020").performClick()
         compose.onNodeWithContentDescription("Month choices").performScrollToNode(hasText("February"))
         compose.onNodeWithText("February").performClick()
+        compose.onNodeWithContentDescription("Day choices").performScrollToNode(hasText("1"))
+        compose.onNode(hasText("1") and hasAnyAncestor(hasContentDescription("Day choices"))).performClick()
         saveScreenshot("month-year-picker")
         compose.onNodeWithText("Go").performClick()
         compose.onNode(hasText("February 2020") and hasClickAction()).assertIsDisplayed()
@@ -97,7 +101,7 @@ class CalendarDragTest {
         compose.onNode(hasText(heading) and hasClickAction()).performClick()
         compose.onNodeWithContentDescription("Year choices").performScrollToNode(hasText("2010"))
         compose.onNodeWithText("2010").performClick()
-        compose.onNodeWithText("Cancel").assertIsDisplayed().performClick()
+        compose.onNodeWithContentDescription("Close date chooser").assertIsDisplayed().performClick()
         compose.onNode(hasText(heading) and hasClickAction()).assertIsDisplayed()
     }
 

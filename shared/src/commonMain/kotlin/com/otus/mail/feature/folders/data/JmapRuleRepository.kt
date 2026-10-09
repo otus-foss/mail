@@ -138,9 +138,11 @@ class JmapRuleRepository(
         change: RuleChange,
         state: String,
     ): SetMethod {
-        val extra = mutableMapOf<String, JsonElement>()
-        if (change.run == true) extra["onSuccessActivateScript"] = JsonPrimitive(ours?.id ?: "#$CREATION_ID")
-        if (change.run == false && ours?.isActive == true) extra["onSuccessDeactivateScript"] = JsonPrimitive(true)
+        val extra =
+            buildMap<String, JsonElement> {
+                if (change.run == true) put("onSuccessActivateScript", JsonPrimitive(ours?.id ?: "#$CREATION_ID"))
+                if (change.run == false && ours?.isActive == true) put("onSuccessDeactivateScript", JsonPrimitive(true))
+            }
         val blob = "blobId" to JsonPrimitive(blobId)
         return if (ours == null) {
             val script = JsonObject(mapOf("name" to JsonPrimitive(RULES_SCRIPT), blob))

@@ -15,23 +15,25 @@ internal fun writeSieve(
     metadata: String,
 ): String {
     val active = script.rules.filter { it.enabled }
-    val lines = mutableListOf(HEADER, metadata)
     val required = requiredExtensions(active, script.keep)
-    if (required.isNotEmpty()) lines += "require ${sieveList(required)};"
-    active.forEach { rule ->
-        lines += ""
-        lines += "# ${oneLine(rule.name).ifBlank { "Rule" }}"
-        lines += "if ${test(rule)} {"
-        val flags = if (rule.markRead) ":flags \"\\\\Seen\" " else ""
-        lines += "    fileinto $flags:mailboxid ${sieveString(rule.folderId)} \"INBOX\";"
-        lines += "    stop;"
-        lines += "}"
-    }
-    script.keep?.let {
-        lines += ""
-        lines += "include :personal :optional ${sieveString(it)};"
-    }
-    return lines.joinToString(CRLF, postfix = CRLF)
+    return buildList {
+        add(HEADER)
+        add(metadata)
+        if (required.isNotEmpty()) add("require ${sieveList(required)};")
+        active.forEach { rule ->
+            val flags = if (rule.markRead) ":flags \"\\\\Seen\" " else ""
+            add("")
+            add("# ${oneLine(rule.name).ifBlank { "Rule" }}")
+            add("if ${test(rule)} {")
+            add("    fileinto $flags:mailboxid ${sieveString(rule.folderId)} \"INBOX\";")
+            add("    stop;")
+            add("}")
+        }
+        script.keep?.let {
+            add("")
+            add("include :personal :optional ${sieveString(it)};")
+        }
+    }.joinToString(CRLF, postfix = CRLF)
 }
 
 internal const val HEADER = "# Otus Mail rules. Edit them in Otus Mail; changes made elsewhere are detected."
