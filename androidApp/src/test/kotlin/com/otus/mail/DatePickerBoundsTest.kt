@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performScrollToNode
 import com.otus.designsystem.components.MonthYearPicker
 import com.otus.designsystem.theme.OtusTheme
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -68,9 +69,13 @@ class DatePickerBoundsTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
-                    MonthYearPicker(year, month, today, {}, { selectedYear, selectedMonth, selectedDay ->
-                        confirmed = LocalDate(selectedYear, selectedMonth, selectedDay)
-                    }, initialDay = day)
+                    MonthYearPicker(
+                        YearMonth(year, month),
+                        LocalDate(1970, 1, 1)..today,
+                        {},
+                        { _, date -> confirmed = date },
+                        initialDay = day,
+                    )
                 }
             }
         }

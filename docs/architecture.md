@@ -40,7 +40,7 @@ synchronization do not belong inside UI components.
 The provider-independent JMAP client and login storage come from the `com.otus:jmap` library in
 otus-meta. See [JMAP](jmap.md) and [shared libraries](shared-libraries.md). Code shared with
 Calendar moves to otus-meta when both apps need it; other shared package names do not share code
-across Git repositories. Shared account setup and settings screens come from otus-meta 0.3.0.
+across Git repositories. Shared account setup and settings screens come from otus-meta.
 Mail supplies their state, persistence, service requirement, and destinations in
 app wiring. Mail-specific inbox, folder, and rule screens stay here. Calendar is unchanged.
 Mail's `feature/folders` holds folders and the Sieve rules that file into them; see

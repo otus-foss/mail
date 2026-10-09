@@ -107,6 +107,19 @@ Calendar arithmetic uses the pinned [kotlinx-datetime 0.7.1](https://github.com/
 library in common Kotlin. Source-provided ISO message dates are compared inclusively; JMAP timestamp
 conversion remains part of the future data adapter.
 
+## Date chooser
+
+Meta 0.4.0 provides two modal wheel pickers with centered, snapping day/month/year wheels,
+fading adjacent choices, a close control, and a full-width Go button. Both take an initial
+`YearMonth` and an inclusive `allowedDates` range; callers may include future dates.
+`SpecificDatePicker` disables Go until a day is selected and confirms with a `LocalDate`.
+`MonthYearPicker` exposes Any for the day and confirms with a `YearMonth` and a nullable date.
+
+Mail's calendar uses `MonthYearPicker` with January 1970 through today as its allowed range.
+Opening the chooser starts at Any. Month-only confirmation navigates without changing the
+draft range. An explicit day retains the existing start/end behavior. Close, outside-tap,
+and Back discard chooser edits. The calendar layout, scrolling, and range gestures are unchanged.
+
 ## Validation
 
 `./gradlew checkAll` covers domain combinations and inclusive ranges, UI draft/apply/dismiss,
