@@ -39,7 +39,7 @@ dependencyResolutionManagement {
             val registry =
                 providers
                     .gradleProperty("otusMetaRegistry")
-                    .getOrElse("https://maven.pkg.github.com/reazndev/otus-meta")
+                    .getOrElse("https://git.hilfikers.com/api/packages/florian.ruby/maven")
             maven(registry) {
                 name = "otusMeta"
                 // Gradle checks credentials before every build; without a token only -Potus.meta.path works.

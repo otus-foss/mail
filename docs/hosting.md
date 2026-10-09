@@ -19,13 +19,19 @@ Push accepted commits explicitly to GitHub when needed for GitHub CI. Keep the s
 and respect branch protection on both hosts.
 
 Forgejo workflows live in `.forgejo/workflows`; the working GitHub workflows remain in
-`.github/workflows`. Forgejo requires registered runners labelled `otus-linux` and
+`.github/workflows`. Forgejo requires registered runners labelled `ubuntu-latest` and
 `otus-macos`. The Mac needs Xcode 26.3. The required checks remain `portable`, `android`, and
 `ios`; none has been verified on Forgejo during the Git cutover.
 
-Mail continues downloading its pinned Meta release from GitHub Packages. Forgejo CI needs a
-GitHub read token as `OTUS_META_PACKAGES_TOKEN`; the username variable
-`OTUS_META_PACKAGES_USERNAME` defaults to `reazndev`. See [shared libraries](shared-libraries.md).
+Mail downloads its pinned Meta release from the Forgejo Maven registry at
+`https://git.hilfikers.com/api/packages/florian.ruby/maven`. Configure a Forgejo `read:package`
+token as `OTUS_META_PACKAGES_TOKEN`; `OTUS_META_PACKAGES_USERNAME` defaults to `florian.ruby`.
+Clear a stale GitHub `OTUS_META_REGISTRY_URL` override. Both CI hosts use the same registry.
+See [shared libraries](shared-libraries.md) for local credentials and migration status.
+
+The Linux label follows the instance maintainer's `runs-on: ubuntu-latest` guidance.
+The `ios` job still requires a separate `otus-macos` runner with Xcode 26.3. A Linux
+runner cannot build the Xcode app; a queued iOS job needs its own runner.
 
 Runners, secrets, Actions enablement, branch protection, and automatic mirroring require
 authenticated server access and remain unverified. The
