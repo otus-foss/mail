@@ -35,6 +35,8 @@ import java.time.LocalDate
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 class DateNavigationPickerTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    private val january2020 = kotlinx.datetime.YearMonth(2020, 1)
+    private val pickerDates = kotlinx.datetime.LocalDate(1970, 1, 1)..kotlinx.datetime.LocalDate(2026, 12, 31)
 
     @Test
     fun daySelectionUsesRangeBehaviorAndCancelDiscardsChanges() {
@@ -62,7 +64,7 @@ class DateNavigationPickerTest {
         compose.onNodeWithText("Apply").assertIsNotEnabled()
         compose.onNodeWithText("January 2020").performClick()
         choose("Day", "2")
-        compose.onNodeWithText("Cancel").performClick()
+        compose.onNodeWithContentDescription("Close date chooser").performClick()
         compose.onNodeWithText("${relativeIsoDate(start.toString())} → Choose an end date").assertIsDisplayed()
         compose.onNodeWithText("January 2020").performClick()
         choose("Day", "2")
@@ -75,13 +77,11 @@ class DateNavigationPickerTest {
 
     @Test
     fun changingMonthAndYearClampsDayIncludingLeapYears() {
-        var confirmed: List<Int>? = null
+        var confirmed: kotlinx.datetime.LocalDate? = null
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
-                    MonthYearPicker(2020, 1, kotlinx.datetime.LocalDate(2026, 12, 31), {}, { year, month, day ->
-                        confirmed = listOf(year, month, day)
-                    }, initialDay = 31)
+                    MonthYearPicker(january2020, pickerDates, {}, { _, date -> confirmed = date }, initialDay = 31)
                 }
             }
         }
@@ -92,7 +92,7 @@ class DateNavigationPickerTest {
         choose("Month", "March")
         day("28").assertIsSelected()
         compose.onNodeWithText("Go").performClick()
-        compose.runOnIdle { assertEquals(listOf(2021, 3, 28), confirmed) }
+        compose.runOnIdle { assertEquals(kotlinx.datetime.LocalDate(2021, 3, 28), confirmed) }
     }
 
     @Test
@@ -102,7 +102,7 @@ class DateNavigationPickerTest {
             compose.activity.setContent {
                 val density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                    OtusTheme { MonthYearPicker(2020, 1, kotlinx.datetime.LocalDate(2026, 12, 31), {}, { _, _, _ -> }) }
+                    OtusTheme { MonthYearPicker(january2020, pickerDates, {}, { _, _ -> }) }
                 }
             }
         }
@@ -111,7 +111,7 @@ class DateNavigationPickerTest {
         choose("Year", "2021")
         compose.onNodeWithContentDescription("Day choices").performScrollToNode(hasText("28"))
         day("28").assertIsSelected().assertIsDisplayed()
-        compose.onNodeWithText("Cancel").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Close date chooser").assertIsDisplayed()
         compose.onNodeWithText("Go").assertIsDisplayed()
     }
 
