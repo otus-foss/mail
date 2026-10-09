@@ -125,7 +125,7 @@ class JmapRuleRepositoryTest {
         runTest {
             val scripts = """[{"id": "S1", "name": "Otus Mail", "blobId": "S1", "isActive": true}]"""
             val stored = encodeRules(RuleScript(listOf(rule)))
-            val noChanges = """["SieveScript/set", {"newState": "s2"}, "c0"]"""
+            val noChanges = """["SieveScript/set", {"newState": "s2", "updated": {"S1": null}}, "c0"]"""
             val repository = repository(scripts = scripts, stored = stored, set = noChanges)
             val account = repository.accounts().single()
             assertEquals(RuleOutcome.Saved, repository.save(account, RuleChange(listOf(rule), null, run = false)))

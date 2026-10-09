@@ -13,7 +13,7 @@ uses:
 | `com.otus:settings` | `libs.otus.settings` |
 | `com.otus:accounts` | `libs.otus.accounts` |
 
-Mail pins Meta 0.3.0 for all six libraries. Local source substitution is optional development
+Mail pins Meta 0.4.0 for all six libraries. Local source substitution is optional development
 configuration; normal builds download the pinned Forgejo Packages artifacts. Calendar adoption
 is deferred. See [the component inventory](component-inventory.md) for ownership and release state.
 
@@ -48,11 +48,11 @@ SSH Git credentials do not authenticate Maven downloads.
 
 ## Package migration status
 
-Forgejo Packages is the selected registry. Authenticated downloads of Meta 0.3.0 and its platform
-variants have not yet been verified. Git repository migration does not transfer Maven packages.
-All six modules and their Android, iOS device, and iOS simulator variants must be available to
-complete the migration. Preserve the released sources and artifacts when migrating version 0.3.0;
-changes to library code require a new version. See [hosting and CI](hosting.md).
+Forgejo Packages is the selected registry. Meta's tag workflow publishes all six modules and
+their Android, iOS device, and iOS simulator variants there, starting with 0.3.1. Version 0.3.0
+exists only on GitHub Packages. Git repository migration does not transfer Maven packages.
+Mail's Linux CI resolves the pinned release from Forgejo. iOS linking against the Forgejo
+artifacts is unverified until a macOS runner is available. See [hosting and CI](hosting.md).
 
 ## Changing shared code
 
