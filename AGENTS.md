@@ -64,6 +64,15 @@ immutable UI state, explicit constructor dependencies, and small focused files. 
 wrapper types, factories, generic base ViewModels, and speculative abstractions. Name files after
 their primary responsibility. Package declarations must match the source path.
 
+Write fluent Kotlin when it reads better than the alternative. Express transformations as
+collection or sequence chains, such as `filter`, `map`, `associateBy`, and `firstNotNullOfOrNull`,
+or as builder lambdas such as `buildList`, `buildMap`, and `buildJsonObject`, instead of mutable
+accumulators and index loops. Make composable configuration a chainable extension that returns its
+receiver, like `fun Modifier.monthBackgrounds(...): Modifier`, so call sites read as one `Modifier`
+chain. Change immutable values with `copy`. Keep a loop or a local `var` when early exits, retries,
+or cycle tracking would make a chain harder to follow. Do not add Java-style setters that return
+`this`, chain side effects through `let` or `also`, or change a public API only for style.
+
 Keep colors and all visual tokens in Meta's `designsystem/theme` and refer to named tokens.
 Feature UI belongs with its feature; reusable rendering belongs in Meta. Create folders with real code rather than placeholder files. Keep
 handwritten Kotlin files at most 300 lines and Swift files at most 200 lines, including tests,
