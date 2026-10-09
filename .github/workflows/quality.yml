@@ -8,9 +8,10 @@ on:
 permissions:
   contents: read
 
-# The shared Otus libraries download from otus-meta's GitHub Packages registry.
+# Shared Otus libraries resolve from the Forgejo Maven registry on both CI hosts.
 env:
-  ORG_GRADLE_PROJECT_otusMetaUsername: ${{ github.repository_owner }}
+  ORG_GRADLE_PROJECT_otusMetaRegistry: ${{ vars.OTUS_META_REGISTRY_URL || 'https://git.hilfikers.com/api/packages/florian.ruby/maven' }}
+  ORG_GRADLE_PROJECT_otusMetaUsername: ${{ vars.OTUS_META_PACKAGES_USERNAME || 'florian.ruby' }}
   ORG_GRADLE_PROJECT_otusMetaPassword: ${{ secrets.OTUS_META_PACKAGES_TOKEN }}
 
 concurrency:

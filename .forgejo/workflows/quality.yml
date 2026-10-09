@@ -5,10 +5,10 @@ on:
   push:
     branches: [main]
 
-# Released libraries remain on GitHub Packages until Forgejo package migration is verified.
+# Shared Otus libraries resolve from the Forgejo Maven registry.
 env:
-  ORG_GRADLE_PROJECT_otusMetaRegistry: ${{ vars.OTUS_META_REGISTRY_URL || 'https://maven.pkg.github.com/reazndev/otus-meta' }}
-  ORG_GRADLE_PROJECT_otusMetaUsername: ${{ vars.OTUS_META_PACKAGES_USERNAME || 'reazndev' }}
+  ORG_GRADLE_PROJECT_otusMetaRegistry: ${{ vars.OTUS_META_REGISTRY_URL || 'https://git.hilfikers.com/api/packages/florian.ruby/maven' }}
+  ORG_GRADLE_PROJECT_otusMetaUsername: ${{ vars.OTUS_META_PACKAGES_USERNAME || 'florian.ruby' }}
   ORG_GRADLE_PROJECT_otusMetaPassword: ${{ secrets.OTUS_META_PACKAGES_TOKEN }}
 
 concurrency:
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   portable:
-    runs-on: otus-linux
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: https://github.com/actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -32,7 +32,7 @@ jobs:
       - run: ./gradlew qualityCheck --console=plain
 
   android:
-    runs-on: otus-linux
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: https://github.com/actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

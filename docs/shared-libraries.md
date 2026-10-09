@@ -14,30 +14,45 @@ uses:
 | `com.otus:accounts` | `libs.otus.accounts` |
 
 Mail pins Meta 0.3.0 for all six libraries. Local source substitution is optional development
-configuration; normal builds download the pinned GitHub Packages artifacts. Calendar adoption
+configuration; normal builds download the pinned Forgejo Packages artifacts. Calendar adoption
 is deferred. See [the component inventory](component-inventory.md) for ownership and release state.
 
 All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.toml`.
 
 ## Token setup
 
-Forgejo is the primary Git host, but released artifacts remain on GitHub Packages during
-the cutover. After the pinned version and every platform variant have been verified on
-Forgejo, `otusMetaRegistry` can select its Maven URL in private Gradle properties. Use
-credentials for that registry. Forgejo CI selects it through the `OTUS_META_REGISTRY_URL`
-variable. See [hosting and CI](hosting.md). An SSH key does not authenticate Maven downloads.
+The release registry is `https://git.hilfikers.com/api/packages/florian.ruby/maven`.
+Mail uses this registry by default, locally and on both CI hosts. `otusMetaRegistry` in private
+Gradle properties or `OTUS_META_REGISTRY_URL` in Actions variables can override it.
 
-GitHub Packages requires a token to download Maven packages, even for read access. Create a classic
-token with the `read:packages` scope and add it to `~/.gradle/gradle.properties`, never to this
-repository:
+Create a token in Forgejo's user Settings → Applications with the `read:package` scope.
+The token's account must have access to the packages owned by `florian.ruby`. Package scopes
+require an access token for all accessible resources, rather than a token restricted to specific
+repositories. See [Forgejo token scopes](https://forgejo.org/docs/latest/user/authentication/token-scope/).
+
+On a development machine, add credentials to `~/.gradle/gradle.properties`, never to this repository:
 
 ```properties
-otusMetaUsername=<GitHub username>
-otusMetaPassword=<token>
+otusMetaUsername=florian.ruby
+otusMetaPassword=<Forgejo package-read token>
 ```
 
-CI reads the same token from the repository secret `OTUS_META_PACKAGES_TOKEN`. The Maven registry
-scopes package access to the repository that published it, so CI cannot use its own `GITHUB_TOKEN`.
+In Mail's Actions settings, on each CI host that runs the workflow, configure:
+
+- Secret `OTUS_META_PACKAGES_TOKEN`: the Forgejo package-read token.
+- Variable `OTUS_META_PACKAGES_USERNAME`: the token's Forgejo username, defaulting to `florian.ruby`.
+- Variable `OTUS_META_REGISTRY_URL`: optional registry override; normally leave it unset.
+
+An existing GitHub registry override or GitHub token must be replaced when switching to Forgejo.
+SSH Git credentials do not authenticate Maven downloads.
+
+## Package migration status
+
+Forgejo Packages is the selected registry. Authenticated downloads of Meta 0.3.0 and its platform
+variants have not yet been verified. Git repository migration does not transfer Maven packages.
+All six modules and their Android, iOS device, and iOS simulator variants must be available to
+complete the migration. Preserve the released sources and artifacts when migrating version 0.3.0;
+changes to library code require a new version. See [hosting and CI](hosting.md).
 
 ## Changing shared code
 
@@ -74,10 +89,10 @@ Then run Mail against those artifacts from this checkout:
 
 `otus.meta.repository` is an explicit development override. It resolves only `com.otus` from
 that repository and disables composite substitution, even if `otus.meta.path` is set in your
-machine's Gradle properties. Other dependencies keep their existing repositories. No GitHub
-Packages credentials are required for a file repository. The pinned version still applies.
+machine's Gradle properties. Other dependencies keep their existing repositories. No remote
+package credentials are required for a file repository. The pinned version still applies.
 
 This checks artifact metadata, transitive dependencies, compilation, and Android resource
 packaging independently of a sibling source build. Kotlin iOS compilation on Linux does not
 verify Xcode linking or simulator resource loading. After the remote release, repeat the build
-without either override to verify GitHub Packages access and the released artifacts.
+without either override to verify Forgejo Packages access and the released artifacts.
