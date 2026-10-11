@@ -4,13 +4,22 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 
-/** A folder a message can be filed into with one action. */
-enum class FolderShortcut { ReadLater, Archive, Trash }
+/** A system folder a message can be filed into with one action. */
+enum class FolderShortcut { Archive, Trash }
 
 /**
- * A folder a message can move to; [label] is its full path. [shortcut] marks the account's Read
- * later folder, or its archive or trash folder, found by role because servers name these folders
- * differently.
+ * Read later as offered for one message: [apply] [saves] the message or removes it. The message
+ * [leaves] the list it is shown in when it moves into Read later or leaves the Read later page.
+ */
+class ReadLaterChange(
+    val saves: Boolean,
+    val leaves: Boolean,
+    val apply: () -> Unit,
+)
+
+/**
+ * A folder a message can move to; [label] is its full path. [shortcut] marks the account's
+ * archive or trash folder, found by role because servers name these folders differently.
  */
 data class MoveTarget(
     val folderId: String,
@@ -31,9 +40,10 @@ class MessageActions(
     val canMark: (MailMessage, MessageFlag) -> Boolean,
     /** Turns a mark on or off; the open message shows the change at once. */
     val onMark: (MailMessage, MessageFlag, Boolean) -> Unit,
-    val canCreateRule: (MailMessage) -> Boolean,
-    /** Starts a rule for mail from this message's sender. */
-    val onCreateRule: (MailMessage) -> Unit,
+    /** Starts a rule for mail from the message's sender; null when its account has no rules. */
+    val ruleForSender: (MailMessage) -> (() -> Unit)?,
+    /** Read later for the message, shown at once when applied; null while it is off or cannot change it. */
+    val readLater: (MailMessage) -> ReadLaterChange?,
     /** The saved swipes and whether opening a message marks it read. */
     val behavior: () -> MailBehavior,
 ) {

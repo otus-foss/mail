@@ -60,6 +60,22 @@ class FoldersAndRulesTest {
     }
 
     @Test
+    fun rowsNameTheOtherFoldersAMessageIsIn() {
+        server.alsoIn += "r"
+        start()
+        waitFor("Welcome")
+        compose.waitUntil(TIMEOUT) {
+            compose.onAllNodes(hasText("Welcome") and hasText("Receipts")).fetchSemanticsNodes().isNotEmpty()
+        }
+        // Without labels or files, the row shows the start of the message instead.
+        server.alsoIn.clear()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNode(hasText("Receipts") and isSelectable()).performClick()
+        waitFor("Order shipped")
+        compose.onNode(hasText("Order shipped") and hasText("Hello")).assertIsDisplayed()
+    }
+
+    @Test
     fun aNewFolderIsCreatedOnTheServerAndListed() {
         start()
         openSettingsPage("Folders")

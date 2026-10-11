@@ -14,6 +14,7 @@ import com.otus.mail.feature.inbox.domain.MessageSwipe
 import com.otus.mail.feature.inbox.domain.hasFlag
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import org.jetbrains.compose.resources.DrawableResource
 
 /** What pressing the button does next: an unread message offers to mark it read, and back. */
@@ -26,10 +27,13 @@ internal fun MessageFlag.label(on: Boolean): String =
 internal val FolderShortcut.label: String
     get() =
         when (this) {
-            FolderShortcut.ReadLater -> "Read later"
             FolderShortcut.Archive -> "Archive"
             FolderShortcut.Trash -> "Trash"
         }
+
+/** Saving offers Read later; a saved message offers to leave it. */
+internal val ReadLaterChange.label: String
+    get() = if (saves) "Read later" else "Remove from Read later"
 
 /** The choice as the settings page names it, independent of any one message. */
 internal val MessageSwipe.label: String
@@ -52,7 +56,7 @@ internal fun MessageActions.swipeAction(
         MessageSwipe.None -> null
         MessageSwipe.Read -> markSwipe(message, MessageFlag.Read)
         MessageSwipe.Flag -> markSwipe(message, MessageFlag.Flagged)
-        MessageSwipe.ReadLater -> fileSwipe(message, FolderShortcut.ReadLater, Res.drawable.symbol_bookmark)
+        MessageSwipe.ReadLater -> readLaterSwipe(message)
         MessageSwipe.Archive -> fileSwipe(message, FolderShortcut.Archive, Res.drawable.symbol_archive)
         MessageSwipe.Trash -> fileSwipe(message, FolderShortcut.Trash, Res.drawable.symbol_delete)
     }
@@ -70,6 +74,11 @@ private fun MessageActions.markSwipe(
         }
     return SwipeAction(flag.label(on), icon) { onMark(message, flag, !on) }
 }
+
+private fun MessageActions.readLaterSwipe(message: MailMessage): SwipeAction? =
+    readLater(message)?.let { change ->
+        SwipeAction(change.label, Res.drawable.symbol_bookmark, dismisses = change.leaves, onSwipe = change.apply)
+    }
 
 private fun MessageActions.fileSwipe(
     message: MailMessage,

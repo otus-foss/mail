@@ -103,12 +103,30 @@ class MessageActionsTest {
     }
 
     @Test
-    fun readLaterFilesTheMessageIntoItsFolder() {
+    fun readLaterSavesTheMessageInPlaceAndCanRemoveIt() {
         server.folders += """{"id": "l", "name": "Read later"}"""
         openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
         compose.onNodeWithText("Read later").performClick()
-        val move = lastUpdate()
-        assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/l\":true}}" in move)
+        val save = lastUpdate()
+        assertTrue(save, "\"update\":{\"m1\":{\"mailboxIds/l\":true}}" in save)
+
+        // The message stays open and in the inbox, now offering to leave Read later.
+        compose.onNodeWithText("Remove from Read later").performClick()
+        compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 2 }
+        val remove = lastUpdate()
+        assertTrue(remove, "\"update\":{\"m1\":{\"mailboxIds/l\":null}}" in remove)
+    }
+
+    @Test
+    fun trashTakesTheMessageOutOfEveryFolder() {
+        server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
+        server.folders += """{"id": "l", "name": "Read later"}"""
+        server.alsoIn += "l"
+        openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
+        compose.onNodeWithText("Trash").performClick()
+        val trash = lastUpdate()
+        val patch = "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/l\":null,\"mailboxIds/t\":true}}"
+        assertTrue(trash, patch in trash)
     }
 
     @Test

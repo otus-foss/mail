@@ -23,16 +23,28 @@ script, so they keep working while the app is closed.
 - Names are trimmed and must be unique among siblings without regard to case, as Stalwart checks.
 - Deleting sends `onDestroyRemoveEmails: false`: a folder with mail or subfolders is refused and
   nothing is lost. The user must empty it first.
-- An open message offers **Move**, filing it with one `Email/set` patch that leaves its current
-  mailbox and joins the target. **Archive** and **Trash** use the same move with the folder that
-  has the `archive` or `trash` role. All three need `mayRemoveItems` on the current folder and
-  `mayAddItems` on the target.
+- An open message offers **Move**, filing it with one `Email/set` patch of `mailboxIds` that
+  leaves the folder it is shown in and joins the target. **Archive** and **Trash** use the folder
+  with the `archive` or `trash` role. Archive also leaves the inbox, and Trash leaves every folder,
+  so trashed mail does not stay in Read later. Other folders the message is in stay as they are.
+  All three need `mayRemoveItems` on the current folder and `mayAddItems` on the target.
 
 ## Read later
 
 Off by default. The **Read later** switch in Appearance & behavior gives each account a folder named
-"Read later", and adds a **Read later** button to an open message and to the swipe choices. The
-button moves the message into that folder.
+"Read later", and adds a **Read later** button to an open message and to the swipe choices.
+
+- **Read later** adds the folder to the message's `mailboxIds` and leaves its other folders as
+  they are, so a saved message stays in the inbox and its row shows a Read later label. Archiving
+  it later keeps it in Read later. A saved message offers **Remove from Read later** instead,
+  which takes only that folder away. On the Read later page, the message then leaves the list.
+- A message must stay in at least one folder (RFC 8621, section 4.1.1), so **Remove from Read
+  later** is offered only while the message is in another folder too. Otherwise Archive, Move,
+  or Trash files it.
+- When the account's `maxMailboxesPerEmail` (RFC 8621, section 1.3.1) leaves no room for another
+  folder, **Read later** moves the message there instead, like Move.
+
+### The folder
 
 - The folder has no role. RFC 8621 allows only roles from the IANA "IMAP Mailbox Name Attributes"
   registry, which has none for it. The nearest one, `snoozed` (RFC 9979), is for mail the server
@@ -50,9 +62,9 @@ button moves the message into that folder.
   (`mayCreateTopLevelMailbox`), get no folder. Their mail does not offer the action.
 - The folder sorts right after the inbox and has the bookmark symbol. With one account, the sidebar
   lists it right under the unified Inbox.
-- The action follows the Archive rules. It is offered when the folder exists and the message is
-  not already in it, and needs `mayRemoveItems` on the current folder and `mayAddItems` on Read
-  later.
+- Saving needs `mayAddItems` on Read later; removing needs `mayRemoveItems` on it. A move also
+  needs `mayRemoveItems` on the folder the message is shown in. `readLaterStep` decides which
+  of these a message gets, and IMAP apps see a saved message in both folders.
 - Turning the switch off hides the action and the swipe choice, and returns a swipe set to Read
   later to its default. The folder and its mail stay on the server as an ordinary folder. While
   the switch is on, a deleted Read later folder is created again on the next load.
@@ -149,7 +161,8 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
 ## Checks
 
 - Domain: `FolderTreeTest`, `FolderChangesTest`, `RuleMatchingTest`, `RuleListsTest`,
-  `ReadLaterFoldersTest` (saved, adopted, and created folders; overlapping and replaced loads).
+  `ReadLaterFoldersTest` (saved, adopted, and created folders; overlapping and replaced loads),
+  `MessageFoldersTest` (saving, removing, or moving into Read later; which folders label a row).
 - Data: `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
   Sieve, escaping, read-back, edits made elsewhere), `JmapMessageMoverTest`.
 - Presentation: `RulesStateTest` (activation choices, vacation never kept, failed saves keep the
@@ -157,7 +170,8 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and
   folder pages, creating a folder, saving a rule as an active script, moving a message, and
   starting a rule from its sender. It also turns on Read later and checks the created folder's
-  place in the sidebar. `MessageActionsTest` and `SwipeActionsTest` file a message into it.
+  place in the sidebar, and that rows name a message's other folders. `MessageActionsTest` and
+  `SwipeActionsTest` save a message in place, remove it, and trash it out of every folder.
 - `ServerIntegrationTest` creates and deletes a mailbox and uploads a blob on a real server when
   configured. It has not been run against Stalwart yet.
 

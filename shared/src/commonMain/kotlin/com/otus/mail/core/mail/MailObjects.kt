@@ -14,6 +14,7 @@ val EmailType: JmapType<EmailObject> = JmapType("Email", JmapCapability.MAIL, Em
 val EMAIL_PROPERTIES =
     listOf(
         "id",
+        "mailboxIds",
         "keywords",
         "from",
         "subject",
@@ -59,11 +60,13 @@ data class MailCapability(
     val mayCreateTopLevelMailbox: Boolean = true,
     val maxMailboxDepth: Long? = null,
     val maxSizeMailboxName: Long? = null,
+    val maxMailboxesPerEmail: Long? = null,
 )
 
 @Serializable
 data class EmailObject(
     val id: String,
+    val mailboxIds: Map<String, Boolean> = emptyMap(),
     val keywords: Map<String, Boolean> = emptyMap(),
     val from: List<EmailAddress>? = null,
     val subject: String? = null,
