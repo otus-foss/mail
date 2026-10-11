@@ -136,8 +136,7 @@ are written to `androidApp/build/reports/context-panel/`; physical-device testin
 Inbox matching tests run via `:shared:testAndroidHostTest`, also included in `checkAll` and Android CI.
 Inbox UI screenshots are written to `androidApp/build/reports/inbox/`.
 
-## Forgejo cutover
+## Runners
 
-Forgejo workflows live in `.forgejo/workflows`; GitHub workflows remain in `.github/workflows`.
-Both retain the required checks. Forgejo runners and repository settings still need verification.
-See [hosting and CI](hosting.md).
+Linux jobs run on Ubicloud's `ubicloud-standard-2` runners. The `ios` job is paused with
+`if: false`. See [hosting and CI](hosting.md).

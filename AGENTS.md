@@ -2,9 +2,8 @@
 
 ## Hosting
 
-Forgejo is the primary Git host. Use `origin` for Forgejo and `github` for the secondary GitHub
-copy. Development, pull requests, and new issues use Forgejo. GitHub CI and released packages
-remain available during migration; see [hosting and CI](docs/hosting.md).
+GitHub hosts development, pull requests, issues, CI, and released packages. Use `origin` for
+GitHub. Forgejo is a retired copy; do not push to it. See [hosting and CI](docs/hosting.md).
 
 ## Required reading and commands
 
