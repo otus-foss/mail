@@ -50,10 +50,9 @@ class AccountIdentityPickerTest {
         }
         compose.onNodeWithText("ada@work.example").performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.runOnIdle {
-            assertEquals(setOf("work"), applied.accounts)
-            assertEquals(listOf("work"), searchMessages(messages, applied).map { it.id })
-        }
+        compose.waitForIdle()
+        assertEquals(setOf("work"), applied.accounts)
+        assertEquals(listOf("work"), searchMessages(messages, applied).map { it.id })
     }
 
     private fun message(

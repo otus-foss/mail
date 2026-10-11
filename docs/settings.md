@@ -2,11 +2,10 @@
 
 Implemented through the shared `settings` and `accounts` libraries from otus-meta, with
 Mail-specific destination entries in `app/MailSettings.kt`. Mail pins both libraries to Meta
-0.6.0; the appearance page's content slot arrived in 0.5.0. Settings is a sidebar destination
+0.7.0; the appearance page's content slot arrived in 0.5.0. Settings is a sidebar destination
 with subpages.
 
-The connection sheet and sending-address list described below are unreleased Meta changes.
-Local builds use `-Potus.meta.path=../otus-meta` until Mail adopts their released version.
+Meta 0.7.0 includes the connection sheet and sending-address list described below.
 
 ## Pages
 
