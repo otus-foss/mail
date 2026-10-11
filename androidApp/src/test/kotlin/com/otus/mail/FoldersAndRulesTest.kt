@@ -74,6 +74,25 @@ class FoldersAndRulesTest {
     }
 
     @Test
+    fun turningOnReadLaterCreatesItsFolderBelowTheInbox() {
+        start()
+        openSettingsPage("Appearance & behavior")
+        compose.onNodeWithText("Read later").performScrollTo().performClick()
+        compose.waitUntil(TIMEOUT) {
+            server.calls.any { "\"create\":{\"folder\":{\"name\":\"Read later\",\"parentId\":null" in it }
+        }
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        val entry = hasText("Read later") and isSelectable()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(entry).fetchSemanticsNodes().isNotEmpty() }
+        // With one account, Read later sits under the unified Inbox, above the account's folders.
+        val inbox = compose.onNode(hasText("Inbox") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        val readLater = compose.onNode(entry).fetchSemanticsNode().boundsInRoot
+        val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        assertTrue(inbox.bottom <= readLater.top && readLater.bottom <= receipts.top)
+    }
+
+    @Test
     fun aRuleIsSavedAsAnActiveSieveScript() {
         start()
         openSettingsPage("Rules")

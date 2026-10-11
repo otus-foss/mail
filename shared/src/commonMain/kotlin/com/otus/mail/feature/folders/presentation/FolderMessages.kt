@@ -2,6 +2,7 @@ package com.otus.mail.feature.folders.presentation
 
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
+import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_draft
 import com.otus.designsystem.resources.symbol_folder
@@ -10,6 +11,7 @@ import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_send
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderNameProblem
+import com.otus.mail.feature.folders.domain.FolderNode
 import org.jetbrains.compose.resources.DrawableResource
 
 fun FolderFailure.message(): String =
@@ -36,8 +38,11 @@ fun FolderNameProblem.message(): String =
         FolderNameProblem.Taken -> "A folder with that name already exists there."
     }
 
-/** System folders have their own symbols; the user's folders share one. */
-fun folderIcon(role: String?): DrawableResource =
+/** System folders and Read later have their own symbols; the user's other folders share one. */
+fun folderIcon(node: FolderNode): DrawableResource =
+    if (node.readLater) Res.drawable.symbol_bookmark else roleIcon(node.folder.role)
+
+private fun roleIcon(role: String?): DrawableResource =
     when (role) {
         "inbox" -> Res.drawable.symbol_inbox
         "drafts" -> Res.drawable.symbol_draft

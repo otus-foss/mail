@@ -100,8 +100,8 @@ empty-state title. Closing search and clearing filters return to that default; t
 reads "All" for it. `MailSource.messages(MailScope)` loads either every account's inbox or one
 folder of one account. Messages keep their server id and mailbox id so they can be moved.
 
-An open message can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**, **Archive**,
-**Trash**, **Move**, and **Rule for sender** through `MessageActions`, which app wiring builds from
+An open message can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**, **Read later**,
+**Archive**, **Trash**, **Move**, and **Rule for sender** through `MessageActions`, which app wiring builds from
 the loaded folders and rules. The actions wrap above the message body, so they stay in view while
 it scrolls.
 
@@ -111,7 +111,8 @@ it scrolls.
   and the inbox shows a notice. Changing the read mark refreshes the folder unread counts.
 - Archive and Trash move the message to the account's folder with the `archive` or `trash` role,
   found by role because servers name these folders differently. Each is offered only when that
-  folder exists and the message is not already in it. Trash moves the message; nothing is
+  folder exists and the message is not already in it. **Read later**, when it is on, works the
+  same way with the account's Read later folder; see [Folders and rules](folders.md#read-later). Trash moves the message; nothing is
   permanently deleted.
 - Actions follow the rights of the folder the message is shown in (RFC 8621, section 2):
   `maySetSeen` for the read mark, `maySetKeywords` for the flag, and `mayRemoveItems` for
@@ -127,8 +128,8 @@ a notice. See [Folders and rules](folders.md).
 ## Swipe actions
 
 Each inbox and folder row is wrapped in Meta's `SwipeActions`. Appearance & behavior chooses what
-a swipe right and a swipe left do: **Read / unread**, **Flag / unflag**, **Archive**,
-**Trash**, or **Nothing**. The defaults are mark read or unread on a swipe right and archive on a
+a swipe right and a swipe left do: **Read / unread**, **Flag / unflag**, **Read later** (while it
+is on), **Archive**, **Trash**, or **Nothing**. The defaults are mark read or unread on a swipe right and archive on a
 swipe left. Right-to-left layouts mirror the directions.
 
 - A swipe runs the same action as the open message's button, with the same folder rights and role
@@ -136,9 +137,10 @@ swipe left. Right-to-left layouts mirror the directions.
 - Dragging uncovers a full-height accent area that grows out of the screen edge. Its concave
   corners at the edge cut 12 dp into the rows above and below, and its free end is rounded. The action's icon grows in beside its label, and the row
   stops once the action is fully revealed. Releasing past
-  96 dp, marked by a haptic, flashes and runs the action. Archive and Trash leave the row to the
-  list, which removes it at once. Marks return the row to rest showing the new state.
+  96 dp, marked by a haptic, flashes and runs the action. Read later, Archive, and Trash leave the
+  row to the list, which removes it at once. Marks return the row to rest showing the new state.
 - TalkBack and VoiceOver offer each available swipe as a custom action on the row.
-- `MailBehavior` holds the two swipes and the open-to-read choice. `MailBehaviorStore` saves them
+- `MailBehavior` holds the two swipes, the open-to-read choice, and whether Read later is on. Turning
+  Read later off returns a swipe set to it to that swipe's default. `MailBehaviorStore` saves them
   in app-private preferences: `SharedPreferences` on Android and `NSUserDefaults` on iOS. Unknown
   saved values read as the defaults.

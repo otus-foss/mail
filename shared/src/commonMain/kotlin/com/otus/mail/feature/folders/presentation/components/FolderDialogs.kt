@@ -61,7 +61,7 @@ private fun FolderChangeDialog(
         }
 
         is FolderDialog.Move -> {
-            val paths = folderTree(account.folders).associate { it.folder.id to it.path }
+            val paths = account.folderTree().associate { it.folder.id to it.path }
             ChoiceDialog(
                 title = "Move ${folder.name}",
                 options = moveTargets(account, folder),
