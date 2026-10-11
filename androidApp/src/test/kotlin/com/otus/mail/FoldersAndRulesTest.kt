@@ -11,6 +11,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.otus.mail.app.App
+import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -27,8 +29,12 @@ class FoldersAndRulesTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer()
 
-    private fun start() {
-        compose.runOnUiThread { compose.activity.setContent { App(services = server.services()) } }
+    private fun start(behavior: MailBehavior = MailBehavior()) {
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                App(services = server.services(), behaviorState = MailBehaviorState(initial = behavior))
+            }
+        }
     }
 
     private fun waitFor(text: String) {
@@ -106,6 +112,23 @@ class FoldersAndRulesTest {
         val readLater = compose.onNode(entry).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
         assertTrue(inbox.bottom <= readLater.top && readLater.bottom <= receipts.top)
+    }
+
+    @Test
+    fun readLaterKeepsItsSubfoldersUnderItInTheSidebar() {
+        server.folders += """{"id": "l", "name": "Read later"}"""
+        server.folders += """{"id": "x", "name": "Articles", "parentId": "l"}"""
+        start(MailBehavior(readLater = true))
+        waitFor("Welcome")
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        val articles = hasText("Articles") and isSelectable()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(articles).fetchSemanticsNodes().isNotEmpty() }
+        // Articles follows Read later above the account's folders, one level in.
+        val readLater = compose.onNodeWithText("Read later", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val nested = compose.onNodeWithText("Articles", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        assertTrue(readLater.bottom <= nested.top && nested.bottom <= receipts.top)
+        assertTrue(nested.left > readLater.left)
     }
 
     @Test

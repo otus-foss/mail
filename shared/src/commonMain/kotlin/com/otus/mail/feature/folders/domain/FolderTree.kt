@@ -4,6 +4,14 @@ package com.otus.mail.feature.folders.domain
 fun AccountFolders.folderTree(hidden: (MailFolder) -> Boolean = { false }): List<FolderNode> =
     folderTree(folders, readLaterId, hidden)
 
+/** The Read later folder with its subfolders nested under it, wherever it sits; empty without one. */
+fun AccountFolders.readLaterTree(): List<FolderNode> {
+    val folder = readLater ?: return emptyList()
+    val subtree = subtreeIds(folders, folder)
+    // Its parent is left out, so Read later becomes the root.
+    return folderTree(folders.filter { it.id in subtree }, readLaterId)
+}
+
 /**
  * Parents come before their children. Siblings sort system folders first, in a fixed order, then
  * by the server's sort order and by name. The [readLaterId] folder sorts right after the inbox. A
@@ -61,22 +69,32 @@ fun subtreeIds(
     return ids
 }
 
+/** The folders above [folder], nearest first. A parent cycle ends the list. */
+fun ancestors(
+    folders: List<MailFolder>,
+    folder: MailFolder,
+): List<MailFolder> {
+    val byId = folders.associateBy { it.id }
+    val seen = mutableSetOf(folder.id)
+    return buildList {
+        var parent = folder.parentId?.let(byId::get)
+        while (parent != null && seen.add(parent.id)) {
+            add(parent)
+            parent = parent.parentId?.let(byId::get)
+        }
+    }
+}
+
 /** How many ancestors [folder] has. */
 fun ancestorCount(
     folders: List<MailFolder>,
     folder: MailFolder,
-): Int {
-    val byId = folders.associateBy { it.id }
-    val seen = mutableSetOf(folder.id)
-    var parent = folder.parentId?.let(byId::get)
-    while (parent != null && seen.add(parent.id)) parent = parent.parentId?.let(byId::get)
-    return seen.size - 1
-}
+): Int = ancestors(folders, folder).size
 
 // Roles never contain spaces, so this slot cannot match a server's role.
 private const val READ_LATER_SLOT = "read later"
 
-private val ROLE_ORDER = listOf(INBOX_ROLE, READ_LATER_SLOT, "drafts", "sent", ARCHIVE_ROLE, "junk", TRASH_ROLE)
+private val ROLE_ORDER = listOf(INBOX_ROLE, READ_LATER_SLOT, "drafts", "sent", ARCHIVE_ROLE, JUNK_ROLE, TRASH_ROLE)
 
 private fun siblingOrder(readLaterId: String?): Comparator<MailFolder> =
     compareBy({ it.rank(readLaterId) }, { it.sortOrder }, { it.name.lowercase() })

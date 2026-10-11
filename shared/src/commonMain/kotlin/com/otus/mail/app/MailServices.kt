@@ -19,6 +19,7 @@ import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
+import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.folders.domain.RuleRepository
 import com.otus.mail.feature.inbox.data.JmapMailSource
@@ -36,7 +37,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 class MailServices(
     logins: LoginStore = InMemoryLoginStore(),
     avatarStore: AvatarStore = EmptyAvatarStore,
-    internal val readLaterStore: ReadLaterStore? = null,
+    readLaterStore: ReadLaterStore? = null,
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     private val client by lazy(createClient)
@@ -67,6 +68,9 @@ class MailServices(
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins) }
     internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins) }
+
+    /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
+    internal val readLater by lazy { ReadLaterFolders(folders, readLaterStore) }
     internal val rules: RuleRepository by lazy { JmapRuleRepository(connections, logins) }
 }
 

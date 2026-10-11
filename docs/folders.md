@@ -11,10 +11,12 @@ script, so they keep working while the app is closed.
 - Identified by login and mailbox id, never by name, because names repeat under different parents.
 - Ordering (`folderTree`): parents before children; system folders first (inbox, drafts, sent,
   archive, junk, trash), then other special uses, then the user's folders by `sortOrder` and name.
-  A folder whose parent is missing becomes a root. A parent cycle cannot repeat or lose folders.
+  While Read later is on, its folder sorts right after the inbox. A folder whose parent is missing
+  becomes a root. A parent cycle cannot repeat or lose folders.
 - The sidebar lists each account's folders under its name, indented, with unread counts. With one
-  account, its inbox is the unified Inbox and is not listed twice. Tapping a folder opens it as a
-  page that reuses the inbox screen with "Search <folder>" and all of the folder's messages.
+  account, its inbox is the unified Inbox and is not listed twice, and its Read later folder
+  follows the unified Inbox with its subfolders. Tapping a folder opens it as a page that reuses
+  the inbox screen with "Search <folder>" and all of the folder's messages.
 - **Settings › Folders** creates, renames, moves, and deletes folders with `Mailbox/set`. Only the
   user's own folders (no role) can be renamed, moved, or deleted. Actions follow `myRights`,
   `mayCreateTopLevelMailbox`, `maxMailboxDepth`, and `maxSizeMailboxName`.
@@ -50,18 +52,23 @@ Off by default. The **Read later** switch in Appearance & behavior gives each ac
   registry, which has none for it. The nearest one, `snoozed` (RFC 9979), is for mail the server
   brings back at a set time. Other mail apps show the folder as one of the user's own.
 - Otus saves the folder's id per login in app-private storage (`ReadLaterStore`:
-  `SharedPreferences` on Android, `NSUserDefaults` on iOS), so renaming the folder keeps it.
-  Without a saved id, as on a new device, Otus uses a top-level folder named "Read later" in any
-  case, or creates one at the top level with the same `Mailbox/set` as **New folder**. A device
-  without the saved id cannot recognize a renamed folder, so it creates a new one.
+  `SharedPreferences` on Android, `NSUserDefaults` on iOS), so renaming or moving the folder
+  keeps it. The saved folder stops counting once it has a role or sits inside Trash or Junk,
+  where its mail can be purged. Thunderbird, for one, deletes a folder by moving it into Trash.
+- Without a usable saved id, as on a new device, Otus uses a top-level folder named "Read later"
+  in any case, or creates one at the top level with the same `Mailbox/set` as **New folder**. A
+  device without the saved id cannot recognize a renamed folder, so it creates a new one.
 - `ReadLaterFolders` runs on every folder load while the switch is on. Turning it on, adding an
-  account, and a folder deleted elsewhere all go through the same step. A lock keeps overlapping
-  loads from creating two folders. A creation already sent finishes even when a newer load
-  replaces the one that sent it.
-- Accounts that fail to load, or whose server refuses top-level folders
-  (`mayCreateTopLevelMailbox`), get no folder. Their mail does not offer the action.
+  account, and a folder deleted elsewhere all go through the same step. `MailServices` keeps one
+  per process, and its lock keeps overlapping loads, even those of a recreated activity, from
+  creating two folders.
+- A create the server may already have applied always finishes, and its id is saved at once, even
+  when a newer load replaces the one that sent it. The replaced load shows nothing. A load still
+  running when the switch turns off shows no Read later folder.
+- Otus creates no folder for accounts that fail to load or whose server refuses top-level folders
+  (`mayCreateTopLevelMailbox`). Such an account still uses a Read later folder it already has.
 - The folder sorts right after the inbox and has the bookmark symbol. With one account, the sidebar
-  lists it right under the unified Inbox.
+  lists it right under the unified Inbox, with its subfolders nested under it.
 - Saving needs `mayAddItems` on Read later; removing needs `mayRemoveItems` on it. A move also
   needs `mayRemoveItems` on the folder the message is shown in. `readLaterStep` decides which
   of these a message gets, and IMAP apps see a saved message in both folders.
@@ -161,7 +168,8 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
 ## Checks
 
 - Domain: `FolderTreeTest`, `FolderChangesTest`, `RuleMatchingTest`, `RuleListsTest`,
-  `ReadLaterFoldersTest` (saved, adopted, and created folders; overlapping and replaced loads),
+  `ReadLaterFoldersTest` (saved, adopted, and created folders; saved folders moved into Trash or
+  given a role; overlapping and replaced loads; the switch turning off during a load),
   `MessageFoldersTest` (saving, removing, or moving into Read later; which folders label a row).
 - Data: `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
   Sieve, escaping, read-back, edits made elsewhere), `JmapMessageMoverTest`.
@@ -170,7 +178,8 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and
   folder pages, creating a folder, saving a rule as an active script, moving a message, and
   starting a rule from its sender. It also turns on Read later and checks the created folder's
-  place in the sidebar, and that rows name a message's other folders. `MessageActionsTest` and
+  place in the sidebar, with a subfolder nested under it, and that rows name a message's other
+  folders. `MessageActionsTest` and
   `SwipeActionsTest` save a message in place, remove it, and trash it out of every folder.
 - `ServerIntegrationTest` creates and deletes a mailbox and uploads a blob on a real server when
   configured. It has not been run against Stalwart yet.
