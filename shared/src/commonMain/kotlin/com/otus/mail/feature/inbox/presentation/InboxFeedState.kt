@@ -48,6 +48,14 @@ class InboxFeedState(
         notice = text
     }
 
+    /** Replaces the loaded message with [id], such as after a local change the server will confirm. */
+    fun change(
+        id: String,
+        transform: (MailMessage) -> MailMessage,
+    ) {
+        messages = messages.map { if (it.id == id) transform(it) else it }
+    }
+
     fun refresh() {
         job?.cancel()
         job =

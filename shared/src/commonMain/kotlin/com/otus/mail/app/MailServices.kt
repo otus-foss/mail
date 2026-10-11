@@ -21,8 +21,10 @@ import com.otus.mail.feature.folders.data.JmapRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.RuleRepository
 import com.otus.mail.feature.inbox.data.JmapMailSource
+import com.otus.mail.feature.inbox.data.JmapMessageMarker
 import com.otus.mail.feature.inbox.data.JmapMessageMover
 import com.otus.mail.feature.inbox.domain.MailSource
+import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 
@@ -61,6 +63,7 @@ class MailServices(
     }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins) }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins) }
+    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins) }
     internal val rules: RuleRepository by lazy { JmapRuleRepository(connections, logins) }
 }

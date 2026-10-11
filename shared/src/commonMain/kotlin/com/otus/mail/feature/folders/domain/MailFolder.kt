@@ -26,6 +26,12 @@ data class FolderRights(
     val mayCreateChild: Boolean = true,
     val mayRename: Boolean = true,
     val mayDelete: Boolean = true,
+    /** Messages may leave this folder, which a move requires. */
+    val mayRemoveItems: Boolean = true,
+    /** The read mark may change for messages in this folder. */
+    val maySetSeen: Boolean = true,
+    /** Other marks, such as the flag, may change for messages in this folder. */
+    val maySetKeywords: Boolean = true,
 )
 
 /** What the account's server allows when creating folders (RFC 8621, section 1.3.1). */
@@ -49,7 +55,10 @@ data class AccountFolders(
 
     /** The folder new mail arrives in, located by role because servers name it differently. */
     val inbox: MailFolder?
-        get() = folders.firstOrNull { it.role == INBOX_ROLE }
+        get() = withRole(INBOX_ROLE)
+
+    /** The folder with a special use such as `archive` or `trash` (RFC 8621, section 2). */
+    fun withRole(role: String): MailFolder? = folders.firstOrNull { it.role == role }
 }
 
 /** A folder in display order, with its nesting [depth] and its full [path] for pickers. */
@@ -60,3 +69,5 @@ data class FolderNode(
 )
 
 const val INBOX_ROLE = "inbox"
+const val ARCHIVE_ROLE = "archive"
+const val TRASH_ROLE = "trash"
