@@ -55,10 +55,7 @@ data class AccountFolders(
 
     /** The folder new mail arrives in, located by role because servers name it differently. */
     val inbox: MailFolder?
-        get() = withRole(INBOX_ROLE)
-
-    /** The folder with a special use such as `archive` or `trash` (RFC 8621, section 2). */
-    fun withRole(role: String): MailFolder? = folders.firstOrNull { it.role == role }
+        get() = folders.firstOrNull { it.role == INBOX_ROLE }
 }
 
 /** A folder in display order, with its nesting [depth] and its full [path] for pickers. */

@@ -38,17 +38,3 @@ internal fun MessageActionRow(
         if (actions.canCreateRule(message)) TextButton(onClick = onCreateRule) { Text("Rule for sender") }
     }
 }
-
-/** What pressing the button does next: an unread message offers to mark it read, and back. */
-private fun MessageFlag.label(on: Boolean): String =
-    when (this) {
-        MessageFlag.Read -> if (on) "Mark unread" else "Mark read"
-        MessageFlag.Flagged -> if (on) "Unflag" else "Flag"
-    }
-
-private val FolderShortcut.label: String
-    get() =
-        when (this) {
-            FolderShortcut.Archive -> "Archive"
-            FolderShortcut.Trash -> "Trash"
-        }

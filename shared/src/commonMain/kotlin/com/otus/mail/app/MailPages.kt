@@ -13,6 +13,7 @@ import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
@@ -42,7 +43,7 @@ internal fun MailPageContent(
 
         MailPage.Settings -> {
             SettingsScreen(
-                entries = mailSettingsEntries(dateFormatState, states.accounts.accounts.size, navigation),
+                entries = mailSettingsEntries(states.accounts.accounts.size, navigation),
                 onOpenNavigation = navigation.openSidebar,
             )
         }
@@ -52,7 +53,7 @@ internal fun MailPageContent(
         }
 
         MailPage.Appearance -> {
-            AppearanceSettingsScreen(dateFormatState, onBack = back)
+            AppearanceSettingsScreen(dateFormatState, onBack = back) { MailBehaviorSettings(states.behavior) }
         }
 
         MailPage.Folders -> {

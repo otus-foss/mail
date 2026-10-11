@@ -73,27 +73,33 @@ fun InboxScreen(
                 .fillMaxSize()
                 .safeDrawingPadding()
                 .imePadding()
-                .padding(InboxTokens.pageInset),
+                .padding(vertical = InboxTokens.pageInset),
         ) {
-            InboxPanel(
-                state.searching,
-                state.search,
-                dateFormatter,
-                context,
-                InboxPanelActions(
-                    onChange = state::update,
-                    onSearchingChange = { searching -> if (searching) state.startSearch() else closeSearch() },
-                    onFilter = {
-                        focus.clearFocus()
-                        filter = it
-                    },
-                    onSubmit = { focus.clearFocus() },
-                    onOpenNavigation = onOpenNavigation,
-                ),
-                remember(messages, state.search.senders) { selectedSenders(messages, state.search.senders) },
-            )
+            // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
+            Box(Modifier.padding(horizontal = InboxTokens.pageInset)) {
+                InboxPanel(
+                    state.searching,
+                    state.search,
+                    dateFormatter,
+                    context,
+                    InboxPanelActions(
+                        onChange = state::update,
+                        onSearchingChange = { searching -> if (searching) state.startSearch() else closeSearch() },
+                        onFilter = {
+                            focus.clearFocus()
+                            filter = it
+                        },
+                        onSubmit = { focus.clearFocus() },
+                        onOpenNavigation = onOpenNavigation,
+                    ),
+                    remember(messages, state.search.senders) { selectedSenders(messages, state.search.senders) },
+                )
+            }
             PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
-                InboxResults(messages, status, state, dateFormatter, context, onOpen = { openId = it.id })
+                InboxResults(messages, status, state, dateFormatter, context, messageActions) {
+                    messageActions?.opened(it)
+                    openId = it.id
+                }
             }
         }
         filter?.let { selected ->
@@ -110,6 +116,7 @@ private fun InboxResults(
     state: InboxState,
     dateFormatter: DateFormatter,
     context: InboxContext,
+    actions: MessageActions?,
     onOpen: (MailMessage) -> Unit,
 ) {
     val results = remember(messages, state.search) { searchMessages(messages, state.search) }
@@ -129,14 +136,17 @@ private fun InboxResults(
     Column {
         Text(
             countLabel,
-            Modifier.padding(horizontal = InboxTokens.rowPadding, vertical = InboxTokens.rowPadding),
+            Modifier.padding(
+                horizontal = InboxTokens.pageInset + InboxTokens.rowPadding,
+                vertical = InboxTokens.rowPadding,
+            ),
             color = OtusColors.text2,
             fontSize = InboxTokens.metadataSize,
         )
         status.notice?.let {
             Text(
                 it,
-                Modifier.padding(horizontal = InboxTokens.rowPadding),
+                Modifier.padding(horizontal = InboxTokens.pageInset + InboxTokens.rowPadding),
                 color = OtusColors.text2,
                 fontSize = InboxTokens.metadataSize,
             )
@@ -147,6 +157,7 @@ private fun InboxResults(
                 listState,
                 dateFormatter,
                 onOpen,
+                actions,
                 emptyContent = {
                     InboxEmptyState(
                         context.emptyTitle,

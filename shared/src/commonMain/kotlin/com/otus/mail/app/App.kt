@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.rememberSidebarState
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.settings.presentation.DateFormatSettingsState
 import kotlinx.coroutines.launch
 
@@ -22,12 +23,13 @@ import kotlinx.coroutines.launch
 fun App(
     dateFormatState: DateFormatSettingsState = remember { DateFormatSettingsState() },
     services: MailServices = remember { MailServices() },
+    behaviorState: MailBehaviorState = remember { MailBehaviorState() },
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
     var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf<MailPage>(MailPage.Inbox) }
     val sidebar = rememberSidebarState()
     val scope = rememberCoroutineScope()
-    val states = remember(services) { MailStates(services, scope) }
+    val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) }
     // Folders fill the sidebar; rules decide whether an open message offers to start one.
     LaunchedEffect(states) {
         states.folders.refresh()

@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.settings.presentation.DateFormatSettingsState
 
 class MainActivity : ComponentActivity() {
@@ -19,6 +20,7 @@ class MainActivity : ComponentActivity() {
         }
         val dateFormatState = DateFormatSettingsState(AndroidDateFormatPreferenceStore(this))
         val services = (application as OtusMailApplication).services
-        setContent { App(dateFormatState, services) }
+        val behaviorState = MailBehaviorState(AndroidMailBehaviorStore(this))
+        setContent { App(dateFormatState, services, behaviorState) }
     }
 }
