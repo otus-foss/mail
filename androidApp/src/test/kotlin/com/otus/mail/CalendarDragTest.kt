@@ -52,7 +52,7 @@ class CalendarDragTest {
         compose.onNodeWithContentDescription("Previous month").performClick()
         dragRange(3, 12, "calendar-drag-forward")
         dragRange(19, 8, "calendar-drag-backward")
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         val month = LocalDate.now().minusMonths(1).withDayOfMonth(1)
         compose
             .onNodeWithText(
@@ -162,7 +162,7 @@ class CalendarDragTest {
         val today = LocalDate.now()
         val start = today.minusDays(29)
         compose.onNodeWithText(relativeIsoRange(start.toString(), today.toString())).assertIsDisplayed()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose
             .onNodeWithText("This month")
             .assertIsOn()
@@ -247,7 +247,7 @@ class CalendarDragTest {
         compose.onNodeWithText(relativeIsoRange(minOf(start, end), maxOf(start, end))).assertIsDisplayed()
         compose.onNodeWithContentDescription(start).assertIsSelected()
         compose.onNodeWithContentDescription(end).assertIsSelected()
-        compose.onNodeWithText("Apply").assertIsEnabled()
+        compose.onNodeWithText("Done").assertIsEnabled()
         saveScreenshot(screenshot)
         calendar.performTouchInput { up() }
         compose.mainClock.autoAdvance = true

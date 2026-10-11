@@ -61,7 +61,7 @@ class DateNavigationPickerTest {
         compose.onNodeWithText("Go").performClick()
         val start = LocalDate.of(2020, 1, 5)
         compose.onNodeWithText("${relativeIsoDate(start.toString())} → Choose an end date").assertIsDisplayed()
-        compose.onNodeWithText("Apply").assertIsNotEnabled()
+        compose.onNodeWithText("Done").assertIsNotEnabled()
         compose.onNodeWithText("January 2020").performClick()
         choose("Day", "2")
         compose.onNodeWithContentDescription("Close date chooser").performClick()
@@ -71,7 +71,7 @@ class DateNavigationPickerTest {
         compose.onNodeWithText("Go").performClick()
         val end = LocalDate.of(2020, 1, 2)
         compose.onNodeWithText(relativeIsoRange(end.toString(), start.toString())).assertIsDisplayed()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText(relativeIsoRange(end.toString(), start.toString(), "–")).assertIsDisplayed()
     }
 
