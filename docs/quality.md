@@ -12,6 +12,9 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-quality.txt
 ```
 
+To build against an unreleased otus-meta checkout, including in the pre-push hook, set
+`GRADLE_OPTS=-Dorg.gradle.project.otus.meta.path=../otus-meta`.
+
 Daily commands:
 
 ```sh
@@ -48,8 +51,8 @@ mint run swiftformat --lint iosApp
 mint run swiftlint lint --strict
 ```
 
-The CI `quality` workflow runs portable checks, Android lint/debug assembly and local UI tests, and Swift
-formatting/lint plus a simulator build. The iOS job runs on macOS 15 with Xcode 26.3; Compose
+The CI `quality` workflow runs on pull requests that change more than Markdown. Its `check` job runs
+`checkAll`, and its `ios` job runs Swift formatting/lint plus a simulator build. The iOS job runs on macOS 15 with Xcode 26.3; Compose
 Multiplatform links symbols from the iOS 26 SDK, so Xcode 16 cannot link the app. The simulator
 build verifies compilation without device signing and targets `arm64`, matching the configured Apple Silicon simulator framework.
 JMAP iOS storage tests run in otus-meta through `:jmap:iosSimulatorArm64Test` before publication.
@@ -84,10 +87,15 @@ rules, including function and type length, remain enabled.
 ## Enforcement
 
 No lint baselines, blanket warning allowances, or failure-tolerant checks. The narrowly scoped
-file-length exception above is permitted. CI evaluates every pull request and push to main.
-Repository administrators must require the `portable`, `android`, and `ios` checks on main and
-disallow bypasses for merge enforcement; adding workflow files alone does not enable branch
-protection. Local Git hooks are not a security boundary and are not relied upon.
+file-length exception above is permitted. The versioned Git hooks
+are the main gate. `pre-commit` runs the Spotless and Ruff checks. `pre-push` runs `checkAll`
+before every push that sends commits, including pushes to `main` and tags. Both check the
+working tree, so stash unrelated changes first. `git push --no-verify` skips the hooks; do not
+use it to get past a failing check.
+
+CI runs `checkAll` only on pull requests that change more than Markdown, to save runner minutes.
+The repositories are private on a GitHub plan that cannot require checks, so CI reports results
+but cannot block a merge. See [suite decision 0013](https://github.com/reazndev/otus-meta/blob/main/docs/decisions/0013-local-quality-gate.md).
 
 Detekt runs without full application type resolution. Architecture checks inspect source references,
 not the whole Kotlin semantic graph. Neither claims proof of design quality. Compiler/build checks
@@ -116,7 +124,7 @@ imperative verbs, accurate claims, breaking-change explanations, and the 72-char
 Git-generated merge messages are exempt during a merge. Temporary `fixup!`, `squash!`, and
 `amend!` messages are exempt; review the final squash message before committing it.
 
-`checkAll` and portable CI run the checker's regression tests, including Git rejection in a
+`checkAll`, and so the pre-push hook and CI, runs the checker's regression tests, including Git rejection in a
 temporary repository. They do not inspect commit history or install local hooks. New clones must
 enable the hook with the command above. See [the decision](decisions/0004-commit-messages.md).
 
@@ -133,7 +141,7 @@ Run `./gradlew :androidApp:testDebugUnitTest` for local Android UI checks.
 Robolectric and Compose test dependencies are pinned in the version catalog. Native-graphics screenshots
 are written to `androidApp/build/reports/context-panel/`; physical-device testing is still required.
 
-Inbox matching tests run via `:shared:testAndroidHostTest`, also included in `checkAll` and Android CI.
+Inbox matching tests run via `:shared:testAndroidHostTest`, also included in `checkAll` and CI.
 Inbox UI screenshots are written to `androidApp/build/reports/inbox/`.
 
 ## Runners
