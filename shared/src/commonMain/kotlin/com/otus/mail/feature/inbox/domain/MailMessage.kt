@@ -43,4 +43,25 @@ data class MailLocation(
 data class MailAttributes(
     val unread: Boolean = false,
     val attachments: List<String> = emptyList(),
+    val flagged: Boolean = false,
 )
+
+/** A mark the user can turn on or off for one message. */
+enum class MessageFlag { Read, Flagged }
+
+/** [message] with [flag] turned [on], as the server will show it once the change is saved. */
+fun MailMessage.withFlag(
+    flag: MessageFlag,
+    on: Boolean,
+): MailMessage =
+    when (flag) {
+        MessageFlag.Read -> copy(attributes = attributes.copy(unread = !on))
+        MessageFlag.Flagged -> copy(attributes = attributes.copy(flagged = on))
+    }
+
+/** Whether [flag] is currently on for this message. */
+fun MailMessage.hasFlag(flag: MessageFlag): Boolean =
+    when (flag) {
+        MessageFlag.Read -> !attributes.unread
+        MessageFlag.Flagged -> attributes.flagged
+    }

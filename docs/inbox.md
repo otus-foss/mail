@@ -98,6 +98,25 @@ empty-state title. Closing search and clearing filters return to that default; t
 reads "All" for it. `MailSource.messages(MailScope)` loads either every account's inbox or one
 folder of one account. Messages keep their server id and mailbox id so they can be moved.
 
-An open message can offer **Move** and **Rule for sender** through `MessageActions`, which app
-wiring builds from the loaded folders and rules. A move that the server refuses leaves the message
-in place and shows a notice. See [Folders and rules](folders.md).
+An open message can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**, **Archive**,
+**Trash**, **Move**, and **Rule for sender** through `MessageActions`, which app wiring builds from
+the loaded folders and rules. The actions wrap above the message body, so they stay in view while
+it scrolls.
+
+- Marks set or clear one keyword with an `Email/set` patch (RFC 8621, section 4.1.1): `$seen` for
+  read and `$flagged` for the flag. Other keywords are untouched; turning a mark off removes the
+  keyword. The open message shows the change at once. If the server refuses, the mark goes back
+  and the inbox shows a notice. Changing the read mark refreshes the folder unread counts.
+- Archive and Trash move the message to the account's folder with the `archive` or `trash` role,
+  found by role because servers name these folders differently. Each is offered only when that
+  folder exists and the message is not already in it. Trash moves the message; nothing is
+  permanently deleted.
+- Actions follow the rights of the folder the message is shown in (RFC 8621, section 2):
+  `maySetSeen` for the read mark, `maySetKeywords` for the flag, and `mayRemoveItems` for
+  Archive, Trash, and Move. The target must allow `mayAddItems`. The server still checks every
+  other mailbox the message belongs to.
+- Opening a message does not mark it read. Undo, bulk selection, and permanent deletion are not
+  implemented yet; see issue #27.
+
+A move that the server refuses leaves the message in place and shows a notice. See
+[Folders and rules](folders.md).

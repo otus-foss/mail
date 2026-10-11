@@ -33,6 +33,16 @@ class InboxStorageException(
     cause: Throwable,
 ) : Exception("Inbox account storage is unavailable.", cause)
 
+/** Turns message marks on or off on the server. */
+interface MessageMarker {
+    /** Sets [flag] to [on] for [message]; false when the server refused or could not be reached. */
+    suspend fun mark(
+        message: MailMessage,
+        flag: MessageFlag,
+        on: Boolean,
+    ): Boolean
+}
+
 /** Files messages into folders on the server. */
 interface MessageMover {
     /** Moves [message] from its mailbox into [folderId] of the same account; false when the server refused. */

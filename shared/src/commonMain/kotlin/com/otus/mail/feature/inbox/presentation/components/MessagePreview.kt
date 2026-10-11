@@ -2,7 +2,6 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
@@ -21,7 +20,10 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 
-/** A read-only message. With [actions], it can be moved to a folder or start a rule for its sender. */
+/**
+ * A read-only message. With [actions], it can be marked, archived, trashed, moved to a folder, or
+ * start a rule for its sender. The actions stay in view while a long body scrolls.
+ */
 @Composable
 fun MessagePreview(
     message: MailMessage,
@@ -29,47 +31,42 @@ fun MessagePreview(
     onDismiss: () -> Unit,
 ) {
     var moving by rememberSaveable { mutableStateOf(false) }
-    val targets = actions?.moveTargets?.invoke(message).orEmpty()
+    val file: (MoveTarget) -> Unit = { target ->
+        onDismiss()
+        actions?.onMove(message, target)
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(message.subject.ifBlank { "(No subject)" }) },
         text = {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(InboxTokens.itemGap),
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(InboxTokens.itemGap)) {
                 Text("${message.sender.name} <${message.sender.address}>", color = OtusColors.text2)
-                Text(message.body)
-                if (message.attributes.attachments.isNotEmpty()) {
-                    Text("Attachments: ${message.attributes.attachments.joinToString()}", color = OtusColors.text2)
-                }
-            }
-        },
-        confirmButton = {
-            Row {
-                if (targets.isNotEmpty()) TextButton(onClick = { moving = true }) { Text("Move") }
-                if (actions?.canCreateRule?.invoke(message) == true) {
-                    TextButton(onClick = {
+                actions?.let {
+                    MessageActionRow(message, it, onChooseFolder = { moving = true }, onFile = file) {
                         onDismiss()
-                        actions.onCreateRule(message)
-                    }) { Text("Rule for sender") }
+                        it.onCreateRule(message)
+                    }
                 }
-                TextButton(onClick = onDismiss) { Text("Close") }
+                Column(
+                    Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(InboxTokens.itemGap),
+                ) {
+                    Text(message.body)
+                    if (message.attributes.attachments.isNotEmpty()) {
+                        Text("Attachments: ${message.attributes.attachments.joinToString()}", color = OtusColors.text2)
+                    }
+                }
             }
         },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
     )
     if (moving && actions != null) {
         ChoiceDialog<MoveTarget?>(
             "Move to",
-            targets,
+            actions.moveTargets(message),
             selected = null,
             label = { it?.label.orEmpty() },
-            onSelect = { target ->
-                target?.let {
-                    onDismiss()
-                    actions.onMove(message, it)
-                }
-            },
+            onSelect = { target -> target?.let(file) },
             onDismiss = { moving = false },
         )
     }

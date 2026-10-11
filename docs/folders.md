@@ -24,7 +24,9 @@ script, so they keep working while the app is closed.
 - Deleting sends `onDestroyRemoveEmails: false`: a folder with mail or subfolders is refused and
   nothing is lost. The user must empty it first.
 - An open message offers **Move**, filing it with one `Email/set` patch that leaves its current
-  mailbox and joins the target.
+  mailbox and joins the target. **Archive** and **Trash** use the same move with the folder that
+  has the `archive` or `trash` role. All three need `mayRemoveItems` on the current folder and
+  `mayAddItems` on the target.
 
 ## Rules
 

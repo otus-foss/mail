@@ -45,6 +45,9 @@ data class MailboxObject(
 @Serializable
 data class MailboxRights(
     val mayAddItems: Boolean = true,
+    val mayRemoveItems: Boolean = true,
+    val maySetSeen: Boolean = true,
+    val maySetKeywords: Boolean = true,
     val mayCreateChild: Boolean = true,
     val mayRename: Boolean = true,
     val mayDelete: Boolean = true,

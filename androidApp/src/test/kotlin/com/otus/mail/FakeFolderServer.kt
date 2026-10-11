@@ -29,6 +29,9 @@ class FakeFolderServer {
             """{"id": "z", "name": "Amazon", "parentId": "r"}""",
         )
 
+    /** When set, every `Email/set` update is refused as forbidden. */
+    var refuseUpdates = false
+
     /** The rules script as last uploaded and saved. */
     var script: String? = null
         private set
@@ -80,13 +83,19 @@ class FakeFolderServer {
             when {
                 "Mailbox/set" in body -> createFolder(body)
                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $folderList}, "c0"]"""
-                "Email/set" in body -> """["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]"""
+                "Email/set" in body -> updateEmail()
                 "Email/query" in body -> emails(if ("\"inMailbox\":\"r\"" in body) "Order shipped" else "Welcome")
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
                 else -> error("Unexpected call: $body")
             }
         return """{"methodResponses": [$reply]}"""
+    }
+
+    private fun updateEmail(): String {
+        val outcome =
+            if (refuseUpdates) """"notUpdated": {"m1": {"type": "forbidden"}}""" else """"updated": {"m1": null}"""
+        return """["Email/set", {"newState": "e2", $outcome}, "c0"]"""
     }
 
     private val folderList: String

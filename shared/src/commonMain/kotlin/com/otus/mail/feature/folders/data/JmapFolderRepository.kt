@@ -144,7 +144,16 @@ private fun MailboxObject.toFolder(loginId: String) =
         sortOrder = sortOrder,
         unread = unreadEmails,
         total = totalEmails,
-        rights = FolderRights(myRights.mayAddItems, myRights.mayCreateChild, myRights.mayRename, myRights.mayDelete),
+        rights =
+            FolderRights(
+                mayAddItems = myRights.mayAddItems,
+                mayCreateChild = myRights.mayCreateChild,
+                mayRename = myRights.mayRename,
+                mayDelete = myRights.mayDelete,
+                mayRemoveItems = myRights.mayRemoveItems,
+                maySetSeen = myRights.maySetSeen,
+                maySetKeywords = myRights.maySetKeywords,
+            ),
     )
 
 /** A malformed capability keeps the defaults; the server still enforces its real limits. */
