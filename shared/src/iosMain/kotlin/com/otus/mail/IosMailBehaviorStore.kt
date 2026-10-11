@@ -15,6 +15,7 @@ class IosMailBehaviorStore(
             endToStart = MessageSwipe.fromStorageValue(preferences.stringForKey(END_TO_START)) ?: defaults.endToStart,
             markReadOnOpen = bool(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
             readLater = bool(READ_LATER, defaults.readLater),
+            combinedFolders = bool(COMBINED_FOLDERS, defaults.combinedFolders),
         )
     }
 
@@ -23,6 +24,7 @@ class IosMailBehaviorStore(
         preferences.setObject(behavior.endToStart.storageValue, forKey = END_TO_START)
         preferences.setBool(behavior.markReadOnOpen, forKey = MARK_READ_ON_OPEN)
         preferences.setBool(behavior.readLater, forKey = READ_LATER)
+        preferences.setBool(behavior.combinedFolders, forKey = COMBINED_FOLDERS)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -36,5 +38,6 @@ class IosMailBehaviorStore(
         const val END_TO_START = "otus.mail.swipe_end_to_start"
         const val MARK_READ_ON_OPEN = "otus.mail.mark_read_on_open"
         const val READ_LATER = "otus.mail.read_later"
+        const val COMBINED_FOLDERS = "otus.mail.combined_folders"
     }
 }

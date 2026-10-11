@@ -101,6 +101,34 @@ class JmapMailSourceTest {
         }
 
     @Test
+    fun aRoleLoadsThatFolderOfEveryAccountUnderOneName() =
+        runTest {
+            val roleApi = { body: String ->
+                if ("Mailbox/get" in body) {
+                    """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
+                        {"id": "a", "name": "Inbox", "role": "inbox"},
+                        {"id": "j", "name": "Junk Mail", "role": "junk"}]}, "c0"]]}"""
+                } else {
+                    check("\"inMailbox\":\"j\"" in body) { "Queries the folder with the junk role" }
+                    """{"methodResponses": [["Email/query", {"ids": ["m1"]}, "c0"],
+                        ["Email/get", {"state": "e", "list": [{"id": "m1", "subject": "Prize",
+                         "receivedAt": "2026-10-04T09:30:00Z"}]}, "c1"]]}"""
+                }
+            }
+            val store =
+                InMemoryLoginStore().apply {
+                    save(login, "secret")
+                    save(login.copy(id = "work", name = "Work"), "secret")
+                }
+            val client = JmapClient(stalwartLike(api = roleApi))
+            val source = JmapMailSource(JmapConnections(client, store), store, zone = { TimeZone.UTC })
+            val snapshot = source.messages(MailScope.Role("junk", "Spam"))
+            assertTrue(snapshot.unavailable.isEmpty())
+            assertEquals(setOf("ada", "work"), snapshot.messages.map { it.location.accountId }.toSet())
+            assertTrue(snapshot.messages.all { it.location.mailbox == "Spam" && it.location.mailboxId == "j" })
+        }
+
+    @Test
     fun aLoginThatFailsIsReportedWithoutHidingOthers() =
         runTest {
             val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")

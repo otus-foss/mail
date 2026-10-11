@@ -38,14 +38,9 @@ internal class MailStates(
             rules.refresh()
         }
 
-    /** A folder page loads only that folder; avatars share the inbox's cache. */
-    fun folderFeed(page: MailPage.Folder): InboxFeedState =
-        InboxFeedState(
-            services.mail,
-            scope,
-            services.avatars,
-            mailScope = MailScope.Folder(page.accountId, page.folderId),
-        )
+    /** A folder page loads only its own mail; avatars share the inbox's cache. */
+    fun folderFeed(mailScope: MailScope): InboxFeedState =
+        InboxFeedState(services.mail, scope, services.avatars, mailScope = mailScope)
 
     /** Mail and folder counts change together, so a pull refreshes both. */
     fun refreshInbox() {

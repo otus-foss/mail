@@ -23,9 +23,10 @@ Local builds use `-Potus.meta.path=../otus-meta` until Mail adopts their release
   down anywhere on the sheet closes it. A short, slow pull springs back.
   Dark mode is the only color mode, so there is no theme choice. Below it, Mail adds
   `MailBehaviorSettings` through the screen's content slot: **Swipe right** and **Swipe left** open a
-  `ChoiceSheet` of message actions, shown in a `ValueButton`. **Mark as read when opened** and
-  **Read later** are `SettingToggleRow` switches. Each change is saved before it is shown. See
-  [swipe actions](inbox.md#swipe-actions) and [Read later](folders.md#read-later).
+  `ChoiceSheet` of message actions, shown in a `ValueButton`. **Mark as read when opened**,
+  **Read later**, and **Combined folders** are `SettingToggleRow` switches. Each change is saved
+  before it is shown. See [swipe actions](inbox.md#swipe-actions), [Read later](folders.md#read-later),
+  and [combined folders](folders.md#combined-folders).
 - **Folders** shows each account as a section of flat folder rows, indented by nesting, ending with
   a **New folder** row. **Folders** and **Rules** manage each account's folders and the rules that
   file arriving mail;

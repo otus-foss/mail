@@ -1,0 +1,13 @@
+#!/bin/sh
+# CI checks only pull requests, so this hook gates every push, including pushes to main and tags.
+set -eu
+
+pushes_commits=
+while read -r _ local_sha _ _; do
+    # Git sends an all-zero SHA for a deleted ref.
+    case $local_sha in *[!0]*) pushes_commits=1 ;; esac
+done
+[ -n "$pushes_commits" ] || exit 0
+
+cd "$(git rev-parse --show-toplevel)"
+exec ./gradlew --quiet checkAll

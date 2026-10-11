@@ -132,6 +132,28 @@ class FoldersAndRulesTest {
     }
 
     @Test
+    fun combinedFoldersListSpamAndTrashOnceAndOpenThem() {
+        server.folders += """{"id": "j", "name": "Junk Mail", "role": "junk", "unreadEmails": 3}"""
+        server.folders += """{"id": "t", "name": "Deleted Items", "role": "trash"}"""
+        start()
+        openSettingsPage("Appearance & behavior")
+        compose.onNodeWithText("Combined folders").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        val spam = hasText("Spam") and hasText("3") and isSelectable()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(spam).fetchSemanticsNodes().isNotEmpty() }
+        // The app names each role once, above the account's own folders, in place of the server's names.
+        assertTrue(compose.onAllNodes(hasText("Junk Mail") and isSelectable()).fetchSemanticsNodes().isEmpty())
+        val trash = compose.onNode(hasText("Trash") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        assertTrue(trash.bottom <= receipts.top)
+        compose.onNode(spam).performClick()
+        compose.onNodeWithText("Search Spam").assertIsDisplayed()
+        waitFor("Welcome")
+        assertTrue(server.calls.any { "\"inMailbox\":\"j\"" in it })
+    }
+
+    @Test
     fun aRuleIsSavedAsAnActiveSieveScript() {
         start()
         openSettingsPage("Rules")
