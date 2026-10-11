@@ -48,6 +48,24 @@ class InboxFeedState(
         notice = text
     }
 
+    /** Replaces the loaded message with [id], such as after a local change the server will confirm. */
+    fun change(
+        id: String,
+        transform: (MailMessage) -> MailMessage,
+    ) {
+        messages = messages.map { if (it.id == id) transform(it) else it }
+    }
+
+    /** Takes the message with [id] out of the list, such as while a move is sent to the server. */
+    fun remove(id: String) {
+        messages = messages.filterNot { it.id == id }
+    }
+
+    /** Puts [message] back after the server refused to move it, unless a reload already did. */
+    fun restore(message: MailMessage) {
+        if (messages.none { it.id == message.id }) messages = messages + message
+    }
+
     fun refresh() {
         job?.cancel()
         job =

@@ -26,6 +26,12 @@ data class FolderRights(
     val mayCreateChild: Boolean = true,
     val mayRename: Boolean = true,
     val mayDelete: Boolean = true,
+    /** Messages may leave this folder, which a move requires. */
+    val mayRemoveItems: Boolean = true,
+    /** The read mark may change for messages in this folder. */
+    val maySetSeen: Boolean = true,
+    /** Other marks, such as the flag, may change for messages in this folder. */
+    val maySetKeywords: Boolean = true,
 )
 
 /** What the account's server allows when creating folders (RFC 8621, section 1.3.1). */
@@ -60,3 +66,5 @@ data class FolderNode(
 )
 
 const val INBOX_ROLE = "inbox"
+const val ARCHIVE_ROLE = "archive"
+const val TRASH_ROLE = "trash"

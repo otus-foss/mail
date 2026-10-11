@@ -35,7 +35,7 @@ class JmapMailSourceTest {
                    "subject": "Compiler draft", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Attached…",
                    "hasAttachment": true, "attachments": [{"partId": "2", "name": "draft.pdf"}],
                    "textBody": [{"partId": "1"}], "bodyValues": {"1": {"value": "Attached is the first draft."}}},
-                  {"id": "m2", "keywords": {"${'$'}seen": true}, "from": [{"email": "ada@example.org"}],
+                  {"id": "m2", "keywords": {"${'$'}seen": true, "${'$'}flagged": true}, "from": [{"email": "ada@example.org"}],
                    "subject": null, "receivedAt": "2026-10-03T23:05:00Z", "preview": "Notes", "hasAttachment": false}
                 ]}, "c1"]]}"""
         }
@@ -65,6 +65,8 @@ class JmapMailSourceTest {
             assertEquals("Notes", second.body)
             assertEquals("", second.subject)
             assertTrue(!second.attributes.unread)
+            assertTrue(!first.attributes.flagged)
+            assertTrue(second.attributes.flagged)
         }
 
     @Test

@@ -1,7 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -9,11 +11,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.EmptyState
+import com.otus.designsystem.components.SwipeActions
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.presentation.MessageActions
 
 @Composable
 fun InboxBody(
@@ -21,18 +25,30 @@ fun InboxBody(
     listState: LazyListState,
     dateFormatter: DateFormatter,
     onOpen: (MailMessage) -> Unit,
+    actions: MessageActions?,
     emptyContent: @Composable () -> Unit,
 ) {
     if (messages.isEmpty()) {
-        emptyContent()
+        Box(Modifier.padding(horizontal = InboxTokens.pageInset)) { emptyContent() }
     } else {
-        // Rows span the control panel's width; their own padding aligns their content.
+        // Rows reach the screen edges, so a swipe's color does too; the inset aligns their content.
         LazyColumn(
             Modifier.fillMaxSize(),
             state = listState,
             contentPadding = PaddingValues(vertical = InboxTokens.pageInset),
         ) {
-            items(messages, key = { it.id }) { MessageRow(it, dateFormatter) { onOpen(it) } }
+            items(messages, key = { it.id }) { message ->
+                val swipes = actions?.behavior?.invoke()
+                SwipeActions(
+                    startToEnd = swipes?.let { actions.swipeAction(message, it.startToEnd) },
+                    endToStart = swipes?.let { actions.swipeAction(message, it.endToStart) },
+                    modifier = Modifier.animateItem(),
+                ) {
+                    Box(Modifier.padding(horizontal = InboxTokens.pageInset)) {
+                        MessageRow(message, dateFormatter) { onOpen(message) }
+                    }
+                }
+            }
         }
     }
 }

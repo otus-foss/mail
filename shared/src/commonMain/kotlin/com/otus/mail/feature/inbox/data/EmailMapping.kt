@@ -36,13 +36,12 @@ internal fun EmailObject.toMessage(
         location = MailLocation(mailbox, account, accountId, accountAddress, mailboxId = mailboxId),
         attributes =
             MailAttributes(
-                unread = keywords[SEEN] != true,
+                unread = keywords[SEEN_KEYWORD] != true,
                 attachments = if (hasAttachment) attachments.orEmpty().map { it.name ?: "Attachment" } else emptyList(),
+                flagged = keywords[FLAGGED_KEYWORD] == true,
             ),
         emailId = id,
     )
 }
-
-private const val SEEN = "\$seen"
 
 private fun Int.twoDigits() = toString().padStart(2, '0')

@@ -5,12 +5,10 @@ import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_rule_folder
 import com.otus.designsystem.resources.symbol_tune
-import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.SettingsEntry
 
 /** Mail chooses the destinations; the settings library renders their shared rows and page. */
 internal fun mailSettingsEntries(
-    dateFormat: DateFormatSettingsState,
     accountCount: Int,
     navigation: MailNavigation,
 ): List<SettingsEntry> =
@@ -26,7 +24,7 @@ internal fun mailSettingsEntries(
         ) { navigation.go(MailPage.EmailAccounts) },
         SettingsEntry(
             "Appearance & behavior",
-            "Date format: ${dateFormat.preference.patternLabel}",
+            "Dates, swipes, and reading",
             Res.drawable.symbol_tune,
         ) { navigation.go(MailPage.Appearance) },
         SettingsEntry(

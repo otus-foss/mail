@@ -66,7 +66,7 @@ fun ancestorCount(
     return seen.size - 1
 }
 
-private val ROLE_ORDER = listOf(INBOX_ROLE, "drafts", "sent", "archive", "junk", "trash")
+private val ROLE_ORDER = listOf(INBOX_ROLE, "drafts", "sent", ARCHIVE_ROLE, "junk", TRASH_ROLE)
 
 private val siblingOrder: Comparator<MailFolder> =
     compareBy({ it.roleRank() }, { it.sortOrder }, { it.name.lowercase() })
