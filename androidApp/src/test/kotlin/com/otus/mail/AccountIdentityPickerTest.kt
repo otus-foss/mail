@@ -12,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.searchMessages
+import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.components.InboxFilter
 import com.otus.mail.feature.inbox.presentation.components.InboxFilterSheet
 import org.junit.Assert.assertEquals
@@ -39,6 +40,7 @@ class AccountIdentityPickerTest {
                         InboxFilter.Accounts,
                         messages,
                         InboxSearch(),
+                        InboxContext(),
                         DateFormatter(),
                         { applied = it },
                         {},

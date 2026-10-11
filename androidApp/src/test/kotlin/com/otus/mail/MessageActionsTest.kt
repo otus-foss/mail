@@ -3,6 +3,7 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -106,7 +107,8 @@ class MessageActionsTest {
     fun readLaterSavesTheMessageInPlaceAndCanRemoveIt() {
         server.folders += """{"id": "l", "name": "Read later"}"""
         openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
-        compose.onNodeWithText("Read later").performClick()
+        // The inbox row's Read later pill is a toggle; the message's action is not.
+        compose.onNode(hasText("Read later") and !isToggleable()).performClick()
         val save = lastUpdate()
         assertTrue(save, "\"update\":{\"m1\":{\"mailboxIds/l\":true}}" in save)
 

@@ -33,6 +33,9 @@ class FakeFolderServer {
     /** Folders the message is in besides the one it was loaded from. */
     val alsoIn = mutableListOf<String>()
 
+    /** The subject of the one message in each folder; any other folder's message is "Welcome". */
+    val subjects = mutableMapOf("r" to "Order shipped")
+
     /** When set, every `Email/set` update is refused as forbidden. */
     var refuseUpdates = false
 
@@ -88,7 +91,7 @@ class FakeFolderServer {
                 "Mailbox/set" in body -> createFolder(body)
                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $folderList}, "c0"]"""
                 "Email/set" in body -> updateEmail()
-                "Email/query" in body -> emails(QUERIED_FOLDER.find(body)?.groupValues?.get(1) ?: "a")
+                "Email/query" in body -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
                 else -> error("Unexpected call: $body")
@@ -130,7 +133,7 @@ class FakeFolderServer {
     }
 
     private fun emails(mailbox: String): String {
-        val subject = if (mailbox == "r") "Order shipped" else "Welcome"
+        val subject = subjects[mailbox] ?: "Welcome"
         val mailboxIds = (listOf(mailbox) + alsoIn).distinct().joinToString { "\"$it\": true" }
         return """["Email/query", {"ids": ["m1"]}, "c0"], ["Email/get", {"state": "e", "list": [{"id": "m1",
            "mailboxIds": {$mailboxIds}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
@@ -141,7 +144,7 @@ class FakeFolderServer {
         respond(text, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
 
     private companion object {
-        val QUERIED_FOLDER = Regex("\"inMailbox\":\"([^\"]+)\"")
+        val IN_MAILBOX = Regex("\"inMailbox\":\"([^\"]+)\"")
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:mail": {},
             "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
             "accounts": {"d1": {"name": "Ada", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},

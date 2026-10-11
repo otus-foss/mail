@@ -8,6 +8,7 @@ import com.otus.jmap.login.LoginSecret
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -98,6 +99,76 @@ class JmapMailSourceTest {
             assertEquals("Receipts", message.location.mailbox)
             assertEquals("r", message.location.mailboxId)
             assertTrue(queried.any { "\"inMailbox\":\"r\"" in it })
+        }
+
+    @Test
+    fun chosenMailboxesLoadOnceEachAndAllMailboxesLoadEveryOne() =
+        runTest {
+            val queried = mutableListOf<String>()
+            val mailboxApi = { body: String ->
+                queried += body
+                if ("Mailbox/get" in body) {
+                    """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
+                        {"id": "a", "name": "Posteingang", "role": "inbox"}, {"id": "s", "name": "Sent"},
+                        {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
+                } else {
+                    val ids = if ("\"inMailbox\":\"a\"" in body) "\"m1\", \"m2\"" else "\"m1\""
+                    """{"methodResponses": [["Email/query", {"ids": [$ids]}, "c0"],
+                        ["Email/get", {"state": "e", "list": [${ids.split(
+                        ", ",
+                    ).joinToString { email(it) }}]}, "c1"]]}"""
+                }
+            }
+            val store = InMemoryLoginStore().apply { save(login, "secret") }
+            val client = JmapClient(stalwartLike(api = mailboxApi))
+            val source = JmapMailSource(JmapConnections(client, store), store, zone = { TimeZone.UTC })
+            val snapshot =
+                source.messages(
+                    MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox"), MailboxScope(null, "Receipts"))),
+                )
+            assertEquals(listOf("ada/m1", "ada/m2"), snapshot.messages.map { it.id })
+            assertEquals(
+                "Inbox",
+                snapshot.messages
+                    .first()
+                    .location.mailbox,
+                "A message in both is listed under the first",
+            )
+            assertTrue(queried.any { "\"inMailbox\":\"r\"" in it })
+            assertTrue(queried.none { "\"inMailbox\":\"s\"" in it }, "Mailboxes that were not chosen are not loaded")
+            source.messages(MailScope.AllMailboxes)
+            assertTrue(queried.any { "\"inMailbox\":\"s\"" in it })
+        }
+
+    private fun email(id: String) = """{"id": $id, "subject": "Order", "receivedAt": "2026-10-04T09:30:00Z"}"""
+
+    @Test
+    fun aFolderPillLoadsEachChosenFolderOfItsAccountsOnly() =
+        runTest {
+            val queried = mutableListOf<String>()
+            val folderApi = { body: String ->
+                queried += body
+                if ("Mailbox/get" in body) {
+                    """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"},
+                        {"id": "r", "name": "Receipts"}, {"id": "l", "name": "Read later"}]}, "c0"]]}"""
+                } else {
+                    """{"methodResponses": [["Email/query", {"ids": ["m1"]}, "c0"],
+                        ["Email/get", {"state": "e", "list": [{"id": "m1", "subject": "Order",
+                         "receivedAt": "2026-10-04T09:30:00Z"}]}, "c1"]]}"""
+                }
+            }
+            val store =
+                InMemoryLoginStore().apply {
+                    save(login, "secret")
+                    save(login.copy(id = "grace", name = "Grace", username = "grace@example.org"), "wrong")
+                }
+            val source = JmapMailSource(JmapConnections(JmapClient(stalwartLike(api = folderApi)), store), store)
+            val chosen = setOf(MailScope.Folder("ada", "r"), MailScope.Folder("ada", "l"))
+            val snapshot = source.messages(MailScope.Folders(chosen))
+            assertTrue(snapshot.unavailable.isEmpty(), "Accounts without a chosen folder are not loaded")
+            assertEquals(listOf("ada/m1"), snapshot.messages.map { it.id }, "A message in both folders is listed once")
+            assertTrue(queried.any { "\"inMailbox\":\"r\"" in it } && queried.any { "\"inMailbox\":\"l\"" in it })
+            assertTrue(queried.none { "\"inMailbox\":\"a\"" in it })
         }
 
     @Test

@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import com.otus.designsystem.elements.Chip
 import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.SearchPrompt
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusTheme
 import org.junit.Assert.assertEquals
@@ -38,19 +40,26 @@ class ControlPressFeedbackTest {
     @Test
     fun iconFeedbackStaysInsideCircleWhenTouchPaddingIsPressed() = checkFeedback(icon = true)
 
+    @Test
+    fun searchPromptKeepsItsBackgroundWhenPressed() {
+        var clicks = 0
+        show { SearchPrompt("Tap to search", onClick = { clicks++ }) }
+        val prompt = compose.onNodeWithText("Tap to search")
+        val before = screenshot()
+        prompt.performTouchInput { down(center) }
+        val pressed = screenshot()
+        prompt.performTouchInput { up() }
+        assertEquals(1, clicks)
+        assertTrue("The search prompt should not change while pressed", before.sameAs(pressed))
+    }
+
     private fun checkFeedback(icon: Boolean) {
         var clicks = 0
-        compose.runOnUiThread {
-            compose.activity.setContent {
-                OtusTheme {
-                    Box(Modifier.fillMaxSize().background(OtusColors.bgRegular)) {
-                        if (icon) {
-                            IconButton("Action", onClick = { clicks++ }) {}
-                        } else {
-                            Chip("Filter", onClick = { clicks++ })
-                        }
-                    }
-                }
+        show {
+            if (icon) {
+                IconButton("Action", onClick = { clicks++ }) {}
+            } else {
+                Chip("Filter", onClick = { clicks++ })
             }
         }
         val control = if (icon) compose.onNodeWithContentDescription("Action") else compose.onNodeWithText("Filter")
@@ -87,6 +96,16 @@ class ControlPressFeedbackTest {
         for (y in bounds.top.toInt() until bounds.bottom.toInt()) {
             for (x in bounds.left.toInt() until bounds.right.toInt()) {
                 assertEquals(before.getPixel(x, y), released.getPixel(x, y))
+            }
+        }
+    }
+
+    private fun show(content: @Composable () -> Unit) {
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                OtusTheme {
+                    Box(Modifier.fillMaxSize().background(OtusColors.bgRegular)) { content() }
+                }
             }
         }
     }
