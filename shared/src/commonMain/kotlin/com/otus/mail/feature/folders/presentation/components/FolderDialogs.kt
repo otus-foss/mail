@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.otus.designsystem.components.ActionDialog
 import com.otus.designsystem.components.ChoiceDialog
+import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.DialogAction
 import com.otus.designsystem.components.InputDialog
 import com.otus.mail.feature.folders.domain.AccountFolders
@@ -72,12 +73,11 @@ private fun FolderChangeDialog(
         }
 
         is FolderDialog.Delete -> {
-            ActionDialog(
+            ConfirmDialog(
                 title = "Delete ${folder.name}?",
-                message =
-                    "Only an empty folder without subfolders can be deleted, so no mail is lost. " +
-                        "Rules that move mail here will deliver it to the inbox instead.",
-                actions = listOf(DialogAction("Delete", { actions.onDelete(folder) }, primary = true)),
+                message = "Only empty folders can be deleted. Rules for it will use the inbox.",
+                confirmLabel = "Delete",
+                onConfirm = { actions.onDelete(folder) },
                 onDismiss = close,
             )
         }
