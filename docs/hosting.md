@@ -33,6 +33,9 @@ The Linux label follows the instance maintainer's `runs-on: ubuntu-latest` guida
 The `ios` job still requires a separate `otus-macos` runner with Xcode 26.3. A Linux
 runner cannot build the Xcode app; a queued iOS job needs its own runner.
 
+The GitHub workflows run their Linux jobs on Ubicloud's `ubicloud-standard-2` runners.
+The GitHub `ios` job is paused with `if: false`; delete that condition to run it again.
+
 Runners, secrets, Actions enablement, branch protection, and automatic mirroring require
 authenticated server access and remain unverified. The
 [suite hosting guide](https://git.hilfikers.com/florian.ruby/otus-meta/src/branch/main/docs/hosting.md)
