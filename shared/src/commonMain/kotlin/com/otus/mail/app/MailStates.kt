@@ -71,7 +71,11 @@ internal class MailStates(
             behavior = { behavior.behavior },
         )
 
-    /** Takes the message out of the list at once and puts it back if the server refuses the move. */
+    /**
+     * Takes the message out of the list at once and puts it back if the server refuses the move.
+     * A successful move does not reload the list: a reload can answer before another move still in
+     * flight, which would bring that message back.
+     */
     private fun move(
         feed: InboxFeedState,
         message: MailMessage,
@@ -80,7 +84,6 @@ internal class MailStates(
         feed.remove(message.id)
         scope.launch {
             if (services.mover.move(message, target.folderId)) {
-                feed.refresh()
                 folders.refresh()
             } else {
                 feed.restore(message)
