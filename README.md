@@ -1,8 +1,7 @@
 # Otus Mail
 
-Development, pull requests, and new issues use
-[otus-mail on Forgejo](https://git.hilfikers.com/florian.ruby/otus-mail).
-GitHub is a secondary copy. See [hosting and CI](docs/hosting.md) for the cutover status.
+Development, pull requests, and issues use
+[otus-mail on GitHub](https://github.com/reazndev/otus-mail). See [hosting and CI](docs/hosting.md).
 
 Kotlin Multiplatform + Compose app for Android and iOS, intended as the mail client in the Otus JMAP
 suite. Mail starts with an empty inbox and working local search/filter UI over supplied messages.
@@ -29,7 +28,7 @@ Use JDK 21 and Android Studio with the Kotlin Multiplatform plugin. Install Andr
 `ANDROID_HOME` or add `sdk.dir=/your/android/sdk` to untracked `local.properties`. Open this
 directory in Android Studio and run `androidApp`.
 
-The build downloads shared Otus libraries from Forgejo Packages, which needs a Forgejo token. See
+The build downloads shared Otus libraries from GitHub Packages, which needs a GitHub token. See
 [Shared libraries](docs/shared-libraries.md) for the one-time setup.
 
 ```sh

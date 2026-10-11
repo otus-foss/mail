@@ -36,11 +36,7 @@ dependencyResolutionManagement {
             }
         } else {
             // Shared Otus libraries. Downloading needs a token; see docs/shared-libraries.md.
-            val registry =
-                providers
-                    .gradleProperty("otusMetaRegistry")
-                    .getOrElse("https://git.hilfikers.com/api/packages/florian.ruby/maven")
-            maven(registry) {
+            maven("https://maven.pkg.github.com/reazndev/otus-meta") {
                 name = "otusMeta"
                 // Gradle checks credentials before every build; without a token only -Potus.meta.path works.
                 if (providers.gradleProperty("otusMetaPassword").isPresent) credentials(PasswordCredentials::class)
