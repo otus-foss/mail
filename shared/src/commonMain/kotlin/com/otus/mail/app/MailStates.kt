@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import com.otus.accounts.presentation.AccountsState
 import com.otus.mail.feature.folders.domain.FolderRights
+import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
 import com.otus.mail.feature.folders.presentation.RulesState
@@ -9,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.hasFlag
+import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.domain.withFlag
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -40,7 +42,13 @@ internal class MailStates(
 
     /** A folder page loads only its own mail; avatars share the inbox's cache. */
     fun folderFeed(mailScope: MailScope): InboxFeedState =
-        InboxFeedState(services.mail, scope, services.avatars, mailScope = mailScope)
+        InboxFeedState(services.mail, scope, services.avatars, defaultScope = mailScope)
+
+    /** Every account's folder names in folder order, once each, for search to choose from. */
+    fun mailboxNames(): List<String> =
+        folders.accounts
+            .flatMap { account -> account.folderTree().map { mailboxName(it.folder.name, it.folder.role) } }
+            .distinct()
 
     /** Mail and folder counts change together, so a pull refreshes both. */
     fun refreshInbox() {

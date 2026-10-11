@@ -12,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.searchMessages
+import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.components.InboxFilter
 import com.otus.mail.feature.inbox.presentation.components.InboxFilterSheet
 import org.junit.Assert.assertEquals
@@ -39,6 +40,7 @@ class AccountIdentityPickerTest {
                         InboxFilter.Accounts,
                         messages,
                         InboxSearch(),
+                        InboxContext(),
                         DateFormatter(),
                         { applied = it },
                         {},
@@ -47,9 +49,11 @@ class AccountIdentityPickerTest {
             }
         }
         compose.onNodeWithText("ada@work.example").performClick()
-        compose.onNodeWithText("Apply").performClick()
-        assertEquals(setOf("work"), applied.accounts)
-        assertEquals(listOf("work"), searchMessages(messages, applied).map { it.id })
+        compose.onNodeWithText("Done").performClick()
+        compose.runOnIdle {
+            assertEquals(setOf("work"), applied.accounts)
+            assertEquals(listOf("work"), searchMessages(messages, applied).map { it.id })
+        }
     }
 
     private fun message(

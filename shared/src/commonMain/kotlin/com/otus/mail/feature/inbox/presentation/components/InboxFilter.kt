@@ -5,7 +5,6 @@ enum class InboxFilter(
 ) {
     People("People"),
     Date("Date"),
-    Mailboxes("Inboxes"),
     Accounts("Accounts"),
     More("Filters"),
 }

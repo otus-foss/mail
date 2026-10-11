@@ -1,22 +1,36 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 
 /**
- * What a message list shows by default and how it names itself. The unified inbox is the default;
- * a folder's page shows all of its messages and names the folder.
+ * What a message list shows by default, how it names itself, which other mailboxes its search
+ * can load, and its row of pills. The unified inbox is the default; a folder's page shows all of
+ * its messages and names the folder. [folderPill] is the folder pill whose mail the page shows in
+ * place of its own.
  */
 data class InboxContext(
     val defaultSearch: InboxSearch = InboxSearch(),
     val searchPrompt: String = "Tap to search",
     val emptyTitle: String = "Your inbox is empty",
+    val mailboxSearch: MailboxSearch = MailboxSearch(),
+    val pills: InboxPills = InboxPills(),
+    val folderPill: FolderPillOption? = null,
 ) {
+    val allowsMailboxSelection: Boolean
+        get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()
+
     companion object {
-        fun folder(name: String): InboxContext =
+        /** A folder's page shows only the filter pills of [pills]: folder pills would leave the folder. */
+        fun folder(
+            name: String,
+            pills: List<InboxPill>,
+        ): InboxContext =
             InboxContext(
                 defaultSearch = InboxSearch(mailboxes = emptySet()),
                 searchPrompt = "Search $name",
                 emptyTitle = "$name is empty",
+                pills = InboxPills(pills.filterIsInstance<InboxPill.Filter>()),
             )
     }
 }

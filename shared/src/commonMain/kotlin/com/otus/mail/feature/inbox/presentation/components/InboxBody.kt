@@ -18,6 +18,7 @@ import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
 
 @Composable
@@ -62,9 +63,24 @@ internal fun InboxEmptyState(
     searching: Boolean,
     hasMessages: Boolean,
     filtered: Boolean,
-    connected: Boolean,
+    status: InboxStatus,
     onReset: () -> Unit,
+    onRefresh: () -> Unit,
 ) {
+    if (status.loading) {
+        EmptyState("Loading mail", "Fetching messages from your accounts.", Res.drawable.symbol_inbox)
+        return
+    }
+    if (!hasMessages && status.notice != null) {
+        EmptyState(
+            "Couldn't load mail",
+            status.notice,
+            Res.drawable.symbol_inbox,
+            actionLabel = "Try again",
+            onAction = onRefresh,
+        )
+        return
+    }
     EmptyState(
         title =
             when {
@@ -75,7 +91,7 @@ internal fun InboxEmptyState(
         description =
             when {
                 hasMessages -> "Try another search or clear your filters."
-                connected -> "New messages will appear here."
+                status.connected -> "New messages will appear here."
                 else -> "Connect an account in Settings to see your mail."
             },
         icon = if (searching) Res.drawable.symbol_search else Res.drawable.symbol_inbox,

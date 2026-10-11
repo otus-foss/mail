@@ -56,7 +56,9 @@ its badge adds up the unread mail of all of them.
 ## Read later
 
 Off by default. The **Read later** switch in Appearance & behavior gives each account a folder named
-"Read later", and adds a **Read later** button to an open message and to the swipe choices.
+"Read later", adds a **Read later** button to an open message and to the swipe choices, and adds a
+Read later pill to the inbox row that shows every account's saved mail. See
+[inbox pills](inbox.md#inbox-pills).
 
 - **Read later** adds the folder to the message's `mailboxIds` and leaves its other folders as
   they are, so a saved message stays in the inbox and its row shows a Read later label. Archiving
@@ -94,8 +96,8 @@ Off by default. The **Read later** switch in Appearance & behavior gives each ac
 - Saving needs `mayAddItems` on Read later; removing needs `mayRemoveItems` on it. A move also
   needs `mayRemoveItems` on the folder the message is shown in. `readLaterStep` decides which
   of these a message gets, and IMAP apps see a saved message in both folders.
-- Turning the switch off hides the action and the swipe choice, and returns a swipe set to Read
-  later to its default. The folder and its mail stay on the server as an ordinary folder. While
+- Turning the switch off hides the action, the swipe choice, and the pill, and returns a swipe set
+  to Read later to its default. The folder and its mail stay on the server as an ordinary folder. While
   the switch is on, a deleted Read later folder is created again on the next load.
 
 ## Rules

@@ -7,15 +7,16 @@ and incremental synchronization remain separate work.
 
 ## Implemented
 
-- The existing `ContextPanel` uses detached quick filters in Inbox and overlapping filter pills in search.
+- The existing `ContextPanel` uses detached quick filters in Inbox and overlapping filter pills in
+  search. The user chooses the quick filters; see [inbox pills](#inbox-pills).
 - Search focuses the input, updates results as text changes, supports clearing, and dismisses the
   keyboard on IME Search. The header back control and completed system back return to Inbox and
   reset search criteria.
 - Portable domain matching requires every whitespace-separated query term to match somewhere in
   subject, sender name/address, or plain-text body, without case sensitivity. Punctuation is literal.
-- Unread, attachment, multiple senders, inclusive date ranges, account-specific mailboxes, and
+- Unread, attachment, flagged, multiple senders, inclusive date ranges, account-specific mailboxes, and
   multiple accounts combine with the query. Inbox is the default scope. Custom selection sheets
-  have independent picker search and draft/Clear/Apply behavior. See [selection sheets](selection-sheets.md).
+  have independent picker search and draft/Clear/Done behavior. See [selection sheets](selection-sheets.md).
 - Results sort newest first using ISO dates and 24-hour times normalized by the JMAP data
   adapter, which also supplies mailbox/account identifiers. This is
   local search over supplied messages, not an implementation of JMAP Email/query semantics.
@@ -36,6 +37,8 @@ and incremental synchronization remain separate work.
 Feature components receive values/callbacks; they reuse the design-system panel, pills, input,
 icons, and avatar from Meta. App wiring connects `InboxFeedState` to the domain's `MailSource`
 contract and the `JmapMailSource` data implementation, then supplies messages to `InboxScreen`.
+On the Inbox page it also passes a `MailboxSearch` in `InboxContext`, with saved account metadata,
+folder names, and the feed's `show` to load the mailboxes a search picks.
 
 ## Design reference and adaptations
 
@@ -92,15 +95,36 @@ senders show up to four overlapping avatars and a count for additional senders. 
 label retains the sender's full name or the selected count. Selected addresses that are no longer
 in the supplied messages still have an initials fallback.
 
+Selected-account pills follow the same rule, with the account avatar and full account name. Beside
+particular inboxes, one account shows only its avatar. The
+accessibility label reads "<name> account" or "<count> accounts", followed by the chosen inboxes.
+Saved accounts remain available even when they have no loaded messages. Their selection remains
+named in the pill, with generated initials when no photo has resolved.
+
+## Searching other inboxes
+
+Choosing inboxes or accounts makes `InboxFeedState.show` load the selected scope, up to 50 of the
+newest messages per mailbox, and search then filters those. With no inbox checked, it loads every
+mailbox of the selected accounts. No account selected means every account. Each login queries its
+mailboxes sequentially, while different logins load in parallel. Closing search
+loads the page's own messages again. A message in two chosen mailboxes is listed once, under the
+first. Choices are names: each account's inbox is Inbox, and other folders use the server's name.
+Folders with the same name in different accounts are one choice, and so are nested folders with the
+same name. Account-specific mailbox selections keep their login IDs when the source loads them.
+Scope changes clear the previous list before loading; cancelled requests cannot publish old mail
+or end the new request's loading state. Empty loading and failed loads have separate states, and a
+failed empty load offers Try again. Searching still covers only these snapshots, with no pagination
+or full server search.
+
 ## Folder pages and message actions
 
 A folder opened from the sidebar uses the same screen. `InboxContext` gives it its default scope
 (every message of that folder, not the Inbox scope), its search prompt ("Search <folder>"), and its
-empty-state title. Closing search and clearing filters return to that default; the mailbox pill
-reads "All" for it. `MailSource.messages(MailScope)` loads either one role's folder of every
-account (`MailScope.Role`, such as the inbox or, with [combined folders](folders.md#combined-folders),
-Trash) or one folder of one account. Messages keep their server id and mailbox id so they can be
-moved.
+empty-state title. Closing search and clearing filters return to that default. Folder pages offer
+no inbox choices. `MailSource.messages(MailScope)` loads named mailboxes across accounts, folders
+with a shared role through `MailScope.Role`, or selected folders from their own accounts. The
+unified inbox uses the inbox role. [Combined folders](folders.md#combined-folders) use the other
+system roles. Messages keep their server and mailbox IDs so actions use the correct account.
 
 An open message can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**, **Read later**,
 **Archive**, **Trash**, **Move**, and **Rule for sender** through `MessageActions`, which app wiring builds from
@@ -164,7 +188,45 @@ swipe left. Right-to-left layouts mirror the directions.
   list, which removes it at once. Read later saves the message in place, so the row returns to
   rest with its new label; it leaves only where the message leaves the page. Marks return the row to rest showing the new state.
 - TalkBack and VoiceOver offer each available swipe as a custom action on the row.
-- `MailBehavior` holds the two swipes, the open-to-read choice, and whether Read later is on. Turning
-  Read later off returns a swipe set to it to that swipe's default. `MailBehaviorStore` saves them
-  in app-private preferences: `SharedPreferences` on Android and `NSUserDefaults` on iOS. Unknown
-  saved values read as the defaults.
+- `MailBehavior` holds the two swipes, the open-to-read choice, whether Read later is on, and the
+  inbox pills. Turning Read later off returns a swipe set to it to that swipe's default.
+  `MailBehaviorStore` saves them in app-private preferences: `SharedPreferences` on Android and
+  `NSUserDefaults` on iOS. Unknown saved values read as the defaults.
+
+## Inbox pills
+
+The row under the search prompt shows the user's pills in the user's order. **Appearance &
+behavior › Pills** opens a `SelectionSheet` that starts with the shown pills in row order. Dragging
+a pill's handle moves it, using Meta's `ReorderableColumn`, and tapping a shown pill takes it off
+the row. TalkBack and VoiceOver offer Move up and Move down on each shown pill. Below follow the
+pills to add, grouped as filters, folders every account has, and each account's own folders;
+tapping one adds it to the end of the row. Done saves the row, and closing the sheet any other
+way keeps the old one. A new install shows **Unread** and **Attachments**. With no pills, the
+filter button moves into the header beside the search prompt and the list starts right below the
+header; search still shows its own filters.
+
+- A filter pill turns its filter on and off: **Unread**, **Attachments**, or **Flagged** (the
+  `$flagged` keyword).
+- A folder pill shows that folder's mail in place of the inbox. Pressing it again returns to the
+  inbox, and one folder pill is on at a time. Filters and search then apply to the folder's mail,
+  and the prompt reads "Search <folder>". In search, the pill stays first. The account picker has
+  no Inboxes section, and selected accounts narrow the pill's folders.
+- **Read later** covers each account's Read later folder. Turning Read later on adds its pill to
+  the end of the row, and turning it off removes it. The user can remove the pill and keep Read
+  later on.
+- Each role the servers report (RFC 8621, section 2), such as `archive`, `sent`, or `trash`, gives
+  one pill that covers every account with that folder. The folder name labels it when every account
+  uses the same name; otherwise the role does. The inbox is not offered, because the page shows it.
+- Each of the user's own folders can be a pill too. Settings lists them under their account with
+  their full path.
+- A folder pill is saved as a role or a server mailbox id, never a name, so renaming the folder
+  keeps the pill. A pill whose folder is missing, because it was deleted elsewhere or its account
+  failed to load, stays saved but hidden. An active pill whose folder is no longer available
+  returns to the inbox after the folder list finishes loading.
+- Folder pages show only the filter pills, since a folder pill would leave the folder.
+- App wiring finds the folder pills in the loaded folders (`folderPillOptions`), because the inbox
+  feature does not import folders. The feed loads a pill's folders with `MailScope.Folders`, up to
+  50 of the newest messages per folder. The inbox's mail leaves the list at once, so it never shows
+  under the pill. A message in two of the folders is listed once.
+- `MailBehaviorStore` saves the row as one value with a pill per line. Lines this version doesn't
+  know are skipped.

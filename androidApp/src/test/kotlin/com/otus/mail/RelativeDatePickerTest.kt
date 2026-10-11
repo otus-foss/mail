@@ -34,7 +34,7 @@ class RelativeDatePickerTest {
     fun todayShortcutUsesRelativeSummaryAndSingleDatePill() {
         compose.onNodeWithText("Today").performClick()
         compose.onNodeWithText("Today → Today").assertIsDisplayed()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose
             .onNodeWithText("Today")
             .assertIsOn()
@@ -49,12 +49,12 @@ class RelativeDatePickerTest {
         compose.onNodeWithContentDescription(yesterday).performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithText("Yesterday → Choose an end date").assertIsDisplayed()
-        compose.onNodeWithText("Apply").assertIsNotEnabled()
+        compose.onNodeWithText("Done").assertIsNotEnabled()
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithContentDescription(LocalDate.now().toString()).performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithText("Yesterday → Today").assertIsDisplayed()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose
             .onNodeWithText("Yesterday–Today")
             .assertIsOn()
@@ -71,7 +71,7 @@ class RelativeDatePickerTest {
         compose.onNodeWithContentDescription(yesterday).performClick()
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithText("Yesterday → Yesterday").assertIsDisplayed()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose
             .onNodeWithText("Yesterday")
             .assertIsOn()
@@ -80,7 +80,7 @@ class RelativeDatePickerTest {
         compose.onNodeWithText("Last 7 days").performClick()
         val start = LocalDate.now().minusDays(6)
         compose.onNodeWithText("$start → Today").assertIsDisplayed()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose
             .onNodeWithText("This week")
             .assertIsOn()

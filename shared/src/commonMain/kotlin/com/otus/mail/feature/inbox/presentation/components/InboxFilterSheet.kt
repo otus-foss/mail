@@ -19,8 +19,12 @@ import com.otus.designsystem.components.SelectionSheet
 import com.otus.designsystem.elements.SelectionRow
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
+import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.has
+import com.otus.mail.feature.inbox.domain.with
+import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxSearchSaver
 
 @Composable
@@ -28,17 +32,14 @@ fun InboxFilterSheet(
     filter: InboxFilter,
     messages: List<MailMessage>,
     search: InboxSearch,
+    context: InboxContext,
     dateFormatter: DateFormatter,
     onApply: (InboxSearch) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var draft by rememberSaveable(filter, stateSaver = InboxSearchSaver) { mutableStateOf(search) }
     var query by rememberSaveable(filter) { mutableStateOf("") }
-    val today = currentLocalDate().toString()
-    val firstDate = draft.dateStart
-    val lastDate = draft.dateEnd
-    val validDateRange = firstDate == null || (lastDate != null && firstDate <= today && lastDate <= today)
-    val searchable = filter in listOf(InboxFilter.People, InboxFilter.Mailboxes, InboxFilter.Accounts)
+    val searchable = filter in listOf(InboxFilter.People, InboxFilter.Accounts)
     SelectionSheet(
         title = if (filter == InboxFilter.People) "From" else filter.title,
         onDismiss = onDismiss,
@@ -47,7 +48,7 @@ fun InboxFilterSheet(
             onApply(draft)
             onDismiss()
         },
-        applyEnabled = filter != InboxFilter.Date || validDateRange,
+        applyEnabled = filter != InboxFilter.Date || draft.hasCompleteDates(currentLocalDate().toString()),
         search =
             if (searchable) {
                 { PickerSearch(query, { query = it }, "Search ${filter.title.lowercase()}…") }
@@ -67,60 +68,60 @@ fun InboxFilterSheet(
                     Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
                 ) {
-                    SelectionRow(
-                        title = "Unread only",
-                        selected = draft.unreadOnly,
-                        onClick = { draft = draft.copy(unreadOnly = !draft.unreadOnly) },
-                    )
-                    SelectionRow(
-                        title = "Has attachments",
-                        selected = draft.attachmentsOnly,
-                        onClick = { draft = draft.copy(attachmentsOnly = !draft.attachmentsOnly) },
-                    )
+                    InboxPill.Filter.entries.forEach { pill ->
+                        val on = draft.has(pill)
+                        SelectionRow(pill.sheetTitle, on, { draft = draft.with(pill, !on) })
+                    }
                 }
             }
 
             else -> {
                 Text(
-                    "${draft.selectionCount(filter, messages)} selected",
+                    "${draft.selectionCount(filter)} selected",
                     color = OtusColors.text2,
                     fontSize = SheetTokens.detailSize,
                 )
-                InboxPickerChoices(filter, messages, query, draft) { draft = it }
+                InboxPickerChoices(
+                    filter,
+                    messages,
+                    context.mailboxSearch,
+                    context.allowsMailboxSelection,
+                    query,
+                    draft,
+                ) { draft = it }
             }
         }
     }
 }
 
+/** No date range, or one with both ends no later than [today]. */
+private fun InboxSearch.hasCompleteDates(today: String): Boolean {
+    val first = dateStart
+    val last = dateEnd
+    return first == null || (last != null && first <= today && last <= today)
+}
+
+/** Unchecks everything in [filter]; nothing checked means all of it. */
 private fun InboxSearch.clear(filter: InboxFilter): InboxSearch =
     when (filter) {
         InboxFilter.People -> copy(senders = emptySet())
         InboxFilter.Date -> copy(dateStart = null, dateEnd = null)
-        InboxFilter.Mailboxes -> copy(mailboxes = emptySet())
-        InboxFilter.Accounts -> copy(accounts = emptySet())
-        InboxFilter.More -> copy(unreadOnly = false, attachmentsOnly = false)
+        InboxFilter.Accounts -> copy(accounts = emptySet(), mailboxes = emptySet())
+        InboxFilter.More -> InboxPill.Filter.entries.fold(this) { search, pill -> search.with(pill, on = false) }
     }
 
-private fun InboxSearch.selectionCount(
-    filter: InboxFilter,
-    messages: List<MailMessage>,
-): Int =
+/** The filter as the Filters sheet names it: a condition the mail meets. */
+private val InboxPill.Filter.sheetTitle: String
+    get() =
+        when (this) {
+            InboxPill.Filter.Unread -> "Unread only"
+            InboxPill.Filter.Attachments -> "Has attachments"
+            InboxPill.Filter.Flagged -> "Flagged only"
+        }
+
+private fun InboxSearch.selectionCount(filter: InboxFilter): Int =
     when (filter) {
-        InboxFilter.People -> {
-            senders.size
-        }
-
-        InboxFilter.Mailboxes -> {
-            messages.map { it.location }.distinctBy { it.accountId to it.mailbox }.count { location ->
-                mailboxes.any { it.matches(location) }
-            }
-        }
-
-        InboxFilter.Accounts -> {
-            accounts.size
-        }
-
-        else -> {
-            0
-        }
+        InboxFilter.People -> senders.size
+        InboxFilter.Accounts -> accounts.size + mailboxes.size
+        else -> 0
     }

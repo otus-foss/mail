@@ -9,11 +9,15 @@ import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
 import com.otus.mail.feature.folders.presentation.screens.RulesScreen
+import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.InboxStatus
+import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
@@ -32,15 +36,7 @@ internal fun MailPageContent(
     val back = { navigation.go(page.parent ?: page) }
     when (page) {
         MailPage.Inbox -> {
-            val feed = states.feed
-            InboxScreen(
-                rememberLabeled(states, feed),
-                dateFormatter,
-                navigation.openSidebar,
-                InboxStatus(states.accounts.accounts.isNotEmpty(), feed.loading, feed.notice),
-                onRefresh = states::refreshInbox,
-                messageActions = rememberMessageActions(states, feed, navigation),
-            )
+            InboxPage(states, dateFormatter, navigation)
         }
 
         MailPage.Settings -> {
@@ -55,7 +51,11 @@ internal fun MailPageContent(
         }
 
         MailPage.Appearance -> {
-            AppearanceSettingsScreen(dateFormatState, onBack = back) { MailBehaviorSettings(states.behavior) }
+            val folderPills = rememberFolderPills(states)
+            AppearanceSettingsScreen(
+                dateFormatState,
+                onBack = back,
+            ) { MailBehaviorSettings(states.behavior, folderPills) }
         }
 
         MailPage.Folders -> {
@@ -89,6 +89,41 @@ internal fun MailPageContent(
             FeedPage(MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
         }
     }
+}
+
+/** The unified inbox, whose folder pills load in place of its own mail. */
+@Composable
+private fun InboxPage(
+    states: MailStates,
+    dateFormatter: DateFormatter,
+    navigation: MailNavigation,
+) {
+    val feed = states.feed
+    val mailboxes = states.mailboxNames()
+    val pills =
+        InboxPills(
+            states.behavior.behavior.pills,
+            rememberFolderPills(states),
+            foldersLoaded = !states.accounts.loading && !states.folders.loading,
+        )
+    InboxScreen(
+        rememberLabeled(states, feed),
+        dateFormatter,
+        navigation.openSidebar,
+        InboxStatus(states.accounts.accounts.isNotEmpty(), feed.loading, feed.notice),
+        onRefresh = states::refreshInbox,
+        context =
+            InboxContext(
+                pills = pills,
+                mailboxSearch =
+                    MailboxSearch(
+                        mailboxes,
+                        states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
+                        feed::show,
+                    ),
+            ),
+        messageActions = rememberMessageActions(states, feed, navigation),
+    )
 }
 
 @Composable
@@ -133,7 +168,7 @@ private fun FeedPage(
             feed.refresh()
             states.folders.refresh()
         },
-        context = InboxContext.folder(name),
+        context = InboxContext.folder(name, states.behavior.behavior.pills),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
 }
@@ -147,6 +182,11 @@ private fun rememberMessageActions(
     remember(states, feed, navigation) {
         states.messageActions(feed) { accountId -> navigation.go(MailPage.RuleEditor(accountId, null)) }
     }
+
+/** The folder pills the loaded folders can fill, again whenever they change. */
+@Composable
+private fun rememberFolderPills(states: MailStates): List<FolderPillOption> =
+    remember(states.folders.accounts) { folderPillOptions(states.folders.accounts) }
 
 /** The feed's messages with their other folders named, again whenever messages or folders change. */
 @Composable

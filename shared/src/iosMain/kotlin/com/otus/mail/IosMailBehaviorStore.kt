@@ -1,5 +1,6 @@
 package com.otus.mail
 
+import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.MessageSwipe
@@ -10,11 +11,13 @@ class IosMailBehaviorStore(
 ) : MailBehaviorStore {
     override fun read(): MailBehavior {
         val defaults = MailBehavior()
+        val readLater = bool(READ_LATER, defaults.readLater)
         return MailBehavior(
             startToEnd = MessageSwipe.fromStorageValue(preferences.stringForKey(START_TO_END)) ?: defaults.startToEnd,
             endToStart = MessageSwipe.fromStorageValue(preferences.stringForKey(END_TO_START)) ?: defaults.endToStart,
             markReadOnOpen = bool(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
-            readLater = bool(READ_LATER, defaults.readLater),
+            readLater = readLater,
+            pills = preferences.stringForKey(PILLS)?.let(InboxPill::decode) ?: InboxPill.defaults(readLater),
             combinedFolders = bool(COMBINED_FOLDERS, defaults.combinedFolders),
         )
     }
@@ -24,6 +27,7 @@ class IosMailBehaviorStore(
         preferences.setObject(behavior.endToStart.storageValue, forKey = END_TO_START)
         preferences.setBool(behavior.markReadOnOpen, forKey = MARK_READ_ON_OPEN)
         preferences.setBool(behavior.readLater, forKey = READ_LATER)
+        preferences.setObject(InboxPill.encode(behavior.pills), forKey = PILLS)
         preferences.setBool(behavior.combinedFolders, forKey = COMBINED_FOLDERS)
     }
 
@@ -38,6 +42,7 @@ class IosMailBehaviorStore(
         const val END_TO_START = "otus.mail.swipe_end_to_start"
         const val MARK_READ_ON_OPEN = "otus.mail.mark_read_on_open"
         const val READ_LATER = "otus.mail.read_later"
+        const val PILLS = "otus.mail.inbox_pills"
         const val COMBINED_FOLDERS = "otus.mail.combined_folders"
     }
 }

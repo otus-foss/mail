@@ -60,12 +60,12 @@ internal class MessageFiling(
         target: MoveTarget,
     ) {
         val leaving = leaving(message, target.shortcut)
-        feed.remove(message.id)
+        val restore = feed.remove(message.id)
         scope.launch {
             if (services.mover.move(message, target.folderId, leaving)) {
                 folders.refresh()
             } else {
-                feed.restore(message)
+                restore()
                 feed.report("Couldn't move the message to ${target.label}. Try again.")
             }
         }
@@ -107,12 +107,13 @@ internal class MessageFiling(
         saved: Boolean,
         leaves: Boolean = false,
     ) {
-        if (leaves) feed.remove(message.id) else feed.change(message.id) { it.inFolder(folder.id, saved) }
+        val restore = if (leaves) feed.remove(message.id) else null
+        if (!leaves) feed.change(message.id) { it.inFolder(folder.id, saved) }
         scope.launch {
             if (services.mover.setInFolder(message, folder.id, saved)) {
                 folders.refresh()
             } else {
-                if (leaves) feed.restore(message) else feed.change(message.id) { it.inFolder(folder.id, !saved) }
+                if (restore != null) restore() else feed.change(message.id) { it.inFolder(folder.id, !saved) }
                 feed.report("Couldn't change ${folder.name}. Try again.")
             }
         }

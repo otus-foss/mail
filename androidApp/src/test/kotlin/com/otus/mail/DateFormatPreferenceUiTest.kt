@@ -40,7 +40,7 @@ class DateFormatPreferenceUiTest {
         val next = start.format(DateTimeFormatter.ofPattern("MM/dd/uuuu"))
         compose.onNodeWithText("$next → Today").assertIsDisplayed()
         compose.onNodeWithText("Last 7 days").assertIsSelected()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("This week").performScrollTo().performClick()
         compose.onNodeWithText("$next → Today").assertIsDisplayed()
         compose.onNodeWithText("Last 7 days").assertIsSelected()

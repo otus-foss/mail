@@ -3,46 +3,37 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ContextPanelScope
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.elements.Symbol
-import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_attach_file
-import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.presentation.InboxContext
 
+/**
+ * Search filters while searching, the user's pills otherwise. A shown folder pill stays first in
+ * search, in place of the inbox choice: the search covers that pill's folders.
+ */
 @Composable
 internal fun ContextPanelScope.InboxPanelChips(
     searching: Boolean,
     search: InboxSearch,
-    defaultSearch: InboxSearch,
+    context: InboxContext,
     dateFormatter: DateFormatter,
-    senders: List<MailSender>,
-    onChange: (InboxSearch) -> Unit,
-    onFilter: (InboxFilter) -> Unit,
+    selection: FilterSelection,
+    actions: InboxPanelActions,
 ) {
+    val shown = context.folderPill
     transition(searching) { mode ->
         if (mode) {
-            InboxFilter.entries.filter { it != InboxFilter.More }.forEach { filter ->
-                item(
-                    filter,
-                ) { SearchFilterChip(filter, search, defaultSearch, dateFormatter, senders) { onFilter(filter) } }
-            }
+            shown?.let { item(it.pill) { FolderPillChip(it, selected = true, actions.onFolder) } }
+            InboxFilter.entries
+                .filter { it != InboxFilter.More }
+                .forEach { filter ->
+                    item(filter) {
+                        SearchFilterChip(filter, search, context, dateFormatter, selection) {
+                            actions.onFilter(filter)
+                        }
+                    }
+                }
         } else {
-            item("unread") {
-                Chip(
-                    "Unread",
-                    { onChange(search.copy(unreadOnly = !search.unreadOnly)) },
-                    selected = search.unreadOnly,
-                ) { Symbol(Res.drawable.symbol_mark_email_unread) }
-            }
-            item("attachments") {
-                Chip(
-                    "Attachments",
-                    { onChange(search.copy(attachmentsOnly = !search.attachmentsOnly)) },
-                    selected = search.attachmentsOnly,
-                ) { Symbol(Res.drawable.symbol_attach_file) }
-            }
+            InboxRowPills(context.pills, search, shown?.pill, actions.onChange, actions.onFolder)
         }
     }
 }

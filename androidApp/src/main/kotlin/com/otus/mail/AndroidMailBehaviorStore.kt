@@ -2,6 +2,7 @@ package com.otus.mail
 
 import android.content.Context
 import androidx.core.content.edit
+import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.MessageSwipe
@@ -17,6 +18,7 @@ class AndroidMailBehaviorStore(
 
     override fun read(): MailBehavior {
         val defaults = MailBehavior()
+        val readLater = preferences.getBoolean(READ_LATER, defaults.readLater)
         return MailBehavior(
             startToEnd =
                 MessageSwipe.fromStorageValue(
@@ -27,7 +29,8 @@ class AndroidMailBehaviorStore(
                     preferences.getString(END_TO_START, null),
                 ) ?: defaults.endToStart,
             markReadOnOpen = preferences.getBoolean(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
-            readLater = preferences.getBoolean(READ_LATER, defaults.readLater),
+            readLater = readLater,
+            pills = preferences.getString(PILLS, null)?.let(InboxPill::decode) ?: InboxPill.defaults(readLater),
             combinedFolders = preferences.getBoolean(COMBINED_FOLDERS, defaults.combinedFolders),
         )
     }
@@ -38,6 +41,7 @@ class AndroidMailBehaviorStore(
             putString(END_TO_START, behavior.endToStart.storageValue)
             putBoolean(MARK_READ_ON_OPEN, behavior.markReadOnOpen)
             putBoolean(READ_LATER, behavior.readLater)
+            putString(PILLS, InboxPill.encode(behavior.pills))
             putBoolean(COMBINED_FOLDERS, behavior.combinedFolders)
         }
     }
@@ -47,6 +51,7 @@ class AndroidMailBehaviorStore(
         const val END_TO_START = "swipe_end_to_start"
         const val MARK_READ_ON_OPEN = "mark_read_on_open"
         const val READ_LATER = "read_later"
+        const val PILLS = "inbox_pills"
         const val COMBINED_FOLDERS = "combined_folders"
     }
 }
