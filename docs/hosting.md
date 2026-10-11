@@ -1,8 +1,7 @@
 # Hosting and CI
 
 [Otus Mail on GitHub](https://github.com/reazndev/otus-mail) hosts development, pull requests,
-issues, and CI. The repository used Forgejo from 2026-10-08 to 2026-10-11; every Forgejo branch
-was pushed to GitHub before the switch. Do not push new work to Forgejo.
+issues, and CI.
 
 New clones use:
 
@@ -20,5 +19,5 @@ Mail downloads its pinned Meta release from GitHub Packages at
 `https://maven.pkg.github.com/reazndev/otus-meta`. CI reads a GitHub token with `read:packages`
 from the `OTUS_META_PACKAGES_TOKEN` secret. See [shared libraries](shared-libraries.md) for local
 credentials, and the
-[suite hosting guide](https://github.com/reazndev/otus-meta/blob/main/docs/hosting.md) for the
-switch from Forgejo.
+[suite hosting guide](https://github.com/reazndev/otus-meta/blob/main/docs/hosting.md) for package
+publishing.
