@@ -1,10 +1,7 @@
 package com.otus.mail.app
 
 import com.otus.accounts.presentation.AccountsState
-import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
 import com.otus.mail.feature.folders.domain.FolderRights
-import com.otus.mail.feature.folders.domain.TRASH_ROLE
-import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
 import com.otus.mail.feature.folders.presentation.RulesState
@@ -13,11 +10,9 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.hasFlag
 import com.otus.mail.feature.inbox.domain.withFlag
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -28,7 +23,12 @@ internal class MailStates(
     val behavior: MailBehaviorState = MailBehaviorState(),
 ) {
     val feed = InboxFeedState(services.mail, scope, services.avatars)
-    val folders = FoldersState(services.folders, scope)
+    val folders =
+        FoldersState(
+            services.folders,
+            scope,
+            loadAccounts = { services.readLater.accounts { behavior.behavior.readLater } },
+        )
     val rules = RulesState(services.rules, scope)
     val ruleEditor = RuleEditorState(rules)
     val accounts =
@@ -53,44 +53,23 @@ internal class MailStates(
         folders.refresh()
     }
 
+    /** Moves messages between folders and in and out of Read later. */
+    val filing = MessageFiling(services, folders, scope)
+
     /** Moves, marks, and rules for messages shown by [feed]; [openRule] shows the rule editor for an account. */
     fun messageActions(
         feed: InboxFeedState,
         openRule: (accountId: String) -> Unit,
     ): MessageActions =
         MessageActions(
-            moveTargets = ::moveTargets,
-            onMove = { message, target -> move(feed, message, target) },
+            moveTargets = filing::moveTargets,
+            onMove = { message, target -> filing.move(feed, message, target) },
             canMark = ::canMark,
             onMark = { message, flag, on -> mark(feed, message, flag, on) },
-            canCreateRule = { rules.account(it.location.accountId)?.support != null },
-            onCreateRule = { message ->
-                ruleEditor.startForSender(message.location.accountId, message.sender.address)
-                openRule(message.location.accountId)
-            },
+            ruleForSender = { ruleForSender(it, openRule) },
+            readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },
         )
-
-    /**
-     * Takes the message out of the list at once and puts it back if the server refuses the move.
-     * A successful move does not reload the list: a reload can answer before another move still in
-     * flight, which would bring that message back.
-     */
-    private fun move(
-        feed: InboxFeedState,
-        message: MailMessage,
-        target: MoveTarget,
-    ) {
-        feed.remove(message.id)
-        scope.launch {
-            if (services.mover.move(message, target.folderId)) {
-                folders.refresh()
-            } else {
-                feed.restore(message)
-                feed.report("Couldn't move the message to ${target.label}. Try again.")
-            }
-        }
-    }
 
     /** Shows the change at once and puts the message back as it was if the server refuses it. */
     private fun mark(
@@ -112,38 +91,28 @@ internal class MailStates(
         }
     }
 
-    /** Folders of the message's account that accept mail, except the one it is in. */
-    private fun moveTargets(message: MailMessage): List<MoveTarget> {
-        val account = folders.account(message.location.accountId)
-        if (account == null || !rightsOf(message).mayRemoveItems) return emptyList()
-        return folderTree(account.folders)
-            .filter { it.folder.id != message.location.mailboxId && it.folder.rights.mayAddItems }
-            .map { MoveTarget(it.folder.id, it.path, shortcutFor(it.folder.role)) }
+    /** Starts a rule for the message's sender, where the account's server runs rules. */
+    private fun ruleForSender(
+        message: MailMessage,
+        openRule: (accountId: String) -> Unit,
+    ): (() -> Unit)? {
+        val accountId = message.location.accountId
+        if (rules.account(accountId)?.support == null) return null
+        return {
+            ruleEditor.startForSender(accountId, message.sender.address)
+            openRule(accountId)
+        }
     }
 
     /** Supplied messages have no server id, so only loaded mail can change its marks. */
     private fun canMark(
         message: MailMessage,
         flag: MessageFlag,
-    ): Boolean = message.emailId.isNotEmpty() && rightsOf(message).allow(flag)
-
-    /** Rights of the folder the message is shown in. Unknown folders allow everything; the server decides. */
-    private fun rightsOf(message: MailMessage): FolderRights =
-        folders
-            .account(message.location.accountId)
-            ?.folder(message.location.mailboxId)
-            ?.rights ?: FolderRights()
+    ): Boolean = message.emailId.isNotEmpty() && folders.rightsOf(message).allow(flag)
 }
 
 private fun FolderRights.allow(flag: MessageFlag): Boolean =
     when (flag) {
         MessageFlag.Read -> maySetSeen
         MessageFlag.Flagged -> maySetKeywords
-    }
-
-private fun shortcutFor(role: String?): FolderShortcut? =
-    when (role) {
-        ARCHIVE_ROLE -> FolderShortcut.Archive
-        TRASH_ROLE -> FolderShortcut.Trash
-        else -> null
     }

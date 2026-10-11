@@ -25,6 +25,7 @@ fun mainViewController() =
             MailServices(
                 IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
                 avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
+                readLaterStore = IosReadLaterStore(),
             )
         val behaviorState = MailBehaviorState(IosMailBehaviorStore())
         ComposeUIViewController { App(dateFormatState, services, behaviorState) }

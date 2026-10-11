@@ -12,10 +12,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-/** Every account's folders, and the changes the user makes to them. One change runs at a time. */
+/**
+ * Every account's folders, and the changes the user makes to them. One change runs at a time.
+ * [loadAccounts] loads the list; app wiring has it find each account's Read later folder too.
+ */
 class FoldersState(
     private val repository: FolderRepository,
     private val scope: CoroutineScope,
+    private val loadAccounts: suspend () -> List<AccountFolders>,
 ) {
     var accounts by mutableStateOf(emptyList<AccountFolders>())
         private set
@@ -98,7 +102,7 @@ class FoldersState(
     private suspend fun load() {
         loading = true
         try {
-            accounts = repository.accounts()
+            accounts = loadAccounts()
         } catch (expected: FolderStorageException) {
             notice = STORAGE_NOTICE
         } finally {

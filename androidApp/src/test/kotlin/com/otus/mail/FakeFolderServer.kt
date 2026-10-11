@@ -30,6 +30,9 @@ class FakeFolderServer {
             """{"id": "z", "name": "Amazon", "parentId": "r"}""",
         )
 
+    /** Folders the message is in besides the one it was loaded from. */
+    val alsoIn = mutableListOf<String>()
+
     /** When set, every `Email/set` update is refused as forbidden. */
     var refuseUpdates = false
 
@@ -85,7 +88,7 @@ class FakeFolderServer {
                 "Mailbox/set" in body -> createFolder(body)
                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $folderList}, "c0"]"""
                 "Email/set" in body -> updateEmail()
-                "Email/query" in body -> emails(if ("\"inMailbox\":\"r\"" in body) "Order shipped" else "Welcome")
+                "Email/query" in body -> emails(if ("\"inMailbox\":\"r\"" in body) "r" else "a")
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
                 else -> error("Unexpected call: $body")
@@ -126,10 +129,13 @@ class FakeFolderServer {
         return """["SieveScript/set", {"newState": "s$state", "created": {"rules": {"id": "S1"}}}, "c0"]"""
     }
 
-    private fun emails(subject: String) =
-        """["Email/query", {"ids": ["m1"]}, "c0"], ["Email/get", {"state": "e", "list": [{"id": "m1",
-           "from": [{"name": "Grace Hopper", "email": "grace@example.org"}], "subject": "$subject",
-           "receivedAt": "2026-10-04T09:30:00Z", "preview": "Hello"}]}, "c1"]"""
+    private fun emails(mailbox: String): String {
+        val subject = if (mailbox == "r") "Order shipped" else "Welcome"
+        val mailboxIds = (listOf(mailbox) + alsoIn).distinct().joinToString { "\"$it\": true" }
+        return """["Email/query", {"ids": ["m1"]}, "c0"], ["Email/get", {"state": "e", "list": [{"id": "m1",
+           "mailboxIds": {$mailboxIds}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
+           "subject": "$subject", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Hello"}]}, "c1"]"""
+    }
 
     private fun MockRequestHandleScope.json(text: String): HttpResponseData =
         respond(text, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))

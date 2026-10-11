@@ -64,7 +64,7 @@ private fun AccountFolderSection(
 ) {
     SettingsSection(account.accountName) {
         account.failure?.let { PageNote(it.message()) }
-        folderTree(account.folders).forEach { node ->
+        account.folderTree().forEach { node ->
             FolderRow(node) { onDialog(FolderDialog.Actions(account.accountId, node.folder.id)) }
         }
         if (account.failure == null && canCreateIn(account, null)) {

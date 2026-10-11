@@ -27,6 +27,7 @@ class AndroidMailBehaviorStore(
                     preferences.getString(END_TO_START, null),
                 ) ?: defaults.endToStart,
             markReadOnOpen = preferences.getBoolean(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
+            readLater = preferences.getBoolean(READ_LATER, defaults.readLater),
         )
     }
 
@@ -35,6 +36,7 @@ class AndroidMailBehaviorStore(
             putString(START_TO_END, behavior.startToEnd.storageValue)
             putString(END_TO_START, behavior.endToStart.storageValue)
             putBoolean(MARK_READ_ON_OPEN, behavior.markReadOnOpen)
+            putBoolean(READ_LATER, behavior.readLater)
         }
     }
 
@@ -42,5 +44,6 @@ class AndroidMailBehaviorStore(
         const val START_TO_END = "swipe_start_to_end"
         const val END_TO_START = "swipe_end_to_start"
         const val MARK_READ_ON_OPEN = "mark_read_on_open"
+        const val READ_LATER = "read_later"
     }
 }

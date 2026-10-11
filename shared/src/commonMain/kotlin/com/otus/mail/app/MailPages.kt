@@ -9,6 +9,7 @@ import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
 import com.otus.mail.feature.folders.presentation.screens.RulesScreen
+import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
@@ -32,7 +33,7 @@ internal fun MailPageContent(
         MailPage.Inbox -> {
             val feed = states.feed
             InboxScreen(
-                feed.messages,
+                rememberLabeled(states, feed),
                 dateFormatter,
                 navigation.openSidebar,
                 InboxStatus(states.accounts.accounts.isNotEmpty(), feed.loading, feed.notice),
@@ -100,7 +101,7 @@ private fun FolderPage(
         if (account != null && account.failure == null && folder == null) navigation.go(MailPage.Inbox)
     }
     InboxScreen(
-        feed.messages,
+        rememberLabeled(states, feed),
         dateFormatter,
         navigation.openSidebar,
         InboxStatus(connected = true, loading = feed.loading, notice = feed.notice),
@@ -122,3 +123,10 @@ private fun rememberMessageActions(
     remember(states, feed, navigation) {
         states.messageActions(feed) { accountId -> navigation.go(MailPage.RuleEditor(accountId, null)) }
     }
+
+/** The feed's messages with their other folders named, again whenever messages or folders change. */
+@Composable
+private fun rememberLabeled(
+    states: MailStates,
+    feed: InboxFeedState,
+): List<MailMessage> = remember(feed.messages, states.folders.accounts) { states.filing.labeled(feed.messages) }

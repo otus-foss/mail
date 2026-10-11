@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import com.otus.designsystem.components.SwipeAction
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
+import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_mark_email_read
@@ -13,6 +14,7 @@ import com.otus.mail.feature.inbox.domain.MessageSwipe
 import com.otus.mail.feature.inbox.domain.hasFlag
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import org.jetbrains.compose.resources.DrawableResource
 
 /** What pressing the button does next: an unread message offers to mark it read, and back. */
@@ -29,6 +31,10 @@ internal val FolderShortcut.label: String
             FolderShortcut.Trash -> "Trash"
         }
 
+/** Saving offers Read later; a saved message offers to leave it. */
+internal val ReadLaterChange.label: String
+    get() = if (saves) "Read later" else "Remove from Read later"
+
 /** The choice as the settings page names it, independent of any one message. */
 internal val MessageSwipe.label: String
     get() =
@@ -36,6 +42,7 @@ internal val MessageSwipe.label: String
             MessageSwipe.None -> "Nothing"
             MessageSwipe.Read -> "Read / unread"
             MessageSwipe.Flag -> "Flag / unflag"
+            MessageSwipe.ReadLater -> "Read later"
             MessageSwipe.Archive -> "Archive"
             MessageSwipe.Trash -> "Trash"
         }
@@ -49,6 +56,7 @@ internal fun MessageActions.swipeAction(
         MessageSwipe.None -> null
         MessageSwipe.Read -> markSwipe(message, MessageFlag.Read)
         MessageSwipe.Flag -> markSwipe(message, MessageFlag.Flagged)
+        MessageSwipe.ReadLater -> readLaterSwipe(message)
         MessageSwipe.Archive -> fileSwipe(message, FolderShortcut.Archive, Res.drawable.symbol_archive)
         MessageSwipe.Trash -> fileSwipe(message, FolderShortcut.Trash, Res.drawable.symbol_delete)
     }
@@ -66,6 +74,11 @@ private fun MessageActions.markSwipe(
         }
     return SwipeAction(flag.label(on), icon) { onMark(message, flag, !on) }
 }
+
+private fun MessageActions.readLaterSwipe(message: MailMessage): SwipeAction? =
+    readLater(message)?.let { change ->
+        SwipeAction(change.label, Res.drawable.symbol_bookmark, dismisses = change.leaves, onSwipe = change.apply)
+    }
 
 private fun MessageActions.fileSwipe(
     message: MailMessage,

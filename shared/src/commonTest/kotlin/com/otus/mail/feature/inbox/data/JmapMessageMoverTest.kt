@@ -41,12 +41,33 @@ class JmapMessageMoverTest {
                 mover {
                     sent += it
                     """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
-                }.move(message, "r")
+                }.move(message, "r", leaving = setOf("a"))
             assertTrue(moved)
             assertTrue(
                 "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/r\":true}}" in sent.single(),
                 sent.single(),
             )
+        }
+
+    @Test
+    fun aMoveCanLeaveSeveralFoldersAndOnlyNamedOnesChange() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val updated = """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
+            val mover =
+                mover {
+                    sent += it
+                    updated
+                }
+            assertTrue(mover.move(message, "t", leaving = setOf("a", "l")))
+            assertTrue(mover.setInFolder(message, "l", inFolder = true))
+            assertTrue(mover.setInFolder(message, "l", inFolder = false))
+            assertTrue(
+                "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/l\":null,\"mailboxIds/t\":true}}" in sent[0],
+                sent[0],
+            )
+            assertTrue("\"update\":{\"m1\":{\"mailboxIds/l\":true}}" in sent[1], sent[1])
+            assertTrue("\"update\":{\"m1\":{\"mailboxIds/l\":null}}" in sent[2], sent[2])
         }
 
     @Test
@@ -57,10 +78,11 @@ class JmapMessageMoverTest {
                     """{"methodResponses": [["Email/set", {"newState": "e2",
                        "notUpdated": {"m1": {"type": "forbidden"}}}, "c0"]]}"""
                 }
-            assertFalse(refused.move(message, "r"))
+            assertFalse(refused.move(message, "r", setOf("a")))
             val idle = mover { error("Nothing is sent") }
-            assertFalse(idle.move(message, "a"), "Moving into the same mailbox does nothing")
-            assertFalse(idle.move(message.copy(emailId = ""), "r"), "Supplied messages have no server id")
-            assertEquals(false, idle.move(message.copy(location = message.location.copy(accountId = "gone")), "r"))
+            assertFalse(idle.move(message, "a", setOf("a")), "Moving into the same mailbox does nothing")
+            assertFalse(idle.move(message.copy(emailId = ""), "r", setOf("a")), "Supplied messages have no server id")
+            val gone = message.copy(location = message.location.copy(accountId = "gone"))
+            assertEquals(false, idle.move(gone, "r", setOf("a")))
         }
 }

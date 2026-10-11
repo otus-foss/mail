@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.EmptyState
@@ -31,6 +32,8 @@ fun InboxBody(
     if (messages.isEmpty()) {
         Box(Modifier.padding(horizontal = InboxTokens.pageInset)) { emptyContent() }
     } else {
+        // Account names tell rows apart only when the list mixes accounts.
+        val mixedAccounts = remember(messages) { messages.distinctBy { it.location.accountId }.size > 1 }
         // Rows reach the screen edges, so a swipe's color does too; the inset aligns their content.
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -45,7 +48,7 @@ fun InboxBody(
                     modifier = Modifier.animateItem(),
                 ) {
                     Box(Modifier.padding(horizontal = InboxTokens.pageInset)) {
-                        MessageRow(message, dateFormatter) { onOpen(message) }
+                        MessageRow(message, dateFormatter, mixedAccounts) { onOpen(message) }
                     }
                 }
             }

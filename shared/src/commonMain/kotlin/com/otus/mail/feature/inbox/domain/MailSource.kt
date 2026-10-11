@@ -43,11 +43,22 @@ interface MessageMarker {
     ): Boolean
 }
 
-/** Files messages into folders on the server. */
+/** Files messages into folders on the server. False when the server refused or could not be reached. */
 interface MessageMover {
-    /** Moves [message] from its mailbox into [folderId] of the same account; false when the server refused. */
+    /**
+     * Moves [message] into [folderId] of the same account and out of [leaving]. It stays in any
+     * other mailbox it is in.
+     */
     suspend fun move(
         message: MailMessage,
         folderId: String,
+        leaving: Set<String>,
+    ): Boolean
+
+    /** Adds [message] to [folderId], or takes it out, and leaves its other mailboxes as they are. */
+    suspend fun setInFolder(
+        message: MailMessage,
+        folderId: String,
+        inFolder: Boolean,
     ): Boolean
 }
