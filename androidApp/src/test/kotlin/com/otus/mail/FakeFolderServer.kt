@@ -14,20 +14,24 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * A JMAP server shaped like Stalwart that remembers changes: folders created with `Mailbox/set`
  * and the rules script uploaded and activated with `SieveScript/set`.
  */
 class FakeFolderServer {
-    /** Every API request body, in order. */
-    val calls = mutableListOf<String>()
+    /** Every API request body, in order. The client adds to it while tests read it. */
+    val calls: MutableList<String> = CopyOnWriteArrayList()
     val folders =
         mutableListOf(
             """{"id": "a", "name": "Inbox", "role": "inbox", "unreadEmails": 1, "totalEmails": 1}""",
             """{"id": "r", "name": "Receipts", "unreadEmails": 2, "totalEmails": 3}""",
             """{"id": "z", "name": "Amazon", "parentId": "r"}""",
         )
+
+    /** When set, every `Email/set` update is refused as forbidden. */
+    var refuseUpdates = false
 
     /** The rules script as last uploaded and saved. */
     var script: String? = null
@@ -80,13 +84,19 @@ class FakeFolderServer {
             when {
                 "Mailbox/set" in body -> createFolder(body)
                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $folderList}, "c0"]"""
-                "Email/set" in body -> """["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]"""
+                "Email/set" in body -> updateEmail()
                 "Email/query" in body -> emails(if ("\"inMailbox\":\"r\"" in body) "Order shipped" else "Welcome")
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
                 else -> error("Unexpected call: $body")
             }
         return """{"methodResponses": [$reply]}"""
+    }
+
+    private fun updateEmail(): String {
+        val outcome =
+            if (refuseUpdates) """"notUpdated": {"m1": {"type": "forbidden"}}""" else """"updated": {"m1": null}"""
+        return """["Email/set", {"newState": "e2", $outcome}, "c0"]"""
     }
 
     private val folderList: String

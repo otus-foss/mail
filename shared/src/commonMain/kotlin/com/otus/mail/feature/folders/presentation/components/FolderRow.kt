@@ -1,25 +1,27 @@
 package com.otus.mail.feature.folders.presentation.components
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.DetailRow
-import com.otus.designsystem.elements.Symbol
+import androidx.compose.ui.Modifier
+import com.otus.designsystem.components.SettingRow
+import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.presentation.folderIcon
 
-/** Maps a folder and its message counts into a shared indented row. */
+/** A folder and its message counts as a settings row, indented by its nesting depth. */
 @Composable
 fun FolderRow(
     node: FolderNode,
     onClick: () -> Unit,
 ) {
     val folder = node.folder
-    DetailRow(
+    SettingRow(
         folder.name,
-        listOf(folderCounts(folder.total, folder.unread)),
         onClick,
-        depth = node.depth,
-        maxLines = 1,
-    ) { Symbol(folderIcon(folder.role)) }
+        Modifier.padding(start = PageTokens.nestIndent * node.depth),
+        description = folderCounts(folder.total, folder.unread),
+        icon = folderIcon(folder.role),
+    )
 }
 
 private fun folderCounts(

@@ -33,13 +33,20 @@ class JmapFolderRepositoryTest {
                     """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
                        {"id": "a", "name": "Inbox", "role": "Inbox", "unreadEmails": 3, "totalEmails": 9},
                        {"id": "r", "name": "Receipts", "parentId": null,
-                        "myRights": {"mayDelete": false, "mayRename": true, "mayCreateChild": true, "mayAddItems": true}},
+                        "myRights": {"mayDelete": false, "mayRename": true, "mayCreateChild": true, "mayAddItems": true,
+                          "mayRemoveItems": false, "maySetSeen": false, "maySetKeywords": false}},
                        {"id": "z", "name": "Amazon", "parentId": "r", "sortOrder": 4}]}, "c0"]]}"""
                 }.accounts().single()
             assertEquals(FolderLimits(mayCreateTopLevel = false, maxDepth = 3, maxNameBytes = 200), account.limits)
             assertEquals("inbox", account.inbox?.role)
             assertEquals(3, account.inbox?.unread)
             assertEquals(false, account.folder("r")?.rights?.mayDelete)
+            val shared = requireNotNull(account.folder("r")).rights
+            assertEquals(
+                listOf(false, false, false),
+                listOf(shared.mayRemoveItems, shared.maySetSeen, shared.maySetKeywords),
+            )
+            assertEquals(true, account.folder("z")?.rights?.maySetSeen, "Missing rights are left to the server")
             assertEquals("r", account.folder("z")?.parentId)
             assertTrue("\"parentId\"" in sent.single() && "\"myRights\"" in sent.single())
         }

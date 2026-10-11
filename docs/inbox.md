@@ -70,8 +70,10 @@ chevron still closes search.
 ## Page width
 
 Content spans the context panel's width: the page has an 8 dp inset and full-width elements, such as
-message rows, Settings rows, fields, and buttons, use it directly. Free-standing text, such as the
-message count, section captions, and notes (`PageNote`), lines up with the text inside those rows.
+Settings rows, fields, and buttons, use it directly. Free-standing text, such as the message count,
+section captions, and notes (`PageNote`), lines up with the text inside those rows. Inbox and folder
+message rows are the exception: they reach the screen edges so a swipe's color does too, and pad
+their content by the same 8 dp so it stays aligned with the context panel.
 
 ## Connected account identity
 
@@ -98,6 +100,45 @@ empty-state title. Closing search and clearing filters return to that default; t
 reads "All" for it. `MailSource.messages(MailScope)` loads either every account's inbox or one
 folder of one account. Messages keep their server id and mailbox id so they can be moved.
 
-An open message can offer **Move** and **Rule for sender** through `MessageActions`, which app
-wiring builds from the loaded folders and rules. A move that the server refuses leaves the message
-in place and shows a notice. See [Folders and rules](folders.md).
+An open message can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**, **Archive**,
+**Trash**, **Move**, and **Rule for sender** through `MessageActions`, which app wiring builds from
+the loaded folders and rules. The actions wrap above the message body, so they stay in view while
+it scrolls.
+
+- Marks set or clear one keyword with an `Email/set` patch (RFC 8621, section 4.1.1): `$seen` for
+  read and `$flagged` for the flag. Other keywords are untouched; turning a mark off removes the
+  keyword. The open message shows the change at once. If the server refuses, the mark goes back
+  and the inbox shows a notice. Changing the read mark refreshes the folder unread counts.
+- Archive and Trash move the message to the account's folder with the `archive` or `trash` role,
+  found by role because servers name these folders differently. Each is offered only when that
+  folder exists and the message is not already in it. Trash moves the message; nothing is
+  permanently deleted.
+- Actions follow the rights of the folder the message is shown in (RFC 8621, section 2):
+  `maySetSeen` for the read mark, `maySetKeywords` for the flag, and `mayRemoveItems` for
+  Archive, Trash, and Move. The target must allow `mayAddItems`. The server still checks every
+  other mailbox the message belongs to.
+- Opening an unread message marks it read with the same `$seen` patch, unless **Mark as read when
+  opened** is off in Appearance & behavior. Undo, bulk selection, and permanent deletion are not
+  implemented yet; see issue #27.
+
+A moved message leaves the list at once. If the server refuses, it comes back and the inbox shows
+a notice. See [Folders and rules](folders.md).
+
+## Swipe actions
+
+Each inbox and folder row is wrapped in Meta's `SwipeActions`. Appearance & behavior chooses what
+a swipe right and a swipe left do: **Read / unread**, **Flag / unflag**, **Archive**,
+**Trash**, or **Nothing**. The defaults are mark read or unread on a swipe right and archive on a
+swipe left. Right-to-left layouts mirror the directions.
+
+- A swipe runs the same action as the open message's button, with the same folder rights and role
+  checks. A row whose message cannot take the chosen action does not move in that direction.
+- Dragging uncovers a full-height accent area that grows out of the screen edge. Its concave
+  corners at the edge cut 12 dp into the rows above and below, and its free end is rounded. The action's icon grows in beside its label, and the row
+  stops once the action is fully revealed. Releasing past
+  96 dp, marked by a haptic, flashes and runs the action. Archive and Trash leave the row to the
+  list, which removes it at once. Marks return the row to rest showing the new state.
+- TalkBack and VoiceOver offer each available swipe as a custom action on the row.
+- `MailBehavior` holds the two swipes and the open-to-read choice. `MailBehaviorStore` saves them
+  in app-private preferences: `SharedPreferences` on Android and `NSUserDefaults` on iOS. Unknown
+  saved values read as the defaults.
