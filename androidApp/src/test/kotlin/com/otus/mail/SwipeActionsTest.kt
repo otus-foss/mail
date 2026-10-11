@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -82,6 +83,22 @@ class SwipeActionsTest {
     }
 
     @Test
+    fun aTapOnARowReturningFromASwipeDoesNotRunItsActionAgain() {
+        start()
+        waitForSwipe("Mark read")
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithText("Welcome").performTouchInput { swipeRight() }
+        // The row slides out for 300 ms and then back for 300 ms; this tap lands on its way back.
+        compose.mainClock.advanceTimeBy(RETURNING_MILLIS)
+        compose.onNodeWithText("Welcome").performTouchInput { click() }
+        compose.mainClock.autoAdvance = true
+        compose.waitUntil(TIMEOUT) { updates().isNotEmpty() }
+        compose.waitForIdle()
+        assertTrue(compose.onAllNodes(offers("Mark read")).fetchSemanticsNodes().isEmpty())
+        assertTrue(updates().single(), "\"keywords/\$seen\":true" in updates().single())
+    }
+
+    @Test
     fun aSwipeSetToNothingOrWithoutAFolderLeavesTheRowStill() {
         // No folder has the archive role, and the other side is turned off.
         start(MailBehavior(startToEnd = MessageSwipe.None, endToStart = MessageSwipe.Archive))
@@ -120,5 +137,6 @@ class SwipeActionsTest {
 
     private companion object {
         const val TIMEOUT = 5_000L
+        const val RETURNING_MILLIS = 400L
     }
 }
