@@ -29,21 +29,21 @@ fits without overlapping the number.
 
 ## Shared controls
 
-`SelectionSheet` is a design-system component with heading, optional search slot, scrollable
-content area, and fixed Clear/Apply actions. `PickerSearch` composes the existing `SearchField`
+`SelectionSheet` uses the shared `SheetFrame` with a heading, optional search slot, scrollable
+content area, and Clear and Done actions in its header. `PickerSearch` composes the existing `SearchField`
 element; its text is independent of the mail query. `SelectionRow` and `ActionButton` are elements.
 They share clipped press feedback with pills and icon buttons, including keyboard focus feedback.
 All colors use the supplied dark palette; text uses Figtree and the existing symbols use Material
 Symbols Rounded. `SheetTokens` owns sheet geometry. No new palette colors or icon assets are added.
 
-The sheet dismisses through Close, outside-tap, or system Back. The list scrolls independently,
-and safe-area/IME padding keeps the actions above the keyboard. Width is capped at 560 dp on
-larger displays. This modal has no drag handle or swipe-to-dismiss gesture.
+Done commits the draft and closes the sheet. Tapping outside, system Back, or a downward swipe
+discards it. A short, slow pull springs back. The list scrolls independently, and safe-area/IME
+padding keeps the sheet above the keyboard. Width is capped at 560 dp on larger displays.
 
 ## Drafts and filters
 
 Opening a sheet copies the applied criteria into a saveable draft. Row presses only change that
-draft. Apply commits it and closes; dismissal discards it. Clear resets only the current filter
+draft. Done commits it and closes; dismissal discards it. Clear resets only the current filter
 in the draft. Double-tapping Clear also applies the cleared draft and closes the sheet.
 Picker search does not clear selections, and reopening resets its local query.
 Screen criteria, open filter, draft selections, and picker query survive activity recreation.
@@ -54,7 +54,7 @@ Screen criteria, open filter, draft selections, and picker query survive activit
 - **Inboxes:** searchable mailbox choices sorted by account name, with an account avatar and
   address on each row. Search matches mailbox names, account names, and addresses. Selection includes account identity;
   matching mailbox names in different accounts are separate choices. The initial Inbox scope
-  matches Inbox across accounts. Clear + Apply means all supplied mailboxes.
+  matches Inbox across accounts. Clear + Done means all supplied mailboxes.
 - **Accounts:** searchable multiple account choices with account avatars. Show the address beneath
   the account name only when it differs. No selection means all accounts. The pill
   now says Accounts rather than the Figma label Mails to make its purpose explicit.
@@ -66,7 +66,7 @@ Screen criteria, open filter, draft selections, and picker query survive activit
   selects a range instead. The fixed month control tracks the visible month, and inline labels mark each month's first day. Tapping two dates remains available for touch, keyboard, and accessibility
   actions, including endpoints in different months. Double-tapping a date selects the inclusive
   range between that date and today. Future dates are absent and cannot be selected. Each date also
-  exposes a "Select through today" accessibility action. Apply is disabled for a half-selected range.
+  exposes a "Select through today" accessibility action. Done is disabled for a half-selected range.
   A start-only selection reads `[date] → Choose an end date` in one summary, wrapping only when
   needed. The separate scrolling/dragging instruction line is omitted.
   The month/year heading uses stable month and year columns so changing the month name does not
@@ -83,13 +83,13 @@ Screen criteria, open filter, draft selections, and picker query survive activit
   Selecting another date after a complete range starts a new range. Today, Last 7 days, and Last 30 days use the device's local date.
   The ranges include today and the previous six or 29 days, respectively. A shortcut uses the active
   blue fill and border when its complete range matches the draft, including manual date selection.
-  Clearing or changing the range updates the highlight. Clear + Apply removes date restrictions.
+  Clearing or changing the range updates the highlight. Clear + Done removes date restrictions.
   The draft summary shows Today and Yesterday for matching device-local dates; other dates use the
   selected display format. Applied date pills show Today, This week, or This month when the selected
   dates match those shortcuts. Other single dates show one label, and other ranges label each endpoint
   independently. Stored dates and filtering remain ISO-based.
   A week can contain dates from adjacent months, with one uninterrupted range band across the boundary.
-- **Filters:** unread and attachment switches also use draft/Apply behavior.
+- **Filters:** unread and attachment switches also use draft/Done behavior.
 
 Selections are ORed within each category and ANDed across categories and the mail query.
 Search pills summarize applied selections. The default Inbox scope and unrestricted account scope

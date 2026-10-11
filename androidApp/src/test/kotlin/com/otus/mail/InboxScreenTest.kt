@@ -108,11 +108,11 @@ class InboxScreenTest {
         compose.onNodeWithContentDescription("Search mailbox").performClick()
         compose.onNodeWithText("People").performClick()
         compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Design review").assertIsDisplayed()
         compose.onNodeWithContentDescription("All accounts").performScrollTo().performClick()
         compose.onNodeWithText("Personal").performClick()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("No matching messages").assertIsDisplayed()
         screenshot("narrow-filtered")
     }

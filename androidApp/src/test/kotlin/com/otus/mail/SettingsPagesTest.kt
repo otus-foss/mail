@@ -1,11 +1,14 @@
 package com.otus.mail
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -78,7 +81,8 @@ class SettingsPagesTest {
     fun systemBackLeavesASubpageForSettings() {
         openSettings()
         compose.onNodeWithText("Email accounts").performClick()
-        compose.onNodeWithText("Add a JMAP account").assertIsDisplayed()
+        compose.onNodeWithText("Connect an account").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Server").assertDoesNotExist()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("Appearance & behavior").assertIsDisplayed()
     }
@@ -87,6 +91,7 @@ class SettingsPagesTest {
     fun accountSetupResolvesTheJmapSessionBeforeConnecting() {
         openSettings()
         compose.onNodeWithText("Email accounts").performClick()
+        compose.onNodeWithText("Connect an account").performClick()
         val server = compose.onNodeWithContentDescription("Server")
         server.performTextInput("http://mail.example.com")
         compose.onNodeWithText("JMAP requires a secure connection. Use https://.").assertIsDisplayed()
@@ -100,6 +105,36 @@ class SettingsPagesTest {
                 "Password",
             ).assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
         compose.onNodeWithText("Connect").assertIsEnabled()
+    }
+
+    @Test
+    fun closingAccountSetupDiscardsTheFormAndKeepsTheAccountsPage() {
+        openSettings()
+        compose.onNodeWithText("Email accounts").performClick()
+        compose.onNodeWithContentDescription("Server").assertDoesNotExist()
+        compose.onNodeWithText("Connect an account").performClick()
+        compose.onNodeWithContentDescription("Server").performTextInput("mail.example.org")
+        compose.onNodeWithContentDescription("Username").performTextInput("ada@example.org")
+        compose.onNodeWithContentDescription("Password").performTextInput("secret")
+        compose.onNodeWithContentDescription("Dismiss Connect an account").performTouchInput {
+            click(Offset(center.x, 10f))
+        }
+        waitForAccountSheetToClose()
+        compose.onNodeWithContentDescription("Server").assertDoesNotExist()
+        compose.onNodeWithText("Connected accounts").assertIsDisplayed()
+        compose.onNodeWithText("Connect an account").performClick()
+        compose.onNodeWithText("mail.example.org").assertDoesNotExist()
+        compose.onNodeWithText("ada@example.org").assertDoesNotExist()
+        compose.onNodeWithText("Connect").assertIsNotEnabled()
+        compose.onNodeWithText("Done").performClick()
+        waitForAccountSheetToClose()
+        compose.onNodeWithContentDescription("Server").assertDoesNotExist()
+    }
+
+    private fun waitForAccountSheetToClose() {
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasContentDescription("Server")).fetchSemanticsNodes().isEmpty()
+        }
     }
 
     private fun openSettings() {

@@ -13,7 +13,7 @@ uses:
 | `com.otus:settings` | `libs.otus.settings` |
 | `com.otus:accounts` | `libs.otus.accounts` |
 
-Mail pins Meta 0.6.0 for all six libraries. Local source substitution is optional development
+Mail pins Meta 0.7.0 for all six libraries. Local source substitution is optional development
 configuration; normal builds download the pinned GitHub Packages artifacts. Calendar adoption
 is deferred. See [the component inventory](component-inventory.md) for ownership and release state.
 
