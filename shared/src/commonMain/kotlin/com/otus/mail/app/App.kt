@@ -51,6 +51,7 @@ fun App(
                 sidebar,
                 current = page.root,
                 accounts = states.folders.accounts,
+                combined = behaviorState.behavior.combinedFolders,
                 onSelect = {
                     page = it
                     scope.launch { sidebar.close() }

@@ -10,6 +10,7 @@ import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
 import com.otus.mail.feature.folders.presentation.screens.RulesScreen
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
@@ -82,6 +83,11 @@ internal fun MailPageContent(
         is MailPage.Folder -> {
             FolderPage(page, states, dateFormatter, navigation)
         }
+
+        is MailPage.Combined -> {
+            val folder = page.folder
+            FeedPage(MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
+        }
     }
 }
 
@@ -92,14 +98,32 @@ private fun FolderPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val feed = remember(page) { states.folderFeed(page) }
-    LaunchedEffect(feed) { feed.refresh() }
     val account = states.folders.account(page.accountId)
     val folder = account?.folder(page.folderId)
     // A folder deleted elsewhere leaves its page once the account's folders have loaded without it.
     LaunchedEffect(account, folder) {
         if (account != null && account.failure == null && folder == null) navigation.go(MailPage.Inbox)
     }
+    FeedPage(
+        MailScope.Folder(page.accountId, page.folderId),
+        folder?.name ?: "Folder",
+        states,
+        dateFormatter,
+        navigation,
+    )
+}
+
+/** The messages [mailScope] loads, on a page that calls their folder [name]. */
+@Composable
+private fun FeedPage(
+    mailScope: MailScope,
+    name: String,
+    states: MailStates,
+    dateFormatter: DateFormatter,
+    navigation: MailNavigation,
+) {
+    val feed = remember(mailScope) { states.folderFeed(mailScope) }
+    LaunchedEffect(feed) { feed.refresh() }
     InboxScreen(
         rememberLabeled(states, feed),
         dateFormatter,
@@ -109,7 +133,7 @@ private fun FolderPage(
             feed.refresh()
             states.folders.refresh()
         },
-        context = InboxContext.folder(folder?.name ?: "Folder"),
+        context = InboxContext.folder(name),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
 }

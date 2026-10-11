@@ -1,6 +1,7 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.saveable.Saver
+import com.otus.mail.feature.folders.domain.CombinedFolder
 
 /** Every page, including subpages. Pages without a parent are sidebar destinations. */
 internal sealed interface MailPage {
@@ -46,6 +47,11 @@ internal sealed interface MailPage {
         val folderId: String,
     ) : MailPage
 
+    /** One system folder of every account, such as the Trash of all of them. */
+    data class Combined(
+        val folder: CombinedFolder,
+    ) : MailPage
+
     companion object {
         private val fixed = listOf(Inbox, Settings, EmailAccounts, Appearance, Folders, Rules)
 
@@ -55,6 +61,7 @@ internal sealed interface MailPage {
                     when (page) {
                         is Folder -> listOf(FOLDER, page.accountId, page.folderId)
                         is RuleEditor -> listOf(RULE, page.accountId, page.ruleId.orEmpty())
+                        is Combined -> listOf(COMBINED, page.folder.name)
                         else -> listOf(page.toString())
                     }
                 },
@@ -62,6 +69,7 @@ internal sealed interface MailPage {
                     when (saved.firstOrNull()) {
                         FOLDER -> Folder(saved[1], saved[2])
                         RULE -> RuleEditor(saved[1], saved[2].ifEmpty { null })
+                        COMBINED -> CombinedFolder.entries.firstOrNull { it.name == saved[1] }?.let(::Combined) ?: Inbox
                         else -> fixed.firstOrNull { it.toString() == saved.firstOrNull() } ?: Inbox
                     }
                 },
@@ -69,5 +77,6 @@ internal sealed interface MailPage {
 
         private const val FOLDER = "Folder"
         private const val RULE = "RuleEditor"
+        private const val COMBINED = "Combined"
     }
 }
