@@ -25,6 +25,7 @@ import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.MessageLabel
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Rule
@@ -78,7 +79,12 @@ class InboxScreenTest {
     @Test
     fun liveSearchFiltersFixturesAndResetRestoresList() {
         showFixtures()
-        compose.onNodeWithText("Design review").assertIsDisplayed()
+        // Two accounts, so rows name theirs; the saved message also names Read later.
+        compose
+            .onNode(
+                hasText("Design review") and hasText("Read later") and hasText("Work · 1 file"),
+            ).assertIsDisplayed()
+        compose.onNode(hasText("Weekend plans") and hasText("Personal")).assertIsDisplayed()
         screenshot("inbox-fixtures")
         compose.onNodeWithContentDescription("Search mailbox").performClick()
         compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("prototype")
@@ -150,6 +156,7 @@ class InboxScreenTest {
                     ReceivedAt("2026-10-03", "10:30"),
                     MailLocation("Inbox", "Work"),
                     MailAttributes(true, listOf("draft.pdf")),
+                    labels = listOf(MessageLabel("Read later", readLater = true)),
                 ),
                 MailMessage(
                     "sam",

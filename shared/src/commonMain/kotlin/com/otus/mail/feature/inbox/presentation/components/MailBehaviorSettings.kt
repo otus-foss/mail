@@ -40,11 +40,17 @@ fun MailBehaviorSettings(state: MailBehaviorState) {
             onCheckedChange = { on -> state.update { it.copy(markReadOnOpen = on) } },
             description = "Otherwise mail stays unread until you mark it",
         )
+        SettingToggleRow(
+            "Read later",
+            checked = behavior.readLater,
+            onCheckedChange = { on -> state.update { it.withReadLater(on) } },
+            description = "Adds a Read later folder and a button that moves mail there",
+        )
     }
     choosing?.let { side ->
         ChoiceSheet(
             title = side.title(rtl),
-            choices = ChoiceOptions(MessageSwipe.entries, selected = side.of(behavior), default = side.default),
+            choices = ChoiceOptions(behavior.swipeChoices, selected = side.of(behavior), default = side.default),
             label = { it.label },
             detail = { swipe -> "Default".takeIf { swipe == side.default } },
             onSelect = { swipe -> state.update { side.with(it, swipe) } },

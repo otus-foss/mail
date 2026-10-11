@@ -99,6 +99,22 @@ class SwipeActionsTest {
     }
 
     @Test
+    fun aSwipeSetToReadLaterSavesTheMessageAndLabelsItsRow() {
+        server.folders += """{"id": "l", "name": "Read later"}"""
+        start(MailBehavior(endToStart = MessageSwipe.ReadLater, readLater = true))
+        waitForSwipe("Read later")
+        compose.onNodeWithText("Welcome").performTouchInput { swipeLeft() }
+        compose.waitUntil(TIMEOUT) { updates().isNotEmpty() }
+        val save = updates().single()
+        assertTrue(save, "\"update\":{\"m1\":{\"mailboxIds/l\":true}}" in save)
+        // The row stays, names its new folder, and now offers to leave it.
+        compose.onNode(hasText("Welcome") and hasText("Read later")).assertIsDisplayed()
+        waitForSwipe("Remove from Read later")
+        // The existing folder is used, not created again.
+        assertTrue(server.calls.none { "Mailbox/set" in it })
+    }
+
+    @Test
     fun aSwipeSetToNothingOrWithoutAFolderLeavesTheRowStill() {
         // No folder has the archive role, and the other side is turned off.
         start(MailBehavior(startToEnd = MessageSwipe.None, endToStart = MessageSwipe.Archive))

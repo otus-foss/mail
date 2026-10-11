@@ -34,13 +34,15 @@ data class FolderRights(
     val maySetKeywords: Boolean = true,
 )
 
-/** What the account's server allows when creating folders (RFC 8621, section 1.3.1). */
+/** What the account's server allows for folders (RFC 8621, section 1.3.1). */
 data class FolderLimits(
     val mayCreateTopLevel: Boolean = true,
     /** One more than the most ancestors a folder may have; null when unlimited. */
     val maxDepth: Int? = null,
     /** The longest name in UTF-8 octets; null when unlimited. */
     val maxNameBytes: Int? = null,
+    /** The most folders one message may be in at once; null when unlimited. */
+    val maxFoldersPerMessage: Int? = null,
 )
 
 /** One connected account's folders. [failure] is set when they could not be loaded. */
@@ -50,21 +52,31 @@ data class AccountFolders(
     val folders: List<MailFolder> = emptyList(),
     val limits: FolderLimits = FolderLimits(),
     val failure: FolderFailure? = null,
+    /** The folder Read later files mail into; null while that setting is off or it has none. */
+    val readLaterId: String? = null,
 ) {
     fun folder(id: String): MailFolder? = folders.firstOrNull { it.id == id }
+
+    val readLater: MailFolder?
+        get() = readLaterId?.let(::folder)
 
     /** The folder new mail arrives in, located by role because servers name it differently. */
     val inbox: MailFolder?
         get() = folders.firstOrNull { it.role == INBOX_ROLE }
 }
 
-/** A folder in display order, with its nesting [depth] and its full [path] for pickers. */
+/**
+ * A folder in display order, with its nesting [depth] and its full [path] for pickers. [readLater]
+ * marks the account's Read later folder.
+ */
 data class FolderNode(
     val folder: MailFolder,
     val depth: Int,
     val path: String,
+    val readLater: Boolean = false,
 )
 
 const val INBOX_ROLE = "inbox"
 const val ARCHIVE_ROLE = "archive"
+const val JUNK_ROLE = "junk"
 const val TRASH_ROLE = "trash"

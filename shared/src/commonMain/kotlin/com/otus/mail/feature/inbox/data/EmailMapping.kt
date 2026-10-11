@@ -33,7 +33,15 @@ internal fun EmailObject.toMessage(
         subject = subject.orEmpty(),
         body = text.ifBlank { preview },
         received = ReceivedAt(local.date.toString(), "${local.hour.twoDigits()}:${local.minute.twoDigits()}"),
-        location = MailLocation(mailbox, account, accountId, accountAddress, mailboxId = mailboxId),
+        location =
+            MailLocation(
+                mailbox,
+                account,
+                accountId,
+                accountAddress,
+                mailboxId = mailboxId,
+                mailboxIds = mailboxIds.filterValues { it }.keys,
+            ),
         attributes =
             MailAttributes(
                 unread = keywords[SEEN_KEYWORD] != true,

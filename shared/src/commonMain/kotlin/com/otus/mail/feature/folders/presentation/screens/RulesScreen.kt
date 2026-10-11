@@ -99,7 +99,7 @@ private fun AccountRulesContent(
             val paths =
                 folders
                     ?.let {
-                        folderTree(it.folders).associate { node ->
+                        it.folderTree().associate { node ->
                             node.folder.id to node.path
                         }
                     }.orEmpty()

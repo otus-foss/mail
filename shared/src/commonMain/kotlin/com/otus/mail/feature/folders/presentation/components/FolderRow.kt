@@ -20,7 +20,7 @@ fun FolderRow(
         onClick,
         Modifier.padding(start = PageTokens.nestIndent * node.depth),
         description = folderCounts(folder.total, folder.unread),
-        icon = folderIcon(folder.role),
+        icon = folderIcon(node),
     )
 }
 

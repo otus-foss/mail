@@ -13,6 +13,7 @@ class OtusMailApplication : Application() {
         MailServices(
             AndroidLoginStore(this, preferencesName = "otus_accounts", keyAlias = "otus.account.credentials"),
             avatarStore = FileAvatarStore(File(cacheDir, "avatars-v1").absolutePath),
+            readLaterStore = AndroidReadLaterStore(this),
         )
     }
 }

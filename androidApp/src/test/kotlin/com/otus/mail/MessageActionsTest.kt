@@ -103,14 +103,44 @@ class MessageActionsTest {
     }
 
     @Test
+    fun readLaterSavesTheMessageInPlaceAndCanRemoveIt() {
+        server.folders += """{"id": "l", "name": "Read later"}"""
+        openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
+        compose.onNodeWithText("Read later").performClick()
+        val save = lastUpdate()
+        assertTrue(save, "\"update\":{\"m1\":{\"mailboxIds/l\":true}}" in save)
+
+        // The message stays open and in the inbox, now offering to leave Read later.
+        compose.onNodeWithText("Remove from Read later").performClick()
+        compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 2 }
+        val remove = lastUpdate()
+        assertTrue(remove, "\"update\":{\"m1\":{\"mailboxIds/l\":null}}" in remove)
+    }
+
+    @Test
+    fun trashTakesTheMessageOutOfEveryFolder() {
+        server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
+        server.folders += """{"id": "l", "name": "Read later"}"""
+        server.alsoIn += "l"
+        openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
+        compose.onNodeWithText("Trash").performClick()
+        val trash = lastUpdate()
+        val patch = "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/l\":null,\"mailboxIds/t\":true}}"
+        assertTrue(trash, patch in trash)
+    }
+
+    @Test
     fun actionsWithoutAFolderRoleOrPermissionAreNotOffered() {
         server.folders[0] =
             """{"id": "a", "name": "Inbox", "role": "inbox", "myRights": {"maySetKeywords": false}}"""
+        // Read later is off, so its folder is an ordinary one.
+        server.folders += """{"id": "l", "name": "Read later"}"""
         openMessage(MailBehavior(markReadOnOpen = false))
         compose.onNodeWithText("Mark read").assertIsDisplayed()
         compose.onNodeWithText("Flag").assertDoesNotExist()
         compose.onNodeWithText("Archive").assertDoesNotExist()
         compose.onNodeWithText("Trash").assertDoesNotExist()
+        compose.onNodeWithText("Read later").assertDoesNotExist()
     }
 
     @Test

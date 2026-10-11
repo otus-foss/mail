@@ -109,7 +109,7 @@ Mail's calendar uses `MonthYearPicker`.
 | [FolderRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderRow.kt) | `FolderRow` | `otus-mail` | Maps folder counts and tree depth into shared DetailRow. |
 | [RuleRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/RuleRow.kt) | `RuleRow` | `otus-mail` | Maps rule labels and enabled state into shared DetailRow. |
 | [InboxBody](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxBody.kt) | `InboxBody`, `InboxEmptyState` | `otus-mail` | Composes the message list and supplies feature text/actions to shared EmptyState. |
-| [MessageRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageRow.kt) | `MessageRow` | `otus-mail` | Maps message labels and unread state into shared ContentRow. |
+| [MessageRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageRow.kt) | `MessageRow` | `otus-mail` | Maps the sender, arrival time, folder labels, and unread state into shared ContentRow and LabelPill. |
 | [PeopleFilterChip](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/PeopleFilterChip.kt) | `PeopleFilterChip` | `otus-mail` | Maps Mail senders and labels into shared AvatarStackChip. |
 | [SenderAvatar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/SenderAvatar.kt) | `SenderAvatar` | `otus-mail` | Maps Mail sender data into the shared Avatar element. |
 
@@ -124,7 +124,7 @@ Mail's calendar uses `MonthYearPicker`.
 | [MailPages](../shared/src/commonMain/kotlin/com/otus/mail/app/MailPages.kt) | `MailPageContent`, `FolderPage`, `rememberMessageActions` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailServices](../shared/src/commonMain/kotlin/com/otus/mail/app/MailServices.kt) | `MailServices` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailSettings](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSettings.kt) | `MailSettings` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
-| [MailSidebar](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSidebar.kt) | `MailSidebar` | `otus-mail` | Mail destinations and folder tree; drawer and rows are shared Sidebar/SidebarEntry. |
+| [MailSidebar](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSidebar.kt) | `MailSidebar`, `FolderEntry` | `otus-mail` | Mail destinations and folder tree; drawer and rows are shared Sidebar/SidebarEntry. |
 | [MailStates](../shared/src/commonMain/kotlin/com/otus/mail/app/MailStates.kt) | `MailStates` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [ConditionEditor](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/ConditionEditor.kt) | `ConditionEditor` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |
 | [FolderActions](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderActions.kt) | `FolderActions` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |
@@ -143,7 +143,7 @@ Mail's calendar uses `MonthYearPicker`.
 | [InboxPanelActions](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxPanelActions.kt) | `InboxPanelActions` | `otus-mail` | Mail messages, searches, filters, or previews; uses shared controls. |
 | [InboxPanelChips](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxPanelChips.kt) | `InboxPanelChips` | `otus-mail` | Mail messages, searches, filters, or previews; uses shared controls. |
 | [InboxPickerChoices](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxPickerChoices.kt) | `InboxPickerChoices`, `AccountAvatar`, `EmptyChoices` | `otus-mail` | Mail messages, searches, filters, or previews; uses shared controls. |
-| [MailBehaviorSettings](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailBehaviorSettings.kt) | `MailBehaviorSettings` | `otus-mail` | Mail swipe and reading choices; uses shared rows and `ChoiceSheet`. |
+| [MailBehaviorSettings](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailBehaviorSettings.kt) | `MailBehaviorSettings` | `otus-mail` | Mail swipe, reading, and Read later choices; uses shared rows and `ChoiceSheet`. |
 | [MessageActionLabels](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageActionLabels.kt) | `swipeAction` | `otus-mail` | Mail adapter mapping message actions to Meta's `SwipeActions`. |
 | [MessageActionRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageActionRow.kt) | `MessageActionRow` | `otus-mail` | Open-message actions as Material text buttons, like the preview dialog around them. |
 | [MessagePreview](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessagePreview.kt) | `MessagePreview` | `otus-mail` | The open message in a Material `AlertDialog`, with its actions above the body. |
