@@ -12,6 +12,7 @@ import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.folderTree
+import com.otus.mail.feature.folders.domain.readLaterTree
 import com.otus.mail.feature.folders.presentation.folderIcon
 
 /** The unified Inbox, then each account's folders, then Settings at the bottom. */
@@ -32,26 +33,30 @@ internal fun MailSidebar(
         },
     ) {
         SidebarEntry("Inbox", Res.drawable.symbol_inbox, current == MailPage.Inbox, { onSelect(MailPage.Inbox) })
-        // With one account, its inbox is the unified Inbox above and its Read later folder follows
-        // it; their subfolders move up a level.
+        // With one account, its inbox is the unified Inbox above, and its Read later folder follows
+        // with its subfolders nested under it. The inbox's subfolders move up a level.
         val single = accounts.singleOrNull()
-        single?.readLater?.let { FolderEntry(single, FolderNode(it, 0, it.name, readLater = true), current, onSelect) }
+        val lifted = single?.readLaterTree().orEmpty()
+        val liftedIds = lifted.map { it.folder.id }.toSet()
+        lifted.forEach { node -> FolderEntry(node, current, onSelect) }
         accounts.forEach { account ->
-            val nodes = account.folderTree { single != null && (it.role == INBOX_ROLE || it.id == account.readLaterId) }
+            val nodes =
+                account
+                    .folderTree { single != null && it.role == INBOX_ROLE }
+                    .filter { it.folder.id !in liftedIds }
             if (nodes.isNotEmpty()) SidebarHeading(account.accountName)
-            nodes.forEach { node -> FolderEntry(account, node, current, onSelect) }
+            nodes.forEach { node -> FolderEntry(node, current, onSelect) }
         }
     }
 }
 
 @Composable
 private fun FolderEntry(
-    account: AccountFolders,
     node: FolderNode,
     current: MailPage,
     onSelect: (MailPage) -> Unit,
 ) {
-    val page = MailPage.Folder(account.accountId, node.folder.id)
+    val page = MailPage.Folder(node.folder.accountId, node.folder.id)
     SidebarEntry(
         node.folder.name,
         folderIcon(node),

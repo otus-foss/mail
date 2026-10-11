@@ -2,7 +2,6 @@ package com.otus.mail.app
 
 import com.otus.accounts.presentation.AccountsState
 import com.otus.mail.feature.folders.domain.FolderRights
-import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
 import com.otus.mail.feature.folders.presentation.RulesState
@@ -28,7 +27,7 @@ internal class MailStates(
         FoldersState(
             services.folders,
             scope,
-            ReadLaterFolders(services.folders, services.readLaterStore) { behavior.behavior.readLater },
+            loadAccounts = { services.readLater.accounts { behavior.behavior.readLater } },
         )
     val rules = RulesState(services.rules, scope)
     val ruleEditor = RuleEditorState(rules)

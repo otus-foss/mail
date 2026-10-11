@@ -37,8 +37,9 @@ comes first, then each account's folders under the account name, then Settings a
 Folders are indented by nesting and show their unread count; system folders have their own symbol.
 With one account, its inbox is the unified Inbox and is not listed again; its subfolders move up a
 level. Its [Read later](folders.md#read-later) folder, when that switch is on, follows the unified
-Inbox above the account name. With several accounts, each lists its Read later folder right after
-its inbox. Settings subpages stay under the Settings entry; see [Settings](settings.md) and
+Inbox above the account name, with its own subfolders nested under it. With several accounts, each
+lists its Read later folder right after its inbox. Settings subpages stay under the Settings entry;
+see [Settings](settings.md) and
 [Folders and rules](folders.md). Each page, including each folder, keeps its saved state, such as a
 search, while another page is shown.
 
