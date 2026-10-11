@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
@@ -129,7 +130,7 @@ class SwipeActionsTest {
     }
 
     @Test
-    fun theAppearancePageChangesAndSavesEachSwipe() {
+    fun theAppearancePageSavesEachChange() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNode(hasText("Settings") and isSelectable()).performClick()
         compose.onNodeWithText("Appearance & behavior").performClick()
@@ -138,11 +139,13 @@ class SwipeActionsTest {
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Trash").assertIsDisplayed()
         compose.onNodeWithText("Mark as read when opened").performClick()
+        compose.onNodeWithText("Combined folders").performScrollTo().performClick()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         assertEquals(MessageSwipe.Trash, saved.endToStart)
         assertEquals(MessageSwipe.Read, saved.startToEnd)
         assertFalse(saved.markReadOnOpen)
+        assertTrue(saved.combinedFolders)
     }
 
     private fun waitFor(text: String) {

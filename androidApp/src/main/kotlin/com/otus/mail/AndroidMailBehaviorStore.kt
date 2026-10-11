@@ -28,6 +28,7 @@ class AndroidMailBehaviorStore(
                 ) ?: defaults.endToStart,
             markReadOnOpen = preferences.getBoolean(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
             readLater = preferences.getBoolean(READ_LATER, defaults.readLater),
+            combinedFolders = preferences.getBoolean(COMBINED_FOLDERS, defaults.combinedFolders),
         )
     }
 
@@ -37,6 +38,7 @@ class AndroidMailBehaviorStore(
             putString(END_TO_START, behavior.endToStart.storageValue)
             putBoolean(MARK_READ_ON_OPEN, behavior.markReadOnOpen)
             putBoolean(READ_LATER, behavior.readLater)
+            putBoolean(COMBINED_FOLDERS, behavior.combinedFolders)
         }
     }
 
@@ -45,5 +47,6 @@ class AndroidMailBehaviorStore(
         const val END_TO_START = "swipe_end_to_start"
         const val MARK_READ_ON_OPEN = "mark_read_on_open"
         const val READ_LATER = "read_later"
+        const val COMBINED_FOLDERS = "combined_folders"
     }
 }

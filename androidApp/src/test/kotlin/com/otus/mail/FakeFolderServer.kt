@@ -88,7 +88,7 @@ class FakeFolderServer {
                 "Mailbox/set" in body -> createFolder(body)
                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $folderList}, "c0"]"""
                 "Email/set" in body -> updateEmail()
-                "Email/query" in body -> emails(if ("\"inMailbox\":\"r\"" in body) "r" else "a")
+                "Email/query" in body -> emails(QUERIED_FOLDER.find(body)?.groupValues?.get(1) ?: "a")
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
                 else -> error("Unexpected call: $body")
@@ -141,6 +141,7 @@ class FakeFolderServer {
         respond(text, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
 
     private companion object {
+        val QUERIED_FOLDER = Regex("\"inMailbox\":\"([^\"]+)\"")
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:mail": {},
             "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
             "accounts": {"d1": {"name": "Ada", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},

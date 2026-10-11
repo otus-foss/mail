@@ -9,9 +9,15 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_send
+import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
+import com.otus.mail.feature.folders.domain.DRAFTS_ROLE
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderNameProblem
 import com.otus.mail.feature.folders.domain.FolderNode
+import com.otus.mail.feature.folders.domain.INBOX_ROLE
+import com.otus.mail.feature.folders.domain.JUNK_ROLE
+import com.otus.mail.feature.folders.domain.SENT_ROLE
+import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import org.jetbrains.compose.resources.DrawableResource
 
 fun FolderFailure.message(): String =
@@ -42,13 +48,14 @@ fun FolderNameProblem.message(): String =
 fun folderIcon(node: FolderNode): DrawableResource =
     if (node.readLater) Res.drawable.symbol_bookmark else roleIcon(node.folder.role)
 
-private fun roleIcon(role: String?): DrawableResource =
+/** The symbol of a folder with [role]; the user's own folders, without a role, share one. */
+fun roleIcon(role: String?): DrawableResource =
     when (role) {
-        "inbox" -> Res.drawable.symbol_inbox
-        "drafts" -> Res.drawable.symbol_draft
-        "sent" -> Res.drawable.symbol_send
-        "archive" -> Res.drawable.symbol_archive
-        "junk" -> Res.drawable.symbol_report
-        "trash" -> Res.drawable.symbol_delete
+        INBOX_ROLE -> Res.drawable.symbol_inbox
+        DRAFTS_ROLE -> Res.drawable.symbol_draft
+        SENT_ROLE -> Res.drawable.symbol_send
+        ARCHIVE_ROLE -> Res.drawable.symbol_archive
+        JUNK_ROLE -> Res.drawable.symbol_report
+        TRASH_ROLE -> Res.drawable.symbol_delete
         else -> Res.drawable.symbol_folder
     }
