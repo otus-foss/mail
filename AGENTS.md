@@ -3,7 +3,7 @@
 ## Hosting
 
 GitHub hosts development, pull requests, issues, CI, and released packages. Use `origin` for
-GitHub. Forgejo is a retired copy; do not push to it. See [hosting and CI](docs/hosting.md).
+GitHub. See [hosting and CI](docs/hosting.md).
 
 ## Required reading and commands
 
