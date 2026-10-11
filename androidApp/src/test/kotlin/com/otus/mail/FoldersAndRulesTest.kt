@@ -91,23 +91,28 @@ class FoldersAndRulesTest {
         compose.onNodeWithText("From contains “amazon”").assertIsDisplayed()
     }
 
-    @Test
-    fun anOpenMessageMovesToAFolderOrStartsARuleForItsSender() {
+    private fun openWelcome() {
         start()
         waitFor("Welcome")
         compose.onNodeWithText("Welcome").performClick()
         // Both actions appear once folders and rules have loaded.
         waitFor("Rule for sender")
+    }
+
+    @Test
+    fun anOpenMessageMovesToAFolder() {
+        openWelcome()
         compose.onNodeWithText("Move").performClick()
         compose.onNodeWithText("Receipts / Amazon").performClick()
         // Opening marked the message read; the move is the update that changes its folders.
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "mailboxIds" in it } }
         val move = server.calls.first { "Email/set" in it && "mailboxIds" in it }
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/z\":true}}" in move)
+    }
 
-        // The moved row leaves at once; this server still lists it, so the reload brings it back.
-        waitFor("Welcome")
-        compose.onNodeWithText("Welcome").performClick()
+    @Test
+    fun anOpenMessageStartsARuleForItsSender() {
+        openWelcome()
         compose.onNodeWithText("Rule for sender").performClick()
         compose.onNodeWithText("New rule").assertIsDisplayed()
         compose.onNodeWithText("grace@example.org").assertIsDisplayed()

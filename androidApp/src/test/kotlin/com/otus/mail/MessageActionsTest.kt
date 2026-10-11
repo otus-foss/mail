@@ -77,21 +77,27 @@ class MessageActionsTest {
     }
 
     @Test
-    fun archiveAndTrashFileTheMessageIntoTheFoldersWithThoseRoles() {
+    fun archiveFilesTheMessageIntoTheArchiveFolderAndTheRowStaysOut() {
         server.folders += """{"id": "x", "name": "Old mail", "role": "archive"}"""
-        server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
         openMessage(MailBehavior(markReadOnOpen = false))
         compose.onNodeWithText("Archive").performClick()
         val archive = lastUpdate()
         assertTrue(archive, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/x\":true}}" in archive)
         compose.onNodeWithText("Close").assertDoesNotExist()
 
-        // The moved row leaves at once; this server still lists it, so the reload brings it back.
-        waitFor("Welcome")
-        compose.onNodeWithText("Welcome").performClick()
-        waitFor("Trash")
+        // A successful move refreshes the folders but not the list, which this server would refill.
+        val afterArchive = server.calls.indexOfFirst { "Email/set" in it }
+        compose.waitUntil(TIMEOUT) { server.calls.drop(afterArchive).any { "Mailbox/get" in it } }
+        compose.waitForIdle()
+        assertTrue(server.calls.drop(afterArchive).none { "Email/query" in it })
+        compose.onNodeWithText("Welcome").assertDoesNotExist()
+    }
+
+    @Test
+    fun trashFilesTheMessageIntoTheTrashFolder() {
+        server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
+        openMessage(MailBehavior(markReadOnOpen = false))
         compose.onNodeWithText("Trash").performClick()
-        compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 2 }
         val trash = lastUpdate()
         assertTrue(trash, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/t\":true}}" in trash)
     }
