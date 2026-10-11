@@ -31,9 +31,9 @@ fun MessagePreview(
     onDismiss: () -> Unit,
 ) {
     var moving by rememberSaveable { mutableStateOf(false) }
-    val file: (MoveTarget) -> Unit = { target ->
+    val leave: (() -> Unit) -> Unit = { run ->
         onDismiss()
-        actions?.onMove(message, target)
+        run()
     }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -42,10 +42,7 @@ fun MessagePreview(
             Column(verticalArrangement = Arrangement.spacedBy(InboxTokens.itemGap)) {
                 Text("${message.sender.name} <${message.sender.address}>", color = OtusColors.text2)
                 actions?.let {
-                    MessageActionRow(message, it, onChooseFolder = { moving = true }, onFile = file) {
-                        onDismiss()
-                        it.onCreateRule(message)
-                    }
+                    MessageActionRow(message, it, onChooseFolder = { moving = true }, onLeave = leave)
                 }
                 Column(
                     Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
@@ -66,7 +63,7 @@ fun MessagePreview(
             actions.moveTargets(message),
             selected = null,
             label = { it?.label.orEmpty() },
-            onSelect = { target -> target?.let(file) },
+            onSelect = { target -> target?.let { leave { actions.onMove(message, it) } } },
             onDismiss = { moving = false },
         )
     }

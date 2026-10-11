@@ -109,7 +109,7 @@ Mail's calendar uses `MonthYearPicker`.
 | [FolderRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderRow.kt) | `FolderRow` | `otus-mail` | Maps folder counts and tree depth into shared DetailRow. |
 | [RuleRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/RuleRow.kt) | `RuleRow` | `otus-mail` | Maps rule labels and enabled state into shared DetailRow. |
 | [InboxBody](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxBody.kt) | `InboxBody`, `InboxEmptyState` | `otus-mail` | Composes the message list and supplies feature text/actions to shared EmptyState. |
-| [MessageRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageRow.kt) | `MessageRow` | `otus-mail` | Maps message labels and unread state into shared ContentRow. |
+| [MessageRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageRow.kt) | `MessageRow` | `otus-mail` | Maps the sender, arrival time, folder labels, and unread state into shared ContentRow and LabelPill. |
 | [PeopleFilterChip](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/PeopleFilterChip.kt) | `PeopleFilterChip` | `otus-mail` | Maps Mail senders and labels into shared AvatarStackChip. |
 | [SenderAvatar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/SenderAvatar.kt) | `SenderAvatar` | `otus-mail` | Maps Mail sender data into the shared Avatar element. |
 

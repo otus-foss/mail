@@ -34,13 +34,15 @@ data class FolderRights(
     val maySetKeywords: Boolean = true,
 )
 
-/** What the account's server allows when creating folders (RFC 8621, section 1.3.1). */
+/** What the account's server allows for folders (RFC 8621, section 1.3.1). */
 data class FolderLimits(
     val mayCreateTopLevel: Boolean = true,
     /** One more than the most ancestors a folder may have; null when unlimited. */
     val maxDepth: Int? = null,
     /** The longest name in UTF-8 octets; null when unlimited. */
     val maxNameBytes: Int? = null,
+    /** The most folders one message may be in at once; null when unlimited. */
+    val maxFoldersPerMessage: Int? = null,
 )
 
 /** One connected account's folders. [failure] is set when they could not be loaded. */

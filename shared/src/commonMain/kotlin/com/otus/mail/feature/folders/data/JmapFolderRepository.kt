@@ -165,6 +165,7 @@ private fun limits(capability: JsonObject?): FolderLimits {
         mayCreateTopLevel = mail.mayCreateTopLevelMailbox,
         maxDepth = mail.maxMailboxDepth?.coerceIn(1, Int.MAX_VALUE.toLong())?.toInt(),
         maxNameBytes = mail.maxSizeMailboxName?.coerceIn(1, Int.MAX_VALUE.toLong())?.toInt(),
+        maxFoldersPerMessage = mail.maxMailboxesPerEmail?.coerceIn(1, Int.MAX_VALUE.toLong())?.toInt(),
     )
 }
 

@@ -13,6 +13,14 @@ data class MailMessage(
     val attributes: MailAttributes = MailAttributes(),
     /** The server's Email id; [id] adds the account so ids from different accounts never collide. */
     val emailId: String = "",
+    /** Other folders the message is in, named on its row; the app adds them once folders load. */
+    val labels: List<MessageLabel> = emptyList(),
+)
+
+/** A folder named on a message's row. [readLater] marks the Read later folder. */
+data class MessageLabel(
+    val name: String,
+    val readLater: Boolean = false,
 )
 
 data class MailSender(
@@ -38,6 +46,8 @@ data class MailLocation(
     val accountAvatar: ResolvedAvatar? = null,
     /** The server's id for [mailbox]; empty for supplied messages. */
     val mailboxId: String = "",
+    /** Every mailbox the message is in on the server, [mailboxId] among them; empty for supplied messages. */
+    val mailboxIds: Set<String> = emptySet(),
 )
 
 data class MailAttributes(
@@ -58,6 +68,15 @@ fun MailMessage.withFlag(
         MessageFlag.Read -> copy(attributes = attributes.copy(unread = !on))
         MessageFlag.Flagged -> copy(attributes = attributes.copy(flagged = on))
     }
+
+/** [message] added to [folderId], or taken out of it, as the server will show it once the change is saved. */
+fun MailMessage.inFolder(
+    folderId: String,
+    inFolder: Boolean,
+): MailMessage {
+    val folders = if (inFolder) location.mailboxIds + folderId else location.mailboxIds - folderId
+    return copy(location = location.copy(mailboxIds = folders))
+}
 
 /** Whether [flag] is currently on for this message. */
 fun MailMessage.hasFlag(flag: MessageFlag): Boolean =
