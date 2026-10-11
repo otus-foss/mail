@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import com.otus.jmap.JmapClient
@@ -87,7 +88,7 @@ class AccountConnectionTest {
         compose.waitUntil(
             TIMEOUT,
         ) { compose.onAllNodes(hasText("Connected Ada Lovelace.")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("ada@example.org · mail.example.org").assertIsDisplayed()
+        compose.onNodeWithText("ada@example.org\nmail.example.org").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("1 account connected").assertIsDisplayed()
 
