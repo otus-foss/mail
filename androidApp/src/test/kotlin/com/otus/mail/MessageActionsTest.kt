@@ -103,14 +103,26 @@ class MessageActionsTest {
     }
 
     @Test
+    fun readLaterFilesTheMessageIntoItsFolder() {
+        server.folders += """{"id": "l", "name": "Read later"}"""
+        openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
+        compose.onNodeWithText("Read later").performClick()
+        val move = lastUpdate()
+        assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/l\":true}}" in move)
+    }
+
+    @Test
     fun actionsWithoutAFolderRoleOrPermissionAreNotOffered() {
         server.folders[0] =
             """{"id": "a", "name": "Inbox", "role": "inbox", "myRights": {"maySetKeywords": false}}"""
+        // Read later is off, so its folder is an ordinary one.
+        server.folders += """{"id": "l", "name": "Read later"}"""
         openMessage(MailBehavior(markReadOnOpen = false))
         compose.onNodeWithText("Mark read").assertIsDisplayed()
         compose.onNodeWithText("Flag").assertDoesNotExist()
         compose.onNodeWithText("Archive").assertDoesNotExist()
         compose.onNodeWithText("Trash").assertDoesNotExist()
+        compose.onNodeWithText("Read later").assertDoesNotExist()
     }
 
     @Test

@@ -13,13 +13,8 @@ class IosMailBehaviorStore(
         return MailBehavior(
             startToEnd = MessageSwipe.fromStorageValue(preferences.stringForKey(START_TO_END)) ?: defaults.startToEnd,
             endToStart = MessageSwipe.fromStorageValue(preferences.stringForKey(END_TO_START)) ?: defaults.endToStart,
-            // boolForKey cannot tell a saved false from a missing value.
-            markReadOnOpen =
-                if (preferences.objectForKey(MARK_READ_ON_OPEN) == null) {
-                    defaults.markReadOnOpen
-                } else {
-                    preferences.boolForKey(MARK_READ_ON_OPEN)
-                },
+            markReadOnOpen = bool(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
+            readLater = bool(READ_LATER, defaults.readLater),
         )
     }
 
@@ -27,11 +22,19 @@ class IosMailBehaviorStore(
         preferences.setObject(behavior.startToEnd.storageValue, forKey = START_TO_END)
         preferences.setObject(behavior.endToStart.storageValue, forKey = END_TO_START)
         preferences.setBool(behavior.markReadOnOpen, forKey = MARK_READ_ON_OPEN)
+        preferences.setBool(behavior.readLater, forKey = READ_LATER)
     }
+
+    // boolForKey cannot tell a saved false from a missing value.
+    private fun bool(
+        key: String,
+        default: Boolean,
+    ): Boolean = if (preferences.objectForKey(key) == null) default else preferences.boolForKey(key)
 
     private companion object {
         const val START_TO_END = "otus.mail.swipe_start_to_end"
         const val END_TO_START = "otus.mail.swipe_end_to_start"
         const val MARK_READ_ON_OPEN = "otus.mail.mark_read_on_open"
+        const val READ_LATER = "otus.mail.read_later"
     }
 }

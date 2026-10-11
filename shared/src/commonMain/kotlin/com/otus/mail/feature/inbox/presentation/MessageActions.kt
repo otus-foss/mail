@@ -4,12 +4,13 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 
-/** A system folder a message can be filed into with one action. */
-enum class FolderShortcut { Archive, Trash }
+/** A folder a message can be filed into with one action. */
+enum class FolderShortcut { ReadLater, Archive, Trash }
 
 /**
- * A folder a message can move to; [label] is its full path. [shortcut] marks the account's
- * archive or trash folder, found by role because servers name these folders differently.
+ * A folder a message can move to; [label] is its full path. [shortcut] marks the account's Read
+ * later folder, or its archive or trash folder, found by role because servers name these folders
+ * differently.
  */
 data class MoveTarget(
     val folderId: String,

@@ -50,19 +50,28 @@ data class AccountFolders(
     val folders: List<MailFolder> = emptyList(),
     val limits: FolderLimits = FolderLimits(),
     val failure: FolderFailure? = null,
+    /** The folder Read later files mail into; null while that setting is off or it has none. */
+    val readLaterId: String? = null,
 ) {
     fun folder(id: String): MailFolder? = folders.firstOrNull { it.id == id }
+
+    val readLater: MailFolder?
+        get() = readLaterId?.let(::folder)
 
     /** The folder new mail arrives in, located by role because servers name it differently. */
     val inbox: MailFolder?
         get() = folders.firstOrNull { it.role == INBOX_ROLE }
 }
 
-/** A folder in display order, with its nesting [depth] and its full [path] for pickers. */
+/**
+ * A folder in display order, with its nesting [depth] and its full [path] for pickers. [readLater]
+ * marks the account's Read later folder.
+ */
 data class FolderNode(
     val folder: MailFolder,
     val depth: Int,
     val path: String,
+    val readLater: Boolean = false,
 )
 
 const val INBOX_ROLE = "inbox"

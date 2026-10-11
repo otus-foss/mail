@@ -28,6 +28,35 @@ script, so they keep working while the app is closed.
   has the `archive` or `trash` role. All three need `mayRemoveItems` on the current folder and
   `mayAddItems` on the target.
 
+## Read later
+
+Off by default. The **Read later** switch in Appearance & behavior gives each account a folder named
+"Read later", and adds a **Read later** button to an open message and to the swipe choices. The
+button moves the message into that folder.
+
+- The folder has no role. RFC 8621 allows only roles from the IANA "IMAP Mailbox Name Attributes"
+  registry, which has none for it. The nearest one, `snoozed` (RFC 9979), is for mail the server
+  brings back at a set time. Other mail apps show the folder as one of the user's own.
+- Otus saves the folder's id per login in app-private storage (`ReadLaterStore`:
+  `SharedPreferences` on Android, `NSUserDefaults` on iOS), so renaming the folder keeps it.
+  Without a saved id, as on a new device, Otus uses a top-level folder named "Read later" in any
+  case, or creates one at the top level with the same `Mailbox/set` as **New folder**. A device
+  without the saved id cannot recognize a renamed folder, so it creates a new one.
+- `ReadLaterFolders` runs on every folder load while the switch is on. Turning it on, adding an
+  account, and a folder deleted elsewhere all go through the same step. A lock keeps overlapping
+  loads from creating two folders. A creation already sent finishes even when a newer load
+  replaces the one that sent it.
+- Accounts that fail to load, or whose server refuses top-level folders
+  (`mayCreateTopLevelMailbox`), get no folder. Their mail does not offer the action.
+- The folder sorts right after the inbox and has the bookmark symbol. With one account, the sidebar
+  lists it right under the unified Inbox.
+- The action follows the Archive rules. It is offered when the folder exists and the message is
+  not already in it, and needs `mayRemoveItems` on the current folder and `mayAddItems` on Read
+  later.
+- Turning the switch off hides the action and the swipe choice, and returns a swipe set to Read
+  later to its default. The folder and its mail stay on the server as an ordinary folder. While
+  the switch is on, a deleted Read later folder is created again on the next load.
+
 ## Rules
 
 - Available when the account offers `urn:ietf:params:jmap:sieve` (RFC 9661) and its
@@ -119,14 +148,16 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
 
 ## Checks
 
-- Domain: `FolderTreeTest`, `FolderChangesTest`, `RuleMatchingTest`, `RuleListsTest`.
+- Domain: `FolderTreeTest`, `FolderChangesTest`, `RuleMatchingTest`, `RuleListsTest`,
+  `ReadLaterFoldersTest` (saved, adopted, and created folders; overlapping and replaced loads).
 - Data: `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
   Sieve, escaping, read-back, edits made elsewhere), `JmapMessageMoverTest`.
 - Presentation: `RulesStateTest` (activation choices, vacation never kept, failed saves keep the
   draft).
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and
   folder pages, creating a folder, saving a rule as an active script, moving a message, and
-  starting a rule from its sender.
+  starting a rule from its sender. It also turns on Read later and checks the created folder's
+  place in the sidebar. `MessageActionsTest` and `SwipeActionsTest` file a message into it.
 - `ServerIntegrationTest` creates and deletes a mailbox and uploads a blob on a real server when
   configured. It has not been run against Stalwart yet.
 

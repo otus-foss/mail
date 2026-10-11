@@ -126,7 +126,7 @@ private fun FolderChoice(
     val options =
         folders
             ?.let { account ->
-                folderTree(account.folders).filter { it.folder.role != INBOX_ROLE && it.folder.rights.mayAddItems }
+                account.folderTree().filter { it.folder.role != INBOX_ROLE && it.folder.rights.mayAddItems }
             }.orEmpty()
     val chosen = options.firstOrNull { it.folder.id == draft.folderId }
     ActionRow(

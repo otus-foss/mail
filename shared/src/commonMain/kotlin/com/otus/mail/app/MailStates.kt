@@ -2,7 +2,9 @@ package com.otus.mail.app
 
 import com.otus.accounts.presentation.AccountsState
 import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
+import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.domain.FolderRights
+import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FoldersState
@@ -28,7 +30,12 @@ internal class MailStates(
     val behavior: MailBehaviorState = MailBehaviorState(),
 ) {
     val feed = InboxFeedState(services.mail, scope, services.avatars)
-    val folders = FoldersState(services.folders, scope)
+    val folders =
+        FoldersState(
+            services.folders,
+            scope,
+            ReadLaterFolders(services.folders, services.readLaterStore) { behavior.behavior.readLater },
+        )
     val rules = RulesState(services.rules, scope)
     val ruleEditor = RuleEditorState(rules)
     val accounts =
@@ -116,9 +123,10 @@ internal class MailStates(
     private fun moveTargets(message: MailMessage): List<MoveTarget> {
         val account = folders.account(message.location.accountId)
         if (account == null || !rightsOf(message).mayRemoveItems) return emptyList()
-        return folderTree(account.folders)
+        return account
+            .folderTree()
             .filter { it.folder.id != message.location.mailboxId && it.folder.rights.mayAddItems }
-            .map { MoveTarget(it.folder.id, it.path, shortcutFor(it.folder.role)) }
+            .map { MoveTarget(it.folder.id, it.path, shortcutFor(it)) }
     }
 
     /** Supplied messages have no server id, so only loaded mail can change its marks. */
@@ -141,9 +149,10 @@ private fun FolderRights.allow(flag: MessageFlag): Boolean =
         MessageFlag.Flagged -> maySetKeywords
     }
 
-private fun shortcutFor(role: String?): FolderShortcut? =
-    when (role) {
-        ARCHIVE_ROLE -> FolderShortcut.Archive
-        TRASH_ROLE -> FolderShortcut.Trash
+private fun shortcutFor(node: FolderNode): FolderShortcut? =
+    when {
+        node.readLater -> FolderShortcut.ReadLater
+        node.folder.role == ARCHIVE_ROLE -> FolderShortcut.Archive
+        node.folder.role == TRASH_ROLE -> FolderShortcut.Trash
         else -> null
     }

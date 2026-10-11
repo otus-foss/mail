@@ -53,6 +53,20 @@ class FolderTreeTest {
     }
 
     @Test
+    fun readLaterFollowsTheInboxAndIsMarked() {
+        val folders =
+            listOf(
+                folder("s", "Sent", role = "sent"),
+                folder("a", "Amazon"),
+                folder("l", "Someday"),
+                folder("i", "Inbox", role = "inbox"),
+            )
+        val tree = folderTree(folders, readLaterId = "l")
+        assertEquals(listOf("i", "l", "s", "a"), tree.map { it.folder.id })
+        assertEquals(listOf("l"), tree.filter { it.readLater }.map { it.folder.id })
+    }
+
+    @Test
     fun ancestorsAndSubtreesFollowParents() {
         val folders = listOf(folder("r"), folder("a", parentId = "r"), folder("b", parentId = "a"), folder("c"))
         assertEquals(2, ancestorCount(folders, folders[2]))

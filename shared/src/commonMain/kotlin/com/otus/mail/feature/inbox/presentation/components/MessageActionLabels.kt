@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import com.otus.designsystem.components.SwipeAction
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
+import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_mark_email_read
@@ -25,6 +26,7 @@ internal fun MessageFlag.label(on: Boolean): String =
 internal val FolderShortcut.label: String
     get() =
         when (this) {
+            FolderShortcut.ReadLater -> "Read later"
             FolderShortcut.Archive -> "Archive"
             FolderShortcut.Trash -> "Trash"
         }
@@ -36,6 +38,7 @@ internal val MessageSwipe.label: String
             MessageSwipe.None -> "Nothing"
             MessageSwipe.Read -> "Read / unread"
             MessageSwipe.Flag -> "Flag / unflag"
+            MessageSwipe.ReadLater -> "Read later"
             MessageSwipe.Archive -> "Archive"
             MessageSwipe.Trash -> "Trash"
         }
@@ -49,6 +52,7 @@ internal fun MessageActions.swipeAction(
         MessageSwipe.None -> null
         MessageSwipe.Read -> markSwipe(message, MessageFlag.Read)
         MessageSwipe.Flag -> markSwipe(message, MessageFlag.Flagged)
+        MessageSwipe.ReadLater -> fileSwipe(message, FolderShortcut.ReadLater, Res.drawable.symbol_bookmark)
         MessageSwipe.Archive -> fileSwipe(message, FolderShortcut.Archive, Res.drawable.symbol_archive)
         MessageSwipe.Trash -> fileSwipe(message, FolderShortcut.Trash, Res.drawable.symbol_delete)
     }

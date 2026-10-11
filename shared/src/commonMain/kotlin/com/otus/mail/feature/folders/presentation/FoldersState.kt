@@ -8,14 +8,19 @@ import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-/** Every account's folders, and the changes the user makes to them. One change runs at a time. */
+/**
+ * Every account's folders, and the changes the user makes to them. One change runs at a time.
+ * With [readLater], loading also finds or creates each account's Read later folder.
+ */
 class FoldersState(
     private val repository: FolderRepository,
     private val scope: CoroutineScope,
+    private val readLater: ReadLaterFolders? = null,
 ) {
     var accounts by mutableStateOf(emptyList<AccountFolders>())
         private set
@@ -98,7 +103,7 @@ class FoldersState(
     private suspend fun load() {
         loading = true
         try {
-            accounts = repository.accounts()
+            accounts = readLater?.accounts() ?: repository.accounts()
         } catch (expected: FolderStorageException) {
             notice = STORAGE_NOTICE
         } finally {

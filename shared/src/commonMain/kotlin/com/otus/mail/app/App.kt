@@ -30,11 +30,10 @@ fun App(
     val sidebar = rememberSidebarState()
     val scope = rememberCoroutineScope()
     val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) }
-    // Folders fill the sidebar; rules decide whether an open message offers to start one.
-    LaunchedEffect(states) {
-        states.folders.refresh()
-        states.rules.refresh()
-    }
+    // Rules decide whether an open message offers to start one.
+    LaunchedEffect(states) { states.rules.refresh() }
+    // Folders fill the sidebar. Turning Read later on finds or creates its folders; off unmarks them.
+    LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
     // Reload whenever the inbox is shown, including at launch.
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.

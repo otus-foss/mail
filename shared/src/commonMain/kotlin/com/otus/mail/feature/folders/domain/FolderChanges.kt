@@ -57,7 +57,7 @@ fun moveTargets(
     val height = subtreeHeight(account.folders, folder)
     val maxDepth = account.limits.maxDepth
     val folders =
-        folderTree(account.folders).map { it.folder }.filter { target ->
+        account.folderTree().map { it.folder }.filter { target ->
             target.id !in subtree &&
                 target.rights.mayCreateChild &&
                 (maxDepth == null || ancestorCount(account.folders, target) + 2 + height <= maxDepth)
