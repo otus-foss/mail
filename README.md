@@ -79,14 +79,15 @@ Use lowercase types and scopes, start the subject with an imperative verb, and a
 of at most 72 characters without a final period. Apply the unslop skill to the entire message
 when available. Keep the wording plain and describe only changes in the commit.
 
-Enable the versioned `commit-msg` hook once per checkout, including new clones. Run this from
-the repository root with Python 3.11+ installed:
+Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
+formatting, `pre-push` runs `checkAll`, and `commit-msg` checks the message. Run this from the
+repository root with Python 3.11+ installed:
 
 ```sh
 git config --local core.hooksPath .githooks
 ```
 
-The hook rejects invalid title syntax, missing separators, and bodies outside the 1–8 bullet
+The `commit-msg` hook rejects invalid title syntax, missing separators, and bodies outside the 1–8 bullet
 limit. Review wording and the title-length target manually. Git-generated merge messages and
 temporary autosquash messages are exempt; final squash messages follow the rules. CI tests the
 checker but does not inspect commit history or install local hooks.

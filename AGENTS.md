@@ -127,13 +127,15 @@ feat(inbox): add avatars
 - Fall back to initials when a photo is unavailable.
 ```
 
-Enable the versioned `commit-msg` hook once per checkout, including new clones:
+Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
+formatting, `pre-push` runs `checkAll`, and `commit-msg` checks the message. CI checks only pull
+requests, so the hooks are the only check on a direct push to `main`.
 
 ```sh
 git config --local core.hooksPath .githooks
 ```
 
-Run the command from this repository's root. The hook needs Python 3.11+ and rejects invalid
+Run the command from this repository's root. The `commit-msg` hook needs Python 3.11+ and rejects invalid
 title syntax, missing separators, and bodies outside the 1–8 bullet limit. Review wording,
 imperative verbs, breaking-change explanations, and the
 72-character target manually. Git-generated merge messages and temporary autosquash messages are
