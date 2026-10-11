@@ -18,8 +18,8 @@ import com.otus.mail.feature.inbox.domain.MessageSwipe
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
- * Swipe and reading choices for the appearance page. Each swipe opens a choice of actions; the
- * rows name the physical direction for the current layout direction.
+ * Swipe, reading, and folder choices for the appearance page. Each swipe opens a choice of
+ * actions; the rows name the physical direction for the current layout direction.
  */
 @Composable
 fun MailBehaviorSettings(state: MailBehaviorState) {
@@ -45,6 +45,14 @@ fun MailBehaviorSettings(state: MailBehaviorState) {
             checked = behavior.readLater,
             onCheckedChange = { on -> state.update { it.withReadLater(on) } },
             description = "Adds a Read later folder and a button that moves mail there",
+        )
+    }
+    SettingsSection("Folders") {
+        SettingToggleRow(
+            "Combined folders",
+            checked = behavior.combinedFolders,
+            onCheckedChange = { on -> state.update { it.copy(combinedFolders = on) } },
+            description = "Shows one Drafts, Sent, Archive, Spam, and Trash for all accounts",
         )
     }
     choosing?.let { side ->

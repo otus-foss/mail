@@ -33,7 +33,10 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
-/** Loads each login's inbox, or one folder, newest first. Logins load in parallel and fail alone. */
+/**
+ * Loads each login's folder with one role, such as the inbox, or one folder, newest first. Logins
+ * load in parallel and fail alone.
+ */
 class JmapMailSource(
     private val connections: JmapConnections,
     private val logins: LoginStore,
@@ -84,13 +87,13 @@ class JmapMailSource(
                 .call(
                     GetMethod(MailboxType, accountId, properties = listOf("id", "name", "role")),
                 ).list
-        // The inbox is located by role, not name: servers name and translate it differently.
+        // System folders are located by role, not name: servers name and translate them differently.
         val mailbox =
             when (scope) {
-                MailScope.Inbox -> mailboxes.firstOrNull { it.role == INBOX_ROLE }
+                is MailScope.Role -> mailboxes.firstOrNull { it.role == scope.role }
                 is MailScope.Folder -> mailboxes.firstOrNull { it.id == scope.folderId }
             } ?: return emptyList()
-        val name = if (scope == MailScope.Inbox) INBOX_NAME else mailbox.name
+        val name = if (scope is MailScope.Role) scope.name else mailbox.name
         val emails =
             connection.request {
                 val query = call(QueryMethod(EmailType, accountId, inMailbox(mailbox.id), NEWEST_FIRST, limit))
@@ -112,8 +115,6 @@ class JmapMailSource(
 
     private companion object {
         const val DEFAULT_LIMIT = 50
-        const val INBOX_ROLE = "inbox"
-        const val INBOX_NAME = "Inbox"
 
         const val MAX_BODY_BYTES = 20_000
         val NEWEST_FIRST = listOf(JmapSort("receivedAt", isAscending = false))

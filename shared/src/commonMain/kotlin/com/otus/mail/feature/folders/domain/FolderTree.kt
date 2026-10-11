@@ -94,7 +94,8 @@ fun ancestorCount(
 // Roles never contain spaces, so this slot cannot match a server's role.
 private const val READ_LATER_SLOT = "read later"
 
-private val ROLE_ORDER = listOf(INBOX_ROLE, READ_LATER_SLOT, "drafts", "sent", ARCHIVE_ROLE, JUNK_ROLE, TRASH_ROLE)
+private val ROLE_ORDER =
+    listOf(INBOX_ROLE, READ_LATER_SLOT, DRAFTS_ROLE, SENT_ROLE, ARCHIVE_ROLE, JUNK_ROLE, TRASH_ROLE)
 
 private fun siblingOrder(readLaterId: String?): Comparator<MailFolder> =
     compareBy({ it.rank(readLaterId) }, { it.sortOrder }, { it.name.lowercase() })

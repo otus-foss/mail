@@ -31,6 +31,28 @@ script, so they keep working while the app is closed.
   so trashed mail does not stay in Read later. Other folders the message is in stay as they are.
   All three need `mayRemoveItems` on the current folder and `mayAddItems` on the target.
 
+## Combined folders
+
+Off by default. The **Combined folders** switch in Appearance & behavior lists Drafts, Sent,
+Archive, Spam, and Trash once in the sidebar, below the unified Inbox and above the accounts, in
+place of each account's own copy. Each entry appears once any account has a folder with its role, and
+its badge adds up the unread mail of all of them.
+
+- Each entry stands for one role (RFC 8621, section 2): `drafts`, `sent`, `archive`, `junk`, and
+  `trash`. The app names them itself, because servers name them differently. Stalwart, for one,
+  calls three of them "Sent Items", "Junk Mail", and "Deleted Items".
+- Spam and Trash are separate folders. The `junk` role marks mail the server or the user judged to
+  be spam, and `trash` marks deleted mail (RFC 6154, section 2). The app shows `junk` as Spam so
+  it is not mistaken for deleted mail.
+- Tapping an entry opens a folder page that loads every account's folder with that role
+  (`MailScope.Role`) and files its messages under the app's name, so search treats them as one
+  folder. Moves, marks, and Read later act on each message's own account, as on any folder page.
+- Subfolders of a combined folder, such as folders moved into Trash, move up to the account's top
+  level, as the inbox's subfolders do with one account. Inboxes, Read later, and the user's own
+  folders stay where they were.
+- Settings › Folders still lists every account's folders in full, and the move picker still names
+  the server's folders, because a move stays inside one account.
+
 ## Read later
 
 Off by default. The **Read later** switch in Appearance & behavior gives each account a folder named
@@ -170,8 +192,10 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
 - Domain: `FolderTreeTest`, `FolderChangesTest`, `RuleMatchingTest`, `RuleListsTest`,
   `ReadLaterFoldersTest` (saved, adopted, and created folders; saved folders moved into Trash or
   given a role; overlapping and replaced loads; the switch turning off during a load),
-  `MessageFoldersTest` (saving, removing, or moving into Read later; which folders label a row).
-- Data: `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
+  `MessageFoldersTest` (saving, removing, or moving into Read later; which folders label a row),
+  `CombinedFolderTest` (one entry per role any account has, unread mail added up, sidebar order).
+- Data: `JmapMailSourceTest` (a role loads that folder of every account under one name),
+  `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
   Sieve, escaping, read-back, edits made elsewhere), `JmapMessageMoverTest`.
 - Presentation: `RulesStateTest` (activation choices, vacation never kept, failed saves keep the
   draft).
@@ -179,7 +203,8 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
   folder pages, creating a folder, saving a rule as an active script, moving a message, and
   starting a rule from its sender. It also turns on Read later and checks the created folder's
   place in the sidebar, with a subfolder nested under it, and that rows name a message's other
-  folders. `MessageActionsTest` and
+  folders. It turns on Combined folders and checks that Spam and Trash replace the server's
+  folders above the account's own and that Spam opens its folder. `MessageActionsTest` and
   `SwipeActionsTest` save a message in place, remove it, and trash it out of every folder.
 - `ServerIntegrationTest` creates and deletes a mailbox and uploads a blob on a real server when
   configured. It has not been run against Stalwart yet.
