@@ -14,14 +14,15 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * A JMAP server shaped like Stalwart that remembers changes: folders created with `Mailbox/set`
  * and the rules script uploaded and activated with `SieveScript/set`.
  */
 class FakeFolderServer {
-    /** Every API request body, in order. */
-    val calls = mutableListOf<String>()
+    /** Every API request body, in order. The client adds to it while tests read it. */
+    val calls: MutableList<String> = CopyOnWriteArrayList()
     val folders =
         mutableListOf(
             """{"id": "a", "name": "Inbox", "role": "inbox", "unreadEmails": 1, "totalEmails": 1}""",

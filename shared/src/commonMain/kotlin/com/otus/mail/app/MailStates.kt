@@ -15,6 +15,7 @@ import com.otus.mail.feature.inbox.domain.hasFlag
 import com.otus.mail.feature.inbox.domain.withFlag
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlinx.coroutines.CoroutineScope
@@ -24,6 +25,7 @@ import kotlinx.coroutines.launch
 internal class MailStates(
     private val services: MailServices,
     private val scope: CoroutineScope,
+    val behavior: MailBehaviorState = MailBehaviorState(),
 ) {
     val feed = InboxFeedState(services.mail, scope, services.avatars)
     val folders = FoldersState(services.folders, scope)
@@ -58,27 +60,30 @@ internal class MailStates(
     ): MessageActions =
         MessageActions(
             moveTargets = ::moveTargets,
-            shortcutTarget = ::shortcutTarget,
             onMove = { message, target -> move(feed, message, target) },
-            canMark = { message, flag -> message.emailId.isNotEmpty() && rightsOf(message).allow(flag) },
+            canMark = ::canMark,
             onMark = { message, flag, on -> mark(feed, message, flag, on) },
             canCreateRule = { rules.account(it.location.accountId)?.support != null },
             onCreateRule = { message ->
                 ruleEditor.startForSender(message.location.accountId, message.sender.address)
                 openRule(message.location.accountId)
             },
+            behavior = { behavior.behavior },
         )
 
+    /** Takes the message out of the list at once and puts it back if the server refuses the move. */
     private fun move(
         feed: InboxFeedState,
         message: MailMessage,
         target: MoveTarget,
     ) {
+        feed.remove(message.id)
         scope.launch {
             if (services.mover.move(message, target.folderId)) {
                 feed.refresh()
                 folders.refresh()
             } else {
+                feed.restore(message)
                 feed.report("Couldn't move the message to ${target.label}. Try again.")
             }
         }
@@ -110,23 +115,14 @@ internal class MailStates(
         if (account == null || !rightsOf(message).mayRemoveItems) return emptyList()
         return folderTree(account.folders)
             .filter { it.folder.id != message.location.mailboxId && it.folder.rights.mayAddItems }
-            .map { MoveTarget(it.folder.id, it.path) }
+            .map { MoveTarget(it.folder.id, it.path, shortcutFor(it.folder.role)) }
     }
 
-    /** The account's archive or trash folder, found by role because servers name them differently. */
-    private fun shortcutTarget(
+    /** Supplied messages have no server id, so only loaded mail can change its marks. */
+    private fun canMark(
         message: MailMessage,
-        shortcut: FolderShortcut,
-    ): MoveTarget? {
-        val role =
-            when (shortcut) {
-                FolderShortcut.Archive -> ARCHIVE_ROLE
-                FolderShortcut.Trash -> TRASH_ROLE
-            }
-        val target = folders.account(message.location.accountId)?.withRole(role) ?: return null
-        val allowed = target.rights.mayAddItems && rightsOf(message).mayRemoveItems
-        return MoveTarget(target.id, target.name).takeIf { allowed && target.id != message.location.mailboxId }
-    }
+        flag: MessageFlag,
+    ): Boolean = message.emailId.isNotEmpty() && rightsOf(message).allow(flag)
 
     /** Rights of the folder the message is shown in. Unknown folders allow everything; the server decides. */
     private fun rightsOf(message: MailMessage): FolderRights =
@@ -140,4 +136,11 @@ private fun FolderRights.allow(flag: MessageFlag): Boolean =
     when (flag) {
         MessageFlag.Read -> maySetSeen
         MessageFlag.Flagged -> maySetKeywords
+    }
+
+private fun shortcutFor(role: String?): FolderShortcut? =
+    when (role) {
+        ARCHIVE_ROLE -> FolderShortcut.Archive
+        TRASH_ROLE -> FolderShortcut.Trash
+        else -> null
     }

@@ -7,6 +7,9 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.mail.app.App
+import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -23,8 +26,12 @@ class MessageActionsTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer()
 
-    private fun openMessage() {
-        compose.runOnUiThread { compose.activity.setContent { App(services = server.services()) } }
+    private fun openMessage(behavior: MailBehavior = MailBehavior()) {
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                App(services = server.services(), behaviorState = MailBehaviorState(initial = behavior))
+            }
+        }
         waitFor("Welcome")
         compose.onNodeWithText("Welcome").performClick()
         // Folder actions appear once folders and rules have loaded.
@@ -43,30 +50,44 @@ class MessageActionsTest {
     }
 
     @Test
-    fun marksChangeOnTheServerAndInTheOpenMessage() {
+    fun openingAMessageMarksItReadAndMarksChangeOnTheServer() {
         openMessage()
-        compose.onNodeWithText("Mark read").performClick()
         compose.onNodeWithText("Mark unread").assertIsDisplayed()
         val read = lastUpdate()
         assertTrue(read, "\"update\":{\"m1\":{\"keywords/\$seen\":true}}" in read)
 
+        compose.onNodeWithText("Mark unread").performClick()
+        compose.onNodeWithText("Mark read").assertIsDisplayed()
+        compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 2 }
+        val unread = lastUpdate()
+        assertTrue(unread, "\"update\":{\"m1\":{\"keywords/\$seen\":null}}" in unread)
+
         compose.onNodeWithText("Flag").performClick()
         compose.onNodeWithText("Unflag").assertIsDisplayed()
-        compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 2 }
+        compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 3 }
         val flag = lastUpdate()
         assertTrue(flag, "\"update\":{\"m1\":{\"keywords/\$flagged\":true}}" in flag)
+    }
+
+    @Test
+    fun aMessageStaysUnreadWhenOpeningIsSetNotToMarkIt() {
+        openMessage(MailBehavior(markReadOnOpen = false))
+        compose.onNodeWithText("Mark read").assertIsDisplayed()
+        assertEquals(0, server.calls.count { "Email/set" in it })
     }
 
     @Test
     fun archiveAndTrashFileTheMessageIntoTheFoldersWithThoseRoles() {
         server.folders += """{"id": "x", "name": "Old mail", "role": "archive"}"""
         server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
-        openMessage()
+        openMessage(MailBehavior(markReadOnOpen = false))
         compose.onNodeWithText("Archive").performClick()
         val archive = lastUpdate()
         assertTrue(archive, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/x\":true}}" in archive)
         compose.onNodeWithText("Close").assertDoesNotExist()
 
+        // The moved row leaves at once; this server still lists it, so the reload brings it back.
+        waitFor("Welcome")
         compose.onNodeWithText("Welcome").performClick()
         waitFor("Trash")
         compose.onNodeWithText("Trash").performClick()
@@ -79,7 +100,7 @@ class MessageActionsTest {
     fun actionsWithoutAFolderRoleOrPermissionAreNotOffered() {
         server.folders[0] =
             """{"id": "a", "name": "Inbox", "role": "inbox", "myRights": {"maySetKeywords": false}}"""
-        openMessage()
+        openMessage(MailBehavior(markReadOnOpen = false))
         compose.onNodeWithText("Mark read").assertIsDisplayed()
         compose.onNodeWithText("Flag").assertDoesNotExist()
         compose.onNodeWithText("Archive").assertDoesNotExist()
@@ -89,7 +110,7 @@ class MessageActionsTest {
     @Test
     fun aRefusedMarkIsUndoneAndReported() {
         server.refuseUpdates = true
-        openMessage()
+        openMessage(MailBehavior(markReadOnOpen = false))
         compose.onNodeWithText("Flag").performClick()
         waitFor("Couldn't change the message")
         compose.onNodeWithText("Flag").assertIsDisplayed()

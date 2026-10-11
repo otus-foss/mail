@@ -6,6 +6,7 @@ import com.otus.dateformat.IosDateFormatPreferenceStore
 import com.otus.jmap.login.IosLoginStore
 import com.otus.mail.app.App
 import com.otus.mail.app.MailServices
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.settings.presentation.DateFormatSettingsState
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
@@ -25,5 +26,6 @@ fun mainViewController() =
                 IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
                 avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
             )
-        ComposeUIViewController { App(dateFormatState, services) }
+        val behaviorState = MailBehaviorState(IosMailBehaviorStore())
+        ComposeUIViewController { App(dateFormatState, services, behaviorState) }
     }

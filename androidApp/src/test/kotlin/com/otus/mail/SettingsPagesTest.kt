@@ -14,6 +14,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,16 +32,20 @@ class SettingsPagesTest {
     @Test
     fun dateFormatShowsTheCurrentChoiceAndChangesItInAPopup() {
         openSettings()
-        compose.onNodeWithText("Date format: Use device format").assertIsDisplayed()
+        compose.onNodeWithText("Dates, swipes, and reading").assertIsDisplayed()
         compose.onNodeWithText("Appearance & behavior").performClick()
         compose.onNodeWithText("Date format").assertIsDisplayed()
         compose.onNodeWithText("YYYY-MM-DD").assertDoesNotExist()
         compose.onNodeWithText("Date format").performClick()
         compose.onNodeWithText("YYYY-MM-DD").performClick()
+        // Choosing applies at once; the sheet stays open with the check moved until Done.
+        compose.onNodeWithContentDescription("Dismiss Date format").assertExists()
+        compose.onNodeWithText("Done").performClick()
         compose.onNodeWithContentDescription("Dismiss Date format").assertDoesNotExist()
         compose.onNodeWithText("YYYY-MM-DD", substring = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithText("Date format: YYYY-MM-DD").assertIsDisplayed()
+        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("YYYY-MM-DD", substring = true).assertIsDisplayed()
     }
 
     @Test
@@ -47,8 +53,25 @@ class SettingsPagesTest {
         openSettings()
         compose.onNodeWithText("Appearance & behavior").performClick()
         compose.onNodeWithText("Date format").performClick()
-        compose.onNodeWithContentDescription("Close").performClick()
-        compose.onNodeWithText("Use device format", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithText("Device").assertIsDisplayed()
+    }
+
+    @Test
+    fun swipingTheChoiceSheetDownFromItsOptionsClosesIt() {
+        openSettings()
+        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Date format").performClick()
+        // A short, slow pull springs back.
+        compose.onNodeWithText("DD.MM.YYYY").performTouchInput {
+            swipeDown(startY = centerY, endY = centerY + 60f, durationMillis = 600)
+        }
+        compose.onNodeWithContentDescription("Dismiss Date format").assertExists()
+        compose.onNodeWithText("DD.MM.YYYY").performTouchInput {
+            swipeDown(startY = centerY, endY = centerY + 900f, durationMillis = 200)
+        }
+        compose.onNodeWithContentDescription("Dismiss Date format").assertDoesNotExist()
+        compose.onNodeWithText("Device").assertIsDisplayed()
     }
 
     @Test
