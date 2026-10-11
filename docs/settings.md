@@ -2,18 +2,29 @@
 
 Implemented through the shared `settings` and `accounts` libraries from otus-meta, with
 Mail-specific destination entries in `app/MailSettings.kt`. Mail pins both libraries to Meta
-0.3.0. Settings is a sidebar destination with subpages.
+0.5.0, the first release with the appearance page's content slot. Settings is a sidebar destination with subpages.
 
 ## Pages
 
-- **Settings** lists four subpages as `ActionRow`s, each with an icon, a summary, and a chevron.
-- **Email accounts** (`com.otus.accounts`) lists connected accounts and connects new ones with a JMAP
+- **Settings** lists four subpages as flat `SettingRow`s, each with an icon, a summary, and a
+  chevron, separated by hairlines. Settings pages follow Notion's layout: title and description on
+  the left, the control on the right, and large section titles.
+- **Email accounts** (`com.otus.accounts`) lists connected accounts as flat rows with a Remove
+  button, under large section titles, and connects new ones with a JMAP
   server, username, and password or app password. It supports compatible JMAP mail servers with
   HTTP Basic authentication, such as Stalwart; no provider-specific behavior exists.
-- **Appearance & behavior** shows the current date format with an example date. Tapping it opens a
-  `ChoiceDialog` with every format; choosing one applies it and closes, dismissing changes nothing.
-  Dark mode is the only color mode, so there is no theme choice.
-- **Folders** and **Rules** manage each account's folders and the rules that file arriving mail;
+- **Appearance & behavior** shows the date format's pattern in a `ValueButton`, with an example
+  date below the title. Tapping the row opens a `ChoiceSheet` with every format and its example;
+  choosing one applies it at once and moves the check, and Done, the scrim, Back, or swiping
+  down anywhere on the sheet closes it. A short, slow pull springs back.
+  Dark mode is the only color mode, so there is no theme choice. Below it, Mail adds
+  `MailBehaviorSettings` through the screen's content slot: **Swipe right** and **Swipe left** open a
+  `ChoiceSheet` of message actions, shown in a `ValueButton`, and **Mark as read when opened** is a
+  `SettingToggleRow` switch. Each change is saved
+  before it is shown. See [swipe actions](inbox.md#swipe-actions).
+- **Folders** shows each account as a section of flat folder rows, indented by nesting, ending with
+  a **New folder** row. **Folders** and **Rules** manage each account's folders and the rules that
+  file arriving mail;
   see [Folders and rules](folders.md).
 
 ## Reusable pieces
@@ -21,8 +32,13 @@ Mail-specific destination entries in `app/MailSettings.kt`. Mail pins both libra
 - `PageScaffold` (component): context-panel header with a leading chevron and a scrolling body.
 - `Subpage` (component): a `PageScaffold` whose chevron and the system back gesture call `onBack`.
 - `PageSection` (component): a captioned group of rows.
-- `ChoiceDialog` (component): single-choice popup over a scrim.
+- `ChoiceSheet` (component): single-choice bottom sheet for settings; choosing applies at once.
+  The default option, "Use device format" or a swipe's own default marked "Default", is listed
+  first in a group of its own.
+- `ChoiceDialog` (component): single-choice popup over a scrim, for one-shot picks.
 - `DialogFrame` (component): the shared popup frame with a title and close button.
+- `ConfirmDialog` (component): asks before a destructive change, with Cancel and the
+  confirming action. Removing an account and deleting a folder or rule use it.
 - `ActionDialog` and `InputDialog` (components): a confirmation or menu of `DialogAction`s, and a
   popup with one validated text field.
 - `ActionRow`, `InputField`, and `InputKind` (elements).
@@ -41,7 +57,8 @@ under the field.
 Connect verifies the server and credentials, then saves the account; see [JMAP](jmap.md). If the
 server hands sign-in to another host, the page names that host and continues only after the user
 trusts it.
-Connected accounts are listed with a remove action. The password field is cleared after connecting.
+Connected accounts are listed with a Remove button, which asks in a `ConfirmDialog` before
+the device forgets the account and its saved password; Cancel keeps it. The password field is cleared after connecting.
 Local storage failures keep the page open with an error and a reload action. A failed removal can
 be retried using the same account row. Inbox refresh preserves existing messages if account
 metadata cannot be read.
