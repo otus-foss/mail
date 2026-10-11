@@ -5,6 +5,9 @@ Mail-specific destination entries in `app/MailSettings.kt`. Mail pins both libra
 0.6.0; the appearance page's content slot arrived in 0.5.0. Settings is a sidebar destination
 with subpages.
 
+The connection sheet and sending-address list described below are unreleased Meta changes.
+Local builds use `-Potus.meta.path=../otus-meta` until Mail adopts their released version.
+
 ## Pages
 
 - **Settings** lists four subpages as flat `SettingRow`s, each with an icon, a summary, and a
@@ -38,6 +41,7 @@ with subpages.
   first in a group of its own.
 - `ChoiceDialog` (component): single-choice popup over a scrim, for one-shot picks.
 - `DialogFrame` (component): the shared popup frame with a title and close button.
+- `SheetFrame` (component): the shared bottom sheet with a title, Done, and dismissal gestures.
 - `ConfirmDialog` (component): asks before a destructive change, with Cancel and the
   confirming action. Removing an account and deleting a folder or rule use it.
 - `ActionDialog` and `InputDialog` (components): a confirmation or menu of `DialogAction`s, and a
@@ -58,8 +62,15 @@ under the field.
 Connect verifies the server and credentials, then saves the account; see [JMAP](jmap.md). If the
 server hands sign-in to another host, the page names that host and continues only after the user
 trusts it.
-Connected accounts are listed with a Remove button, which asks in a `ConfirmDialog` before
-the device forgets the account and its saved password; Cancel keeps it. The password field is cleared after connecting.
+"Connect an account" opens the shared `SheetFrame` with the server, username, password, and
+connection status. The form scrolls above the keyboard. Success closes the sheet. Dismissing it
+discards the draft and cancels pending connection work, including credentials awaiting host consent.
+Connected accounts show the sign-in address, server, and any distinct sending addresses the server
+reports through `Identity/get`. Discovery requires submission support on the selected mail account;
+receiving aliases without an identity cannot be listed. Address discovery errors keep the saved
+account visible. The address list refreshes when accounts reload and is not persisted.
+Each account has a Remove button, which asks in a `ConfirmDialog` before
+the device forgets the account and its saved password; Cancel keeps it.
 Local storage failures keep the page open with an error and a reload action. A failed removal can
 be retried using the same account row. Inbox refresh preserves existing messages if account
 metadata cannot be read.
