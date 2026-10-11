@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -23,6 +24,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.Density
 import com.otus.dateformat.DateFormatPreference
 import com.otus.dateformat.DateFormatter
@@ -96,6 +98,28 @@ class InboxPickerTest {
     }
 
     @Test
+    fun swipingTheSheetDownDiscardsTheDraft() {
+        compose.onNodeWithText("People").performClick()
+        compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
+        compose.onNodeWithText("From").performTouchInput {
+            swipeDown(startY = centerY, endY = centerY + 900f, durationMillis = 200)
+        }
+        compose.onNodeWithContentDescription("Dismiss From").assertDoesNotExist()
+        compose.onNodeWithText("2 results").assertIsDisplayed()
+    }
+
+    @Test
+    fun swipingDownFromContentThatDoesNotScrollClosesTheSheet() {
+        listOf(hasContentDescription("Search accounts…"), hasText("1 selected")).forEach { start ->
+            compose.onNodeWithText("All accounts").performScrollTo().performClick()
+            compose.onNode(start).performTouchInput {
+                swipeDown(startY = centerY, endY = centerY + 900f, durationMillis = 200)
+            }
+            compose.onNodeWithContentDescription("Dismiss Accounts").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun doubleTappingClearAppliesClearedSelectionAndCloses() {
         compose.onNodeWithText("People").performClick()
         compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
@@ -130,22 +154,33 @@ class InboxPickerTest {
     }
 
     @Test
-    fun mailboxSearchKeepsAccountIdentityAndAccountsHaveTheirOwnSearch() {
-        compose.onNodeWithContentDescription("All inboxes").assertIsOff().performClick()
-        compose.onNodeWithText("2 selected").assertIsDisplayed()
-        compose.onNodeWithText("me@work.example").assertIsDisplayed()
-        screenshot("inboxes")
-        compose.onNodeWithContentDescription("Search inboxes…").performTextInput("Personal")
-        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
-        compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("1 result").assertIsDisplayed()
-        compose.onNodeWithText("Meeting design").assertIsDisplayed()
-        compose.onNodeWithContentDescription("All accounts").performScrollTo().performClick()
+    fun accountPickerSearchesAccountsAndRestrictsMessages() {
+        compose
+            .onNodeWithText("All accounts")
+            .performScrollTo()
+            .assertIsOff()
+            .performClick()
+        compose.onNodeWithText("1 selected").assertIsDisplayed()
         compose.onNodeWithContentDescription("Search accounts…").performTextInput("Personal")
         compose.onNode(hasText("Personal") and isToggleable()).performClick()
         screenshot("accounts")
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("No matching messages").assertIsDisplayed()
+        compose.onNodeWithText("1 result").assertIsDisplayed()
+        compose.onNodeWithText("Meeting plans").assertIsDisplayed()
+        val single = compose.onNodeWithContentDescription("Personal account, Inbox").performScrollTo()
+        single.assert(hasText("Inbox") and !hasText("Personal")).assertIsOn()
+        chipScreenshot("Personal account, Inbox", "accounts-chip-single")
+        single.performClick()
+        compose.onNodeWithContentDescription("Search accounts…").performTextReplacement("Work")
+        compose.onNode(hasText("Work") and isToggleable()).performClick()
+        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithText("2 results").assertIsDisplayed()
+        compose
+            .onNodeWithContentDescription("2 accounts, Inbox")
+            .performScrollTo()
+            .assert(hasText("Inbox"))
+            .assertIsOn()
+        chipScreenshot("2 accounts, Inbox", "accounts-chip-multiple")
     }
 
     @Test

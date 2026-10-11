@@ -4,6 +4,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
@@ -14,6 +15,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.feature.inbox.presentation.InboxContext
+import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -22,6 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.math.abs
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
@@ -51,7 +56,8 @@ class InboxHeaderActionsTest {
         compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused()
         compose.onNodeWithText("People").assertIsDisplayed()
         compose.onNodeWithText("Date").assertIsDisplayed()
-        compose.onNodeWithContentDescription("All accounts").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("All accounts").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Inboxes").assertDoesNotExist()
         compose.runOnIdle { assertTrue("Opening search requests the software keyboard", keyboardRequested) }
     }
 
@@ -64,6 +70,32 @@ class InboxHeaderActionsTest {
         compose.onNodeWithContentDescription("Search your mailbox…").assertDoesNotExist()
         compose.onNodeWithText("Unread").assertIsOn()
     }
+
+    @Test
+    fun withoutPillsTheFilterButtonMovesIntoTheHeaderAndTheListMovesUp() {
+        fun show(pills: List<InboxPill>) =
+            compose.runOnUiThread {
+                compose.activity.setContent {
+                    OtusTheme { InboxScreen(emptyList(), context = InboxContext(pills = InboxPills(pills))) }
+                }
+            }
+
+        fun bounds(node: SemanticsNodeInteraction) = node.fetchSemanticsNode().boundsInRoot
+        show(InboxPill.defaults(readLater = false))
+        val prompt = bounds(compose.onNodeWithText("Tap to search"))
+        assertTrue("With pills, the button ends their row", bounds(filters()).top >= prompt.bottom)
+        val listWithPills = bounds(compose.onNodeWithText("0 messages")).top
+        show(emptyList())
+        val button = bounds(filters())
+        assertTrue("Without pills, it sits beside the prompt", abs(button.center.y - prompt.center.y) < 2f)
+        assertTrue(bounds(compose.onNodeWithText("0 messages")).top < listWithPills)
+        // Search still lists its filters, and the button stays available.
+        compose.onNodeWithText("Tap to search").performClick()
+        compose.onNodeWithText("People").assertIsDisplayed()
+        filters().assertIsDisplayed()
+    }
+
+    private fun filters() = compose.onNodeWithContentDescription("Open filters")
 
     @Test
     fun navigationChevronIsAvailableAndSearchBackReturnsToPrompt() {

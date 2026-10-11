@@ -29,35 +29,42 @@ fits without overlapping the number.
 
 ## Shared controls
 
-`SelectionSheet` uses the shared `SheetFrame` with a heading, optional search slot, scrollable
-content area, and Clear and Done actions in its header. `PickerSearch` composes the existing `SearchField`
-element; its text is independent of the mail query. `SelectionRow` and `ActionButton` are elements.
+`SelectionSheet` is a design-system bottom sheet built on the same `SheetFrame` as `ChoiceSheet`:
+a grab handle, a centered title with Clear before it and Done after it, an optional search slot,
+and a scrollable content area. `PickerSearch` composes the existing `SearchField` element; its
+text is independent of the mail query. `SelectionRow` is an element.
 They share clipped press feedback with pills and icon buttons, including keyboard focus feedback.
 All colors use the supplied dark palette; text uses Figtree and the existing symbols use Material
 Symbols Rounded. `SheetTokens` owns sheet geometry. No new palette colors or icon assets are added.
 
-Done commits the draft and closes the sheet. Tapping outside, system Back, or a downward swipe
-discards it. A short, slow pull springs back. The list scrolls independently, and safe-area/IME
-padding keeps the sheet above the keyboard. Width is capped at 560 dp on larger displays.
+The sheet slides up from the bottom edge. Outside-tap, system Back, or swiping down anywhere on
+it slides it away; in a scrolling list or calendar, the swipe takes over once the content is at
+its top. Everything else, including the header, the search field, and empty space, drags the
+sheet directly. Safe-area and keyboard padding keep the content above the keyboard. Width is
+capped at 560 dp on larger displays.
 
 ## Drafts and filters
 
 Opening a sheet copies the applied criteria into a saveable draft. Row presses only change that
-draft. Done commits it and closes; dismissal discards it. Clear resets only the current filter
-in the draft. Double-tapping Clear also applies the cleared draft and closes the sheet.
+draft. Done commits it once the sheet has slid away; every other way of closing discards it.
+Clear resets only the current filter in the draft. Double-tapping Clear also applies the cleared
+draft and closes the sheet.
 Picker search does not clear selections, and reopening resets its local query.
 Screen criteria, open filter, draft selections, and picker query survive activity recreation.
 
 - **People / From:** match sender name or address within the picker, with multiple sender choices,
   avatar initials, and email subtitles. Filtering is by sender, not recipient. Sender choices
   come from all supplied messages, not only the currently filtered results. JMAP Contacts is deferred.
-- **Inboxes:** searchable mailbox choices sorted by account name, with an account avatar and
-  address on each row. Search matches mailbox names, account names, and addresses. Selection includes account identity;
-  matching mailbox names in different accounts are separate choices. The initial Inbox scope
-  matches Inbox across accounts. Clear + Done means all supplied mailboxes.
 - **Accounts:** searchable multiple account choices with account avatars. Show the address beneath
   the account name only when it differs. No selection means all accounts. The pill
   now says Accounts rather than the Figma label Mails to make its purpose explicit.
+  App wiring supplies saved accounts, so accounts without loaded mail remain selectable.
+  On the Inbox page, an Inboxes section follows the accounts. It lists every account's folder
+  names once each, with each account's inbox as Inbox. An inbox choice matches that mailbox in
+  every account the search includes, so Work and Archive together find Work's Archive. The
+  search field filters both lists. Inbox starts checked. With no inbox checked, search covers every
+  inbox, and Clear unchecks them all. Inbox rows are 48 dp tall, since they have one line and no
+  avatar. Folder pages and active folder pills show no Inboxes section.
 - **Date:** regular seven-column calendar with plain day numbers, a continuous rectangular
   range band, and softly squared endpoints. Only exposed endpoint edges have rounded corners;
   edges joining another selected day in the same row are square, including in RTL. Hold a date, then drag across days or week rows to preview
@@ -89,13 +96,17 @@ Screen criteria, open filter, draft selections, and picker query survive activit
   dates match those shortcuts. Other single dates show one label, and other ranges label each endpoint
   independently. Stored dates and filtering remain ISO-based.
   A week can contain dates from adjacent months, with one uninterrupted range band across the boundary.
-- **Filters:** unread and attachment switches also use draft/Done behavior.
+- **Filters:** unread, attachment, and flagged switches also use draft/Done behavior.
 
 Selections are ORed within each category and ANDed across categories and the mail query.
-Search pills summarize applied selections. The default Inbox scope and unrestricted account scope
-show "All" beside their respective icons without a selection highlight. Accessibility labels
-distinguish "All inboxes" from "All accounts". An empty message source shows honest empty lists;
-no demonstration contacts, accounts, or messages are shipped.
+Search pills summarize applied selections. With no account selected, the account pill reads
+"All accounts" without a selection highlight. One selected account shows its avatar and name;
+several show only overlapping avatars, the same as the people pill. The chosen inboxes follow a
+thin divider line: "Inbox", "Inbox +1" for several, or "All inboxes" when none is checked. Beside
+particular inboxes, one account shows only its avatar. Screen readers hear a comma in place of the
+line. The pill is highlighted once accounts are chosen or the inboxes differ from the page's.
+An empty message source shows no senders. Saved accounts still appear in the account picker.
+No demonstration contacts, accounts, or messages are shipped.
 
 Calendar rows are at least 48 dp tall and grow with text. Seven equal-width columns fit the sheet
 without horizontal scrolling; cell widths are narrower than 48 dp on small screens. The calendar scrolls independently beneath the date summary and shortcuts. Those controls have a

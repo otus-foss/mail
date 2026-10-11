@@ -13,21 +13,33 @@ data class InboxSnapshot(
     val unavailable: List<UnavailableAccount> = emptyList(),
 )
 
-/** Which messages to load: every account's folder with one role, or one folder of one account. */
+/**
+ * Which messages to load: all or named mailboxes of every account, one folder of one account, or
+ * several such folders.
+ */
 sealed interface MailScope {
-    /**
-     * Each account's folder with [role], such as `trash` (RFC 8621, section 2). Its messages are
-     * filed under [name], whatever each server calls the folder.
-     */
     data class Role(
         val role: String,
         val name: String,
+    ) : MailScope
+
+    data object AllMailboxes : MailScope
+
+    /** The chosen mailboxes of [accounts]. Empty choices load every mailbox or account. */
+    data class Mailboxes(
+        val mailboxes: Set<MailboxScope>,
+        val accounts: Set<String> = emptySet(),
     ) : MailScope
 
     /** [accountId] is the login; [folderId] is the server's mailbox id. */
     data class Folder(
         val accountId: String,
         val folderId: String,
+    ) : MailScope
+
+    /** Folders of one or more accounts, such as each account's Read later folder. */
+    data class Folders(
+        val folders: Set<Folder>,
     ) : MailScope
 
     companion object {

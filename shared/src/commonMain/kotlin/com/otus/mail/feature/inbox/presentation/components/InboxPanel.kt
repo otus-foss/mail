@@ -28,7 +28,6 @@ import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.InboxContext
 
 @Composable
@@ -38,7 +37,7 @@ fun InboxPanel(
     dateFormatter: DateFormatter,
     context: InboxContext,
     actions: InboxPanelActions,
-    selectedSenders: List<MailSender> = emptyList(),
+    selection: FilterSelection = FilterSelection(),
 ) {
     val onChange = actions.onChange
     val onSearchingChange = actions.onSearchingChange
@@ -46,24 +45,20 @@ fun InboxPanel(
     val onSubmit = actions.onSubmit
     val onOpenNavigation = actions.onOpenNavigation
     ContextPanel(
-        placement = if (searching) ChipPlacement.Overlapping else ChipPlacement.Below,
+        // Without pills, the filter button moves into the header and the list gets the row's space.
+        placement =
+            when {
+                searching -> ChipPlacement.Overlapping
+                context.pills.shown.isEmpty() -> ChipPlacement.None
+                else -> ChipPlacement.Below
+            },
         navigation = { InboxNavigation(searching, onOpenNavigation) { onSearchingChange(false) } },
         trailingAction = {
             IconButton("Open filters", { onFilter(InboxFilter.More) }) {
                 Symbol(Res.drawable.symbol_filter_list)
             }
         },
-        chips = {
-            InboxPanelChips(
-                searching,
-                search,
-                context.defaultSearch,
-                dateFormatter,
-                selectedSenders,
-                onChange,
-                onFilter,
-            )
-        },
+        chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions) },
     ) {
         AnimatedContent(
             targetState = searching,

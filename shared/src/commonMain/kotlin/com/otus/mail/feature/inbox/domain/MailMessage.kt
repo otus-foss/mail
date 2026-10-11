@@ -36,6 +36,15 @@ data class ReceivedAt(
     val time: String,
 )
 
+/** The inbox's name in the app. Servers name and translate it differently, so it is found by role. */
+const val INBOX_MAILBOX = "Inbox"
+
+/** The name messages and search use for a mailbox: [INBOX_MAILBOX] for the inbox role, else the server's [name]. */
+fun mailboxName(
+    name: String,
+    role: String?,
+): String = if (role == "inbox") INBOX_MAILBOX else name
+
 data class MailLocation(
     val mailbox: String,
     val account: String,

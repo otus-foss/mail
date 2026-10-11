@@ -110,7 +110,7 @@ class InboxScreenTest {
         compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Design review").assertIsDisplayed()
-        compose.onNodeWithContentDescription("All accounts").performScrollTo().performClick()
+        compose.onNodeWithText("All accounts").performScrollTo().performClick()
         compose.onNodeWithText("Personal").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("No matching messages").assertIsDisplayed()

@@ -2,6 +2,7 @@ package com.otus.mail
 
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -124,7 +125,11 @@ class FoldersAndRulesTest {
         val articles = hasText("Articles") and isSelectable()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(articles).fetchSemanticsNodes().isNotEmpty() }
         // Articles follows Read later above the account's folders, one level in.
-        val readLater = compose.onNodeWithText("Read later", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val readLater =
+            compose
+                .onNode(hasText("Read later") and hasAnyAncestor(isSelectable()), useUnmergedTree = true)
+                .fetchSemanticsNode()
+                .boundsInRoot
         val nested = compose.onNodeWithText("Articles", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
         assertTrue(readLater.bottom <= nested.top && nested.bottom <= receipts.top)

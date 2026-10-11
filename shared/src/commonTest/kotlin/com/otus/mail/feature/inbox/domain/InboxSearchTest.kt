@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class InboxSearchTest {
@@ -23,6 +24,7 @@ class InboxSearchTest {
                 "A walk by the lake",
                 ReceivedAt("2026-10-03", "10:00"),
                 MailLocation("Inbox", "Personal"),
+                MailAttributes(flagged = true),
             ),
             MailMessage(
                 "archive",
@@ -50,6 +52,14 @@ class InboxSearchTest {
         assertTrue(results(InboxSearch(query = "Alex lake")).isEmpty())
         assertEquals(listOf("older"), results(InboxSearch(unreadOnly = true, attachmentsOnly = true)))
         assertTrue(results(InboxSearch(query = "Weekend", unreadOnly = true)).isEmpty())
+    }
+
+    @Test
+    fun aFilterPillTurnsItsFilterOnAndOff() {
+        val flagged = InboxSearch().with(InboxPill.Filter.Flagged, on = true)
+        assertTrue(flagged.has(InboxPill.Filter.Flagged))
+        assertEquals(listOf("newer"), results(flagged))
+        assertEquals(InboxSearch(), flagged.with(InboxPill.Filter.Flagged, on = false))
     }
 
     @Test
@@ -105,5 +115,34 @@ class InboxSearchTest {
     fun selectedSendersResolveNamesAndKeepUnknownAddresses() {
         val senders = selectedSenders(messages, setOf("alex@example.com", "gone@example.com"))
         assertEquals(listOf(MailSender("Alex", "alex@example.com"), MailSender("", "gone@example.com")), senders)
+    }
+
+    @Test
+    fun mailboxAndAccountChoicesKeepTheirRemoteScope() {
+        val default = InboxSearch()
+        assertNull(default.copy(query = "plans").scopeToLoad(default))
+        assertEquals(
+            MailScope.Mailboxes(default.mailboxes, setOf("Work")),
+            default.copy(accounts = setOf("Work")).scopeToLoad(default),
+        )
+        val withArchive = default.copy(mailboxes = default.mailboxes + MailboxScope(null, "Archive"))
+        assertEquals(
+            MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox"), MailboxScope(null, "Archive"))),
+            withArchive.scopeToLoad(default),
+        )
+        assertEquals(MailScope.AllMailboxes, default.copy(mailboxes = emptySet()).scopeToLoad(default))
+        val accountMailbox = setOf(MailboxScope("Work", "Inbox"))
+        assertEquals(
+            MailScope.Mailboxes(accountMailbox),
+            default.copy(mailboxes = accountMailbox).scopeToLoad(default),
+        )
+    }
+
+    @Test
+    fun selectedAccountsKeepSelectionOrderAndUnknownIds() {
+        val accounts = selectedAccounts(messages, setOf("Personal", "gone", "Work"))
+        assertEquals(listOf("Personal", "gone", "Work"), accounts.map { it.account })
+        val empty = MailLocation("", "Empty account", "empty", "empty@example.org")
+        assertEquals(listOf(empty), selectedAccounts(messages, setOf("empty"), listOf(empty)))
     }
 }

@@ -20,7 +20,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-/** Loaded messages of the unified inbox or one folder. A refresh replaces any refresh still in flight. */
+/**
+ * Loaded messages of the unified inbox or one folder, or of the mailboxes a search or a folder
+ * pill shows in their place. A refresh replaces any refresh still in flight.
+ */
 class InboxFeedState(
     private val source: MailSource,
     private val scope: CoroutineScope,
@@ -31,8 +34,10 @@ class InboxFeedState(
             domainIcons = true,
             domainIconProxy = true,
         ),
-    private val mailScope: MailScope = MailScope.Inbox,
+    private val defaultScope: MailScope = MailScope.Inbox,
 ) {
+    private var mailScope = defaultScope
+
     var messages by mutableStateOf(emptyList<MailMessage>())
         private set
     var loading by mutableStateOf(false)
@@ -42,6 +47,7 @@ class InboxFeedState(
     var notice by mutableStateOf<String?>(null)
         private set
     private var job: Job? = null
+    private var request = 0
 
     /** Shows [text] in place of the last load's notice, such as a failed change. */
     fun report(text: String) {
@@ -56,33 +62,54 @@ class InboxFeedState(
         messages = messages.map { if (it.id == id) transform(it) else it }
     }
 
-    /** Takes the message with [id] out of the list, such as while a move is sent to the server. */
-    fun remove(id: String) {
+    /** Removes [id] and returns a rollback that restores it only in the same scope. */
+    fun remove(id: String): () -> Unit {
+        val before = messages.firstOrNull { it.id == id }
+        val previousScope = mailScope
         messages = messages.filterNot { it.id == id }
+        return { if (mailScope == previousScope && before != null) restore(before) }
     }
 
     /** Puts [message] back after the server refused to move it, unless a reload already did. */
-    fun restore(message: MailMessage) {
+    private fun restore(message: MailMessage) {
         if (messages.none { it.id == message.id }) messages = messages + message
     }
 
+    /**
+     * Loads [scope] in place of the page's own messages, or returns to them when it is null. The
+     * previous scope's messages leave at once, so they never show under the new one.
+     */
+    fun show(scope: MailScope?) {
+        val next = scope ?: defaultScope
+        if (next == mailScope) return
+        mailScope = next
+        messages = emptyList()
+        refresh()
+    }
+
     fun refresh() {
+        val current = ++request
+        val requestedScope = mailScope
         job?.cancel()
+        loading = true
+        notice = null
         job =
             scope.launch {
-                loading = true
                 try {
-                    val snapshot = source.messages(mailScope)
-                    messages = withCachedAvatars(snapshot.messages)
+                    val snapshot = source.messages(requestedScope)
+                    val incoming = withCachedAvatars(snapshot.messages)
+                    if (current != request) return@launch
+                    messages = incoming
                     notice = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
                 } catch (expected: InboxStorageException) {
-                    notice = "Couldn't load saved accounts. Try again in Settings."
+                    if (current == request) notice = "Couldn't load saved accounts. Try again in Settings."
                 } finally {
-                    loading = false
+                    if (current == request) loading = false
                 }
+                if (current != request) return@launch
                 coroutineScope {
-                    launch { resolveAccountAvatars() }
-                    resolveAvatars()
+                    launch { resolveAccountAvatars(current) }
+                    resolveAvatars(current)
                 }
             }
     }
@@ -111,7 +138,7 @@ class InboxFeedState(
     }
 
     /** Each account's own address resolves like a sender, for the inbox picker. */
-    private suspend fun resolveAccountAvatars() {
+    private suspend fun resolveAccountAvatars(current: Int) {
         val service = avatars ?: return
         val accounts =
             messages
@@ -124,6 +151,7 @@ class InboxFeedState(
                 launch {
                     val request = AvatarRequest(account.accountId, account.accountAddress, account.account)
                     val resolved = service.resolve(request, avatarOptions)
+                    if (current != this@InboxFeedState.request) return@launch
                     val avatar = keepIdenticalImage(resolved, account.accountAvatar) ?: resolved
                     messages =
                         messages.map { message ->
@@ -139,7 +167,7 @@ class InboxFeedState(
     }
 
     /** Optional network photos update rows without blocking mail or showing errors. */
-    private suspend fun resolveAvatars() {
+    private suspend fun resolveAvatars(current: Int) {
         val service = avatars ?: return
         val senders = messages.map { it.sender }.distinctBy { it.accountKey to avatarEmailKey(it.address) }
         coroutineScope {
@@ -150,6 +178,7 @@ class InboxFeedState(
                             AvatarRequest(sender.accountKey, sender.address, sender.name),
                             avatarOptions,
                         )
+                    if (current != request) return@launch
                     val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved
                     messages =
                         messages.map { message ->

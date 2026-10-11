@@ -22,6 +22,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
+import com.otus.mail.feature.inbox.domain.mailboxName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
@@ -34,8 +35,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
 /**
- * Loads each login's folder with one role, such as the inbox, or one folder, newest first. Logins
- * load in parallel and fail alone.
+ * Loads all or named mailboxes of each login, or chosen folders, newest first. Logins load in
+ * parallel and fail alone.
  */
 class JmapMailSource(
     private val connections: JmapConnections,
@@ -52,7 +53,7 @@ class JmapMailSource(
                     throw InboxStorageException(error)
                 }
             }
-        val selected = if (scope is MailScope.Folder) saved.filter { it.id == scope.accountId } else saved
+        val selected = saved.filter { scope.reads(it.id) }
         val results = coroutineScope { selected.map { async { load(it, scope) } }.awaitAll() }
         return InboxSnapshot(
             messages = results.filterIsInstance<AccountLoad.Loaded>().flatMap { it.messages },
@@ -70,13 +71,13 @@ class JmapMailSource(
             if (accountId == null) {
                 AccountLoad.Failed(UnavailableAccount(login.name, InboxFailure.NoMail))
             } else {
-                AccountLoad.Loaded(loadMailbox(connection, login, accountId, scope))
+                AccountLoad.Loaded(loadMailboxes(connection, login, accountId, scope))
             }
         } catch (error: JmapException) {
             AccountLoad.Failed(UnavailableAccount(login.name, error.toInboxFailure()))
         }
 
-    private suspend fun loadMailbox(
+    private suspend fun loadMailboxes(
         connection: JmapConnection,
         login: JmapLogin,
         accountId: String,
@@ -87,16 +88,54 @@ class JmapMailSource(
                 .call(
                     GetMethod(MailboxType, accountId, properties = listOf("id", "name", "role")),
                 ).list
-        // System folders are located by role, not name: servers name and translate them differently.
-        val mailbox =
+        val chosen =
             when (scope) {
-                is MailScope.Role -> mailboxes.firstOrNull { it.role == scope.role }
-                is MailScope.Folder -> mailboxes.firstOrNull { it.id == scope.folderId }
-            } ?: return emptyList()
-        val name = if (scope is MailScope.Role) scope.name else mailbox.name
+                is MailScope.Role -> {
+                    mailboxes.filter { it.role == scope.role }
+                }
+
+                MailScope.AllMailboxes -> {
+                    mailboxes
+                }
+
+                is MailScope.Mailboxes -> {
+                    mailboxes.filter { mailbox ->
+                        scope.mailboxes.isEmpty() ||
+                            scope.mailboxes.any {
+                                it.name == mailboxName(mailbox.name, mailbox.role) &&
+                                    (it.account == null || it.account == login.id)
+                            }
+                    }
+                }
+
+                is MailScope.Folder -> {
+                    mailboxes.filter { it.id == scope.folderId }
+                }
+
+                is MailScope.Folders -> {
+                    mailboxes.filter { MailScope.Folder(login.id, it.id) in scope.folders }
+                }
+            }
+        // Each login loads its mailboxes sequentially instead of starting one request per folder.
+        val loaded =
+            chosen.map { mailbox ->
+                val name = if (scope is MailScope.Role) scope.name else mailboxName(mailbox.name, mailbox.role)
+                loadMailbox(connection, login, accountId, mailbox.id, name)
+            }
+        // A message can be in several chosen mailboxes; it is listed once, under the first.
+        return loaded.flatten().distinctBy { it.id }
+    }
+
+    private suspend fun loadMailbox(
+        connection: JmapConnection,
+        login: JmapLogin,
+        accountId: String,
+        mailboxId: String,
+        name: String,
+    ): List<MailMessage> {
         val emails =
             connection.request {
-                val query = call(QueryMethod(EmailType, accountId, inMailbox(mailbox.id), NEWEST_FIRST, limit))
+                val query = call(QueryMethod(EmailType, accountId, inMailbox(mailboxId), NEWEST_FIRST, limit))
                 call(
                     GetMethod(
                         EmailType,
@@ -109,7 +148,7 @@ class JmapMailSource(
             }
         val local = zone()
         return jmapDecoding {
-            emails.list.map { it.toMessage(login.id, login.name, name, local, login.username, mailbox.id) }
+            emails.list.map { it.toMessage(login.id, login.name, name, local, login.username, mailboxId) }
         }
     }
 
@@ -130,6 +169,27 @@ class JmapMailSource(
 }
 
 private fun inMailbox(id: String) = buildJsonObject { put("inMailbox", JsonPrimitive(id)) }
+
+/** Whether this scope reads mail of the login with [loginId]. */
+private fun MailScope.reads(loginId: String): Boolean =
+    when (this) {
+        MailScope.AllMailboxes, is MailScope.Role -> {
+            true
+        }
+
+        is MailScope.Mailboxes -> {
+            (accounts.isEmpty() || loginId in accounts) &&
+                (mailboxes.isEmpty() || mailboxes.any { it.account == null || it.account == loginId })
+        }
+
+        is MailScope.Folder -> {
+            accountId == loginId
+        }
+
+        is MailScope.Folders -> {
+            folders.any { it.accountId == loginId }
+        }
+    }
 
 private sealed interface AccountLoad {
     class Loaded(

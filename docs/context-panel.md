@@ -10,8 +10,11 @@ networking, storage, or navigation services are implemented by these controls.
 
 `ContextPanel` accepts optional navigation and trailing-action slots, main content, and a chip
 builder. Wrap each pill in `item(stableKey) { Chip(...) }` so its position drives a cutout.
-Keys must be unique within a panel. Use `ChipPlacement.Below` for detached pills or
-`ChipPlacement.Overlapping` for pills embedded in the lower edge. Placement does not depend on
+Keys must be unique within a panel. Use `ChipPlacement.Below` for detached pills,
+`ChipPlacement.Overlapping` for pills embedded in the lower edge, or `ChipPlacement.None` when
+there are no pills. `None` drops the pill row, so the panel is only as tall as its header, and the
+trailing action moves to the header's end. The row grows and shrinks over the mode transition
+while the action fades between its two places. Placement does not depend on
 whether the content is a title, a search field, or metadata. Use `transition(expanded) { mode -> ... }`
 inside the chip builder when replacing a two-mode pill group. Place each pill inside `item(...)`
 within that group so its cutout follows the animated layout.
@@ -97,3 +100,4 @@ Chips and icon buttons share a subtle 100 ms highlight at 10% opacity using `tex
 Feedback is clipped to the visible rounded surface, including when pressing its larger 48 dp
 accessible touch target. The outer target has no rectangular ripple. Keyboard focus uses the same
 highlight; release or cancellation fades it out. Appearance and timing live in `ControlFeedbackTokens`.
+The search prompt has no highlight, so tapping it leaves the field's background unchanged.

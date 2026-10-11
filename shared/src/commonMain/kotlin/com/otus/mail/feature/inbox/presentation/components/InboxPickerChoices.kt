@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.elements.Avatar
 import com.otus.designsystem.elements.SelectionRow
@@ -19,11 +21,15 @@ import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.feature.inbox.domain.selectedAccounts
+import com.otus.mail.feature.inbox.presentation.MailboxSearch
 
 @Composable
 internal fun InboxPickerChoices(
     filter: InboxFilter,
     messages: List<MailMessage>,
+    mailboxSearch: MailboxSearch,
+    allowMailboxSelection: Boolean,
     query: String,
     draft: InboxSearch,
     onChange: (InboxSearch) -> Unit,
@@ -31,10 +37,17 @@ internal fun InboxPickerChoices(
     val needle = query.trim()
     LazyColumn(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(SheetTokens.gap)) {
         when (filter) {
-            InboxFilter.People -> peopleChoices(messages, needle, draft, onChange)
-            InboxFilter.Mailboxes -> mailboxChoices(messages, needle, draft, onChange)
-            InboxFilter.Accounts -> accountChoices(messages, needle, draft, onChange)
-            else -> error("This filter does not have searchable choices")
+            InboxFilter.People -> {
+                peopleChoices(messages, needle, draft, onChange)
+            }
+
+            InboxFilter.Accounts -> {
+                accountChoices(messages, mailboxSearch, allowMailboxSelection, needle, draft, onChange)
+            }
+
+            else -> {
+                error("This filter does not have searchable choices")
+            }
         }
     }
 }
@@ -63,52 +76,27 @@ private fun LazyListScope.peopleChoices(
     }
 }
 
-private fun LazyListScope.mailboxChoices(
-    messages: List<MailMessage>,
-    needle: String,
-    draft: InboxSearch,
-    onChange: (InboxSearch) -> Unit,
-) {
-    val accounts = messages.associate { it.location.accountId to it.location }
-    val mailboxes =
-        messages
-            .map { MailboxScope(it.location.accountId, it.location.mailbox) }
-            .distinct()
-            .sortedWith(compareBy({ accounts[it.account]?.account }, { it.name }))
-    val matches =
-        mailboxes.filter { scope ->
-            val location = accounts[scope.account]
-            scope.name.contains(needle, true) ||
-                location?.account.orEmpty().contains(needle, true) ||
-                location?.accountAddress.orEmpty().contains(needle, true)
-        }
-    val expanded =
-        mailboxes
-            .filter { option ->
-                draft.mailboxes.any { it.name == option.name && (it.account == null || it.account == option.account) }
-            }.toSet()
-    if (matches.isEmpty()) item { EmptyChoices(mailboxes.isEmpty(), "No inboxes available yet.") }
-    items(matches, key = { "${it.account}/${it.name}" }) { scope ->
-        val location = accounts[scope.account]
-        SelectionRow(
-            scope.name,
-            scope in expanded,
-            { onChange(draft.copy(mailboxes = expanded.toggled(scope))) },
-            subtitle = location?.let { it.accountAddress.ifBlank { it.account } },
-            leading = { location?.let { AccountAvatar(it) } },
-        )
-    }
-}
-
+/** Accounts, then mailbox names. A name matches that mailbox in every account the search includes. */
 private fun LazyListScope.accountChoices(
     messages: List<MailMessage>,
+    mailboxSearch: MailboxSearch,
+    allowMailboxSelection: Boolean,
     needle: String,
     draft: InboxSearch,
     onChange: (InboxSearch) -> Unit,
 ) {
-    val accounts = messages.map { it.location }.distinctBy { it.accountId }.sortedBy { it.account }
+    val known = mailboxSearch.accounts ?: messages.map { it.location }.distinctBy { it.accountId }
+    val accounts =
+        selectedAccounts(messages, known.map { it.accountId }.toSet() + draft.accounts, known)
+            .sortedBy { it.account }
     val matches = accounts.filter { it.account.contains(needle, true) || it.accountAddress.contains(needle, true) }
-    if (matches.isEmpty()) item { EmptyChoices(accounts.isEmpty(), "No accounts connected.") }
+    // Selected names stay listed so they can be cleared, even when the folder list lacks them.
+    val names =
+        if (allowMailboxSelection) (mailboxSearch.names + draft.mailboxes.map { it.name }).distinct() else emptyList()
+    val nameMatches = names.filter { it.contains(needle, true) }
+    if (matches.isEmpty() && nameMatches.isEmpty()) {
+        item { EmptyChoices(accounts.isEmpty() && names.isEmpty(), "No accounts connected.") }
+    }
     items(matches, key = { it.accountId }) { account ->
         SelectionRow(
             account.account,
@@ -119,9 +107,39 @@ private fun LazyListScope.accountChoices(
             leading = { AccountAvatar(account) },
         )
     }
+    mailboxChoices(nameMatches, draft, onChange)
+}
+
+private fun LazyListScope.mailboxChoices(
+    names: List<String>,
+    draft: InboxSearch,
+    onChange: (InboxSearch) -> Unit,
+) {
+    if (names.isEmpty()) return
+    item { SectionCaption("Inboxes") }
+    items(names, key = { "mailbox/$it" }) { name ->
+        SelectionRow(
+            name,
+            draft.mailboxes.any { it.name == name },
+            { onChange(draft.copy(mailboxes = draft.mailboxes.toggledName(name))) },
+        )
+    }
 }
 
 private fun <T> Set<T>.toggled(value: T): Set<T> = if (value in this) this - value else this + value
+
+private fun Set<MailboxScope>.toggledName(name: String): Set<MailboxScope> =
+    if (any { it.name == name }) filterNot { it.name == name }.toSet() else this + MailboxScope(null, name)
+
+@Composable
+private fun SectionCaption(text: String) {
+    Text(
+        text,
+        Modifier.padding(top = SheetTokens.inset).semantics { heading() },
+        color = OtusColors.text2,
+        fontSize = SheetTokens.detailSize,
+    )
+}
 
 @Composable
 private fun AccountAvatar(location: MailLocation) {
