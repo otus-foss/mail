@@ -3,6 +3,7 @@ package com.otus.mail.feature.folders.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.otus.designsystem.components.ActionDialog
+import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.DialogAction
 import com.otus.mail.feature.folders.domain.AccountRules
 import com.otus.mail.feature.folders.presentation.RulesDialog
@@ -35,11 +36,12 @@ fun RulesDialogs(
             if (rule == null) {
                 LaunchedEffect(dialog) { close() }
             } else {
-                ActionDialog(
-                    "Delete “${rule.title()}”?",
-                    listOf(DialogAction("Delete", { actions.onDelete(account.accountId, rule.id) }, primary = true)),
-                    close,
-                    message = "Mail it already moved stays in its folder.",
+                ConfirmDialog(
+                    title = "Delete “${rule.title()}”?",
+                    message = "Mail it already moved stays put.",
+                    confirmLabel = "Delete",
+                    onConfirm = { actions.onDelete(account.accountId, rule.id) },
+                    onDismiss = close,
                 )
             }
         }
