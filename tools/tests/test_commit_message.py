@@ -1,5 +1,6 @@
 """Commit format boundaries and rejection through an installed Git hook."""
 
+import os
 import shutil
 import subprocess
 import sys
@@ -98,6 +99,13 @@ class CommitMessageTests(unittest.TestCase):
         self.assertFalse(violations("feat(inbox): add " + "a" * 80 + "\n\n- Add a field.\n"))
 
 
+# Git exports GIT_DIR and similar variables to hooks. Dropping them keeps the test repository
+# separate when checkAll runs from the pre-push hook.
+ISOLATED_GIT_ENV = {
+    name: value for name, value in os.environ.items() if not name.startswith("GIT_")
+}
+
+
 class GitHookTests(unittest.TestCase):
     def test_git_rejects_invalid_message_and_accepts_valid_message(self):
         with tempfile.TemporaryDirectory(prefix="otus commit test ") as directory:
@@ -107,6 +115,7 @@ class GitHookTests(unittest.TestCase):
                 return subprocess.run(
                     ["git", *args],
                     cwd=repo,
+                    env=ISOLATED_GIT_ENV,
                     text=True,
                     capture_output=True,
                     check=check,
@@ -140,7 +149,12 @@ class GitHookTests(unittest.TestCase):
             message_file = repo / "message.txt"
             message_file.write_text(VALID + "; Editor comment\n", encoding="utf-8")
             subprocess.run(
-                [str(hook), str(message_file)], cwd=repo, check=True, capture_output=True, text=True
+                [str(hook), str(message_file)],
+                cwd=repo,
+                env=ISOLATED_GIT_ENV,
+                check=True,
+                capture_output=True,
+                text=True,
             )
             primary_branch = git("branch", "--show-current").stdout.strip()
             git("checkout", "-b", "topic")
@@ -149,7 +163,11 @@ class GitHookTests(unittest.TestCase):
             git("merge", "--no-ff", "--no-commit", "topic")
             message_file.write_text("update stuff\n", encoding="utf-8")
             rejected = subprocess.run(
-                [str(hook), str(message_file)], cwd=repo, capture_output=True, text=True
+                [str(hook), str(message_file)],
+                cwd=repo,
+                env=ISOLATED_GIT_ENV,
+                capture_output=True,
+                text=True,
             )
             self.assertNotEqual(rejected.returncode, 0)
             git("commit", "--no-edit")
