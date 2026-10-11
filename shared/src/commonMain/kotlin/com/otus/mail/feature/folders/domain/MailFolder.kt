@@ -77,6 +77,8 @@ data class FolderNode(
 )
 
 const val INBOX_ROLE = "inbox"
+const val DRAFTS_ROLE = "drafts"
+const val SENT_ROLE = "sent"
 const val ARCHIVE_ROLE = "archive"
 const val JUNK_ROLE = "junk"
 const val TRASH_ROLE = "trash"

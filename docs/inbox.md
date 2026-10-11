@@ -97,8 +97,10 @@ in the supplied messages still have an initials fallback.
 A folder opened from the sidebar uses the same screen. `InboxContext` gives it its default scope
 (every message of that folder, not the Inbox scope), its search prompt ("Search <folder>"), and its
 empty-state title. Closing search and clearing filters return to that default; the mailbox pill
-reads "All" for it. `MailSource.messages(MailScope)` loads either every account's inbox or one
-folder of one account. Messages keep their server id and mailbox id so they can be moved.
+reads "All" for it. `MailSource.messages(MailScope)` loads either one role's folder of every
+account (`MailScope.Role`, such as the inbox or, with [combined folders](folders.md#combined-folders),
+Trash) or one folder of one account. Messages keep their server id and mailbox id so they can be
+moved.
 
 An open message can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**, **Read later**,
 **Archive**, **Trash**, **Move**, and **Rule for sender** through `MessageActions`, which app wiring builds from
