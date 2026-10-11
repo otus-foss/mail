@@ -59,6 +59,10 @@ class AccountConnectionTest {
                     respond(EMAILS, HttpStatusCode.OK, json)
                 }
 
+                "Identity/get" in body -> {
+                    respond(IDENTITIES, HttpStatusCode.OK, json)
+                }
+
                 else -> {
                     respond(MAILBOXES, HttpStatusCode.OK, json)
                 }
@@ -74,6 +78,8 @@ class AccountConnectionTest {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNode(hasText("Settings") and isSelectable()).performClick()
         compose.onNodeWithText("Email accounts").performClick()
+        compose.onNodeWithContentDescription("Server").assertDoesNotExist()
+        compose.onNodeWithText("Connect an account").performClick()
         compose.onNodeWithContentDescription("Server").performTextInput("mail.example.org")
         compose.onNodeWithContentDescription("Username").performTextInput("ada@example.org")
         compose.onNodeWithContentDescription("Password").performTextInput("wrong")
@@ -87,8 +93,19 @@ class AccountConnectionTest {
         compose.onNodeWithText("Connect").performClick()
         compose.waitUntil(
             TIMEOUT,
-        ) { compose.onAllNodes(hasText("Connected Ada Lovelace.")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("ada@example.org\nmail.example.org").performScrollTo().assertIsDisplayed()
+        ) {
+            compose
+                .onAllNodes(
+                    hasText("ada@example.org\nada@other.example\nmail.example.org"),
+                ).fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Server").assertDoesNotExist()
+        compose
+            .onNodeWithText(
+                "ada@example.org\nada@other.example\nmail.example.org",
+            ).performScrollTo()
+            .assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("1 account connected").assertIsDisplayed()
 
@@ -100,13 +117,17 @@ class AccountConnectionTest {
 
     private companion object {
         const val TIMEOUT = 5_000L
-        const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:mail": {}},
-            "accounts": {"d1": {"name": "Ada Lovelace", "accountCapabilities": {"urn:ietf:params:jmap:mail": {}}}},
+        const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:mail": {},
+            "urn:ietf:params:jmap:submission": {}},
+            "accounts": {"d1": {"name": "Ada Lovelace", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},
+            "urn:ietf:params:jmap:submission": {}}}},
             "primaryAccounts": {"urn:ietf:params:jmap:mail": "d1"},
             "username": "ada@example.org", "apiUrl": "/jmap/"}"""
         const val MAILBOXES = """{"methodResponses": [["Mailbox/get",
             {"state": "m", "list": [{"id": "a", "name": "Inbox", "role": "inbox"}]},
             "c0"]]}"""
+        const val IDENTITIES = """{"methodResponses": [["Identity/get", {"state": "i", "list": [
+            {"email": "ada@example.org"}, {"email": "ada@other.example"}, {"email": "ada@example.org"}]}, "c0"]]}"""
         const val EMAILS = """{"methodResponses": [["Email/query", {"ids": ["m1"]}, "c0"],
             ["Email/get", {"state": "e", "list": [
             {"id": "m1", "keywords": {}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],

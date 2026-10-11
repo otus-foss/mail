@@ -59,7 +59,7 @@ class InboxHeaderActionsTest {
     fun defaultFilterButtonOpensFiltersWithoutStartingSearch() {
         compose.onNodeWithContentDescription("Open filters").assertIsDisplayed().performClick()
         compose.onNodeWithText("Unread only").performClick()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Tap to search").assertIsDisplayed()
         compose.onNodeWithContentDescription("Search your mailbox…").assertDoesNotExist()
         compose.onNodeWithText("Unread").assertIsOn()

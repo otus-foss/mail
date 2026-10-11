@@ -102,7 +102,7 @@ class OptionalDayPickerTest {
         compose.onNodeWithText(todayHeading()).performClick()
         choose("Year", "2020")
         compose.onNodeWithText("Go").performClick()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Today").assertIsDisplayed()
     }
 

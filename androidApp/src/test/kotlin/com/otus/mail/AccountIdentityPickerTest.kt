@@ -47,7 +47,8 @@ class AccountIdentityPickerTest {
             }
         }
         compose.onNodeWithText("ada@work.example").performClick()
-        compose.onNodeWithText("Apply").performClick()
+        compose.onNodeWithText("Done").performClick()
+        compose.waitForIdle()
         assertEquals(setOf("work"), applied.accounts)
         assertEquals(listOf("work"), searchMessages(messages, applied).map { it.id })
     }

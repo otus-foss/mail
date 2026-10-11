@@ -167,9 +167,8 @@ Mail's calendar uses `MonthYearPicker`.
 
 ## Release state
 
-Meta 0.6.0 is published to GitHub Packages from `v0.6.0`. Mail pins all six libraries to that
-release and normally downloads its Maven artifacts. Local source substitution through
-`otus.meta.path` remains optional.
+Mail pins all six libraries to Meta 0.7.0 and normally downloads its Maven artifacts from GitHub
+Packages. Local source substitution through `otus.meta.path` remains optional.
 
 ## Central UI policy
 

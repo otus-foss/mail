@@ -15,7 +15,7 @@ and incremental synchronization remain separate work.
   subject, sender name/address, or plain-text body, without case sensitivity. Punctuation is literal.
 - Unread, attachment, multiple senders, inclusive date ranges, account-specific mailboxes, and
   multiple accounts combine with the query. Inbox is the default scope. Custom selection sheets
-  have independent picker search and draft/Clear/Apply behavior. See [selection sheets](selection-sheets.md).
+  have independent picker search and draft/Clear/Done behavior. See [selection sheets](selection-sheets.md).
 - Results sort newest first using ISO dates and 24-hour times normalized by the JMAP data
   adapter, which also supplies mailbox/account identifiers. This is
   local search over supplied messages, not an implementation of JMAP Email/query semantics.
