@@ -17,6 +17,7 @@ import com.otus.designsystem.components.ReorderableColumn
 import com.otus.designsystem.components.SelectionSheet
 import com.otus.designsystem.elements.SelectionRow
 import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
@@ -58,6 +59,7 @@ internal fun InboxPillsSheet(
                 key = { it.pill.storageValue },
                 onMove = { from, to -> draft = draft.reordered(shown, from, to) },
                 spacing = SheetTokens.gap,
+                background = OtusColors.bgDark,
             ) { choice ->
                 SelectionRow(choice.title, selected = true, onClick = { draft = draft - choice.pill }, leading = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
