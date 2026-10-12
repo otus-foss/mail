@@ -85,9 +85,9 @@ offer it:
 
 | Target | Actions | Offered on |
 | --- | --- | --- |
-| Messages | Read, Flag, Read later, Archive, Trash, Spam, Move, Suggested move, Move to | Open message, selected messages |
-| One message | Rule for sender, Reply, Reply all, Forward | Open message |
-| List | Search, Filters, Mark all read | Message list |
+| Messages | Read, Flag, Read later, Archive, Trash, Spam, Not spam, Restore, Delete forever, Move, Suggested move, Move to | Open message, selected messages |
+| One message | Rule for sender, Reply, Reply all, Forward, Follow up | Open message |
+| List | Search, Filters, Mark all read, Empty spam or trash | Message list |
 | Draft | Send, Attach, Discard | Writing |
 | Anywhere | New mail | Message list, open message |
 
@@ -107,6 +107,8 @@ none of them can take it.
   sheet offers the folders every selected message can move to, whether the rows were selected by
   long press, tap, or drag.
 - **Rule for sender** needs exactly one message, so the selection bar never offers it.
+- **Not spam**, **Restore**, **Delete forever**, **Empty spam or trash**, and **Follow up** work
+  only in some folders; see [folder bars](#folder-bars).
 
 ### Move to a folder
 
@@ -135,7 +137,7 @@ menu does not offer it otherwise.
 Actions follow the same folder rights as before; see
 [folder pages and message actions](inbox.md#folder-pages-and-message-actions). An action the
 current messages cannot take stays in its slot, disabled with a `text3` icon, so the buttons never
-move. A swipe can be any action except Spam, Move, and Rule for sender.
+move. A swipe can be any action except Spam, Move, Rule for sender, and the folder actions.
 
 ### Settings
 
@@ -236,10 +238,52 @@ on iOS, and is off when missing.
 
 Flag left the open message's bar for Reply; it is in **More actions**.
 
+### Folder bars
+
+Spam, Trash, and Sent pages show their own bars. The page's folders are found by role
+(`FolderRole`: `junk`, `trash`, or `sent`), so a combined folder, one account's folder, and a
+folder pill all count. The open message uses the role of the folder it is shown in.
+
+| Folder | Message list | Selected messages | Open message |
+| --- | --- | --- | --- |
+| Spam | Search, Filters, Empty spam; main New mail | Delete forever; main Not spam | Delete forever; main Not spam |
+| Trash | Search, Filters, Empty trash; main New mail | Delete forever; main Restore | Delete forever; main Restore |
+| Sent | Unchanged | Unchanged | Forward; main Follow up |
+
+These are defaults. `MailBehavior.barLayout(place, role)` shows a folder's bar only while the
+place's saved bar is still the place's default and the mode is **Per screen**. A bar the user
+changed, and the **Same everywhere** bar, look the same in every folder. Settings has no
+per-folder bars: the slot picker lists the folder actions in their groups like any other, and
+outside their folders they stay in their slots, disabled. This keeps one saved bar per place.
+Drafts has no bar of its own, because reopening a draft is not built yet.
+
+- **Not spam** moves a message from Spam to its account's inbox. Where the Spam folder allows
+  marks (`maySetKeywords`), the same `Email/set` patch sets `$notjunk` and clears `$junk`.
+- **Restore** moves a message from Trash to its account's inbox. The server keeps no record of
+  where a message was before it was trashed, so it cannot go back there.
+- **Delete forever** deletes the messages from the Spam or Trash folder they are shown in, after a
+  confirm dialog. A message only in that folder is destroyed; one also in another folder only
+  leaves this one, like an IMAP expunge. It needs `mayRemoveItems` on the folder. `mayDelete` is
+  the right to delete the folder itself, so it does not apply.
+- **Empty spam** and **Empty trash** delete every message in the list's Spam or Trash folders,
+  after a confirm dialog that gives the folders' message count. They need `mayRemoveItems`.
+- **Follow up** opens a reply to a message the account sent, to its original To and Cc, from the
+  identity that sent it (`ComposeRequest.FollowUp`). Sending stays disabled.
+
+Each change takes the messages off the list at once. Messages the server keeps come back, and the
+list shows a notice. Deleting runs `Email/set` calls of at most `maxObjectsInSet` objects, capped
+at 256. Emptying first pages through the folder with `Email/query` and `Email/get` (ids and
+`mailboxIds` only), then deletes, so the pages do not shift while it reads them.
+
 ## Deferred
 
 - The reply, reply all, forward, share, and today symbols the spec lists. Meta does not bundle
-  them yet, so Reply, Reply all, and Forward show the send symbol.
+  them yet, so Reply, Reply all, Forward, and Follow up show the send symbol. Not spam and
+  Restore show the inbox symbol, and Delete forever and emptying the delete symbol, until Meta
+  bundles `report_off`, `restore_from_trash`, and `delete_forever`.
+- **Block sender** in Spam. The rule editor only files mail into folders, so blocking would need a
+  new rule action; **Rule for sender** remains the way to sort a sender's mail.
+- Undo for deleting and emptying.
 - Calendar's use of the bar, such as a `BarToken.Date` context.
 - Hiding the bar while the page scrolls.
 - A split main button.
@@ -265,7 +309,11 @@ each place's default, its storage format, mode resolution, and Read later's remo
 migration of older bars, and switching folders. `MoveToOffersTest` covers moving across accounts,
 the disabled button, and Suggested move, and `MoveTargetPathTest` the folder paths move targets
 carry. `MoveToButtonsTest` picks Move to buttons with different folders for two slots, switches
-one slot's folder through its `ValuePicker`, and moves the open message with one. `InboxActionBarTest` covers the message list's bar and the **Same everywhere** mode across
+one slot's folder through its `ValuePicker`, and moves the open message with one. `FolderBarsTest`
+covers each folder's default bars and when they apply, `JmapMessageCleanerTest` the Not spam
+patch, batching, and emptying, `FolderCleaningTest` the rights checks and the rollback of kept
+messages, and `FolderActionsTest` Not spam in Spam and the Delete forever confirm in Trash.
+`InboxActionBarTest` covers the message list's bar and the **Same everywhere** mode across
 screens, `ComposeActionsTest` the draft requests and the reply context, and
 `ActionBarSettingsTest` the settings page, the slot picker, swapping, removing, and switching modes. Run
 `./gradlew checkAll` for results; this guide does not record a passing run.

@@ -148,11 +148,14 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
   [Folders and rules](folders.md#read-later).
 - Actions follow the rights of the folder the message is shown in (RFC 8621, section 2):
   `maySetSeen` for the read mark, `maySetKeywords` for the flag, and `mayRemoveItems` for
-  Archive, Trash, Spam, and Move. The target must allow `mayAddItems`. The server still checks every
+  Archive, Trash, Spam, Move, Not spam, Restore, and deleting for good. The target must allow `mayAddItems`. The server still checks every
   other mailbox the message belongs to.
 - Opening an unread message marks it read with the same `$seen` patch, unless **Mark as read when
-  opened** is off in Appearance & behavior. Undo and permanent deletion are not implemented yet;
-  see issue #27.
+  opened** is off in Appearance & behavior. Undo is not implemented yet; see issue #27.
+- In Spam and Trash, **Not spam** and **Restore** move a message to the inbox, and **Delete
+  forever** and **Empty spam** or **Empty trash** delete messages for good after a confirm dialog.
+  In Sent, **Follow up** writes to the people a message went to. See
+  [folder bars](action-bar.md#folder-bars).
 
 A moved message leaves the list at once. If the server refuses, it comes back and the inbox shows
 a notice. See [Folders and rules](folders.md).

@@ -6,6 +6,7 @@ import com.otus.designsystem.components.BarToken
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.barLayout
 import com.otus.mail.feature.inbox.presentation.MessageActions
 
 /**
@@ -21,7 +22,7 @@ internal fun SelectionBar(
 ) {
     val moveChoice = rememberMoveChoice(onDone)
     val behavior = actions.behavior()
-    val layout = behavior.barLayout(ActionBarPlace.Selection)
+    val layout = behavior.barLayout(ActionBarPlace.Selection, actions.cleanup?.listRole?.invoke())
     val suggestion = rememberSuggestedMove(selected, actions, wanted = MailAction.SuggestedMove in layout.buttons)
     MailActionBar(
         layout,

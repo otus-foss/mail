@@ -83,6 +83,7 @@ internal class MailStates(
 
     /** Moves messages between folders and in and out of Read later. */
     val filing = MessageFiling(services, folders, scope)
+    private val cleaning = FolderCleaning(services, folders, scope)
 
     /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
     val sorting = MessageSorting(rules, services.inboxMatcher, folders, filing, scope)
@@ -105,6 +106,7 @@ internal class MailStates(
             ruleForSender = { ruleForSender(it, openRule) },
             readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },
+            cleanup = cleaning.cleanup(feed),
         )
 
     /** Shows the change at once and puts the message back as it was if the server refuses it. */

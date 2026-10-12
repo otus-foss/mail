@@ -60,6 +60,8 @@ class MessageActions(
     val readLater: (MailMessage) -> ReadLaterChange?,
     /** The saved swipes and bars, and whether opening a message marks it read. */
     val behavior: () -> MailBehavior,
+    /** Not spam, Restore, Delete forever, and emptying; null where the page has no folders. */
+    val cleanup: FolderCleanup? = null,
 ) {
     /** The folder [shortcut] files the message into; null when there is none or it is already there. */
     fun shortcutTarget(

@@ -4,59 +4,80 @@ import com.otus.designsystem.components.BarContext
 import com.otus.designsystem.components.BarToken
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.original
 
 /**
- * Reply, Reply all, Forward, and New mail for an open [message]; null for any other action. Each
- * starts a draft through [onCompose]. New mail sends from the message's account.
+ * Reply, Reply all, Forward, and New mail for an open [message], and Follow up when its folder
+ * [role] is Sent; null for any other action. Each starts a draft through [onCompose]. New mail
+ * sends from the message's account.
  */
 internal fun replyOffer(
     message: MailMessage,
     action: BarButton,
+    role: FolderRole?,
     onCompose: (ComposeRequest) -> Unit,
 ): OfferedAction? {
     val request =
-        when (action) {
-            MailAction.Reply -> ComposeRequest.Reply(message.original(), all = false)
-            MailAction.ReplyAll -> ComposeRequest.Reply(message.original(), all = true)
-            MailAction.Forward -> ComposeRequest.Forward(message.original())
-            MailAction.NewMail -> ComposeRequest.New(message.location.accountId)
+        when {
+            action == MailAction.Reply -> ComposeRequest.Reply(message.original(), all = false)
+            action == MailAction.ReplyAll -> ComposeRequest.Reply(message.original(), all = true)
+            action == MailAction.FollowUp && role == FolderRole.Sent -> ComposeRequest.FollowUp(message.original())
+            action == MailAction.Forward -> ComposeRequest.Forward(message.original())
+            action == MailAction.NewMail -> ComposeRequest.New(message.location.accountId)
             else -> return null
         }
     return plainOffer(action) { onCompose(request) }
 }
 
-/** Who [primary] answers, shown beside it: the sender for Reply, and everyone for Reply all. */
+/**
+ * Who [primary] writes to, shown beside it: the sender for Reply, everyone for Reply all, and the
+ * message's recipients for Follow up.
+ */
 internal fun replyContext(
     message: MailMessage,
     primary: BarButton,
 ): BarContext? {
-    val sender = message.sender
-    val name = sender.name.ifBlank { sender.address }
-    val people = message.replyAllCount()
+    val everyone = message.others(listOf(message.sender) + message.to + message.cc)
     return when {
-        primary == MailAction.ReplyAll && people > 1 -> {
-            BarContext("$people people", BarToken.People(sender.chipAvatar, people), "to $people people")
-        }
-
-        primary == MailAction.Reply || primary == MailAction.ReplyAll -> {
-            BarContext(name, BarToken.Person(sender.chipAvatar), "to $name")
-        }
-
-        else -> {
-            null
-        }
+        primary == MailAction.FollowUp -> peopleContext(message.others(message.to + message.cc))
+        primary == MailAction.ReplyAll && everyone.size > 1 -> peopleContext(everyone)
+        primary == MailAction.Reply || primary == MailAction.ReplyAll -> personContext(message.sender)
+        else -> null
     }
 }
 
-/** The distinct people a reply to all reaches: the sender, To, and Cc, without the account itself. */
-private fun MailMessage.replyAllCount(): Int {
+private fun peopleContext(people: List<MailSender>): BarContext? =
+    when (people.size) {
+        0 -> {
+            null
+        }
+
+        1 -> {
+            personContext(people.single())
+        }
+
+        else -> {
+            BarContext(
+                "${people.size} people",
+                BarToken.People(people.first().chipAvatar, people.size),
+                "to ${people.size} people",
+            )
+        }
+    }
+
+private fun personContext(person: MailSender): BarContext {
+    val name = person.name.ifBlank { person.address }
+    return BarContext(name, BarToken.Person(person.chipAvatar), "to $name")
+}
+
+/** [people], each address once, without the account itself. */
+private fun MailMessage.others(people: List<MailSender>): List<MailSender> {
     val own = location.accountAddress.lowercase()
-    return (listOf(sender) + to + cc)
-        .map { it.address.lowercase() }
-        .filter { it.isNotBlank() && it != own }
-        .distinct()
-        .size
+    return people
+        .filter { it.address.isNotBlank() && it.address.lowercase() != own }
+        .distinctBy { it.address.lowercase() }
 }

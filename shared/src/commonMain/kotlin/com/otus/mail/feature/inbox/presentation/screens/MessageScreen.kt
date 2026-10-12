@@ -40,11 +40,13 @@ import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailAction.SuggestedMove
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.barLayout
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.MailActionBar
 import com.otus.mail.feature.inbox.presentation.components.OfferedAction
 import com.otus.mail.feature.inbox.presentation.components.offer
 import com.otus.mail.feature.inbox.presentation.components.overflow
+import com.otus.mail.feature.inbox.presentation.components.rememberConfirmation
 import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
 import com.otus.mail.feature.inbox.presentation.components.rememberSuggestedMove
 import com.otus.mail.feature.inbox.presentation.components.replyContext
@@ -70,19 +72,21 @@ fun MessageScreen(
         onBackCompleted = onClose,
     )
     val moveChoice = rememberMoveChoice { onClose() }
+    val confirmation = rememberConfirmation()
     var menu by remember { mutableStateOf(false) }
     val perform = { action: OfferedAction ->
         if (action.leaves) onClose()
         action.run()
     }
+    val role = actions?.cleanup?.role?.invoke(message)
     val behavior = actions?.behavior()
-    val layout = behavior?.barLayout(ActionBarPlace.Message)
+    val layout = behavior?.barLayout(ActionBarPlace.Message, role)
     val suggestion = rememberSuggestedMove(listOf(message), actions, layout?.buttons.orEmpty().contains(SuggestedMove))
     val offerFor = { action: BarButton ->
         actions?.offer(listOf(message), action, moveChoice::choose, suggestion)
-            ?: replyOffer(message, action, onCompose)
+            ?: replyOffer(message, action, role, onCompose)
     }
-    val more = behavior?.overflow(ActionBarPlace.Message, offerFor).orEmpty()
+    val more = behavior?.overflow(ActionBarPlace.Message, offerFor, role).orEmpty()
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar =
@@ -101,25 +105,34 @@ fun MessageScreen(
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(PageTokens.pageInset)) {
                 MessageHeader(message, onClose, onMore = { menu = true }.takeIf { more.isNotEmpty() })
-                notice?.let {
-                    Text(
-                        it,
-                        Modifier.padding(horizontal = PageTokens.textInset),
-                        color = OtusColors.text2,
-                        fontSize = InboxTokens.metadataSize,
-                    )
-                }
+                notice?.let { MessageNotice(it) }
                 MessageBody(message, Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(padding))
             }
         }
     }
-    if (menu) {
-        ActionDialog("More actions", more.map { DialogAction(it.label, { perform(it) }) }, onDismiss = {
-            menu =
-                false
-        })
-    }
+    if (menu) MoreActionsDialog(more, { confirmation.run(it, perform) }) { menu = false }
+    confirmation.Dialog()
     actions?.let { moveChoice.Sheet(it) }
+}
+
+@Composable
+private fun MoreActionsDialog(
+    actions: List<OfferedAction>,
+    onChoose: (OfferedAction) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ActionDialog("More actions", actions.map { DialogAction(it.label, { onChoose(it) }) }, onDismiss = onDismiss)
+}
+
+/** A notice, such as a refused mark, under the header. */
+@Composable
+private fun MessageNotice(text: String) {
+    Text(
+        text,
+        Modifier.padding(horizontal = PageTokens.textInset),
+        color = OtusColors.text2,
+        fontSize = InboxTokens.metadataSize,
+    )
 }
 
 @Composable

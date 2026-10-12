@@ -12,6 +12,7 @@ import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_report
@@ -56,6 +57,8 @@ internal fun MessageActions.offer(
 
         MailAction.Spam -> offerFiling(messages, FolderShortcut.Spam, action)
 
+        MailAction.NotSpam, MailAction.Restore, MailAction.DeleteForever -> offerCleanup(messages, action)
+
         MailAction.Move -> offerMove(messages, chooseFolder)
 
         MailAction.SuggestedMove -> suggestion?.let { offerSuggested(messages, it) }
@@ -84,12 +87,16 @@ internal val BarButton.symbol: DrawableResource
 
             MailAction.Spam -> Res.drawable.symbol_report
 
+            MailAction.NotSpam, MailAction.Restore -> Res.drawable.symbol_inbox
+
+            MailAction.DeleteForever, MailAction.EmptyFolder -> Res.drawable.symbol_delete
+
             MailAction.Move -> Res.drawable.symbol_drive_file_move
 
             MailAction.RuleForSender -> Res.drawable.symbol_auto_filter
 
             // Stand-ins until Meta bundles symbol_reply, symbol_reply_all, and symbol_forward.
-            MailAction.Reply, MailAction.ReplyAll, MailAction.Forward -> Res.drawable.symbol_send
+            MailAction.Reply, MailAction.ReplyAll, MailAction.Forward, MailAction.FollowUp -> Res.drawable.symbol_send
 
             MailAction.NewMail -> Res.drawable.symbol_edit
 

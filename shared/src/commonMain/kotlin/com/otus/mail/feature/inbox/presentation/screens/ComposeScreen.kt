@@ -184,5 +184,6 @@ private val ComposeRequest.title: String
         when (this) {
             is ComposeRequest.New -> "New message"
             is ComposeRequest.Reply -> if (all) "Reply all" else "Reply"
+            is ComposeRequest.FollowUp -> "Follow up"
             is ComposeRequest.Forward -> "Forward"
         }
