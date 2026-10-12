@@ -113,7 +113,7 @@ pinned. See [action bar](action-bar.md). The compose page also uses the unreleas
 
 | File | UI declarations or supporting file | Owner | Reason |
 | --- | --- | --- | --- |
-| [FolderRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderRow.kt) | `FolderRow` | `otus-mail` | Maps folder counts and tree depth into shared DetailRow. |
+| [FolderRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderRow.kt) | `FolderRow` | `otus-mail` | A compact folder row with the senders rules move there; uses shared `SettingRow`, `AvatarStack`, and `SidebarExpandButton`. |
 | [RuleRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/RuleRow.kt) | `RuleRow` | `otus-mail` | Maps rule labels and enabled state into shared DetailRow. |
 | [InboxBody](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxBody.kt) | `InboxBody`, `InboxEmptyState` | `otus-mail` | Composes the message list and supplies feature text/actions to shared EmptyState. |
 | [MessageRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageRow.kt) | `MessageRow` | `otus-mail` | Maps the sender, arrival time, folder labels, unread state, and selection into shared ContentRow and LabelPill. |
@@ -157,7 +157,7 @@ pinned. See [action bar](action-bar.md). The compose page also uses the unreleas
 | [MessageActionLabels](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageActionLabels.kt) | `label`, `buttonLabel`, `swipeAction` | `otus-mail` | Names message actions and action bar modes, and maps actions to Meta's `SwipeActions`. |
 | [MoveChoice](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveChoice.kt) | `MoveChoice`, `rememberMoveChoice` | `otus-mail` | Opens the Move to sheet from an action bar or menu, for one message or a selection. |
 | [MoveSheet](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveSheet.kt) | `MoveSheet`, `MovePills`, `icon` | `otus-mail` | Moves one message or a selection; uses shared `SheetFrame`, `PickerSearch`, `SidebarPill`, and `SettingRow`. |
-| [MoveFolderList](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveFolderList.kt) | `MoveFolderList` | `otus-mail` | The move sheet's own folders as a tree that collapses; uses shared `SettingRow`, `SidebarExpandButton`, and `Collapsible`. |
+| [MoveFolderList](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveFolderList.kt) | `MoveFolderList` | `otus-mail` | The move sheet's own folders as a tree that collapses; uses shared `SettingRow`, `SidebarExpandButton`, and `CollapsibleTree`. |
 | [MoveSummary](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveSummary.kt) | `MoveSummary` | `otus-mail` | The message, or the selection's count and senders, on shared `SummaryCard`. |
 | [MoveSortFooter](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveSortFooter.kt) | `MoveSortFooter` | `otus-mail` | The move sheet's switch that also adds a rule; uses shared `SettingToggleRow`, `ValueButton`, and `ChoiceSheet`. |
 | [MoveSorting](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveSorting.kt) | `MoveSorting`, `rememberMoveSorting` | `otus-mail` | The sort switch and chosen condition, kept across recreation. |

@@ -2,6 +2,9 @@ package com.otus.mail
 
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
@@ -98,7 +101,11 @@ class FoldersAndRulesTest {
         compose.onNodeWithContentDescription("Name").performTextInput("Travel")
         compose.onNodeWithText("Create").performClick()
         compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("Travel") and hasText("0 messages")).fetchSemanticsNodes().isNotEmpty()
+            compose
+                .onAllNodes(
+                    hasText("Travel") and hasClickAction() and !hasSetTextAction(),
+                ).fetchSemanticsNodes()
+                .isNotEmpty()
         }
         assertTrue(server.calls.any { "\"create\":{\"folder\":{\"name\":\"Travel\"" in it })
     }
@@ -173,6 +180,27 @@ class FoldersAndRulesTest {
         assertTrue(script, "fileinto :mailboxid \"z\" \"INBOX\";" in script)
         assertTrue("The first rule turns the rules on", server.scriptActive)
         compose.onNodeWithText("From contains “amazon”").assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsFoldersShowTheSendersRulesMoveThere() {
+        server.script =
+            "# otus-rules-v1 " +
+            """{"rules":[{"id":"1","conditions":[{"field":"from","operator":"is","value":"grace@example.org"}],""" +
+            """"folder":"r"}]}"""
+        server.scriptActive = true
+        start()
+        // Grace's name comes from her message in the inbox.
+        waitFor("Welcome")
+        openSettingsPage("Folders")
+        compose.waitUntil(TIMEOUT) {
+            compose
+                .onAllNodes(hasContentDescription("Rules move mail from Grace Hopper here"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        compose.onNodeWithText("Grace").assertIsDisplayed()
+        compose.onNodeWithText("Ada").assertIsDisplayed()
     }
 
     private fun openWelcome() {
