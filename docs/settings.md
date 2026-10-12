@@ -20,17 +20,28 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   date below the title. Tapping the row opens a `ChoiceSheet` with every format and its example;
   choosing one applies it at once and moves the check, and Done, the scrim, Back, or swiping
   down anywhere on the sheet closes it. A short, slow pull springs back.
-  Dark mode is the only color mode, so there is no theme choice. Below it, Mail adds
-  `MailBehaviorSettings` through the screen's content slot. **Pills** shows how many pills the
-  inbox row shows and opens `InboxPillsSheet`, a `SelectionSheet` where the shown pills are
-  reordered by their drag handles and others are added. Done saves the row.
-  Under **Actions**, **Swipe right** and **Swipe left** open a
-  `ChoiceSheet` of message actions, shown in a `ValueButton`. **Action bar** shows its mode,
-  **Per screen** or **Same everywhere**, in a `ValueButton` and opens its own page. **Mark as read
-  when opened** and **Read later** are `SettingToggleRow` switches. Each change is saved before it
-  is shown. See [inbox pills](inbox.md#inbox-pills), [swipe actions](inbox.md#swipe-actions), and
-  [Read later](folders.md#read-later). A **Sidebar** row opens the Sidebar page, which arranges
-  the sidebar's sections, mailboxes, and counts; see [Mail destinations](sidebar.md#mail-destinations).
+  Every row has an icon. The **Look** section starts with **Theme**, which shows the theme's name
+  and accent and opens the Theme page. Mail adds `MailLookSettings` through the screen's `look`
+  slot: **Sidebar** shows **Edit** and opens the Sidebar page, which arranges the sidebar's
+  sections, mailboxes, and counts (see [Mail destinations](sidebar.md#mail-destinations)), and
+  **Pills** shows how many pills the inbox row shows and opens `InboxPillsSheet`, a
+  `SelectionSheet` where the shown pills are reordered by their drag handles and others are added.
+  Done saves the row. The date format closes the section. Below it, Mail adds
+  `MailBehaviorSettings` through the content slot. Under **Actions**, **Swipe right** and **Swipe
+  left** open a `ChoiceSheet` of message actions, shown in a `ValueButton`. **Action bar** shows its
+  mode, **Per screen** or **Same everywhere**, and opens its own page, and **Minimize action bar**
+  is a switch. Under **Reading**, **Mark as read when opened** and **Read later** are
+  `SettingToggleRow` switches. Each change is saved before it is shown. See
+  [inbox pills](inbox.md#inbox-pills), [swipe actions](inbox.md#swipe-actions), and
+  [Read later](folders.md#read-later).
+- **Theme** (`ThemeSettingsScreen` from `com.otus.settings`), a subpage of Appearance &
+  behavior, previews the inbox in the current colors with `ThemeInboxPreview`, then offers the
+  **Otus**, **Light**, **Graphite** (warm grey, after Notion), and **Black** (true black, after
+  the X app) themes as cards and seven accent swatches. The plus swatch opens a **Custom color**
+  sheet with hue and intensity sliders, a hex field, and the shades in each theme; Done applies
+  it. Otus derives each accent's fill, outline, and text shades for the theme and shows them with
+  their hex codes. **Reset to Otus** restores the default. Every choice applies to the whole app
+  at once and is saved by `AndroidThemePreferenceStore` or `IosThemePreferenceStore`.
 - **Action bar** (`ActionBarSettingsScreen`), a subpage of Appearance & behavior, starts with a
   **Layout** row whose `ChoiceSheet` picks **Per screen** or **Same everywhere**. **Per screen**
   shows a section for **Message list**, **Selected messages**, **Open message**, and **Writing**;

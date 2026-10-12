@@ -35,7 +35,7 @@ class SettingsPagesTest {
     @Test
     fun dateFormatShowsTheCurrentChoiceAndChangesItInAPopup() {
         openSettings()
-        compose.onNodeWithText("Dates, sidebar, swipes, and reading").assertIsDisplayed()
+        compose.onNodeWithText("Theme, dates, sidebar, swipes, and reading").assertIsDisplayed()
         compose.onNodeWithText("Appearance & behavior").performClick()
         compose.onNodeWithText("Date format").assertIsDisplayed()
         compose.onNodeWithText("YYYY-MM-DD").assertDoesNotExist()

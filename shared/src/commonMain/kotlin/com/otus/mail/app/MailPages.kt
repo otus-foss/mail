@@ -20,13 +20,14 @@ import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
+import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.settings.presentation.DateFormatSettingsState
-import com.otus.settings.presentation.screens.AppearanceSettingsScreen
+import com.otus.settings.presentation.ThemeSettingsState
 import com.otus.settings.presentation.screens.SettingsScreen
+import com.otus.settings.presentation.screens.ThemeSettingsScreen
 
 @Composable
 internal fun MailPageContent(
@@ -34,6 +35,7 @@ internal fun MailPageContent(
     states: MailStates,
     dateFormatter: DateFormatter,
     dateFormatState: DateFormatSettingsState,
+    themeState: ThemeSettingsState,
     navigation: MailNavigation,
 ) {
     val back = { navigation.go(page.parent ?: page) }
@@ -47,9 +49,10 @@ internal fun MailPageContent(
         }
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.SidebarSettings,
-        MailPage.ActionBarSettings, MailPage.Folders, MailPage.Rules, is MailPage.RuleEditor,
+        MailPage.ThemeSettings, MailPage.ActionBarSettings, MailPage.Folders, MailPage.Rules,
+        is MailPage.RuleEditor,
         -> {
-            SettingsPageContent(page, states, dateFormatState, navigation, back)
+            SettingsPageContent(page, states, dateFormatState, themeState, navigation, back)
         }
 
         is MailPage.Folder -> {
@@ -77,6 +80,7 @@ private fun SettingsPageContent(
     page: MailPage,
     states: MailStates,
     dateFormatState: DateFormatSettingsState,
+    themeState: ThemeSettingsState,
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
@@ -93,22 +97,15 @@ private fun SettingsPageContent(
         }
 
         MailPage.Appearance -> {
-            val folderPills = rememberFolderPills(states)
-            AppearanceSettingsScreen(
-                dateFormatState,
-                onBack = back,
-            ) {
-                MailBehaviorSettings(
-                    states.behavior,
-                    folderPills,
-                    onSidebar = { navigation.go(MailPage.SidebarSettings) },
-                    onOpenActionBar = { navigation.go(MailPage.ActionBarSettings) },
-                )
-            }
+            AppearancePage(states, dateFormatState, themeState, navigation, back)
         }
 
         MailPage.SidebarSettings -> {
             SidebarSettingsPage(states, back)
+        }
+
+        MailPage.ThemeSettings -> {
+            ThemeSettingsScreen(themeState, onBack = back) { ThemeInboxPreview() }
         }
 
         MailPage.ActionBarSettings -> {
@@ -261,7 +258,7 @@ private fun rememberFolderPaths(states: MailStates): List<List<String>> =
 
 /** The folder pills the loaded folders can fill, again whenever they change. */
 @Composable
-private fun rememberFolderPills(states: MailStates): List<FolderPillOption> =
+internal fun rememberFolderPills(states: MailStates): List<FolderPillOption> =
     remember(states.folders.accounts) { folderPillOptions(states.folders.accounts) }
 
 /** The feed's messages with their other folders named, again whenever messages or folders change. */
