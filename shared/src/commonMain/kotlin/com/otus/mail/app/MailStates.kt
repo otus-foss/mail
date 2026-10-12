@@ -18,6 +18,7 @@ import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.MessageMoves
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -79,8 +80,13 @@ internal class MailStates(
         openRule: (accountId: String) -> Unit,
     ): MessageActions =
         MessageActions(
-            moveTargets = filing::moveTargets,
-            onMove = { message, target -> filing.move(feed, message, target) },
+            moves =
+                MessageMoves(
+                    targets = filing::moveTargets,
+                    onMove = { message, target -> filing.move(feed, message, target) },
+                    suggested = filing::suggestedTarget,
+                    futureSorting = { rules.futureSorting(it, feed) },
+                ),
             canMark = ::canMark,
             onMark = { message, flag, on -> mark(feed, message, flag, on) },
             ruleForSender = { ruleForSender(it, openRule) },

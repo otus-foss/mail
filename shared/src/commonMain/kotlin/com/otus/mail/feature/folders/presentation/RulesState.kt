@@ -8,6 +8,7 @@ import com.otus.mail.feature.folders.domain.ApplyOutcome
 import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.MailRule
 import com.otus.mail.feature.folders.domain.RuleChange
+import com.otus.mail.feature.folders.domain.RuleFailure
 import com.otus.mail.feature.folders.domain.RuleOutcome
 import com.otus.mail.feature.folders.domain.RuleRepository
 import kotlinx.coroutines.CoroutineScope
@@ -82,23 +83,30 @@ class RulesState(
     /**
      * Saves the change [build] makes to [accountId]'s loaded rules; [onSaved] runs only when it
      * worked. When the script was edited in another app, the change waits in [replaceRequest],
-     * unless [replacing] says the user already chose to replace those edits.
+     * unless [replacing] says the user already chose to replace those edits. A caller off the rules
+     * page passes [onFailed] instead: it gets the reason, worded for the user, whenever the change
+     * is not saved, and a change to edited rules is not saved, because only that page asks.
      */
     fun submit(
         accountId: String,
         onSaved: suspend () -> Unit = {},
         replacing: Boolean = false,
+        onFailed: ((String) -> Unit)? = null,
         build: (AccountRules) -> RuleChange,
     ) {
         val account = account(accountId)
-        if (busy || account == null) return
+        val refusal = refusal(busy, account, offPage = !replacing && onFailed != null)
+        if (refusal != null || account == null) {
+            refusal?.let { onFailed?.invoke(it) }
+            return
+        }
         if (account.changedElsewhere && !replacing) {
             val close = { replaceRequest = null }
             replaceRequest =
                 ReplaceRequest(
                     replace = {
                         close()
-                        submit(accountId, onSaved, replacing = true, build)
+                        submit(accountId, onSaved, replacing = true, build = build)
                     },
                     dismiss = close,
                 )
@@ -109,13 +117,21 @@ class RulesState(
         scope.launch {
             try {
                 when (val outcome = repository.save(account, build(account))) {
-                    RuleOutcome.Saved -> onSaved()
-                    is RuleOutcome.Failed -> notice = outcome.reason.message(outcome.detail)
+                    RuleOutcome.Saved -> {
+                        onSaved()
+                    }
+
+                    is RuleOutcome.Failed -> {
+                        val reason = outcome.reason.message(outcome.detail)
+                        notice = reason
+                        onFailed?.invoke(reason)
+                    }
                 }
                 job?.cancel()
                 load()
             } catch (expected: FolderStorageException) {
                 notice = STORAGE_NOTICE
+                onFailed?.invoke(STORAGE_NOTICE)
             } finally {
                 busy = false
             }
@@ -158,3 +174,22 @@ class ReplaceRequest(
     val replace: () -> Unit,
     val dismiss: () -> Unit,
 )
+
+/**
+ * Why a change cannot start, worded for the user; null when it can. A change asked for [offPage]
+ * cannot replace rules edited in another app, because only the rules page asks about that.
+ */
+private fun refusal(
+    busy: Boolean,
+    account: AccountRules?,
+    offPage: Boolean,
+): String? =
+    when {
+        busy -> BUSY_NOTICE
+        account == null -> RuleFailure.NotFound.message()
+        account.changedElsewhere && offPage -> EDITED_ELSEWHERE_NOTICE
+        else -> null
+    }
+
+private const val BUSY_NOTICE = "Rules are still saving. Try again."
+private const val EDITED_ELSEWHERE_NOTICE = "The rules were edited in another app. Change them in Rules first."

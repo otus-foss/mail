@@ -18,17 +18,17 @@ internal fun SelectionBar(
     actions: MessageActions,
     onDone: () -> Unit,
 ) {
-    val folderChoice = rememberFolderChoice(onDone)
+    val moveChoice = rememberMoveChoice(onDone)
     MailActionBar(
         actions.behavior().barLayout(ActionBarPlace.Selection),
-        offer = { actions.offer(selected, it, folderChoice::choose) },
+        offer = { actions.offer(selected, it, moveChoice::choose) },
         onAction = { action ->
             action.run()
             if (!action.asks) onDone()
         },
         context = selectionContext(selected.size),
     )
-    folderChoice.Dialog()
+    moveChoice.Sheet(actions)
 }
 
 private fun selectionContext(count: Int): BarContext {

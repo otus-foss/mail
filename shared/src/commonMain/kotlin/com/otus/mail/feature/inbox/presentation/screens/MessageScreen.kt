@@ -44,7 +44,7 @@ import com.otus.mail.feature.inbox.presentation.components.MailActionBar
 import com.otus.mail.feature.inbox.presentation.components.OfferedAction
 import com.otus.mail.feature.inbox.presentation.components.offer
 import com.otus.mail.feature.inbox.presentation.components.overflow
-import com.otus.mail.feature.inbox.presentation.components.rememberFolderChoice
+import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
 import com.otus.mail.feature.inbox.presentation.components.replyContext
 import com.otus.mail.feature.inbox.presentation.components.replyOffer
 
@@ -67,14 +67,14 @@ fun MessageScreen(
         state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
         onBackCompleted = onClose,
     )
-    val folderChoice = rememberFolderChoice { onClose() }
+    val moveChoice = rememberMoveChoice { onClose() }
     var menu by remember { mutableStateOf(false) }
     val perform = { action: OfferedAction ->
         if (action.leaves) onClose()
         action.run()
     }
     val offerFor = { action: MailAction ->
-        actions?.offer(listOf(message), action, folderChoice::choose)
+        actions?.offer(listOf(message), action, moveChoice::choose)
             ?: replyOffer(message, action, onCompose)
     }
     val behavior = actions?.behavior()
@@ -107,7 +107,7 @@ fun MessageScreen(
                 false
         })
     }
-    folderChoice.Dialog()
+    actions?.let { moveChoice.Sheet(it) }
 }
 
 @Composable
