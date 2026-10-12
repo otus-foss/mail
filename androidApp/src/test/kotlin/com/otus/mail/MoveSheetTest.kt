@@ -154,7 +154,7 @@ class MoveSheetTest {
         compose.onNodeWithText("This message and future ones like it go there.").assertDoesNotExist()
         compose.onNodeWithContentDescription("Also sort future mail").performClick()
         screenshot("move-sheet-sorting")
-        compose.onNodeWithText("grace@example.org").performClick()
+        compose.onNodeWithContentDescription("From grace@example.org, change").performClick()
         compose.onNodeWithText("Sort mail that…").assertIsDisplayed()
         screenshot("move-sheet-conditions")
         compose.onNodeWithText("Anyone at this company").performClick()

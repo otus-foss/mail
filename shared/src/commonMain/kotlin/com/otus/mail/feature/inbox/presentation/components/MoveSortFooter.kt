@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,7 +13,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ChoiceOptions
 import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
-import com.otus.designsystem.components.ValueToken
+import com.otus.designsystem.components.ValuePicker
 import com.otus.designsystem.theme.SheetTokens
 
 /**
@@ -29,11 +30,12 @@ internal fun MoveSortFooter(sorting: MoveSorting) {
         verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
     ) {
         SheetCaption("Create new rule based on this move action", RowTextInset)
-        ValueToken(
+        ValuePicker(
             chosen.value,
+            { choosing = true },
+            Modifier.fillMaxWidth(),
             keyword = chosen.keyword,
             avatar = chosen.person?.chipAvatar,
-            onClick = { choosing = true },
         )
         SheetCaption("This message and future ones like it go there.", RowTextInset, heading = false)
     }
