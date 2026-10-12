@@ -13,7 +13,11 @@ import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.inbox.domain.SidebarCount
 
-/** All, then each account by its initials, each with its [inboxes]' [counts], then Add account and Settings. */
+/**
+ * All, then each account by its initials, each with its [inboxes]' [counts], then Add account and
+ * Settings. Tapping All while it is chosen opens the inbox of every account, so a double tap
+ * chooses All and opens that inbox.
+ */
 @Composable
 internal fun MailSidebarRail(
     accounts: List<ConnectedAccount>,
@@ -30,7 +34,7 @@ internal fun MailSidebarRail(
             label = "All",
             description = "All accounts",
             selected = selected == null,
-            onClick = { onSelectAccount(null) },
+            onClick = { if (selected == null) onSelect(MailPage.Inbox) else onSelectAccount(null) },
             badge = counter.badge(inboxes),
         )
         SidebarRailDivider()
