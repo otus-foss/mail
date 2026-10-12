@@ -144,6 +144,11 @@ class FakeFolderServer {
     }
 
     private fun saveScript(body: String): String {
+        // Like Stalwart, which ties `:mailboxid` to the "mailbox" extension.
+        if (":mailboxid" in uploaded && "\"mailbox\"" !in uploaded) {
+            return """["SieveScript/set", {"newState": "s$state", "notCreated": {"rules": {"type": "invalidScript",
+                "description": "Undeclared capability 'mailbox'"}}}, "c0"]"""
+        }
         script = uploaded
         scriptActive = scriptActive || "onSuccessActivateScript" in body
         state++
@@ -180,7 +185,7 @@ class FakeFolderServer {
             "urn:ietf:params:jmap:submission": {}, "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
             "accounts": {"d1": {"name": "Ada", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},
               "urn:ietf:params:jmap:submission": {},
-              "urn:ietf:params:jmap:sieve": {"sieveExtensions": ["fileinto", "mailboxid", "imap4flags", "include"]}}}},
+              "urn:ietf:params:jmap:sieve": {"sieveExtensions": ["fileinto", "mailbox", "mailboxid", "imap4flags", "include"]}}}},
             "primaryAccounts": {"urn:ietf:params:jmap:mail": "d1"}, "username": "ada@example.org", "apiUrl": "/jmap/",
             "downloadUrl": "/download/{blobId}", "uploadUrl": "/upload/{accountId}/", "state": "x"}"""
     }

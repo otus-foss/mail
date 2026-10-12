@@ -30,7 +30,8 @@ internal data class SieveCapability(
 
 internal fun SetError.toRuleFailure(): RuleFailure =
     when (type) {
-        "invalidSieve" -> RuleFailure.Invalid
+        // RFC 9661 says invalidSieve; Stalwart answers invalidScript.
+        "invalidSieve", "invalidScript" -> RuleFailure.Invalid
 
         "tooLarge" -> RuleFailure.TooLarge
 
