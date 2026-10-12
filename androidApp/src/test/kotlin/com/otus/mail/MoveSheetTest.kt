@@ -110,6 +110,14 @@ class MoveSheetTest {
     }
 
     @Test
+    fun aTopLevelSuggestionDoesNotRepeatItsName() {
+        server.senderFolders += listOf("r", "r")
+        openMoveSheet()
+        waitFor("Where Grace Hopper usually goes")
+        compose.onNodeWithText("Receipts · where Grace Hopper usually goes").assertDoesNotExist()
+    }
+
+    @Test
     fun aFolderCollapsesItsNestedFoldersUntilSearchShowsThem() {
         openMoveSheet()
         compose.onNodeWithContentDescription("Collapse Receipts").performClick()
@@ -132,17 +140,24 @@ class MoveSheetTest {
         compose.onNodeWithText("No folders match.").assertIsDisplayed()
     }
 
+    /** Turns on the sort pill and moves the message to Amazon, which adds a rule for its sender. */
+    private fun moveAndSort() {
+        openMoveSheet()
+        compose.onNodeWithContentDescription("Also sort future mail").performClick()
+        compose.onNodeWithText("Amazon").performClick()
+        waitFor("Moved to Amazon")
+    }
+
     @Test
     fun sortingFutureMailAlsoAddsARuleForTheChosenMail() {
         openMoveSheet()
-        compose.onNodeWithText("Off · only this message moves").assertIsDisplayed()
-        compose.onNodeWithText("Also sort future mail").performClick()
-        compose.onNodeWithText("Adds a rule in Ada").assertIsDisplayed()
+        compose.onNodeWithText("This message and future ones like it go there.").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Also sort future mail").performClick()
         screenshot("move-sheet-sorting")
-        compose.onNodeWithText("is from grace@example.org").performClick()
+        compose.onNodeWithContentDescription("From grace@example.org, change").performClick()
         compose.onNodeWithText("Sort mail that…").assertIsDisplayed()
         screenshot("move-sheet-conditions")
-        compose.onNodeWithText("Every sender at this company").performClick()
+        compose.onNodeWithText("Anyone at this company").performClick()
         // The condition sheet opened last, so its Done is the last one.
         compose.onAllNodesWithText("Done").onLast().performClick()
         compose.waitUntil(TIMEOUT) {
@@ -154,6 +169,31 @@ class MoveSheetTest {
         val script = server.script.orEmpty()
         assertTrue(script, "\"@example.org\"" in script)
         assertTrue(script, "\"z\"" in script)
+    }
+
+    @Test
+    fun aSavedRuleOffersToMoveOlderMailItMatches() {
+        server.olderMail += listOf("o1", "o2")
+        moveAndSort()
+        waitFor("2 older messages match")
+        compose.onNodeWithText("New mail from grace@example.org will go there too.").assertIsDisplayed()
+        screenshot("sorted-move")
+        compose.onNodeWithText("Move 2 too").performClick()
+        compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "\"o1\"" in it } }
+        val move = server.calls.first { "Email/set" in it && "\"o1\"" in it }
+        assertTrue(move, "\"o2\"" in move && "\"mailboxIds/z\":true" in move)
+        assertTrue(move, "\"m1\"" !in move)
+    }
+
+    @Test
+    fun undoMovesTheMessageBackAndDeletesTheRule() {
+        moveAndSort()
+        waitFor("No older mail in Inbox matches.")
+        compose.onNodeWithText("Undo").performClick()
+        val back = "\"update\":{\"m1\":{\"mailboxIds/z\":null,\"mailboxIds/a\":true}}"
+        compose.waitUntil(TIMEOUT) { server.calls.any { back in it } }
+        compose.waitUntil(TIMEOUT) { "\"z\"" !in server.script.orEmpty() }
+        compose.onNodeWithText("Moved to Amazon").assertDoesNotExist()
     }
 
     /** Saves the sheet on top to build/reports/inbox for review. */

@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ChoiceOptions
+import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.ReorderableColumn
@@ -94,7 +95,7 @@ private fun LayoutChoiceSheet(
                         selected = layout.mailboxes,
                         default = MailboxStyle.Chips,
                     ),
-                label = { it.label },
+                row = { ChoiceRow(it.label) },
                 onSelect = { style -> change { it.copy(mailboxes = style) } },
                 onDismiss = onDismiss,
             )
@@ -104,7 +105,7 @@ private fun LayoutChoiceSheet(
             ChoiceSheet(
                 title = "Counts",
                 choices = ChoiceOptions(SidebarCount.entries, selected = layout.counts, default = SidebarCount.Unread),
-                label = { it.label },
+                row = { ChoiceRow(it.label) },
                 onSelect = { count -> change { it.copy(counts = count) } },
                 onDismiss = onDismiss,
             )

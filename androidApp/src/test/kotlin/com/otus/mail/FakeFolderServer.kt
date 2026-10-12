@@ -40,6 +40,9 @@ class FakeFolderServer {
     /** The folder of each earlier message from the sender, newest first, for folder suggestions. */
     val senderFolders = mutableListOf<String>()
 
+    /** Ids of older inbox messages from the sender that only a rule's inbox check sees. */
+    val olderMail = mutableListOf<String>()
+
     /** When set, every `Email/set` update is refused as forbidden. */
     var refuseUpdates = false
 
@@ -99,8 +102,7 @@ class FakeFolderServer {
                 "Mailbox/query" in body -> draftsQuery()
                 "Email/set" in body -> setEmail(body)
                 "Identity/get" in body -> IDENTITIES
-                "Email/query" in body && FROM_FILTER in body -> senderMail()
-                "Email/query" in body -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
+                "Email/query" in body -> queryEmails(body)
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
                 else -> error("Unexpected call: $body")
@@ -144,6 +146,11 @@ class FakeFolderServer {
     }
 
     private fun saveScript(body: String): String {
+        // Like Stalwart, which ties `:mailboxid` to the "mailbox" extension.
+        if (":mailboxid" in uploaded && "\"mailbox\"" !in uploaded) {
+            return """["SieveScript/set", {"newState": "s$state", "notCreated": {"rules": {"type": "invalidScript",
+                "description": "Undeclared capability 'mailbox'"}}}, "c0"]"""
+        }
         script = uploaded
         scriptActive = scriptActive || "onSuccessActivateScript" in body
         state++
@@ -156,6 +163,22 @@ class FakeFolderServer {
         return """["Email/query", {"ids": ["m1"]}, "c0"], ["Email/get", {"state": "e", "list": [{"id": "m1",
            "mailboxIds": {$mailboxIds}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
            "subject": "$subject", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Hello"}]}, "c1"]"""
+    }
+
+    private fun queryEmails(body: String): String =
+        when {
+            FROM_FILTER in body -> senderMail()
+            "bodyStructure" in body -> ruleMatches()
+            else -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
+        }
+
+    /** The inbox as a rule's check reads it: the loaded message, then [olderMail]. */
+    private fun ruleMatches(): String {
+        val list =
+            (listOf("m1") + olderMail).joinToString(prefix = "[", postfix = "]") {
+                """{"id": "$it", "from": [{"email": "grace@example.org"}], "subject": "Welcome"}"""
+            }
+        return """["Email/query", {"ids": []}, "c0"], ["Email/get", {"state": "e", "list": $list}, "c1"]"""
     }
 
     private fun senderMail(): String {
@@ -180,7 +203,7 @@ class FakeFolderServer {
             "urn:ietf:params:jmap:submission": {}, "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
             "accounts": {"d1": {"name": "Ada", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},
               "urn:ietf:params:jmap:submission": {},
-              "urn:ietf:params:jmap:sieve": {"sieveExtensions": ["fileinto", "mailboxid", "imap4flags", "include"]}}}},
+              "urn:ietf:params:jmap:sieve": {"sieveExtensions": ["fileinto", "mailbox", "mailboxid", "imap4flags", "include"]}}}},
             "primaryAccounts": {"urn:ietf:params:jmap:mail": "d1"}, "username": "ada@example.org", "apiUrl": "/jmap/",
             "downloadUrl": "/download/{blobId}", "uploadUrl": "/upload/{accountId}/", "state": "x"}"""
     }

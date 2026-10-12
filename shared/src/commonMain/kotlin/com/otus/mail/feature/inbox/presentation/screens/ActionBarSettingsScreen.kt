@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ChoiceOptions
+import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.PreviewCard
 import com.otus.designsystem.components.SettingRow
@@ -60,8 +61,7 @@ fun ActionBarSettingsScreen(
         ChoiceSheet(
             "Layout",
             ChoiceOptions(ActionBarMode.entries, mode, MailBehavior().actionBarMode),
-            label = { it.label },
-            detail = { it.description },
+            row = { ChoiceRow(it.label, it.description) },
             onSelect = { chosen -> state.update { it.copy(actionBarMode = chosen) } },
             onDismiss = { choosingMode = false },
         )

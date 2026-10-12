@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_attach_file
+import com.otus.designsystem.resources.symbol_auto_filter
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_delete
@@ -13,7 +14,6 @@ import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_report
-import com.otus.designsystem.resources.symbol_rule_folder
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.resources.symbol_send
 import com.otus.mail.feature.inbox.domain.MailAction
@@ -77,7 +77,7 @@ internal val MailAction.symbol: DrawableResource
 
             MailAction.Move -> Res.drawable.symbol_drive_file_move
 
-            MailAction.RuleForSender -> Res.drawable.symbol_rule_folder
+            MailAction.RuleForSender -> Res.drawable.symbol_auto_filter
 
             // Stand-ins until Meta bundles symbol_reply, symbol_reply_all, and symbol_forward.
             MailAction.Reply, MailAction.ReplyAll, MailAction.Forward -> Res.drawable.symbol_send

@@ -97,6 +97,25 @@ internal class MessageFiling(
         }
     }
 
+    /**
+     * Puts [message] back in the folder it was shown in after a move to [target], then reloads
+     * [feed] so it shows again.
+     */
+    fun moveBack(
+        feed: InboxFeedState,
+        message: MailMessage,
+        target: MoveTarget,
+    ) {
+        scope.launch {
+            if (services.mover.move(message, message.location.mailboxId, setOf(target.folderId))) {
+                feed.refresh()
+                folders.refresh()
+            } else {
+                feed.report("Couldn't move the message back from ${target.label}. Try again.")
+            }
+        }
+    }
+
     /** Read later for a loaded message shown in [feed]; supplied messages have no server id. */
     fun readLater(
         feed: InboxFeedState,

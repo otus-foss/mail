@@ -108,4 +108,14 @@ class RuleScriptCodecTest {
         val newer = stored.replace("\"field\":\"from\"", "\"field\":\"priority\"")
         assertTrue(decodeRules(newer, support).changedElsewhere, "Unknown conditions are never dropped silently")
     }
+
+    @Test
+    fun aServerWithMailboxGetsItDeclaredAndReadsItsOwnScriptBack() {
+        val stalwart = support.copy(extensions = support.extensions + "mailbox")
+        val script = RuleScript(listOf(invites))
+        val stored = encodeRules(script, stalwart.extensions)
+        assertTrue(stored.contains("""require ["fileinto", "mailbox", "mailboxid", "mime"];"""), stored)
+        assertEquals(ReadRules(script, changedElsewhere = false), decodeRules(stored, stalwart))
+        assertFalse("\"mailbox\"" in encodeRules(script, support.extensions))
+    }
 }
