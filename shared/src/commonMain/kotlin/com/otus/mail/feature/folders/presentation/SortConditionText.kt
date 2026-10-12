@@ -1,13 +1,7 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_alternate_email
-import com.otus.designsystem.resources.symbol_filter_list
-import com.otus.designsystem.resources.symbol_inbox
-import com.otus.designsystem.resources.symbol_person
 import com.otus.mail.feature.folders.domain.SortBy
 import com.otus.mail.feature.folders.domain.SortCondition
-import org.jetbrains.compose.resources.DrawableResource
 
 /** The condition as it completes "Mail that", such as "is from billing@acme.example". */
 val SortCondition.phrase: String
@@ -33,22 +27,25 @@ val SortCondition.catches: String
         }
     }
 
+/** What the condition matches on, shown before [shown], such as "From". */
+val SortCondition.keyword: String
+    get() =
+        when (kind) {
+            SortBy.Sender, SortBy.Domain -> "From"
+            SortBy.Recipient -> "To"
+            SortBy.Subject -> "Subject"
+        }
+
+/** The value the condition matches, as it follows [keyword], such as “Invoice”. */
+val SortCondition.shown: String
+    get() = if (kind == SortBy.Subject) "“${condition.value}”" else condition.value
+
 /** Who else the condition catches besides this message's sender. */
 val SortCondition.reach: String
     get() =
         when (kind) {
             SortBy.Sender -> "Just this sender"
-            SortBy.Domain -> "Every sender at this company"
-            SortBy.Recipient -> "Everything to this address"
-            SortBy.Subject -> "From any sender"
-        }
-
-/** What the condition matches by: a person, an address domain, a mailbox, or a filter on the subject. */
-val SortCondition.icon: DrawableResource
-    get() =
-        when (kind) {
-            SortBy.Sender -> Res.drawable.symbol_person
-            SortBy.Domain -> Res.drawable.symbol_alternate_email
-            SortBy.Recipient -> Res.drawable.symbol_inbox
-            SortBy.Subject -> Res.drawable.symbol_filter_list
+            SortBy.Domain -> "Anyone at this company"
+            SortBy.Recipient -> "Everything sent to this address"
+            SortBy.Subject -> "Any mail with this word in the subject"
         }

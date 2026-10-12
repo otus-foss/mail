@@ -151,13 +151,13 @@ class MoveSheetTest {
     @Test
     fun sortingFutureMailAlsoAddsARuleForTheChosenMail() {
         openMoveSheet()
-        compose.onNodeWithText("Mail that").assertDoesNotExist()
+        compose.onNodeWithText("This message and future ones like it go there.").assertDoesNotExist()
         compose.onNodeWithContentDescription("Also sort future mail").performClick()
         screenshot("move-sheet-sorting")
-        compose.onNodeWithText("is from grace@example.org").performClick()
+        compose.onNodeWithText("grace@example.org").performClick()
         compose.onNodeWithText("Sort mail that…").assertIsDisplayed()
         screenshot("move-sheet-conditions")
-        compose.onNodeWithText("Every sender at this company").performClick()
+        compose.onNodeWithText("Anyone at this company").performClick()
         // The condition sheet opened last, so its Done is the last one.
         compose.onAllNodesWithText("Done").onLast().performClick()
         compose.waitUntil(TIMEOUT) {

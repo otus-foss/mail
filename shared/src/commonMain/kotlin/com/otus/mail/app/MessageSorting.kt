@@ -15,9 +15,10 @@ import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleDraft
 import com.otus.mail.feature.folders.presentation.RulesState
 import com.otus.mail.feature.folders.presentation.catches
-import com.otus.mail.feature.folders.presentation.icon
+import com.otus.mail.feature.folders.presentation.keyword
 import com.otus.mail.feature.folders.presentation.phrase
 import com.otus.mail.feature.folders.presentation.reach
+import com.otus.mail.feature.folders.presentation.shown
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -66,7 +67,7 @@ internal class MessageSorting(
         val choices =
             sortConditions(message.sender.address, recipient, message.subject).map { sort ->
                 val person = message.personFor(sort.kind)
-                SortChoice(sort.phrase, sort.reach, sort.icon, person) { target, moved ->
+                SortChoice(sort.phrase, sort.keyword, sort.shown, sort.reach, person) { target, moved ->
                     addRule(account.accountId, sort, person, target, moved, feed)
                 }
             }
@@ -134,14 +135,19 @@ internal class MessageSorting(
 }
 
 /**
- * Whose address a condition by [kind] names: the sender, or the recipient, who is usually the
- * account itself and then gets its avatar. Null for a domain or a subject.
+ * Who a condition by [kind] names: the sender, the company of a sender's domain, or the recipient,
+ * who is usually the account itself and then gets its avatar. Null for a subject.
  */
 private fun MailMessage.personFor(kind: SortBy): MailSender? =
     when (kind) {
         SortBy.Sender -> sender
+
         SortBy.Recipient -> to.firstOrNull()?.withAccountAvatar(location)
-        SortBy.Domain, SortBy.Subject -> null
+
+        // The company the domain names, such as "acme" for "@acme.example".
+        SortBy.Domain -> sender.address.substringAfterLast('@').let { MailSender(it.substringBefore('.'), it) }
+
+        SortBy.Subject -> null
     }
 
 private fun MailSender.withAccountAvatar(location: MailLocation): MailSender =
