@@ -39,6 +39,7 @@ that zone, so pages need no extra wiring.
   SemiBold text and a 2 dp `bgDark` ring. Add account is a dashed `bgLight` circle with a `text2`
   plus. Accounts have no colors or images of their own, and the account initials are 13.3 sp, the
   `Avatar` scale at 40 dp, rather than the spec's 14 sp.
+- Opening it, by tap or swipe, clears focus from any field, such as search, and hides the keyboard.
 - Choosing an entry, tapping the scrim, the system back gesture, or swiping it back toward the
   leading edge closes it. A released swipe settles on the nearer side unless it was flung faster
   than 400 dp/s. Its surface is `bgDark`.
@@ -87,7 +88,7 @@ undecided. Calendar adoption therefore needs either that decision or a deliberat
 
 ## Checks
 
-`SidebarNavigationTest` covers opening from the chevron, the 336 dp width, the rail's pinned
+`SidebarNavigationTest` covers opening from the chevron, hiding the keyboard when it opens from search, the 336 dp width, the rail's pinned
 Settings, navigating to Settings and back with preserved inbox state, scrim
 dismissal, back dismissal, swiping open on and above the context panel (but not on the message
 list), and swiping closed. `SidebarEditTest` covers choosing an account in the rail and the Sidebar

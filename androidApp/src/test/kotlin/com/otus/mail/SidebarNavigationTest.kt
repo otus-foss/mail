@@ -2,6 +2,8 @@ package com.otus.mail
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
@@ -96,6 +98,16 @@ class SidebarNavigationTest {
         compose.onNodeWithText("All accounts").assertDoesNotExist()
         swipeOpenAt(2f)
         compose.onNodeWithText("All accounts").assertIsDisplayed()
+    }
+
+    @Test
+    fun openingTheSidebarFromSearchClosesTheKeyboard() {
+        compose.onNodeWithText("Tap to search").performClick()
+        val search = compose.onNodeWithContentDescription("Search your mailbox…")
+        search.assertIsFocused()
+        swipeOpenAt(2f)
+        compose.onNodeWithText("No accounts yet").assertIsDisplayed()
+        search.assertIsNotFocused()
     }
 
     private fun swipeOpenAt(y: Float) {
