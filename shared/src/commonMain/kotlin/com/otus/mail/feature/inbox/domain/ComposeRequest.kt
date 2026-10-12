@@ -27,7 +27,7 @@ sealed interface ComposeRequest {
 /**
  * The parts of a received message a reply or forward needs; [MailMessage.original] builds it.
  * [messageIds] and [references] are the RFC 5322 Message-ID and References values that keep the
- * answer in its thread.
+ * answer in its thread. [bodyTruncated] when [body] is only the start of the message.
  */
 data class OriginalMessage(
     val accountId: String,
@@ -40,6 +40,7 @@ data class OriginalMessage(
     val body: String,
     val messageIds: List<String> = emptyList(),
     val references: List<String> = emptyList(),
+    val bodyTruncated: Boolean = false,
 )
 
 /** The parts of this message a reply or forward quotes and threads with. */
@@ -55,4 +56,5 @@ fun MailMessage.original(): OriginalMessage =
         body = body,
         messageIds = messageIds,
         references = references,
+        bodyTruncated = bodyTruncated,
     )

@@ -158,10 +158,13 @@ class JmapMailSource(
         const val MAX_BODY_BYTES = 20_000
         val NEWEST_FIRST = listOf(JmapSort("receivedAt", isAscending = false))
 
-        /** Text bodies up to [MAX_BODY_BYTES] per part (RFC 8621, section 4.2). */
+        /**
+         * Text bodies up to [MAX_BODY_BYTES] per part, marked `isTruncated` when cut off (RFC 8621,
+         * section 4.2). Each part's `type` tells an HTML body from a plain one.
+         */
         val BODY_ARGUMENTS =
             mapOf(
-                "bodyProperties" to JsonArray(listOf(JsonPrimitive("partId"), JsonPrimitive("name"))),
+                "bodyProperties" to JsonArray(listOf("partId", "name", "type").map(::JsonPrimitive)),
                 "fetchTextBodyValues" to JsonPrimitive(true),
                 "maxBodyValueBytes" to JsonPrimitive(MAX_BODY_BYTES),
             )
