@@ -13,8 +13,8 @@ import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.elements.ValueButton
+import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MessageSwipe
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -22,12 +22,13 @@ import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 /**
  * Inbox, swipe, and reading choices for the appearance page. [folderPills] are the folder pills
  * the accounts' folders can fill. Each swipe opens a choice of actions; the rows name the physical
- * direction for the current layout direction.
+ * direction for the current layout direction. The action bar row runs [onOpenActionBar].
  */
 @Composable
 fun MailBehaviorSettings(
     state: MailBehaviorState,
     folderPills: List<FolderPillOption>,
+    onOpenActionBar: () -> Unit,
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     var choosing by rememberSaveable { mutableStateOf<SwipeSide?>(null) }
@@ -39,11 +40,14 @@ fun MailBehaviorSettings(
             ValueButton(if (shown == 0) "None" else "$shown shown")
         }
     }
-    SettingsSection("Swipe actions") {
+    SettingsSection("Actions") {
         SwipeSide.entries.forEach { side ->
             SettingRow(side.title(rtl), { choosing = side }, description = side.description(rtl)) {
-                ValueButton(side.of(behavior).label)
+                ValueButton(side.of(behavior).swipeLabel)
             }
+        }
+        SettingRow("Action bar", onOpenActionBar, description = "Buttons at the bottom of the screen") {
+            ValueButton(behavior.actionBarMode.label)
         }
     }
     SettingsSection("Reading") {
@@ -76,16 +80,29 @@ fun MailBehaviorSettings(
             description = "Shows one Drafts, Sent, Archive, Spam, and Trash for all accounts",
         )
     }
-    choosing?.let { side ->
-        ChoiceSheet(
-            title = side.title(rtl),
-            choices = ChoiceOptions(behavior.swipeChoices, selected = side.of(behavior), default = side.default),
-            label = { it.label },
-            detail = { swipe -> "Default".takeIf { swipe == side.default } },
-            onSelect = { swipe -> state.update { side.with(it, swipe) } },
-            onDismiss = { choosing = null },
-        )
-    }
+    choosing?.let { side -> SwipeChoice(state, side, side.title(rtl)) { choosing = null } }
+}
+
+@Composable
+private fun SwipeChoice(
+    state: MailBehaviorState,
+    side: SwipeSide,
+    title: String,
+    onDismiss: () -> Unit,
+) {
+    ChoiceSheet(
+        title = title,
+        choices =
+            ChoiceOptions(
+                listOf(null) + state.behavior.swipeChoices,
+                selected = side.of(state.behavior),
+                default = side.default,
+            ),
+        label = { it.swipeLabel },
+        detail = { swipe -> "Default".takeIf { swipe == side.default } },
+        onSelect = { swipe -> state.update { side.with(it, swipe) } },
+        onDismiss = onDismiss,
+    )
 }
 
 private enum class SwipeSide {
@@ -99,10 +116,10 @@ private enum class SwipeSide {
         if ((this == StartToEnd) != rtl) "Drag a message to the right" else "Drag a message to the left"
 
     /** What this swipe does until the user changes it. */
-    val default: MessageSwipe
+    val default: MailAction?
         get() = of(MailBehavior())
 
-    fun of(behavior: MailBehavior): MessageSwipe =
+    fun of(behavior: MailBehavior): MailAction? =
         when (this) {
             StartToEnd -> behavior.startToEnd
             EndToStart -> behavior.endToStart
@@ -110,10 +127,14 @@ private enum class SwipeSide {
 
     fun with(
         behavior: MailBehavior,
-        swipe: MessageSwipe,
+        swipe: MailAction?,
     ): MailBehavior =
         when (this) {
             StartToEnd -> behavior.copy(startToEnd = swipe)
             EndToStart -> behavior.copy(endToStart = swipe)
         }
 }
+
+/** A swipe's name in settings; no action is "Nothing". */
+private val MailAction?.swipeLabel: String
+    get() = this?.label ?: "Nothing"

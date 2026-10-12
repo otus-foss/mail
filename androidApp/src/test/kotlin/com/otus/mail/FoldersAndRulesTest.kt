@@ -77,7 +77,8 @@ class FoldersAndRulesTest {
         // Without labels or files, the row shows the start of the message instead.
         server.alsoIn.clear()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Receipts") and isSelectable()).performClick()
+        // Message rows are selectable too, so this picks the sidebar's folder.
+        compose.onNode(hasText("Receipts") and isSelectable() and !hasText("Welcome")).performClick()
         waitFor("Order shipped")
         compose.onNode(hasText("Order shipped") and hasText("Hello")).assertIsDisplayed()
     }
@@ -179,15 +180,16 @@ class FoldersAndRulesTest {
     private fun openWelcome() {
         start()
         waitFor("Welcome")
-        compose.onNodeWithText("Welcome").performClick()
         // Both actions appear once folders and rules have loaded.
-        waitFor("Rule for sender")
+        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.waitForIdle()
+        compose.onNodeWithText("Welcome").performClick()
     }
 
     @Test
     fun anOpenMessageMovesToAFolder() {
         openWelcome()
-        compose.onNodeWithText("Move").performClick()
+        compose.onNodeWithContentDescription("Move").performClick()
         compose.onNodeWithText("Receipts / Amazon").performClick()
         // Opening marked the message read; the move is the update that changes its folders.
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "mailboxIds" in it } }
@@ -198,6 +200,7 @@ class FoldersAndRulesTest {
     @Test
     fun anOpenMessageStartsARuleForItsSender() {
         openWelcome()
+        compose.onNodeWithContentDescription("More actions").performClick()
         compose.onNodeWithText("Rule for sender").performClick()
         compose.onNodeWithText("New rule").assertIsDisplayed()
         compose.onNodeWithText("grace@example.org").assertIsDisplayed()

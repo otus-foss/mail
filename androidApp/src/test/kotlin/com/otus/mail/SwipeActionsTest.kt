@@ -16,9 +16,11 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
+import com.otus.designsystem.theme.Motion
+import com.otus.designsystem.theme.MotionSpeed
 import com.otus.mail.app.App
+import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MessageSwipe
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -89,8 +91,8 @@ class SwipeActionsTest {
         waitForSwipe("Mark read")
         compose.mainClock.autoAdvance = false
         compose.onNodeWithText("Welcome").performTouchInput { swipeRight() }
-        // The row slides out for 300 ms and then back for 300 ms; this tap lands on its way back.
-        compose.mainClock.advanceTimeBy(RETURNING_MILLIS)
+        // The row slides out and then back, each at the relaxed speed; this tap lands on its way back.
+        compose.mainClock.advanceTimeBy(Motion.millis(MotionSpeed.Relaxed) * 4L / 3)
         compose.onNodeWithText("Welcome").performTouchInput { click() }
         compose.mainClock.autoAdvance = true
         compose.waitUntil(TIMEOUT) { updates().isNotEmpty() }
@@ -102,7 +104,7 @@ class SwipeActionsTest {
     @Test
     fun aSwipeSetToReadLaterSavesTheMessageAndLabelsItsRow() {
         server.folders += """{"id": "l", "name": "Read later"}"""
-        start(MailBehavior(endToStart = MessageSwipe.ReadLater, readLater = true))
+        start(MailBehavior(endToStart = MailAction.ReadLater, readLater = true))
         waitForSwipe("Read later")
         compose.onNodeWithText("Welcome").performTouchInput { swipeLeft() }
         compose.waitUntil(TIMEOUT) { updates().isNotEmpty() }
@@ -118,7 +120,7 @@ class SwipeActionsTest {
     @Test
     fun aSwipeSetToNothingOrWithoutAFolderLeavesTheRowStill() {
         // No folder has the archive role, and the other side is turned off.
-        start(MailBehavior(startToEnd = MessageSwipe.None, endToStart = MessageSwipe.Archive))
+        start(MailBehavior(startToEnd = null, endToStart = MailAction.Archive))
         waitFor("Welcome")
         compose.waitUntil(TIMEOUT) { server.calls.any { "Mailbox/get" in it } }
         compose.waitForIdle()
@@ -142,8 +144,8 @@ class SwipeActionsTest {
         compose.onNodeWithText("Combined folders").performScrollTo().performClick()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
-        assertEquals(MessageSwipe.Trash, saved.endToStart)
-        assertEquals(MessageSwipe.Read, saved.startToEnd)
+        assertEquals(MailAction.Trash, saved.endToStart)
+        assertEquals(MailAction.Read, saved.startToEnd)
         assertFalse(saved.markReadOnOpen)
         assertTrue(saved.combinedFolders)
     }
@@ -156,6 +158,5 @@ class SwipeActionsTest {
 
     private companion object {
         const val TIMEOUT = 5_000L
-        const val RETURNING_MILLIS = 400L
     }
 }

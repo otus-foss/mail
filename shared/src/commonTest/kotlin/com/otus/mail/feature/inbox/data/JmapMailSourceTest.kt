@@ -29,10 +29,13 @@ class JmapMailSourceTest {
             check(
                 "\"inMailbox\":\"a\"" in body && "\"#ids\"" in body,
             ) { "Queries the inbox by role, chained by back-reference" }
+            check("\"messageId\"" in body && "\"cc\"" in body) { "Requests what a reply needs" }
             """{"methodResponses": [
                 ["Email/query", {"ids": ["m1", "m2"]}, "c0"],
                 ["Email/get", {"state": "e", "list": [
                   {"id": "m1", "keywords": {}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
+                   "to": [{"name": "Ada", "email": "ada@example.org"}], "cc": [{"email": "team@example.org"}],
+                   "messageId": ["m1@example.org"], "references": ["m0@example.org"],
                    "subject": "Compiler draft", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Attached…",
                    "hasAttachment": true, "attachments": [{"partId": "2", "name": "draft.pdf"}],
                    "textBody": [{"partId": "1"}], "bodyValues": {"1": {"value": "Attached is the first draft."}}},
@@ -62,6 +65,10 @@ class JmapMailSourceTest {
             assertEquals("Ada", first.location.account)
             assertTrue(first.attributes.unread)
             assertEquals(listOf("draft.pdf"), first.attributes.attachments)
+            assertEquals(listOf("Ada", "team@example.org"), (first.to + first.cc).map { it.name })
+            assertEquals(listOf("m1@example.org"), first.messageIds)
+            assertEquals(listOf("m0@example.org"), first.references)
+            assertTrue(second.to.isEmpty() && second.messageIds.isEmpty())
             assertEquals("ada@example.org", second.sender.name)
             assertEquals("Notes", second.body)
             assertEquals("", second.subject)

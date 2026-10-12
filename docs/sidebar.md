@@ -26,9 +26,10 @@ that zone, so pages need no extra wiring.
 - Choosing an entry, tapping the scrim, the system back gesture, or swiping it back toward the
   leading edge closes it. A released swipe settles on the nearer side unless it was flung faster
   than 400 dp/s. Its surface is `bgDark`.
-- Motion reuses the suite curves: open with `MotionTokens.enter` over 300 ms, close with
-  `MotionTokens.exit` over 220 ms; a sidebar released part-way animates only the remaining share
-  of that time. One progress value drives slide and scrim, so swipes and reversals stay continuous. Values live in `SidebarTokens`.
+- It opens at `MotionSpeed.Relaxed` (300 ms) with `MotionCurve.Enter` and closes at
+  `MotionSpeed.Normal` (240 ms) with `MotionCurve.Exit`. A sidebar released part-way animates only
+  the remaining share of that time. One progress value drives slide and scrim, so swipes and
+  reversals stay continuous. Sizes live in `SidebarTokens`; see [motion](motion.md).
 
 ## Mail destinations
 

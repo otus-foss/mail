@@ -20,6 +20,8 @@ import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
+import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
+import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
@@ -55,7 +57,15 @@ internal fun MailPageContent(
             AppearanceSettingsScreen(
                 dateFormatState,
                 onBack = back,
-            ) { MailBehaviorSettings(states.behavior, folderPills) }
+            ) { MailBehaviorSettings(states.behavior, folderPills) { navigation.go(MailPage.ActionBarSettings) } }
+        }
+
+        is MailPage.Compose -> {
+            ComposePage(page, states, back)
+        }
+
+        MailPage.ActionBarSettings -> {
+            ActionBarSettingsScreen(states.behavior, onBack = back)
         }
 
         MailPage.Folders -> {
@@ -86,9 +96,20 @@ internal fun MailPageContent(
 
         is MailPage.Combined -> {
             val folder = page.folder
-            FeedPage(MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
+            FeedPage(page, MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
         }
     }
+}
+
+/** A draft for the page's request; without an account there is nothing to write from. */
+@Composable
+private fun ComposePage(
+    page: MailPage.Compose,
+    states: MailStates,
+    onClose: () -> Unit,
+) {
+    val compose = remember(page) { states.compose(page.request) } ?: return LaunchedEffect(page) { onClose() }
+    ComposeScreen(compose, states.behavior.behavior, onClose)
 }
 
 /** The unified inbox, whose folder pills load in place of its own mail. */
@@ -121,6 +142,7 @@ private fun InboxPage(
                         states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
                         feed::show,
                     ),
+                onCompose = { navigation.go(MailPage.Compose(it)) },
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
@@ -140,6 +162,7 @@ private fun FolderPage(
         if (account != null && account.failure == null && folder == null) navigation.go(MailPage.Inbox)
     }
     FeedPage(
+        page,
         MailScope.Folder(page.accountId, page.folderId),
         folder?.name ?: "Folder",
         states,
@@ -148,9 +171,10 @@ private fun FolderPage(
     )
 }
 
-/** The messages [mailScope] loads, on a page that calls their folder [name]. */
+/** The messages [mailScope] loads, on [page], which calls their folder [name]. */
 @Composable
 private fun FeedPage(
+    page: MailPage,
     mailScope: MailScope,
     name: String,
     states: MailStates,
@@ -168,7 +192,10 @@ private fun FeedPage(
             feed.refresh()
             states.folders.refresh()
         },
-        context = InboxContext.folder(name, states.behavior.behavior.pills),
+        context =
+            InboxContext.folder(name, states.behavior.behavior.pills).copy(
+                onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
+            ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
 }

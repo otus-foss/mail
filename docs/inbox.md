@@ -21,7 +21,8 @@ and incremental synchronization remain separate work.
   adapter, which also supplies mailbox/account identifiers. This is
   local search over supplied messages, not an implementation of JMAP Email/query semantics.
 - Empty inbox and no-result states are distinct. Clearing search and filters restores the default
-  Inbox scope. Message rows can show a read-only plain-text preview; opening does not mark mail read.
+  Inbox scope. Tapping a row opens the message as a read-only page over the list; see
+  [open message and selection](#open-message-and-selection).
 - Search mode, query, and filters use saveable screen state. There is no saved message store.
 - Pulling the message area down past a fixed 80 dp threshold reloads the inbox, in both Inbox and
   search modes. The design-system `PullToRefresh` component uses Compose Material's pull gesture
@@ -51,8 +52,9 @@ Material Symbols Rounded remains the approved icon family. The Figma row's black
 tokens with `text1` initials, and metadata uses
 named text tokens rather than introducing that border color. Text is allowed sufficient height at
 large font scales instead of reproducing Figma's clipped 48 px row. Root Inbox now reserves a
-left chevron for the planned sidebar navigation. The prototype's compose/bulk toolbar
-and deletion toast are deferred with their corresponding product behaviors.
+left chevron for the planned sidebar navigation. The list and selected rows now get an action bar,
+whose **New mail** button stands in for the prototype's compose button. The deletion toast is
+deferred with its product behavior.
 
 ## Validation
 
@@ -126,32 +128,47 @@ with a shared role through `MailScope.Role`, or selected folders from their own 
 unified inbox uses the inbox role. [Combined folders](folders.md#combined-folders) use the other
 system roles. Messages keep their server and mailbox IDs so actions use the correct account.
 
-An open message can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**, **Read later**,
-**Archive**, **Trash**, **Move**, and **Rule for sender** through `MessageActions`, which app wiring builds from
-the loaded folders and rules. The actions wrap above the message body, so they stay in view while
-it scrolls.
+An open message or a selection can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**,
+**Read later**, **Archive**, **Trash**, **Spam**, **Move**, and **Rule for sender** through
+`MessageActions`, which app wiring builds from the loaded folders and rules. The action bar and
+the open message's **More actions** menu show them; see [action bar](action-bar.md).
 
 - Marks set or clear one keyword with an `Email/set` patch (RFC 8621, section 4.1.1): `$seen` for
   read and `$flagged` for the flag. Other keywords are untouched; turning a mark off removes the
   keyword. The open message shows the change at once. If the server refuses, the mark goes back
   and the inbox shows a notice. Changing the read mark refreshes the folder unread counts.
-- Archive and Trash move the message to the account's folder with the `archive` or `trash` role,
-  found by role because servers name these folders differently. Each is offered only when that
-  folder exists and the message is not already in it. Archive also takes the message out of the
-  inbox, and Trash out of every folder. Trash moves the message; nothing is permanently deleted.
+- Archive, Trash, and Spam move the message to the account's folder with the `archive`, `trash`,
+  or `junk` role, found by role because servers name these folders differently. Each is offered
+  only when that folder exists and the message is not already in it. Archive also takes the
+  message out of the inbox, and Trash and Spam out of every folder. Trash moves the message;
+  nothing is permanently deleted. Spam sets no keyword.
 - **Read later**, when it is on, adds the account's Read later folder and keeps the message where
   it is; a saved message offers **Remove from Read later**. See
   [Folders and rules](folders.md#read-later).
 - Actions follow the rights of the folder the message is shown in (RFC 8621, section 2):
   `maySetSeen` for the read mark, `maySetKeywords` for the flag, and `mayRemoveItems` for
-  Archive, Trash, and Move. The target must allow `mayAddItems`. The server still checks every
+  Archive, Trash, Spam, and Move. The target must allow `mayAddItems`. The server still checks every
   other mailbox the message belongs to.
 - Opening an unread message marks it read with the same `$seen` patch, unless **Mark as read when
-  opened** is off in Appearance & behavior. Undo, bulk selection, and permanent deletion are not
-  implemented yet; see issue #27.
+  opened** is off in Appearance & behavior. Undo and permanent deletion are not implemented yet;
+  see issue #27.
 
 A moved message leaves the list at once. If the server refuses, it comes back and the inbox shows
 a notice. See [Folders and rules](folders.md).
+
+## Open message and selection
+
+Tapping a row opens the message as a page over the list, with a back chevron, the subject, and a
+**More actions** button in the header. The chevron and system Back close it. The action bar at
+the bottom shows the user's chosen actions, and **More actions** lists the rest. An action that
+takes the message out of the list closes the page first; marks keep it open.
+
+Long-pressing a row selects it. While rows are selected, a tap toggles a row instead of opening
+it, selected rows show a check in place of the avatar, and system Back clears the selection. The
+selection bar shows the number of selected messages beside its main button, and each action ends
+the selection. With nothing selected, the list shows its own bar with **New mail**, **Search**,
+**Filters**, and **Mark all read**. See [action bar](action-bar.md) for the actions, settings, and
+storage.
 
 ## Message rows
 
@@ -188,8 +205,9 @@ swipe left. Right-to-left layouts mirror the directions.
   list, which removes it at once. Read later saves the message in place, so the row returns to
   rest with its new label; it leaves only where the message leaves the page. Marks return the row to rest showing the new state.
 - TalkBack and VoiceOver offer each available swipe as a custom action on the row.
-- `MailBehavior` holds the two swipes, the open-to-read choice, whether Read later is on, and the
-  inbox pills. Turning Read later off returns a swipe set to it to that swipe's default.
+- `MailBehavior` holds the two swipes, the open-to-read choice, whether Read later is on, the
+  inbox pills, and the [action bars](action-bar.md). Turning Read later off returns a swipe set
+  to it to that swipe's default.
   `MailBehaviorStore` saves them in app-private preferences: `SharedPreferences` on Android and
   `NSUserDefaults` on iOS. Unknown saved values read as the defaults.
 

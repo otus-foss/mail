@@ -6,6 +6,7 @@ import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.components.ContentRow
 import com.otus.designsystem.components.ContentRowText
 import com.otus.designsystem.components.RowLabel
+import com.otus.designsystem.components.RowSelection
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -15,13 +16,16 @@ import com.otus.mail.feature.inbox.presentation.receivedLabel
  * One message in a list: subject, sender, and when it arrived. The last line shows only what the
  * page doesn't already say: the message's other folders as labels, its account when the list
  * mixes accounts ([showAccount]), and its attachments. Without any of these, it shows the start
- * of the message.
+ * of the message. A selected row shows a check instead of the sender's avatar; a null [selection]
+ * means the list is not selecting.
  */
 @Composable
 fun MessageRow(
     message: MailMessage,
     dateFormatter: DateFormatter,
     showAccount: Boolean,
+    selection: RowSelection? = null,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val labels = message.labels
@@ -45,6 +49,8 @@ fun MessageRow(
         emphasized = message.attributes.unread,
         stateLabel = if (message.attributes.unread) "Unread" else "Read",
         onClick = onClick,
+        selection = selection,
+        onLongClick = onLongClick,
         leading = { SenderAvatar(message.sender) },
     )
 }

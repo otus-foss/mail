@@ -96,6 +96,8 @@ See [the full commit rules](AGENTS.md#commit-messages) and [hook details](docs/q
 ## Inbox and reusable controls
 
 See [Inbox](docs/inbox.md) for the default screen and search scope, and
+[Action bar](docs/action-bar.md) for the open message page, selection, and configurable actions, and
+[Compose](docs/compose.md) for new messages, replies, forwards, and drafts, and
 [Context panel](docs/context-panel.md) for the reusable API and component test playground, and
 [Sidebar](docs/sidebar.md) for page navigation, and [Settings](docs/settings.md) for subpages and
 JMAP account setup, and [JMAP](docs/jmap.md) for the protocol client.

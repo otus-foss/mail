@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
 import com.otus.mail.feature.folders.domain.FolderRights
+import com.otus.mail.feature.folders.domain.JUNK_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStep
 import com.otus.mail.feature.folders.domain.TRASH_ROLE
@@ -121,7 +122,7 @@ internal class MessageFiling(
 
     /**
      * The folders a move takes the message out of: the one it is shown in, the inbox too when it
-     * is archived, and every folder when it is trashed, so trashed mail leaves Read later as well.
+     * is archived, and every folder when it is trashed or marked spam, so it leaves Read later as well.
      */
     private fun leaving(
         message: MailMessage,
@@ -131,7 +132,7 @@ internal class MessageFiling(
         val folderIds = message.location.mailboxIds
         val inbox = folders.account(message.location.accountId)?.inbox?.id
         return when (shortcut) {
-            FolderShortcut.Trash -> shown + folderIds
+            FolderShortcut.Trash, FolderShortcut.Spam -> shown + folderIds
             FolderShortcut.Archive -> shown + setOfNotNull(inbox?.takeIf { it in folderIds })
             null -> shown
         }
@@ -146,5 +147,6 @@ private fun shortcutFor(role: String?): FolderShortcut? =
     when (role) {
         ARCHIVE_ROLE -> FolderShortcut.Archive
         TRASH_ROLE -> FolderShortcut.Trash
+        JUNK_ROLE -> FolderShortcut.Spam
         else -> null
     }
