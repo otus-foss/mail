@@ -23,7 +23,8 @@ import com.otus.mail.feature.inbox.presentation.title
 /**
  * The account rail beside the built-in mailboxes and the user's shared folders, in the order and
  * layout the user chose. Choosing an account in the rail, or All, changes only the counts:
- * [accountId] is the chosen account, or null for every account.
+ * [accountId] is the chosen account, or null for every account. Tapping All again opens the
+ * inbox of every account.
  */
 @Composable
 internal fun MailSidebar(
