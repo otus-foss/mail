@@ -52,8 +52,8 @@ internal class MessageFiling(
 
     /**
      * Takes the message out of [feed] at once and puts it back if the server refuses the move. A
-     * successful move does not reload the list: a reload can answer before another move still in
-     * flight, which would bring that message back.
+     * successful move does not reload the list; [feed] keeps the message out of loads that may
+     * predate the move.
      */
     fun move(
         feed: InboxFeedState,
@@ -61,12 +61,13 @@ internal class MessageFiling(
         target: MoveTarget,
     ) {
         val leaving = leaving(message, target.shortcut)
-        val restore = feed.remove(message.id)
+        val change = feed.remove(message.id)
         scope.launch {
             if (services.mover.move(message, target.folderId, leaving)) {
+                change.confirm()
                 folders.refresh()
             } else {
-                restore()
+                change.rollBack()
                 feed.report("Couldn't move the message to ${target.label}. Try again.")
             }
         }
@@ -108,13 +109,18 @@ internal class MessageFiling(
         saved: Boolean,
         leaves: Boolean = false,
     ) {
-        val restore = if (leaves) feed.remove(message.id) else null
-        if (!leaves) feed.change(message.id) { it.inFolder(folder.id, saved) }
+        val change =
+            if (leaves) {
+                feed.remove(message.id)
+            } else {
+                feed.change(message.id, { it.inFolder(folder.id, saved) }, undo = { it.inFolder(folder.id, !saved) })
+            }
         scope.launch {
             if (services.mover.setInFolder(message, folder.id, saved)) {
+                change.confirm()
                 folders.refresh()
             } else {
-                if (restore != null) restore() else feed.change(message.id) { it.inFolder(folder.id, !saved) }
+                change.rollBack()
                 feed.report("Couldn't change ${folder.name}. Try again.")
             }
         }

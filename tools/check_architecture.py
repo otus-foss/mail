@@ -13,24 +13,111 @@ PLATFORM_APIS = ("android.", "java.", "javax.", "platform.")
 DATA_APIS = ("io.ktor.", "app.cash.sqldelight.", "androidx.room.", "okhttp3.")
 
 
+SUPPRESSION = re.compile(
+    r"@(?:\w+:)?\[?\s*(?:[\w.]+\.)?Suppress(?:Lint|Warnings)?\b"
+    r"|ktlint-disable|detekt:|swiftlint:disable|swiftformat:disable|tools:ignore\b"
+)
+DRAWABLE = re.compile(r"drawable(?:-[\w-]+)?")
+
+
 def source_code(text: str) -> str:
-    """Remove literals/comments before checking code references (not type resolution)."""
-    return re.sub(
-        r'"""[\s\S]*?"""|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*[\s\S]*?\*/|//[^\n]*',
-        lambda match: "\n" * match.group().count("\n"),
-        text,
-    )
+    """Blank literals and comments, keeping `${...}` template code (not type resolution)."""
+    out: list[str] = []
+    _code(text, 0, out, template=False)
+    return "".join(out)
+
+
+def _blank(text: str) -> str:
+    return re.sub(r"[^\n]", " ", text)
+
+
+def _code(text: str, i: int, out: list[str], *, template: bool) -> int:
+    """Copy code from [i]; inside a template, stop before its closing brace."""
+    depth = 0
+    while i < len(text):
+        char = text[i]
+        if text.startswith("//", i):
+            end = text.find("\n", i)
+            end = len(text) if end < 0 else end
+        elif text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            end = len(text) if end < 0 else end + 2
+        elif char == "'":
+            literal = re.compile(r"'(?:\\.|[^'\\\n])*'").match(text, i)
+            end = literal.end() if literal else i + 1
+        elif char == '"':
+            quote = '"""' if text.startswith('"""', i) else '"'
+            out.append(" " * len(quote))
+            i = _string(text, i + len(quote), out, quote)
+            continue
+        else:
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                if template and depth == 0:
+                    return i
+                depth -= 1
+            out.append(char)
+            i += 1
+            continue
+        out.append(_blank(text[i:end]))
+        i = end
+    return i
+
+
+def _string(text: str, i: int, out: list[str], quote: str) -> int:
+    """Blank a string body after its opening [quote], keeping the code of `${...}` templates."""
+    while i < len(text):
+        if quote == '"' and text[i] == "\\":
+            out.append(_blank(text[i : i + 2]))
+            i += 2
+        elif text.startswith(quote, i):
+            while quote == '"""' and text.startswith('""""', i):
+                out.append(" ")
+                i += 1
+            out.append(" " * len(quote))
+            return i + len(quote)
+        elif text.startswith("${", i):
+            out.append("  ")
+            i = _code(text, i + 2, out, template=True)
+            if i < len(text):
+                out.append(" ")
+                i += 1
+        else:
+            out.append(_blank(text[i]))
+            i += 1
+    return i
+
+
+def suppression_violations(text: str) -> list[str]:
+    if SUPPRESSION.search(text):
+        return ["inline lint suppression is prohibited; fix the violation"]
+    return []
+
+
+def drawable_violations(root: Path) -> list[str]:
+    """Drawable resources in any source set of the shared or Android module belong in otus-meta."""
+    return [
+        f"{path.relative_to(root)}: visual drawable resources belong in otus-meta/designsystem"
+        for folder in ("shared/src", "androidApp/src")
+        for path in sorted((root / folder).rglob("*"))
+        if path.is_file()
+        and not set(path.relative_to(root).parts) & SKIP
+        and DRAWABLE.fullmatch(path.parent.name)
+    ]
+
+
+def color_names(code: str) -> str:
+    """`Color` and any name it is imported as, for spotting literal colors."""
+    aliases = re.findall(r"^import\s+[\w.]*\.Color\s+as\s+(\w+)", code, re.MULTILINE)
+    return "|".join(["Color", *aliases])
 
 
 def violations(path: Path, text: str, base: str, *, central_ui: bool = False) -> list[str]:
-    errors = file_length_violations(path, text)
+    errors = file_length_violations(path, text) + suppression_violations(text)
     code = source_code(text)
     parts = path.parts
     production = any(part.endswith("Main") or part == "main" for part in parts)
-    if re.search(
-        r"@(?:file:)?Suppress\b|ktlint-disable|detekt:|swiftlint:disable|swiftformat:disable", text
-    ):
-        errors.append("inline lint suppression is prohibited; fix the violation")
     if path.suffix != ".kt":
         return errors
     package = re.search(r"^package\s+([\w.]+)", code, re.MULTILINE)
@@ -97,7 +184,13 @@ def violations(path: Path, text: str, base: str, *, central_ui: bool = False) ->
             if "data" in location and any(x in target for x in ("presentation", "designsystem")):
                 errors.append("data cannot depend on presentation/designsystem")
     if "domain" in location:
-        forbidden = (*PLATFORM_APIS, *DATA_APIS, "androidx.compose.", "androidx.lifecycle.")
+        forbidden = (
+            *PLATFORM_APIS,
+            *DATA_APIS,
+            "androidx.compose.",
+            "androidx.lifecycle.",
+            "org.jetbrains.compose.",
+        )
         if any(re.search(r"(?<![\w.])" + re.escape(api), code) for api in forbidden):
             errors.append("domain contains UI/platform/network/database dependencies")
     if ("presentation" in location or location[:1] == ["designsystem"]) and any(
@@ -119,8 +212,13 @@ def violations(path: Path, text: str, base: str, *, central_ui: bool = False) ->
             errors.append(
                 "composables belong in app/designsystem/presentation screens or components"
             )
-    if "theme" not in location and re.search(r"\bColor\s*\(\s*0[xX]", code):
-        errors.append("literal colors belong in designsystem/theme")
+    names = color_names(code)
+    if re.search(
+        rf"(?<![\w.])(?:androidx\.compose\.ui\.graphics\.)?(?:{names})"
+        r"(?:\s*\(\s*(?:\w+\s*=\s*)?(?:0[xX]|\d|\.\d)|\.(?:hsv|hsl)\s*\()",
+        code,
+    ):
+        errors.append("literal colors belong in otus-meta designsystem/theme")
     return sorted(set(errors))
 
 
@@ -130,11 +228,12 @@ def main() -> int:
     if not app:
         print("Cannot determine Otus application namespace", file=sys.stderr)
         return 1
-    failures = []
-    if app.group(1) == "mail":
-        drawables = ROOT / "shared/src/commonMain/composeResources/drawable"
-        if any(path.is_file() for path in drawables.rglob("*")):
-            failures.append("visual drawable resources belong in otus-meta/designsystem")
+    failures = drawable_violations(ROOT) if app.group(1) == "mail" else []
+    for folder in ("shared/src", "androidApp/src"):
+        for path in sorted((ROOT / folder).rglob("*.xml")):
+            if not set(path.parts) & SKIP:
+                errors = suppression_violations(path.read_text())
+                failures += [f"{path.relative_to(ROOT)}: {error}" for error in errors]
     for folder in ("shared/src", "androidApp/src", "iosApp"):
         for path in sorted((ROOT / folder).rglob("*")):
             if path.suffix not in {".kt", ".swift"} or set(path.parts) & SKIP:

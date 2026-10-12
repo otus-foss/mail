@@ -32,6 +32,10 @@ class RulesState(
         private set
     var busy by mutableStateOf(false)
         private set
+
+    /** A change waiting for the user to replace edits made in another app; see [submit]. */
+    var replaceRequest by mutableStateOf<ReplaceRequest?>(null)
+        private set
     private var job: Job? = null
 
     fun account(accountId: String): AccountRules? = accounts.firstOrNull { it.accountId == accountId }
@@ -53,14 +57,20 @@ class RulesState(
 
     /**
      * Makes the rules the script the server runs. With [keepOther], the script running now keeps
-     * running after the rules. A vacation reply is never kept that way: its script stays on the
-     * server while the reply is off, so including it would send replies the user turned off.
+     * running after the rules; without it, that script and any script kept before stop. A vacation
+     * reply is never kept: its script stays on the server while the reply is off, so including it
+     * would send replies the user turned off.
      */
     fun turnOn(
         accountId: String,
         keepOther: Boolean,
     ) = submit(accountId) { account ->
-        val keep = account.activeOther?.takeIf { keepOther && !account.vacationIsOn } ?: account.keep
+        val keep =
+            when {
+                account.activeOther == null -> account.keep
+                keepOther && !account.vacationIsOn -> account.activeOther
+                else -> null
+            }
         RuleChange(account.rules, keep, run = true)
     }
 
@@ -69,14 +79,31 @@ class RulesState(
     /** Stops running the other script after the rules. */
     fun stopKeeping(accountId: String) = submit(accountId) { RuleChange(it.rules, keep = null) }
 
-    /** Saves the change [build] makes to [accountId]'s loaded rules; [onSaved] runs only when it worked. */
+    /**
+     * Saves the change [build] makes to [accountId]'s loaded rules; [onSaved] runs only when it
+     * worked. When the script was edited in another app, the change waits in [replaceRequest],
+     * unless [replacing] says the user already chose to replace those edits.
+     */
     fun submit(
         accountId: String,
         onSaved: suspend () -> Unit = {},
+        replacing: Boolean = false,
         build: (AccountRules) -> RuleChange,
     ) {
         val account = account(accountId)
         if (busy || account == null) return
+        if (account.changedElsewhere && !replacing) {
+            val close = { replaceRequest = null }
+            replaceRequest =
+                ReplaceRequest(
+                    replace = {
+                        close()
+                        submit(accountId, onSaved, replacing = true, build)
+                    },
+                    dismiss = close,
+                )
+            return
+        }
         busy = true
         notice = null
         scope.launch {
@@ -125,3 +152,9 @@ class RulesState(
         }
     }
 }
+
+/** Asks before a change replaces rules edited in another app: [replace] saves it, [dismiss] drops it. */
+class ReplaceRequest(
+    val replace: () -> Unit,
+    val dismiss: () -> Unit,
+)

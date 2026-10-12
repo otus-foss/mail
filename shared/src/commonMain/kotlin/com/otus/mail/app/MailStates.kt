@@ -96,13 +96,14 @@ internal class MailStates(
         on: Boolean,
     ) {
         val before = message.hasFlag(flag)
-        feed.change(message.id) { it.withFlag(flag, on) }
+        val change = feed.change(message.id, { it.withFlag(flag, on) }, undo = { it.withFlag(flag, before) })
         scope.launch {
             if (services.marker.mark(message, flag, on)) {
+                change.confirm()
                 // Folder unread counts follow the read mark.
                 if (flag == MessageFlag.Read) folders.refresh()
             } else {
-                feed.change(message.id) { it.withFlag(flag, before) }
+                change.rollBack()
                 feed.report("Couldn't change the message. Try again.")
             }
         }

@@ -1,9 +1,12 @@
 package com.otus.mail.feature.folders.data
 
+import com.otus.mail.feature.folders.domain.AccountRules
 import com.otus.mail.feature.folders.domain.MailRule
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.RuleField
 import com.otus.mail.feature.folders.domain.RuleOperator
+import com.otus.mail.feature.folders.domain.RuleSupport
+import com.otus.mail.feature.folders.domain.ruleProblem
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -32,9 +35,13 @@ internal fun encodeRules(script: RuleScript): String {
 /**
  * Reads the rules from [text]. The Sieve is regenerated from them and compared, so an edit made
  * in another app is reported instead of being silently replaced. A script without readable
- * rules yields none and counts as changed elsewhere.
+ * rules yields none and counts as changed elsewhere. Rules and a kept script that a server with
+ * [support] cannot run are left out and count as changed too, so the next save writes valid Sieve.
  */
-internal fun decodeRules(text: String): ReadRules {
+internal fun decodeRules(
+    text: String,
+    support: RuleSupport,
+): ReadRules {
     val line = text.lineSequence().map { it.trimEnd('\r') }.firstOrNull { it.startsWith(METADATA_PREFIX) }
     val dto =
         line?.let {
@@ -48,9 +55,23 @@ internal fun decodeRules(text: String): ReadRules {
         }
     val rules = dto?.rules?.map { it.toRule() }
     if (dto == null || rules == null || rules.any { it == null }) return ReadRules(RuleScript(emptyList()), true)
-    val script = RuleScript(rules.filterNotNull(), dto.keep)
-    return ReadRules(script, normalized(encodeRules(script)) != normalized(text))
+    val stored = RuleScript(rules.filterNotNull(), dto.keep)
+    val script = stored.runnableBy(support)
+    return ReadRules(script, script != stored || normalized(encodeRules(stored)) != normalized(text))
 }
+
+/** Only rules the editor would accept, and a kept script only when it is another script the server can include. */
+private fun RuleScript.runnableBy(support: RuleSupport) =
+    RuleScript(
+        rules.filter { ruleProblem(it, support, folderExists = true) == null },
+        keep?.takeIf { name ->
+            support.canKeepOtherScript &&
+                name.isNotBlank() &&
+                name != RULES_SCRIPT &&
+                !name.equals(AccountRules.VACATION_SCRIPT, ignoreCase = true) &&
+                name.none { it < ' ' }
+        },
+    )
 
 private const val METADATA_PREFIX = "# otus-rules-v1 "
 

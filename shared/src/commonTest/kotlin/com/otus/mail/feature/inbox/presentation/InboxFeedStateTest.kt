@@ -189,12 +189,12 @@ class InboxFeedStateTest {
             runCurrent()
             val undo = state.remove("inbox")
             assertTrue(state.messages.isEmpty())
-            undo()
+            undo.rollBack()
             assertEquals(listOf("inbox"), state.messages.map { it.id })
             val oldUndo = state.remove("inbox")
             state.show(MailScope.Folder("ada", "r"))
             runCurrent()
-            oldUndo()
+            oldUndo.rollBack()
             assertEquals(listOf("folder"), state.messages.map { it.id })
         }
 }
