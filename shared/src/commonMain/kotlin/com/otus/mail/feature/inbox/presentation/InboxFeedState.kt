@@ -48,27 +48,48 @@ class InboxFeedState(
         private set
     private var job: Job? = null
     private var request = 0
+    private val pending = PendingChanges()
 
     /** Shows [text] in place of the last load's notice, such as a failed change. */
     fun report(text: String) {
         notice = text
     }
 
-    /** Replaces the loaded message with [id], such as after a local change the server will confirm. */
+    /**
+     * Shows [transform] of the loaded message with [id] before the server saves it. Loads keep the
+     * change until it is confirmed; rolling it back applies [undo].
+     */
     fun change(
         id: String,
         transform: (MailMessage) -> MailMessage,
-    ) {
+        undo: (MailMessage) -> MailMessage,
+    ): LocalChange {
         messages = messages.map { if (it.id == id) transform(it) else it }
+        return track(pending.add(id, scope = null, edit = transform)) {
+            messages = messages.map { if (it.id == id) undo(it) else it }
+        }
     }
 
-    /** Removes [id] and returns a rollback that restores it only in the same scope. */
-    fun remove(id: String): () -> Unit {
+    /** Takes [id] off the list before the server moves it. Rolling back restores it only in the same scope. */
+    fun remove(id: String): LocalChange {
         val before = messages.firstOrNull { it.id == id }
         val previousScope = mailScope
         messages = messages.filterNot { it.id == id }
-        return { if (mailScope == previousScope && before != null) restore(before) }
+        return track(pending.add(id, previousScope) { null }) {
+            if (mailScope == previousScope && before != null) restore(before)
+        }
     }
+
+    private fun track(
+        key: Int,
+        rollBack: () -> Unit,
+    ) = LocalChange(
+        onConfirm = { pending.confirm(key, request) },
+        onRollBack = {
+            pending.drop(key)
+            rollBack()
+        },
+    )
 
     /** Puts [message] back after the server refused to move it, unless a reload already did. */
     private fun restore(message: MailMessage) {
@@ -99,7 +120,7 @@ class InboxFeedState(
                     val snapshot = source.messages(requestedScope)
                     val incoming = withCachedAvatars(snapshot.messages)
                     if (current != request) return@launch
-                    messages = incoming
+                    messages = pending.publish(incoming, current, requestedScope)
                     notice = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
                 } catch (expected: InboxStorageException) {
                     if (current == request) notice = "Couldn't load saved accounts. Try again in Settings."

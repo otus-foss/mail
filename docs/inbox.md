@@ -157,6 +157,11 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
 A moved message leaves the list at once. If the server refuses, it comes back and the inbox shows
 a notice. See [Folders and rules](folders.md).
 
+`InboxFeedState` keeps each mark and move as a pending change until the server answers. A reload
+that started before the server saved a change can return the old state, so the feed applies the
+change to every load requested before the server confirmed it. A refused change is dropped at
+once, and later loads show the server's state.
+
 ## Open message and selection
 
 Tapping a row opens the message as a page over the list, with a back chevron, the subject, and a
