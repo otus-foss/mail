@@ -13,6 +13,9 @@ import com.otus.mail.feature.folders.domain.RuleOperator
 import com.otus.mail.feature.folders.domain.RuleOutcome
 import com.otus.mail.feature.folders.domain.RuleRepository
 import com.otus.mail.feature.folders.domain.RuleSupport
+import com.otus.mail.feature.folders.domain.moved
+import com.otus.mail.feature.folders.domain.paused
+import com.otus.mail.feature.folders.domain.without
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -56,13 +59,21 @@ class RulesStateTest {
     private fun account(
         installed: Boolean = false,
         activeOther: String? = null,
+        keep: String? = null,
+        changedElsewhere: Boolean = false,
+        rules: List<MailRule> = emptyList(),
     ) = AccountRules(
         "ada",
         "Ada",
         RuleAvailability.Available(support),
+        rules = rules,
         installed = installed,
         activeOther = activeOther,
+        keep = keep,
+        changedElsewhere = changedElsewhere,
     )
+
+    private fun rule(id: String) = MailRule(id, id, listOf(condition), "M7")
 
     private fun TestScope.loaded(repository: FakeRules): Pair<RulesState, RuleEditorState> {
         val rules = RulesState(repository, this)
@@ -110,13 +121,82 @@ class RulesStateTest {
             val (rules, _) = loaded(repository)
             rules.turnOn("ada", keepOther = true)
             runCurrent()
-            assertEquals(RuleChange(emptyList(), keep = "roundcube", run = true), repository.changes.last())
+            assertEquals("roundcube", repository.changes.last().keep)
             repository.account = account(installed = true, activeOther = "vacation")
             rules.refresh()
             runCurrent()
             rules.turnOn("ada", keepOther = true)
             runCurrent()
-            assertEquals(RuleChange(emptyList(), keep = null, run = true), repository.changes.last())
+            assertEquals(null, repository.changes.last().keep)
+        }
+
+    @Test
+    fun replacingTheRunningScriptStopsEveryScriptKeptBefore() =
+        runTest {
+            val repository = FakeRules(account(installed = true, activeOther = "roundcube", keep = "roundcube"))
+            val (rules, _) = loaded(repository)
+            rules.turnOn("ada", keepOther = false)
+            runCurrent()
+            assertEquals(null, repository.changes.single().keep)
+            repository.account = account(installed = true, activeOther = "vacation", keep = "vacation")
+            rules.refresh()
+            runCurrent()
+            rules.turnOn("ada", keepOther = true)
+            runCurrent()
+            assertEquals(null, repository.changes.last().keep, "A vacation reply is never kept")
+        }
+
+    @Test
+    fun turningRulesOnWithNothingElseRunningKeepsTheScriptKeptBefore() =
+        runTest {
+            val repository = FakeRules(account(installed = true, keep = "roundcube"))
+            val (rules, _) = loaded(repository)
+            rules.turnOn("ada", keepOther = false)
+            runCurrent()
+            assertEquals("roundcube", repository.changes.single().keep)
+        }
+
+    @Test
+    fun everyChangeAsksBeforeReplacingEditsMadeElsewhere() =
+        runTest {
+            val repository =
+                FakeRules(
+                    account(
+                        installed = true,
+                        activeOther = "roundcube",
+                        keep = "x",
+                        changedElsewhere = true,
+                        rules = listOf(rule("r1"), rule("r2")),
+                    ),
+                )
+            val (rules, editor) = loaded(repository)
+            val changes =
+                listOf<() -> Unit>(
+                    { rules.updateRules("ada") { it.paused("r1", true) } },
+                    { rules.updateRules("ada") { it.moved("r2", -1) } },
+                    { rules.updateRules("ada") { it.without("r1") } },
+                    { rules.turnOn("ada", keepOther = false) },
+                    { rules.turnOff("ada") },
+                    { rules.stopKeeping("ada") },
+                    {
+                        editor.edit("ada", "r1")
+                        editor.save {}
+                    },
+                )
+            changes.forEach { change ->
+                change()
+                runCurrent()
+                val request = assertNotNull(rules.replaceRequest)
+                assertTrue(repository.changes.isEmpty(), "Nothing is saved before the user replaces the edits")
+                request.dismiss()
+                assertNull(rules.replaceRequest)
+            }
+            rules.updateRules("ada") { it.without("r1") }
+            assertNotNull(rules.replaceRequest).replace()
+            runCurrent()
+            assertNull(rules.replaceRequest)
+            val saved = repository.changes.single()
+            assertEquals(listOf("r2"), saved.rules.map { it.id })
         }
 
     @Test

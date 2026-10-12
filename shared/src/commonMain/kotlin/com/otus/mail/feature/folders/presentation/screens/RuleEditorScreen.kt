@@ -2,12 +2,6 @@ package com.otus.mail.feature.folders.presentation.screens
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import com.otus.designsystem.components.ActionDialog
-import com.otus.designsystem.components.DialogAction
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.Subpage
 import com.otus.mail.feature.folders.domain.ruleProblem
@@ -15,6 +9,7 @@ import com.otus.mail.feature.folders.domain.without
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
 import com.otus.mail.feature.folders.presentation.RulesState
+import com.otus.mail.feature.folders.presentation.components.ReplaceRulesDialog
 import com.otus.mail.feature.folders.presentation.components.RuleEditorActions
 import com.otus.mail.feature.folders.presentation.components.RuleEditorForm
 import com.otus.mail.feature.folders.presentation.message
@@ -29,7 +24,6 @@ fun RuleEditorScreen(
     ruleId: String?,
     onDone: () -> Unit,
 ) {
-    var confirmReplace by rememberSaveable { mutableStateOf(false) }
     val account = state.account(accountId)
     // Opened directly, for example after the app was restored: start from the saved rule.
     LaunchedEffect(accountId, ruleId, account != null) {
@@ -50,7 +44,6 @@ fun RuleEditorScreen(
         state.notice?.let { PageNote(it) }
         val accountFolders = folders.account(accountId)
         val folderExists = accountFolders?.folder(draft.folderId.orEmpty()) != null
-        val save = { editor.save(onSaved = onDone) }
         RuleEditorForm(
             draft,
             support,
@@ -66,7 +59,7 @@ fun RuleEditorScreen(
                         null,
                     ) { id -> editor.draft?.let { editor.update(it.copy(folderId = id)) } }
                 },
-                onSave = { if (account.changedElsewhere) confirmReplace = true else save() },
+                onSave = { editor.save(onSaved = onDone) },
                 onDelete =
                     draft.ruleId?.let { id ->
                         {
@@ -77,12 +70,5 @@ fun RuleEditorScreen(
             ),
         )
     }
-    if (confirmReplace) {
-        ActionDialog(
-            "Replace edits made elsewhere?",
-            listOf(DialogAction("Replace and save", { editor.save(onSaved = onDone) }, primary = true)),
-            onDismiss = { confirmReplace = false },
-            message = "These rules were edited in another app. Saving replaces that script with the rules shown here.",
-        )
-    }
+    state.replaceRequest?.let { ReplaceRulesDialog(it.replace, it.dismiss) }
 }

@@ -163,8 +163,10 @@ if header :contains "from" "amazon" {
 - Mail is filed by folder id, so renaming or moving a folder keeps its rules working. If the
   folder is deleted, Stalwart files into the inbox, the fallback name, so no mail is lost.
 - On load the app rebuilds the Sieve from the JSON and compares. A difference means the script
-  was edited in another app: the rules page says so, and saving asks before replacing it.
-  Conditions written by a newer app version count as a difference too, so they are never dropped.
+  was edited in another app: the rules page says so, and every change asks before replacing it.
+  That covers saving and deleting in the editor, and reordering, pausing, deleting, turning rules
+  on or off, and stopping a kept script on the rules page. Conditions written by a newer app
+  version count as a difference too, so they are never dropped.
 - Saving uploads the script as a blob (RFC 8620, section 6.1), then creates or updates it with
   `SieveScript/set`. The request carries `ifInState` from the last load, so a change from another
   device is refused (`stateMismatch`); the app reloads and the user saves again.
@@ -176,7 +178,8 @@ A server runs one Sieve script at a time. Decisions taken for now:
 - The first rule turns the script on only when no other script runs. Otherwise the rules page
   shows what runs instead and asks before replacing it.
 - With the `include` extension, the user can keep the other script running after the rules
-  (`include :personal :optional "<name>"`), for mail no rule moved.
+  (`include :personal :optional "<name>"`), for mail no rule moved. Choosing **Replace** instead
+  stops it, along with any script the rules kept before.
 - A script named `vacation` is never kept that way. Stalwart builds its `VacationResponse` into
   that script and keeps it while the reply is off, so including it would send replies the user
   turned off. Turning rules on switches the vacation reply off, and the app says so first.
@@ -216,8 +219,8 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
 - Data: `JmapMailSourceTest` (a role loads that folder of every account under one name),
   `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
   Sieve, escaping, read-back, edits made elsewhere), `JmapMessageMoverTest`.
-- Presentation: `RulesStateTest` (activation choices, vacation never kept, failed saves keep the
-  draft).
+- Presentation: `RulesStateTest` (activation choices, vacation never kept, replacing drops a kept
+  script, every change asks before replacing edits made elsewhere, failed saves keep the draft).
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and
   folder pages, creating a folder, saving a rule as an active script, moving a message, and
   starting a rule from its sender. It also turns on Read later and checks that its mailbox follows
