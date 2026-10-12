@@ -55,7 +55,11 @@ internal fun MailPageContent(
             AppearanceSettingsScreen(
                 dateFormatState,
                 onBack = back,
-            ) { MailBehaviorSettings(states.behavior, folderPills) }
+            ) { MailBehaviorSettings(states.behavior, folderPills) { navigation.go(MailPage.SidebarSettings) } }
+        }
+
+        MailPage.SidebarSettings -> {
+            SidebarSettingsPage(states, back)
         }
 
         MailPage.Folders -> {
@@ -87,6 +91,14 @@ internal fun MailPageContent(
         is MailPage.Combined -> {
             val folder = page.folder
             FeedPage(MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
+        }
+
+        MailPage.ReadLater -> {
+            ReadLaterPage(states, dateFormatter, navigation)
+        }
+
+        is MailPage.Shared -> {
+            SharedFolderPage(page, states, dateFormatter, navigation)
         }
     }
 }
@@ -150,7 +162,7 @@ private fun FolderPage(
 
 /** The messages [mailScope] loads, on a page that calls their folder [name]. */
 @Composable
-private fun FeedPage(
+internal fun FeedPage(
     mailScope: MailScope,
     name: String,
     states: MailStates,

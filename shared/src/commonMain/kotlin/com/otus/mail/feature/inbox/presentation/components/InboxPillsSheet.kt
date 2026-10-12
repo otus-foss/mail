@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,13 +13,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import com.otus.designsystem.components.ReorderableColumn
 import com.otus.designsystem.components.SelectionSheet
 import com.otus.designsystem.elements.SelectionRow
 import com.otus.designsystem.elements.Symbol
-import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
@@ -55,8 +51,8 @@ internal fun InboxPillsSheet(
             Modifier.verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
-            Caption("Shown")
-            if (shown.isEmpty()) Caption("No pills yet. Add one below.", heading = false)
+            SheetCaption("Shown")
+            if (shown.isEmpty()) SheetCaption("No pills yet. Add one below.", heading = false)
             ReorderableColumn(
                 shown,
                 key = { it.pill.storageValue },
@@ -71,7 +67,7 @@ internal fun InboxPillsSheet(
                 })
             }
             choices.filter { it.pill !in draft }.groupBy { it.group }.forEach { (group, options) ->
-                Caption(group)
+                SheetCaption(group)
                 options.forEach { choice ->
                     SelectionRow(choice.title, selected = false, onClick = { draft = draft + choice.pill }, leading = {
                         Symbol(choice.icon)
@@ -103,19 +99,6 @@ private fun List<InboxPill>.reordered(
     val order = shown.map { it.pill }
     val rest = order.filterIndexed { index, _ -> index != from }
     return rest.take(to) + order[from] + rest.drop(to) + (this - order.toSet())
-}
-
-@Composable
-private fun Caption(
-    text: String,
-    heading: Boolean = true,
-) {
-    Text(
-        text,
-        if (heading) Modifier.semantics { heading() } else Modifier,
-        color = OtusColors.text2,
-        fontSize = SheetTokens.detailSize,
-    )
 }
 
 private val PillsSaver =
