@@ -89,8 +89,9 @@ internal class InboxRuleApplier(
         const val DEFAULT_LIMIT = 500
         const val MAX_BATCH = 100L
         val NEWEST_FIRST = listOf(JmapSort("receivedAt", isAscending = false))
-        val PROPERTIES = listOf("id", "from", "to", "cc", "subject", "attachments")
-        val BODY = mapOf("bodyProperties" to JsonArray(listOf(JsonPrimitive("type"), JsonPrimitive("name"))))
+        val PROPERTIES = listOf("id", "from", "to", "cc", "subject", "bodyStructure")
+        val BODY =
+            mapOf("bodyProperties" to JsonArray(listOf("type", "name", "subParts").map(::JsonPrimitive)))
     }
 }
 
@@ -102,26 +103,36 @@ internal data class RuleEmail(
     val to: List<EmailAddress>? = null,
     val cc: List<EmailAddress>? = null,
     val subject: String? = null,
-    val attachments: List<RuleAttachment>? = null,
+    val bodyStructure: RulePart? = null,
 )
 
+/** One MIME part of an Email's `bodyStructure`, with its children when it is a multipart type. */
 @Serializable
-internal data class RuleAttachment(
+internal data class RulePart(
     val type: String? = null,
     val name: String? = null,
+    val subParts: List<RulePart>? = null,
 )
 
 private val RuleEmailType: JmapType<RuleEmail> = JmapType("Email", JmapCapability.MAIL, RuleEmail.serializer())
 
-private fun RuleEmail.toRuleMessage() =
-    RuleMessage(
+/**
+ * The message as the server's rules see it. Sieve's `:mime :anychild` tests every MIME part,
+ * containers and text bodies included, so attachment details here come from every part too.
+ */
+internal fun RuleEmail.toRuleMessage(): RuleMessage {
+    val parts = bodyStructure?.withSubParts().orEmpty()
+    return RuleMessage(
         from = from.orEmpty().map { RuleAddress(it.name, it.email) },
         to = to.orEmpty().map { RuleAddress(it.name, it.email) },
         cc = cc.orEmpty().map { RuleAddress(it.name, it.email) },
         subject = subject,
-        attachmentTypes = attachments.orEmpty().mapNotNull { it.type },
-        attachmentNames = attachments.orEmpty().mapNotNull { it.name },
+        attachmentTypes = parts.mapNotNull { it.type },
+        attachmentNames = parts.mapNotNull { it.name },
     )
+}
+
+private fun RulePart.withSubParts(): List<RulePart> = listOf(this) + subParts.orEmpty().flatMap { it.withSubParts() }
 
 private fun inMailbox(id: String) = JsonObject(mapOf("inMailbox" to JsonPrimitive(id)))
 

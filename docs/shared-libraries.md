@@ -21,8 +21,9 @@ All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.
 
 ## Token setup
 
-The release registry is `https://maven.pkg.github.com/reazndev/otus-meta`. GitHub Packages needs
-a token for every download. Create a classic personal access token with the `read:packages` scope.
+The release registry is `https://maven.pkg.github.com/reazndev/otus-meta`. `settings.gradle.kts`
+declares it as exclusive content for the `com.otus` group, so Gradle never resolves a `com.otus`
+artifact from Maven Central or Google. GitHub Packages needs a token for every download. Create a classic personal access token with the `read:packages` scope.
 
 On a development machine, add credentials to `~/.gradle/gradle.properties`, never to this repository:
 

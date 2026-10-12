@@ -81,7 +81,7 @@ class JmapRuleRepository(
     ): ReadRules {
         val limit = (support.maxScriptBytes ?: MAX_SCRIPT_BYTES).coerceIn(1, MAX_SCRIPT_BYTES)
         val blob = account.connection.download(account.accountId, script.blobId, SIEVE_MEDIA_TYPE, limit)
-        return decodeRules(blob.bytes.decodeToString())
+        return decodeRules(blob.bytes.decodeToString(), support)
     }
 
     override suspend fun save(

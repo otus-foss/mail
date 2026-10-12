@@ -60,6 +60,7 @@ fun RuleProblem.message(): String =
     when (this) {
         RuleProblem.NoConditions -> "Add at least one condition."
         RuleProblem.EmptyValue -> "Fill in every condition."
+        RuleProblem.ControlCharacter -> "Remove the control characters from the name or conditions."
         RuleProblem.InvalidRegex -> "One regular expression isn't valid."
         RuleProblem.Unsupported -> "This server can't run one of these conditions or actions."
         RuleProblem.NoFolder -> "Choose a folder to move mail into."

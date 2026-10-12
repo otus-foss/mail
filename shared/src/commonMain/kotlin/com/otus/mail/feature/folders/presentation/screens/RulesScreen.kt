@@ -22,6 +22,7 @@ import com.otus.mail.feature.folders.domain.without
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RulesDialog
 import com.otus.mail.feature.folders.presentation.RulesState
+import com.otus.mail.feature.folders.presentation.components.ReplaceRulesDialog
 import com.otus.mail.feature.folders.presentation.components.RuleRow
 import com.otus.mail.feature.folders.presentation.components.RulesActions
 import com.otus.mail.feature.folders.presentation.components.RulesDialogs
@@ -64,6 +65,7 @@ fun RulesScreen(
             )
         RulesDialogs(open, state.account(open.accountId), actions) { dialog = it }
     }
+    state.replaceRequest?.let { ReplaceRulesDialog(it.replace, it.dismiss) }
 }
 
 @Composable

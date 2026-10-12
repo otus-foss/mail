@@ -157,6 +157,11 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
 A moved message leaves the list at once. If the server refuses, it comes back and the inbox shows
 a notice. See [Folders and rules](folders.md).
 
+`InboxFeedState` keeps each mark and move as a pending change until the server answers. A reload
+that started before the server saved a change can return the old state, so the feed applies the
+change to every load requested before the server confirmed it. A refused change is dropped at
+once, and later loads show the server's state.
+
 ## Open message and selection
 
 Tapping a row opens the message as a page over the list, with a back chevron, the subject, and a
@@ -189,6 +194,13 @@ The last line shows only what the page doesn't already say:
 
 A row with none of these shows the start of the message instead. The line keeps a label's height,
 so rows with and without labels line up.
+
+`toMessage` cleans sender names and addresses, subjects, bodies, and attachment names before any
+screen shows them. `displayText` and `displayLine` remove control characters and the
+bidirectional marks, embeddings, overrides, and isolates (U+061C, U+200E, U+200F, U+202A to
+U+202E, U+2066 to U+2069) that can make "lapyap" read as "paypal". Single-line fields also turn
+line breaks and whitespace runs into one space. The open message shows the sender's address after
+the name.
 
 ## Swipe actions
 

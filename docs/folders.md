@@ -128,6 +128,10 @@ Read later pill to the inbox row that shows every account's saved mail. See
 - Saving can also move matching mail already in the inbox. Sieve runs only on delivery, so the app
   checks the newest 500 inbox messages, matching headers and attachment details locally, and moves
   matches in batches within `maxObjectsInSet`. Rules that check the body cannot do this.
+- The attachment fields use `header :mime :anychild`, which tests every MIME part of a message,
+  not only the parts JMAP lists as `attachments`. "Attachment type is text/plain" therefore
+  matches almost every message. Sieve has no single test for "attachment parts only", so the
+  inbox check reads `bodyStructure` and compares every part the same way.
 
 ### Conditions
 
@@ -136,8 +140,8 @@ Read later pill to the inbox row that shows every account's saved mail. See
 | From, To, Cc, To or Cc | "is", "starts with", "ends with": the address. "contains" and regex: the whole header, display names included. |
 | Subject | The subject header. |
 | Body | Body text (`body :text`); contains, doesn't contain, or regex. |
-| Attachment type | Each MIME part's `type/subtype`, such as `text/calendar`. |
-| Attachment name | Each part's `filename` or `name` parameter, such as `*.ics`. |
+| Attachment type | Every MIME part's `type/subtype`, such as `text/calendar`, including text bodies and `multipart/*` containers. |
+| Attachment name | Every MIME part's `filename` or `name` parameter, such as `*.ics`. |
 
 Comparisons ignore case with the server's default comparator. "Starts with" and "ends with" use
 `:matches` with `*`, `?`, and `\` escaped. Blind copies leave no header, so "Bcc" is not offered;
@@ -163,8 +167,16 @@ if header :contains "from" "amazon" {
 - Mail is filed by folder id, so renaming or moving a folder keeps its rules working. If the
   folder is deleted, Stalwart files into the inbox, the fallback name, so no mail is lost.
 - On load the app rebuilds the Sieve from the JSON and compares. A difference means the script
-  was edited in another app: the rules page says so, and saving asks before replacing it.
-  Conditions written by a newer app version count as a difference too, so they are never dropped.
+  was edited in another app: the rules page says so, and every change asks before replacing it.
+  That covers saving and deleting in the editor, and reordering, pausing, deleting, turning rules
+  on or off, and stopping a kept script on the rules page. Conditions written by a newer app
+  version count as a difference too, so they are never dropped.
+- The app also checks the rules it reads back with the editor's checks (`ruleProblem`). A rule
+  without conditions, with an empty value or a control character, or with a condition the server
+  cannot run is left out, and the script counts as edited elsewhere. A kept script is dropped
+  when the server lacks `include`, or when it names the rules script itself or `vacation`. The
+  next save then writes valid Sieve. The writer also leaves control characters other than tab out
+  of every Sieve string and comment, and writes line breaks as spaces.
 - Saving uploads the script as a blob (RFC 8620, section 6.1), then creates or updates it with
   `SieveScript/set`. The request carries `ifInState` from the last load, so a change from another
   device is refused (`stateMismatch`); the app reloads and the user saves again.
@@ -176,7 +188,8 @@ A server runs one Sieve script at a time. Decisions taken for now:
 - The first rule turns the script on only when no other script runs. Otherwise the rules page
   shows what runs instead and asks before replacing it.
 - With the `include` extension, the user can keep the other script running after the rules
-  (`include :personal :optional "<name>"`), for mail no rule moved.
+  (`include :personal :optional "<name>"`), for mail no rule moved. Choosing **Replace** instead
+  stops it, along with any script the rules kept before.
 - A script named `vacation` is never kept that way. Stalwart builds its `VacationResponse` into
   that script and keeps it while the reply is off, so including it would send replies the user
   turned off. Turning rules on switches the vacation reply off, and the app says so first.
@@ -215,9 +228,11 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
   lifted, Trash left out).
 - Data: `JmapMailSourceTest` (a role loads that folder of every account under one name),
   `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
-  Sieve, escaping, read-back, edits made elsewhere), `JmapMessageMoverTest`.
-- Presentation: `RulesStateTest` (activation choices, vacation never kept, failed saves keep the
-  draft).
+  Sieve, escaping, read-back, edits made elsewhere), `RuleScriptValidationTest` (invalid rules
+  and kept scripts read back, control characters), `RuleEmailTest` (attachment fields cover every
+  MIME part), `JmapMessageMoverTest`.
+- Presentation: `RulesStateTest` (activation choices, vacation never kept, replacing drops a kept
+  script, every change asks before replacing edits made elsewhere, failed saves keep the draft).
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and
   folder pages, creating a folder, saving a rule as an active script, moving a message, and
   starting a rule from its sender. It also turns on Read later and checks that its mailbox follows
