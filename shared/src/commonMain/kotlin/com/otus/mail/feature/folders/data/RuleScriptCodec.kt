@@ -26,10 +26,16 @@ internal data class ReadRules(
     val changedElsewhere: Boolean,
 )
 
-/** The full script for [script], with the rules as one JSON comment line the app can read back. */
-internal fun encodeRules(script: RuleScript): String {
+/**
+ * The full script for [script], with the rules as one JSON comment line the app can read back.
+ * [extensions] are the server's Sieve extensions, which decide what the script declares.
+ */
+internal fun encodeRules(
+    script: RuleScript,
+    extensions: Set<String> = emptySet(),
+): String {
     val dto = ScriptDto(script.rules.map { it.toDto() }, script.keep)
-    return writeSieve(script, METADATA_PREFIX + json.encodeToString(ScriptDto.serializer(), dto))
+    return writeSieve(script, METADATA_PREFIX + json.encodeToString(ScriptDto.serializer(), dto), extensions)
 }
 
 /**
@@ -57,7 +63,10 @@ internal fun decodeRules(
     if (dto == null || rules == null || rules.any { it == null }) return ReadRules(RuleScript(emptyList()), true)
     val stored = RuleScript(rules.filterNotNull(), dto.keep)
     val script = stored.runnableBy(support)
-    return ReadRules(script, script != stored || normalized(encodeRules(stored)) != normalized(text))
+    return ReadRules(
+        script,
+        script != stored || normalized(encodeRules(stored, support.extensions)) != normalized(text),
+    )
 }
 
 /** Only rules the editor would accept, and a kept script only when it is another script the server can include. */

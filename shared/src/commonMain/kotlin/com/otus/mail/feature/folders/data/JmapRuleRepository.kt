@@ -88,7 +88,8 @@ class JmapRuleRepository(
         account: AccountRules,
         change: RuleChange,
     ): RuleOutcome {
-        val bytes = encodeRules(RuleScript(change.rules, change.keep)).encodeToByteArray()
+        val extensions = account.support?.extensions.orEmpty()
+        val bytes = encodeRules(RuleScript(change.rules, change.keep), extensions).encodeToByteArray()
         val limit = account.support?.maxScriptBytes
         return if (limit != null && bytes.size > limit) {
             RuleOutcome.Failed(RuleFailure.TooLarge)
