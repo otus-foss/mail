@@ -190,6 +190,13 @@ The last line shows only what the page doesn't already say:
 A row with none of these shows the start of the message instead. The line keeps a label's height,
 so rows with and without labels line up.
 
+`toMessage` cleans sender names and addresses, subjects, bodies, and attachment names before any
+screen shows them. `displayText` and `displayLine` remove control characters and the
+bidirectional marks, embeddings, overrides, and isolates (U+061C, U+200E, U+200F, U+202A to
+U+202E, U+2066 to U+2069) that can make "lapyap" read as "paypal". Single-line fields also turn
+line breaks and whitespace runs into one space. The open message shows the sender's address after
+the name.
+
 ## Swipe actions
 
 Each inbox and folder row is wrapped in Meta's `SwipeActions`. Appearance & behavior chooses what

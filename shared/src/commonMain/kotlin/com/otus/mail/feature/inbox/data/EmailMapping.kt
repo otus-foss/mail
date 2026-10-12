@@ -1,17 +1,23 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailAddress
+import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.displayLine
+import com.otus.mail.feature.inbox.domain.displayText
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-/** Maps one Email in [mailbox] of [account]. Ids are prefixed so accounts cannot collide. */
+/**
+ * Maps one Email in [mailbox] of [account]. Ids are prefixed so accounts cannot collide. Server
+ * text loses hidden characters here, so no screen can show a spoofed sender or subject.
+ */
 internal fun EmailObject.toMessage(
     accountId: String,
     account: String,
@@ -25,8 +31,8 @@ internal fun EmailObject.toMessage(
     return MailMessage(
         id = "$accountId/$id",
         sender = from?.firstOrNull().toSender(accountId),
-        subject = subject.orEmpty(),
-        body = text.ifBlank { preview },
+        subject = subject.orEmpty().displayLine(),
+        body = text.ifBlank { preview }.displayText(),
         received = ReceivedAt(local.date.toString(), "${local.hour.twoDigits()}:${local.minute.twoDigits()}"),
         location =
             MailLocation(
@@ -40,7 +46,7 @@ internal fun EmailObject.toMessage(
         attributes =
             MailAttributes(
                 unread = keywords[SEEN_KEYWORD] != true,
-                attachments = if (hasAttachment) attachments.orEmpty().map { it.name ?: "Attachment" } else emptyList(),
+                attachments = if (hasAttachment) attachments.orEmpty().map { it.displayName() } else emptyList(),
                 flagged = keywords[FLAGGED_KEYWORD] == true,
             ),
         emailId = id,
@@ -51,8 +57,12 @@ internal fun EmailObject.toMessage(
     )
 }
 
-/** A blank display name shows the address instead. */
-private fun EmailAddress?.toSender(accountId: String) =
-    MailSender(this?.name?.ifBlank { null } ?: this?.email.orEmpty(), this?.email.orEmpty(), accountId)
+/** A blank display name shows the address instead. Both lose hidden characters. */
+private fun EmailAddress?.toSender(accountId: String): MailSender {
+    val address = this?.email.orEmpty().displayLine()
+    return MailSender(this?.name?.displayLine()?.ifBlank { null } ?: address, address, accountId)
+}
+
+private fun EmailBodyPart.displayName(): String = name.orEmpty().displayLine().ifBlank { "Attachment" }
 
 private fun Int.twoDigits() = toString().padStart(2, '0')
