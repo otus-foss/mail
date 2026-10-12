@@ -1,11 +1,10 @@
 name: quality
 
-# Local hooks run these checks before each commit and push. CI rechecks only pull requests
-# that change more than Markdown, to save runner minutes.
+# Paused: CI starts only when run by hand from GitHub Actions; the local hooks still gate every
+# commit and push. To resume, trigger on pull requests that change more than Markdown again, with
+# paths-ignore "**/*.md".
 on:
-  pull_request:
-    paths-ignore:
-      - "**/*.md"
+  workflow_dispatch:
 
 permissions:
   contents: read
