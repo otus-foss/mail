@@ -67,9 +67,12 @@ fun InboxScreen(
     val selected = remember(messages, selectedIds) { messages.filter { it.id in selectedIds } }
     val clearSelection = { selectedIds = emptyList() }
     val gestures =
-        rowGestures(messageActions, selected, onToggle = { selectedIds = selectedIds.toggled(it.id) }) {
-            openId = it.id
-        }
+        rowGestures(
+            messageActions,
+            selected,
+            onToggle = { selectedIds = selectedIds.toggled(it.id) },
+            onSelect = { selectedIds = it.toList() },
+        ) { openId = it.id }
     val page = shownPage(state, context)
     val closeSearch = searchCloser(state)
     BackHandler(selected.isNotEmpty(), clearSelection)
@@ -251,14 +254,15 @@ private fun inboxBar(
         }
     }
 
-/** Row taps and long presses: opening marks a message read as the saved behavior asks. */
+/** Row taps, long presses, and drags: opening marks a message read as the saved behavior asks. */
 private fun rowGestures(
     actions: MessageActions?,
     selected: List<MailMessage>,
     onToggle: (MailMessage) -> Unit,
+    onSelect: (Set<String>) -> Unit,
     onOpen: (MailMessage) -> Unit,
 ): RowGestures =
-    RowGestures(actions, selected.map { it.id }.toSet(), onToggle) { message ->
+    RowGestures(actions, selected.map { it.id }.toSet(), onToggle, onSelect) { message ->
         actions?.opened(message)
         onOpen(message)
     }

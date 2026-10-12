@@ -64,7 +64,11 @@ This page replaced the Material `AlertDialog` preview and its `MessageActionRow`
 ### Selection
 
 Long-pressing a row selects it. While any row is selected, tapping a row adds or removes it
-instead of opening it, and long-pressing toggles it too. A selected row is tinted `accentDark` and
+instead of opening it, and long-pressing toggles it too. Dragging up or down after a long press,
+without lifting the finger, gives every row passed the pressed row's new state: drag from a newly
+selected row to select a run of messages, or from a deselected row to clear them. Dragging back
+restores the rows the finger leaves, and holding near the list's top or bottom edge scrolls it.
+A selected row is tinted `accentDark` and
 shows a check in place of the sender's avatar. System Back clears the selection. The selection
 survives configuration changes, and a message that leaves the list leaves the selection.
 
