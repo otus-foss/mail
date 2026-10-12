@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -41,9 +42,12 @@ class JmapMessageCleanerTest {
         emailId = id,
     )
 
-    private fun cleaner(reply: (String) -> String): JmapMessageCleaner {
+    private fun cleaner(
+        session: String = smallBatches,
+        reply: (String) -> String,
+    ): JmapMessageCleaner {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageCleaner(JmapConnections(JmapClient(stalwartLike(smallBatches, reply)), store), store)
+        return JmapMessageCleaner(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store)
     }
 
     /** Destroys or updates every id a `/set` call names, except [refused] destroys. */
@@ -162,6 +166,15 @@ class JmapMessageCleanerTest {
                 }.empty("ada", "t")
             assertEquals(Deletion(emptySet(), complete = false), deletion)
             assertEquals(Deletion(emptySet(), complete = false), cleaner { error("unused") }.empty("gone", "t"))
+        }
+
+    @Test
+    fun aLoginWithoutMailCleansNothing() =
+        runTest {
+            val contactsOnly = cleaner(CONTACTS_ONLY_SESSION) { error("Nothing is sent") }
+            assertFalse(contactsOnly.notSpam(message("m1", folder = "j"), inboxId = "a", keywords = true))
+            assertEquals(emptySet(), contactsOnly.delete(listOf(message("m1"))))
+            assertEquals(Deletion(emptySet(), complete = false), contactsOnly.empty("ada", "t"))
         }
 
     /** The page of [ids] at [position], two at a time; "m2" is also in another folder. */

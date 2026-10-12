@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.mail.pointer
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageMover
 import kotlinx.serialization.json.JsonNull
@@ -24,8 +25,8 @@ class JmapMessageMover(
         val left = leaving - folderId - ""
         val patch =
             buildJsonObject {
-                left.forEach { put("mailboxIds/$it", JsonNull) }
-                put("mailboxIds/$folderId", JsonPrimitive(true))
+                left.forEach { put("mailboxIds/${pointer(it)}", JsonNull) }
+                put("mailboxIds/${pointer(folderId)}", JsonPrimitive(true))
             }
         return left.isNotEmpty() && updateEmail(connections, logins, message, patch)
     }
@@ -35,7 +36,8 @@ class JmapMessageMover(
         folderId: String,
         inFolder: Boolean,
     ): Boolean {
-        val patch = buildJsonObject { put("mailboxIds/$folderId", if (inFolder) JsonPrimitive(true) else JsonNull) }
+        val patch =
+            buildJsonObject { put("mailboxIds/${pointer(folderId)}", if (inFolder) JsonPrimitive(true) else JsonNull) }
         return updateEmail(connections, logins, message, patch)
     }
 }

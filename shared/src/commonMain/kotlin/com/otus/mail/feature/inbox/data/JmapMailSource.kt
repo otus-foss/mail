@@ -6,7 +6,6 @@ import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
-import com.otus.jmap.JmapSort
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
@@ -15,6 +14,8 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
@@ -32,7 +33,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Loads all or named mailboxes of each login, or chosen folders, newest first. Logins load in
@@ -156,7 +156,6 @@ class JmapMailSource(
         const val DEFAULT_LIMIT = 50
 
         const val MAX_BODY_BYTES = 20_000
-        val NEWEST_FIRST = listOf(JmapSort("receivedAt", isAscending = false))
 
         /** Text bodies up to [MAX_BODY_BYTES] per part (RFC 8621, section 4.2). */
         val BODY_ARGUMENTS =
@@ -167,8 +166,6 @@ class JmapMailSource(
             )
     }
 }
-
-private fun inMailbox(id: String) = buildJsonObject { put("inMailbox", JsonPrimitive(id)) }
 
 /** Whether this scope reads mail of the login with [loginId]. */
 private fun MailScope.reads(loginId: String): Boolean =

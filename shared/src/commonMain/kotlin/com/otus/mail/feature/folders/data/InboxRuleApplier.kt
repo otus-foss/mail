@@ -5,13 +5,16 @@ import com.otus.jmap.GetResult
 import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapIds
-import com.otus.jmap.JmapSort
 import com.otus.jmap.JmapType
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.QueryResult
 import com.otus.jmap.SetMethod
 import com.otus.mail.core.mail.EmailAddress
+import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.core.mail.pointer
 import com.otus.mail.feature.folders.domain.ApplyOutcome
 import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.InboxMatches
@@ -22,7 +25,6 @@ import com.otus.mail.feature.folders.domain.matches
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
@@ -43,19 +45,19 @@ internal class InboxRuleApplier(
     /** The newest inbox messages [rule] matches; none when there is no inbox or the rule files into it. */
     suspend fun matches(rule: MailRule): InboxMatches {
         val mailboxes =
-            account.connection.call(GetMethod(MailboxType, account.accountId, properties = listOf("id", "role"))).list
+            account.connection.call(GetMethod(MailboxType, account.id, properties = listOf("id", "role"))).list
         val inbox = mailboxes.firstOrNull { it.role?.lowercase() == INBOX_ROLE }
         if (inbox == null || inbox.id == rule.folderId) return InboxMatches("", emptyList(), 0, more = false)
         lateinit var query: JmapCall<QueryResult>
         lateinit var get: JmapCall<GetResult<RuleEmail>>
         val response =
             account.connection.send {
-                query = call(QueryMethod(RuleEmailType, account.accountId, inMailbox(inbox.id), NEWEST_FIRST, limit))
+                query = call(QueryMethod(RuleEmailType, account.id, inMailbox(inbox.id), NEWEST_FIRST, limit))
                 get =
                     call(
                         GetMethod(
                             RuleEmailType,
-                            account.accountId,
+                            account.id,
                             JmapIds.Result(query.resultOf("/ids")),
                             PROPERTIES,
                             BODY,
@@ -85,7 +87,7 @@ internal class InboxRuleApplier(
             }
         val batch = (account.session.maxObjectsInSet ?: MAX_BATCH).coerceIn(1, MAX_BATCH).toInt()
         return matches.ids.chunked(batch).sumOf { chunk ->
-            val method = SetMethod(RuleEmailType, account.accountId, update = chunk.associateWith { patch })
+            val method = SetMethod(RuleEmailType, account.id, update = chunk.associateWith { patch })
             account.connection
                 .call(method)
                 .updated.size
@@ -95,7 +97,6 @@ internal class InboxRuleApplier(
     private companion object {
         const val DEFAULT_LIMIT = 500
         const val MAX_BATCH = 100L
-        val NEWEST_FIRST = listOf(JmapSort("receivedAt", isAscending = false))
         val PROPERTIES = listOf("id", "from", "to", "cc", "subject", "bodyStructure")
         val BODY =
             mapOf("bodyProperties" to JsonArray(listOf("type", "name", "subParts").map(::JsonPrimitive)))
@@ -140,8 +141,3 @@ internal fun RuleEmail.toRuleMessage(): RuleMessage {
 }
 
 private fun RulePart.withSubParts(): List<RulePart> = listOf(this) + subParts.orEmpty().flatMap { it.withSubParts() }
-
-private fun inMailbox(id: String) = JsonObject(mapOf("inMailbox" to JsonPrimitive(id)))
-
-/** A JSON Pointer token (RFC 6901), as patch paths use (RFC 8620, section 5.3). */
-private fun pointer(id: String): String = id.replace("~", "~0").replace("/", "~1")

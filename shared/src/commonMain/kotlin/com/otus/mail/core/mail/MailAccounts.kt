@@ -1,4 +1,4 @@
-package com.otus.mail.feature.folders.data
+package com.otus.mail.core.mail
 
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnection
@@ -8,8 +8,6 @@ import com.otus.jmap.JmapSession
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
-import com.otus.mail.feature.folders.domain.FolderFailure
-import com.otus.mail.feature.folders.domain.FolderStorageException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -19,20 +17,24 @@ internal class MailAccount(
     val login: JmapLogin,
     val connection: JmapConnection,
     val session: JmapSession,
-    val accountId: String,
+    val id: String,
 )
 
-/** Resolves saved logins to their mail accounts. Folders and rules live in the mail account. */
+/**
+ * Resolves saved logins to their mail accounts. When the saved logins cannot be read, it throws
+ * what [storageFailure] makes of the [LoginStoreException], so a feature can report its own error.
+ */
 internal class MailAccounts(
     private val connections: JmapConnections,
     private val logins: LoginStore,
+    private val storageFailure: (LoginStoreException) -> Exception = { it },
 ) {
     suspend fun logins(): List<JmapLogin> =
         withContext(Dispatchers.IO) {
             try {
                 logins.logins()
             } catch (error: LoginStoreException) {
-                throw FolderStorageException(error)
+                throw storageFailure(error)
             }
         }
 
@@ -40,20 +42,10 @@ internal class MailAccounts(
     suspend fun open(login: JmapLogin): MailAccount {
         val connection = connections.connection(login)
         val session = connection.session()
-        val accountId = session.accountFor(JmapCapability.MAIL) ?: throw JmapException.Unsupported(JmapCapability.MAIL)
-        return MailAccount(login, connection, session, accountId)
+        val id = session.accountFor(JmapCapability.MAIL) ?: throw JmapException.Unsupported(JmapCapability.MAIL)
+        return MailAccount(login, connection, session, id)
     }
 
     /** The account for [loginId], or null once the login was removed. */
     suspend fun open(loginId: String): MailAccount? = logins().firstOrNull { it.id == loginId }?.let { open(it) }
 }
-
-internal fun JmapException.toFolderFailure(): FolderFailure =
-    when (this) {
-        is JmapException.Unauthorized -> FolderFailure.SignInRejected
-        is JmapException.Forbidden -> FolderFailure.NotPermitted
-        is JmapException.CredentialsUnavailable -> FolderFailure.CredentialsUnavailable
-        is JmapException.Unsupported -> FolderFailure.NoMail
-        is JmapException.Unreachable -> FolderFailure.Unreachable
-        else -> FolderFailure.ServerProblem
-    }

@@ -8,6 +8,8 @@ import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.testing.CONTACTS_ONLY_SESSION
+import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -28,9 +30,12 @@ class JmapMessageMoverTest {
             emailId = "m1",
         )
 
-    private fun mover(reply: (String) -> String): JmapMessageMover {
+    private fun mover(
+        session: String = STALWART_SESSION,
+        reply: (String) -> String,
+    ): JmapMessageMover {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageMover(JmapConnections(JmapClient(stalwartLike(api = reply)), store), store)
+        return JmapMessageMover(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store)
     }
 
     @Test
@@ -71,6 +76,20 @@ class JmapMessageMoverTest {
         }
 
     @Test
+    fun folderIdsAreEscapedInPatchPaths() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val moved =
+                mover {
+                    sent += it
+                    """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
+                }.move(message, "r/1", leaving = setOf("a~b"))
+            val patch = "\"update\":{\"m1\":{\"mailboxIds/a~0b\":null,\"mailboxIds/r~11\":true}}"
+            assertTrue(moved)
+            assertTrue(patch in sent.single(), sent.single())
+        }
+
+    @Test
     fun refusalsAndPointlessMovesReportFailure() =
         runTest {
             val refused =
@@ -84,5 +103,13 @@ class JmapMessageMoverTest {
             assertFalse(idle.move(message.copy(emailId = ""), "r", setOf("a")), "Supplied messages have no server id")
             val gone = message.copy(location = message.location.copy(accountId = "gone"))
             assertEquals(false, idle.move(gone, "r", setOf("a")))
+        }
+
+    @Test
+    fun aLoginWithoutMailMovesNothing() =
+        runTest {
+            val contactsOnly = mover(CONTACTS_ONLY_SESSION) { error("Nothing is sent") }
+            assertFalse(contactsOnly.move(message, "r", setOf("a")))
+            assertFalse(contactsOnly.setInFolder(message, "r", inFolder = true))
         }
 }

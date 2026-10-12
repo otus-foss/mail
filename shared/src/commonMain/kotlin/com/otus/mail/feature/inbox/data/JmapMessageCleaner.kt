@@ -13,6 +13,9 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EMAIL_FOLDERS_PROPERTIES
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.core.mail.pointer
 import com.otus.mail.feature.inbox.domain.Deletion
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageCleaner
@@ -41,8 +44,8 @@ class JmapMessageCleaner(
         if (shown.isEmpty() || shown == inboxId) return false
         val patch =
             buildJsonObject {
-                put("mailboxIds/$shown", JsonNull)
-                put("mailboxIds/$inboxId", JsonPrimitive(true))
+                put("mailboxIds/${pointer(shown)}", JsonNull)
+                put("mailboxIds/${pointer(inboxId)}", JsonPrimitive(true))
                 if (keywords) {
                     put("keywords/$JUNK_KEYWORD", JsonNull)
                     put("keywords/$NOT_JUNK_KEYWORD", JsonPrimitive(true))
@@ -95,7 +98,7 @@ class JmapMessageCleaner(
                     update =
                         elsewhere.associate {
                             it.emailId to
-                                buildJsonObject { put("mailboxIds/${it.folderId}", JsonNull) }
+                                buildJsonObject { put("mailboxIds/${pointer(it.folderId)}", JsonNull) }
                         },
                     destroy = onlyHere.map { it.emailId },
                 ),
@@ -118,7 +121,7 @@ class JmapMessageCleaner(
                             QueryMethod(
                                 EmailType,
                                 id,
-                                buildJsonObject { put("inMailbox", JsonPrimitive(folderId)) },
+                                inMailbox(folderId),
                                 limit = page,
                                 extra = mapOf("position" to JsonPrimitive(found.size)),
                             ),

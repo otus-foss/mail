@@ -4,13 +4,14 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
-import com.otus.jmap.JmapSort
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EMAIL_FOLDERS_PROPERTIES
 import com.otus.mail.core.mail.EmailFoldersType
+import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.SenderHistory
 import kotlinx.serialization.json.JsonPrimitive
@@ -60,6 +61,5 @@ class JmapSenderHistory(
 
     private companion object {
         const val DEFAULT_LIMIT = 50
-        val NEWEST_FIRST = listOf(JmapSort("receivedAt", isAscending = false))
     }
 }
