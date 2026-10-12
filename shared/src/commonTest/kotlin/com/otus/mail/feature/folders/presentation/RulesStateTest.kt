@@ -15,6 +15,7 @@ import com.otus.mail.feature.folders.domain.RuleRepository
 import com.otus.mail.feature.folders.domain.RuleSupport
 import com.otus.mail.feature.folders.domain.moved
 import com.otus.mail.feature.folders.domain.paused
+import com.otus.mail.feature.folders.domain.withRule
 import com.otus.mail.feature.folders.domain.without
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -222,5 +223,44 @@ class RulesStateTest {
             runCurrent()
             assertNotNull(editor.draft)
             assertEquals(RuleFailure.ChangedElsewhere.message(), rules.notice)
+        }
+
+    @Test
+    fun anAddedRuleIsSavedAndARefusalReachesTheCaller() =
+        runTest {
+            val repository = FakeRules(account(installed = true))
+            val (rules, _) = loaded(repository)
+            val failures = mutableListOf<String>()
+            val rule = MailRule("q", "Move mail from amazon", listOf(condition), "r")
+            rules.submit("ada", onFailed = { failures += it }) { it.withRule(rule) }
+            runCurrent()
+            assertEquals(listOf(rule), repository.changes.single().rules)
+            assertNull(repository.changes.single().run)
+            assertTrue(failures.isEmpty())
+
+            repository.outcome = RuleOutcome.Failed(RuleFailure.TooLarge)
+            rules.submit("ada", onFailed = { failures += it }) { it.withRule(rule.copy(id = "q2")) }
+            runCurrent()
+            assertEquals(listOf(RuleFailure.TooLarge.message()), failures)
+            assertEquals(failures.single(), rules.notice)
+
+            rules.submit("grace", onFailed = { failures += it }) { it.withRule(rule) }
+            assertEquals(RuleFailure.NotFound.message(), failures.last())
+        }
+
+    @Test
+    fun aChangeFromOutsideTheRulesPageLeavesRulesEditedElsewhereAlone() =
+        runTest {
+            val repository = FakeRules(account(installed = true).copy(changedElsewhere = true))
+            val (rules, _) = loaded(repository)
+            val failures = mutableListOf<String>()
+            rules.submit(
+                "ada",
+                onFailed = { failures += it },
+            ) { it.withRule(MailRule("q", "", listOf(condition), "r")) }
+            runCurrent()
+            assertTrue(repository.changes.isEmpty())
+            assertNull(rules.replaceRequest)
+            assertEquals(1, failures.size)
         }
 }
