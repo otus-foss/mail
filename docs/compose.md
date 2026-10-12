@@ -55,10 +55,11 @@ closes the page. A draft the user has not changed closes at once.
 
 `ComposeState` saves the draft two seconds after the last change, and again when the page
 closes. A draft nobody changed is never saved. Each save replaces the previous copy in Drafts and
-remembers the new Email id. Saves run one at a time, so a draft is never stored twice, and a
-discard waits for a save in progress before deleting the copy. A failed save shows a notice under
-the header until a later save succeeds. The notice says why: no Drafts folder, no permission, or
-an unreachable server.
+remembers the new Email id. Saves run one at a time, so each save knows the copy it replaces. A change,
+closing the page, or a discard during a save lets that save finish and keep its new id, so the
+next save replaces that copy and a discard deletes it. A failed save keeps the previous copy and
+its id, so the next save replaces it, and shows a notice under the header until a later save
+succeeds. The notice says why: no Drafts folder, no permission, or an unreachable server.
 
 ## Limits
 
@@ -69,11 +70,14 @@ an unreachable server.
 - Opening a saved draft from the Drafts folder is not built.
 - Recipient lines are plain text. There is no address completion from contacts yet.
 - A failed discard is not reported, because the page has already closed.
+- When a save stores the new copy but deleting the old one fails, the old one stays in Drafts as
+  a duplicate.
 
 ## Validation
 
 `DraftStartTest` and `RecipientTextTest` cover starting drafts and the recipient text format.
-`ComposeStateTest` covers delayed saves, saving on close, discard, failure notices, and the
-sending identity. `ComposeScreenTest` types a draft, checks the disabled Send names its
-recipients, saves on Back, chooses an identity, and confirms a discard. Its screenshot is written
-to `androidApp/build/reports/compose/`.
+`ComposeStateTest` covers delayed saves, saving on close, discard, failure notices, keeping the
+stored copy after a failed save, a change or discard during a save, and the sending identity.
+`ComposeScreenTest` types a draft, checks the disabled Send names its recipients, saves on Back,
+chooses an identity, and confirms a discard. Its screenshot is written to
+`androidApp/build/reports/compose/`.

@@ -24,12 +24,13 @@ stay in its thread.
 
 Drafts (`JmapDraftRepository`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:
 
-- Saving finds the mailbox with role `drafts` through `Mailbox/query`, then sends one `Email/set`.
+- Saving finds the mailbox with role `drafts` through `Mailbox/query`, then sends an `Email/set`.
   It creates the Email with keywords `$draft` and `$seen`, the addresses, the subject,
   `inReplyTo` and `references` when set, and a single `text/plain` body (`bodyValues` and
-  `textBody`). Email content cannot change, so the same call destroys the previous copy. If the
-  server rejects the new Email but still destroys the old one, the draft stays only in the app
-  until the next save.
+  `textBody`). Email content cannot change, so a second `Email/set` destroys the previous copy.
+  Each operation in one call succeeds or fails alone (RFC 8620, section 5.3), so that destroy
+  waits until the server has created the new Email; a rejected save keeps the old copy. When the
+  destroy fails, the save still succeeds and the old copy stays in Drafts as a duplicate.
 - Discarding destroys the Email. A copy that is already gone counts as discarded.
 - Failures come back as `DraftException`: no drafts mailbox, forbidden, unreachable, or another
   server problem.
