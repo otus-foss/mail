@@ -32,7 +32,9 @@ class InboxFeedState(
     private val avatarOptions: AvatarOptions = MailAvatarOptions,
     private val defaultScope: MailScope = MailScope.Inbox,
 ) {
-    private var mailScope = defaultScope
+    /** What the list loads: the page's own messages, or what a search or folder pill shows in their place. */
+    var mailScope by mutableStateOf(defaultScope)
+        private set
 
     var messages by mutableStateOf(emptyList<MailMessage>())
         private set

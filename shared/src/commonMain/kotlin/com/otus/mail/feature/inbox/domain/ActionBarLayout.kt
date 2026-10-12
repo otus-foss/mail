@@ -51,9 +51,12 @@ enum class ActionBarPlace(
     Everywhere("everywhere", ActionTarget.entries.toSet()),
     ;
 
-    /** What the bar here can offer. */
+    /** The plain actions the bar here can offer. */
     val actions: List<MailAction>
-        get() = MailAction.entries.filter { it.target in targets }
+        get() = MailAction.entries.filter(::offers)
+
+    /** Whether the bar here can hold [button]. */
+    fun offers(button: BarButton): Boolean = button.target in targets
 
     /** Places with their own bar in Adaptive mode. */
     val adaptive: Boolean
@@ -80,17 +83,17 @@ sealed interface BarSlot {
     ) : BarSlot
 }
 
-/** Up to [MAX_SECONDARY] distinct [secondary] actions, in slot order, beside one [primary] that is none of them. */
+/** Up to [MAX_SECONDARY] distinct [secondary] buttons, in slot order, beside one [primary] that is none of them. */
 data class ActionBarLayout(
-    val secondary: List<MailAction>,
-    val primary: MailAction,
+    val secondary: List<BarButton>,
+    val primary: BarButton,
 ) {
     init {
         require(secondary.size <= MAX_SECONDARY && secondary.distinct() == secondary && primary !in secondary)
     }
 
     /** The primary, then the secondary actions in slot order, as settings list them. */
-    val buttons: List<MailAction>
+    val buttons: List<BarButton>
         get() = listOf(primary) + secondary
 
     /**
@@ -100,7 +103,7 @@ data class ActionBarLayout(
      */
     fun withSlot(
         slot: Int,
-        action: MailAction?,
+        action: BarButton?,
     ): ActionBarLayout {
         val old = secondary.getOrNull(slot)
         return when {
@@ -138,7 +141,7 @@ data class ActionBarLayout(
      * default, or to the first other action the place offers.
      */
     fun without(
-        action: MailAction,
+        action: BarButton,
         place: ActionBarPlace,
     ): ActionBarLayout {
         val kept = secondary - action
@@ -150,25 +153,28 @@ data class ActionBarLayout(
         return ActionBarLayout(kept - primary, primary)
     }
 
-    /** The action in [slot], or null for an empty secondary slot. */
-    fun actionAt(slot: BarSlot): MailAction? =
+    /** The button in [slot], or null for an empty secondary slot. */
+    fun actionAt(slot: BarSlot): BarButton? =
         when (slot) {
             BarSlot.Primary -> primary
             is BarSlot.Secondary -> secondary.getOrNull(slot.index)
         }
 
     /** Where [action] sits in this bar, if anywhere. */
-    fun slotOf(action: MailAction): BarSlot? =
+    fun slotOf(action: BarButton): BarSlot? =
         when (action) {
             primary -> BarSlot.Primary
             in secondary -> BarSlot.Secondary(secondary.indexOf(action))
             else -> null
         }
 
-    /** Puts [action] in [slot]; an action already elsewhere in the bar trades places with the slot's old one. */
+    /**
+     * Puts [action] in [slot], such as a Move to button for another folder; an action already
+     * elsewhere in the bar trades places with the slot's old one.
+     */
     fun with(
         slot: BarSlot,
-        action: MailAction,
+        action: BarButton,
     ): ActionBarLayout =
         when (slot) {
             BarSlot.Primary -> copy(secondary = secondary.replace(action, primary), primary = action)
@@ -188,7 +194,7 @@ data class ActionBarLayout(
             val default = place.defaultLayout
             val parts = value?.split("|")?.takeIf { it.size == 2 } ?: return default
             val names = parts[0].split(",").filter { it.isNotEmpty() } + parts[1]
-            val actions = names.mapNotNull(MailAction::fromStorageValue).filter { it in place.actions }
+            val actions = names.mapNotNull(BarButton::fromStorageValue).filter(place::offers)
             val valid = actions.size == names.size && actions.size <= MAX_SECONDARY + 1 && actions.distinct() == actions
             return if (valid) ActionBarLayout(actions.dropLast(1), actions.last()) else default
         }

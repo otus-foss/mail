@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
 import com.otus.mail.feature.folders.presentation.screens.RulesScreen
@@ -111,7 +112,7 @@ private fun SettingsPageContent(
         }
 
         MailPage.ActionBarSettings -> {
-            ActionBarSettingsScreen(states.behavior, onBack = back)
+            ActionBarSettingsScreen(states.behavior, rememberFolderPaths(states), onBack = back)
         }
 
         MailPage.Folders -> {
@@ -250,6 +251,13 @@ private fun rememberMessageActions(
     remember(states, feed, navigation) {
         states.messageActions(feed) { accountId -> navigation.go(MailPage.RuleEditor(accountId, null)) }
     }
+
+/** The path of each of every account's own folders, for Move to buttons. */
+@Composable
+private fun rememberFolderPaths(states: MailStates): List<List<String>> =
+    remember(
+        states.folders.accounts,
+    ) { sharedFolders(states.folders.accounts).flatMap { it.flatten() }.map { it.path } }
 
 /** The folder pills the loaded folders can fill, again whenever they change. */
 @Composable

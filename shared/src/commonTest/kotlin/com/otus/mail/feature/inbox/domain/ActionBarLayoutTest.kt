@@ -5,6 +5,7 @@ import com.otus.mail.feature.inbox.domain.ActionBarPlace.Everywhere
 import com.otus.mail.feature.inbox.domain.ActionBarPlace.Inbox
 import com.otus.mail.feature.inbox.domain.ActionBarPlace.Message
 import com.otus.mail.feature.inbox.domain.ActionBarPlace.Selection
+import com.otus.mail.feature.inbox.domain.BarButton.MoveTo
 import com.otus.mail.feature.inbox.domain.MailAction.Archive
 import com.otus.mail.feature.inbox.domain.MailAction.Attach
 import com.otus.mail.feature.inbox.domain.MailAction.Discard
@@ -31,6 +32,8 @@ class ActionBarLayoutTest {
     ) = ActionBarLayout(secondary.toList(), primary)
 
     private val message = layout(Archive, Trash, Flag)
+    private val receipts = MoveTo(listOf("Receipts"))
+    private val travel = MoveTo(listOf("Travel"))
 
     @Test
     fun aSlotTakesANewActionOrEmptiesAndLaterSlotsMoveUp() {
@@ -116,6 +119,40 @@ class ActionBarLayoutTest {
         val saved = layout(RuleForSender).encode()
         assertEquals(layout(RuleForSender), ActionBarLayout.decode(saved, Message))
         assertEquals(Selection.defaultLayout, ActionBarLayout.decode(saved, Selection))
+    }
+
+    @Test
+    fun barsSavedBeforeMoveToButtonsReadTheSame() {
+        assertEquals(
+            layout(Archive, Trash, Move, primary = Reply),
+            ActionBarLayout.decode("archive,trash,move|reply", Message),
+        )
+        assertEquals(layout(Read, Flag, Trash), ActionBarLayout.decode("read,flag,trash|move", Selection))
+        assertEquals(layout(primary = NewMail), ActionBarLayout.decode("|new_mail", Inbox))
+    }
+
+    @Test
+    fun moveToButtonsReadBackAsSavedWhereMessagesCanMove() {
+        val bar = ActionBarLayout(listOf(Archive, receipts, MoveTo(listOf("Clients", "Acme"))), travel)
+        assertEquals("archive,move_to:Receipts,move_to:Clients/Acme|move_to:Travel", bar.encode())
+        listOf(Message, Selection, Everywhere).forEach { assertEquals(bar, ActionBarLayout.decode(bar.encode(), it)) }
+        assertEquals(Inbox.defaultLayout, ActionBarLayout.decode(bar.encode(), Inbox))
+        assertEquals(Compose.defaultLayout, ActionBarLayout.decode(bar.encode(), Compose))
+        // The same folder twice, even in another case, is a repeated button.
+        assertEquals(Message.defaultLayout, ActionBarLayout.decode("move_to:Receipts|move_to:receipts", Message))
+    }
+
+    @Test
+    fun aMoveToButtonSwitchesFolderInItsSlot() {
+        val bar = ActionBarLayout(listOf(Archive, receipts), travel)
+        val clients = MoveTo(listOf("Clients"))
+        assertEquals(ActionBarLayout(listOf(Archive, clients), travel), bar.with(BarSlot.Secondary(1), clients))
+        assertEquals(ActionBarLayout(listOf(Archive, receipts), clients), bar.with(BarSlot.Primary, clients))
+        // A folder another button already moves to trades places with it, ignoring case.
+        assertEquals(
+            ActionBarLayout(listOf(Archive, travel), receipts),
+            bar.with(BarSlot.Secondary(1), MoveTo(listOf("travel"))),
+        )
     }
 
     @Test

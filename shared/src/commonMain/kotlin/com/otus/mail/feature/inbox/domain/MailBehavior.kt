@@ -44,12 +44,12 @@ data class MailBehavior(
         to: ActionBarPlace,
     ): ActionBarLayout {
         val source = savedLayout(from)
-        val offered = barChoices(to)
-        val primary = source.primary.takeIf { it in offered } ?: savedLayout(to).primary
-        return ActionBarLayout(source.secondary.filter { it in offered && it != primary }, primary)
+        val offered = { button: BarButton -> to.offers(button) && offers(button) }
+        val primary = source.primary.takeIf(offered) ?: savedLayout(to).primary
+        return ActionBarLayout(source.secondary.filter { offered(it) && it != primary }, primary)
     }
 
-    private fun offers(action: MailAction): Boolean = readLater || action != MailAction.ReadLater
+    private fun offers(button: BarButton): Boolean = readLater || button != MailAction.ReadLater
 
     /**
      * Turning Read later on adds its pill to the end of the row. Turning it off removes the pill,

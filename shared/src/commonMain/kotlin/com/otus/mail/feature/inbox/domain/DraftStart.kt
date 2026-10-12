@@ -6,6 +6,7 @@ val ComposeRequest.accountId: String?
         when (this) {
             is ComposeRequest.New -> accountId
             is ComposeRequest.Reply -> original.accountId
+            is ComposeRequest.FollowUp -> original.accountId
             is ComposeRequest.Forward -> original.accountId
         }
 
@@ -26,6 +27,10 @@ fun ComposeRequest.startDraft(
             original.reply(accountId, all, ownAddresses.map(String::lowercase).toSet())
         }
 
+        is ComposeRequest.FollowUp -> {
+            original.reply(accountId, all = true, ownAddresses.map(String::lowercase).toSet(), fromSelf = true)
+        }
+
         is ComposeRequest.Forward -> {
             Draft(
                 accountId,
@@ -37,26 +42,31 @@ fun ComposeRequest.startDraft(
 
 /**
  * The identity to send from: for a reply or forward, the one the original went to, so the
- * answer comes from the address the sender wrote to; otherwise the first.
+ * answer comes from the address the sender wrote to; for a follow-up, the one that sent the
+ * original; otherwise the first.
  */
 fun ComposeRequest.preferredIdentity(identities: List<MailSender>): MailSender? {
-    val original =
+    val senders =
         when (this) {
-            is ComposeRequest.New -> null
-            is ComposeRequest.Reply -> original
-            is ComposeRequest.Forward -> original
+            is ComposeRequest.New -> emptyList()
+            is ComposeRequest.Reply -> original.to + original.cc
+            is ComposeRequest.FollowUp -> listOf(original.from)
+            is ComposeRequest.Forward -> original.to + original.cc
         }
-    val received = original?.let { (it.to + it.cc).map { sender -> sender.address.lowercase() } }.orEmpty()
-    return identities.firstOrNull { it.address.lowercase() in received } ?: identities.firstOrNull()
+    val addresses = senders.map { it.address.lowercase() }
+    return identities.firstOrNull { it.address.lowercase() in addresses } ?: identities.firstOrNull()
 }
 
+/**
+ * A reply that goes to [from], or [fromSelf] to the recipients of a message the account sent. A
+ * follow-up is always [fromSelf], even when it was sent from an address the account doesn't list.
+ */
 private fun OriginalMessage.reply(
     accountId: String,
     all: Boolean,
     own: Set<String>,
+    fromSelf: Boolean = from.address.lowercase() in own,
 ): Draft {
-    // Answering a message the account sent goes back to its recipients, not to the account.
-    val fromSelf = from.address.lowercase() in own
     val primary = if (fromSelf) to else listOf(from)
     val to = if (all && !fromSelf) primary + to else primary
     val kept =

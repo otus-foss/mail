@@ -10,6 +10,9 @@ val MailboxType: JmapType<MailboxObject> = JmapType("Mailbox", JmapCapability.MA
 /** Email objects (RFC 8621, section 4). */
 val EmailType: JmapType<EmailObject> = JmapType("Email", JmapCapability.MAIL, EmailObject.serializer())
 
+/** Only the mailboxes of each Email, for callers that need nothing else. */
+val EmailFoldersType: JmapType<EmailFolders> = JmapType("Email", JmapCapability.MAIL, EmailFolders.serializer())
+
 /** Identities an account may send as (RFC 8621, section 6). */
 val IdentityType: JmapType<IdentityObject> =
     JmapType("Identity", JmapCapability.SUBMISSION, IdentityObject.serializer())
@@ -33,6 +36,9 @@ val EMAIL_PROPERTIES =
         "textBody",
         "bodyValues",
     )
+
+/** The Email properties [EmailFolders] reads. */
+val EMAIL_FOLDERS_PROPERTIES = listOf("id", "mailboxIds")
 
 /** Mailbox properties folders request (RFC 8621, section 2). */
 val MAILBOX_PROPERTIES =
@@ -88,6 +94,13 @@ data class EmailObject(
     val attachments: List<EmailBodyPart>? = null,
     val textBody: List<EmailBodyPart>? = null,
     val bodyValues: Map<String, EmailBodyValue> = emptyMap(),
+)
+
+/** The mailboxes an Email is in, without its other properties. */
+@Serializable
+data class EmailFolders(
+    val id: String,
+    val mailboxIds: Map<String, Boolean> = emptyMap(),
 )
 
 @Serializable

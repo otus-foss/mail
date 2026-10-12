@@ -85,9 +85,9 @@ offer it:
 
 | Target | Actions | Offered on |
 | --- | --- | --- |
-| Messages | Read, Flag, Read later, Archive, Trash, Spam, Move | Open message, selected messages |
-| One message | Rule for sender, Reply, Reply all, Forward | Open message |
-| List | Search, Filters, Mark all read | Message list |
+| Messages | Read, Flag, Read later, Archive, Trash, Spam, Not spam, Restore, Delete forever, Move, Suggested move, Move to | Open message, selected messages |
+| One message | Rule for sender, Reply, Reply all, Forward, Follow up | Open message |
+| List | Search, Filters, Mark all read, Empty spam or trash | Message list |
 | Draft | Send, Attach, Discard | Writing |
 | Anywhere | New mail | Message list, open message |
 
@@ -107,11 +107,37 @@ none of them can take it.
   sheet offers the folders every selected message can move to, whether the rows were selected by
   long press, tap, or drag.
 - **Rule for sender** needs exactly one message, so the selection bar never offers it.
+- **Not spam**, **Restore**, **Delete forever**, **Empty spam or trash**, and **Follow up** work
+  only in some folders; see [folder bars](#folder-bars).
+
+### Move to a folder
+
+A **Move to** button moves the messages to one folder the user picked, without the Move to
+sheet. A bar can hold several, one per folder, such as Receipts, Travel, and Clients. The button
+saves the folder's path, the folder names from the top level down, and finds the folder in each
+message's own account by that path, ignoring case, as shared folder pages do. One button therefore
+works in every account that has the folder.
+
+- As a secondary button it shows the folder symbol. Its tooltip and accessibility label read
+  "Move to Travel".
+- As the main button it shows the folder's name and symbol.
+- Tapping it moves the message, or each selected message, through the same move as the Move to
+  sheet: the folder rights decide, the row leaves at once, and it comes back with a notice if the
+  server refuses. A message whose account has no folder at that path, or that is already there, is
+  skipped. When none of the messages can move there, the button is disabled.
+- System folders and folders under Trash and Junk have no shared path, so a Move to button never
+  targets them.
+
+**Suggested move** moves the messages to the user's own folder where most of the sender's recent
+mail is, the same suggestion the Move to sheet shows. Its label is that folder's name, and it is
+disabled while there is no suggestion or the messages come from more than one sender. Mail asks
+the server for the suggestion only while the bar shows Suggested move, so the **More actions**
+menu does not offer it otherwise.
 
 Actions follow the same folder rights as before; see
 [folder pages and message actions](inbox.md#folder-pages-and-message-actions). An action the
 current messages cannot take stays in its slot, disabled with a `text3` icon, so the buttons never
-move. A swipe can be any action except Spam, Move, and Rule for sender.
+move. A swipe can be any action except Spam, Move, Rule for sender, and the folder actions.
 
 ### Settings
 
@@ -126,13 +152,30 @@ with **Per screen** and **Same everywhere**. **Per screen** shows a card for **M
 screen** card instead. Each card is a Meta `PreviewCard`: a title, where the bar shows, a sketch of
 the page, and the saved bar. Tapping the card or its bar opens the bar's editor.
 
-The editor (`ActionBarEditSheet`) is a `SheetFrame` titled with the place. It shows the bar, then
-its buttons with the main button first.
+The editor (`ActionBarEditSheet`) is a `SheetFrame` titled with the place. It shows the bar in a
+`PreviewCard`, with an **Add button** after the last secondary button while the bar has room.
+Tapping a button, or **Add button**, opens the picker for that slot (`ActionPickerSheet`), titled
+**Main button** or **Button 1** to **Button 3**.
 
-- Dragging a button's handle reorders the buttons. The one on top is the main button.
-- Every button except the main one has a remove button. Later buttons move up.
-- **Not in the bar** lists the place's other actions, each with an add button that puts it last.
-  The add buttons stay disabled while the bar holds three buttons besides the main one.
+- A search field narrows the actions by name. The actions sit in groups by what they act on:
+  **Messages**, **One message**, **Message list**, **Writing**, and **Anywhere**. The picker shows
+  the headings only when more than one group is left.
+- A check marks the slot's current action. An action already in another slot says so, such as
+  "Swaps with Button 2", and picking it trades the two places. An empty slot lists only actions the
+  bar lacks.
+- Picking an action applies at once and keeps the picker open. **Remove from bar** empties a
+  filled secondary slot and closes the picker; later buttons move up. The main button cannot be
+  removed, only replaced.
+- Where messages can move, the **Messages** group ends with **Move to folder…**. It opens a
+  `ChoiceSheet` of the user's folders across all accounts, and the picked folder becomes a Move to
+  button in the slot. Each slot can hold a Move to button for a different folder. An empty slot
+  lists only folders without a button; a filled slot lists all of them, and a folder in another
+  slot says it will swap.
+- While the slot holds a Move to button, that row is **Move to** with the folder in Meta's
+  `ValuePicker`, with the folder symbol and the folder's path as the value. Screen readers hear,
+  for example, "Travel, change". Tapping it opens the same folder sheet, so the folder changes
+  without removing the button. When no account has the folder any more, the row says "Folder not
+  found. Pick another."
 - Each change is saved at once.
 
 The editor's ⋯ button opens **Copy to** (`ActionBarCopySheet`), which lists the other places to
@@ -144,9 +187,13 @@ nothing.
 ### Model and storage
 
 `ActionBarPlace` names the places: `Inbox`, `Selection`, `Message`, `Compose`, and `Everywhere`,
-the bar **Same everywhere** uses. `ActionBarLayout` holds up to three distinct buttons in slot
-order and one main action that is none of them. `buttons` lists the main action, then the
-buttons. `withSlot`, `without`, and `moved` return changed copies.
+the bar **Same everywhere** uses. A slot holds a `BarButton`: a plain `MailAction`, or a
+`BarButton.MoveTo` with a folder path. Two Move to buttons whose paths differ only in case are
+the same button. `ActionBarLayout` holds up to three distinct buttons in slot order and one main
+button that is none of them. `buttons` lists the main button, then the others. A `BarSlot` names
+a place in the bar, `Primary` or `Secondary(index)`. `actionAt(slot)` and `slotOf(button)` look
+up either way, and `with(slot, button)` puts a button in a slot, trading places with a button
+already elsewhere in the bar. `withSlot` and `without` also return changed copies.
 `MailBehavior.barLayout(place)` is the bar a screen shows in the current mode,
 `savedLayout(place)` is the one settings edit, and `copiedBar(from, to)` is the bar **Copy to**
 gives a place.
@@ -159,10 +206,16 @@ value:
 
 ```text
 archive,trash,move|reply
+archive,move_to:Receipts,move_to:Clients/Acme|move_to:Travel
 ```
 
+A Move to button is `move_to:` and its path, joined with `/`. A `%`, `/`, `,`, or `|` in a folder
+name is saved as `%` and its hex code, such as `%2F`. Bars saved before Move to buttons read the
+same as before.
+
 A missing or malformed value, an unknown action, a repeated action, or an action the place cannot
-offer reads as the place's default. Turning Read later off removes it from every bar. If it was
+offer reads as the place's default. The message list and the compose page cannot offer Move to,
+and **Copy to** leaves it out for them. Turning Read later off removes it from every bar. If it was
 the main button, the place's default main action takes over.
 
 The mode is saved as `adaptive` or `fixed` under `action_bar_mode` on Android and
@@ -185,13 +238,58 @@ on iOS, and is off when missing.
 
 Flag left the open message's bar for Reply; it is in **More actions**.
 
+### Folder bars
+
+Spam, Trash, and Sent pages show their own bars. The page's folders are found by role
+(`FolderRole`: `junk`, `trash`, or `sent`), so a combined folder, one account's folder, and a
+folder pill all count. The open message uses the role of the folder it is shown in.
+
+| Folder | Message list | Selected messages | Open message |
+| --- | --- | --- | --- |
+| Spam | Search, Filters, Empty spam; main New mail | Delete forever; main Not spam | Delete forever; main Not spam |
+| Trash | Search, Filters, Empty trash; main New mail | Delete forever; main Restore | Delete forever; main Restore |
+| Sent | Unchanged | Unchanged | Forward; main Follow up |
+
+These are defaults. `MailBehavior.barLayout(place, role)` shows a folder's bar only while the
+place's saved bar is still the place's default and the mode is **Per screen**. A bar the user
+changed, and the **Same everywhere** bar, look the same in every folder. Settings has no
+per-folder bars: the slot picker lists the folder actions in their groups like any other, and
+outside their folders they stay in their slots, disabled. This keeps one saved bar per place.
+Drafts has no bar of its own, because reopening a draft is not built yet.
+
+- **Not spam** moves a message from Spam to its account's inbox. Where the Spam folder allows
+  marks (`maySetKeywords`), the same `Email/set` patch sets `$notjunk` and clears `$junk`.
+- **Restore** moves a message from Trash to its account's inbox. The server keeps no record of
+  where a message was before it was trashed, so it cannot go back there.
+- **Delete forever** deletes the messages from the Spam or Trash folder they are shown in, after a
+  confirm dialog. A message only in that folder is destroyed; one also in another folder only
+  leaves this one, like an IMAP expunge. It needs `mayRemoveItems` on the folder. `mayDelete` is
+  the right to delete the folder itself, so it does not apply.
+- **Empty spam** and **Empty trash** delete every message in the list's Spam or Trash folders,
+  after a confirm dialog that gives the folders' message count. They need `mayRemoveItems`.
+- **Follow up** opens a reply to a message the account sent, to its original To and Cc, from the
+  identity that sent it (`ComposeRequest.FollowUp`). Sending stays disabled.
+
+Each change takes the messages off the list at once. Messages the server keeps come back, and the
+list shows a notice. Deleting runs `Email/set` calls of at most `maxObjectsInSet` objects, capped
+at 256. Emptying first pages through the folder with `Email/query` and `Email/get` (ids and
+`mailboxIds` only), then deletes, so the pages do not shift while it reads them.
+
 ## Deferred
 
 - The reply, reply all, forward, share, and today symbols the spec lists. Meta does not bundle
-  them yet, so Reply, Reply all, and Forward show the send symbol.
+  them yet, so Reply, Reply all, Forward, and Follow up show the send symbol. Not spam and
+  Restore show the inbox symbol, and Delete forever and emptying the delete symbol, until Meta
+  bundles `report_off`, `restore_from_trash`, and `delete_forever`.
+- **Block sender** in Spam. The rule editor only files mail into folders, so blocking would need a
+  new rule action; **Rule for sender** remains the way to sort a sender's mail.
+- Undo for deleting and emptying.
 - Calendar's use of the bar, such as a `BarToken.Date` context.
 - Hiding the bar while the page scrolls.
 - A split main button.
+- "Move to" in the main Move to button's accessibility label. Meta's `BarAction` has one label,
+  which the shell both shows and reads, so the main button reads only the folder's name. It needs
+  a separate description in Meta.
 
 ## Open decisions
 
@@ -207,7 +305,15 @@ checks that the main button's icon stays put through the transition, that a disa
 every slot in place, that the shell is one button naming its context, and that large text grows
 the shell but not the group. `ActionBarLayoutTest` and `MailBehaviorTest` cover the layout model,
 each place's default, its storage format, mode resolution, and Read later's removal.
+`BarButtonTest` and `ActionBarLayoutTest` cover Move to's storage, the
+migration of older bars, and switching folders. `MoveToOffersTest` covers moving across accounts,
+the disabled button, and Suggested move, and `MoveTargetPathTest` the folder paths move targets
+carry. `MoveToButtonsTest` picks Move to buttons with different folders for two slots, switches
+one slot's folder through its `ValuePicker`, and moves the open message with one. `FolderBarsTest`
+covers each folder's default bars and when they apply, `JmapMessageCleanerTest` the Not spam
+patch, batching, and emptying, `FolderCleaningTest` the rights checks and the rollback of kept
+messages, and `FolderActionsTest` Not spam in Spam and the Delete forever confirm in Trash.
 `InboxActionBarTest` covers the message list's bar and the **Same everywhere** mode across
 screens, `ComposeActionsTest` the draft requests and the reply context, and
-`ActionBarSettingsTest` the settings page and switching modes. Run
+`ActionBarSettingsTest` the settings page, the slot picker, swapping, removing, and switching modes. Run
 `./gradlew checkAll` for results; this guide does not record a passing run.

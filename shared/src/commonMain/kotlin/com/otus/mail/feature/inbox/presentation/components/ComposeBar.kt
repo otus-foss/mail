@@ -26,7 +26,7 @@ internal fun ComposeBar(
     MailActionBar(
         layout,
         offer = { action ->
-            OfferedAction(action.buttonLabel, action.symbol, leaves = true, run = onDiscard).takeIf {
+            OfferedAction(action.buttonLabel(), action.symbol, leaves = true, run = onDiscard).takeIf {
                 action ==
                     MailAction.Discard
             }

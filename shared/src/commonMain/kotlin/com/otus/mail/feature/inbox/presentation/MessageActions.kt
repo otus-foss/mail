@@ -30,7 +30,8 @@ class ReadLaterChange(
 /**
  * A folder a message can move to; [label] is its full path and [name] its own name. [shortcut]
  * marks one of the account's system folders. [own] marks the user's own folders, which the move
- * sheet lists as a tree, nested [depth] levels below other own folders.
+ * sheet lists as a tree, nested [depth] levels below other own folders. [path] is an own folder's
+ * shared folder path, the names a Move to button saves; null for other folders.
  */
 data class MoveTarget(
     val folderId: String,
@@ -39,6 +40,7 @@ data class MoveTarget(
     val name: String = label,
     val depth: Int = 0,
     val own: Boolean = false,
+    val path: List<String>? = null,
 )
 
 /**
@@ -58,6 +60,8 @@ class MessageActions(
     val readLater: (MailMessage) -> ReadLaterChange?,
     /** The saved swipes and bars, and whether opening a message marks it read. */
     val behavior: () -> MailBehavior,
+    /** Not spam, Restore, Delete forever, and emptying; null where the page has no folders. */
+    val cleanup: FolderCleanup? = null,
 ) {
     /** The folder [shortcut] files the message into; null when there is none or it is already there. */
     fun shortcutTarget(
