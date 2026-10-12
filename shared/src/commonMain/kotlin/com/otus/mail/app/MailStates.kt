@@ -1,6 +1,8 @@
 package com.otus.mail.app
 
 import com.otus.accounts.presentation.AccountsState
+import com.otus.avatar.AvatarOptions
+import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderSenders
@@ -26,7 +28,7 @@ internal class MailStates(
     private val scope: CoroutineScope,
     val behavior: MailBehaviorState = MailBehaviorState(),
 ) {
-    val feed = InboxFeedState(services.mail, scope, services.avatars)
+    val feed = InboxFeedState(services.mail, scope, services.avatars, ::avatarOptions)
     val folders =
         FoldersState(
             services.folders,
@@ -37,7 +39,7 @@ internal class MailStates(
 
     /** Rules keep only addresses, so senders take their names from the inbox's loaded mail. */
     val folderSenders =
-        FolderSenders(services.avatars) { address ->
+        FolderSenders(services.avatars, ::avatarOptions) { address ->
             feed.messages
                 .firstOrNull { it.sender.address.equals(address, ignoreCase = true) }
                 ?.sender
@@ -51,9 +53,18 @@ internal class MailStates(
             rules.refresh()
         }
 
-    /** A folder page loads only its own mail; avatars share the inbox's cache. */
-    fun folderFeed(mailScope: MailScope): InboxFeedState =
-        InboxFeedState(services.mail, scope, services.avatars, defaultScope = mailScope)
+    /**
+     * A folder page loads only its own mail, in [pageScope], so leaving the page stops its loads and
+     * avatar lookups. Avatars share the inbox's cache.
+     */
+    fun folderFeed(
+        mailScope: MailScope,
+        pageScope: CoroutineScope,
+    ): InboxFeedState =
+        InboxFeedState(services.mail, pageScope, services.avatars, ::avatarOptions, defaultScope = mailScope)
+
+    /** Avatars load from outside the user's servers only while Website icons is on. */
+    private fun avatarOptions(): AvatarOptions = mailAvatarOptions(behavior.behavior.websiteIcons)
 
     /** Every account's folder names in folder order, once each, for search to choose from. */
     fun mailboxNames(): List<String> =

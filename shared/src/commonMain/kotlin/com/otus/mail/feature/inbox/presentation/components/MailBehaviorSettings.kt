@@ -24,8 +24,8 @@ import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
- * Inbox, swipe, and reading choices for the appearance page. [folderPills] are the folder pills
- * the accounts' folders can fill, and [onSidebar] opens the sidebar's page. [onOpenActionBar]
+ * Inbox, swipe, reading, and privacy choices for the appearance page. [folderPills] are the folder
+ * pills the accounts' folders can fill, and [onSidebar] opens the sidebar's page. [onOpenActionBar]
  * opens the action bar's page. Each swipe opens a choice of actions; the rows name the physical
  * direction for the current layout direction.
  */
@@ -83,6 +83,7 @@ fun MailBehaviorSettings(
             description = "Adds a Read later folder, pill, and button",
         )
     }
+    PrivacySettings(state)
     if (choosingPills) {
         InboxPillsSheet(
             behavior.pills,
@@ -92,6 +93,19 @@ fun MailBehaviorSettings(
         )
     }
     choosing?.let { side -> SwipeChoice(state, side, side.title(rtl)) { choosing = null } }
+}
+
+/** Whether avatars may load images from servers other than the user's own. */
+@Composable
+private fun PrivacySettings(state: MailBehaviorState) {
+    SettingsSection("Privacy") {
+        SettingToggleRow(
+            "Website icons",
+            checked = state.behavior.websiteIcons,
+            onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
+            description = "Logos from sender websites and DuckDuckGo, which see your IP address",
+        )
+    }
 }
 
 @Composable
