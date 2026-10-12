@@ -35,7 +35,7 @@ class SettingsPagesTest {
     @Test
     fun dateFormatShowsTheCurrentChoiceAndChangesItInAPopup() {
         openSettings()
-        compose.onNodeWithText("Dates, swipes, and reading").assertIsDisplayed()
+        compose.onNodeWithText("Dates, sidebar, swipes, and reading").assertIsDisplayed()
         compose.onNodeWithText("Appearance & behavior").performClick()
         compose.onNodeWithText("Date format").assertIsDisplayed()
         compose.onNodeWithText("YYYY-MM-DD").assertDoesNotExist()
@@ -139,7 +139,7 @@ class SettingsPagesTest {
 
     private fun openSettings() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Settings") and isSelectable()).performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Email accounts").assertIsDisplayed()
     }
 }

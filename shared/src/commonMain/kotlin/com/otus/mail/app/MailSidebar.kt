@@ -1,98 +1,139 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import com.otus.designsystem.components.Sidebar
 import com.otus.designsystem.components.SidebarState
-import com.otus.designsystem.elements.SidebarEntry
+import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.SidebarHeading
+import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_inbox
-import com.otus.designsystem.resources.symbol_settings
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.CombinedFolder
-import com.otus.mail.feature.folders.domain.FolderNode
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
-import com.otus.mail.feature.folders.domain.combinedFolders
-import com.otus.mail.feature.folders.domain.folderTree
-import com.otus.mail.feature.folders.domain.readLaterTree
-import com.otus.mail.feature.folders.presentation.folderIcon
-import com.otus.mail.feature.folders.presentation.roleIcon
+import com.otus.designsystem.resources.symbol_create_new_folder
+import com.otus.mail.feature.folders.domain.sharedFolders
+import com.otus.mail.feature.inbox.domain.SidebarCount
+import com.otus.mail.feature.inbox.domain.SidebarSection
+import com.otus.mail.feature.inbox.presentation.label
+import com.otus.mail.feature.inbox.presentation.title
 
 /**
- * The unified Inbox, then each account's folders, then Settings at the bottom. When [combined],
- * Drafts, Sent, Archive, Spam, and Trash follow the unified Inbox once for all accounts.
+ * The account rail beside the built-in mailboxes and the user's shared folders, in the order and
+ * layout the user chose. Choosing an account in the rail, or All, changes only the counts:
+ * [accountId] is the chosen account, or null for every account.
  */
 @Composable
 internal fun MailSidebar(
     state: SidebarState,
     current: MailPage,
-    accounts: List<AccountFolders>,
-    combined: Boolean,
+    states: MailStates,
+    accountId: String?,
+    onSelectAccount: (String?) -> Unit,
     onSelect: (MailPage) -> Unit,
 ) {
+    val accounts = states.accounts.accounts
+    val folders = states.folders.accounts
+    val layout = states.behavior.behavior.sidebar
+    val account = accounts.firstOrNull { it.id == accountId }
+    val counter = SidebarCounter(account?.id, layout.counts)
+    var collapsedSections by rememberSaveable(stateSaver = SectionsSaver) { mutableStateOf(emptySet<SidebarSection>()) }
+    var collapsedFolders by rememberSaveable(stateSaver = KeysSaver) { mutableStateOf(emptySet<List<String>>()) }
+    val mailboxes = remember(folders) { sidebarMailboxes(folders) }
+    val shared = remember(folders) { sharedFolders(folders) }
+    val inboxes = folders.mapNotNull { it.inbox }
     Sidebar(
         state,
-        title = "Otus",
-        footer = {
-            SidebarEntry("Settings", Res.drawable.symbol_settings, current == MailPage.Settings, {
-                onSelect(MailPage.Settings)
-            })
-        },
+        title = account?.name ?: "All accounts",
+        subtitle =
+            account?.username
+                ?: allAccountsSummary(accounts.size, SidebarCounter(null, layout.counts).of(inboxes), layout.counts),
+        rail = { MailSidebarRail(accounts, inboxes, layout.counts, account?.id, onSelectAccount, onSelect) },
     ) {
-        SidebarEntry("Inbox", Res.drawable.symbol_inbox, current == MailPage.Inbox, { onSelect(MailPage.Inbox) })
-        // With one account, its inbox is the unified Inbox above, and its Read later folder follows
-        // with its subfolders nested under it. The inbox's subfolders move up a level.
-        val single = accounts.singleOrNull()
-        val lifted = single?.readLaterTree().orEmpty()
-        val liftedIds = lifted.map { it.folder.id }.toSet()
-        lifted.forEach { node -> FolderEntry(node, current, onSelect) }
-        if (combined) {
-            combinedFolders(accounts).forEach { (folder, unread) -> CombinedEntry(folder, unread, current, onSelect) }
-        }
-        accounts.forEach { account ->
-            val nodes =
-                account
-                    .folderTree {
-                        (single != null && it.role == INBOX_ROLE) || (combined && it.role in CombinedFolder.roles)
-                    }.filter { it.folder.id !in liftedIds }
-            if (nodes.isNotEmpty()) SidebarHeading(account.accountName)
-            nodes.forEach { node -> FolderEntry(node, current, onSelect) }
+        layout.shown.forEach { section ->
+            val open = section !in collapsedSections
+            SidebarHeading(
+                section.title,
+                expanded = open,
+                onExpandedChange = {
+                    collapsedSections =
+                        if (it) collapsedSections - section else collapsedSections + section
+                },
+                action =
+                    if (section == SidebarSection.Folders) {
+                        { NewFolderButton { onSelect(MailPage.Folders) } }
+                    } else {
+                        null
+                    },
+            )
+            if (open) {
+                when (section) {
+                    SidebarSection.Mailboxes -> {
+                        SidebarMailboxList(mailboxes, layout.mailboxes, current, counter, onSelect)
+                    }
+
+                    SidebarSection.Folders -> {
+                        SidebarFolderList(
+                            shared,
+                            collapsedFolders,
+                            onCollapse = { key, collapse ->
+                                collapsedFolders =
+                                    if (collapse) collapsedFolders + setOf(key) else collapsedFolders - setOf(key)
+                            },
+                            current,
+                            counter,
+                            onSelect,
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
+/** Folders are made per account, so this opens the folder settings, where each account has its own. */
 @Composable
-private fun FolderEntry(
-    node: FolderNode,
-    current: MailPage,
-    onSelect: (MailPage) -> Unit,
-) {
-    val page = MailPage.Folder(node.folder.accountId, node.folder.id)
-    SidebarEntry(
-        node.folder.name,
-        folderIcon(node),
-        selected = current == page,
-        onClick = { onSelect(page) },
-        depth = node.depth,
-        badge = unreadBadge(node.folder.unread),
-    )
+private fun NewFolderButton(onClick: () -> Unit) {
+    IconButton("New folder", onClick, outlined = false) { Symbol(Res.drawable.symbol_create_new_folder) }
 }
 
-@Composable
-private fun CombinedEntry(
-    folder: CombinedFolder,
-    unread: Long,
-    current: MailPage,
-    onSelect: (MailPage) -> Unit,
-) {
-    val page = MailPage.Combined(folder)
-    SidebarEntry(
-        folder.title,
-        roleIcon(folder.role),
-        selected = current == page,
-        onClick = { onSelect(page) },
-        badge = unreadBadge(unread),
-    )
-}
+/** The account count, then the inboxes' [count] in the user's chosen [counts], when there is one. */
+private fun allAccountsSummary(
+    accounts: Int,
+    count: String?,
+    counts: SidebarCount,
+): String =
+    when (accounts) {
+        0 -> "No accounts yet"
+        1 -> "1 account"
+        else -> "$accounts accounts"
+    } + count?.let { " · $it ${counts.label.lowercase()}" }.orEmpty()
 
-private fun unreadBadge(unread: Long): String? = unread.takeIf { it > 0 }?.toString()
+private val SectionsSaver =
+    listSaver<Set<SidebarSection>, String>(
+        save = { sections -> sections.map { it.storageValue } },
+        restore = { saved ->
+            saved
+                .mapNotNull { value ->
+                    SidebarSection.entries.firstOrNull { it.storageValue == value }
+                }.toSet()
+        },
+    )
+
+// Each key is saved as its length, then its levels, so no character in a folder name can split it.
+private val KeysSaver =
+    listSaver<Set<List<String>>, String>(
+        save = { keys -> keys.flatMap { listOf(it.size.toString()) + it } },
+        restore = { saved ->
+            buildSet {
+                var index = 0
+                while (index < saved.size) {
+                    val size = saved[index].toInt()
+                    add(saved.subList(index + 1, index + 1 + size).toList())
+                    index += size + 1
+                }
+            }
+        },
+    )

@@ -124,7 +124,7 @@ Mail's calendar uses `MonthYearPicker`.
 | [MailPages](../shared/src/commonMain/kotlin/com/otus/mail/app/MailPages.kt) | `MailPageContent`, `FolderPage`, `rememberMessageActions`, `rememberFolderPills` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailServices](../shared/src/commonMain/kotlin/com/otus/mail/app/MailServices.kt) | `MailServices` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailSettings](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSettings.kt) | `MailSettings` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
-| [MailSidebar](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSidebar.kt) | `MailSidebar`, `FolderEntry` | `otus-mail` | Mail destinations and folder tree; drawer and rows are shared Sidebar/SidebarEntry. |
+| [MailSidebar](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSidebar.kt) | `MailSidebar`, `MailSidebarRail`, `SidebarMailboxList`, `SidebarFolderList` | `otus-mail` | Mail accounts, mailboxes, and shared folders; the drawer, rail, and rows are shared Sidebar components. |
 | [MailStates](../shared/src/commonMain/kotlin/com/otus/mail/app/MailStates.kt) | `MailStates` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [ConditionEditor](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/ConditionEditor.kt) | `ConditionEditor` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |
 | [FolderActions](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderActions.kt) | `FolderActions` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |

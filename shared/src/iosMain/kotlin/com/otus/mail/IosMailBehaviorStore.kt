@@ -4,6 +4,7 @@ import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.MessageSwipe
+import com.otus.mail.feature.inbox.domain.SidebarLayout
 import platform.Foundation.NSUserDefaults
 
 class IosMailBehaviorStore(
@@ -18,7 +19,7 @@ class IosMailBehaviorStore(
             markReadOnOpen = bool(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
             readLater = readLater,
             pills = preferences.stringForKey(PILLS)?.let(InboxPill::decode) ?: InboxPill.defaults(readLater),
-            combinedFolders = bool(COMBINED_FOLDERS, defaults.combinedFolders),
+            sidebar = preferences.stringForKey(SIDEBAR)?.let(SidebarLayout::decode) ?: defaults.sidebar,
         )
     }
 
@@ -28,7 +29,7 @@ class IosMailBehaviorStore(
         preferences.setBool(behavior.markReadOnOpen, forKey = MARK_READ_ON_OPEN)
         preferences.setBool(behavior.readLater, forKey = READ_LATER)
         preferences.setObject(InboxPill.encode(behavior.pills), forKey = PILLS)
-        preferences.setBool(behavior.combinedFolders, forKey = COMBINED_FOLDERS)
+        preferences.setObject(SidebarLayout.encode(behavior.sidebar), forKey = SIDEBAR)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -43,6 +44,6 @@ class IosMailBehaviorStore(
         const val MARK_READ_ON_OPEN = "otus.mail.mark_read_on_open"
         const val READ_LATER = "otus.mail.read_later"
         const val PILLS = "otus.mail.inbox_pills"
-        const val COMBINED_FOLDERS = "otus.mail.combined_folders"
+        const val SIDEBAR = "otus.mail.sidebar_layout"
     }
 }

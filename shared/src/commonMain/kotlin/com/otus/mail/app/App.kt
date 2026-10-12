@@ -28,6 +28,8 @@ fun App(
     val dateFormatter = rememberDateFormatter(dateFormatState)
     var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf<MailPage>(MailPage.Inbox) }
     val sidebar = rememberSidebarState()
+    // The account whose counts the sidebar shows; null shows every account's.
+    var sidebarAccount by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) }
     // Rules decide whether an open message offers to start one.
@@ -50,8 +52,9 @@ fun App(
             MailSidebar(
                 sidebar,
                 current = page.root,
-                accounts = states.folders.accounts,
-                combined = behaviorState.behavior.combinedFolders,
+                states,
+                sidebarAccount,
+                onSelectAccount = { sidebarAccount = it },
                 onSelect = {
                     page = it
                     scope.launch { sidebar.close() }

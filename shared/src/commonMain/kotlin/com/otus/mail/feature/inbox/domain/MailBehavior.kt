@@ -21,7 +21,7 @@ enum class MessageSwipe(
  * How the inbox responds to the user. Swipes are named by layout direction: [startToEnd] is a
  * swipe right in left-to-right languages. [readLater] adds a Read later folder to each account, an
  * action that saves mail there, and its pill. [pills] are the inbox row's pills, in order.
- * [combinedFolders] lists system folders once across accounts.
+ * [sidebar] arranges the sidebar.
  */
 data class MailBehavior(
     val startToEnd: MessageSwipe = MessageSwipe.Read,
@@ -29,7 +29,7 @@ data class MailBehavior(
     val markReadOnOpen: Boolean = true,
     val readLater: Boolean = false,
     val pills: List<InboxPill> = InboxPill.defaults(readLater),
-    val combinedFolders: Boolean = false,
+    val sidebar: SidebarLayout = SidebarLayout(),
 ) {
     /** What a swipe can be set to; Read later only while it is on. */
     val swipeChoices: List<MessageSwipe>
