@@ -109,8 +109,12 @@ class InboxPillsTest {
     fun aFolderChosenInSettingsJoinsTheRow() {
         start()
         openPillsSheet()
-        waitFor("Receipts / Amazon")
+        // Nested folders list by name under their parent.
+        waitFor("Amazon")
+        compose.onNode(hasText("Receipts / Amazon") and isToggleable()).assertDoesNotExist()
         compose.onNode(hasText("Receipts") and isToggleable()).performClick()
+        // Without its parent in the list, a folder names the parent again.
+        compose.onNode(hasText("Receipts / Amazon") and isToggleable()).assertExists()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("3 shown").assertIsDisplayed()
         assertEquals(

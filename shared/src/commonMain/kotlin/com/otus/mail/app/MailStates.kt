@@ -3,6 +3,7 @@ package com.otus.mail.app
 import com.otus.accounts.presentation.AccountsState
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
+import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
 import com.otus.mail.feature.folders.presentation.RulesState
@@ -36,6 +37,15 @@ internal class MailStates(
             loadAccounts = { services.readLater.accounts { behavior.behavior.readLater } },
         )
     val rules = RulesState(services.rules, scope)
+
+    /** Rules keep only addresses, so senders take their names from the inbox's loaded mail. */
+    val folderSenders =
+        FolderSenders(services.avatars) { address ->
+            feed.messages
+                .firstOrNull { it.sender.address.equals(address, ignoreCase = true) }
+                ?.sender
+                ?.name
+        }
     val ruleEditor = RuleEditorState(rules)
     val accounts =
         AccountsState(services.accounts, scope) {

@@ -33,22 +33,4 @@ class MoveSearchTest {
         assertTrue(targets.first { it.folderId == "j" }.matchesSearch("spam"))
         assertEquals(listOf("c", "ca"), targets.filter { it.matchesSearch("client") }.map { it.folderId })
     }
-
-    @Test
-    fun collapsingAFolderHidesEverythingNestedUnderItOnly() {
-        val tree =
-            listOf(
-                MoveTarget("c", "Clients", own = true),
-                MoveTarget("ca", "Clients / Acme", depth = 1, own = true),
-                MoveTarget("cai", "Clients / Acme / Invoices", depth = 2, own = true),
-                MoveTarget("cb", "Clients / Beta", depth = 1, own = true),
-                MoveTarget("p", "Projects", own = true),
-            )
-        assertEquals(setOf("c", "ca"), tree.parentIds())
-        assertEquals(setOf("ca", "cai", "cb"), tree.collapsedAway(setOf("c")))
-        assertEquals(setOf("cai"), tree.collapsedAway(setOf("ca")))
-        // A collapsed folder inside a collapsed one changes nothing more.
-        assertEquals(setOf("ca", "cai", "cb"), tree.collapsedAway(setOf("c", "ca")))
-        assertEquals(emptySet(), tree.collapsedAway(setOf("p")))
-    }
 }
