@@ -46,16 +46,38 @@ class ActionBarLayoutTest {
     }
 
     @Test
-    fun aMovedButtonLeavesTheOthersInOrder() {
-        assertEquals(layout(Trash, Flag, Archive), message.moved(1, 3))
-        assertEquals(layout(Flag, Archive, Trash), message.moved(3, 1))
+    fun aButtonDraggedIntoTheMainGroupBecomesThePrimary() {
+        assertEquals(
+            layout(Move, Trash, Flag, primary = Archive),
+            message.regrouped(listOf(Move, Archive), listOf(Trash, Flag)),
+        )
+        assertEquals(
+            layout(Move, Archive, Trash, primary = Flag),
+            message.regrouped(listOf(Flag, Move), listOf(Archive, Trash)),
+        )
     }
 
     @Test
-    fun theFirstButtonIsThePrimary() {
+    fun aPrimaryDraggedOutHandsItsPlaceToTheFirstOtherButton() {
+        assertEquals(
+            layout(Trash, Flag, Move, primary = Archive),
+            message.regrouped(emptyList(), listOf(Archive, Trash, Flag, Move)),
+        )
+        assertEquals(
+            layout(Move, Trash, Flag, primary = Archive),
+            message.regrouped(emptyList(), listOf(Archive, Move, Trash, Flag)),
+        )
+    }
+
+    @Test
+    fun aRemovedPrimaryHandsItsPlaceToTheFirstButton() {
+        assertEquals(layout(Trash, Flag, primary = Archive), message.regrouped(emptyList(), message.secondary))
+        assertEquals(layout(primary = Move), layout().regrouped(emptyList(), emptyList()))
+    }
+
+    @Test
+    fun theButtonsListThePrimaryFirst() {
         assertEquals(listOf(Move, Archive, Trash, Flag), message.buttons)
-        assertEquals(layout(Move, Trash, Flag, primary = Archive), message.moved(1, 0))
-        assertEquals(layout(Archive, Trash, Move, primary = Flag), message.moved(0, 3).moved(2, 0))
     }
 
     @Test

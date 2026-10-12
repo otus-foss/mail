@@ -13,7 +13,8 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 /**
  * Any screen's bar for [layout]. [offer] gives each action as it applies on this screen; one it
  * cannot offer stays in its slot, disabled, so the buttons never move. [context] describes what
- * the primary applies to, such as a reply's recipient. A [minimized] bar shows only the primary.
+ * the primary applies to, such as a reply's recipient. A [minimized] bar shows only the primary,
+ * and scales it out while [hidden].
  */
 @Composable
 internal fun MailActionBar(
@@ -23,6 +24,7 @@ internal fun MailActionBar(
     minimized: Boolean,
     modifier: Modifier = Modifier,
     context: BarContext? = null,
+    hidden: Boolean = false,
 ) {
     fun barAction(action: MailAction): BarAction {
         val offered = offer(action)
@@ -41,6 +43,7 @@ internal fun MailActionBar(
         secondary = if (minimized) emptyList() else layout.secondary.map(::barAction),
         context = context,
         minimized = minimized,
+        hidden = hidden,
     )
 }
 

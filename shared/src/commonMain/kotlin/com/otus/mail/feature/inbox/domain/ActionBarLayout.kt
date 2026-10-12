@@ -141,14 +141,22 @@ data class ActionBarLayout(
         return ActionBarLayout(kept - primary, primary)
     }
 
-    /** Moves the [buttons] entry at [from] to [to]; whichever button ends up first is the primary. */
-    fun moved(
-        from: Int,
-        to: Int,
+    /**
+     * The bar after its buttons are dragged between two groups: [main] under the main heading and
+     * [rest] under the other, each in order. A button dragged into [main] becomes the primary, and
+     * the old primary leads the rest. When [main] is left empty, the first other button in [rest]
+     * becomes the primary; a primary in neither group is removed.
+     */
+    fun regrouped(
+        main: List<MailAction>,
+        rest: List<MailAction>,
     ): ActionBarLayout {
-        val rest = buttons.filterIndexed { index, _ -> index != from }
-        val order = rest.take(to) + buttons[from] + rest.drop(to)
-        return ActionBarLayout(order.drop(1), order.first())
+        val next =
+            main.firstOrNull { it != primary }
+                ?: main.firstOrNull()
+                ?: rest.firstOrNull { it != primary }
+                ?: primary
+        return ActionBarLayout(main + rest - next, next)
     }
 
     fun encode(): String = secondary.joinToString(",") { it.storageValue } + "|" + primary.storageValue
