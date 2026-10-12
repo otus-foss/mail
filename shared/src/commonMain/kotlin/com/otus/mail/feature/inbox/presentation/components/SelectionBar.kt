@@ -19,13 +19,15 @@ internal fun SelectionBar(
     onDone: () -> Unit,
 ) {
     val moveChoice = rememberMoveChoice(onDone)
+    val behavior = actions.behavior()
     MailActionBar(
-        actions.behavior().barLayout(ActionBarPlace.Selection),
+        behavior.barLayout(ActionBarPlace.Selection),
         offer = { actions.offer(selected, it, moveChoice::choose) },
         onAction = { action ->
             action.run()
             if (!action.asks) onDone()
         },
+        minimized = behavior.minimizedBar,
         context = selectionContext(selected.size),
     )
     moveChoice.Sheet(actions)

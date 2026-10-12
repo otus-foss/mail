@@ -33,12 +33,6 @@ class ActionBarLayoutTest {
     private val message = layout(Archive, Trash, Flag)
 
     @Test
-    fun aSecondaryMadePrimaryTradesPlacesWithTheOldPrimary() {
-        assertEquals(layout(Archive, Trash, Move, primary = Flag), message.withPrimary(Flag))
-        assertEquals(layout(Archive, Trash, Flag, primary = Spam), message.withPrimary(Spam))
-    }
-
-    @Test
     fun aSlotTakesANewActionOrEmptiesAndLaterSlotsMoveUp() {
         assertEquals(layout(Spam, Trash, Flag), message.withSlot(0, Spam))
         assertEquals(layout(Archive, Flag), message.withSlot(1, null))
@@ -49,6 +43,33 @@ class ActionBarLayoutTest {
     fun anActionAlreadyInTheBarTradesPlacesWithTheSlotsOldAction() {
         assertEquals(layout(Flag, Trash, Archive), message.withSlot(0, Flag))
         assertEquals(layout(Move, Trash, Flag, primary = Archive), message.withSlot(0, Move))
+    }
+
+    @Test
+    fun aPrimaryChosenFromTheSecondaryTradesPlacesWithTheOldPrimary() {
+        assertEquals(layout(Archive, Trash, Move, primary = Flag), message.with(BarSlot.Primary, Flag))
+        assertEquals(layout(Archive, Trash, Flag, primary = Spam), message.with(BarSlot.Primary, Spam))
+    }
+
+    @Test
+    fun aSecondarySlotTakesANewActionOrTradesWithAnotherSlot() {
+        assertEquals(layout(Spam, Trash, Flag), message.with(BarSlot.Secondary(0), Spam))
+        assertEquals(layout(Flag, Trash, Archive), message.with(BarSlot.Secondary(0), Flag))
+        assertEquals(layout(Archive, Trash), layout(Archive).with(BarSlot.Secondary(1), Trash))
+    }
+
+    @Test
+    fun slotsNameWhereEachActionSits() {
+        assertEquals(BarSlot.Primary, message.slotOf(Move))
+        assertEquals(BarSlot.Secondary(2), message.slotOf(Flag))
+        assertEquals(null, message.slotOf(Spam))
+        assertEquals(Trash, message.actionAt(BarSlot.Secondary(1)))
+        assertEquals(null, layout(Archive).actionAt(BarSlot.Secondary(2)))
+    }
+
+    @Test
+    fun theButtonsListThePrimaryFirst() {
+        assertEquals(listOf(Move, Archive, Trash, Flag), message.buttons)
     }
 
     @Test

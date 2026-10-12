@@ -13,13 +13,14 @@ import com.otus.mail.feature.inbox.presentation.recipients
 /**
  * The compose page's bar for [layout]. Only Discard runs; Send and Attach stay disabled until
  * Mail can send, and actions for messages, which Fixed mode may place here, do not apply. The
- * main button names the draft's recipients once it has any.
+ * main button names the draft's recipients once it has any. A [minimized] bar shows only the main button.
  */
 @Composable
 internal fun ComposeBar(
     layout: ActionBarLayout,
     draft: Draft,
     onDiscard: () -> Unit,
+    minimized: Boolean,
     modifier: Modifier = Modifier,
 ) {
     MailActionBar(
@@ -31,6 +32,7 @@ internal fun ComposeBar(
             }
         },
         onAction = { it.run() },
+        minimized = minimized,
         modifier = modifier,
         context = draft.recipients.barContext(),
     )

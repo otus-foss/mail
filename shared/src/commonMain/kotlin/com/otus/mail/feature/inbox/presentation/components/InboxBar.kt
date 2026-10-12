@@ -12,7 +12,7 @@ import com.otus.mail.feature.inbox.presentation.MessageActions
 /**
  * The message list's bar while nothing is selected. Search opens the search field, Filters runs
  * [onFilters], and Mark all read marks the messages [state] shows. Actions that need a message
- * stay disabled.
+ * stay disabled. A minimized bar scales out while searching, before the keyboard arrives.
  */
 @Composable
 internal fun InboxBar(
@@ -25,5 +25,8 @@ internal fun InboxBar(
     val matching = state.matching
     val results = remember(messages, matching) { searchMessages(messages, matching) }
     val list = ListActions(results, matching.accounts.singleOrNull(), actions, state::startSearch, onFilters, onCompose)
-    MailActionBar(actions.behavior().barLayout(ActionBarPlace.Inbox), list::offer, onAction = { it.run() })
+    val behavior = actions.behavior()
+    MailActionBar(behavior.barLayout(ActionBarPlace.Inbox), list::offer, onAction = {
+        it.run()
+    }, behavior.minimizedBar, hidden = state.searching)
 }

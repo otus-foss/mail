@@ -79,9 +79,12 @@ fun ComposeScreen(
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar = {
-                ComposeBar(behavior.barLayout(ActionBarPlace.Compose), state.draft, onDiscard = {
-                    if (state.edited) confirming = true else discard()
-                })
+                ComposeBar(
+                    behavior.barLayout(ActionBarPlace.Compose),
+                    state.draft,
+                    onDiscard = { if (state.edited) confirming = true else discard() },
+                    minimized = behavior.minimizedBar,
+                )
             },
             Modifier.safeDrawingPadding(),
         ) { padding ->

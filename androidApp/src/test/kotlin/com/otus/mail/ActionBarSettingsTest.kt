@@ -3,12 +3,14 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -47,26 +49,41 @@ class ActionBarSettingsTest {
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Welcome")).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun openActionBarSettings() {
+    private fun openAppearance() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Appearance & behavior").performClick()
-        compose.onNodeWithText("Per screen").performScrollTo()
-        compose.onNodeWithText("Action bar").performScrollTo().performClick()
+    }
+
+    private fun openActionBarSettings() {
+        openAppearance()
+        compose.onNode(hasText("Action bar") and hasClickAction()).performScrollTo().performClick()
     }
 
     private fun button(label: String) = compose.onNode(hasContentDescription(label) and hasClickAction())
 
+    /** The topmost match, such as a button in the editor's preview over the page's cards. */
+    private fun top(label: String) = compose.onAllNodes(hasContentDescription(label) and hasClickAction()).onLast()
+
+    private fun pick(text: String) =
+        compose
+            .onAllNodesWithText(text)
+            .onLast()
+            .performScrollTo()
+            .performClick()
+
+    private fun done() = compose.onAllNodesWithText("Done").onLast().performClick()
+
     @Test
-    fun aButtonChosenForTheOpenMessageIsSavedAndShownOnItsBar() {
+    fun aButtonAddedToTheOpenMessageIsSavedAndShownOnItsBar() {
         server.folders += """{"id": "s", "name": "Junk", "role": "junk"}"""
         start()
         openActionBarSettings()
-        // The third "Button 1" row belongs to the open message's section.
-        compose.onAllNodesWithText("Button 1")[2].performScrollTo().performClick()
-        compose.onNodeWithText("Spam").performScrollTo().performClick()
-        compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("Spam").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Open message").performScrollTo().performClick()
+        top("Archive").performClick()
+        pick("Spam")
+        done()
+        done()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         val expected =
@@ -84,7 +101,46 @@ class ActionBarSettingsTest {
     }
 
     @Test
-    fun oneBarForEveryScreenReplacesThePerScreenSections() {
+    fun aSecondaryPickedAsTheMainButtonTradesPlacesWithIt() {
+        start()
+        openActionBarSettings()
+        compose.onNodeWithText("Open message").performScrollTo().performClick()
+        top("Reply").performClick()
+        compose.onNodeWithText("Swaps with Button 1").assertIsDisplayed()
+        pick("Archive")
+        done()
+        done()
+
+        val expected = ActionBarLayout(listOf(MailAction.Reply, MailAction.Trash, MailAction.Move), MailAction.Archive)
+        compose.runOnIdle {
+            assertEquals(
+                expected,
+                AndroidMailBehaviorStore(compose.activity).read().savedLayout(ActionBarPlace.Message),
+            )
+        }
+    }
+
+    @Test
+    fun aMinimizedBarShowsOnlyTheMainButton() {
+        start()
+        openAppearance()
+        compose
+            .onNode(hasText("Minimize") and isToggleable())
+            .performScrollTo()
+            .performClick()
+            .assertIsOn()
+        assertEquals(true, AndroidMailBehaviorStore(compose.activity).read().minimizedBar)
+
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
+        compose.onNodeWithText("Welcome").performClick()
+        compose.onNode(hasContentDescription("Reply", substring = true) and hasClickAction()).assertIsDisplayed()
+        button("Archive").assertDoesNotExist()
+    }
+
+    @Test
+    fun oneBarForEveryScreenReplacesThePerScreenCards() {
         start()
         openActionBarSettings()
         listOf("Message list", "Open message", "Selected messages", "Writing").forEach {
@@ -95,17 +151,20 @@ class ActionBarSettingsTest {
         compose.onNodeWithText("Layout").performScrollTo().performClick()
         compose.onNodeWithText("Same everywhere").performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("Every screen").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Open message").assertDoesNotExist()
         // Fixed mode edits the one shared bar and leaves each screen's own bar saved.
-        compose.onAllNodesWithText("Button 1")[0].performScrollTo().performClick()
-        compose.onNodeWithText("Reply").performScrollTo().performClick()
-        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithText("Every screen").performScrollTo().performClick()
+        top("Search").performClick()
+        pick("Remove from bar")
+        top("Add button").performClick()
+        pick("Reply")
+        done()
+        done()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         assertEquals(ActionBarMode.Fixed, saved.actionBarMode)
         val everywhere =
-            ActionBarLayout(listOf(MailAction.Reply, MailAction.Archive, MailAction.Trash), MailAction.NewMail)
+            ActionBarLayout(listOf(MailAction.Archive, MailAction.Trash, MailAction.Reply), MailAction.NewMail)
         assertEquals(everywhere, saved.barLayout(ActionBarPlace.Inbox))
         assertEquals(ActionBarPlace.Message.defaultLayout, saved.savedLayout(ActionBarPlace.Message))
 
@@ -117,12 +176,25 @@ class ActionBarSettingsTest {
     }
 
     @Test
-    fun writingOffersOnlyAsManyButtonSlotsAsItHasActions() {
+    fun theOpenMessageBarCopiesOnlyToScreensThatCanUseIt() {
         start()
         openActionBarSettings()
-        // Writing has Send, Attach, and Discard, so beside its main button it has two slots.
-        assertEquals(4, compose.onAllNodesWithText("Button 2").fetchSemanticsNodes().size)
-        assertEquals(3, compose.onAllNodesWithText("Button 3").fetchSemanticsNodes().size)
+        compose.onNodeWithText("Open message").performScrollTo().performClick()
+        button("Copy to other screens").performClick()
+        compose.onNodeWithText("Message list and Writing can't use these buttons.").performScrollTo()
+        compose
+            .onNode(hasText("Selected messages") and isToggleable())
+            .performScrollTo()
+            .performClick()
+            .assertIsOn()
+        compose.onNodeWithText("Done").performClick()
+        // Done copies once the sheet has slid away.
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Copy to")).fetchSemanticsNodes().isEmpty() }
+
+        val saved = AndroidMailBehaviorStore(compose.activity).read()
+        val selection = ActionBarLayout(listOf(MailAction.Archive, MailAction.Trash), MailAction.Move)
+        assertEquals(selection, saved.savedLayout(ActionBarPlace.Selection))
+        assertEquals(ActionBarPlace.Everywhere.defaultLayout, saved.savedLayout(ActionBarPlace.Everywhere))
     }
 
     private companion object {
