@@ -15,7 +15,7 @@ data class RuleAddress(
     val email: String,
 )
 
-enum class RuleProblem { NoConditions, EmptyValue, InvalidRegex, Unsupported, NoFolder }
+enum class RuleProblem { NoConditions, EmptyValue, ControlCharacter, InvalidRegex, Unsupported, NoFolder }
 
 /** The first reason [rule] cannot be saved for a server with [support], or null when it can. */
 fun ruleProblem(
@@ -30,6 +30,10 @@ fun ruleProblem(
 
         rule.conditions.any { it.value.isBlank() } -> {
             RuleProblem.EmptyValue
+        }
+
+        (listOf(rule.name, rule.folderId) + rule.conditions.map { it.value }).any { it.hasControlCharacter() } -> {
+            RuleProblem.ControlCharacter
         }
 
         rule.conditions.any { it.operator == RuleOperator.MatchesRegex && it.regexOrNull() == null } -> {
@@ -52,6 +56,12 @@ fun ruleProblem(
             null
         }
     }
+
+/**
+ * Sieve strings cannot hold NUL or a lone CR or LF (RFC 5228, section 2.4.2), and other control
+ * characters have no place in a rule. Line breaks are allowed: the script writes them as spaces.
+ */
+private fun String.hasControlCharacter(): Boolean = any { it < ' ' && it !in "\t\r\n" }
 
 /** Body text is not available here, so such rules can only run on the server. */
 val MailRule.checksBody: Boolean

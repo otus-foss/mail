@@ -167,6 +167,12 @@ if header :contains "from" "amazon" {
   That covers saving and deleting in the editor, and reordering, pausing, deleting, turning rules
   on or off, and stopping a kept script on the rules page. Conditions written by a newer app
   version count as a difference too, so they are never dropped.
+- The app also checks the rules it reads back with the editor's checks (`ruleProblem`). A rule
+  without conditions, with an empty value or a control character, or with a condition the server
+  cannot run is left out, and the script counts as edited elsewhere. A kept script is dropped
+  when the server lacks `include`, or when it names the rules script itself or `vacation`. The
+  next save then writes valid Sieve. The writer also leaves control characters other than tab out
+  of every Sieve string and comment, and writes line breaks as spaces.
 - Saving uploads the script as a blob (RFC 8620, section 6.1), then creates or updates it with
   `SieveScript/set`. The request carries `ifInState` from the last load, so a change from another
   device is refused (`stateMismatch`); the app reloads and the user saves again.
@@ -218,7 +224,8 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
   lifted, Trash left out).
 - Data: `JmapMailSourceTest` (a role loads that folder of every account under one name),
   `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
-  Sieve, escaping, read-back, edits made elsewhere), `JmapMessageMoverTest`.
+  Sieve, escaping, read-back, edits made elsewhere), `RuleScriptValidationTest` (invalid rules
+  and kept scripts read back, control characters), `JmapMessageMoverTest`.
 - Presentation: `RulesStateTest` (activation choices, vacation never kept, replacing drops a kept
   script, every change asks before replacing edits made elsewhere, failed saves keep the draft).
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and

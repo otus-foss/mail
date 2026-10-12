@@ -4,12 +4,14 @@ import com.otus.mail.feature.folders.domain.MailRule
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.RuleField
 import com.otus.mail.feature.folders.domain.RuleOperator
+import com.otus.mail.feature.folders.domain.RuleSupport
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RuleScriptCodecTest {
+    private val support = RuleSupport(setOf("fileinto", "mailboxid", "imap4flags", "include", "mime", "regex", "body"))
     private val invites =
         MailRule(
             id = "r1",
@@ -85,25 +87,25 @@ class RuleScriptCodecTest {
         val paused = invites.copy(enabled = false)
         val sieve = encodeRules(RuleScript(listOf(paused)))
         assertFalse("fileinto" in sieve.lines().filterNot { it.startsWith("#") }.joinToString())
-        assertEquals(listOf(paused), decodeRules(sieve).script.rules)
+        assertEquals(listOf(paused), decodeRules(sieve, support).script.rules)
     }
 
     @Test
     fun rulesReadBackUnchangedWhateverTheLineEnds() {
         val script = RuleScript(listOf(invites, copies), keep = "roundcube")
         val stored = encodeRules(script)
-        assertEquals(ReadRules(script, changedElsewhere = false), decodeRules(stored))
-        assertEquals(ReadRules(script, changedElsewhere = false), decodeRules(stored.replace("\r\n", "\n")))
+        assertEquals(ReadRules(script, changedElsewhere = false), decodeRules(stored, support))
+        assertEquals(ReadRules(script, changedElsewhere = false), decodeRules(stored.replace("\r\n", "\n"), support))
     }
 
     @Test
     fun editsMadeElsewhereAreDetected() {
         val stored = encodeRules(RuleScript(listOf(invites)))
         val edited = stored.replace("stop;", "keep;\r\n    stop;")
-        assertEquals(ReadRules(RuleScript(listOf(invites)), changedElsewhere = true), decodeRules(edited))
+        assertEquals(ReadRules(RuleScript(listOf(invites)), changedElsewhere = true), decodeRules(edited, support))
         val foreign = "require \"fileinto\";\r\nfileinto \"Junk\";\r\n"
-        assertEquals(ReadRules(RuleScript(emptyList()), changedElsewhere = true), decodeRules(foreign))
+        assertEquals(ReadRules(RuleScript(emptyList()), changedElsewhere = true), decodeRules(foreign, support))
         val newer = stored.replace("\"field\":\"from\"", "\"field\":\"priority\"")
-        assertTrue(decodeRules(newer).changedElsewhere, "Unknown conditions are never dropped silently")
+        assertTrue(decodeRules(newer, support).changedElsewhere, "Unknown conditions are never dropped silently")
     }
 }
