@@ -28,9 +28,9 @@ import com.otus.designsystem.elements.IconPill
 import com.otus.designsystem.elements.SidebarPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
+import com.otus.designsystem.resources.symbol_auto_filter
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_delete
-import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
@@ -135,7 +135,7 @@ private fun MovePills(
             others.forEach { ShortcutPill(it, onMove) }
         }
         sorting.future?.let {
-            IconPill(SORT_FUTURE_MAIL, Res.drawable.symbol_filter_list, sorting.on, { sorting.onToggle(!sorting.on) })
+            IconPill(SORT_FUTURE_MAIL, Res.drawable.symbol_auto_filter, sorting.on, { sorting.onToggle(!sorting.on) })
         }
     }
 }
