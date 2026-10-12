@@ -4,6 +4,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailboxStyle
 import com.otus.mail.feature.inbox.domain.SidebarCount
@@ -53,6 +55,23 @@ class SidebarEditTest {
         compose.onNodeWithContentDescription("All accounts").assertIsNotSelected()
         compose.onNodeWithText("ada@example.org").assertIsDisplayed()
         compose.onNode(hasText("Receipts") and hasText("2") and isSelectable()).assertIsDisplayed()
+    }
+
+    @Test
+    fun doubleTappingAllChoosesItAndOpensTheInboxOfEveryAccount() {
+        openSidebar()
+        compose.onNodeWithContentDescription("Ada").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNodeWithContentDescription("All accounts").performTouchInput { doubleClick() }
+        compose.onNodeWithText("ada@example.org").assertDoesNotExist()
+        compose.onNodeWithText("Tap to search").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNodeWithContentDescription("All accounts").assertIsSelected()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNodeWithContentDescription("All accounts").performClick()
+        compose.onNodeWithText("Tap to search").assertIsDisplayed()
     }
 
     @Test
