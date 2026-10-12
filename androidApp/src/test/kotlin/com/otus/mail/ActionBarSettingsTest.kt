@@ -6,7 +6,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -49,7 +49,7 @@ class ActionBarSettingsTest {
 
     private fun openActionBarSettings() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Settings") and isSelectable()).performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Appearance & behavior").performClick()
         compose.onNodeWithText("Per screen").performScrollTo()
         compose.onNodeWithText("Action bar").performScrollTo().performClick()
@@ -77,7 +77,7 @@ class ActionBarSettingsTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
+        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
         compose.onNodeWithText("Welcome").performClick()
         button("Spam").assertIsEnabled()
         button("Archive").assertDoesNotExist()

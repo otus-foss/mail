@@ -24,7 +24,7 @@ internal fun mailSettingsEntries(
         ) { navigation.go(MailPage.EmailAccounts) },
         SettingsEntry(
             "Appearance & behavior",
-            "Dates, swipes, and reading",
+            "Dates, sidebar, swipes, and reading",
             Res.drawable.symbol_tune,
         ) { navigation.go(MailPage.Appearance) },
         SettingsEntry(

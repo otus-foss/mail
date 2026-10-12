@@ -10,7 +10,7 @@ class CombinedFolderTest {
     ) = AccountFolders(id, id, folders.toList())
 
     @Test
-    fun eachRoleSomeAccountHasIsListedOnceWithTheUnreadMailOfAll() {
+    fun eachRoleSomeAccountHasIsListedOnceWithEveryAccountsFolder() {
         val ada =
             account(
                 "ada",
@@ -26,8 +26,14 @@ class CombinedFolderTest {
                 MailFolder("grace", "w", "Work", unread = 5),
             )
         assertEquals(
-            mapOf(CombinedFolder.Sent to 0L, CombinedFolder.Spam to 4L, CombinedFolder.Trash to 3L),
-            combinedFolders(listOf(ada, grace)),
+            mapOf(
+                CombinedFolder.Sent to listOf("grace/s"),
+                CombinedFolder.Spam to listOf("ada/j"),
+                CombinedFolder.Trash to listOf("ada/t", "grace/t"),
+            ),
+            combinedFolders(listOf(ada, grace)).mapValues { (_, folders) ->
+                folders.map { "${it.accountId}/${it.id}" }
+            },
         )
         assertEquals(
             listOf(CombinedFolder.Sent, CombinedFolder.Spam, CombinedFolder.Trash),

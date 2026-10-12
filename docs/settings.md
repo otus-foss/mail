@@ -27,11 +27,10 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   Under **Actions**, **Swipe right** and **Swipe left** open a
   `ChoiceSheet` of message actions, shown in a `ValueButton`. **Action bar** shows its mode,
   **Per screen** or **Same everywhere**, in a `ValueButton` and opens its own page. **Mark as read
-  when opened**,
-  **Read later**, and **Combined folders** are `SettingToggleRow` switches. Each change is saved
-  before it is shown. See [inbox pills](inbox.md#inbox-pills),
-  [swipe actions](inbox.md#swipe-actions), [Read later](folders.md#read-later), and
-  [combined folders](folders.md#combined-folders).
+  when opened** and **Read later** are `SettingToggleRow` switches. Each change is saved before it
+  is shown. See [inbox pills](inbox.md#inbox-pills), [swipe actions](inbox.md#swipe-actions), and
+  [Read later](folders.md#read-later). A **Sidebar** row opens the Sidebar page, which arranges
+  the sidebar's sections, mailboxes, and counts; see [Mail destinations](sidebar.md#mail-destinations).
 - **Action bar** (`ActionBarSettingsScreen`), a subpage of Appearance & behavior, starts with a
   **Layout** row whose `ChoiceSheet` picks **Per screen** or **Same everywhere**. **Per screen**
   shows a section for **Message list**, **Selected messages**, **Open message**, and **Writing**;

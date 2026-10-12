@@ -134,20 +134,18 @@ class SwipeActionsTest {
     @Test
     fun theAppearancePageSavesEachChange() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Settings") and isSelectable()).performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Appearance & behavior").performClick()
         compose.onNodeWithText("Swipe left").performClick()
         compose.onNodeWithText("Trash").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Trash").assertIsDisplayed()
-        compose.onNodeWithText("Mark as read when opened").performClick()
-        compose.onNodeWithText("Combined folders").performScrollTo().performClick()
+        compose.onNodeWithText("Mark as read when opened").performScrollTo().performClick()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         assertEquals(MailAction.Trash, saved.endToStart)
         assertEquals(MailAction.Read, saved.startToEnd)
         assertFalse(saved.markReadOnOpen)
-        assertTrue(saved.combinedFolders)
     }
 
     private fun waitFor(text: String) {

@@ -7,6 +7,7 @@ import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
+import com.otus.mail.feature.inbox.domain.SidebarLayout
 import platform.Foundation.NSUserDefaults
 
 class IosMailBehaviorStore(
@@ -21,7 +22,7 @@ class IosMailBehaviorStore(
             markReadOnOpen = bool(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
             readLater = readLater,
             pills = preferences.stringForKey(PILLS)?.let(InboxPill::decode) ?: InboxPill.defaults(readLater),
-            combinedFolders = bool(COMBINED_FOLDERS, defaults.combinedFolders),
+            sidebar = preferences.stringForKey(SIDEBAR)?.let(SidebarLayout::decode) ?: defaults.sidebar,
             actionBar =
                 ActionBarPlace.entries.associateWith { place ->
                     ActionBarLayout.decode(preferences.stringForKey(actionBarKey(place)), place)
@@ -37,7 +38,7 @@ class IosMailBehaviorStore(
         preferences.setBool(behavior.markReadOnOpen, forKey = MARK_READ_ON_OPEN)
         preferences.setBool(behavior.readLater, forKey = READ_LATER)
         preferences.setObject(InboxPill.encode(behavior.pills), forKey = PILLS)
-        preferences.setBool(behavior.combinedFolders, forKey = COMBINED_FOLDERS)
+        preferences.setObject(SidebarLayout.encode(behavior.sidebar), forKey = SIDEBAR)
         behavior.actionBar.forEach { (place, layout) ->
             preferences.setObject(layout.encode(), forKey = actionBarKey(place))
         }
@@ -56,7 +57,7 @@ class IosMailBehaviorStore(
         const val MARK_READ_ON_OPEN = "otus.mail.mark_read_on_open"
         const val READ_LATER = "otus.mail.read_later"
         const val PILLS = "otus.mail.inbox_pills"
-        const val COMBINED_FOLDERS = "otus.mail.combined_folders"
+        const val SIDEBAR = "otus.mail.sidebar_layout"
         const val ACTION_BAR_MODE = "otus.mail.action_bar_mode"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"

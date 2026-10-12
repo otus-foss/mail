@@ -1,7 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
 /**
- * A system folder the sidebar can show once for every account, in sidebar order. [title] replaces
+ * A system folder the sidebar shows once for every account, in sidebar order. [title] replaces
  * each server's own name, which differs between servers, such as Stalwart's "Junk Mail" for [Spam].
  */
 enum class CombinedFolder(
@@ -20,11 +20,10 @@ enum class CombinedFolder(
     }
 }
 
-/** Each combined folder that some account has, with the unread mail of all of them. */
-fun combinedFolders(accounts: List<AccountFolders>): Map<CombinedFolder, Long> {
+/** Each combined folder that some account has, with every account's folder of that role. */
+fun combinedFolders(accounts: List<AccountFolders>): Map<CombinedFolder, List<MailFolder>> {
     val folders = accounts.flatMap { it.folders }
     return CombinedFolder.entries
         .associateWith { combined -> folders.filter { it.role == combined.role } }
         .filterValues { it.isNotEmpty() }
-        .mapValues { (_, matching) -> matching.sumOf { it.unread } }
 }

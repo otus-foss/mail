@@ -13,10 +13,9 @@ script, so they keep working while the app is closed.
   archive, junk, trash), then other special uses, then the user's folders by `sortOrder` and name.
   While Read later is on, its folder sorts right after the inbox. A folder whose parent is missing
   becomes a root. A parent cycle cannot repeat or lose folders.
-- The sidebar lists each account's folders under its name, indented, with unread counts. With one
-  account, its inbox is the unified Inbox and is not listed twice, and its Read later folder
-  follows the unified Inbox with its subfolders. Tapping a folder opens it as a page that reuses
-  the inbox screen with "Search <folder>" and all of the folder's messages.
+- The sidebar lists the built-in mailboxes once for every account, then the user's own folders,
+  [shared by every account](#shared-folders), indented, with counts. Tapping a folder opens it as
+  a page that reuses the inbox screen with "Search <folder>" and all of the folder's messages.
 - **Settings › Folders** creates, renames, moves, and deletes folders with `Mailbox/set`. Only the
   user's own folders (no role) can be renamed, moved, or deleted. Actions follow `myRights`,
   `mayCreateTopLevelMailbox`, `maxMailboxDepth`, and `maxSizeMailboxName`.
@@ -33,25 +32,39 @@ script, so they keep working while the app is closed.
 
 ## Combined folders
 
-Off by default. The **Combined folders** switch in Appearance & behavior lists Drafts, Sent,
-Archive, Spam, and Trash once in the sidebar, below the unified Inbox and above the accounts, in
-place of each account's own copy. Each entry appears once any account has a folder with its role, and
-its badge adds up the unread mail of all of them.
+The sidebar's Mailboxes section always lists Drafts, Sent, Archive, Spam, and Trash once for all
+accounts, after Inbox and Read later. Each appears once any account has a folder with its role.
+The **Combined folders** switch that turned this on is gone; a saved value is ignored.
 
 - Each entry stands for one role (RFC 8621, section 2): `drafts`, `sent`, `archive`, `junk`, and
   `trash`. The app names them itself, because servers name them differently. Stalwart, for one,
   calls three of them "Sent Items", "Junk Mail", and "Deleted Items".
 - Spam and Trash are separate folders. The `junk` role marks mail the server or the user judged to
   be spam, and `trash` marks deleted mail (RFC 6154, section 2). The app shows `junk` as Spam so
-  it is not mistaken for deleted mail.
+  it is not mistaken for deleted mail. The sidebar spec calls it Junk; the app keeps Spam.
 - Tapping an entry opens a folder page that loads every account's folder with that role
   (`MailScope.Role`) and files its messages under the app's name, so search treats them as one
   folder. Moves, marks, and Read later act on each message's own account, as on any folder page.
-- Subfolders of a combined folder, such as folders moved into Trash, move up to the account's top
-  level, as the inbox's subfolders do with one account. Inboxes, Read later, and the user's own
-  folders stay where they were.
 - Settings › Folders still lists every account's folders in full, and the move picker still names
   the server's folders, because a move stays inside one account.
+
+## Shared folders
+
+JMAP has no folder that spans accounts: each mailbox belongs to one account (RFC 8621, section 2).
+The sidebar merges the user's own folders by path instead, without a new stored model.
+`sharedFolders` treats folders whose names match from the top level down, ignoring case, as one
+folder. Clients › Acme in two accounts is one row, and tapping it loads both accounts' folders
+through `MailScope.Folders`. Its count adds up the accounts' folders, or counts one account's
+while that account is chosen in the rail.
+
+- Folders keep the order of the first account that has them; another account's extra folders
+  follow.
+- System folders and Read later are left out, and their subfolders move up a level. Folders inside
+  Trash or Junk are left out entirely.
+- Creating, renaming, moving, and deleting still act on one account's folder in Settings › Folders.
+  Renaming a folder in one account splits it from the others until their names match again.
+- `MailPage.Shared` saves the lower-case path. If no account has that path once every account's
+  folders load, the page returns to the Inbox. While an account fails to load, the page stays.
 
 ## Read later
 
@@ -91,8 +104,10 @@ Read later pill to the inbox row that shows every account's saved mail. See
   running when the switch turns off shows no Read later folder.
 - Otus creates no folder for accounts that fail to load or whose server refuses top-level folders
   (`mayCreateTopLevelMailbox`). Such an account still uses a Read later folder it already has.
-- The folder sorts right after the inbox and has the bookmark symbol. With one account, the sidebar
-  lists it right under the unified Inbox, with its subfolders nested under it.
+- The folder sorts right after the inbox and has the bookmark symbol. The sidebar shows it as the
+  Read later mailbox, after Inbox, which loads every account's Read later folder. Once every
+  account's folders load without one, as after the switch turns off, its page returns to the Inbox. Its subfolders
+  join the user's [shared folders](#shared-folders).
 - Saving needs `mayAddItems` on Read later; removing needs `mayRemoveItems` on it. A move also
   needs `mayRemoveItems` on the folder the message is shown in. `readLaterStep` decides which
   of these a message gets, and IMAP apps see a saved message in both folders.
@@ -195,7 +210,9 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
   `ReadLaterFoldersTest` (saved, adopted, and created folders; saved folders moved into Trash or
   given a role; overlapping and replaced loads; the switch turning off during a load),
   `MessageFoldersTest` (saving, removing, or moving into Read later; which folders label a row),
-  `CombinedFolderTest` (one entry per role any account has, unread mail added up, sidebar order).
+  `CombinedFolderTest` (one entry per role any account has, with every account's folder, in sidebar
+  order), `SharedFolderTest` (folders merged by path in any case, system folders and Read later
+  lifted, Trash left out).
 - Data: `JmapMailSourceTest` (a role loads that folder of every account under one name),
   `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
   Sieve, escaping, read-back, edits made elsewhere), `JmapMessageMoverTest`.
@@ -203,10 +220,10 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
   draft).
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and
   folder pages, creating a folder, saving a rule as an active script, moving a message, and
-  starting a rule from its sender. It also turns on Read later and checks the created folder's
-  place in the sidebar, with a subfolder nested under it, and that rows name a message's other
-  folders. It turns on Combined folders and checks that Spam and Trash replace the server's
-  folders above the account's own and that Spam opens its folder. `MessageActionsTest` and
+  starting a rule from its sender. It also turns on Read later and checks that its mailbox follows
+  Inbox and that its subfolder joins the user's folders, and that rows name a message's other
+  folders. It checks that Spam and Trash replace the server's folders above the user's own, that
+  Spam opens its folder, and that a collapsed folder counts its subfolders' mail. `MessageActionsTest` and
   `SwipeActionsTest` save a message in place, remove it, and trash it out of every folder.
 - `ServerIntegrationTest` creates and deletes a mailbox and uploads a blob on a real server when
   configured. It has not been run against Stalwart yet.
@@ -220,4 +237,4 @@ have no Figma frames; their layout reuses existing settings components.
 - Saved filters and views (#4, #5): turning `InboxSearch` into a reusable filter model.
 - Creating a rule from a whole search, not only from a sender.
 - ManageSieve (RFC 5804) for IMAP servers; the Sieve writer is protocol-independent.
-- Collapsing nested folders in the sidebar.
+- Creating, renaming, or deleting a shared folder in every account at once.

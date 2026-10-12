@@ -12,7 +12,10 @@ import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
+import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.elements.ValueButton
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_chevron_right
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
@@ -21,13 +24,15 @@ import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
  * Inbox, swipe, and reading choices for the appearance page. [folderPills] are the folder pills
- * the accounts' folders can fill. Each swipe opens a choice of actions; the rows name the physical
- * direction for the current layout direction. The action bar row runs [onOpenActionBar].
+ * the accounts' folders can fill, and [onSidebar] opens the sidebar's page. Each swipe opens a
+ * choice of actions; the rows name the physical direction for the current layout direction. The
+ * action bar row runs [onOpenActionBar].
  */
 @Composable
 fun MailBehaviorSettings(
     state: MailBehaviorState,
     folderPills: List<FolderPillOption>,
+    onSidebar: () -> Unit,
     onOpenActionBar: () -> Unit,
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -38,6 +43,11 @@ fun MailBehaviorSettings(
         val shown = InboxPills(behavior.pills, folderPills).shown.size
         SettingRow("Pills", { choosingPills = true }, description = "Filters and folders above your mail") {
             ValueButton(if (shown == 0) "None" else "$shown shown")
+        }
+    }
+    SettingsSection("Sidebar") {
+        SettingRow("Sidebar", onSidebar, description = "Sections, mailboxes, and counts") {
+            Symbol(Res.drawable.symbol_chevron_right, mirrorInRtl = true)
         }
     }
     SettingsSection("Actions") {
@@ -70,14 +80,6 @@ fun MailBehaviorSettings(
             folderPills,
             onApply = { pills -> state.update { it.copy(pills = pills) } },
             onDismiss = { choosingPills = false },
-        )
-    }
-    SettingsSection("Folders") {
-        SettingToggleRow(
-            "Combined folders",
-            checked = behavior.combinedFolders,
-            onCheckedChange = { on -> state.update { it.copy(combinedFolders = on) } },
-            description = "Shows one Drafts, Sent, Archive, Spam, and Trash for all accounts",
         )
     }
     choosing?.let { side -> SwipeChoice(state, side, side.title(rtl)) { choosing = null } }

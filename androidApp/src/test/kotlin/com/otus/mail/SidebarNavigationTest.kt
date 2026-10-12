@@ -2,10 +2,14 @@ package com.otus.mail
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -15,6 +19,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -30,21 +35,22 @@ class SidebarNavigationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun chevronHalfOpensSidebarWithNameEntriesAndSettingsAtTheBottom() {
-        compose.onNodeWithText("Otus").assertDoesNotExist()
+    fun chevronOpensTheRailBesideMailboxesWithSettingsAtTheBottom() {
+        compose.onNodeWithText("All accounts").assertDoesNotExist()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNodeWithText("Otus").assertIsDisplayed()
-        compose.onNodeWithText("Inbox").assertIsDisplayed().assertIsSelected()
-        val settings =
-            compose
-                .onNodeWithText("Settings")
-                .assertIsDisplayed()
-                .fetchSemanticsNode()
-                .boundsInRoot
-        val inbox = compose.onNodeWithText("Inbox").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithText("All accounts").assertIsDisplayed()
+        compose.onNodeWithText("No accounts yet").assertIsDisplayed()
+        compose.onNodeWithContentDescription("All accounts").assertIsSelected()
+        compose.onNode(hasText("Inbox") and isToggleable()).assertIsDisplayed().assertIsOn()
+        val inbox = compose.onNode(hasText("Inbox") and isToggleable()).fetchSemanticsNode().boundsInRoot
+        val settings = compose.onNodeWithContentDescription("Settings").fetchSemanticsNode().boundsInRoot
         val width = compose.activity.window.decorView.width
-        assertTrue("Settings sits at the bottom, below the entries", settings.top > inbox.bottom + width)
-        assertTrue("The sidebar half-opens and leaves the page visible", inbox.right < width * 0.7f)
+        assertTrue(
+            "Settings sits at the bottom of the rail",
+            settings.top > inbox.bottom + width && settings.right < inbox.left,
+        )
+        val sidebarWidth = with(compose.density) { 336.dp.toPx() }
+        assertTrue("The sidebar is 336 dp wide and leaves the page visible", inbox.right < sidebarWidth)
     }
 
     @Test
@@ -53,12 +59,11 @@ class SidebarNavigationTest {
         compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("invoice")
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Settings") and isSelectable()).performClick()
-        compose.onNodeWithText("Otus").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithText("All accounts").assertDoesNotExist()
         compose.onNodeWithText("Email accounts").assertIsDisplayed()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Settings") and isSelectable()).assertIsSelected()
-        compose.onNodeWithText("Inbox").performClick()
+        compose.onNode(hasText("Inbox") and isToggleable()).assertIsOff().performClick()
         compose.onNodeWithText("Tap to search").assertIsDisplayed()
     }
 
@@ -70,11 +75,11 @@ class SidebarNavigationTest {
             .onNodeWithContentDescription(
                 "Close navigation",
             ).performTouchInput { click(centerRight - Offset(24f, 0f)) }
-        compose.onNodeWithText("Otus").assertDoesNotExist()
+        compose.onNodeWithText("All accounts").assertDoesNotExist()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNodeWithText("Otus").assertIsDisplayed()
+        compose.onNodeWithText("All accounts").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.onNodeWithText("Otus").assertDoesNotExist()
+        compose.onNodeWithText("All accounts").assertDoesNotExist()
         compose.onNodeWithText("Tap to search").assertIsDisplayed()
     }
 
@@ -82,17 +87,27 @@ class SidebarNavigationTest {
     fun swipingOnTheContextPanelOpensTheSidebarAndSwipingBackClosesIt() {
         val panel = compose.onNodeWithContentDescription("Open navigation").fetchSemanticsNode().boundsInRoot
         swipeOpenAt(panel.center.y)
-        compose.onNodeWithText("Otus").assertIsDisplayed()
+        compose.onNodeWithText("All accounts").assertIsDisplayed()
         compose.onRoot().performTouchInput { swipeLeft(width * 0.5f, width * 0.05f) }
-        compose.onNodeWithText("Otus").assertDoesNotExist()
+        compose.onNodeWithText("All accounts").assertDoesNotExist()
     }
 
     @Test
     fun swipingAboveThePanelOpensButSwipingOnTheMessageListDoesNot() {
         swipeOpenAt(compose.activity.window.decorView.height * 0.6f)
-        compose.onNodeWithText("Otus").assertDoesNotExist()
+        compose.onNodeWithText("All accounts").assertDoesNotExist()
         swipeOpenAt(2f)
-        compose.onNodeWithText("Otus").assertIsDisplayed()
+        compose.onNodeWithText("All accounts").assertIsDisplayed()
+    }
+
+    @Test
+    fun openingTheSidebarFromSearchClosesTheKeyboard() {
+        compose.onNodeWithText("Tap to search").performClick()
+        val search = compose.onNodeWithContentDescription("Search your mailbox…")
+        search.assertIsFocused()
+        swipeOpenAt(2f)
+        compose.onNodeWithText("No accounts yet").assertIsDisplayed()
+        search.assertIsNotFocused()
     }
 
     private fun swipeOpenAt(y: Float) {

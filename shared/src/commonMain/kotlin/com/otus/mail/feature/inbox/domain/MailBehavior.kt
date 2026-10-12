@@ -4,9 +4,8 @@ package com.otus.mail.feature.inbox.domain
  * How the inbox responds to the user. Swipes are named by layout direction: [startToEnd] is a
  * swipe right in left-to-right languages. [readLater] adds a Read later folder to each account, an
  * action that saves mail there, and its pill. [pills] are the inbox row's pills, in order.
- * [combinedFolders] lists system folders once across accounts. [actionBar] holds each place's
- * bar, and [actionBarMode] picks whether places use their own or the Everywhere bar. A null swipe
- * does nothing.
+ * [sidebar] arranges the sidebar. [actionBar] holds each place's bar, and [actionBarMode] picks
+ * whether places use their own or the Everywhere bar. A null swipe does nothing.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -14,7 +13,7 @@ data class MailBehavior(
     val markReadOnOpen: Boolean = true,
     val readLater: Boolean = false,
     val pills: List<InboxPill> = InboxPill.defaults(readLater),
-    val combinedFolders: Boolean = false,
+    val sidebar: SidebarLayout = SidebarLayout(),
     val actionBar: Map<ActionBarPlace, ActionBarLayout> = ActionBarPlace.entries.associateWith { it.defaultLayout },
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
 ) {

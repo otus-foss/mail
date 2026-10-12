@@ -2,9 +2,9 @@ package com.otus.mail
 
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performTextInput
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -46,20 +47,25 @@ class FoldersAndRulesTest {
 
     private fun openSettingsPage(title: String) {
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Settings") and isSelectable()).performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText(title).performClick()
     }
 
     @Test
     fun sidebarNestsFoldersAndOpensOneAsAPage() {
+        server.folders += """{"id": "y", "name": "Books", "parentId": "r", "unreadEmails": 4}"""
         start()
         waitFor("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.waitUntil(TIMEOUT) {
             compose.onAllNodes(hasText("Amazon") and isSelectable()).fetchSemanticsNodes().isNotEmpty()
         }
-        // One account: its inbox is the unified Inbox, so it is listed once.
-        compose.onNode(hasText("Inbox") and isSelectable()).assertIsDisplayed()
+        compose.onNode(hasText("Inbox") and hasText("1") and isToggleable()).assertIsDisplayed()
+        // A collapsed folder hides its subfolders and counts their mail with its own.
+        compose.onNodeWithContentDescription("Collapse Receipts").performClick()
+        compose.onNode(hasText("Amazon") and isSelectable()).assertDoesNotExist()
+        compose.onNode(hasText("Receipts") and hasText("6") and isSelectable()).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Expand Receipts").performClick()
         compose.onNode(hasText("Receipts") and hasText("2") and isSelectable()).performClick()
         compose.onNodeWithText("Search Receipts").assertIsDisplayed()
         waitFor("Order shipped")
@@ -98,7 +104,7 @@ class FoldersAndRulesTest {
     }
 
     @Test
-    fun turningOnReadLaterCreatesItsFolderBelowTheInbox() {
+    fun turningOnReadLaterAddsItsMailboxAfterTheInbox() {
         start()
         openSettingsPage("Appearance & behavior")
         compose.onNodeWithText("Read later").performScrollTo().performClick()
@@ -107,17 +113,18 @@ class FoldersAndRulesTest {
         }
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        val entry = hasText("Read later") and isSelectable()
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(entry).fetchSemanticsNodes().isNotEmpty() }
-        // With one account, Read later sits under the unified Inbox, above the account's folders.
-        val inbox = compose.onNode(hasText("Inbox") and isSelectable()).fetchSemanticsNode().boundsInRoot
-        val readLater = compose.onNode(entry).fetchSemanticsNode().boundsInRoot
+        val pill = hasText("Read later") and isToggleable()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(pill).fetchSemanticsNodes().isNotEmpty() }
+        val inbox = compose.onNode(hasText("Inbox") and isToggleable()).fetchSemanticsNode().boundsInRoot
+        val readLater = compose.onNode(pill).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
-        assertTrue(inbox.bottom <= readLater.top && readLater.bottom <= receipts.top)
+        assertTrue(inbox.right <= readLater.left && readLater.bottom <= receipts.top)
+        // Read later is a mailbox, not one of the user's folders.
+        compose.onNode(hasText("Read later") and isSelectable()).assertDoesNotExist()
     }
 
     @Test
-    fun readLaterKeepsItsSubfoldersUnderItInTheSidebar() {
+    fun readLaterSubfoldersJoinTheUsersFolders() {
         server.folders += """{"id": "l", "name": "Read later"}"""
         server.folders += """{"id": "x", "name": "Articles", "parentId": "l"}"""
         start(MailBehavior(readLater = true))
@@ -125,32 +132,23 @@ class FoldersAndRulesTest {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         val articles = hasText("Articles") and isSelectable()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(articles).fetchSemanticsNodes().isNotEmpty() }
-        // Articles follows Read later above the account's folders, one level in.
-        val readLater =
-            compose
-                .onNode(hasText("Read later") and hasAnyAncestor(isSelectable()), useUnmergedTree = true)
-                .fetchSemanticsNode()
-                .boundsInRoot
-        val nested = compose.onNodeWithText("Articles", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
-        assertTrue(readLater.bottom <= nested.top && nested.bottom <= receipts.top)
-        assertTrue(nested.left > readLater.left)
+        val folder = compose.onNodeWithText("Articles", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val receipts = compose.onNodeWithText("Receipts", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertEquals(receipts.left, folder.left)
     }
 
     @Test
-    fun combinedFoldersListSpamAndTrashOnceAndOpenThem() {
+    fun mailboxesListSpamAndTrashOnceAndOpenThem() {
         server.folders += """{"id": "j", "name": "Junk Mail", "role": "junk", "unreadEmails": 3}"""
         server.folders += """{"id": "t", "name": "Deleted Items", "role": "trash"}"""
         start()
-        openSettingsPage("Appearance & behavior")
-        compose.onNodeWithText("Combined folders").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Back").performClick()
+        waitFor("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        val spam = hasText("Spam") and hasText("3") and isSelectable()
+        val spam = hasText("Spam") and hasText("3") and isToggleable()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(spam).fetchSemanticsNodes().isNotEmpty() }
-        // The app names each role once, above the account's own folders, in place of the server's names.
-        assertTrue(compose.onAllNodes(hasText("Junk Mail") and isSelectable()).fetchSemanticsNodes().isEmpty())
-        val trash = compose.onNode(hasText("Trash") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        // The app names each role in place of the server's names, above the user's own folders.
+        assertTrue(compose.onAllNodes(hasText("Junk Mail")).fetchSemanticsNodes().isEmpty())
+        val trash = compose.onNode(hasText("Trash") and isToggleable()).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
         assertTrue(trash.bottom <= receipts.top)
         compose.onNode(spam).performClick()

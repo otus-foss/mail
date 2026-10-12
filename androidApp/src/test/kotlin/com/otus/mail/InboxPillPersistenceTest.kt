@@ -8,6 +8,10 @@ import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.domain.MailboxStyle
+import com.otus.mail.feature.inbox.domain.SidebarCount
+import com.otus.mail.feature.inbox.domain.SidebarLayout
+import com.otus.mail.feature.inbox.domain.SidebarSection
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,7 +40,13 @@ class InboxPillPersistenceTest {
             MailBehavior(
                 readLater = true,
                 pills = listOf(InboxPill.Role("archive"), InboxPill.Filter.Flagged, InboxPill.ReadLater),
-                combinedFolders = true,
+                sidebar =
+                    SidebarLayout(
+                        sections = listOf(SidebarSection.Folders, SidebarSection.Mailboxes),
+                        hidden = setOf(SidebarSection.Mailboxes),
+                        mailboxes = MailboxStyle.Rows,
+                        counts = SidebarCount.Total,
+                    ),
             )
         AndroidMailBehaviorStore(context).write(saved)
         assertEquals(saved, AndroidMailBehaviorStore(context).read())

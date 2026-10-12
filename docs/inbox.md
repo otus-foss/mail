@@ -126,7 +126,8 @@ empty-state title. Closing search and clearing filters return to that default. F
 no inbox choices. `MailSource.messages(MailScope)` loads named mailboxes across accounts, folders
 with a shared role through `MailScope.Role`, or selected folders from their own accounts. The
 unified inbox uses the inbox role. [Combined folders](folders.md#combined-folders) use the other
-system roles. Messages keep their server and mailbox IDs so actions use the correct account.
+system roles, and [shared folders](folders.md#shared-folders) load each account's folder at their
+path. Messages keep their server and mailbox IDs so actions use the correct account.
 
 An open message or a selection can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**,
 **Read later**, **Archive**, **Trash**, **Spam**, **Move**, and **Rule for sender** through

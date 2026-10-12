@@ -29,7 +29,7 @@ class AccountRemovalTest {
     private fun openAccounts() {
         compose.runOnUiThread { compose.activity.setContent { App(services = server.services()) } }
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Settings") and isSelectable()).performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Email accounts").performClick()
     }
 

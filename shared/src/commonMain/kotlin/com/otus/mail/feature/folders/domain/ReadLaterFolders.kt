@@ -86,7 +86,7 @@ class ReadLaterFolders(
 
 // Mail in Trash or Junk can be purged with it, and Thunderbird, for one, deletes a folder by moving
 // it into Trash.
-private val DISCARD_ROLES = setOf(TRASH_ROLE, JUNK_ROLE)
+internal val DISCARD_ROLES = setOf(TRASH_ROLE, JUNK_ROLE)
 
 /**
  * The saved folder while it is still one of the user's own and outside Trash and Junk, or else a
