@@ -5,7 +5,6 @@ import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 
@@ -15,14 +14,6 @@ internal fun MessageFlag.label(on: Boolean): String =
         MessageFlag.Read -> if (on) "Mark unread" else "Mark read"
         MessageFlag.Flagged -> if (on) "Unflag" else "Flag"
     }
-
-internal val FolderShortcut.label: String
-    get() =
-        when (this) {
-            FolderShortcut.Archive -> "Archive"
-            FolderShortcut.Trash -> "Trash"
-            FolderShortcut.Spam -> "Spam"
-        }
 
 /** Saving offers Read later; a saved message offers to leave it. */
 internal val ReadLaterChange.label: String

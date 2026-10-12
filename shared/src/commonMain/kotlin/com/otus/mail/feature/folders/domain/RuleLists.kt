@@ -4,6 +4,13 @@ package com.otus.mail.feature.folders.domain
 fun List<MailRule>.upserted(rule: MailRule): List<MailRule> =
     if (any { it.id == rule.id }) map { if (it.id == rule.id) rule else it } else this + rule
 
+/**
+ * These rules with [rule] saved into them. A first rule turns the rules on unless another script
+ * runs: replacing that is the user's choice.
+ */
+fun AccountRules.withRule(rule: MailRule): RuleChange =
+    RuleChange(rules.upserted(rule), keep, run = true.takeIf { !installed && activeOther == null })
+
 fun List<MailRule>.without(ruleId: String): List<MailRule> = filterNot { it.id == ruleId }
 
 fun List<MailRule>.paused(

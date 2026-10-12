@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
 import com.otus.mail.feature.folders.domain.FolderRights
+import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.JUNK_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStep
@@ -13,10 +14,12 @@ import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageLabel
 import com.otus.mail.feature.inbox.domain.inFolder
+import com.otus.mail.feature.inbox.domain.suggestedFolder
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
+import com.otus.mail.feature.inbox.presentation.ownFolders
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -40,14 +43,35 @@ internal class MessageFiling(
             message.copy(labels = labels.orEmpty())
         }
 
-    /** Folders of the message's account that accept mail, except the one it is in. */
+    /**
+     * Folders of the message's account that accept mail, except the one it is in. The user's own
+     * folders are nested as if system folders and Read later were not there.
+     */
     fun moveTargets(message: MailMessage): List<MoveTarget> {
         val account = folders.account(message.location.accountId)
         if (account == null || !folders.rightsOf(message).mayRemoveItems) return emptyList()
+        val own = account.folderTree { !it.isCustom || it.id == account.readLaterId }.associateBy { it.folder.id }
         return account
             .folderTree()
             .filter { it.folder.id != message.location.mailboxId && it.folder.rights.mayAddItems }
-            .map { MoveTarget(it.folder.id, it.path, shortcutFor(it.folder.role)) }
+            .map { node ->
+                val ownNode = own[node.folder.id]
+                MoveTarget(
+                    node.folder.id,
+                    node.path,
+                    shortcutFor(node.folder.role),
+                    name = node.folder.name,
+                    depth = ownNode?.depth ?: 0,
+                    own = ownNode != null,
+                )
+            }
+    }
+
+    /** The user's own folder where most of the sender's recent mail is, read from the server. */
+    suspend fun suggestedTarget(message: MailMessage): MoveTarget? {
+        val own = moveTargets(message).ownFolders().associateBy { it.folderId }
+        if (own.isEmpty()) return null
+        return suggestedFolder(services.senderHistory.recentFolders(message), own.keys)?.let(own::get)
     }
 
     /**
@@ -140,7 +164,7 @@ internal class MessageFiling(
         return when (shortcut) {
             FolderShortcut.Trash, FolderShortcut.Spam -> shown + folderIds
             FolderShortcut.Archive -> shown + setOfNotNull(inbox?.takeIf { it in folderIds })
-            null -> shown
+            FolderShortcut.Inbox, FolderShortcut.Spam, null -> shown
         }
     }
 }
@@ -151,7 +175,9 @@ internal fun FoldersState.rightsOf(message: MailMessage): FolderRights =
 
 private fun shortcutFor(role: String?): FolderShortcut? =
     when (role) {
+        INBOX_ROLE -> FolderShortcut.Inbox
         ARCHIVE_ROLE -> FolderShortcut.Archive
+        JUNK_ROLE -> FolderShortcut.Spam
         TRASH_ROLE -> FolderShortcut.Trash
         JUNK_ROLE -> FolderShortcut.Spam
         else -> null

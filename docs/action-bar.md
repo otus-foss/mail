@@ -47,7 +47,8 @@ The bar shows the **Open message** layout. **More actions** opens an `ActionDial
 action the message can take that the bar leaves out, Reply, Reply all, and Forward included; the
 button is hidden when there are none. An action that takes the message out of the list, such as
 Archive, closes the page first. Marks keep the page open and show their new state on the button.
-**Move** asks for a folder, and choosing one closes the page and moves the message.
+**Move** opens the Move to sheet (see [Folders and rules](folders.md)), and choosing a folder
+closes the page and moves the message.
 
 **Reply**, **Reply all**, and **Forward** open the compose page with a `ComposeRequest` built from
 the message. **New mail** starts a blank draft from the message's account. When the main button
@@ -102,8 +103,9 @@ none of them can take it.
   account's folder with the `archive`, `trash`, or `junk` role. Spam is new and works like Trash:
   the message leaves every folder it is in, Read later included. It moves the message and sets no
   keyword. Messages already in the folder, or whose account has none, are skipped.
-- **Move** needs messages from one account, because folders belong to an account. It offers the
-  folders every selected message can move to.
+- **Move** needs messages from one account, because folders belong to an account. Its Move to
+  sheet offers the folders every selected message can move to, whether the rows were selected by
+  long press, tap, or drag.
 - **Rule for sender** needs exactly one message, so the selection bar never offers it.
 
 Actions follow the same folder rights as before; see

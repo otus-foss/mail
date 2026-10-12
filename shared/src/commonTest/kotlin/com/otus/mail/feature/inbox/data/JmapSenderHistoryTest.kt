@@ -1,0 +1,60 @@
+package com.otus.mail.feature.inbox.data
+
+import com.otus.jmap.JmapClient
+import com.otus.jmap.JmapConnections
+import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.jmap.login.JmapLogin
+import com.otus.mail.feature.inbox.domain.MailLocation
+import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.testing.stalwartLike
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+
+class JmapSenderHistoryTest {
+    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val message =
+        MailMessage(
+            "ada/m1",
+            MailSender("Billing", "billing@acme.example"),
+            "Invoice",
+            "",
+            ReceivedAt("2026-10-04", "09:30"),
+            MailLocation("Inbox", "Ada", "ada", mailboxId = "a"),
+            emailId = "m1",
+        )
+
+    private fun history(reply: (String) -> String): JmapSenderHistory {
+        val store = InMemoryLoginStore().apply { save(login, "secret") }
+        return JmapSenderHistory(JmapConnections(JmapClient(stalwartLike(api = reply)), store), store)
+    }
+
+    @Test
+    fun theSendersNewestMailIsQueriedAndOnlyItsFoldersAreRead() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val folders =
+                history {
+                    sent += it
+                    """{"methodResponses": [["Email/query", {"ids": ["m1", "m2"]}, "c0"],
+                    ["Email/get", {"state": "e", "list": [{"id": "m1", "mailboxIds": {"a": true}},
+                    {"id": "m2", "mailboxIds": {"r": true, "x": false}}]}, "c1"]]}"""
+                }.recentFolders(message)
+            assertEquals(listOf(setOf("a"), setOf("r")), folders)
+            val request = sent.single()
+            assertTrue("\"filter\":{\"from\":\"billing@acme.example\"}" in request, request)
+            assertTrue("\"limit\":50" in request, request)
+            assertTrue("\"properties\":[\"id\",\"mailboxIds\"]" in request, request)
+        }
+
+    @Test
+    fun aFailedQueryOrASuppliedMessageGivesNoHistory() =
+        runTest {
+            val failing = history { error("The server is down") }
+            assertEquals(emptyList(), history { "not json" }.recentFolders(message))
+            assertEquals(emptyList(), failing.recentFolders(message.copy(emailId = "")))
+        }
+}
