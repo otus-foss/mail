@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.components.SwipeAction
 import com.otus.mail.feature.inbox.domain.ActionBarMode
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
@@ -19,10 +20,11 @@ internal fun MessageFlag.label(on: Boolean): String =
 internal val ReadLaterChange.label: String
     get() = if (saves) "Read later" else "Remove from Read later"
 
-/** The action as the settings page names it, independent of any one message. */
-internal val MailAction.label: String
+/** The button as the settings page names it, independent of any one message. */
+internal val BarButton.label: String
     get() =
         when (this) {
+            is BarButton.MoveTo -> "Move to ${path.joinToString(FOLDER_PATH_SEPARATOR)}"
             MailAction.Read -> "Read / unread"
             MailAction.Flag -> "Flag / unflag"
             MailAction.ReadLater -> "Read later"
@@ -30,6 +32,7 @@ internal val MailAction.label: String
             MailAction.Trash -> "Trash"
             MailAction.Spam -> "Spam"
             MailAction.Move -> "Move"
+            MailAction.SuggestedMove -> "Suggested move"
             MailAction.RuleForSender -> "Rule for sender"
             MailAction.Reply -> "Reply"
             MailAction.ReplyAll -> "Reply all"
@@ -43,21 +46,27 @@ internal val MailAction.label: String
             MailAction.Discard -> "Discard"
         }
 
-/** The action's name on a button that shows no state, such as an unavailable or previewed one. */
-internal val MailAction.buttonLabel: String
-    get() =
-        when (this) {
-            MailAction.Read -> MessageFlag.Read.label(on = false)
-            MailAction.Flag -> MessageFlag.Flagged.label(on = false)
-            else -> label
-        }
+/**
+ * The button's name in a bar when it shows no state, such as an unavailable or previewed one. On
+ * the [primary] button, Move to shows only the folder's name.
+ */
+internal fun BarButton.buttonLabel(primary: Boolean = false): String =
+    when (this) {
+        is BarButton.MoveTo -> if (primary) name else "Move to $name"
+        MailAction.Read -> MessageFlag.Read.label(on = false)
+        MailAction.Flag -> MessageFlag.Flagged.label(on = false)
+        else -> label
+    }
+
+/** Joins a folder's names from the top level down, as pickers show its path. */
+internal const val FOLDER_PATH_SEPARATOR = " / "
 
 /** The swipe that runs [action] on [message]; null when there is none or the message cannot take it. */
 internal fun MessageActions.swipeAction(
     message: MailMessage,
     action: MailAction?,
 ): SwipeAction? =
-    action?.takeIf { it.swipeable }?.let { offer(listOf(message), it) { _, _ -> } }?.let {
+    action?.takeIf { it.swipeable }?.let { offer(listOf(message), it, chooseFolder = { _, _ -> }) }?.let {
         SwipeAction(it.label, it.symbol, dismisses = it.leaves, onSwipe = it.run)
     }
 

@@ -31,12 +31,14 @@ import com.otus.mail.feature.inbox.presentation.components.title
 
 /**
  * Chooses whether each screen has its own action bar or one bar is used everywhere. A card per
- * bar that mode shows previews it as saved, and tapping the card opens its editor. The editor's
- * menu copies the bar to other screens.
+ * bar that mode shows previews it as saved, and tapping the card opens its editor, where Move to
+ * buttons pick among [folders], the paths of every account's own folders. The editor's menu
+ * copies the bar to other screens.
  */
 @Composable
 fun ActionBarSettingsScreen(
     state: MailBehaviorState,
+    folders: List<List<String>>,
     onBack: () -> Unit,
 ) {
     var choosingMode by rememberSaveable { mutableStateOf(false) }
@@ -70,6 +72,7 @@ fun ActionBarSettingsScreen(
         ActionBarEditSheet(
             state,
             place,
+            folders,
             onCopy = {
                 editing = null
                 copying = place

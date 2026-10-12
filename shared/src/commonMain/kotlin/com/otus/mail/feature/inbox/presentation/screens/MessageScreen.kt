@@ -36,8 +36,9 @@ import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.domain.MailAction.SuggestedMove
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.MailActionBar
@@ -45,6 +46,7 @@ import com.otus.mail.feature.inbox.presentation.components.OfferedAction
 import com.otus.mail.feature.inbox.presentation.components.offer
 import com.otus.mail.feature.inbox.presentation.components.overflow
 import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
+import com.otus.mail.feature.inbox.presentation.components.rememberSuggestedMove
 import com.otus.mail.feature.inbox.presentation.components.replyContext
 import com.otus.mail.feature.inbox.presentation.components.replyOffer
 
@@ -73,16 +75,18 @@ fun MessageScreen(
         if (action.leaves) onClose()
         action.run()
     }
-    val offerFor = { action: MailAction ->
-        actions?.offer(listOf(message), action, moveChoice::choose)
+    val behavior = actions?.behavior()
+    val layout = behavior?.barLayout(ActionBarPlace.Message)
+    val suggestion = rememberSuggestedMove(listOf(message), actions, layout?.buttons.orEmpty().contains(SuggestedMove))
+    val offerFor = { action: BarButton ->
+        actions?.offer(listOf(message), action, moveChoice::choose, suggestion)
             ?: replyOffer(message, action, onCompose)
     }
-    val behavior = actions?.behavior()
     val more = behavior?.overflow(ActionBarPlace.Message, offerFor).orEmpty()
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar =
-                behavior?.barLayout(ActionBarPlace.Message)?.let { layout ->
+                layout?.let {
                     {
                         MailActionBar(
                             layout,

@@ -21,13 +21,13 @@ internal fun ActionBarPreview(
     addSlot: Boolean = false,
 ) {
     val secondary =
-        layout.secondary.mapIndexed { index, action ->
-            BarAction(action.buttonLabel, action.symbol) { onSlot(BarSlot.Secondary(index)) }
+        layout.secondary.mapIndexed { index, button ->
+            BarAction(button.buttonLabel(), button.symbol) { onSlot(BarSlot.Secondary(index)) }
         }
     val next = layout.secondary.size.takeIf { addSlot && it < ActionBarLayout.MAX_SECONDARY }
     val add = next?.let { BarAction("Add button", Res.drawable.symbol_add) { onSlot(BarSlot.Secondary(it)) } }
     ActionBar(
-        BarAction(layout.primary.buttonLabel, layout.primary.symbol) { onSlot(BarSlot.Primary) },
+        BarAction(layout.primary.buttonLabel(primary = true), layout.primary.symbol) { onSlot(BarSlot.Primary) },
         secondary = secondary + listOfNotNull(add),
     )
 }

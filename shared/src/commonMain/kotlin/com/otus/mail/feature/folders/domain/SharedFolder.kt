@@ -3,15 +3,19 @@ package com.otus.mail.feature.folders.domain
 /**
  * The user's own folders of every account, merged by path. Folders whose names match from the top
  * level down, ignoring case, are one shared folder, so Clients / Acme in two accounts is one row
- * holding both accounts' mail. [key] is that path in lower case, and [folders] are the accounts'
- * folders at it; a folder with only nested folders in some account holds none of that account's.
+ * holding both accounts' mail. [path] names it from the top level down as the first account spells
+ * it, and [key] is that path in lower case. [folders] are the accounts' folders at it; a folder
+ * with only nested folders in some account holds none of that account's.
  */
 data class SharedFolder(
     val name: String,
-    val key: List<String>,
+    val path: List<String>,
     val folders: List<MailFolder>,
     val children: List<SharedFolder> = emptyList(),
 ) {
+    val key: List<String>
+        get() = path.map { it.lowercase() }
+
     /** This folder, then its nested folders, in order. */
     fun flatten(): List<SharedFolder> = listOf(this) + children.flatMap { it.flatten() }
 }
@@ -61,12 +65,7 @@ private fun merge(
         val (here, below) = group.partition { it.names.size == depth + 1 }
         SharedFolder(
             name = group.first().names[depth],
-            key =
-                group
-                    .first()
-                    .names
-                    .take(depth + 1)
-                    .map { it.lowercase() },
+            path = group.first().names.take(depth + 1),
             folders = here.map { it.folder },
             children = merge(below, depth + 1),
         )

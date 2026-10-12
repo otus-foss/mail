@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -20,7 +21,7 @@ internal class ListActions(
 )
 
 /** [action] for the list; null for actions that need a message, and for Mark all read with nothing unread. */
-internal fun ListActions.offer(action: MailAction): OfferedAction? =
+internal fun ListActions.offer(action: BarButton): OfferedAction? =
     when (action) {
         MailAction.NewMail -> plainOffer(action) { onCompose(ComposeRequest.New(accountId)) }
         MailAction.Search -> plainOffer(action, onSearch)

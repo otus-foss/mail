@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.otus.designsystem.components.BarContext
 import com.otus.designsystem.components.BarToken
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
 
@@ -20,9 +21,11 @@ internal fun SelectionBar(
 ) {
     val moveChoice = rememberMoveChoice(onDone)
     val behavior = actions.behavior()
+    val layout = behavior.barLayout(ActionBarPlace.Selection)
+    val suggestion = rememberSuggestedMove(selected, actions, wanted = MailAction.SuggestedMove in layout.buttons)
     MailActionBar(
-        behavior.barLayout(ActionBarPlace.Selection),
-        offer = { actions.offer(selected, it, moveChoice::choose) },
+        layout,
+        offer = { actions.offer(selected, it, moveChoice::choose, suggestion) },
         onAction = { action ->
             action.run()
             if (!action.asks) onDone()

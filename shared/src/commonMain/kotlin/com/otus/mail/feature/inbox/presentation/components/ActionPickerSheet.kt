@@ -22,26 +22,34 @@ import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionTarget
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.BarSlot
 import com.otus.mail.feature.inbox.domain.MailAction
 
 /**
  * Picks the action for [slot] of [layout] from [choices], grouped by what each acts on and narrowed
  * by search. Picking applies at once and moves the check; an action already elsewhere in the bar
- * says it will trade places. [onRemove], when given, empties the slot and closes the sheet.
+ * says it will trade places. Where messages can move to [folders], the messages group ends in a
+ * [MoveToChoice]. [onRemove], when given, empties the slot and closes the sheet.
  */
 @Composable
 internal fun ActionPickerSheet(
     slot: BarSlot,
     layout: ActionBarLayout,
     choices: List<MailAction>,
-    onPick: (MailAction) -> Unit,
+    folders: List<BarButton.MoveTo>,
+    onPick: (BarButton) -> Unit,
     onRemove: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val current = layout.actionAt(slot)
-    val groups = choices.filter { it.label.contains(query.trim(), ignoreCase = true) }.groupBy { it.target }
+    val matches = { label: String -> label.contains(query.trim(), ignoreCase = true) }
+    val moveTo = (folders.isNotEmpty() || current is BarButton.MoveTo) && matches(MOVE_TO_FOLDER)
+    val groups =
+        choices.filter { matches(it.label) }.groupBy { it.target }.let { found ->
+            if (moveTo) found + (ActionTarget.Messages to found[ActionTarget.Messages].orEmpty()) else found
+        }
     SheetFrame(slot.title, onDismiss) {
         Column(
             Modifier
@@ -58,17 +66,13 @@ internal fun ActionPickerSheet(
                         SettingRow(
                             action.label,
                             { onPick(action) },
-                            description =
-                                layout
-                                    .slotOf(
-                                        action,
-                                    )?.takeIf { it != slot }
-                                    ?.let { "Swaps with ${it.title}" },
+                            description = layout.swapNote(slot, action),
                             icon = action.symbol,
                             trailing = { if (action == current) Symbol(Res.drawable.symbol_check) },
                             density = RowDensity.Compact,
                         )
                     }
+                    if (moveTo && target == ActionTarget.Messages) MoveToChoice(slot, layout, folders, onPick)
                 }
             }
             if (groups.isEmpty()) SheetCaption("No actions match.", RowTextInset, heading = false)
@@ -83,6 +87,12 @@ internal fun ActionPickerSheet(
         }
     }
 }
+
+/** Says that picking [button] for [slot] trades places with the slot that holds it, if another does. */
+internal fun ActionBarLayout.swapNote(
+    slot: BarSlot,
+    button: BarButton?,
+): String? = button?.let(::slotOf)?.takeIf { it != slot }?.let { "Swaps with ${it.title}" }
 
 /** The slot's name as its picker and the actions that would swap with it call it. */
 internal val BarSlot.title: String

@@ -23,10 +23,10 @@ enum class ActionTarget {
  * [swipeable] actions can be a swipe; [target] decides where the bar can offer it.
  */
 enum class MailAction(
-    val storageValue: String,
-    val target: ActionTarget,
+    override val storageValue: String,
+    override val target: ActionTarget,
     val swipeable: Boolean = false,
-) {
+) : BarButton {
     Read("read", ActionTarget.Messages, swipeable = true),
     Flag("flag", ActionTarget.Messages, swipeable = true),
     ReadLater("read_later", ActionTarget.Messages, swipeable = true),
@@ -34,6 +34,7 @@ enum class MailAction(
     Trash("trash", ActionTarget.Messages, swipeable = true),
     Spam("spam", ActionTarget.Messages),
     Move("move", ActionTarget.Messages),
+    SuggestedMove("suggested_move", ActionTarget.Messages),
     RuleForSender("rule_for_sender", ActionTarget.OneMessage),
     Reply("reply", ActionTarget.OneMessage),
     ReplyAll("reply_all", ActionTarget.OneMessage),

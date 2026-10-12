@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.components.BarContext
 import com.otus.designsystem.components.BarToken
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -13,7 +14,7 @@ import com.otus.mail.feature.inbox.domain.original
  */
 internal fun replyOffer(
     message: MailMessage,
-    action: MailAction,
+    action: BarButton,
     onCompose: (ComposeRequest) -> Unit,
 ): OfferedAction? {
     val request =
@@ -30,7 +31,7 @@ internal fun replyOffer(
 /** Who [primary] answers, shown beside it: the sender for Reply, and everyone for Reply all. */
 internal fun replyContext(
     message: MailMessage,
-    primary: MailAction,
+    primary: BarButton,
 ): BarContext? {
     val sender = message.sender
     val name = sender.name.ifBlank { sender.address }

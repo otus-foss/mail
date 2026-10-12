@@ -10,6 +10,7 @@ import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
+import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageLabel
@@ -51,6 +52,11 @@ internal class MessageFiling(
         val account = folders.account(message.location.accountId)
         if (account == null || !folders.rightsOf(message).mayRemoveItems) return emptyList()
         val own = account.folderTree { !it.isCustom || it.id == account.readLaterId }.associateBy { it.folder.id }
+        val paths =
+            sharedFolders(listOf(account))
+                .flatMap { it.flatten() }
+                .flatMap { shared -> shared.folders.map { it.id to shared.path } }
+                .toMap()
         return account
             .folderTree()
             .filter { it.folder.id != message.location.mailboxId && it.folder.rights.mayAddItems }
@@ -63,6 +69,7 @@ internal class MessageFiling(
                     name = node.folder.name,
                     depth = ownNode?.depth ?: 0,
                     own = ownNode != null,
+                    path = paths[node.folder.id],
                 )
             }
     }

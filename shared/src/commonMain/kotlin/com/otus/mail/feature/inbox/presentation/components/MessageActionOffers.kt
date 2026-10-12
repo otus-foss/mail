@@ -11,11 +11,13 @@ import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_flag
+import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.resources.symbol_send
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
@@ -31,14 +33,17 @@ internal typealias ChooseFolder = (messages: List<MailMessage>, targets: List<Mo
 /**
  * [action] for [messages], one or a selection; null when none of them can take it. A mark turns
  * on for all of them while any lacks it, and off otherwise. Moving needs one account, because
- * folders belong to an account.
+ * folders belong to an account. Suggested move goes to [suggestion], when there is one.
  */
 internal fun MessageActions.offer(
     messages: List<MailMessage>,
-    action: MailAction,
+    action: BarButton,
     chooseFolder: ChooseFolder,
+    suggestion: MoveTarget? = null,
 ): OfferedAction? =
     when (action) {
+        is BarButton.MoveTo -> offerMoveTo(messages, action)
+
         MailAction.Read -> offerMark(messages, MessageFlag.Read)
 
         MailAction.Flag -> offerMark(messages, MessageFlag.Flagged)
@@ -53,6 +58,8 @@ internal fun MessageActions.offer(
 
         MailAction.Move -> offerMove(messages, chooseFolder)
 
+        MailAction.SuggestedMove -> suggestion?.let { offerSuggested(messages, it) }
+
         MailAction.RuleForSender -> offerRule(messages)
 
         // Screen and draft actions are offered by their screens, not for messages.
@@ -60,9 +67,11 @@ internal fun MessageActions.offer(
     }
 
 /** The symbol settings and unavailable slots show, independent of any message. */
-internal val MailAction.symbol: DrawableResource
+internal val BarButton.symbol: DrawableResource
     get() =
         when (this) {
+            is BarButton.MoveTo, MailAction.SuggestedMove -> Res.drawable.symbol_folder
+
             MailAction.Read -> Res.drawable.symbol_mark_email_read
 
             MailAction.Flag -> Res.drawable.symbol_flag
@@ -120,37 +129,6 @@ private fun MessageActions.offerReadLater(messages: List<MailMessage>): OfferedA
     val chosen = saving.ifEmpty { changes }.ifEmpty { return null }
     return OfferedAction(chosen.first().label, Res.drawable.symbol_bookmark, chosen.any { it.leaves }) {
         chosen.forEach { it.apply() }
-    }
-}
-
-private fun MessageActions.offerFiling(
-    messages: List<MailMessage>,
-    shortcut: FolderShortcut,
-    action: MailAction,
-): OfferedAction? {
-    val filings = messages.mapNotNull { message -> shortcutTarget(message, shortcut)?.let { message to it } }
-    if (filings.isEmpty()) return null
-    return OfferedAction(shortcut.label, action.symbol, leaves = true) {
-        filings.forEach { (message, target) -> moves.onMove(message, target) }
-    }
-}
-
-private fun MessageActions.offerMove(
-    messages: List<MailMessage>,
-    chooseFolder: ChooseFolder,
-): OfferedAction? {
-    val oneAccount = messages.distinctBy { it.location.accountId }.size == 1
-    val targets =
-        if (oneAccount) {
-            messages
-                .map { moves.targets(it) }
-                .reduce { common, next -> common.filter { target -> next.any { it.folderId == target.folderId } } }
-        } else {
-            emptyList()
-        }
-    if (targets.isEmpty()) return null
-    return OfferedAction("Move", MailAction.Move.symbol, leaves = false, asks = true) {
-        chooseFolder(messages, targets)
     }
 }
 

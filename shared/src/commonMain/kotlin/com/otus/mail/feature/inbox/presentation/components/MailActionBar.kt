@@ -7,7 +7,7 @@ import com.otus.designsystem.components.BarAction
 import com.otus.designsystem.components.BarContext
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailBehavior
 
 /**
@@ -19,28 +19,30 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 @Composable
 internal fun MailActionBar(
     layout: ActionBarLayout,
-    offer: (MailAction) -> OfferedAction?,
+    offer: (BarButton) -> OfferedAction?,
     onAction: (OfferedAction) -> Unit,
     minimized: Boolean,
     modifier: Modifier = Modifier,
     context: BarContext? = null,
     hidden: Boolean = false,
 ) {
-    fun barAction(action: MailAction): BarAction {
-        val offered = offer(action)
+    fun barAction(
+        button: BarButton,
+        primary: Boolean,
+    ): BarAction {
+        val offered = offer(button)
         return BarAction(
-            offered?.label ?: action.buttonLabel,
-            offered?.symbol ?: action.symbol,
-            enabled =
-                offered != null,
+            (if (primary) offered?.primaryLabel else offered?.label) ?: button.buttonLabel(primary),
+            offered?.symbol ?: button.symbol,
+            enabled = offered != null,
         ) {
             offered?.let(onAction)
         }
     }
     ActionBar(
-        barAction(layout.primary),
+        barAction(layout.primary, primary = true),
         modifier,
-        secondary = if (minimized) emptyList() else layout.secondary.map(::barAction),
+        secondary = if (minimized) emptyList() else layout.secondary.map { barAction(it, primary = false) },
         context = context,
         minimized = minimized,
         hidden = hidden,
@@ -48,16 +50,14 @@ internal fun MailActionBar(
 }
 
 /**
- * Actions [place] can offer that its bar leaves out, for a page's menu, which takes the secondary
- * actions too while the bar is minimized. [offer] drops those that do not apply.
+ * Actions [place] can offer that its bar leaves out, for a page's menu, after the secondary
+ * buttons while the bar is minimized. [offer] drops those that do not apply.
  */
 internal fun MailBehavior.overflow(
     place: ActionBarPlace,
-    offer: (MailAction) -> OfferedAction?,
+    offer: (BarButton) -> OfferedAction?,
 ): List<OfferedAction> {
     val layout = barLayout(place)
-    val shown = if (minimizedBar) listOf(layout.primary) else layout.buttons
-    return barChoices(place)
-        .filter { it !in shown }
-        .mapNotNull(offer)
+    val hidden = if (minimizedBar) layout.secondary else emptyList()
+    return (hidden + barChoices(place).filter { it !in layout.buttons }).mapNotNull(offer)
 }
