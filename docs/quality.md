@@ -55,7 +55,8 @@ The CI `quality` workflow runs on pull requests that change more than Markdown. 
 `checkAll`, and its `ios` job runs Swift formatting/lint plus a simulator build. The iOS job runs on macOS 15 with Xcode 26.3; Compose
 Multiplatform links symbols from the iOS 26 SDK, so Xcode 16 cannot link the app. The simulator
 build verifies compilation without device signing and targets `arm64`, matching the configured Apple Silicon simulator framework.
-JMAP iOS storage tests run in otus-meta through `:jmap:iosSimulatorArm64Test` before publication.
+JMAP iOS storage tests live in otus-meta as `:jmap:iosSimulatorArm64Test`. Meta's publish job
+does not run them, and its macOS `ios` job is paused, so they run only when started by hand on a Mac.
 Android setup installs `platform-tools`
 and the pinned platform/build-tools packages rather than the removed legacy `tools` package.
 
