@@ -80,9 +80,9 @@ data class ActionBarLayout(
         require(secondary.size <= MAX_SECONDARY && secondary.distinct() == secondary && primary !in secondary)
     }
 
-    /** Makes [action] the primary; when it was a secondary, the old primary takes its slot. */
-    fun withPrimary(action: MailAction): ActionBarLayout =
-        copy(secondary = secondary.replace(action, primary), primary = action)
+    /** The primary, then the secondary actions in slot order, as settings list them. */
+    val buttons: List<MailAction>
+        get() = listOf(primary) + secondary
 
     /**
      * Puts [action] in [slot], or empties it when null; later slots then move up. An action
@@ -139,6 +139,16 @@ data class ActionBarLayout(
                 ?: kept.firstOrNull()
                 ?: place.actions.first { it != action }
         return ActionBarLayout(kept - primary, primary)
+    }
+
+    /** Moves the [buttons] entry at [from] to [to]; whichever button ends up first is the primary. */
+    fun moved(
+        from: Int,
+        to: Int,
+    ): ActionBarLayout {
+        val rest = buttons.filterIndexed { index, _ -> index != from }
+        val order = rest.take(to) + buttons[from] + rest.drop(to)
+        return ActionBarLayout(order.drop(1), order.first())
     }
 
     fun encode(): String = secondary.joinToString(",") { it.storageValue } + "|" + primary.storageValue

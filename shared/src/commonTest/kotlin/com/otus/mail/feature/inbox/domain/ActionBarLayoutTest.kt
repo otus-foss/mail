@@ -33,12 +33,6 @@ class ActionBarLayoutTest {
     private val message = layout(Archive, Trash, Flag)
 
     @Test
-    fun aSecondaryMadePrimaryTradesPlacesWithTheOldPrimary() {
-        assertEquals(layout(Archive, Trash, Move, primary = Flag), message.withPrimary(Flag))
-        assertEquals(layout(Archive, Trash, Flag, primary = Spam), message.withPrimary(Spam))
-    }
-
-    @Test
     fun aSlotTakesANewActionOrEmptiesAndLaterSlotsMoveUp() {
         assertEquals(layout(Spam, Trash, Flag), message.withSlot(0, Spam))
         assertEquals(layout(Archive, Flag), message.withSlot(1, null))
@@ -49,6 +43,19 @@ class ActionBarLayoutTest {
     fun anActionAlreadyInTheBarTradesPlacesWithTheSlotsOldAction() {
         assertEquals(layout(Flag, Trash, Archive), message.withSlot(0, Flag))
         assertEquals(layout(Move, Trash, Flag, primary = Archive), message.withSlot(0, Move))
+    }
+
+    @Test
+    fun aMovedButtonLeavesTheOthersInOrder() {
+        assertEquals(layout(Trash, Flag, Archive), message.moved(1, 3))
+        assertEquals(layout(Flag, Archive, Trash), message.moved(3, 1))
+    }
+
+    @Test
+    fun theFirstButtonIsThePrimary() {
+        assertEquals(listOf(Move, Archive, Trash, Flag), message.buttons)
+        assertEquals(layout(Move, Trash, Flag, primary = Archive), message.moved(1, 0))
+        assertEquals(layout(Archive, Trash, Move, primary = Flag), message.moved(0, 3).moved(2, 0))
     }
 
     @Test

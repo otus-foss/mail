@@ -25,5 +25,6 @@ internal fun InboxBar(
     val matching = state.matching
     val results = remember(messages, matching) { searchMessages(messages, matching) }
     val list = ListActions(results, matching.accounts.singleOrNull(), actions, state::startSearch, onFilters, onCompose)
-    MailActionBar(actions.behavior().barLayout(ActionBarPlace.Inbox), list::offer, onAction = { it.run() })
+    val behavior = actions.behavior()
+    MailActionBar(behavior.barLayout(ActionBarPlace.Inbox), list::offer, onAction = { it.run() }, behavior.minimizedBar)
 }

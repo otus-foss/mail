@@ -14,8 +14,8 @@ optional day. Both use the shared `DateWheelPicker` body and the `WheelPicker` e
 Mail's calendar uses `MonthYearPicker`.
 
 The action bar work uses Meta's unreleased `ActionBar`, `ActionBarHost`, `BarAction`,
-`BarContext`, `BarToken`, `BarIconButton`, `ActionBarTokens`, `ContentRow` selection, and
-`symbol_more_horiz`. All motion uses the unreleased `Motion`, `MotionSpeed`, `MotionCurve`,
+`BarContext`, `BarToken`, `BarIconButton`, `ActionBarTokens`, `ContentRow` selection,
+`symbol_more_horiz`, `ReorderableColumn`'s `background`, `PreviewCard`, and `SketchMarker`. All motion uses the unreleased `Motion`, `MotionSpeed`, `MotionCurve`,
 `motionTween`, and `LocalMotionScale`, which replace the `MotionTokens` of earlier releases; see
 [motion](motion.md). They join the tables below once a Meta release with them is tagged and
 pinned. See [action bar](action-bar.md). The compose page also uses the unreleased
@@ -163,6 +163,9 @@ pinned. See [action bar](action-bar.md). The compose page also uses the unreleas
 | [MoveSorting](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveSorting.kt) | `MoveSorting`, `rememberMoveSorting` | `otus-mail` | The sort switch and chosen condition, kept across recreation. |
 | [InboxResults](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxResults.kt) | `InboxResults` | `otus-mail` | The message count, notice, and list, padded clear of the action bar. |
 | [MailActionBar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailActionBar.kt) | `MailActionBar`, `overflow` | `otus-mail` | Maps a saved layout and a screen's offers into shared `ActionBar`; an action the screen cannot offer stays disabled in its slot. `overflow` lists what the bar leaves out. |
+| [ActionBarPreview](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ActionBarPreview.kt) | `ActionBarPreview`, `title`, `description`, `marker` | `otus-mail` | A saved bar drawn with shared `ActionBar` whose buttons only open its editor, and each place's card text and sketch marker. |
+| [ActionBarEditSheet](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ActionBarEditSheet.kt) | `ActionBarEditSheet` | `otus-mail` | Edits one place's bar in a shared `SheetFrame`: reorder with `ReorderableColumn`, remove, and add. |
+| [ActionBarCopySheet](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ActionBarCopySheet.kt) | `ActionBarCopySheet` | `otus-mail` | Copies one place's bar to the places the user ticks, with shared `SheetFrame` and `SelectionRow`. |
 | [ComposeBar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ComposeBar.kt) | `ComposeBar` | `otus-mail` | The compose page's `MailActionBar`: only Discard runs, and the main button names the draft's recipients with a `BarToken`. |
 | [ComposeFields](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ComposeFields.kt) | `ComposeFields` | `otus-mail` | A draft's From, To, Cc, Bcc, and Subject lines from shared `ComposeField` and `ComposeValueField`; Cc and Bcc stay hidden until asked for. |
 | [InboxBar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxBar.kt) | `InboxBar` | `otus-mail` | The message list's bar while nothing is selected. |
@@ -174,7 +177,7 @@ pinned. See [action bar](action-bar.md). The compose page also uses the unreleas
 | [RowGestures](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/RowGestures.kt) | `RowGestures` | `otus-mail` | What message rows do on swipe, tap, and long press, and drag, including selection. |
 | [DragToSelect](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/DragToSelect.kt) | `dragToSelect` | `otus-mail` | Long-press-and-drag selection over the message list, with edge scrolling. Draws nothing; [`DragSelection`](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/DragSelection.kt) works out which rows a drag selects. |
 | [SearchFilterChip](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/SearchFilterChip.kt) | `SearchFilterChip` | `otus-mail` | Mail filter selection and labels; pill drawing is shared Chip/AvatarStackChip. |
-| [ActionBarSettingsScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/ActionBarSettingsScreen.kt) | `ActionBarSettingsScreen` | `otus-mail` | Chooses one bar for every screen or one per screen, and each bar's buttons; uses shared `Subpage`, `SettingRow`, `ChoiceSheet`, and an `ActionBar` preview. |
+| [ActionBarSettingsScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/ActionBarSettingsScreen.kt) | `ActionBarSettingsScreen` | `otus-mail` | Chooses one bar for every screen or one per screen, with a `PreviewCard` per bar that opens its editor; uses shared `Subpage`, `SettingRow`, and `ChoiceSheet`. |
 | [ComposeScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/ComposeScreen.kt) | `ComposeScreen` | `otus-mail` | A new message, reply, or forward as a page; uses shared `ContextPanel`, `ActionBarHost`, `ComposeBody`, `ChoiceSheet`, and `ConfirmDialog`. |
 | [InboxScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/InboxScreen.kt) | `InboxScreen` | `otus-mail` | Mail messages, searches, filters, selection, and the list's action bar; uses shared controls and `ActionBarHost`. |
 | [MessageScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/MessageScreen.kt) | `MessageScreen` | `otus-mail` | The open message as a page with its action bar and **More actions** menu; uses shared `ContextPanel`, `ActionBarHost`, and `ActionDialog`. |
