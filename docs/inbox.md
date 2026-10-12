@@ -169,8 +169,8 @@ Tapping a row opens the message as a page over the list, with a back chevron, th
 the bottom shows the user's chosen actions, and **More actions** lists the rest. An action that
 takes the message out of the list closes the page first; marks keep it open.
 
-Long-pressing a row selects it. While rows are selected, a tap toggles a row instead of opening
-it, selected rows show a check in place of the avatar, and system Back clears the selection. The
+Long-pressing a row selects it, and dragging up or down before lifting selects every row passed.
+While rows are selected, a tap toggles a row instead of opening it, selected rows show a check in place of the avatar, and system Back clears the selection. The
 selection bar shows the number of selected messages beside its main button, and each action ends
 the selection. With nothing selected, the list shows its own bar with **New mail**, **Search**,
 **Filters**, and **Mark all read**. See [action bar](action-bar.md) for the actions, settings, and
