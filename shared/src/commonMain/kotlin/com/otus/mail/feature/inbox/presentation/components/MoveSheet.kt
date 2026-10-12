@@ -115,7 +115,7 @@ internal fun MoveSheet(
 }
 
 /**
- * Read later, then the system folders, as one wrapping row of pills, with the pill that also sorts
+ * Inbox, Read later, then the other system folders, as one wrapping row of pills, with the pill that also sorts
  * future mail at the end; nothing when there are none.
  */
 @Composable
@@ -128,15 +128,24 @@ private fun MovePills(
     if (onReadLater == null && shortcuts.isEmpty() && sorting.future == null) return
     Row(horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
         FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
+            // Inbox leads whenever the message can go back there, so the pills keep one order.
+            val (inbox, others) = shortcuts.partition { it.shortcut == FolderShortcut.Inbox }
+            inbox.forEach { ShortcutPill(it, onMove) }
             onReadLater?.let { SidebarPill(READ_LATER, Res.drawable.symbol_bookmark, selected = false, it) }
-            shortcuts.forEach { target ->
-                target.shortcut?.let { SidebarPill(it.label, it.icon, selected = false, { onMove(target) }) }
-            }
+            others.forEach { ShortcutPill(it, onMove) }
         }
         sorting.future?.let {
             IconPill(SORT_FUTURE_MAIL, Res.drawable.symbol_filter_list, sorting.on, { sorting.onToggle(!sorting.on) })
         }
     }
+}
+
+@Composable
+private fun ShortcutPill(
+    target: MoveTarget,
+    onMove: (MoveTarget) -> Unit,
+) {
+    target.shortcut?.let { SidebarPill(it.label, it.icon, selected = false, { onMove(target) }) }
 }
 
 /** The user's own folder [sender]'s mail usually goes to, under its own caption. */

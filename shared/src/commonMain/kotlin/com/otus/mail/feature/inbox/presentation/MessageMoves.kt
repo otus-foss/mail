@@ -2,7 +2,6 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
-import org.jetbrains.compose.resources.DrawableResource
 
 /** Moving a message: where it can go, the move itself, and what the move sheet suggests. */
 class MessageMoves(
@@ -18,14 +17,16 @@ class MessageMoves(
 
 /**
  * Mail like one message that a new rule can sort. [label] completes "Mail that", such as "is from
- * billing@acme.example", [detail] says who else it catches, and [icon] shows what it matches by.
- * [person] is the sender or recipient whose address the label names; null when it names none.
+ * billing@acme.example". In the choices it reads as [keyword] before [value], such as "From" before
+ * "billing@acme.example", over [detail], which says who else it catches. [person] is the sender,
+ * recipient, or company [value] names; null for a subject word.
  * [addRule] adds the rule that sends such mail to the folder the messages moved to.
  */
 class SortChoice(
     val label: String,
+    val keyword: String,
+    val value: String,
     val detail: String,
-    val icon: DrawableResource,
     val person: MailSender?,
     val addRule: (MoveTarget, moved: List<MailMessage>) -> Unit,
 )
