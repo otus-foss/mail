@@ -37,6 +37,9 @@ class FakeFolderServer {
     /** The subject of the one message in each folder; any other folder's message is "Welcome". */
     val subjects = mutableMapOf("r" to "Order shipped")
 
+    /** The folder of each earlier message from the sender, newest first, for folder suggestions. */
+    val senderFolders = mutableListOf<String>()
+
     /** When set, every `Email/set` update is refused as forbidden. */
     var refuseUpdates = false
 
@@ -98,6 +101,7 @@ class FakeFolderServer {
                 "Mailbox/query" in body -> draftsQuery()
                 "Email/set" in body -> setEmail(body)
                 "Identity/get" in body -> IDENTITIES
+                "Email/query" in body && FROM_FILTER in body -> senderMail()
                 "Email/query" in body -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
@@ -156,6 +160,14 @@ class FakeFolderServer {
            "subject": "$subject", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Hello"}]}, "c1"]"""
     }
 
+    private fun senderMail(): String {
+        val list =
+            senderFolders
+                .mapIndexed { index, folder -> """{"id": "h$index", "mailboxIds": {"$folder": true}}""" }
+                .joinToString(prefix = "[", postfix = "]")
+        return """["Email/query", {"ids": []}, "c0"], ["Email/get", {"state": "e", "list": $list}, "c1"]"""
+    }
+
     private fun MockRequestHandleScope.json(text: String): HttpResponseData =
         respond(text, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
 
@@ -165,6 +177,7 @@ class FakeFolderServer {
         val DESTROY = Regex("\"destroy\":\\[([^\\]]*)]")
         const val IDENTITIES = """["Identity/get", {"state": "i", "list": [
             {"id": "i1", "name": "Ada Lovelace", "email": "ada@example.org"}]}, "c0"]"""
+        const val FROM_FILTER = "\"filter\":{\"from\":"
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:mail": {},
             "urn:ietf:params:jmap:submission": {}, "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
             "accounts": {"d1": {"name": "Ada", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},

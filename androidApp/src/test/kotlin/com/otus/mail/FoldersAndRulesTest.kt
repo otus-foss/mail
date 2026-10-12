@@ -188,7 +188,7 @@ class FoldersAndRulesTest {
     fun anOpenMessageMovesToAFolder() {
         openWelcome()
         compose.onNodeWithContentDescription("Move").performClick()
-        compose.onNodeWithText("Receipts / Amazon").performClick()
+        compose.onNodeWithText("Amazon").performClick()
         // Opening marked the message read; the move is the update that changes its folders.
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "mailboxIds" in it } }
         val move = server.calls.first { "Email/set" in it && "mailboxIds" in it }

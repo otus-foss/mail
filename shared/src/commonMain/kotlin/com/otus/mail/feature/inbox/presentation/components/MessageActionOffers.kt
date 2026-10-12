@@ -25,8 +25,8 @@ import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import org.jetbrains.compose.resources.DrawableResource
 
-/** Opens a folder choice among some targets and moves the messages into the chosen one. */
-internal typealias ChooseFolder = (targets: List<MoveTarget>, move: (MoveTarget) -> Unit) -> Unit
+/** Opens the Move to sheet for some messages, offering the targets every one of them can move to. */
+internal typealias ChooseFolder = (messages: List<MailMessage>, targets: List<MoveTarget>) -> Unit
 
 /**
  * [action] for [messages], one or a selection; null when none of them can take it. A mark turns
@@ -128,10 +128,10 @@ private fun MessageActions.offerFiling(
     shortcut: FolderShortcut,
     action: MailAction,
 ): OfferedAction? {
-    val moves = messages.mapNotNull { message -> shortcutTarget(message, shortcut)?.let { message to it } }
-    if (moves.isEmpty()) return null
+    val filings = messages.mapNotNull { message -> shortcutTarget(message, shortcut)?.let { message to it } }
+    if (filings.isEmpty()) return null
     return OfferedAction(shortcut.label, action.symbol, leaves = true) {
-        moves.forEach { (message, target) -> onMove(message, target) }
+        filings.forEach { (message, target) -> moves.onMove(message, target) }
     }
 }
 
@@ -143,14 +143,14 @@ private fun MessageActions.offerMove(
     val targets =
         if (oneAccount) {
             messages
-                .map { moveTargets(it) }
+                .map { moves.targets(it) }
                 .reduce { common, next -> common.filter { target -> next.any { it.folderId == target.folderId } } }
         } else {
             emptyList()
         }
     if (targets.isEmpty()) return null
     return OfferedAction("Move", MailAction.Move.symbol, leaves = false, asks = true) {
-        chooseFolder(targets) { target -> messages.forEach { onMove(it, target) } }
+        chooseFolder(messages, targets)
     }
 }
 

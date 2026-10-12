@@ -29,6 +29,23 @@ script, so they keep working while the app is closed.
   with the `archive` or `trash` role. Archive also leaves the inbox, and Trash leaves every folder,
   so trashed mail does not stay in Read later. Other folders the message is in stay as they are.
   All three need `mayRemoveItems` on the current folder and `mayAddItems` on the target.
+- **Move**, in the open message's bar or menu and in the selection bar, opens the Move to sheet.
+  It shows the message, or a selection's count and senders with a small avatar each, a folder search, pills for Inbox, Read
+  later, Archive, Spam, and Trash where every message can go, a suggested folder, and the user's
+  own folders as a tree. A folder with nested folders has a chevron that collapses them for as
+  long as the sheet is open; a search shows every match. Tapping any folder or pill moves the
+  messages at once and closes the sheet. The suggestion
+  comes from one `Email/query` filtered by `from` (newest 50 of the sender's messages) and one
+  `Email/get` of their `mailboxIds`: the own folder holding most of them, never the current one.
+  Nothing is stored, and the section stays hidden when the query fails or no folder qualifies.
+  A selection from several senders gets no suggestion and no sort switch.
+- Where the account runs rules, the sheet's **Also sort future mail** switch also adds a rule for
+  the tapped folder. The rule matches the sender, the sender's domain, the first To address, or a
+  word from the subject, chosen in **Sort mail that…**. For a selection, the first message supplies
+  them. The switch hides while the search field has focus and the keyboard is open, so the
+  folders keep the room. A refused save is reported on the page; rules edited in another app are left alone, with a
+  notice to change them in Rules first.
+  Read later never gets a rule, because it is a reading list rather than a destination.
 
 ## Combined folders
 
