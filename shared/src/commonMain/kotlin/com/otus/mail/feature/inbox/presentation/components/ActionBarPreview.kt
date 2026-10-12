@@ -4,20 +4,32 @@ import androidx.compose.runtime.Composable
 import com.otus.designsystem.components.ActionBar
 import com.otus.designsystem.components.BarAction
 import com.otus.designsystem.components.SketchMarker
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_add
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.domain.BarSlot
 
-/** [layout] as its bar shows it; every button runs [onClick] instead of its action. */
+/**
+ * [layout] as its bar shows it; each button runs [onSlot] with its slot instead of its action.
+ * With [addSlot], a bar with room ends its secondary group in an Add button for the next slot.
+ */
 @Composable
 internal fun ActionBarPreview(
     layout: ActionBarLayout,
-    onClick: () -> Unit = {},
+    onSlot: (BarSlot) -> Unit = {},
+    addSlot: Boolean = false,
 ) {
-    val preview = { action: MailAction ->
-        BarAction(action.buttonLabel, action.symbol, onClick = onClick)
-    }
-    ActionBar(preview(layout.primary), secondary = layout.secondary.map(preview))
+    val secondary =
+        layout.secondary.mapIndexed { index, action ->
+            BarAction(action.buttonLabel, action.symbol) { onSlot(BarSlot.Secondary(index)) }
+        }
+    val next = layout.secondary.size.takeIf { addSlot && it < ActionBarLayout.MAX_SECONDARY }
+    val add = next?.let { BarAction("Add button", Res.drawable.symbol_add) { onSlot(BarSlot.Secondary(it)) } }
+    ActionBar(
+        BarAction(layout.primary.buttonLabel, layout.primary.symbol) { onSlot(BarSlot.Primary) },
+        secondary = secondary + listOfNotNull(add),
+    )
 }
 
 internal val ActionBarPlace.title: String

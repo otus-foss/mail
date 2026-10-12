@@ -51,7 +51,7 @@ fun ActionBarSettingsScreen(
             ActionBarPlace.entries.filter { it.adaptive == (mode == ActionBarMode.Adaptive) }.forEach { place ->
                 val open = { editing = place }
                 PreviewCard(place.marker, title = place.title, description = place.description, onClick = open) {
-                    ActionBarPreview(state.behavior.savedLayout(place), open)
+                    ActionBarPreview(state.behavior.savedLayout(place), { open() })
                 }
             }
         }

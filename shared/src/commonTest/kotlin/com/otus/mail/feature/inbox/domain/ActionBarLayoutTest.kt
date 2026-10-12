@@ -46,33 +46,25 @@ class ActionBarLayoutTest {
     }
 
     @Test
-    fun aButtonDraggedIntoTheMainGroupBecomesThePrimary() {
-        assertEquals(
-            layout(Move, Trash, Flag, primary = Archive),
-            message.regrouped(listOf(Move, Archive), listOf(Trash, Flag)),
-        )
-        assertEquals(
-            layout(Move, Archive, Trash, primary = Flag),
-            message.regrouped(listOf(Flag, Move), listOf(Archive, Trash)),
-        )
+    fun aPrimaryChosenFromTheSecondaryTradesPlacesWithTheOldPrimary() {
+        assertEquals(layout(Archive, Trash, Move, primary = Flag), message.with(BarSlot.Primary, Flag))
+        assertEquals(layout(Archive, Trash, Flag, primary = Spam), message.with(BarSlot.Primary, Spam))
     }
 
     @Test
-    fun aPrimaryDraggedOutHandsItsPlaceToTheFirstOtherButton() {
-        assertEquals(
-            layout(Trash, Flag, Move, primary = Archive),
-            message.regrouped(emptyList(), listOf(Archive, Trash, Flag, Move)),
-        )
-        assertEquals(
-            layout(Move, Trash, Flag, primary = Archive),
-            message.regrouped(emptyList(), listOf(Archive, Move, Trash, Flag)),
-        )
+    fun aSecondarySlotTakesANewActionOrTradesWithAnotherSlot() {
+        assertEquals(layout(Spam, Trash, Flag), message.with(BarSlot.Secondary(0), Spam))
+        assertEquals(layout(Flag, Trash, Archive), message.with(BarSlot.Secondary(0), Flag))
+        assertEquals(layout(Archive, Trash), layout(Archive).with(BarSlot.Secondary(1), Trash))
     }
 
     @Test
-    fun aRemovedPrimaryHandsItsPlaceToTheFirstButton() {
-        assertEquals(layout(Trash, Flag, primary = Archive), message.regrouped(emptyList(), message.secondary))
-        assertEquals(layout(primary = Move), layout().regrouped(emptyList(), emptyList()))
+    fun slotsNameWhereEachActionSits() {
+        assertEquals(BarSlot.Primary, message.slotOf(Move))
+        assertEquals(BarSlot.Secondary(2), message.slotOf(Flag))
+        assertEquals(null, message.slotOf(Spam))
+        assertEquals(Trash, message.actionAt(BarSlot.Secondary(1)))
+        assertEquals(null, layout(Archive).actionAt(BarSlot.Secondary(2)))
     }
 
     @Test

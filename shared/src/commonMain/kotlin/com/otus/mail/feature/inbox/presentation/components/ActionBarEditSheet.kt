@@ -3,8 +3,6 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,24 +10,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.PreviewCard
-import com.otus.designsystem.components.RowDensity
-import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SheetFrame
 import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.resources.symbol_more_horiz
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.domain.BarSlot
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
- * Edits [place]'s bar, saving each change at once. The bar's buttons drag within and between the
- * main and secondary groups. The actions left out add to the end until the bar is full. The menu
- * opposite Done closes the sheet and runs [onCopy].
+ * Edits [place]'s bar, saving each change at once. Tapping a button in the preview, or the Add
+ * button after the last one, opens [ActionPickerSheet] for that slot. The menu opposite Done closes
+ * the sheet and runs [onCopy].
  */
 @Composable
 internal fun ActionBarEditSheet(
@@ -40,6 +35,7 @@ internal fun ActionBarEditSheet(
 ) {
     // Set before the menu slides the sheet away, so its Done path opens the copy sheet.
     var copyNext by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf<BarSlot?>(null) }
     val layout = state.behavior.savedLayout(place)
     val save = { changed: ActionBarLayout -> state.update { it.copy(actionBar = it.actionBar + (place to changed)) } }
     SheetFrame(
@@ -54,46 +50,27 @@ internal fun ActionBarEditSheet(
         },
     ) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = SheetTokens.inset),
+            Modifier.padding(horizontal = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
-            PreviewCard(place.marker) { ActionBarPreview(layout) }
-            ActionBarButtons(layout, save)
-            LeftOut(state.behavior.barChoices(place) - layout.primary - layout.secondary.toSet(), layout, save)
+            PreviewCard(place.marker) { ActionBarPreview(layout, { picking = it }, addSlot = true) }
+            SheetCaption("Tap a button to change it.", RowTextInset, heading = false)
         }
     }
-}
-
-/** Actions the bar could hold but does not; a full bar keeps their add buttons disabled. */
-@Composable
-private fun LeftOut(
-    actions: List<MailAction>,
-    layout: ActionBarLayout,
-    save: (ActionBarLayout) -> Unit,
-) {
-    if (actions.isEmpty()) return
-    val full = layout.secondary.size == ActionBarLayout.MAX_SECONDARY
-    SheetCaption("Not in the bar")
-    if (full) SheetCaption("Remove a button to add one.", heading = false)
-    actions.forEach { action ->
-        ActionRow(action) {
-            IconButton(
-                "Add ${action.label}",
-                { save(layout.withSlot(layout.secondary.size, action)) },
-                enabled = !full,
-            ) {
-                Symbol(Res.drawable.symbol_add)
-            }
-        }
+    picking?.let { slot ->
+        ActionPickerSheet(
+            slot,
+            layout,
+            // An empty slot takes only what the bar lacks; a filled one can trade with any button.
+            state.behavior.barChoices(place).filter { layout.actionAt(slot) != null || layout.slotOf(it) == null },
+            onPick = { save(layout.with(slot, it)) },
+            onRemove =
+                (slot as? BarSlot.Secondary)?.takeIf { layout.actionAt(it) != null }?.let {
+                    {
+                        save(layout.withSlot(it.index, null))
+                        picking = null
+                    }
+                },
+        ) { picking = null }
     }
-}
-
-@Composable
-internal fun ActionRow(
-    action: MailAction,
-    modifier: Modifier = Modifier,
-    density: RowDensity = RowDensity.Regular,
-    button: @Composable () -> Unit,
-) {
-    SettingRow(action.label, onClick = null, modifier, icon = action.symbol, trailing = button, density = density)
 }

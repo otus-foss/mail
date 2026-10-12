@@ -1,16 +1,16 @@
 package com.otus.mail
 
 import androidx.activity.compose.setContent
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -62,20 +62,32 @@ class ActionBarSettingsTest {
 
     private fun button(label: String) = compose.onNode(hasContentDescription(label) and hasClickAction())
 
+    /** The topmost match, such as a button in the editor's preview over the page's cards. */
+    private fun top(label: String) = compose.onAllNodes(hasContentDescription(label) and hasClickAction()).onLast()
+
+    private fun pick(text: String) =
+        compose
+            .onAllNodesWithText(text)
+            .onLast()
+            .performScrollTo()
+            .performClick()
+
+    private fun done() = compose.onAllNodesWithText("Done").onLast().performClick()
+
     @Test
     fun aButtonAddedToTheOpenMessageIsSavedAndShownOnItsBar() {
         server.folders += """{"id": "s", "name": "Junk", "role": "junk"}"""
         start()
         openActionBarSettings()
         compose.onNodeWithText("Open message").performScrollTo().performClick()
-        button("Add Spam").assertIsNotEnabled()
-        button("Remove Archive").performClick()
-        button("Add Spam").performScrollTo().performClick()
-        compose.onNodeWithText("Done").performClick()
+        top("Archive").performClick()
+        pick("Spam")
+        done()
+        done()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         val expected =
-            ActionBarLayout(listOf(MailAction.Trash, MailAction.Move, MailAction.Spam), MailAction.Reply)
+            ActionBarLayout(listOf(MailAction.Spam, MailAction.Trash, MailAction.Move), MailAction.Reply)
         assertEquals(expected, saved.barLayout(ActionBarPlace.Message))
         assertEquals(ActionBarPlace.Selection.defaultLayout, saved.barLayout(ActionBarPlace.Selection))
 
@@ -89,19 +101,15 @@ class ActionBarSettingsTest {
     }
 
     @Test
-    fun aButtonMovedToTheTopBecomesTheMainButton() {
+    fun aSecondaryPickedAsTheMainButtonTradesPlacesWithIt() {
         start()
         openActionBarSettings()
         compose.onNodeWithText("Open message").performScrollTo().performClick()
-        val handle =
-            compose
-                .onNodeWithContentDescription(
-                    "Reorder Archive",
-                    useUnmergedTree = true,
-                ).fetchSemanticsNode()
-        val moveUp = handle.config[SemanticsActions.CustomActions].single { it.label == "Move up" }
-        compose.runOnUiThread { moveUp.action() }
-        compose.onNodeWithText("Done").performClick()
+        top("Reply").performClick()
+        compose.onNodeWithText("Swaps with Button 1").assertIsDisplayed()
+        pick("Archive")
+        done()
+        done()
 
         val expected = ActionBarLayout(listOf(MailAction.Reply, MailAction.Trash, MailAction.Move), MailAction.Archive)
         compose.runOnIdle {
@@ -146,9 +154,12 @@ class ActionBarSettingsTest {
         compose.onNodeWithText("Open message").assertDoesNotExist()
         // Fixed mode edits the one shared bar and leaves each screen's own bar saved.
         compose.onNodeWithText("Every screen").performScrollTo().performClick()
-        button("Remove Search").performClick()
-        button("Add Reply").performScrollTo().performClick()
-        compose.onNodeWithText("Done").performClick()
+        top("Search").performClick()
+        pick("Remove from bar")
+        top("Add button").performClick()
+        pick("Reply")
+        done()
+        done()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         assertEquals(ActionBarMode.Fixed, saved.actionBarMode)
