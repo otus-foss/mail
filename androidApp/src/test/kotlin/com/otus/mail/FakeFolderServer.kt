@@ -47,11 +47,9 @@ class FakeFolderServer {
     var draftsFolder: String? = "dr"
     private var draftCount = 0
 
-    /** The rules script as last uploaded and saved. */
+    /** The rules script as last uploaded and saved, or the one a test starts with. */
     var script: String? = null
-        private set
     var scriptActive = false
-        private set
     private var uploaded = ""
     private var state = 1
 

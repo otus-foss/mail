@@ -18,7 +18,11 @@ script, so they keep working while the app is closed.
   a page that reuses the inbox screen with "Search <folder>" and all of the folder's messages.
 - **Settings › Folders** creates, renames, moves, and deletes folders with `Mailbox/set`. Only the
   user's own folders (no role) can be renamed, moved, or deleted. Actions follow `myRights`,
-  `mayCreateTopLevelMailbox`, `maxMailboxDepth`, and `maxSizeMailboxName`.
+  `mayCreateTopLevelMailbox`, `maxMailboxDepth`, and `maxSizeMailboxName`. Each account's folders
+  sit under its name and avatar, in the same 36 dp collapsible rows as the sidebar and the move
+  sheet. A folder that a running rule fills with all of one sender's mail shows those senders'
+  avatars and the first one's first name, such as "Grace +1". Rules store only addresses, so a
+  name comes from mail the inbox has loaded, and the address stands in without one.
 - New folders are created with `isSubscribed: true` so IMAP clients that list only subscribed
   folders show them.
 - Names are trimmed and must be unique among siblings without regard to case, as Stalwart checks.
