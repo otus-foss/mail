@@ -5,7 +5,8 @@ package com.otus.mail.feature.inbox.domain
  * swipe right in left-to-right languages. [readLater] adds a Read later folder to each account, an
  * action that saves mail there, and its pill. [pills] are the inbox row's pills, in order.
  * [sidebar] arranges the sidebar. [actionBar] holds each place's bar, and [actionBarMode] picks
- * whether places use their own or the Everywhere bar. A null swipe does nothing.
+ * whether places use their own or the Everywhere bar. A [minimizedBar] shows only its primary,
+ * as a round button. A null swipe does nothing.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -16,6 +17,7 @@ data class MailBehavior(
     val sidebar: SidebarLayout = SidebarLayout(),
     val actionBar: Map<ActionBarPlace, ActionBarLayout> = ActionBarPlace.entries.associateWith { it.defaultLayout },
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
+    val minimizedBar: Boolean = false,
 ) {
     /** What a swipe can be set to besides nothing; Read later only while it is on. */
     val swipeChoices: List<MailAction>
@@ -32,6 +34,20 @@ data class MailBehavior(
 
     /** The layout saved for [place], whichever mode is on; settings edit this one. */
     fun savedLayout(place: ActionBarPlace): ActionBarLayout = actionBar[place] ?: place.defaultLayout
+
+    /**
+     * [from]'s bar as [to] would get it: the buttons [to] can offer, in order. When [to] cannot
+     * offer [from]'s main button, [to] keeps its own.
+     */
+    fun copiedBar(
+        from: ActionBarPlace,
+        to: ActionBarPlace,
+    ): ActionBarLayout {
+        val source = savedLayout(from)
+        val offered = barChoices(to)
+        val primary = source.primary.takeIf { it in offered } ?: savedLayout(to).primary
+        return ActionBarLayout(source.secondary.filter { it in offered && it != primary }, primary)
+    }
 
     private fun offers(action: MailAction): Boolean = readLater || action != MailAction.ReadLater
 

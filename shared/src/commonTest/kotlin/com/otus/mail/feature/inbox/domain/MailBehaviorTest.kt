@@ -98,4 +98,21 @@ class MailBehaviorTest {
         val sparse = MailBehavior(actionBar = emptyMap())
         ActionBarPlace.entries.forEach { assertEquals(it.defaultLayout, sparse.barLayout(it)) }
     }
+
+    @Test
+    fun aCopiedBarKeepsWhatTheTargetOffersAndItsOwnMainButtonOtherwise() {
+        val behavior = MailBehavior()
+        val selection =
+            ActionBarLayout(listOf(MailAction.Archive, MailAction.Trash), MailAction.Move)
+        assertEquals(selection, behavior.copiedBar(ActionBarPlace.Message, ActionBarPlace.Selection))
+        assertEquals(
+            ActionBarPlace.Message.defaultLayout,
+            behavior.copiedBar(ActionBarPlace.Message, ActionBarPlace.Everywhere),
+        )
+        // Writing offers none of the buttons, so it keeps only its own main button.
+        assertEquals(
+            ActionBarLayout(emptyList(), MailAction.Send),
+            behavior.copiedBar(ActionBarPlace.Message, ActionBarPlace.Compose),
+        )
+    }
 }

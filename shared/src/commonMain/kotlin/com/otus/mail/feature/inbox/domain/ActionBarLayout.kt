@@ -71,6 +71,15 @@ enum class ActionBarPlace(
             }
 }
 
+/** A place in an [ActionBarLayout]: its primary, or the secondary slot at [index]. */
+sealed interface BarSlot {
+    data object Primary : BarSlot
+
+    data class Secondary(
+        val index: Int,
+    ) : BarSlot
+}
+
 /** Up to [MAX_SECONDARY] distinct [secondary] actions, in slot order, beside one [primary] that is none of them. */
 data class ActionBarLayout(
     val secondary: List<MailAction>,
@@ -80,9 +89,9 @@ data class ActionBarLayout(
         require(secondary.size <= MAX_SECONDARY && secondary.distinct() == secondary && primary !in secondary)
     }
 
-    /** Makes [action] the primary; when it was a secondary, the old primary takes its slot. */
-    fun withPrimary(action: MailAction): ActionBarLayout =
-        copy(secondary = secondary.replace(action, primary), primary = action)
+    /** The primary, then the secondary actions in slot order, as settings list them. */
+    val buttons: List<MailAction>
+        get() = listOf(primary) + secondary
 
     /**
      * Puts [action] in [slot], or empties it when null; later slots then move up. An action
@@ -140,6 +149,31 @@ data class ActionBarLayout(
                 ?: place.actions.first { it != action }
         return ActionBarLayout(kept - primary, primary)
     }
+
+    /** The action in [slot], or null for an empty secondary slot. */
+    fun actionAt(slot: BarSlot): MailAction? =
+        when (slot) {
+            BarSlot.Primary -> primary
+            is BarSlot.Secondary -> secondary.getOrNull(slot.index)
+        }
+
+    /** Where [action] sits in this bar, if anywhere. */
+    fun slotOf(action: MailAction): BarSlot? =
+        when (action) {
+            primary -> BarSlot.Primary
+            in secondary -> BarSlot.Secondary(secondary.indexOf(action))
+            else -> null
+        }
+
+    /** Puts [action] in [slot]; an action already elsewhere in the bar trades places with the slot's old one. */
+    fun with(
+        slot: BarSlot,
+        action: MailAction,
+    ): ActionBarLayout =
+        when (slot) {
+            BarSlot.Primary -> copy(secondary = secondary.replace(action, primary), primary = action)
+            is BarSlot.Secondary -> withSlot(slot.index, action)
+        }
 
     fun encode(): String = secondary.joinToString(",") { it.storageValue } + "|" + primary.storageValue
 

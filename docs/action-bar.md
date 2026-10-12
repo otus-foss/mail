@@ -115,29 +115,41 @@ move. A swipe can be any action except Spam, Move, and Rule for sender.
 
 ### Settings
 
-**Settings › Appearance & behavior › Action bar** (`ActionBarSettingsScreen`) starts with a
-**Layout** row that shows the mode and opens a `ChoiceSheet` with **Per screen** and **Same
-everywhere**. **Per screen** shows a section for **Message list**, **Selected messages**, **Open
-message**, and **Writing**. **Same everywhere** shows one **Every screen** section instead. The
-**Action bar** row on the appearance page shows the current mode too.
+The appearance page has an **Action bar** section. Its **Action bar** row opens
+**Settings › Appearance & behavior › Action bar** (`ActionBarSettingsScreen`). Its **Minimize**
+switch shows only the main button, as a 62 dp round button at the bar's end, on every screen. The
+other buttons then move into the page's menu, such as an open message's **More actions**.
 
-Each section shows a preview of the saved bar, then a **Main button** row and a row per button
-slot. **Writing** has two slots, because it has only three actions. Tapping a row, or a button in
-the preview, opens a `ChoiceSheet` for that slot. The place's default is listed first.
+The action bar page starts with a **Layout** row that shows the mode and opens a `ChoiceSheet`
+with **Per screen** and **Same everywhere**. **Per screen** shows a card for **Message list**,
+**Selected messages**, **Open message**, and **Writing**. **Same everywhere** shows one **Every
+screen** card instead. Each card is a Meta `PreviewCard`: a title, where the bar shows, a sketch of
+the page, and the saved bar. Tapping the card or its bar opens the bar's editor.
 
-- Choosing an action that another slot or the main button holds swaps the two.
-- A button slot can be **None**. Emptying a slot moves the later buttons up.
-- An empty slot does not offer the main button's action, because the main button cannot be empty
-  and so has nothing to swap in.
+The editor (`ActionBarEditSheet`) is a `SheetFrame` titled with the place. It shows the bar, then
+its buttons with the main button first.
+
+- Dragging a button's handle reorders the buttons. The one on top is the main button.
+- Every button except the main one has a remove button. Later buttons move up.
+- **Not in the bar** lists the place's other actions, each with an add button that puts it last.
+  The add buttons stay disabled while the bar holds three buttons besides the main one.
 - Each change is saved at once.
+
+The editor's ⋯ button opens **Copy to** (`ActionBarCopySheet`), which lists the other places to
+tick. Each row says what that place would get: only the actions it can offer, in the same order.
+When it cannot offer the main button, it keeps its own. A place that would get none of the buttons
+is named in a note instead. Done replaces the ticked places' bars; closing any other way changes
+nothing.
 
 ### Model and storage
 
 `ActionBarPlace` names the places: `Inbox`, `Selection`, `Message`, `Compose`, and `Everywhere`,
 the bar **Same everywhere** uses. `ActionBarLayout` holds up to three distinct buttons in slot
-order and one main action that is none of them. `withPrimary`, `withSlot`, and `without` return
-changed copies. `MailBehavior.barLayout(place)` is the bar a screen shows in the current mode, and
-`savedLayout(place)` is the one settings edit.
+order and one main action that is none of them. `buttons` lists the main action, then the
+buttons. `withSlot`, `without`, and `moved` return changed copies.
+`MailBehavior.barLayout(place)` is the bar a screen shows in the current mode,
+`savedLayout(place)` is the one settings edit, and `copiedBar(from, to)` is the bar **Copy to**
+gives a place.
 
 `MailBehavior.actionBar` holds a layout per place, and `MailBehaviorStore` saves each under its
 own key, `action_bar_<place>` in `SharedPreferences` on Android and `otus.mail.action_bar_<place>`
@@ -154,7 +166,9 @@ offer reads as the place's default. Turning Read later off removes it from every
 the main button, the place's default main action takes over.
 
 The mode is saved as `adaptive` or `fixed` under `action_bar_mode` on Android and
-`otus.mail.action_bar_mode` on iOS. A missing or unknown value reads as `adaptive`.
+`otus.mail.action_bar_mode` on iOS. A missing or unknown value reads as `adaptive`. **Minimize**
+is saved as a boolean under `action_bar_minimized` on Android and `otus.mail.action_bar_minimized`
+on iOS, and is off when missing.
 
 `MailAction` replaced `MessageSwipe`. The swipe storage values are unchanged, and a saved
 "none" still reads as no swipe, so existing swipe settings carry over.

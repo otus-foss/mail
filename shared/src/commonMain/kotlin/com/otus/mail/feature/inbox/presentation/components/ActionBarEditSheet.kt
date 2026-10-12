@@ -1,0 +1,76 @@
+package com.otus.mail.feature.inbox.presentation.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.otus.designsystem.components.PreviewCard
+import com.otus.designsystem.components.SheetFrame
+import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_more_horiz
+import com.otus.designsystem.theme.SheetTokens
+import com.otus.mail.feature.inbox.domain.ActionBarLayout
+import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.BarSlot
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+
+/**
+ * Edits [place]'s bar, saving each change at once. Tapping a button in the preview, or the Add
+ * button after the last one, opens [ActionPickerSheet] for that slot. The menu opposite Done closes
+ * the sheet and runs [onCopy].
+ */
+@Composable
+internal fun ActionBarEditSheet(
+    state: MailBehaviorState,
+    place: ActionBarPlace,
+    onCopy: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // Set before the menu slides the sheet away, so its Done path opens the copy sheet.
+    var copyNext by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf<BarSlot?>(null) }
+    val layout = state.behavior.savedLayout(place)
+    val save = { changed: ActionBarLayout -> state.update { it.copy(actionBar = it.actionBar + (place to changed)) } }
+    SheetFrame(
+        place.title,
+        onDismiss,
+        onDone = { if (copyNext) onCopy() else onDismiss() },
+        leadingAction = { done ->
+            IconButton("Copy to other screens", {
+                copyNext = true
+                done()
+            }, outlined = false) { Symbol(Res.drawable.symbol_more_horiz) }
+        },
+    ) {
+        Column(
+            Modifier.padding(horizontal = SheetTokens.inset),
+            verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
+        ) {
+            PreviewCard(place.marker) { ActionBarPreview(layout, { picking = it }, addSlot = true) }
+            SheetCaption("Tap a button to change it.", RowTextInset, heading = false)
+        }
+    }
+    picking?.let { slot ->
+        ActionPickerSheet(
+            slot,
+            layout,
+            // An empty slot takes only what the bar lacks; a filled one can trade with any button.
+            state.behavior.barChoices(place).filter { layout.actionAt(slot) != null || layout.slotOf(it) == null },
+            onPick = { save(layout.with(slot, it)) },
+            onRemove =
+                (slot as? BarSlot.Secondary)?.takeIf { layout.actionAt(it) != null }?.let {
+                    {
+                        save(layout.withSlot(it.index, null))
+                        picking = null
+                    }
+                },
+        ) { picking = null }
+    }
+}

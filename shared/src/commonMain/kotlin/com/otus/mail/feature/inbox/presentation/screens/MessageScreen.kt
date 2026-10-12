@@ -83,7 +83,15 @@ fun MessageScreen(
         ActionBarHost(
             bar =
                 behavior?.barLayout(ActionBarPlace.Message)?.let { layout ->
-                    { MailActionBar(layout, offerFor, perform, context = replyContext(message, layout.primary)) }
+                    {
+                        MailActionBar(
+                            layout,
+                            offerFor,
+                            perform,
+                            behavior.minimizedBar,
+                            context = replyContext(message, layout.primary),
+                        )
+                    }
                 },
             Modifier.safeDrawingPadding(),
         ) { padding ->

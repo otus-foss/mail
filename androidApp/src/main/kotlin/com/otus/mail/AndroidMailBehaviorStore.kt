@@ -36,6 +36,7 @@ class AndroidMailBehaviorStore(
                 },
             actionBarMode =
                 ActionBarMode.fromStorageValue(preferences.getString(ACTION_BAR_MODE, null)) ?: defaults.actionBarMode,
+            minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
         )
     }
 
@@ -49,6 +50,7 @@ class AndroidMailBehaviorStore(
             putString(SIDEBAR, SidebarLayout.encode(behavior.sidebar))
             behavior.actionBar.forEach { (place, layout) -> putString(actionBarKey(place), layout.encode()) }
             putString(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
+            putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
         }
     }
 
@@ -60,6 +62,7 @@ class AndroidMailBehaviorStore(
         const val PILLS = "inbox_pills"
         const val SIDEBAR = "sidebar_layout"
         const val ACTION_BAR_MODE = "action_bar_mode"
+        const val MINIMIZED_BAR = "action_bar_minimized"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

@@ -25,9 +25,9 @@ import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
  * Inbox, swipe, and reading choices for the appearance page. [folderPills] are the folder pills
- * the accounts' folders can fill, and [onSidebar] opens the sidebar's page. Each swipe opens a
- * choice of actions; the rows name the physical direction for the current layout direction. The
- * action bar row runs [onOpenActionBar].
+ * the accounts' folders can fill, and [onSidebar] opens the sidebar's page. [onOpenActionBar]
+ * opens the action bar's page. Each swipe opens a choice of actions; the rows name the physical
+ * direction for the current layout direction.
  */
 @Composable
 fun MailBehaviorSettings(
@@ -51,14 +51,22 @@ fun MailBehaviorSettings(
             Symbol(Res.drawable.symbol_chevron_right, mirrorInRtl = true)
         }
     }
+    SettingsSection("Action bar") {
+        SettingRow("Action bar", onOpenActionBar, description = "Buttons at the bottom of each screen") {
+            Symbol(Res.drawable.symbol_chevron_right, mirrorInRtl = true)
+        }
+        SettingToggleRow(
+            "Minimize",
+            checked = behavior.minimizedBar,
+            onCheckedChange = { on -> state.update { it.copy(minimizedBar = on) } },
+            description = "One round button for the main action",
+        )
+    }
     SettingsSection("Actions") {
         SwipeSide.entries.forEach { side ->
             SettingRow(side.title(rtl), { choosing = side }, description = side.description(rtl)) {
                 ValueButton(side.of(behavior).swipeLabel)
             }
-        }
-        SettingRow("Action bar", onOpenActionBar, description = "Buttons at the bottom of the screen") {
-            ValueButton(behavior.actionBarMode.label)
         }
     }
     SettingsSection("Reading") {

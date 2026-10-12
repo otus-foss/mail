@@ -229,7 +229,8 @@ private fun shownPage(
 
 /**
  * The bar under the list: the selection's while rows are selected, none while searching, and the
- * list's otherwise. Without [actions] there is no bar.
+ * list's otherwise. A minimized bar stays while searching, so it can sink under the keyboard
+ * instead of vanishing. Without [actions] there is no bar.
  */
 private fun inboxBar(
     messages: List<MailMessage>,
@@ -241,7 +242,7 @@ private fun inboxBar(
     onFilters: () -> Unit,
 ): (@Composable () -> Unit)? =
     when {
-        actions == null || state.searching -> {
+        actions == null || (state.searching && !actions.behavior().minimizedBar) -> {
             null
         }
 
