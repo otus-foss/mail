@@ -115,7 +115,9 @@ private fun SettingsPageContent(
         }
 
         MailPage.Folders -> {
-            FoldersScreen(states.folders, onBack = back) { navigation.go(MailPage.Folder(it.accountId, it.id)) }
+            FoldersScreen(states.folders, states.rules, states.folderSenders, onBack = back) {
+                navigation.go(MailPage.Folder(it.accountId, it.id))
+            }
         }
 
         MailPage.Rules -> {

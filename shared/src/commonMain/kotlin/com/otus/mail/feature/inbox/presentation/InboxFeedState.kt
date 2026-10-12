@@ -9,6 +9,7 @@ import com.otus.avatar.AvatarService
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.avatarEmailKey
 import com.otus.avatar.generatedAvatar
+import com.otus.mail.core.avatar.MailAvatarOptions
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -28,12 +29,7 @@ class InboxFeedState(
     private val source: MailSource,
     private val scope: CoroutineScope,
     private val avatars: AvatarService? = null,
-    private val avatarOptions: AvatarOptions =
-        AvatarOptions(
-            externalContactImages = true,
-            domainIcons = true,
-            domainIconProxy = true,
-        ),
+    private val avatarOptions: AvatarOptions = MailAvatarOptions,
     private val defaultScope: MailScope = MailScope.Inbox,
 ) {
     private var mailScope = defaultScope
