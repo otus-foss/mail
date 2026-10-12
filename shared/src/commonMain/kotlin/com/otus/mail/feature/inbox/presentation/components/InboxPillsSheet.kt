@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -17,16 +18,19 @@ import com.otus.designsystem.components.ReorderableColumn
 import com.otus.designsystem.components.SelectionSheet
 import com.otus.designsystem.elements.SelectionRow
 import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
+import com.otus.mail.feature.inbox.presentation.nestedByPath
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
  * Chooses the inbox row's pills. The shown pills come first, in row order: drag a handle to move
- * one, or tap it to take it off the row. The filters and each group of folder pills follow, and
- * tapping one adds it to the end of the row. Pills without a choice here, such as a folder that
- * failed to load, stay saved after the shown ones.
+ * one, or tap it to take it off the row. The filters and each group of folder pills follow, with
+ * nested folders indented under their parents, and tapping one adds it to the end of the row.
+ * Pills without a choice here, such as a folder that failed to load, stay saved after the shown
+ * ones.
  */
 @Composable
 internal fun InboxPillsSheet(
@@ -68,10 +72,14 @@ internal fun InboxPillsSheet(
             }
             choices.filter { it.pill !in draft }.groupBy { it.group }.forEach { (group, options) ->
                 SheetCaption(group)
-                options.forEach { choice ->
-                    SelectionRow(choice.title, selected = false, onClick = { draft = draft + choice.pill }, leading = {
-                        Symbol(choice.icon)
-                    })
+                options.nestedByPath { it.title }.forEach { (choice, title, depth) ->
+                    SelectionRow(
+                        title,
+                        selected = false,
+                        onClick = { draft = draft + choice.pill },
+                        modifier = Modifier.padding(start = PageTokens.nestIndent * depth),
+                        leading = { Symbol(choice.icon) },
+                    )
                 }
             }
         }
