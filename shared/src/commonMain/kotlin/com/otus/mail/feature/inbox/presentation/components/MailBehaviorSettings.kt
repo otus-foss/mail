@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import com.otus.designsystem.components.ChoiceOptions
+import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingToggleRow
@@ -100,8 +101,7 @@ private fun SwipeChoice(
                 selected = side.of(state.behavior),
                 default = side.default,
             ),
-        label = { it.swipeLabel },
-        detail = { swipe -> "Default".takeIf { swipe == side.default } },
+        row = { swipe -> ChoiceRow(swipe.swipeLabel, "Default".takeIf { swipe == side.default }) },
         onSelect = { swipe -> state.update { side.with(it, swipe) } },
         onDismiss = onDismiss,
     )

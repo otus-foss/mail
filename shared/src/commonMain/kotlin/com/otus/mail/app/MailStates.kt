@@ -84,6 +84,9 @@ internal class MailStates(
     /** Moves messages between folders and in and out of Read later. */
     val filing = MessageFiling(services, folders, scope)
 
+    /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
+    val sorting = MessageSorting(rules, services.inboxMatcher, folders, filing, scope)
+
     /** Moves, marks, and rules for messages shown by [feed]; [openRule] shows the rule editor for an account. */
     fun messageActions(
         feed: InboxFeedState,
@@ -95,7 +98,7 @@ internal class MailStates(
                     targets = filing::moveTargets,
                     onMove = { message, target -> filing.move(feed, message, target) },
                     suggested = filing::suggestedTarget,
-                    futureSorting = { rules.futureSorting(it, feed) },
+                    futureSorting = { sorting.futureSorting(it, feed) },
                 ),
             canMark = ::canMark,
             onMark = { message, flag, on -> mark(feed, message, flag, on) },
