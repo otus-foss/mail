@@ -20,6 +20,8 @@ import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
+import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
+import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
@@ -39,6 +41,45 @@ internal fun MailPageContent(
             InboxPage(states, dateFormatter, navigation)
         }
 
+        is MailPage.Compose -> {
+            ComposePage(page, states, back)
+        }
+
+        MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.SidebarSettings,
+        MailPage.ActionBarSettings, MailPage.Folders, MailPage.Rules, is MailPage.RuleEditor,
+        -> {
+            SettingsPageContent(page, states, dateFormatState, navigation, back)
+        }
+
+        is MailPage.Folder -> {
+            FolderPage(page, states, dateFormatter, navigation)
+        }
+
+        is MailPage.Combined -> {
+            val folder = page.folder
+            FeedPage(page, MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
+        }
+
+        MailPage.ReadLater -> {
+            ReadLaterPage(states, dateFormatter, navigation)
+        }
+
+        is MailPage.Shared -> {
+            SharedFolderPage(page, states, dateFormatter, navigation)
+        }
+    }
+}
+
+/** Settings and its subpages. */
+@Composable
+private fun SettingsPageContent(
+    page: MailPage,
+    states: MailStates,
+    dateFormatState: DateFormatSettingsState,
+    navigation: MailNavigation,
+    back: () -> Unit,
+) {
+    when (page) {
         MailPage.Settings -> {
             SettingsScreen(
                 entries = mailSettingsEntries(states.accounts.accounts.size, navigation),
@@ -55,11 +96,22 @@ internal fun MailPageContent(
             AppearanceSettingsScreen(
                 dateFormatState,
                 onBack = back,
-            ) { MailBehaviorSettings(states.behavior, folderPills) { navigation.go(MailPage.SidebarSettings) } }
+            ) {
+                MailBehaviorSettings(
+                    states.behavior,
+                    folderPills,
+                    onSidebar = { navigation.go(MailPage.SidebarSettings) },
+                    onOpenActionBar = { navigation.go(MailPage.ActionBarSettings) },
+                )
+            }
         }
 
         MailPage.SidebarSettings -> {
             SidebarSettingsPage(states, back)
+        }
+
+        MailPage.ActionBarSettings -> {
+            ActionBarSettingsScreen(states.behavior, onBack = back)
         }
 
         MailPage.Folders -> {
@@ -84,23 +136,19 @@ internal fun MailPageContent(
             )
         }
 
-        is MailPage.Folder -> {
-            FolderPage(page, states, dateFormatter, navigation)
-        }
-
-        is MailPage.Combined -> {
-            val folder = page.folder
-            FeedPage(MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
-        }
-
-        MailPage.ReadLater -> {
-            ReadLaterPage(states, dateFormatter, navigation)
-        }
-
-        is MailPage.Shared -> {
-            SharedFolderPage(page, states, dateFormatter, navigation)
-        }
+        else -> {}
     }
+}
+
+/** A draft for the page's request; without an account there is nothing to write from. */
+@Composable
+private fun ComposePage(
+    page: MailPage.Compose,
+    states: MailStates,
+    onClose: () -> Unit,
+) {
+    val compose = remember(page) { states.compose(page.request) } ?: return LaunchedEffect(page) { onClose() }
+    ComposeScreen(compose, states.behavior.behavior, onClose)
 }
 
 /** The unified inbox, whose folder pills load in place of its own mail. */
@@ -133,6 +181,7 @@ private fun InboxPage(
                         states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
                         feed::show,
                     ),
+                onCompose = { navigation.go(MailPage.Compose(it)) },
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
@@ -152,6 +201,7 @@ private fun FolderPage(
         if (account != null && account.failure == null && folder == null) navigation.go(MailPage.Inbox)
     }
     FeedPage(
+        page,
         MailScope.Folder(page.accountId, page.folderId),
         folder?.name ?: "Folder",
         states,
@@ -160,9 +210,10 @@ private fun FolderPage(
     )
 }
 
-/** The messages [mailScope] loads, on a page that calls their folder [name]. */
+/** The messages [mailScope] loads, on [page], which calls their folder [name]. */
 @Composable
 internal fun FeedPage(
+    page: MailPage,
     mailScope: MailScope,
     name: String,
     states: MailStates,
@@ -180,7 +231,10 @@ internal fun FeedPage(
             feed.refresh()
             states.folders.refresh()
         },
-        context = InboxContext.folder(name, states.behavior.behavior.pills),
+        context =
+            InboxContext.folder(name, states.behavior.behavior.pills).copy(
+                onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
+            ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
 }

@@ -15,6 +15,11 @@ data class MailMessage(
     val emailId: String = "",
     /** Other folders the message is in, named on its row; the app adds them once folders load. */
     val labels: List<MessageLabel> = emptyList(),
+    val to: List<MailSender> = emptyList(),
+    val cc: List<MailSender> = emptyList(),
+    /** RFC 5322 Message-ID and References values, which keep a reply in its thread. */
+    val messageIds: List<String> = emptyList(),
+    val references: List<String> = emptyList(),
 )
 
 /** A folder named on a message's row. [readLater] marks the Read later folder. */

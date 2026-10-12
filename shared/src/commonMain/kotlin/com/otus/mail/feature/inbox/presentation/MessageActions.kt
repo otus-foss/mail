@@ -5,7 +5,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 
 /** A system folder a message can be filed into with one action. */
-enum class FolderShortcut { Archive, Trash }
+enum class FolderShortcut { Archive, Trash, Spam }
 
 /**
  * Read later as offered for one message: [apply] [saves] the message or removes it. The message
@@ -19,7 +19,7 @@ class ReadLaterChange(
 
 /**
  * A folder a message can move to; [label] is its full path. [shortcut] marks the account's
- * archive or trash folder, found by role because servers name these folders differently.
+ * archive, trash, or spam folder, found by role because servers name these folders differently.
  */
 data class MoveTarget(
     val folderId: String,
@@ -44,7 +44,7 @@ class MessageActions(
     val ruleForSender: (MailMessage) -> (() -> Unit)?,
     /** Read later for the message, shown at once when applied; null while it is off or cannot change it. */
     val readLater: (MailMessage) -> ReadLaterChange?,
-    /** The saved swipes and whether opening a message marks it read. */
+    /** The saved swipes and bars, and whether opening a message marks it read. */
     val behavior: () -> MailBehavior,
 ) {
     /** The folder [shortcut] files the message into; null when there is none or it is already there. */

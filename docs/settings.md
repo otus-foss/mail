@@ -24,12 +24,21 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   `MailBehaviorSettings` through the screen's content slot. **Pills** shows how many pills the
   inbox row shows and opens `InboxPillsSheet`, a `SelectionSheet` where the shown pills are
   reordered by their drag handles and others are added. Done saves the row.
-  **Swipe right** and **Swipe left** open a
-  `ChoiceSheet` of message actions, shown in a `ValueButton`. **Mark as read when opened** and
-  **Read later** are `SettingToggleRow` switches. Each change is saved before it is shown. See
-  [inbox pills](inbox.md#inbox-pills), [swipe actions](inbox.md#swipe-actions), and
-  [Read later](folders.md#read-later). A **Sidebar** row opens the Sidebar page, which arranges the sidebar's sections, mailboxes, and
-  counts; see [Mail destinations](sidebar.md#mail-destinations).
+  Under **Actions**, **Swipe right** and **Swipe left** open a
+  `ChoiceSheet` of message actions, shown in a `ValueButton`. **Action bar** shows its mode,
+  **Per screen** or **Same everywhere**, in a `ValueButton` and opens its own page. **Mark as read
+  when opened** and **Read later** are `SettingToggleRow` switches. Each change is saved before it
+  is shown. See [inbox pills](inbox.md#inbox-pills), [swipe actions](inbox.md#swipe-actions), and
+  [Read later](folders.md#read-later). A **Sidebar** row opens the Sidebar page, which arranges
+  the sidebar's sections, mailboxes, and counts; see [Mail destinations](sidebar.md#mail-destinations).
+- **Action bar** (`ActionBarSettingsScreen`), a subpage of Appearance & behavior, starts with a
+  **Layout** row whose `ChoiceSheet` picks **Per screen** or **Same everywhere**. **Per screen**
+  shows a section for **Message list**, **Selected messages**, **Open message**, and **Writing**;
+  **Same everywhere** shows one **Every screen** section. Each section shows a preview of the
+  saved bar, then **Main button** and a row per button slot, up to **Button 3**. A row, or a button
+  in the preview, opens a `ChoiceSheet` for that slot with the place's default first. Choosing an
+  action that another slot holds swaps the two, and a button slot can be **None**. Each change is
+  saved at once. See [action bar](action-bar.md).
 - **Folders** shows each account as a section of flat folder rows, indented by nesting, ending with
   a **New folder** row. **Folders** and **Rules** manage each account's folders and the rules that
   file arriving mail;

@@ -6,28 +6,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.EmptyState
+import com.otus.designsystem.components.RowSelection
 import com.otus.designsystem.components.SwipeActions
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.theme.InboxTokens
+import com.otus.designsystem.theme.motionTween
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxStatus
-import com.otus.mail.feature.inbox.presentation.MessageActions
 
 @Composable
-fun InboxBody(
+internal fun InboxBody(
     messages: List<MailMessage>,
     listState: LazyListState,
     dateFormatter: DateFormatter,
-    onOpen: (MailMessage) -> Unit,
-    actions: MessageActions?,
+    gestures: RowGestures,
+    padding: PaddingValues,
     emptyContent: @Composable () -> Unit,
 ) {
     if (messages.isEmpty()) {
@@ -39,17 +40,39 @@ fun InboxBody(
         LazyColumn(
             Modifier.fillMaxSize(),
             state = listState,
-            contentPadding = PaddingValues(vertical = InboxTokens.pageInset),
+            contentPadding =
+                PaddingValues(
+                    top = InboxTokens.pageInset,
+                    bottom =
+                        InboxTokens.pageInset + padding.calculateBottomPadding(),
+                ),
         ) {
-            items(messages, key = { it.id }) { message ->
+            itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
+                val selectedIds = gestures.selectedIds
+                val selected = message.id in selectedIds
+
+                fun neighborSelected(offset: Int) = selected && messages.getOrNull(index + offset)?.id in selectedIds
+                val selection =
+                    RowSelection(
+                        selected,
+                        neighborSelected(-1),
+                        neighborSelected(1),
+                    ).takeIf { selectedIds.isNotEmpty() }
+                val actions = gestures.actions
                 val swipes = actions?.behavior?.invoke()
                 SwipeActions(
                     startToEnd = swipes?.let { actions.swipeAction(message, it.startToEnd) },
                     endToStart = swipes?.let { actions.swipeAction(message, it.endToStart) },
-                    modifier = Modifier.animateItem(),
+                    modifier = Modifier.animateItem(motionTween(), motionTween(), motionTween()),
                 ) {
                     Box(Modifier.padding(horizontal = InboxTokens.pageInset)) {
-                        MessageRow(message, dateFormatter, mixedAccounts) { onOpen(message) }
+                        MessageRow(
+                            message,
+                            dateFormatter,
+                            mixedAccounts,
+                            selection = selection,
+                            onLongClick = { gestures.onToggle(message) },
+                        ) { gestures.tap(message) }
                     }
                 }
             }

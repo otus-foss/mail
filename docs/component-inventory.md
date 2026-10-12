@@ -13,6 +13,14 @@ Meta 0.4.0 adds `SpecificDatePicker` for one required date and gives `MonthYearP
 optional day. Both use the shared `DateWheelPicker` body and the `WheelPicker` element.
 Mail's calendar uses `MonthYearPicker`.
 
+The action bar work uses Meta's unreleased `ActionBar`, `ActionBarHost`, `BarAction`,
+`BarContext`, `BarToken`, `BarIconButton`, `ActionBarTokens`, `ContentRow` selection, and
+`symbol_more_horiz`. All motion uses the unreleased `Motion`, `MotionSpeed`, `MotionCurve`,
+`motionTween`, and `LocalMotionScale`, which replace the `MotionTokens` of earlier releases; see
+[motion](motion.md). They join the tables below once a Meta release with them is tagged and
+pinned. See [action bar](action-bar.md). The compose page also uses the unreleased
+`ComposeField`, `ComposeValueField`, `ComposeBody`, and `ComposeTokens`; see [compose](compose.md).
+
 ## Shared now
 
 | File | UI declarations or supporting file | Owner | Reason |
@@ -92,7 +100,6 @@ Mail's calendar uses `MonthYearPicker`.
 | [AvatarTokens](https://github.com/reazndev/otus-meta/blob/v0.4.0/designsystem/src/commonMain/kotlin/com/otus/designsystem/theme/AvatarTokens.kt) | `AvatarTokens` | `otus-meta/designsystem` | Reusable visual element, component, theme, or UI support. |
 | [CalendarTokens](https://github.com/reazndev/otus-meta/blob/v0.4.0/designsystem/src/commonMain/kotlin/com/otus/designsystem/theme/CalendarTokens.kt) | `CalendarTokens` | `otus-meta/designsystem` | Reusable visual element, component, theme, or UI support. |
 | [ControlFeedbackTokens](https://github.com/reazndev/otus-meta/blob/v0.4.0/designsystem/src/commonMain/kotlin/com/otus/designsystem/theme/ControlFeedbackTokens.kt) | `ControlFeedbackTokens` | `otus-meta/designsystem` | Reusable visual element, component, theme, or UI support. |
-| [MotionTokens](https://github.com/reazndev/otus-meta/blob/v0.4.0/designsystem/src/commonMain/kotlin/com/otus/designsystem/theme/MotionTokens.kt) | `MotionTokens` | `otus-meta/designsystem` | Reusable visual element, component, theme, or UI support. |
 | [OtusColors](https://github.com/reazndev/otus-meta/blob/v0.4.0/designsystem/src/commonMain/kotlin/com/otus/designsystem/theme/OtusColors.kt) | `OtusColors` | `otus-meta/designsystem` | Reusable visual element, component, theme, or UI support. |
 | [OtusTheme](https://github.com/reazndev/otus-meta/blob/v0.4.0/designsystem/src/commonMain/kotlin/com/otus/designsystem/theme/OtusTheme.kt) | `OtusTheme` | `otus-meta/designsystem` | Reusable visual element, component, theme, or UI support. |
 | [PageTokens](https://github.com/reazndev/otus-meta/blob/v0.4.0/designsystem/src/commonMain/kotlin/com/otus/designsystem/theme/PageTokens.kt) | `PageTokens` | `otus-meta/designsystem` | Reusable visual element, component, theme, or UI support. |
@@ -109,8 +116,8 @@ Mail's calendar uses `MonthYearPicker`.
 | [FolderRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderRow.kt) | `FolderRow` | `otus-mail` | Maps folder counts and tree depth into shared DetailRow. |
 | [RuleRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/RuleRow.kt) | `RuleRow` | `otus-mail` | Maps rule labels and enabled state into shared DetailRow. |
 | [InboxBody](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxBody.kt) | `InboxBody`, `InboxEmptyState` | `otus-mail` | Composes the message list and supplies feature text/actions to shared EmptyState. |
-| [MessageRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageRow.kt) | `MessageRow` | `otus-mail` | Maps the sender, arrival time, folder labels, and unread state into shared ContentRow and LabelPill. |
-| [AvatarFilterChips](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/AvatarFilterChips.kt) | `PeopleFilterChip`, `AccountsFilterChip`, `AvatarFilterChip` | `otus-mail` | Maps selected senders and accounts into shared AvatarStackChip. |
+| [MessageRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageRow.kt) | `MessageRow` | `otus-mail` | Maps the sender, arrival time, folder labels, unread state, and selection into shared ContentRow and LabelPill. |
+| [AvatarFilterChips](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/AvatarFilterChips.kt) | `PeopleFilterChip`, `AccountsFilterChip`, `AvatarFilterChip`, `chipAvatar` | `otus-mail` | Maps selected senders and accounts into shared AvatarStackChip, and a sender into the `ChipAvatar` an action bar token uses. |
 | [SenderAvatar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/SenderAvatar.kt) | `SenderAvatar` | `otus-mail` | Maps Mail sender data into the shared Avatar element. |
 
 ## Mail
@@ -146,12 +153,25 @@ Mail's calendar uses `MonthYearPicker`.
 | [InboxPillChips](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxPillChips.kt) | `InboxRowPills`, `FolderPillChip` | `otus-mail` | The user's inbox pills; pill drawing is shared Chip. |
 | [InboxPillsSheet](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxPillsSheet.kt) | `InboxPillsSheet`, `Caption` | `otus-mail` | Chooses and orders the inbox pills; uses shared `SelectionSheet`, `ReorderableColumn`, and `SelectionRow`. |
 | [InboxPickerChoices](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxPickerChoices.kt) | `InboxPickerChoices`, `AccountAvatar`, `EmptyChoices`, `SectionCaption` | `otus-mail` | Mail messages, searches, filters, or previews; uses shared controls. |
-| [MailBehaviorSettings](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailBehaviorSettings.kt) | `MailBehaviorSettings` | `otus-mail` | Mail pill, swipe, reading, and Read later choices; uses shared rows and `ChoiceSheet`. |
-| [MessageActionLabels](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageActionLabels.kt) | `swipeAction` | `otus-mail` | Mail adapter mapping message actions to Meta's `SwipeActions`. |
-| [MessageActionRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageActionRow.kt) | `MessageActionRow` | `otus-mail` | Open-message actions as Material text buttons, like the preview dialog around them. |
-| [MessagePreview](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessagePreview.kt) | `MessagePreview` | `otus-mail` | The open message in a Material `AlertDialog`, with its actions above the body. |
+| [MailBehaviorSettings](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailBehaviorSettings.kt) | `MailBehaviorSettings` | `otus-mail` | Mail pill, swipe, action bar, reading, and Read later choices; uses shared rows and `ChoiceSheet`. |
+| [MessageActionLabels](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageActionLabels.kt) | `label`, `buttonLabel`, `swipeAction` | `otus-mail` | Names message actions and action bar modes, and maps actions to Meta's `SwipeActions`. |
+| [FolderChoice](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/FolderChoice.kt) | `FolderChoice`, `rememberFolderChoice` | `otus-mail` | The "Move to" choice for an action bar or menu; uses shared `ChoiceDialog`. |
+| [InboxResults](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxResults.kt) | `InboxResults` | `otus-mail` | The message count, notice, and list, padded clear of the action bar. |
+| [MailActionBar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailActionBar.kt) | `MailActionBar`, `overflow` | `otus-mail` | Maps a saved layout and a screen's offers into shared `ActionBar`; an action the screen cannot offer stays disabled in its slot. `overflow` lists what the bar leaves out. |
+| [ComposeBar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ComposeBar.kt) | `ComposeBar` | `otus-mail` | The compose page's `MailActionBar`: only Discard runs, and the main button names the draft's recipients with a `BarToken`. |
+| [ComposeFields](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ComposeFields.kt) | `ComposeFields` | `otus-mail` | A draft's From, To, Cc, Bcc, and Subject lines from shared `ComposeField` and `ComposeValueField`; Cc and Bcc stay hidden until asked for. |
+| [InboxBar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxBar.kt) | `InboxBar` | `otus-mail` | The message list's bar while nothing is selected. |
+| [ListActions](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ListActions.kt) | `ListActions`, `offer` | `otus-mail` | Offers New mail, Search, Filters, and Mark all read for the message list. |
+| [MessageReplyOffers](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageReplyOffers.kt) | `replyOffer`, `replyContext` | `otus-mail` | Offers Reply, Reply all, Forward, and New mail for an open message, and the `BarToken.Person` or `BarToken.People` context naming who a reply goes to. |
+| [MessageActionOffers](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageActionOffers.kt) | `offer`, `symbol` | `otus-mail` | Turns a message action into a labeled, runnable offer for one message or a selection. |
+| [OfferedAction](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/OfferedAction.kt) | `OfferedAction`, `plainOffer` | `otus-mail` | An action's label, symbol, and run callback as offered for some messages. |
+| [SelectionBar](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/SelectionBar.kt) | `SelectionBar` | `otus-mail` | The selected messages' action bar, with a `BarToken.Count` context. |
+| [RowGestures](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/RowGestures.kt) | `RowGestures` | `otus-mail` | What message rows do on swipe, tap, and long press, including selection. |
 | [SearchFilterChip](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/SearchFilterChip.kt) | `SearchFilterChip` | `otus-mail` | Mail filter selection and labels; pill drawing is shared Chip/AvatarStackChip. |
-| [InboxScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/InboxScreen.kt) | `InboxScreen`, `InboxResults` | `otus-mail` | Mail messages, searches, filters, or previews; uses shared controls. |
+| [ActionBarSettingsScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/ActionBarSettingsScreen.kt) | `ActionBarSettingsScreen` | `otus-mail` | Chooses one bar for every screen or one per screen, and each bar's buttons; uses shared `Subpage`, `SettingRow`, `ChoiceSheet`, and an `ActionBar` preview. |
+| [ComposeScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/ComposeScreen.kt) | `ComposeScreen` | `otus-mail` | A new message, reply, or forward as a page; uses shared `ContextPanel`, `ActionBarHost`, `ComposeBody`, `ChoiceSheet`, and `ConfirmDialog`. |
+| [InboxScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/InboxScreen.kt) | `InboxScreen` | `otus-mail` | Mail messages, searches, filters, selection, and the list's action bar; uses shared controls and `ActionBarHost`. |
+| [MessageScreen](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/screens/MessageScreen.kt) | `MessageScreen` | `otus-mail` | The open message as a page with its action bar and **More actions** menu; uses shared `ContextPanel`, `ActionBarHost`, and `ActionDialog`. |
 | [DemoFilters](../shared/src/commonMain/kotlin/com/otus/mail/feature/welcome/presentation/components/DemoFilters.kt) | `DemoFilters` | `otus-mail` | Mail component playground; uses shared controls. |
 | [DemoModePicker](../shared/src/commonMain/kotlin/com/otus/mail/feature/welcome/presentation/components/DemoModePicker.kt) | `DemoModePicker` | `otus-mail` | Mail component playground; uses shared controls. |
 | [DemoScaffold](../shared/src/commonMain/kotlin/com/otus/mail/feature/welcome/presentation/components/DemoScaffold.kt) | `DemoScaffold` | `otus-mail` | Mail component playground; uses shared controls. |

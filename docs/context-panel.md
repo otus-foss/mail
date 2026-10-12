@@ -50,7 +50,7 @@ Inbox node: `19:386`.
 - The Figma fade contains `#353637`, outside the approved palette. It is replaced with an alpha fade.
 - The panel sizes to its content and does not preserve the inbox frame's unused 278 px height.
 - Inbox/search mode changes keep one panel surface. Its lower edge expands and contracts over
-  220 ms as the pills become overlapping or detached. Header content crossfades and resizes.
+  240 ms, `MotionSpeed.Normal`, as the pills become overlapping or detached. Header content crossfades and resizes.
   Pill groups crossfade around the same vertical rail anchor, with animated group dimensions.
   Outgoing pills do not slide up into the header. Their moving cutouts previously created a second,
   higher contour that appeared to jump back down when the incoming group took over, even though both
@@ -96,7 +96,7 @@ iOS builds and runtime testing require macOS/Xcode.
 
 ## Press feedback
 
-Chips and icon buttons share a subtle 100 ms highlight at 10% opacity using `text1`.
+Chips and icon buttons share a subtle 120 ms (`MotionSpeed.Quick`) highlight at 10% opacity using `text1`.
 Feedback is clipped to the visible rounded surface, including when pressing its larger 48 dp
 accessible touch target. The outer target has no rectangular ripple. Keyboard focus uses the same
 highlight; release or cancellation fades it out. Appearance and timing live in `ControlFeedbackTokens`.

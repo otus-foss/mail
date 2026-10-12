@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -19,17 +20,11 @@ internal fun EmailObject.toMessage(
     accountAddress: String = "",
     mailboxId: String = "",
 ): MailMessage {
-    val sender = from?.firstOrNull()
     val local = Instant.parse(receivedAt).toLocalDateTime(zone)
     val text = textBody.orEmpty().mapNotNull { part -> part.partId?.let { bodyValues[it]?.value } }.joinToString("\n")
     return MailMessage(
         id = "$accountId/$id",
-        sender =
-            MailSender(
-                sender?.name?.ifBlank { null } ?: sender?.email.orEmpty(),
-                sender?.email.orEmpty(),
-                accountId,
-            ),
+        sender = from?.firstOrNull().toSender(accountId),
         subject = subject.orEmpty(),
         body = text.ifBlank { preview },
         received = ReceivedAt(local.date.toString(), "${local.hour.twoDigits()}:${local.minute.twoDigits()}"),
@@ -49,7 +44,15 @@ internal fun EmailObject.toMessage(
                 flagged = keywords[FLAGGED_KEYWORD] == true,
             ),
         emailId = id,
+        to = to.orEmpty().map { it.toSender(accountId) },
+        cc = cc.orEmpty().map { it.toSender(accountId) },
+        messageIds = messageId.orEmpty(),
+        references = references.orEmpty(),
     )
 }
+
+/** A blank display name shows the address instead. */
+private fun EmailAddress?.toSender(accountId: String) =
+    MailSender(this?.name?.ifBlank { null } ?: this?.email.orEmpty(), this?.email.orEmpty(), accountId)
 
 private fun Int.twoDigits() = toString().padStart(2, '0')

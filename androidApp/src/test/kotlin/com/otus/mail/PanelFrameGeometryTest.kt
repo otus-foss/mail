@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +23,7 @@ import com.otus.designsystem.components.ContextPanel
 import com.otus.designsystem.elements.Chip
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.motionTween
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -70,9 +70,9 @@ class PanelFrameGeometryTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
-                    val rootY = animateDpAsState(if (moved.value) 24.dp else 0.dp, tween(220))
-                    val pillY = animateDpAsState(if (moved.value) 0.dp else (-12).dp, tween(220))
-                    val headerHeight = animateDpAsState(if (moved.value) 90.dp else 60.dp, tween(220))
+                    val rootY = animateDpAsState(if (moved.value) 24.dp else 0.dp, motionTween())
+                    val pillY = animateDpAsState(if (moved.value) 0.dp else (-12).dp, motionTween())
+                    val headerHeight = animateDpAsState(if (moved.value) 90.dp else 60.dp, motionTween())
                     Box(Modifier.fillMaxSize().background(OtusColors.bgRegular)) {
                         ContextPanel(
                             modifier =

@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.saveable.Saver
 import com.otus.mail.feature.folders.domain.CombinedFolder
+import com.otus.mail.feature.inbox.domain.ComposeRequest
 
 /** Every page, including subpages. Pages without a parent are sidebar destinations. */
 internal sealed interface MailPage {
@@ -28,6 +29,16 @@ internal sealed interface MailPage {
     data object SidebarSettings : MailPage {
         override val parent = Appearance
     }
+
+    data object ActionBarSettings : MailPage {
+        override val parent = Appearance
+    }
+
+    /** A draft started from [request]; it closes back to [parent], the page that opened it. */
+    data class Compose(
+        val request: ComposeRequest,
+        override val parent: MailPage = Inbox,
+    ) : MailPage
 
     data object Folders : MailPage {
         override val parent = Settings
@@ -66,19 +77,21 @@ internal sealed interface MailPage {
 
     companion object {
         private val fixed =
-            listOf(Inbox, Settings, EmailAccounts, Appearance, Folders, Rules, ReadLater, SidebarSettings)
+            listOf(
+                Inbox,
+                Settings,
+                EmailAccounts,
+                Appearance,
+                ActionBarSettings,
+                Folders,
+                Rules,
+                ReadLater,
+                SidebarSettings,
+            )
 
         val Saver: Saver<MailPage, List<String>> =
             Saver(
-                save = { page ->
-                    when (page) {
-                        is Folder -> listOf(FOLDER, page.accountId, page.folderId)
-                        is RuleEditor -> listOf(RULE, page.accountId, page.ruleId.orEmpty())
-                        is Combined -> listOf(COMBINED, page.folder.name)
-                        is Shared -> listOf(SHARED) + page.key
-                        else -> listOf(page.toString())
-                    }
-                },
+                save = { page -> saved(page) },
                 restore = { saved ->
                     when (saved.firstOrNull()) {
                         FOLDER -> Folder(saved[1], saved[2])
@@ -89,6 +102,17 @@ internal sealed interface MailPage {
                     }
                 },
             )
+
+        /** A draft's request holds a whole message, so a restored app returns to the page that opened it. */
+        private fun saved(page: MailPage): List<String> =
+            when (page) {
+                is Folder -> listOf(FOLDER, page.accountId, page.folderId)
+                is RuleEditor -> listOf(RULE, page.accountId, page.ruleId.orEmpty())
+                is Combined -> listOf(COMBINED, page.folder.name)
+                is Shared -> listOf(SHARED) + page.key
+                is Compose -> saved(page.parent)
+                else -> listOf(page.toString())
+            }
 
         private const val FOLDER = "Folder"
         private const val RULE = "RuleEditor"

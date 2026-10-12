@@ -16,7 +16,7 @@ internal fun PeopleFilterChip(
 ) {
     val single = senders.singleOrNull()
     AvatarFilterChip(
-        senders.map { chipAvatar(it.avatar, it.name, it.address) },
+        senders.map { it.chipAvatar },
         single?.let(::shortName),
         single?.let { "From ${it.name.ifBlank { it.address }}" } ?: "From ${senders.size} people",
         onClick,
@@ -55,7 +55,11 @@ private fun AvatarFilterChip(
     AvatarStackChip(avatars, singleLabel ?: "+$hidden".takeIf { hidden > 0 }, description, onClick, detail = detail)
 }
 
-private fun chipAvatar(
+/** The sender's avatar for a chip or an action bar token. */
+internal val MailSender.chipAvatar: ChipAvatar
+    get() = chipAvatar(avatar, name, address)
+
+internal fun chipAvatar(
     avatar: ResolvedAvatar?,
     name: String,
     address: String,
