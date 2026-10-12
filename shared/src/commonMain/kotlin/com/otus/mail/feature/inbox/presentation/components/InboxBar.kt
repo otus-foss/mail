@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.barLayout
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.MessageActions
@@ -26,7 +27,8 @@ internal fun InboxBar(
     val results = remember(messages, matching) { searchMessages(messages, matching) }
     val list = ListActions(results, matching.accounts.singleOrNull(), actions, state::startSearch, onFilters, onCompose)
     val behavior = actions.behavior()
-    MailActionBar(behavior.barLayout(ActionBarPlace.Inbox), list::offer, onAction = {
+    val layout = behavior.barLayout(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke())
+    MailActionBar(layout, list::offer, onAction = {
         it.run()
     }, behavior.minimizedBar, hidden = state.searching)
 }

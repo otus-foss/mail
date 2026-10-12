@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -19,13 +20,17 @@ internal class ListActions(
     val onCompose: (ComposeRequest) -> Unit,
 )
 
-/** [action] for the list; null for actions that need a message, and for Mark all read with nothing unread. */
-internal fun ListActions.offer(action: MailAction): OfferedAction? =
+/**
+ * [action] for the list; null for actions that need a message, for Mark all read with nothing
+ * unread, and for emptying anything but a Spam or Trash list with messages in it.
+ */
+internal fun ListActions.offer(action: BarButton): OfferedAction? =
     when (action) {
         MailAction.NewMail -> plainOffer(action) { onCompose(ComposeRequest.New(accountId)) }
         MailAction.Search -> plainOffer(action, onSearch)
         MailAction.Filters -> plainOffer(action, onFilters)
         MailAction.MarkAllRead -> offerMarkAllRead()
+        MailAction.EmptyFolder -> messageActions?.offerEmpty()
         else -> null
     }
 

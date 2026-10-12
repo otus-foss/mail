@@ -115,4 +115,19 @@ class MailBehaviorTest {
             behavior.copiedBar(ActionBarPlace.Message, ActionBarPlace.Compose),
         )
     }
+
+    @Test
+    fun aCopiedMoveToButtonGoesOnlyWhereMessagesCanMove() {
+        val receipts = BarButton.MoveTo(listOf("Receipts"))
+        val message = ActionBarLayout(listOf(MailAction.Archive, receipts), MailAction.Reply)
+        val behavior = MailBehavior(actionBar = mapOf(ActionBarPlace.Message to message))
+        assertEquals(
+            ActionBarLayout(listOf(MailAction.Archive, receipts), MailAction.Move),
+            behavior.copiedBar(ActionBarPlace.Message, ActionBarPlace.Selection),
+        )
+        assertEquals(
+            ActionBarLayout(emptyList(), MailAction.NewMail),
+            behavior.copiedBar(ActionBarPlace.Message, ActionBarPlace.Inbox),
+        )
+    }
 }

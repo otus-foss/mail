@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -68,10 +67,8 @@ internal fun MoveSheet(
     var searching by remember { mutableStateOf(false) }
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val sorting = rememberMoveSorting(actions.moves.futureSorting(first).takeIf { oneSender })
-    val suggested by produceState<MoveTarget?>(null, first.id, oneSender) {
-        val folder = if (oneSender) actions.moves.suggested(first) else null
-        value = targets.firstOrNull { it.folderId == folder?.folderId }
-    }
+    val folder = rememberSuggestedMove(messages, actions)
+    val suggested = targets.firstOrNull { it.folderId == folder?.folderId }
     val move: (MoveTarget) -> Unit = { target ->
         onLeave {
             messages.forEach { actions.moves.onMove(it, target) }

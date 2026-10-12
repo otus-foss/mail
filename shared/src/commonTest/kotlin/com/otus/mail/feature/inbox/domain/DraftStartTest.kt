@@ -73,6 +73,19 @@ class DraftStartTest {
     }
 
     @Test
+    fun aFollowUpGoesToTheOriginalRecipientsFromTheAddressThatSentIt() {
+        // Sent from an alias the account doesn't list, so a reply would go back to it.
+        val alias = MailSender("Me", "alias@example.com")
+        val sent = original.copy(from = alias, to = listOf(bob, me), cc = listOf(cy))
+        val draft = ComposeRequest.FollowUp(sent).startDraft("a1", own)
+        assertEquals(listOf(bob), draft.to)
+        assertEquals(listOf(cy), draft.cc)
+        assertEquals("Re: Lunch", draft.subject)
+        assertEquals(listOf("<m1@example.com>"), draft.inReplyTo)
+        assertEquals(alias, ComposeRequest.FollowUp(sent).preferredIdentity(listOf(me, alias)))
+    }
+
+    @Test
     fun aForwardCarriesTheOriginalUnderAHeader() {
         val draft = ComposeRequest.Forward(original).startDraft("a1", own)
         assertEquals("Fwd: Lunch", draft.subject)
