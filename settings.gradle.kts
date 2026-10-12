@@ -36,11 +36,17 @@ dependencyResolutionManagement {
             }
         } else {
             // Shared Otus libraries. Downloading needs a token; see docs/shared-libraries.md.
-            maven("https://maven.pkg.github.com/reazndev/otus-meta") {
-                name = "otusMeta"
-                // Gradle checks credentials before every build; without a token only -Potus.meta.path works.
-                if (providers.gradleProperty("otusMetaPassword").isPresent) credentials(PasswordCredentials::class)
-                mavenContent { includeGroup("com.otus") }
+            // Gradle checks credentials before every build; without a token only -Potus.meta.path works.
+            val hasToken = providers.gradleProperty("otusMetaPassword").isPresent
+            // Exclusive content keeps Maven Central from serving a look-alike com.otus artifact.
+            exclusiveContent {
+                forRepository {
+                    maven("https://maven.pkg.github.com/reazndev/otus-meta") {
+                        name = "otusMeta"
+                        if (hasToken) credentials(PasswordCredentials::class)
+                    }
+                }
+                filter { includeGroup("com.otus") }
             }
         }
     }
