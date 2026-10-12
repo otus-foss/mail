@@ -9,42 +9,36 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ChoiceOptions
+import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.SettingRow
-import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.elements.ValueButton
-import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.theme.SheetTokens
 
 /**
- * The switch that also sorts future mail, pinned below the folders, with the condition the rule
- * will use once it is on. Nothing when the account cannot run rules.
+ * The condition a new rule will use, pinned below the folders while the sort pill is on. Nothing
+ * while it is off.
  */
 @Composable
 internal fun MoveSortFooter(sorting: MoveSorting) {
     val future = sorting.future ?: return
+    val chosen = sorting.rule ?: return
     var choosing by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset)) {
-        SettingToggleRow(
-            "Also sort future mail",
-            sorting.on,
-            sorting.onToggle,
-            description = if (sorting.on) "Adds a rule in ${future.accountName}" else "Off · only this message moves",
-            icon = Res.drawable.symbol_filter_list,
+        SettingRow("Mail that", { choosing = true }) { ValueButton(chosen.label, wide = true) }
+        SheetCaption(
+            "Tap a folder. This message and future ones like it go there.",
+            RowTextInset,
+            heading = false,
         )
-        val chosen = sorting.rule ?: return@Column
-        SettingRow("Mail that", { choosing = true }, trailing = { ValueButton(chosen.label) })
-        SheetCaption("Tap a folder. This message and future ones like it go there.", RowTextInset, heading = false)
     }
-    if (choosing && sorting.chosen != null) {
+    if (choosing) {
         ChoiceSheet(
             "Sort mail that…",
-            ChoiceOptions(future.choices, sorting.chosen),
-            label = { it.label },
+            ChoiceOptions(future.choices, chosen),
+            row = { ChoiceRow(it.label, it.detail, it.icon, it.person?.namedByAddress) },
             onSelect = sorting.onChoose,
             onDismiss = { choosing = false },
-            detail = { it.detail },
             footnote = "Becomes a rule in ${future.accountName}. Change or delete it any time in Rules.",
         )
     }

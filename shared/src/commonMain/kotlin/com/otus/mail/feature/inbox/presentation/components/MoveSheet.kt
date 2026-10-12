@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
@@ -18,15 +19,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
+import com.otus.designsystem.components.NamedAvatar
 import com.otus.designsystem.components.PickerSearch
 import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SheetFrame
+import com.otus.designsystem.elements.IconPill
 import com.otus.designsystem.elements.SidebarPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_delete
+import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
@@ -34,6 +38,7 @@ import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
@@ -46,8 +51,8 @@ import org.jetbrains.compose.resources.DrawableResource
 /**
  * Moves [messages], one or a selection, to the folder the user taps among [targets], through
  * [onLeave] so a page they leave closes first. Search narrows every list. A suggestion and the
- * sort switch need one sender, so they are left out for a selection from several. With the switch
- * on, the tap also adds a rule that sends future mail like the first message to the same folder.
+ * sort pill need one sender, so they are left out for a selection from several. With the pill on,
+ * the tap also adds a rule that sends future mail like the first message to the same folder.
  */
 @Composable
 internal fun MoveSheet(
@@ -70,7 +75,7 @@ internal fun MoveSheet(
     val move: (MoveTarget) -> Unit = { target ->
         onLeave {
             messages.forEach { actions.moves.onMove(it, target) }
-            sorting.rule?.addRule(target)
+            sorting.rule?.addRule(target, messages)
         }
     }
     val saving = messages.mapNotNull(actions.readLater).filter { it.saves }
@@ -91,18 +96,10 @@ internal fun MoveSheet(
             MovePills(
                 onReadLater = readLater?.let { changes -> { onLeave { changes.forEach { it.apply() } } } },
                 shortcuts,
+                sorting,
                 onMove = move,
             )
-            suggestion?.let { target ->
-                SheetCaption("Suggested", RowTextInset)
-                SettingRow(
-                    target.name,
-                    { move(target) },
-                    description = "${target.label} · where ${first.sender.name} usually goes",
-                    icon = Res.drawable.symbol_folder,
-                    density = RowDensity.Compact,
-                )
-            }
+            suggestion?.let { MoveSuggestion(it, first.sender, move) }
             MoveFolderList(folders, searching = query.isNotBlank(), onMove = move)
             if (readLater == null && suggestion == null && (shortcuts + folders).isEmpty()) {
                 SheetCaption(
@@ -117,26 +114,59 @@ internal fun MoveSheet(
     }
 }
 
-/** Read later, then the system folders, as one wrapping row of pills; nothing when there are none. */
+/**
+ * Read later, then the system folders, as one wrapping row of pills, with the pill that also sorts
+ * future mail at the end; nothing when there are none.
+ */
 @Composable
 private fun MovePills(
     onReadLater: (() -> Unit)?,
     shortcuts: List<MoveTarget>,
+    sorting: MoveSorting,
     onMove: (MoveTarget) -> Unit,
 ) {
-    if (onReadLater == null && shortcuts.isEmpty()) return
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
-        onReadLater?.let { SidebarPill(READ_LATER, Res.drawable.symbol_bookmark, selected = false, it) }
-        shortcuts.forEach { target ->
-            target.shortcut?.let { SidebarPill(it.label, it.icon, selected = false, { onMove(target) }) }
+    if (onReadLater == null && shortcuts.isEmpty() && sorting.future == null) return
+    Row(horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
+        FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
+            onReadLater?.let { SidebarPill(READ_LATER, Res.drawable.symbol_bookmark, selected = false, it) }
+            shortcuts.forEach { target ->
+                target.shortcut?.let { SidebarPill(it.label, it.icon, selected = false, { onMove(target) }) }
+            }
+        }
+        sorting.future?.let {
+            IconPill(SORT_FUTURE_MAIL, Res.drawable.symbol_filter_list, sorting.on, { sorting.onToggle(!sorting.on) })
         }
     }
+}
+
+/** The user's own folder [sender]'s mail usually goes to, under its own caption. */
+@Composable
+private fun MoveSuggestion(
+    target: MoveTarget,
+    sender: MailSender,
+    onMove: (MoveTarget) -> Unit,
+) {
+    SheetCaption("Suggested", RowTextInset)
+    SettingRow(
+        target.name,
+        { onMove(target) },
+        // A nested folder's path tells it apart; a top-level one would only repeat its name.
+        description =
+            listOfNotNull(target.label.takeIf { it != target.name }, "where ${sender.name} usually goes")
+                .joinToString(" · ")
+                .replaceFirstChar { it.uppercase() },
+        person = NamedAvatar(sender.name, sender.chipAvatar),
+        icon = Res.drawable.symbol_folder,
+        density = RowDensity.Compact,
+    )
 }
 
 /** Lines captions up with the text inside the settings rows below them. */
 internal val RowTextInset = Modifier.padding(horizontal = PageTokens.textInset)
 
 private const val READ_LATER = "Read later"
+
+internal const val SORT_FUTURE_MAIL = "Also sort future mail"
 
 /** The system folder's symbol, the same one its action bar button and sidebar entry use. */
 internal val FolderShortcut.icon: DrawableResource

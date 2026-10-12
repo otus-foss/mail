@@ -16,6 +16,7 @@ import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.rememberSidebarState
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
 import com.otus.settings.presentation.DateFormatSettingsState
 import kotlinx.coroutines.launch
 
@@ -61,5 +62,7 @@ fun App(
                 },
             )
         }
+        // Outlives the page a move closed, such as the open message.
+        states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
     }
 }

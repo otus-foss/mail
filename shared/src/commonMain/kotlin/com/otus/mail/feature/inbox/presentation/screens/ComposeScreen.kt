@@ -32,6 +32,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.ChipPlacement
 import com.otus.designsystem.components.ChoiceOptions
+import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.ContextPanel
@@ -169,10 +170,9 @@ private fun FromSheet(
     ChoiceSheet(
         "Send from",
         ChoiceOptions(identities, selected = state.draft.from ?: identities.first()),
-        label = { it.address },
+        row = { ChoiceRow(it.address, it.name.takeIf(String::isNotBlank)) },
         onSelect = { identity -> state.edit { it.copy(from = identity) } },
         onDismiss = onDismiss,
-        detail = { it.name.takeIf(String::isNotBlank) },
     )
 }
 
