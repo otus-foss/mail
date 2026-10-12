@@ -10,13 +10,21 @@ val MailboxType: JmapType<MailboxObject> = JmapType("Mailbox", JmapCapability.MA
 /** Email objects (RFC 8621, section 4). */
 val EmailType: JmapType<EmailObject> = JmapType("Email", JmapCapability.MAIL, EmailObject.serializer())
 
-/** Email properties the inbox requests (RFC 8621, section 4.1). */
+/** Identities an account may send as (RFC 8621, section 6). */
+val IdentityType: JmapType<IdentityObject> =
+    JmapType("Identity", JmapCapability.SUBMISSION, IdentityObject.serializer())
+
+/** Email properties the inbox requests (RFC 8621, section 4.1). Recipients and ids let a reply quote and thread. */
 val EMAIL_PROPERTIES =
     listOf(
         "id",
         "mailboxIds",
         "keywords",
         "from",
+        "to",
+        "cc",
+        "messageId",
+        "references",
         "subject",
         "receivedAt",
         "preview",
@@ -69,6 +77,10 @@ data class EmailObject(
     val mailboxIds: Map<String, Boolean> = emptyMap(),
     val keywords: Map<String, Boolean> = emptyMap(),
     val from: List<EmailAddress>? = null,
+    val to: List<EmailAddress>? = null,
+    val cc: List<EmailAddress>? = null,
+    val messageId: List<String>? = null,
+    val references: List<String>? = null,
     val subject: String? = null,
     val receivedAt: String,
     val preview: String = "",
@@ -93,4 +105,11 @@ data class EmailBodyPart(
 @Serializable
 data class EmailBodyValue(
     val value: String = "",
+)
+
+@Serializable
+data class IdentityObject(
+    val id: String,
+    val name: String = "",
+    val email: String = "",
 )

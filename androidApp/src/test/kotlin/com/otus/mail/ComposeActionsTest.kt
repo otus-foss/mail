@@ -1,0 +1,107 @@
+package com.otus.mail
+
+import androidx.activity.compose.setContent
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.feature.inbox.domain.ActionBarLayout
+import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.domain.MailLocation
+import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.original
+import com.otus.mail.feature.inbox.presentation.InboxContext
+import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/** New mail, reply, and forward start drafts, and the reply button names who it goes to. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class ComposeActionsTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    private val requests = mutableListOf<ComposeRequest>()
+    private val message =
+        MailMessage(
+            "work:m1",
+            MailSender("Grace Hopper", "grace@example.org"),
+            "Compilers",
+            "Hello",
+            ReceivedAt("2026-10-04", "09:30"),
+            MailLocation("Inbox", "Work", "work", "me@example.org"),
+            emailId = "m1",
+            to = listOf(MailSender("Me", "ME@example.org"), MailSender("Ada", "ada@example.org")),
+            cc = listOf(MailSender("Grace", "grace@example.org"), MailSender("Alan", "alan@example.org")),
+        )
+
+    private fun start(behavior: MailBehavior = MailBehavior()) {
+        val actions =
+            MessageActions(
+                moveTargets = { emptyList() },
+                onMove = { _, _ -> },
+                canMark = { _, _ -> false },
+                onMark = { _, _, _ -> },
+                ruleForSender = { null },
+                readLater = { null },
+                behavior = { behavior },
+            )
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                OtusTheme {
+                    InboxScreen(
+                        listOf(message),
+                        context = InboxContext(onCompose = { requests += it }),
+                        messageActions = actions,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun button(label: String) = compose.onNode(hasContentDescription(label) and hasClickAction())
+
+    @Test
+    fun newMailStartsABlankDraft() {
+        start()
+        button("New mail").performClick()
+        assertEquals(listOf(ComposeRequest.New()), requests)
+    }
+
+    @Test
+    fun replyNamesTheSenderAndAnswersThem() {
+        start()
+        compose.onNodeWithText("Compilers").performClick()
+        button("Reply, to Grace Hopper").performClick()
+        assertEquals(listOf(ComposeRequest.Reply(message.original(), all = false)), requests)
+    }
+
+    @Test
+    fun replyAllCountsEveryoneElseOnceAndForwardIsInTheMenu() {
+        val replyAll = ActionBarLayout(listOf(MailAction.Archive), MailAction.ReplyAll)
+        start(MailBehavior(actionBar = MailBehavior().actionBar + (ActionBarPlace.Message to replyAll)))
+        compose.onNodeWithText("Compilers").performClick()
+        // Grace, Ada, and Alan; the account's own address is left out.
+        button("Reply all, to 3 people").performClick()
+        compose.onNodeWithContentDescription("More actions").performClick()
+        compose.onNodeWithText("Forward").performClick()
+        assertEquals(
+            listOf(ComposeRequest.Reply(message.original(), all = true), ComposeRequest.Forward(message.original())),
+            requests,
+        )
+    }
+}

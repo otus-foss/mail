@@ -29,7 +29,7 @@ internal fun ReadLaterPage(
 ) {
     val folders = states.folders.accounts.mapNotNull { it.readLater }
     LeaveWhenGone(states, navigation, gone = folders.isEmpty())
-    FeedPage(folders.toScope(), "Read later", states, dateFormatter, navigation)
+    FeedPage(MailPage.ReadLater, folders.toScope(), "Read later", states, dateFormatter, navigation)
 }
 
 /** One of the user's folders, holding each account's folder at its path. */
@@ -43,7 +43,7 @@ internal fun SharedFolderPage(
     val accounts = states.folders.accounts
     val folder = remember(accounts, page) { sharedFolder(sharedFolders(accounts), page.key) }
     LeaveWhenGone(states, navigation, gone = folder == null)
-    FeedPage(folder?.folders.orEmpty().toScope(), folder?.name ?: "Folder", states, dateFormatter, navigation)
+    FeedPage(page, folder?.folders.orEmpty().toScope(), folder?.name ?: "Folder", states, dateFormatter, navigation)
 }
 
 /**

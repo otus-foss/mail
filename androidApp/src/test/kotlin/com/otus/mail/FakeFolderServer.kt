@@ -18,7 +18,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * A JMAP server shaped like Stalwart that remembers changes: folders created with `Mailbox/set`
- * and the rules script uploaded and activated with `SieveScript/set`.
+ * and the rules script uploaded and activated with `SieveScript/set`. Drafts saved with `Email/set`
+ * get the ids `draft1`, `draft2`, and so on, in the [draftsFolder] that `Mailbox/query` finds by role.
  */
 class FakeFolderServer {
     /** Every API request body, in order. The client adds to it while tests read it. */
@@ -38,6 +39,10 @@ class FakeFolderServer {
 
     /** When set, every `Email/set` update is refused as forbidden. */
     var refuseUpdates = false
+
+    /** The id of the mailbox with role `drafts`; null when the account has none. */
+    var draftsFolder: String? = "dr"
+    private var draftCount = 0
 
     /** The rules script as last uploaded and saved. */
     var script: String? = null
@@ -90,7 +95,9 @@ class FakeFolderServer {
             when {
                 "Mailbox/set" in body -> createFolder(body)
                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $folderList}, "c0"]"""
-                "Email/set" in body -> updateEmail()
+                "Mailbox/query" in body -> draftsQuery()
+                "Email/set" in body -> setEmail(body)
+                "Identity/get" in body -> IDENTITIES
                 "Email/query" in body -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
@@ -99,10 +106,19 @@ class FakeFolderServer {
         return """{"methodResponses": [$reply]}"""
     }
 
-    private fun updateEmail(): String {
-        val outcome =
-            if (refuseUpdates) """"notUpdated": {"m1": {"type": "forbidden"}}""" else """"updated": {"m1": null}"""
-        return """["Email/set", {"newState": "e2", $outcome}, "c0"]"""
+    private fun draftsQuery(): String {
+        val ids = listOfNotNull(draftsFolder).joinToString { "\"$it\"" }
+        return """["Mailbox/query", {"ids": [$ids]}, "c0"]"""
+    }
+
+    private fun setEmail(body: String): String {
+        val outcomes =
+            buildList {
+                if ("\"create\":" in body) add(""""created": {"draft": {"id": "draft${++draftCount}"}}""")
+                if ("\"update\":" in body) add(if (refuseUpdates) REFUSED_UPDATE else """"updated": {"m1": null}""")
+                DESTROY.find(body)?.let { add(""""destroyed": [${it.groupValues[1]}]""") }
+            }
+        return """["Email/set", {"newState": "e2", ${outcomes.joinToString()}}, "c0"]"""
     }
 
     private val folderList: String
@@ -145,9 +161,14 @@ class FakeFolderServer {
 
     private companion object {
         val IN_MAILBOX = Regex("\"inMailbox\":\"([^\"]+)\"")
+        const val REFUSED_UPDATE = """"notUpdated": {"m1": {"type": "forbidden"}}"""
+        val DESTROY = Regex("\"destroy\":\\[([^\\]]*)]")
+        const val IDENTITIES = """["Identity/get", {"state": "i", "list": [
+            {"id": "i1", "name": "Ada Lovelace", "email": "ada@example.org"}]}, "c0"]"""
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:mail": {},
-            "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
+            "urn:ietf:params:jmap:submission": {}, "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
             "accounts": {"d1": {"name": "Ada", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},
+              "urn:ietf:params:jmap:submission": {},
               "urn:ietf:params:jmap:sieve": {"sieveExtensions": ["fileinto", "mailboxid", "imap4flags", "include"]}}}},
             "primaryAccounts": {"urn:ietf:params:jmap:mail": "d1"}, "username": "ada@example.org", "apiUrl": "/jmap/",
             "downloadUrl": "/download/{blobId}", "uploadUrl": "/upload/{accountId}/", "state": "x"}"""

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 
@@ -16,6 +17,8 @@ data class InboxContext(
     val mailboxSearch: MailboxSearch = MailboxSearch(),
     val pills: InboxPills = InboxPills(),
     val folderPill: FolderPillOption? = null,
+    /** Opens a draft for a new message, reply, or forward. */
+    val onCompose: (ComposeRequest) -> Unit = {},
 ) {
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()

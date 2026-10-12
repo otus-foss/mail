@@ -2,10 +2,13 @@ package com.otus.mail
 
 import android.content.Context
 import androidx.core.content.edit
+import com.otus.mail.feature.inbox.domain.ActionBarLayout
+import com.otus.mail.feature.inbox.domain.ActionBarMode
+import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
-import com.otus.mail.feature.inbox.domain.MessageSwipe
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 
 class AndroidMailBehaviorStore(
@@ -21,29 +24,31 @@ class AndroidMailBehaviorStore(
         val defaults = MailBehavior()
         val readLater = preferences.getBoolean(READ_LATER, defaults.readLater)
         return MailBehavior(
-            startToEnd =
-                MessageSwipe.fromStorageValue(
-                    preferences.getString(START_TO_END, null),
-                ) ?: defaults.startToEnd,
-            endToStart =
-                MessageSwipe.fromStorageValue(
-                    preferences.getString(END_TO_START, null),
-                ) ?: defaults.endToStart,
+            startToEnd = MailAction.decodeSwipe(preferences.getString(START_TO_END, null), defaults.startToEnd),
+            endToStart = MailAction.decodeSwipe(preferences.getString(END_TO_START, null), defaults.endToStart),
             markReadOnOpen = preferences.getBoolean(MARK_READ_ON_OPEN, defaults.markReadOnOpen),
             readLater = readLater,
             pills = preferences.getString(PILLS, null)?.let(InboxPill::decode) ?: InboxPill.defaults(readLater),
             sidebar = preferences.getString(SIDEBAR, null)?.let(SidebarLayout::decode) ?: defaults.sidebar,
+            actionBar =
+                ActionBarPlace.entries.associateWith { place ->
+                    ActionBarLayout.decode(preferences.getString(actionBarKey(place), null), place)
+                },
+            actionBarMode =
+                ActionBarMode.fromStorageValue(preferences.getString(ACTION_BAR_MODE, null)) ?: defaults.actionBarMode,
         )
     }
 
     override fun write(behavior: MailBehavior) {
         preferences.edit {
-            putString(START_TO_END, behavior.startToEnd.storageValue)
-            putString(END_TO_START, behavior.endToStart.storageValue)
+            putString(START_TO_END, MailAction.encodeSwipe(behavior.startToEnd))
+            putString(END_TO_START, MailAction.encodeSwipe(behavior.endToStart))
             putBoolean(MARK_READ_ON_OPEN, behavior.markReadOnOpen)
             putBoolean(READ_LATER, behavior.readLater)
             putString(PILLS, InboxPill.encode(behavior.pills))
             putString(SIDEBAR, SidebarLayout.encode(behavior.sidebar))
+            behavior.actionBar.forEach { (place, layout) -> putString(actionBarKey(place), layout.encode()) }
+            putString(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
         }
     }
 
@@ -54,5 +59,8 @@ class AndroidMailBehaviorStore(
         const val READ_LATER = "read_later"
         const val PILLS = "inbox_pills"
         const val SIDEBAR = "sidebar_layout"
+        const val ACTION_BAR_MODE = "action_bar_mode"
+
+        fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }
 }

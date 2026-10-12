@@ -55,6 +55,18 @@ palette through `OtusColors` and `OtusTheme`; default text is `text1` (`#EBECED`
 `text2`/`text3` require an explicit semantic choice. Do not add a light-mode branch, dynamic device
 colors, or a theme switch.
 
+## Motion
+
+Animate only through Meta's `Motion`. Use `motionTween(speed, curve)` in composables,
+`Motion.tween(speed, curve, scale)` outside composition, or `Motion.millis(speed, scale)` for a
+spec that is not a tween, and respect `LocalMotionScale` everywhere. Never add a raw duration
+constant, a `tween` with a literal, a new `CubicBezierEasing`, or an animation with a Compose
+default spec. Pick the speed by what moves: `Quick` for touch feedback, `Fast` for small in-place
+changes, `Normal` for panels, sheets, and text, `Relaxed` for large surfaces such as the sidebar or
+a settling row. Pick the curve by direction: `Standard` by default, `Enter` for things arriving,
+`Exit` for things leaving. Change `LocalMotionScale` to speed everything up or down; do not edit
+the speeds. See [motion](docs/motion.md).
+
 ## Opinionated conventions
 
 Use the committed formatters, never personal formatting preferences. No wildcard imports. Use

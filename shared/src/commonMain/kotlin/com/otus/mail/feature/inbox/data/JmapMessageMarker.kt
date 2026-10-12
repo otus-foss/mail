@@ -36,3 +36,4 @@ internal val MessageFlag.keyword: String
 
 internal const val SEEN_KEYWORD = "\$seen"
 internal const val FLAGGED_KEYWORD = "\$flagged"
+internal const val DRAFT_KEYWORD = "\$draft"

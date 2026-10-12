@@ -2,7 +2,6 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -26,6 +25,8 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_filter_list
+import com.otus.designsystem.theme.LocalMotionScale
+import com.otus.designsystem.theme.Motion
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
@@ -60,14 +61,15 @@ fun InboxPanel(
         },
         chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions) },
     ) {
+        val motionScale = LocalMotionScale.current
         AnimatedContent(
             targetState = searching,
             contentAlignment = Alignment.CenterStart,
             transitionSpec = {
                 (
-                    fadeIn(tween(PanelTokens.MODE_TRANSITION_MILLIS)) togetherWith
-                        fadeOut(tween(PanelTokens.MODE_TRANSITION_MILLIS))
-                ).using(SizeTransform(clip = false) { _, _ -> tween(PanelTokens.MODE_TRANSITION_MILLIS) })
+                    fadeIn(Motion.tween(scale = motionScale)) togetherWith
+                        fadeOut(Motion.tween(scale = motionScale))
+                ).using(SizeTransform(clip = false) { _, _ -> Motion.tween(scale = motionScale) })
             },
             label = "Inbox search mode",
         ) { mode ->

@@ -1,8 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
-import com.otus.mail.feature.inbox.domain.MessageSwipe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -20,19 +20,19 @@ class MailBehaviorStateTest {
 
     @Test
     fun startsFromTheSavedBehaviorAndSavesEachChange() {
-        val store = RecordingStore(MailBehavior(endToStart = MessageSwipe.Trash))
+        val store = RecordingStore(MailBehavior(endToStart = MailAction.Trash))
         val state = MailBehaviorState(store)
-        assertEquals(MessageSwipe.Trash, state.behavior.endToStart)
+        assertEquals(MailAction.Trash, state.behavior.endToStart)
 
-        state.update { it.copy(startToEnd = MessageSwipe.Flag, markReadOnOpen = false) }
-        assertEquals(MailBehavior(MessageSwipe.Flag, MessageSwipe.Trash, markReadOnOpen = false), store.saved)
+        state.update { it.copy(startToEnd = MailAction.Flag, markReadOnOpen = false) }
+        assertEquals(MailBehavior(MailAction.Flag, MailAction.Trash, markReadOnOpen = false), store.saved)
         assertEquals(store.saved, state.behavior)
     }
 
     @Test
     fun unknownStoredSwipesAreNotGuessed() {
-        assertEquals(MessageSwipe.Archive, MessageSwipe.fromStorageValue("archive"))
-        assertNull(MessageSwipe.fromStorageValue("snooze"))
-        assertNull(MessageSwipe.fromStorageValue(null))
+        assertEquals(MailAction.Archive, MailAction.fromStorageValue("archive"))
+        assertNull(MailAction.fromStorageValue("snooze"))
+        assertNull(MailAction.fromStorageValue(null))
     }
 }

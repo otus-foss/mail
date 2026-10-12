@@ -6,12 +6,15 @@ import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
 import com.otus.mail.feature.folders.presentation.RulesState
+import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.hasFlag
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.domain.withFlag
+import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
@@ -49,6 +52,17 @@ internal class MailStates(
         folders.accounts
             .flatMap { account -> account.folderTree().map { mailboxName(it.folder.name, it.folder.role) } }
             .distinct()
+
+    /**
+     * A draft for [request] from the account it names, or else the first one; null without
+     * accounts. Reply all leaves out the account's sign-in and sending addresses.
+     */
+    fun compose(request: ComposeRequest): ComposeState? {
+        val account =
+            accounts.accounts.run { firstOrNull { it.id == request.accountId } ?: firstOrNull() } ?: return null
+        val own = account.emailAddresses + account.username
+        return ComposeState(services.drafts, scope, request, account.id, own)
+    }
 
     /** Mail and folder counts change together, so a pull refreshes both. */
     fun refreshInbox() {
