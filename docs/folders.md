@@ -128,6 +128,10 @@ Read later pill to the inbox row that shows every account's saved mail. See
 - Saving can also move matching mail already in the inbox. Sieve runs only on delivery, so the app
   checks the newest 500 inbox messages, matching headers and attachment details locally, and moves
   matches in batches within `maxObjectsInSet`. Rules that check the body cannot do this.
+- The attachment fields use `header :mime :anychild`, which tests every MIME part of a message,
+  not only the parts JMAP lists as `attachments`. "Attachment type is text/plain" therefore
+  matches almost every message. Sieve has no single test for "attachment parts only", so the
+  inbox check reads `bodyStructure` and compares every part the same way.
 
 ### Conditions
 
@@ -136,8 +140,8 @@ Read later pill to the inbox row that shows every account's saved mail. See
 | From, To, Cc, To or Cc | "is", "starts with", "ends with": the address. "contains" and regex: the whole header, display names included. |
 | Subject | The subject header. |
 | Body | Body text (`body :text`); contains, doesn't contain, or regex. |
-| Attachment type | Each MIME part's `type/subtype`, such as `text/calendar`. |
-| Attachment name | Each part's `filename` or `name` parameter, such as `*.ics`. |
+| Attachment type | Every MIME part's `type/subtype`, such as `text/calendar`, including text bodies and `multipart/*` containers. |
+| Attachment name | Every MIME part's `filename` or `name` parameter, such as `*.ics`. |
 
 Comparisons ignore case with the server's default comparator. "Starts with" and "ends with" use
 `:matches` with `*`, `?`, and `\` escaped. Blind copies leave no header, so "Bcc" is not offered;
@@ -225,7 +229,8 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
 - Data: `JmapMailSourceTest` (a role loads that folder of every account under one name),
   `JmapFolderRepositoryTest`, `JmapRuleRepositoryTest`, `RuleScriptCodecTest` (golden
   Sieve, escaping, read-back, edits made elsewhere), `RuleScriptValidationTest` (invalid rules
-  and kept scripts read back, control characters), `JmapMessageMoverTest`.
+  and kept scripts read back, control characters), `RuleEmailTest` (attachment fields cover every
+  MIME part), `JmapMessageMoverTest`.
 - Presentation: `RulesStateTest` (activation choices, vacation never kept, replacing drops a kept
   script, every change asks before replacing edits made elsewhere, failed saves keep the draft).
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and
