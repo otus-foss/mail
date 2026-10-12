@@ -51,6 +51,10 @@ mint run swiftformat --lint iosApp
 mint run swiftlint lint --strict
 ```
 
+**CI is paused.** The `quality` workflow runs only when started by hand from GitHub Actions, so
+pull requests get no CI results. The local hooks remain the gate. The workflow file says how to
+resume.
+
 The CI `quality` workflow runs on pull requests that change more than Markdown. Its `check` job runs
 `checkAll`, and its `ios` job runs Swift formatting/lint plus a simulator build. The iOS job runs on macOS 15 with Xcode 26.3; Compose
 Multiplatform links symbols from the iOS 26 SDK, so Xcode 16 cannot link the app. The simulator
