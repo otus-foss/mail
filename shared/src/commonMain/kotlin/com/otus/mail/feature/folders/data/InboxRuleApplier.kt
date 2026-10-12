@@ -14,6 +14,7 @@ import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.feature.folders.domain.ApplyOutcome
 import com.otus.mail.feature.folders.domain.INBOX_ROLE
+import com.otus.mail.feature.folders.domain.InboxMatches
 import com.otus.mail.feature.folders.domain.MailRule
 import com.otus.mail.feature.folders.domain.RuleAddress
 import com.otus.mail.feature.folders.domain.RuleMessage
@@ -35,10 +36,16 @@ internal class InboxRuleApplier(
     private val limit: Int = DEFAULT_LIMIT,
 ) {
     suspend fun apply(rule: MailRule): ApplyOutcome.Applied {
+        val matches = matches(rule)
+        return ApplyOutcome.Applied(move(matches, rule), matches.checked, matches.more)
+    }
+
+    /** The newest inbox messages [rule] matches; none when there is no inbox or the rule files into it. */
+    suspend fun matches(rule: MailRule): InboxMatches {
         val mailboxes =
             account.connection.call(GetMethod(MailboxType, account.accountId, properties = listOf("id", "role"))).list
         val inbox = mailboxes.firstOrNull { it.role?.lowercase() == INBOX_ROLE }
-        if (inbox == null || inbox.id == rule.folderId) return ApplyOutcome.Applied(0, 0, more = false)
+        if (inbox == null || inbox.id == rule.folderId) return InboxMatches("", emptyList(), 0, more = false)
         lateinit var query: JmapCall<QueryResult>
         lateinit var get: JmapCall<GetResult<RuleEmail>>
         val response =
@@ -56,28 +63,28 @@ internal class InboxRuleApplier(
                     )
             }
         val emails = response[get].list
-        val matching = emails.filter { rule.matches(it.toRuleMessage()) }.map { it.id }
-        return ApplyOutcome.Applied(
-            move(matching, inbox.id, rule),
+        return InboxMatches(
+            inbox.id,
+            emails.filter { rule.matches(it.toRuleMessage()) }.map { it.id },
             emails.size,
-            more =
-                response[query].ids.size >= limit,
+            more = response[query].ids.size >= limit,
         )
     }
 
-    private suspend fun move(
-        ids: List<String>,
-        inboxId: String,
+    /** Moves [matches] out of the inbox into [rule]'s folder and returns how many moved. */
+    suspend fun move(
+        matches: InboxMatches,
         rule: MailRule,
     ): Int {
+        if (matches.ids.isEmpty()) return 0
         val patch =
             buildJsonObject {
-                put("mailboxIds/${pointer(inboxId)}", JsonNull)
+                put("mailboxIds/${pointer(matches.inboxId)}", JsonNull)
                 put("mailboxIds/${pointer(rule.folderId)}", JsonPrimitive(true))
                 if (rule.markRead) put("keywords/\$seen", JsonPrimitive(true))
             }
         val batch = (account.session.maxObjectsInSet ?: MAX_BATCH).coerceIn(1, MAX_BATCH).toInt()
-        return ids.chunked(batch).sumOf { chunk ->
+        return matches.ids.chunked(batch).sumOf { chunk ->
             val method = SetMethod(RuleEmailType, account.accountId, update = chunk.associateWith { patch })
             account.connection
                 .call(method)

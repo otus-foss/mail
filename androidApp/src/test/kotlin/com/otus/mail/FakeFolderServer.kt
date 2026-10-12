@@ -40,6 +40,9 @@ class FakeFolderServer {
     /** The folder of each earlier message from the sender, newest first, for folder suggestions. */
     val senderFolders = mutableListOf<String>()
 
+    /** Ids of older inbox messages from the sender that only a rule's inbox check sees. */
+    val olderMail = mutableListOf<String>()
+
     /** When set, every `Email/set` update is refused as forbidden. */
     var refuseUpdates = false
 
@@ -99,8 +102,7 @@ class FakeFolderServer {
                 "Mailbox/query" in body -> draftsQuery()
                 "Email/set" in body -> setEmail(body)
                 "Identity/get" in body -> IDENTITIES
-                "Email/query" in body && FROM_FILTER in body -> senderMail()
-                "Email/query" in body -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
+                "Email/query" in body -> queryEmails(body)
                 "SieveScript/get" in body -> scripts()
                 "SieveScript/set" in body -> saveScript(body)
                 else -> error("Unexpected call: $body")
@@ -156,6 +158,22 @@ class FakeFolderServer {
         return """["Email/query", {"ids": ["m1"]}, "c0"], ["Email/get", {"state": "e", "list": [{"id": "m1",
            "mailboxIds": {$mailboxIds}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
            "subject": "$subject", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Hello"}]}, "c1"]"""
+    }
+
+    private fun queryEmails(body: String): String =
+        when {
+            FROM_FILTER in body -> senderMail()
+            "bodyStructure" in body -> ruleMatches()
+            else -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
+        }
+
+    /** The inbox as a rule's check reads it: the loaded message, then [olderMail]. */
+    private fun ruleMatches(): String {
+        val list =
+            (listOf("m1") + olderMail).joinToString(prefix = "[", postfix = "]") {
+                """{"id": "$it", "from": [{"email": "grace@example.org"}], "subject": "Welcome"}"""
+            }
+        return """["Email/query", {"ids": []}, "c0"], ["Email/get", {"state": "e", "list": $list}, "c1"]"""
     }
 
     private fun senderMail(): String {

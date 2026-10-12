@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ActionBar
 import com.otus.designsystem.components.BarAction
 import com.otus.designsystem.components.ChoiceOptions
+import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingsSection
@@ -51,8 +52,7 @@ fun ActionBarSettingsScreen(
         ChoiceSheet(
             "Layout",
             ChoiceOptions(ActionBarMode.entries, mode, MailBehavior().actionBarMode),
-            label = { it.label },
-            detail = { it.description },
+            row = { ChoiceRow(it.label, it.description) },
             onSelect = { chosen -> state.update { it.copy(actionBarMode = chosen) } },
             onDismiss = { choosingMode = false },
         )
@@ -111,7 +111,7 @@ private fun SlotChoice(
         ChoiceSheet(
             "Main button",
             ChoiceOptions(choices, layout.primary, place.defaultLayout.primary),
-            label = { it.label },
+            row = { ChoiceRow(it.label) },
             onSelect = { save(layout.withPrimary(it)) },
             onDismiss = onDismiss,
         )
@@ -125,7 +125,7 @@ private fun SlotChoice(
                 layout.secondary.getOrNull(slot),
                 place.defaultLayout.secondary.getOrNull(slot),
             ),
-            label = { it?.label ?: "None" },
+            row = { ChoiceRow(it?.label ?: "None") },
             onSelect = { save(layout.withSlot(slot, it)) },
             onDismiss = onDismiss,
         )

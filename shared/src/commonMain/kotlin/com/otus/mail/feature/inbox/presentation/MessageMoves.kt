@@ -1,6 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailSender
+import org.jetbrains.compose.resources.DrawableResource
 
 /** Moving a message: where it can go, the move itself, and what the move sheet suggests. */
 class MessageMoves(
@@ -16,17 +18,40 @@ class MessageMoves(
 
 /**
  * Mail like one message that a new rule can sort. [label] completes "Mail that", such as "is from
- * billing@acme.example", and [detail] says who else it catches. [addRule] adds the rule that
- * sends such mail to a folder.
+ * billing@acme.example", [detail] says who else it catches, and [icon] shows what it matches by.
+ * [person] is the sender or recipient whose address the label names; null when it names none.
+ * [addRule] adds the rule that sends such mail to the folder the messages moved to.
  */
 class SortChoice(
     val label: String,
     val detail: String,
-    val addRule: (MoveTarget) -> Unit,
+    val icon: DrawableResource,
+    val person: MailSender?,
+    val addRule: (MoveTarget, moved: List<MailMessage>) -> Unit,
 )
 
 /** The rules that can sort future mail like a message, saved in [accountName]'s rules. */
 class FutureSorting(
     val accountName: String,
     val choices: List<SortChoice>,
+)
+
+/**
+ * A move that also added a rule, offered back once the rule is saved. [catches] names the mail the
+ * rule sorts, such as "from billing@acme.example". [undo] puts the messages back and deletes the
+ * rule. [older] looks for older inbox mail the rule matches; null when the server cannot be read.
+ * [person] is the one [catches] names, as in [SortChoice].
+ */
+class SortedMove(
+    val folderName: String,
+    val catches: String,
+    val person: MailSender?,
+    val undo: () -> Unit,
+    val older: suspend () -> OlderMail?,
+)
+
+/** [count] older inbox messages a new rule matches, which [move] files like new mail. */
+class OlderMail(
+    val count: Int,
+    val move: () -> Unit,
 )

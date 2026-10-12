@@ -5,6 +5,7 @@ import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.components.AvatarStackChip
 import com.otus.designsystem.components.ChipAvatar
+import com.otus.designsystem.components.NamedAvatar
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -58,6 +59,10 @@ private fun AvatarFilterChip(
 /** The sender's avatar for a chip or an action bar token. */
 internal val MailSender.chipAvatar: ChipAvatar
     get() = chipAvatar(avatar, name, address)
+
+/** The avatar, named by address, for text that shows the address rather than the name. */
+internal val MailSender.namedByAddress: NamedAvatar
+    get() = NamedAvatar(address, chipAvatar)
 
 internal fun chipAvatar(
     avatar: ResolvedAvatar?,
