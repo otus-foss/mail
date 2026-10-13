@@ -13,77 +13,43 @@ import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.elements.ValueButton
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_chevron_right
+import com.otus.designsystem.resources.symbol_bookmark
+import com.otus.designsystem.resources.symbol_collapse_content
+import com.otus.designsystem.resources.symbol_filter_list
+import com.otus.designsystem.resources.symbol_mark_email_read
+import com.otus.designsystem.resources.symbol_menu
+import com.otus.designsystem.resources.symbol_swipe_left
+import com.otus.designsystem.resources.symbol_swipe_right
+import com.otus.designsystem.resources.symbol_view_agenda
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import org.jetbrains.compose.resources.DrawableResource
 
 /**
- * Inbox, swipe, reading, and privacy choices for the appearance page. [folderPills] are the folder
- * pills the accounts' folders can fill, and [onSidebar] opens the sidebar's page. [onOpenActionBar]
- * opens the action bar's page. Each swipe opens a choice of actions; the rows name the physical
- * direction for the current layout direction.
+ * Mail's rows in the appearance page's Look section: the sidebar's page, opened with [onSidebar],
+ * and the inbox pills. [folderPills] are the folder pills the accounts' folders can fill.
  */
 @Composable
-fun MailBehaviorSettings(
+fun MailLookSettings(
     state: MailBehaviorState,
     folderPills: List<FolderPillOption>,
     onSidebar: () -> Unit,
-    onOpenActionBar: () -> Unit,
 ) {
-    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    var choosing by rememberSaveable { mutableStateOf<SwipeSide?>(null) }
     var choosingPills by rememberSaveable { mutableStateOf(false) }
     val behavior = state.behavior
-    SettingsSection("Inbox") {
-        val shown = InboxPills(behavior.pills, folderPills).shown.size
-        SettingRow("Pills", { choosingPills = true }, description = "Filters and folders above your mail") {
-            ValueButton(if (shown == 0) "None" else "$shown shown")
-        }
-    }
-    SettingsSection("Sidebar") {
-        SettingRow("Sidebar", onSidebar, description = "Sections, mailboxes, and counts") {
-            Symbol(Res.drawable.symbol_chevron_right, mirrorInRtl = true)
-        }
-    }
-    SettingsSection("Action bar") {
-        SettingRow("Action bar", onOpenActionBar, description = "Buttons at the bottom of each screen") {
-            Symbol(Res.drawable.symbol_chevron_right, mirrorInRtl = true)
-        }
-        SettingToggleRow(
-            "Minimize",
-            checked = behavior.minimizedBar,
-            onCheckedChange = { on -> state.update { it.copy(minimizedBar = on) } },
-            description = "One round button for the main action",
-        )
-    }
-    SettingsSection("Actions") {
-        SwipeSide.entries.forEach { side ->
-            SettingRow(side.title(rtl), { choosing = side }, description = side.description(rtl)) {
-                ValueButton(side.of(behavior).swipeLabel)
-            }
-        }
-    }
-    SettingsSection("Reading") {
-        SettingToggleRow(
-            "Mark as read when opened",
-            checked = behavior.markReadOnOpen,
-            onCheckedChange = { on -> state.update { it.copy(markReadOnOpen = on) } },
-            description = "Otherwise mail stays unread until you mark it",
-        )
-        SettingToggleRow(
-            "Read later",
-            checked = behavior.readLater,
-            onCheckedChange = { on -> state.update { it.withReadLater(on) } },
-            description = "Adds a Read later folder, pill, and button",
-        )
-    }
-    PrivacySettings(state)
+    SettingRow("Sidebar", onSidebar, icon = Res.drawable.symbol_menu) { ValueButton("Edit") }
+    val shown = InboxPills(behavior.pills, folderPills).shown.size
+    SettingRow(
+        "Pills",
+        { choosingPills = true },
+        description = "Filters and folders above your mail",
+        icon = Res.drawable.symbol_filter_list,
+    ) { ValueButton(if (shown == 0) "None" else "$shown shown") }
     if (choosingPills) {
         InboxPillsSheet(
             behavior.pills,
@@ -92,6 +58,53 @@ fun MailBehaviorSettings(
             onDismiss = { choosingPills = false },
         )
     }
+}
+
+/**
+ * Swipe, action bar, reading, and privacy choices for the appearance page. [onOpenActionBar] opens the
+ * action bar's page. Each swipe opens a choice of actions; the rows name the physical direction
+ * for the current layout direction.
+ */
+@Composable
+fun MailBehaviorSettings(
+    state: MailBehaviorState,
+    onOpenActionBar: () -> Unit,
+) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    var choosing by rememberSaveable { mutableStateOf<SwipeSide?>(null) }
+    val behavior = state.behavior
+    SettingsSection("Actions") {
+        SwipeSide.entries.forEach { side ->
+            SettingRow(side.title(rtl), { choosing = side }, icon = side.icon(rtl)) {
+                ValueButton(side.of(behavior).swipeLabel)
+            }
+        }
+        SettingRow("Action bar", onOpenActionBar, icon = Res.drawable.symbol_view_agenda) {
+            ValueButton(behavior.actionBarMode.label)
+        }
+        SettingToggleRow(
+            "Minimize action bar",
+            checked = behavior.minimizedBar,
+            onCheckedChange = { on -> state.update { it.copy(minimizedBar = on) } },
+            description = "One round button for the main action",
+            icon = Res.drawable.symbol_collapse_content,
+        )
+    }
+    SettingsSection("Reading") {
+        SettingToggleRow(
+            "Mark as read when opened",
+            checked = behavior.markReadOnOpen,
+            onCheckedChange = { on -> state.update { it.copy(markReadOnOpen = on) } },
+            icon = Res.drawable.symbol_mark_email_read,
+        )
+        SettingToggleRow(
+            "Read later",
+            checked = behavior.readLater,
+            onCheckedChange = { on -> state.update { it.withReadLater(on) } },
+            icon = Res.drawable.symbol_bookmark,
+        )
+    }
+    PrivacySettings(state)
     choosing?.let { side -> SwipeChoice(state, side, side.title(rtl)) { choosing = null } }
 }
 
@@ -136,8 +149,8 @@ private enum class SwipeSide {
 
     fun title(rtl: Boolean): String = if ((this == StartToEnd) != rtl) "Swipe right" else "Swipe left"
 
-    fun description(rtl: Boolean): String =
-        if ((this == StartToEnd) != rtl) "Drag a message to the right" else "Drag a message to the left"
+    fun icon(rtl: Boolean): DrawableResource =
+        if ((this == StartToEnd) != rtl) Res.drawable.symbol_swipe_right else Res.drawable.symbol_swipe_left
 
     /** What this swipe does until the user changes it. */
     val default: MailAction?

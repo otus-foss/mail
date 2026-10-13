@@ -50,10 +50,12 @@ sets. No catch-all `utils`, `helpers`, or `manager` packages.
 
 ## Theme
 
-Dark mode is the only supported color mode, regardless of the device setting. Use the supplied Otus
-palette through `OtusColors` and `OtusTheme`; default text is `text1` (`#EBECED`) at full opacity.
-`text2`/`text3` require an explicit semantic choice. Do not add a light-mode branch, dynamic device
-colors, or a theme switch.
+The user picks the theme and accent on the Theme page; the device's light or dark setting does not
+change it, and there are no dynamic device colors. Use colors only through `OtusColors` and
+`OtusTheme`, which follow the picked theme, and read them when drawing; never copy a token into a
+stored value. Default text is `text1` at full opacity. `text2`/`text3` require an explicit semantic
+choice. Check new UI in the Light and Black themes too. See
+[decision 0005](docs/decisions/0005-user-themes.md).
 
 ## Motion
 
