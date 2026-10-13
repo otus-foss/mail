@@ -15,6 +15,10 @@ The inbox finds the mailbox with role `inbox`, then runs `Email/query` and `Emai
 with a reason. `OtusMailApplication` owns one `MailServices` per process. Mail and the first release
 use the same storage names, so earlier accounts keep working.
 
+`core/mail` also holds what the features' data layers share. `MailAccounts` resolves a saved login
+to the JMAP account that holds its mail. `NEWEST_FIRST` and `inMailbox` are the `Email/query` sort
+and mailbox filter, and `pointer` escapes ids in `Email/set` patch paths (RFC 6901).
+
 Folders use `Mailbox/get` and `Mailbox/set`; rules manage one Sieve script with `SieveScript/get`
 and `SieveScript/set` (RFC 9661, `JmapCapability.SIEVE`) after uploading it as a blob. Messages move
 with `Email/set` patches. See [Folders and rules](folders.md).

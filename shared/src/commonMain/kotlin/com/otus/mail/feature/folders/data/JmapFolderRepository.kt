@@ -11,6 +11,7 @@ import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
+import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailCapability
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
@@ -20,6 +21,7 @@ import com.otus.mail.feature.folders.domain.FolderLimits
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRights
+import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.MailFolder
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -34,7 +36,7 @@ class JmapFolderRepository(
     connections: JmapConnections,
     logins: LoginStore,
 ) : FolderRepository {
-    private val accounts = MailAccounts(connections, logins)
+    private val accounts = MailAccounts(connections, logins, ::FolderStorageException)
 
     override suspend fun accounts(): List<AccountFolders> =
         coroutineScope { accounts.logins().map { async { load(it) } }.awaitAll() }
@@ -43,13 +45,13 @@ class JmapFolderRepository(
         try {
             val account = accounts.open(login)
             val mailboxes =
-                account.connection.call(GetMethod(MailboxType, account.accountId, properties = MAILBOX_PROPERTIES))
+                account.connection.call(GetMethod(MailboxType, account.id, properties = MAILBOX_PROPERTIES))
             AccountFolders(
                 login.id,
                 login.name,
                 jmapDecoding { mailboxes.list.map { it.toFolder(login.id) } },
                 limits(
-                    account.session.accounts[account.accountId]
+                    account.session.accounts[account.id]
                         ?.capabilityObjects
                         ?.get(JmapCapability.MAIL),
                 ),
@@ -118,7 +120,7 @@ class JmapFolderRepository(
     ): FolderOutcome =
         try {
             val account = accounts.open(loginId) ?: return FolderOutcome.Failed(FolderFailure.NotFound)
-            val result = account.connection.call(method(account.accountId))
+            val result = account.connection.call(method(account.id))
             val error = result.firstError
             when {
                 error != null -> FolderOutcome.Failed(error.toFolderFailure())
@@ -168,6 +170,16 @@ private fun limits(capability: JsonObject?): FolderLimits {
         maxFoldersPerMessage = mail.maxMailboxesPerEmail?.coerceIn(1, Int.MAX_VALUE.toLong())?.toInt(),
     )
 }
+
+private fun JmapException.toFolderFailure(): FolderFailure =
+    when (this) {
+        is JmapException.Unauthorized -> FolderFailure.SignInRejected
+        is JmapException.Forbidden -> FolderFailure.NotPermitted
+        is JmapException.CredentialsUnavailable -> FolderFailure.CredentialsUnavailable
+        is JmapException.Unsupported -> FolderFailure.NoMail
+        is JmapException.Unreachable -> FolderFailure.Unreachable
+        else -> FolderFailure.ServerProblem
+    }
 
 private fun SetError.toFolderFailure(): FolderFailure =
     when (type) {

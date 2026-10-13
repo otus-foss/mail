@@ -18,6 +18,15 @@ const val STALWART_SESSION = """
  "username": "ada@example.org", "apiUrl": "/jmap/", "state": "s1"}
 """
 
+/** A session whose only account holds contacts, so the login has no mail account. */
+const val CONTACTS_ONLY_SESSION = """
+{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:contacts": {}},
+ "accounts": {"c1": {"name": "ada@example.org", "isPersonal": true,
+   "accountCapabilities": {"urn:ietf:params:jmap:contacts": {}}}},
+ "primaryAccounts": {"urn:ietf:params:jmap:contacts": "c1"},
+ "username": "ada@example.org", "apiUrl": "/jmap/", "state": "s1"}
+"""
+
 /**
  * A mock server shaped like Stalwart: `/.well-known/jmap` answers with a relative 307, and the
  * session uses a relative apiUrl. [api] receives each API request body.
