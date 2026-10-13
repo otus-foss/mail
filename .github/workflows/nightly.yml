@@ -2,7 +2,8 @@ name: nightly
 
 # Builds a signed nightly APK of main and publishes it as a release of the public nightly
 # repository, where the app's update check finds it. A night without new commits on main builds
-# nothing. See docs/nightly.md for the secrets this needs.
+# nothing. It builds against otus-meta main, like a local build, because Meta publishing is paused.
+# See docs/nightly.md for the secrets this needs.
 on:
   schedule:
     - cron: "0 2 * * *"
@@ -52,6 +53,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
@@ -69,7 +76,7 @@ jobs:
           export OTUS_NIGHTLY_KEYSTORE="$RUNNER_TEMP/nightly.p12"
           echo "$KEYSTORE_BASE64" | base64 -d > "$OTUS_NIGHTLY_KEYSTORE"
           ./gradlew :androidApp:assembleNightly --console=plain \
-            -Potus.versionCode="$NUMBER" -Potus.versionName="nightly-$NUMBER"
+            -Potus.meta.path=otus-meta -Potus.versionCode="$NUMBER" -Potus.versionName="nightly-$NUMBER"
       - name: Publish the release
         run: |
           apk="otus-mail-nightly-$NUMBER.apk"
