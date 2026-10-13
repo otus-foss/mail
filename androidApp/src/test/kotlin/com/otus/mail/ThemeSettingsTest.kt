@@ -14,7 +14,6 @@ import androidx.compose.ui.test.performTextReplacement
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusPalette
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +34,8 @@ class ThemeSettingsTest {
     fun aThemeAndAnAccentApplyToTheWholeAppAndAreSaved() {
         openTheme()
         compose.onNode(hasText("Light") and isSelectable()).performScrollTo().performClick()
-        assertTrue(OtusColors.palette.isLight)
+        // App applies the new palette on its next recomposition, a frame after the page shows it.
+        compose.waitUntil(TIMEOUT) { OtusColors.palette.isLight }
         assertEquals("light #4D6F92", saved)
 
         compose.onNode(hasContentDescription("Green") and isSelectable()).performScrollTo().performClick()
@@ -43,7 +43,7 @@ class ThemeSettingsTest {
         compose.onNodeWithText("Otus made the other two shades from green", substring = true).assertExists()
 
         compose.onNodeWithText("Reset to Otus").performScrollTo().performClick()
-        assertEquals(OtusPalette.Otus, OtusColors.palette)
+        compose.waitUntil(TIMEOUT) { OtusColors.palette == OtusPalette.Otus }
         assertEquals("otus #4D6F92", saved)
     }
 

@@ -36,6 +36,9 @@ import com.otus.mail.feature.inbox.domain.MessageCleaner
 import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
 import com.otus.mail.feature.inbox.domain.SenderHistory
+import com.otus.mail.feature.updates.data.GitHubNightlyFeed
+import com.otus.mail.feature.updates.domain.NightlyFeed
+import io.ktor.client.HttpClient
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 
 /**
@@ -46,6 +49,7 @@ class MailServices(
     logins: LoginStore = InMemoryLoginStore(),
     avatarStore: AvatarStore = EmptyAvatarStore,
     readLaterStore: ReadLaterStore? = null,
+    createNightlyFeed: () -> NightlyFeed = { GitHubNightlyFeed(HttpClient()) },
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     private val client by lazy(createClient)
@@ -84,6 +88,7 @@ class MailServices(
     internal val readLater by lazy { ReadLaterFolders(folders, readLaterStore) }
     internal val rules: RuleRepository by lazy { JmapRuleRepository(connections, logins) }
     internal val inboxMatcher: InboxMatcher by lazy { JmapInboxMatcher(connections, logins) }
+    internal val nightly by lazy(createNightlyFeed)
 }
 
 @OptIn(ExperimentalResourceApi::class)

@@ -60,6 +60,8 @@ fills the sidebar for every account at once.
   shows the account's name and address, and every count in the panel counts that account alone.
   The page and the lists stay the same. With All, the header reads "All accounts" over
   "6 accounts · 28 unread", or "28 total" or no count, as **Counts** chooses. Add account opens Email accounts, and the gear opens Settings.
+- In a nightly build, a "Get nightly <number>" row leads the sections when a newer nightly is
+  published. See [nightly builds](nightly.md).
 - **Mailboxes** lists the built-in mailboxes in fixed order: Inbox, then
   [Read later](folders.md#read-later) while it is on, then Drafts, Sent, Archive, Spam, and Trash.
   A mailbox appears once any account has it; Inbox always does. Each one opens every account's
