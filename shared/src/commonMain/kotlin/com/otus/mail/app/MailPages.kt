@@ -3,6 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
@@ -223,7 +224,8 @@ internal fun FeedPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val feed = remember(mailScope) { states.folderFeed(mailScope) }
+    val pageScope = rememberCoroutineScope()
+    val feed = remember(mailScope) { states.folderFeed(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
     InboxScreen(
         rememberLabeled(states, feed),

@@ -13,6 +13,8 @@ import com.otus.mail.feature.inbox.domain.SidebarCount
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.SidebarSection
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -70,5 +72,14 @@ class InboxPillPersistenceTest {
             )
         AndroidMailBehaviorStore(context).write(saved)
         assertEquals(saved, AndroidMailBehaviorStore(context).read())
+    }
+
+    @Test
+    fun websiteIconsStayOnUntilTurnedOffAndStayOffAfterReopeningTheStore() {
+        val context = RuntimeEnvironment.getApplication()
+        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit { clear() }
+        assertTrue(AndroidMailBehaviorStore(context).read().websiteIcons)
+        AndroidMailBehaviorStore(context).write(MailBehavior(websiteIcons = false))
+        assertFalse(AndroidMailBehaviorStore(context).read().websiteIcons)
     }
 }

@@ -9,29 +9,51 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
-import kotlin.test.assertFalse
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JmapMessageMarkerTest {
     private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
-    private val message =
-        MailMessage(
-            "ada/m1",
-            MailSender("Grace", "grace@example.org"),
-            "Order",
-            "",
-            ReceivedAt("2026-10-04", "09:30"),
-            MailLocation("Inbox", "Ada", "ada", mailboxId = "a"),
-            emailId = "m1",
-        )
+
+    /** A second login on another server, with the same credentials so the mock server accepts it. */
+    private val work = JmapLogin("work", "https://work.example.org/.well-known/jmap", "ada@example.org", "Work")
+    private val message = message("m1")
     private val updated = """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
 
-    private fun marker(reply: (String) -> String): JmapMessageMarker {
-        val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageMarker(JmapConnections(JmapClient(stalwartLike(api = reply)), store), store)
+    /** A session that takes two objects per `/set` call. */
+    private val smallBatches =
+        STALWART_SESSION.replace(
+            "\"urn:ietf:params:jmap:core\": {}",
+            "\"urn:ietf:params:jmap:core\": {\"maxObjectsInSet\": 2}",
+        )
+
+    private fun message(
+        id: String,
+        loginId: String = "ada",
+    ) = MailMessage(
+        "$loginId/$id",
+        MailSender("Grace", "grace@example.org"),
+        "Order",
+        "",
+        ReceivedAt("2026-10-04", "09:30"),
+        MailLocation("Inbox", "Ada", loginId, mailboxId = "a"),
+        emailId = id,
+    )
+
+    private fun marker(
+        session: String = STALWART_SESSION,
+        reply: (String) -> String,
+    ): JmapMessageMarker {
+        val store =
+            InMemoryLoginStore().apply {
+                save(login, "secret")
+                save(work, "secret")
+            }
+        return JmapMessageMarker(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store)
     }
 
     private suspend fun sentFor(
@@ -39,14 +61,28 @@ class JmapMessageMarkerTest {
         on: Boolean,
     ): String {
         val sent = mutableListOf<String>()
-        assertTrue(
+        val marked =
             marker {
                 sent += it
                 updated
-            }.mark(message, flag, on),
-        )
+            }.mark(listOf(message), flag, on)
+        assertEquals(setOf("ada/m1"), marked)
         return sent.single()
     }
+
+    /** Updates every id a `/set` call names, except [refused] ones. */
+    private fun setReply(
+        body: String,
+        refused: Set<String> = emptySet(),
+    ): String {
+        val (kept, changed) = updateIds(body).partition { it in refused }
+        val updatedIds = changed.joinToString { "\"$it\": null" }
+        val refusedIds = kept.joinToString { "\"$it\": {\"type\": \"forbidden\"}" }
+        return """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {$updatedIds},
+            "notUpdated": {$refusedIds}}, "c0"]]}"""
+    }
+
+    private fun updateIds(body: String): List<String> = UPDATE.findAll(body).map { it.groupValues[1] }.toList()
 
     @Test
     fun eachMarkPatchesOnlyItsOwnKeyword() =
@@ -72,11 +108,58 @@ class JmapMessageMarkerTest {
                     """{"methodResponses": [["Email/set", {"newState": "e2",
                        "notUpdated": {"m1": {"type": "forbidden"}}}, "c0"]]}"""
                 }
-            assertFalse(refused.mark(message, MessageFlag.Flagged, true))
+            assertEquals(emptySet(), refused.mark(listOf(message), MessageFlag.Flagged, true))
             val idle = marker { error("Nothing is sent") }
             val supplied = message.copy(emailId = "")
-            assertFalse(idle.mark(supplied, MessageFlag.Read, true), "Supplied messages have no server id")
+            assertEquals(
+                emptySet(),
+                idle.mark(listOf(supplied), MessageFlag.Read, true),
+                "Supplied messages have no server id",
+            )
             val gone = message.copy(location = message.location.copy(accountId = "gone"))
-            assertFalse(idle.mark(gone, MessageFlag.Read, true), "A removed login sends nothing")
+            assertEquals(emptySet(), idle.mark(listOf(gone), MessageFlag.Read, true), "A removed login sends nothing")
         }
+
+    @Test
+    fun manyMessagesTakeOneCallPerAccountWithinMaxObjectsInSet() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val messages = listOf(message("m1"), message("w1", "work"), message("m2"), message("m3"))
+            val marked =
+                marker(smallBatches) {
+                    sent += it
+                    setReply(it)
+                }.mark(messages, MessageFlag.Read, true)
+            assertEquals(messages.map { it.id }.toSet(), marked)
+            // Accounts are asked at the same time, so only each account's own batches keep their order.
+            val batches = sent.map(::updateIds)
+            assertEquals(listOf(listOf("m1", "m2"), listOf("m3")), batches.filter { it.first().startsWith("m") })
+            assertEquals(listOf(listOf("w1")), batches.filter { it.first().startsWith("w") })
+            assertTrue(sent.all { CALL.findAll(it).count() == 1 }, "One Email/set call per request")
+        }
+
+    @Test
+    fun refusedMessagesAndFailedBatchesAreLeftOut() =
+        runTest {
+            val messages = listOf(message("m1"), message("m2"), message("m3"), message("w1", "work"))
+            val refused = marker(smallBatches) { setReply(it, refused = setOf("m2")) }
+            assertEquals(setOf("ada/m1", "ada/m3", "work/w1"), refused.mark(messages, MessageFlag.Read, true))
+            // The second batch of the first account fails.
+            val failing = marker(smallBatches) { if ("\"m3\"" in it) "Service unavailable" else setReply(it) }
+            assertEquals(
+                setOf("ada/m1", "ada/m2", "work/w1"),
+                failing.mark(messages, MessageFlag.Read, true),
+                "The first batch still counts, and other accounts still change",
+            )
+            val gone = message("g1", "gone")
+            assertEquals(
+                setOf("ada/m1"),
+                marker { setReply(it) }.mark(listOf(gone, message("m1")), MessageFlag.Read, true),
+            )
+        }
+
+    private companion object {
+        val UPDATE = Regex("\"([^\"]+)\":\\{\"keywords/")
+        val CALL = Regex("\\[\"Email/set\"")
+    }
 }
