@@ -10,6 +10,7 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.work.ForegroundInfo
 import com.otus.mail.feature.notifications.domain.NewMail
 
 /**
@@ -22,14 +23,32 @@ class MailNotifications(
     private val context = context.applicationContext
     private val manager = NotificationManagerCompat.from(this.context)
 
-    fun createChannel() {
-        manager.createNotificationChannel(
-            NotificationChannelCompat
-                .Builder(CHANNEL, NotificationManagerCompat.IMPORTANCE_DEFAULT)
-                .setName(context.getString(R.string.notification_channel_new_mail))
-                .build(),
+    fun createChannels() {
+        manager.createNotificationChannelsCompat(
+            listOf(
+                NotificationChannelCompat
+                    .Builder(CHANNEL, NotificationManagerCompat.IMPORTANCE_DEFAULT)
+                    .setName(context.getString(R.string.notification_channel_new_mail))
+                    .build(),
+                NotificationChannelCompat
+                    .Builder(BACKGROUND_CHANNEL, NotificationManagerCompat.IMPORTANCE_MIN)
+                    .setName(context.getString(R.string.notification_channel_background))
+                    .build(),
+            ),
         )
     }
+
+    /** Before Android 12, expedited work runs as a foreground service, which must show this. */
+    fun backgroundWork(): ForegroundInfo =
+        ForegroundInfo(
+            BACKGROUND_ID,
+            NotificationCompat
+                .Builder(context, BACKGROUND_CHANNEL)
+                .setSmallIcon(android.R.drawable.sym_action_email)
+                .setContentTitle(context.getString(R.string.notification_checking))
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .build(),
+        )
 
     fun show(mail: List<NewMail>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -90,6 +109,8 @@ class MailNotifications(
 
     private companion object {
         const val CHANNEL = "new_mail"
+        const val BACKGROUND_CHANNEL = "background"
+        const val BACKGROUND_ID = 3
         const val MESSAGE_ID = 1
         const val SUMMARY_ID = 2
     }

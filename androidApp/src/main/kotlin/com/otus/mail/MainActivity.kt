@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
         lifecycleScope.launch {
-            if (withContext(Dispatchers.IO) { services.hasAccounts() }) {
+            if (withContext(Dispatchers.IO) { services.logins().isNotEmpty() }) {
                 notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }

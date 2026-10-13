@@ -1,0 +1,57 @@
+package com.otus.mail
+
+import com.otus.jmap.JmapException
+import org.unifiedpush.android.connector.FailedReason
+import org.unifiedpush.android.connector.PushService
+import org.unifiedpush.android.connector.data.PushEndpoint
+import org.unifiedpush.android.connector.data.PushMessage
+import com.otus.jmap.PushMessage as JmapPush
+
+/**
+ * Receives what the UnifiedPush app sends for each account; the instance is the login id. Work
+ * that needs the network goes to WorkManager, because the system may stop this service any time.
+ */
+class MailPushService : PushService() {
+    override fun onNewEndpoint(
+        endpoint: PushEndpoint,
+        instance: String,
+    ) {
+        val keys = endpoint.pubKeySet
+        PushSyncWorker.enqueue(this, PushSyncWorker.endpoint(instance, endpoint.url, keys?.pubKey, keys?.auth))
+    }
+
+    override fun onMessage(
+        message: PushMessage,
+        instance: String,
+    ) {
+        when (val push = decode(message)) {
+            is JmapPush.StateChange -> {
+                NewMailWorker.runNow(this)
+            }
+
+            is JmapPush.Verification -> {
+                PushSyncWorker.enqueue(this, PushSyncWorker.verification(instance, push))
+            }
+
+            null -> {}
+        }
+    }
+
+    override fun onUnregistered(instance: String) {
+        PushSyncWorker.enqueue(this, PushSyncWorker.cleared(instance))
+    }
+
+    // The next background check registers the account again.
+    override fun onRegistrationFailed(
+        reason: FailedReason,
+        instance: String,
+    ) = Unit
+
+    /** Pushes the server did not encrypt are read too; at worst a forged one starts a check. */
+    private fun decode(message: PushMessage): JmapPush? =
+        try {
+            JmapPush.decode(message.content.decodeToString())
+        } catch (_: JmapException) {
+            null
+        }
+}

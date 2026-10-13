@@ -22,6 +22,11 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+    <service android:name=".MailPushService" android:exported="false">
+      <intent-filter>
+        <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
+      </intent-filter>
+    </service>
     <!-- WorkManager starts on demand from OtusMailApplication's configuration. -->
     <provider
       android:name="androidx.startup.InitializationProvider"

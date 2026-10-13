@@ -3,16 +3,19 @@ package com.otus.mail.app
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.resources.symbol_rule_folder
 import com.otus.designsystem.resources.symbol_tune
+import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.settings.presentation.SettingsEntry
 
 /** Mail chooses the destinations; the settings library renders their shared rows and page. */
 internal fun mailSettingsEntries(
     accountCount: Int,
+    notifications: NotificationSettingsState?,
     navigation: MailNavigation,
 ): List<SettingsEntry> =
-    listOf(
+    listOfNotNull(
         SettingsEntry(
             "Email accounts",
             when (accountCount) {
@@ -22,6 +25,13 @@ internal fun mailSettingsEntries(
             },
             Res.drawable.symbol_alternate_email,
         ) { navigation.go(MailPage.EmailAccounts) },
+        notifications?.let { state ->
+            SettingsEntry(
+                "Notifications",
+                state.current?.let { "Instant through ${it.name}" } ?: "New mail every 15 minutes",
+                Res.drawable.symbol_notifications,
+            ) { navigation.go(MailPage.Notifications) }
+        },
         SettingsEntry(
             "Appearance & behavior",
             "Theme, dates, sidebar, swipes, and reading",

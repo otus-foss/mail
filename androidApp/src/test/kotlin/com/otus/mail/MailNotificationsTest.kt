@@ -65,5 +65,6 @@ class MailNotificationsTest {
         val work = WorkManager.getInstance(app).getWorkInfosForUniqueWork("new-mail-check").get()
         assertEquals(WorkInfo.State.ENQUEUED, work.single().state)
         assertEquals("New mail", manager.getNotificationChannel("new_mail").name)
+        assertEquals("Background checks", manager.getNotificationChannel("background").name)
     }
 }
