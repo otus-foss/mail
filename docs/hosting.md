@@ -13,7 +13,8 @@ git config --local core.hooksPath .githooks
 
 `.github/workflows` holds every workflow. Linux jobs run on Ubicloud's `ubicloud-standard-2`
 runners. The `ios` job is paused with `if: false`; delete that condition to run it again. The
-job needs macOS 15 with Xcode 26.3.
+job needs macOS 15 with Xcode 26.3. The `nightly` workflow publishes a signed APK of main each
+night that main changes; see [nightly builds](nightly.md).
 
 Mail downloads its pinned Meta release from GitHub Packages at
 `https://maven.pkg.github.com/reazndev/otus-meta`. CI reads a GitHub token with `read:packages`

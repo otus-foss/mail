@@ -39,9 +39,24 @@ android {
             libs.versions.android.targetSdk
                 .get()
                 .toInt()
-        versionCode = 1
-        versionName = "1.0"
+        // The nightly workflow numbers each build by its commit count on main.
+        versionCode = providers.gradleProperty("otus.versionCode").map(String::toInt).getOrElse(1)
+        versionName = providers.gradleProperty("otus.versionName").getOrElse("1.0")
+        buildConfigField("boolean", "NIGHTLY", "false")
     }
+    buildFeatures { buildConfig = true }
+    // CI decodes the keystore from a secret. Local nightly builds without it come out unsigned.
+    val nightlyKeystore = providers.environmentVariable("OTUS_NIGHTLY_KEYSTORE").orNull
+    val nightlySigning =
+        nightlyKeystore?.let { path ->
+            signingConfigs.create("nightly") {
+                val password = providers.environmentVariable("OTUS_NIGHTLY_KEYSTORE_PASSWORD").get()
+                storeFile = file(path)
+                storePassword = password
+                keyAlias = "otus-nightly"
+                keyPassword = password
+            }
+        }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -52,6 +67,13 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+        }
+        // Its own app id, so it installs beside a debug build signed with a different key.
+        create("nightly") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".nightly"
+            buildConfigField("boolean", "NIGHTLY", "true")
+            signingConfig = nightlySigning
         }
     }
     compileOptions {
