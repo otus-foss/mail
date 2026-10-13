@@ -113,11 +113,15 @@ data class EmailAddress(
 data class EmailBodyPart(
     val partId: String? = null,
     val name: String? = null,
+    /** The media type, such as `text/html`, which a body may be when it has no plain alternative. */
+    val type: String? = null,
 )
 
+/** A part's decoded text; [isTruncated] when it is longer than the request's `maxBodyValueBytes`. */
 @Serializable
 data class EmailBodyValue(
     val value: String = "",
+    val isTruncated: Boolean = false,
 )
 
 @Serializable

@@ -15,10 +15,12 @@ import com.otus.mail.feature.inbox.domain.recipientText
 import com.otus.mail.feature.inbox.domain.startDraft
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /** A line of people a draft goes to. */
 enum class RecipientField { To, Cc, Bcc }
@@ -26,9 +28,9 @@ enum class RecipientField { To, Cc, Bcc }
 /**
  * The draft [request] starts in [accountId], as the user edits it. Each change saves to the
  * Drafts folder [saveDelayMillis] after the last one, and [close] saves at once; each save
- * replaces the earlier copy. Saves run one at a time, so a draft never ends up stored twice. A
- * failed save shows a [notice] until the next one succeeds. [scope] must outlive the page, so a
- * save started on closing finishes.
+ * replaces the earlier copy. Saves run one at a time, and a started save finishes, so each save knows
+ * the copy it replaces. A failed save shows a [notice] until the next one succeeds. [scope] must
+ * outlive the page, so a save started on closing finishes.
  */
 class ComposeState(
     private val drafts: DraftRepository,
@@ -103,7 +105,9 @@ class ComposeState(
         pending =
             scope.launch {
                 delay(saveDelayMillis)
-                save()
+                // A later change, close, or discard cancels only the wait. The server may already hold
+                // the new copy, so a started save finishes and keeps its id for the next one to replace.
+                withContext(NonCancellable) { save() }
             }
     }
 

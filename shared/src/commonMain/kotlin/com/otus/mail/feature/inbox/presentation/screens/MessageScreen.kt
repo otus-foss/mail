@@ -173,6 +173,9 @@ private fun MessageBody(
     ) {
         Text("${message.sender.name} <${message.sender.address}>", color = OtusColors.text2)
         Text(message.body)
+        if (message.bodyTruncated) {
+            Text("Only the start of this message was loaded.", color = OtusColors.text2)
+        }
         if (message.attributes.attachments.isNotEmpty()) {
             Text("Attachments: ${message.attributes.attachments.joinToString()}", color = OtusColors.text2)
         }
