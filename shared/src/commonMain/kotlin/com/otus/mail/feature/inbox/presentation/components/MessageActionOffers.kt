@@ -126,7 +126,7 @@ private fun MessageActions.offerMark(
             on -> Res.drawable.symbol_mark_email_unread
             else -> Res.drawable.symbol_mark_email_read
         }
-    return OfferedAction(flag.label(on), symbol, leaves = false) { markable.forEach { onMark(it, flag, !on) } }
+    return OfferedAction(flag.label(on), symbol, leaves = false) { onMark(markable, flag, !on) }
 }
 
 /** Saves the messages not saved yet; once all are saved, removes them. */

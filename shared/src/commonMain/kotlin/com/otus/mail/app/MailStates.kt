@@ -12,16 +12,13 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.accountId
-import com.otus.mail.feature.inbox.domain.hasFlag
 import com.otus.mail.feature.inbox.domain.mailboxName
-import com.otus.mail.feature.inbox.domain.withFlag
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MessageMoves
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /** State holders that outlive a single page. One per composition of [App]. */
 internal class MailStates(
@@ -84,6 +81,7 @@ internal class MailStates(
     /** Moves messages between folders and in and out of Read later. */
     val filing = MessageFiling(services, folders, scope)
     private val cleaning = FolderCleaning(services, folders, scope)
+    private val marking = MessageMarking(services, folders, scope)
 
     /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
     val sorting = MessageSorting(rules, services.inboxMatcher, folders, filing, scope)
@@ -102,33 +100,12 @@ internal class MailStates(
                     futureSorting = { sorting.futureSorting(it, feed) },
                 ),
             canMark = ::canMark,
-            onMark = { message, flag, on -> mark(feed, message, flag, on) },
+            onMark = { messages, flag, on -> marking.mark(feed, messages, flag, on) },
             ruleForSender = { ruleForSender(it, openRule) },
             readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },
             cleanup = cleaning.cleanup(feed),
         )
-
-    /** Shows the change at once and puts the message back as it was if the server refuses it. */
-    private fun mark(
-        feed: InboxFeedState,
-        message: MailMessage,
-        flag: MessageFlag,
-        on: Boolean,
-    ) {
-        val before = message.hasFlag(flag)
-        val change = feed.change(message.id, { it.withFlag(flag, on) }, undo = { it.withFlag(flag, before) })
-        scope.launch {
-            if (services.marker.mark(message, flag, on)) {
-                change.confirm()
-                // Folder unread counts follow the read mark.
-                if (flag == MessageFlag.Read) folders.refresh()
-            } else {
-                change.rollBack()
-                feed.report("Couldn't change the message. Try again.")
-            }
-        }
-    }
 
     /** Starts a rule for the message's sender, where the account's server runs rules. */
     private fun ruleForSender(
