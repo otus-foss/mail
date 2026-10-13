@@ -92,6 +92,7 @@ private fun OriginalMessage.replyBody(): String =
         add("")
         add("On $sentLabel, ${from.displayName} wrote:")
         addAll(body.lines().map { if (it.isEmpty()) QUOTE else "$QUOTE $it" })
+        if (bodyTruncated) add("$QUOTE $TRUNCATED_NOTE")
     }.joinToString("\n")
 
 private fun OriginalMessage.forwardBody(): String =
@@ -106,6 +107,7 @@ private fun OriginalMessage.forwardBody(): String =
         if (cc.isNotEmpty()) add("Cc: ${cc.recipientText()}")
         add("")
         add(body)
+        if (bodyTruncated) add(TRUNCATED_NOTE)
     }.joinToString("\n")
 
 private val MailSender.displayName: String
@@ -120,5 +122,9 @@ private fun String.prefixed(
 private const val REPLY_PREFIX = "Re:"
 private const val FORWARD_PREFIX = "Fwd:"
 private const val QUOTE = ">"
+
+/** Ends a quoted or forwarded body that stops early, so no reader takes it for the whole message. */
+private const val TRUNCATED_NOTE = "[The rest of the original message is not included.]"
+
 private val replyPattern = Regex("^\\s*re\\s*:", RegexOption.IGNORE_CASE)
 private val forwardPattern = Regex("^\\s*(fwd?|fw)\\s*:", RegexOption.IGNORE_CASE)

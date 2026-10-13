@@ -7,6 +7,8 @@ import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -22,6 +24,8 @@ import kotlin.test.assertTrue
 class ComposeStateTest {
     private class FakeDrafts(
         val identities: List<MailSender> = emptyList(),
+        /** Holds back the answer to a save, after the copy is stored, until it completes. */
+        private val answer: Deferred<Unit>? = null,
     ) : DraftRepository {
         val saved = mutableListOf<Draft>()
         val discarded = mutableListOf<String>()
@@ -32,6 +36,7 @@ class ComposeStateTest {
         override suspend fun save(draft: Draft): Result<String> {
             failure?.let { return Result.failure(DraftException(it)) }
             saved += draft
+            answer?.await()
             return Result.success("d${saved.size}")
         }
 
@@ -110,6 +115,57 @@ class ComposeStateTest {
             state.edit { it.copy(body = "Hello!") }
             advanceTimeBy(DELAY + 1)
             assertNull(state.notice)
+        }
+
+    @Test
+    fun aFailedSaveKeepsTheStoredCopyForTheNextSaveToReplace() =
+        runTest {
+            val drafts = FakeDrafts()
+            val state = state(drafts)
+            state.edit { it.copy(body = "Hello") }
+            advanceTimeBy(DELAY + 1)
+            drafts.failure = DraftFailure.ServerProblem
+            state.edit { it.copy(body = "Hello!") }
+            advanceTimeBy(DELAY + 1)
+            assertEquals("d1", state.draft.emailId)
+            drafts.failure = null
+            state.close()
+            runCurrent()
+            assertEquals("d1", drafts.saved.last().emailId)
+            assertEquals("d2", state.draft.emailId)
+        }
+
+    @Test
+    fun aChangeDuringASaveLetsItFinishSoTheNextSaveReplacesItsCopy() =
+        runTest {
+            val answer = CompletableDeferred<Unit>()
+            val drafts = FakeDrafts(answer = answer)
+            val state = state(drafts)
+            state.edit { it.copy(body = "Hello") }
+            advanceTimeBy(DELAY + 1)
+            state.edit { it.copy(body = "Hello!") }
+            answer.complete(Unit)
+            runCurrent()
+            assertEquals("d1", state.draft.emailId)
+            assertEquals("Hello!", state.draft.body)
+            advanceTimeBy(DELAY + 1)
+            assertEquals("d1", drafts.saved.last().emailId)
+            assertEquals("d2", state.draft.emailId)
+        }
+
+    @Test
+    fun aDiscardDuringASaveDeletesTheCopyThatSaveStored() =
+        runTest {
+            val answer = CompletableDeferred<Unit>()
+            val drafts = FakeDrafts(answer = answer)
+            val state = state(drafts)
+            state.edit { it.copy(subject = "Hi") }
+            advanceTimeBy(DELAY + 1)
+            state.discard()
+            answer.complete(Unit)
+            runCurrent()
+            assertEquals(listOf("d1"), drafts.discarded)
+            assertEquals(1, drafts.saved.size)
         }
 
     @Test

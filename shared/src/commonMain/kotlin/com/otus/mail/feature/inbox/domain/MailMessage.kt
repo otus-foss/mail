@@ -20,6 +20,11 @@ data class MailMessage(
     /** RFC 5322 Message-ID and References values, which keep a reply in its thread. */
     val messageIds: List<String> = emptyList(),
     val references: List<String> = emptyList(),
+    /**
+     * Whether [body] is only the start of the message, because the server sent no more of it. A cut
+     * that more text follows is marked inside [body] instead.
+     */
+    val bodyTruncated: Boolean = false,
 )
 
 /** A folder named on a message's row. [readLater] marks the Read later folder. */

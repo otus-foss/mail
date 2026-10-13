@@ -34,7 +34,7 @@ interface DraftRepository {
 
     /**
      * Stores [draft] in the Drafts folder, replacing its earlier copy, and returns the new Email id.
-     * A failed result holds a [DraftException].
+     * A failed result holds a [DraftException] and leaves the earlier copy in place.
      */
     suspend fun save(draft: Draft): Result<String>
 
