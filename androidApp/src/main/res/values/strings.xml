@@ -4,4 +4,6 @@
   <string name="notification_channel_new_mail">New mail</string>
   <string name="notification_new_mail">New mail</string>
   <string name="notification_no_subject">(No subject)</string>
+  <string name="notification_channel_background">Background checks</string>
+  <string name="notification_checking">Checking for new mail</string>
 </resources>

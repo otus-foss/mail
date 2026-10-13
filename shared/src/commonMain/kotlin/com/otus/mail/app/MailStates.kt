@@ -20,6 +20,7 @@ import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MessageMoves
+import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import kotlinx.coroutines.CoroutineScope
 
 /** State holders that outlive a single page. One per composition of [App]. */
@@ -36,6 +37,9 @@ internal class MailStates(
             loadAccounts = { services.readLater.accounts { behavior.behavior.readLater } },
         )
     val rules = RulesState(services.rules, scope)
+
+    /** Null where the platform has no instant pushes, which hides the Notifications page. */
+    val notifications = services.instantPush?.let { NotificationSettingsState(it, scope) }
 
     /** Rules keep only addresses, so senders take their names from the inbox's loaded mail. */
     val folderSenders =

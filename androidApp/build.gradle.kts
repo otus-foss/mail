@@ -9,6 +9,7 @@ dependencies {
     implementation(projects.shared)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.unifiedpush.connector)
     implementation(libs.compose.foundation)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.work.testing)

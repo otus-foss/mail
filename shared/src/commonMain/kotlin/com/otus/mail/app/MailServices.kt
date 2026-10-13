@@ -14,6 +14,7 @@ import com.otus.avatar.PublicSuffixDomainResolver
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.designsystem.resources.Res
@@ -38,10 +39,13 @@ import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
 import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
+import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.mail.feature.updates.data.GitHubNightlyFeed
 import com.otus.mail.feature.updates.domain.NightlyFeed
+import com.otus.push.PushStateStore
+import com.otus.push.PushSubscriptions
 import io.ktor.client.HttpClient
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 
@@ -54,6 +58,8 @@ class MailServices(
     avatarStore: AvatarStore = EmptyAvatarStore,
     readLaterStore: ReadLaterStore? = null,
     createNightlyFeed: () -> NightlyFeed = { GitHubNightlyFeed(HttpClient()) },
+    /** Instant pushes through the user's UnifiedPush app; null where the platform has none. */
+    internal val instantPush: InstantPush? = null,
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     private val client by lazy(createClient)
@@ -97,12 +103,21 @@ class MailServices(
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */
     fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, logins, states)
 
-    /** Whether any account is saved; false when storage cannot be read. Call it off the main thread. */
-    fun hasAccounts(): Boolean =
+    /**
+     * Keeps each login's push subscription pointed at its push endpoint. Create one per process.
+     * Servers push only new deliveries (RFC 8621, section 1.5), not flag or folder changes.
+     */
+    fun pushSubscriptions(
+        states: PushStateStore,
+        deviceClientId: String,
+    ): PushSubscriptions = PushSubscriptions(connections, logins, states, deviceClientId, listOf("EmailDelivery"))
+
+    /** The saved logins; none when storage cannot be read. Call it off the main thread. */
+    fun logins(): List<JmapLogin> =
         try {
-            logins.logins().isNotEmpty()
+            logins.logins()
         } catch (_: LoginStoreException) {
-            false
+            emptyList()
         }
 }
 
