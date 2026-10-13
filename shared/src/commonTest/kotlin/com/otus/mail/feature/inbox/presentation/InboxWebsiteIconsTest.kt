@@ -183,5 +183,5 @@ private fun message(
     "Subject",
     "Body",
     ReceivedAt("2026-10-05", "09:00"),
-    MailLocation("Inbox", "Work", accountAddress = "me@work.example"),
+    MailLocation("Inbox", "Work", accountAddress = "me@work.org"),
 )
