@@ -79,7 +79,7 @@ class SidebarEditTest {
         openSidebar()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Appearance & behavior").performClick()
-        compose.onNode(hasText("Sections, mailboxes, and counts")).performScrollTo().performClick()
+        compose.onNode(hasText("Sidebar") and hasText("Edit")).performScrollTo().performClick()
         compose
             .onNodeWithText(
                 "Drag a section to reorder it. One section stays on. Changes apply to every account.",

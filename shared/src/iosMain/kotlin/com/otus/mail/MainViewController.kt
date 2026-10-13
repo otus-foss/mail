@@ -8,6 +8,7 @@ import com.otus.mail.app.App
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.settings.presentation.DateFormatSettingsState
+import com.otus.settings.presentation.ThemeSettingsState
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDomainMask
@@ -28,5 +29,6 @@ fun mainViewController() =
                 readLaterStore = IosReadLaterStore(),
             )
         val behaviorState = MailBehaviorState(IosMailBehaviorStore())
-        ComposeUIViewController { App(dateFormatState, services, behaviorState) }
+        val themeState = ThemeSettingsState(IosThemePreferenceStore())
+        ComposeUIViewController { App(dateFormatState, services, behaviorState, themeState) }
     }

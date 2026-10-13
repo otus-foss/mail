@@ -125,7 +125,7 @@ class ActionBarSettingsTest {
         start()
         openAppearance()
         compose
-            .onNode(hasText("Minimize") and isToggleable())
+            .onNode(hasText("Minimize action bar") and isToggleable())
             .performScrollTo()
             .performClick()
             .assertIsOn()

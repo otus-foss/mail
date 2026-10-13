@@ -19,6 +19,7 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
 import com.otus.settings.presentation.DateFormatSettingsState
+import com.otus.settings.presentation.ThemeSettingsState
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
@@ -27,6 +28,7 @@ fun App(
     dateFormatState: DateFormatSettingsState = remember { DateFormatSettingsState() },
     services: MailServices = remember { MailServices() },
     behaviorState: MailBehaviorState = remember { MailBehaviorState() },
+    themeState: ThemeSettingsState = remember { ThemeSettingsState() },
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
     var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf<MailPage>(MailPage.Inbox) }
@@ -48,12 +50,12 @@ fun App(
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
     val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
-    OtusTheme {
+    OtusTheme(themeState.palette) {
         Box(Modifier.fillMaxSize()) {
             // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
             SidebarSwipeArea(sidebar, enabled = page.parent == null) {
                 pages.SaveableStateProvider(page.toString()) {
-                    MailPageContent(page, states, dateFormatter, dateFormatState, navigation)
+                    MailPageContent(page, states, dateFormatter, dateFormatState, themeState, navigation)
                 }
             }
             MailSidebar(
