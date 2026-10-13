@@ -8,6 +8,10 @@ script, so they keep working while the app is closed.
 
 - Loaded per account with `Mailbox/get` (RFC 8621, section 2): hierarchy, role, sort order,
   counts, and `myRights`. Accounts load in parallel and fail alone.
+- A new load, such as the refresh after a move or a read mark, replaces the one running. The
+  replaced load shows nothing and leaves the loading state to the newer one, so a slow load
+  cannot bring back older folders or counts. A change finishes with the newest load, so the rule
+  editor selects a folder it created once the list shows it.
 - Identified by login and mailbox id, never by name, because names repeat under different parents.
 - Ordering (`folderTree`): parents before children; system folders first (inbox, drafts, sent,
   archive, junk, trash), then other special uses, then the user's folders by `sortOrder` and name.
@@ -201,6 +205,8 @@ if header :contains "from" "amazon" {
 - Saving uploads the script as a blob (RFC 8620, section 6.1), then creates or updates it with
   `SieveScript/set`. The request carries `ifInState` from the last load, so a change from another
   device is refused (`stateMismatch`); the app reloads and the user saves again.
+- Rules load like folders: only the newest load shows its rules and ends loading. A save stays
+  busy until that load ends, so the next change starts from the saved rules and their state.
 
 ### One active script
 

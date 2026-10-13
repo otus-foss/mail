@@ -138,6 +138,9 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
   read and `$flagged` for the flag. Other keywords are untouched; turning a mark off removes the
   keyword. The open message shows the change at once. If the server refuses, the mark goes back
   and the inbox shows a notice. Changing the read mark refreshes the folder unread counts.
+- A selection and **Mark all read** mark their messages together: one `Email/set` call per
+  account for at most `maxObjectsInSet` messages, capped at 256. Only the messages the server
+  refuses go back, and the folder counts refresh once.
 - Archive, Trash, and Spam move the message to the account's folder with the `archive`, `trash`,
   or `junk` role, found by role because servers name these folders differently. Each is offered
   only when that folder exists and the message is not already in it. Archive also takes the

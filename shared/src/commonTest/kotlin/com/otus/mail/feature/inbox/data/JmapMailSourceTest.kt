@@ -78,6 +78,35 @@ class JmapMailSourceTest {
         }
 
     @Test
+    fun htmlBodiesReadAsTextAndACutOffBodyIsMarked() =
+        runTest {
+            val bodyApi = { body: String ->
+                if ("Mailbox/get" in body) {
+                    """{"methodResponses": [["Mailbox/get", {"state": "m",
+                        "list": [{"id": "a", "role": "inbox"}]}, "c0"]]}"""
+                } else {
+                    check("\"bodyProperties\":[\"partId\",\"name\",\"type\"]" in body) { "Asks for each part's type" }
+                    val email = """"receivedAt": "2026-10-04T09:30:00Z", "textBody": [{"partId": "1", "type":"""
+                    """{"methodResponses": [["Email/query", {"ids": ["html", "both", "cut"]}, "c0"],
+                        ["Email/get", {"state": "e", "list": [
+                          {"id": "html", $email "text/html"}], "bodyValues": {"1": {"value":
+                           "<html><head><title>News</title></head><body><p>Hello &amp; welcome</p>Bye</body></html>"}}},
+                          {"id": "both", $email "text/plain"}],
+                           "bodyValues": {"1": {"value": "Plain"}, "2": {"value": "<p>Rich</p>"}}},
+                          {"id": "cut", $email "text/plain"}],
+                           "bodyValues": {"1": {"value": "The st", "isTruncated": true}}}
+                        ]}, "c1"]]}"""
+                }
+            }
+            val store = InMemoryLoginStore().apply { save(login, "secret") }
+            val source = JmapMailSource(JmapConnections(JmapClient(stalwartLike(api = bodyApi)), store), store)
+            val (html, both, cut) = source.messages(MailScope.Inbox).messages
+            assertEquals("Hello & welcome\n\nBye", html.body, "An HTML-only message shows its text, not its markup")
+            assertEquals("Plain", both.body, "The plain alternative is used, not the HTML one")
+            assertEquals(listOf(false, false, true), listOf(html, both, cut).map { it.bodyTruncated })
+        }
+
+    @Test
     fun aFolderLoadsOnlyItsAccountAndKeepsItsName() =
         runTest {
             val queried = mutableListOf<String>()

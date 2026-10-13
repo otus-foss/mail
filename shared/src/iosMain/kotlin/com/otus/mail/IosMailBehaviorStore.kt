@@ -30,6 +30,7 @@ class IosMailBehaviorStore(
             actionBarMode =
                 ActionBarMode.fromStorageValue(preferences.stringForKey(ACTION_BAR_MODE)) ?: defaults.actionBarMode,
             minimizedBar = bool(MINIMIZED_BAR, defaults.minimizedBar),
+            websiteIcons = bool(WEBSITE_ICONS, defaults.websiteIcons),
         )
     }
 
@@ -45,6 +46,7 @@ class IosMailBehaviorStore(
         }
         preferences.setObject(behavior.actionBarMode.storageValue, forKey = ACTION_BAR_MODE)
         preferences.setBool(behavior.minimizedBar, forKey = MINIMIZED_BAR)
+        preferences.setBool(behavior.websiteIcons, forKey = WEBSITE_ICONS)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -62,6 +64,7 @@ class IosMailBehaviorStore(
         const val SIDEBAR = "otus.mail.sidebar_layout"
         const val ACTION_BAR_MODE = "otus.mail.action_bar_mode"
         const val MINIMIZED_BAR = "otus.mail.action_bar_minimized"
+        const val WEBSITE_ICONS = "otus.mail.website_icons"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"
     }

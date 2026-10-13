@@ -9,7 +9,6 @@ import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.MailFolder
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -31,7 +30,7 @@ class FoldersState(
         private set
     var busy by mutableStateOf(false)
         private set
-    private var job: Job? = null
+    private val loads = LatestLoad(scope)
 
     fun account(accountId: String): AccountFolders? = accounts.firstOrNull { it.accountId == accountId }
 
@@ -41,8 +40,7 @@ class FoldersState(
     ): MailFolder? = account(accountId)?.folder(folderId)
 
     fun refresh() {
-        job?.cancel()
-        job = scope.launch { load() }
+        loads.start(::load)
     }
 
     /** [onCreated] receives the new folder's id once the list includes it. */
@@ -80,15 +78,17 @@ class FoldersState(
             try {
                 when (val outcome = action()) {
                     is FolderOutcome.Done -> {
-                        job?.cancel()
-                        load()
+                        // Waits for the newest load, even a later refresh's, so the list has the change.
+                        refresh()
+                        loads.awaitLatest()
                         onDone(outcome.folderId)
                     }
 
                     is FolderOutcome.Failed -> {
                         notice = outcome.reason.message()
                         // A missing folder means the list is stale.
-                        load()
+                        refresh()
+                        loads.awaitLatest()
                     }
                 }
             } catch (expected: FolderStorageException) {
@@ -99,14 +99,16 @@ class FoldersState(
         }
     }
 
-    private suspend fun load() {
+    private suspend fun load(isLatest: () -> Boolean) {
         loading = true
         try {
-            accounts = loadAccounts()
+            val loaded = loadAccounts()
+            if (isLatest()) accounts = loaded
         } catch (expected: FolderStorageException) {
-            notice = STORAGE_NOTICE
+            if (isLatest()) notice = STORAGE_NOTICE
         } finally {
-            loading = false
+            // A replaced load can finish after the newer one started; only the newest ends loading.
+            if (isLatest()) loading = false
         }
     }
 }

@@ -31,7 +31,9 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   left** open a `ChoiceSheet` of message actions, shown in a `ValueButton`. **Action bar** shows its
   mode, **Per screen** or **Same everywhere**, and opens its own page, and **Minimize action bar**
   is a switch. Under **Reading**, **Mark as read when opened** and **Read later** are
-  `SettingToggleRow` switches. Each change is saved before it is shown. See
+  `SettingToggleRow` switches. Under **Privacy**, the **Website icons** switch lets avatars load
+  logos from sender websites and DuckDuckGo, and photos that contact cards link to; see
+  [website icons](avatars.md#website-icons). Each change is saved before it is shown. See
   [inbox pills](inbox.md#inbox-pills), [swipe actions](inbox.md#swipe-actions), and
   [Read later](folders.md#read-later).
 - **Theme** (`ThemeSettingsScreen` from `com.otus.settings`), a subpage of Appearance &
