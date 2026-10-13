@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
         val services = (application as OtusMailApplication).services
         val behaviorState = MailBehaviorState(AndroidMailBehaviorStore(this))
         val themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))
+        val nightlyBuild = BuildConfig.VERSION_CODE.takeIf { BuildConfig.NIGHTLY }
         setContent {
             // System bar icons stay readable on the theme's page color.
             val light = themeState.palette.isLight
@@ -29,7 +30,7 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = light
                 }
             }
-            App(dateFormatState, services, behaviorState, themeState)
+            App(dateFormatState, services, behaviorState, themeState, nightlyBuild)
         }
     }
 }

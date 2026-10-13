@@ -18,6 +18,7 @@ import com.otus.designsystem.components.rememberSidebarState
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
+import com.otus.mail.feature.updates.presentation.NightlyUpdateState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
 import kotlinx.coroutines.flow.drop
@@ -29,6 +30,7 @@ fun App(
     services: MailServices = remember { MailServices() },
     behaviorState: MailBehaviorState = remember { MailBehaviorState() },
     themeState: ThemeSettingsState = remember { ThemeSettingsState() },
+    nightlyBuild: Int? = null,
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
     var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf<MailPage>(MailPage.Inbox) }
@@ -37,6 +39,9 @@ fun App(
     var sidebarAccount by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) }
+    // Only nightly builds look for a newer nightly, once per launch.
+    val nightly = remember(services, nightlyBuild) { nightlyBuild?.let { NightlyUpdateState(services.nightly, it) } }
+    LaunchedEffect(nightly) { nightly?.check() }
     // Rules decide whether an open message offers to start one.
     LaunchedEffect(states) { states.rules.refresh() }
     // Folders fill the sidebar. Turning Read later on finds or creates its folders; off unmarks them.
@@ -63,6 +68,7 @@ fun App(
                 current = page.root,
                 states,
                 sidebarAccount,
+                update = nightly?.available,
                 onSelectAccount = { sidebarAccount = it },
                 onSelect = {
                     page = it

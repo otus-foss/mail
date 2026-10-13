@@ -19,12 +19,14 @@ import com.otus.mail.feature.inbox.domain.SidebarCount
 import com.otus.mail.feature.inbox.domain.SidebarSection
 import com.otus.mail.feature.inbox.presentation.label
 import com.otus.mail.feature.inbox.presentation.title
+import com.otus.mail.feature.updates.domain.NightlyBuild
+import com.otus.mail.feature.updates.presentation.components.NightlyUpdateEntry
 
 /**
  * The account rail beside the built-in mailboxes and the user's shared folders, in the order and
  * layout the user chose. Choosing an account in the rail, or All, changes only the counts:
  * [accountId] is the chosen account, or null for every account. Tapping All again opens the
- * inbox of every account.
+ * inbox of every account. A newer nightly [update], when there is one, leads the list.
  */
 @Composable
 internal fun MailSidebar(
@@ -32,6 +34,7 @@ internal fun MailSidebar(
     current: MailPage,
     states: MailStates,
     accountId: String?,
+    update: NightlyBuild?,
     onSelectAccount: (String?) -> Unit,
     onSelect: (MailPage) -> Unit,
 ) {
@@ -53,6 +56,7 @@ internal fun MailSidebar(
                 ?: allAccountsSummary(accounts.size, SidebarCounter(null, layout.counts).of(inboxes), layout.counts),
         rail = { MailSidebarRail(accounts, inboxes, layout.counts, account?.id, onSelectAccount, onSelect) },
     ) {
+        update?.let { NightlyUpdateEntry(it) }
         layout.shown.forEach { section ->
             val open = section !in collapsedSections
             SidebarHeading(
