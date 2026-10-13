@@ -24,7 +24,7 @@ import kotlinx.serialization.json.put
 /**
  * Drafts as Email objects in the mailbox with role `drafts` (RFC 8621, sections 2 and 4.6), and
  * sender addresses from `Identity/get` (section 6). Email content cannot change, so a save creates
- * a new Email and destroys the previous copy in the same `Email/set`.
+ * a new Email and then destroys the previous copy in a second `Email/set`.
  */
 class JmapDraftRepository(
     private val connections: JmapConnections,
@@ -49,18 +49,14 @@ class JmapDraftRepository(
     override suspend fun save(draft: Draft): Result<String> =
         attempt(draft.accountId) { account ->
             val drafts = draftsFolder(account) ?: throw DraftException(DraftFailure.NoDraftsFolder)
-            val result =
-                account.connection.call(
-                    SetMethod(
-                        EmailType,
-                        account.id,
-                        create = mapOf(CREATION_ID to draft.toEmail(drafts)),
-                        // A copy that is already gone needs no destroying, so its outcome is ignored.
-                        destroy = listOfNotNull(draft.emailId),
-                    ),
-                )
+            val create = SetMethod(EmailType, account.id, create = mapOf(CREATION_ID to draft.toEmail(drafts)))
+            val result = account.connection.call(create)
             result.notCreated[CREATION_ID]?.let { throw DraftException(it.toDraftFailure()) }
-            result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.ServerProblem)
+            val id = result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.ServerProblem)
+            // Each operation of one call succeeds or fails alone (RFC 8620, section 5.3), so the old
+            // copy is destroyed only once the server has stored the new one.
+            draft.emailId?.let { account.destroyReplaced(it) }
+            id
         }
 
     override suspend fun discard(
@@ -73,6 +69,19 @@ class JmapDraftRepository(
                 ?.takeUnless { it.type == "notFound" }
                 ?.let { throw DraftException(it.toDraftFailure()) }
         }
+
+    /**
+     * Destroys [emailId], the copy a stored save replaced. A copy the server keeps, or a failed
+     * request, stays in Drafts as a duplicate: the new copy already holds the draft, so the save
+     * still succeeds. A copy that is already gone needs no destroying.
+     */
+    private suspend fun MailAccount.destroyReplaced(emailId: String) {
+        try {
+            connection.call(SetMethod(EmailType, id, destroy = listOf(emailId)))
+        } catch (expected: JmapException) {
+            // A leftover copy is only a duplicate, so the stored save is not reported as failed.
+        }
+    }
 
     private suspend fun draftsFolder(account: MailAccount): String? =
         account.connection

@@ -1,9 +1,12 @@
 # Color theme
 
-Both apps use the supplied Otus palette in dark mode only. System light/dark settings do not change
-the app theme. `OtusColors` holds named tokens and `OtusTheme` supplies Material colors and default
-content styling. Ordinary text inherits `text1` (`#EBECED`) at full opacity; muted text requires an
-explicit `text2` or `text3` choice.
+The user picks one of four themes, **Otus**, **Light**, **Graphite**, or **Black**, and an accent
+color on Settings › Appearance & behavior › Theme. System light/dark settings do not change the
+app theme. `OtusColors` holds named tokens that follow the picked theme, and `OtusTheme` supplies
+Material colors and default content styling. Ordinary text inherits `text1` at full opacity; muted
+text requires an explicit `text2` or `text3` choice. The default, Otus with Otus blue, uses the
+supplied palette below. Meta's `accentShades` derives the other themes' accent shades; see Meta's
+decision 0014 and [decision 0005](decisions/0005-user-themes.md).
 
 | Token         | Hex     |
 | ------------- | ------- |
@@ -23,6 +26,7 @@ borders use their named tokens when explicitly designed. Accent roles use the su
 Material error slot currently reuses `accentLight` because no separate error color was supplied.
 Error UI must communicate meaning through text, not color alone.
 
-Android's starting window mirrors the background/text/accent tokens in XML resources, and system bar
-icons use their light appearance. Keep those native resource values aligned with the common palette.
-The iOS host explicitly requests a dark appearance too.
+Android's starting window mirrors the default theme's background/text/accent tokens in XML
+resources. `MainActivity` switches the system bar icons to their dark appearance in the Light theme.
+Keep those native resource values aligned with the default palette. The iOS host still requests a
+dark appearance, so its status bar keeps light icons in the Light theme.

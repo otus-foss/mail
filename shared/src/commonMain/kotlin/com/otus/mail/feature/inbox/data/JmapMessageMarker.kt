@@ -12,18 +12,19 @@ import kotlinx.serialization.json.buildJsonObject
 /**
  * Sets or clears one keyword with an `Email/set` patch (RFC 8621, sections 4.1.1 and 4.6). Other
  * keywords stay as they are. A cleared keyword is removed, because keyword values must be true.
+ * Each account gets one call per batch of at most its session's `maxObjectsInSet` messages.
  */
 class JmapMessageMarker(
     private val connections: JmapConnections,
     private val logins: LoginStore,
 ) : MessageMarker {
     override suspend fun mark(
-        message: MailMessage,
+        messages: List<MailMessage>,
         flag: MessageFlag,
         on: Boolean,
-    ): Boolean {
+    ): Set<String> {
         val patch = buildJsonObject { put("keywords/${flag.keyword}", if (on) JsonPrimitive(true) else JsonNull) }
-        return updateEmail(connections, logins, message, patch)
+        return updateEmails(connections, logins, messages, patch)
     }
 }
 

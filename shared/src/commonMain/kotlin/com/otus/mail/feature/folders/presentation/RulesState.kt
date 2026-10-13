@@ -12,7 +12,6 @@ import com.otus.mail.feature.folders.domain.RuleFailure
 import com.otus.mail.feature.folders.domain.RuleOutcome
 import com.otus.mail.feature.folders.domain.RuleRepository
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -37,13 +36,12 @@ class RulesState(
     /** A change waiting for the user to replace edits made in another app; see [submit]. */
     var replaceRequest by mutableStateOf<ReplaceRequest?>(null)
         private set
-    private var job: Job? = null
+    private val loads = LatestLoad(scope)
 
     fun account(accountId: String): AccountRules? = accounts.firstOrNull { it.accountId == accountId }
 
     fun refresh() {
-        job?.cancel()
-        job = scope.launch { load() }
+        loads.start(::load)
     }
 
     fun clearNotice() {
@@ -127,8 +125,9 @@ class RulesState(
                         onFailed?.invoke(reason)
                     }
                 }
-                job?.cancel()
-                load()
+                // Busy lasts until the newest load ends, so the next change builds on current rules.
+                refresh()
+                loads.awaitLatest()
             } catch (expected: FolderStorageException) {
                 notice = STORAGE_NOTICE
                 onFailed?.invoke(STORAGE_NOTICE)
@@ -157,14 +156,16 @@ class RulesState(
             }
     }
 
-    private suspend fun load() {
+    private suspend fun load(isLatest: () -> Boolean) {
         loading = true
         try {
-            accounts = repository.accounts()
+            val loaded = repository.accounts()
+            if (isLatest()) accounts = loaded
         } catch (expected: FolderStorageException) {
-            notice = STORAGE_NOTICE
+            if (isLatest()) notice = STORAGE_NOTICE
         } finally {
-            loading = false
+            // A replaced load can finish after the newer one started; only the newest ends loading.
+            if (isLatest()) loading = false
         }
     }
 }

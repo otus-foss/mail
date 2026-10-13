@@ -152,7 +152,7 @@ private class FolderEmail(
 }
 
 /** Objects per `/set` call: the server's `maxObjectsInSet`, or a modest default when it names none. */
-private val JmapSession.setBatch: Int
+internal val JmapSession.setBatch: Int
     get() = limit(maxObjectsInSet)
 
 /** Objects per `/get` call, which also sizes each page of a query. */

@@ -2,6 +2,8 @@ package com.otus.mail.feature.inbox.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class DraftStartTest {
     private val ada = MailSender("Ada Lovelace", "ada@example.com")
@@ -109,6 +111,23 @@ class DraftStartTest {
             "FW: Lunch",
             ComposeRequest.Forward(original.copy(subject = "FW: Lunch")).startDraft("a1", own).subject,
         )
+    }
+
+    @Test
+    fun aQuoteOrForwardOfACutOffBodySaysTheRestIsMissing() {
+        val received = ReceivedAt("2026-10-11", "12:30")
+        val message = MailMessage("a1/m1", ada, "Lunch", "Noon?", received, MailLocation("Inbox", "Work", "a1"))
+        val cut = message.copy(bodyTruncated = true).original()
+        val note = "[The rest of the original message is not included.]"
+        assertEquals("\n\nOn 2026-10-11 12:30, Ada Lovelace wrote:\n> Noon?\n> $note", reply(cut).body)
+        assertTrue(
+            ComposeRequest
+                .Forward(cut)
+                .startDraft("a1", own)
+                .body
+                .endsWith("\n\nNoon?\n$note"),
+        )
+        assertFalse(note in reply(message.original()).body, "A complete body gets no note")
     }
 
     @Test

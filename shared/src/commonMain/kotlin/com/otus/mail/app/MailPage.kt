@@ -30,6 +30,10 @@ internal sealed interface MailPage {
         override val parent = Appearance
     }
 
+    data object ThemeSettings : MailPage {
+        override val parent = Appearance
+    }
+
     data object ActionBarSettings : MailPage {
         override val parent = Appearance
     }
@@ -87,6 +91,7 @@ internal sealed interface MailPage {
                 Rules,
                 ReadLater,
                 SidebarSettings,
+                ThemeSettings,
             )
 
         val Saver: Saver<MailPage, List<String>> =

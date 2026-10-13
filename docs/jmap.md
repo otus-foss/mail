@@ -26,14 +26,25 @@ with `Email/set` patches. See [Folders and rules](folders.md).
 Messages also load `to`, `cc`, `messageId`, and `references`, so a reply can address everyone and
 stay in its thread.
 
+The body is the `textBody` parts' values (RFC 8621, section 4.1.4), with each part's `type`. When a
+message has no plain alternative, that part is `text/html`; the app reads it as plain text and never
+renders it. It drops comments and the content of `script`, `style`, `title`, and `template`, breaks
+lines at blocks and `<br>`, removes other tags, and decodes character references, in one pass that
+tolerates broken markup. A part longer than the limit comes back cut off with `isTruncated`. When
+another part's text follows the cut, the body says "[Part of the message is missing here.]" where
+the part stops. When the cut is at the end, the message has `bodyTruncated`: the open message says
+only its start was loaded, and a reply or forward ends the quoted text with "[The rest of the
+original message is not included.]".
+
 Drafts (`JmapDraftRepository`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:
 
-- Saving finds the mailbox with role `drafts` through `Mailbox/query`, then sends one `Email/set`.
+- Saving finds the mailbox with role `drafts` through `Mailbox/query`, then sends an `Email/set`.
   It creates the Email with keywords `$draft` and `$seen`, the addresses, the subject,
   `inReplyTo` and `references` when set, and a single `text/plain` body (`bodyValues` and
-  `textBody`). Email content cannot change, so the same call destroys the previous copy. If the
-  server rejects the new Email but still destroys the old one, the draft stays only in the app
-  until the next save.
+  `textBody`). Email content cannot change, so a second `Email/set` destroys the previous copy.
+  Each operation in one call succeeds or fails alone (RFC 8620, section 5.3), so that destroy
+  waits until the server has created the new Email; a rejected save keeps the old copy. When the
+  destroy fails, the save still succeeds and the old copy stays in Drafts as a duplicate.
 - Discarding destroys the Email. A copy that is already gone counts as discarded.
 - Failures come back as `DraftException`: no drafts mailbox, forbidden, unreachable, or another
   server problem.

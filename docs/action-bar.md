@@ -31,7 +31,8 @@ search field is open.
 - **Search** opens the search field, as tapping the search prompt does.
 - **Filters** opens the filter sheet, as the header's filter button does.
 - **Mark all read** marks every unread message in the current results read, where the account
-  allows it. It is disabled when there is nothing to mark.
+  allows it, in as few `Email/set` calls as each server allows. It is disabled when there is
+  nothing to mark.
 
 Actions that need a message, such as Archive in **Same everywhere** mode, are disabled here.
 
@@ -39,9 +40,9 @@ Actions that need a message, such as Archive in **Same everywhere** mode, are di
 
 Tapping a row opens the message as a page over the list (`MessageScreen`). The header is a
 `ContextPanel` without pills: a back chevron, the subject, and a **More actions** button. The
-chevron and system Back close the page. The body shows the sender, the plain-text body, and the
-attachment names, and scrolls clear of the bar. While the page is open, accessibility services
-skip the list under it.
+chevron and system Back close the page. The body shows the sender, the body as plain text (an
+HTML-only body converted, and a note when only its start was loaded), and the attachment names, and
+scrolls clear of the bar. While the page is open, accessibility services skip the list under it.
 
 The bar shows the **Open message** layout. **More actions** opens an `ActionDialog` with every
 action the message can take that the bar leaves out, Reply, Reply all, and Forward included; the
@@ -313,6 +314,9 @@ one slot's folder through its `ValuePicker`, and moves the open message with one
 covers each folder's default bars and when they apply, `JmapMessageCleanerTest` the Not spam
 patch, batching, and emptying, `FolderCleaningTest` the rights checks and the rollback of kept
 messages, and `FolderActionsTest` Not spam in Spam and the Delete forever confirm in Trash.
+`JmapMessageMarkerTest` covers batched marks per account, `MessageMarkingTest` the rollback of
+refused marks and the single folder refresh, and `MarkOffersTest` that Mark all read and a
+selection mark their messages in one change.
 `InboxActionBarTest` covers the message list's bar and the **Same everywhere** mode across
 screens, `ComposeActionsTest` the draft requests and the reply context, and
 `ActionBarSettingsTest` the settings page, the slot picker, swapping, removing, and switching modes. Run

@@ -37,14 +37,21 @@ class JmapDraftRepositoryTest {
         return JmapDraftRepository(JmapConnections(JmapClient(engine), store), store)
     }
 
-    private fun server(emailSet: String) =
-        repository { body ->
-            when {
-                "Mailbox/query" in body -> """{"methodResponses": [["Mailbox/query", {"ids": ["dr"]}, "c0"]]}"""
-                "Email/set" in body -> """{"methodResponses": [["Email/set", {"newState": "e2", $emailSet}, "c0"]]}"""
-                else -> error("Unexpected call: $body")
-            }
+    /** Answers the `Email/set` that creates a draft with [created], and any other one with [destroyed]. */
+    private fun server(
+        created: String = """"created": {"draft": {"id": "e9"}}""",
+        destroyed: String = emailSet(""""destroyed": ["old"]"""),
+    ) = repository { body ->
+        when {
+            "Mailbox/query" in body -> """{"methodResponses": [["Mailbox/query", {"ids": ["dr"]}, "c0"]]}"""
+            "\"create\"" in body -> emailSet(created)
+            "Email/set" in body -> destroyed
+            else -> error("Unexpected call: $body")
         }
+    }
+
+    private fun emailSet(outcome: String) =
+        """{"methodResponses": [["Email/set", {"newState": "e2", $outcome}, "c0"]]}"""
 
     private val reply =
         Draft(
@@ -59,14 +66,15 @@ class JmapDraftRepositoryTest {
         )
 
     @Test
-    fun aSaveCreatesTheDraftInTheDraftsFolderAndDestroysItsOldCopy() =
+    fun aSaveCreatesTheDraftInTheDraftsFolderAndThenDestroysItsOldCopy() =
         runTest {
-            val saved =
-                server(""""created": {"draft": {"id": "e9"}}, "destroyed": ["old"]""").save(reply)
+            val saved = server().save(reply)
             assertEquals("e9", saved.getOrThrow())
             assertTrue("\"filter\":{\"role\":\"drafts\"}" in calls.first(), "The Drafts folder is found by role")
-            val set = method(calls.last())
-            assertEquals(listOf("old"), set.getValue("destroy").jsonArray.map { it.toString().trim('"') })
+            val (set, destroy) = calls.drop(1).map(::method)
+            assertTrue("destroy" !in set, "The old copy stays until the new one is stored")
+            assertEquals(setOf("accountId", "destroy"), destroy.keys)
+            assertEquals(listOf("old"), destroy.getValue("destroy").jsonArray.map { it.toString().trim('"') })
             val expected =
                 """{"mailboxIds": {"dr": true}, "keywords": {"${'$'}draft": true, "${'$'}seen": true},
                 "from": [{"name": "Ada Lovelace", "email": "ada@example.org"}],
@@ -82,7 +90,7 @@ class JmapDraftRepositoryTest {
         runTest {
             val saved = server(""""created": {"draft": {"id": "e1"}}""").save(Draft(accountId = "ada"))
             assertEquals("e1", saved.getOrThrow())
-            val set = method(calls.last())
+            val set = method(calls.single { "Email/set" in it })
             assertTrue("destroy" !in set)
             val email =
                 set
@@ -103,25 +111,41 @@ class JmapDraftRepositoryTest {
         }
 
     @Test
-    fun aRefusedSaveReportsWhy() =
+    fun aRejectedSaveReportsWhyAndKeepsTheOldCopy() =
         runTest {
-            val saved =
-                server(
-                    """"notCreated": {"draft": {"type": "forbidden"}}, "notDestroyed": {"old": {"type": "notFound"}}""",
-                ).save(reply)
-            assertEquals(DraftFailure.NotPermitted, saved.failure())
+            val refused = server(""""notCreated": {"draft": {"type": "forbidden"}}""").save(reply)
+            assertEquals(DraftFailure.NotPermitted, refused.failure())
+            val overQuota = server(""""notCreated": {"draft": {"type": "overQuota"}}""").save(reply)
+            assertEquals(DraftFailure.ServerProblem, overQuota.failure())
+            assertTrue(calls.none { "destroy" in it }, "Without a new copy, the old one is not destroyed")
+        }
+
+    @Test
+    fun aStoredSaveSucceedsWhenItsOldCopyCannotBeDestroyed() =
+        runTest {
+            val kept = server(destroyed = emailSet(""""notDestroyed": {"old": {"type": "forbidden"}}"""))
+            assertEquals("e9", kept.save(reply).getOrThrow())
+            val failing = server(destroyed = """{"methodResponses": [["error", {"type": "serverFail"}, "c0"]]}""")
+            assertEquals("e9", failing.save(reply).getOrThrow())
+            assertEquals(2, calls.count { "destroy" in it })
         }
 
     @Test
     fun discardDestroysTheCopyAndAcceptsOneAlreadyGone() =
         runTest {
-            val gone = server(""""notDestroyed": {"old": {"type": "notFound"}}""").discard("ada", "old")
+            val gone =
+                server(
+                    destroyed = emailSet(""""notDestroyed": {"old": {"type": "notFound"}}"""),
+                ).discard("ada", "old")
             assertTrue(gone.isSuccess)
             assertEquals(
                 listOf("old"),
                 method(calls.last()).getValue("destroy").jsonArray.map { it.toString().trim('"') },
             )
-            val refused = server(""""notDestroyed": {"old": {"type": "forbidden"}}""").discard("ada", "old")
+            val refused =
+                server(
+                    destroyed = emailSet(""""notDestroyed": {"old": {"type": "forbidden"}}"""),
+                ).discard("ada", "old")
             assertEquals(DraftFailure.NotPermitted, refused.failure())
         }
 

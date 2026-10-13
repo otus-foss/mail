@@ -59,12 +59,15 @@ class InboxStorageException(
 
 /** Turns message marks on or off on the server. */
 interface MessageMarker {
-    /** Sets [flag] to [on] for [message]; false when the server refused or could not be reached. */
+    /**
+     * Sets [flag] to [on] for [messages] together; returns the [MailMessage.id]s it changed. The
+     * others were refused or could not be reached.
+     */
     suspend fun mark(
-        message: MailMessage,
+        messages: List<MailMessage>,
         flag: MessageFlag,
         on: Boolean,
-    ): Boolean
+    ): Set<String>
 }
 
 /** Files messages into folders on the server. False when the server refused or could not be reached. */
