@@ -15,6 +15,7 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.LoginStore
+import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapInboxMatcher
@@ -36,6 +37,9 @@ import com.otus.mail.feature.inbox.domain.MessageCleaner
 import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
 import com.otus.mail.feature.inbox.domain.SenderHistory
+import com.otus.mail.feature.notifications.data.JmapNewMailChecker
+import com.otus.mail.feature.notifications.domain.MailStateStore
+import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.mail.feature.updates.data.GitHubNightlyFeed
 import com.otus.mail.feature.updates.domain.NightlyFeed
 import io.ktor.client.HttpClient
@@ -46,7 +50,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
  * client. Platform entry points supply their protected [LoginStore] and app-private stores.
  */
 class MailServices(
-    logins: LoginStore = InMemoryLoginStore(),
+    private val logins: LoginStore = InMemoryLoginStore(),
     avatarStore: AvatarStore = EmptyAvatarStore,
     readLaterStore: ReadLaterStore? = null,
     createNightlyFeed: () -> NightlyFeed = { GitHubNightlyFeed(HttpClient()) },
@@ -89,6 +93,17 @@ class MailServices(
     internal val rules: RuleRepository by lazy { JmapRuleRepository(connections, logins) }
     internal val inboxMatcher: InboxMatcher by lazy { JmapInboxMatcher(connections, logins) }
     internal val nightly by lazy(createNightlyFeed)
+
+    /** Finds mail that arrived since the check that last wrote [states], for notifications. */
+    fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, logins, states)
+
+    /** Whether any account is saved; false when storage cannot be read. Call it off the main thread. */
+    fun hasAccounts(): Boolean =
+        try {
+            logins.logins().isNotEmpty()
+        } catch (_: LoginStoreException) {
+            false
+        }
 }
 
 @OptIn(ExperimentalResourceApi::class)
