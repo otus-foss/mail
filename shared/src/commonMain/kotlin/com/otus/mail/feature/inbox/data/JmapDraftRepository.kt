@@ -2,10 +2,8 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapCapability
-import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.JmapSession
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetError
 import com.otus.jmap.SetMethod
@@ -13,15 +11,13 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityType
+import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -36,7 +32,7 @@ class JmapDraftRepository(
 ) : DraftRepository {
     override suspend fun identities(accountId: String): List<MailSender> =
         try {
-            open(accountId)
+            mailAccount(connections, logins, accountId)
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
                 ?.let { account ->
                     account.connection
@@ -98,7 +94,8 @@ class JmapDraftRepository(
         block: suspend (MailAccount) -> T,
     ): Result<T> =
         try {
-            Result.success(block(open(loginId) ?: throw DraftException(DraftFailure.ServerProblem)))
+            val account = mailAccount(connections, logins, loginId) ?: throw DraftException(DraftFailure.ServerProblem)
+            Result.success(block(account))
         } catch (error: DraftException) {
             Result.failure(error)
         } catch (error: JmapException) {
@@ -107,29 +104,15 @@ class JmapDraftRepository(
             Result.failure(DraftException(DraftFailure.ServerProblem, error))
         }
 
-    /** The mail account of the login [loginId], or null when the login is gone or has no mail. */
-    private suspend fun open(loginId: String): MailAccount? {
-        val login = withContext(Dispatchers.IO) { logins.logins() }.firstOrNull { it.id == loginId } ?: return null
-        val connection = connections.connection(login)
-        val session = connection.session()
-        return session.accountFor(JmapCapability.MAIL)?.let { MailAccount(connection, session, it) }
-    }
-
-    private class MailAccount(
-        val connection: JmapConnection,
-        val session: JmapSession,
-        val id: String,
-    ) {
-        /** Identities and submission must live in the account that holds the drafts. */
-        fun mayUse(capability: String): Boolean =
-            capability in session.capabilities && session.accounts[id]?.capabilities?.contains(capability) == true
-    }
-
     private companion object {
         const val CREATION_ID = "draft"
         const val DRAFTS_ROLE = "drafts"
     }
 }
+
+/** Identities and submission must live in the account that holds the drafts. */
+private fun MailAccount.mayUse(capability: String): Boolean =
+    capability in session.capabilities && session.accounts[id]?.capabilities?.contains(capability) == true
 
 private fun SetError.toDraftFailure(): DraftFailure =
     if (type == "forbidden") DraftFailure.NotPermitted else DraftFailure.ServerProblem

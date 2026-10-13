@@ -3,6 +3,7 @@ package com.otus.mail.feature.folders.data
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.InboxMatcher
 import com.otus.mail.feature.folders.domain.InboxMatches
@@ -13,7 +14,7 @@ class JmapInboxMatcher(
     connections: JmapConnections,
     logins: LoginStore,
 ) : InboxMatcher {
-    private val accounts = MailAccounts(connections, logins)
+    private val accounts = MailAccounts(connections, logins, ::FolderStorageException)
 
     override suspend fun matches(
         accountId: String,

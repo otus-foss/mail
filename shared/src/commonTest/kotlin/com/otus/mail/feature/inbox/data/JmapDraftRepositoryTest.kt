@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -177,6 +178,15 @@ class JmapDraftRepositoryTest {
                 }
             assertEquals(emptyList(), failing.identities("ada"))
             assertEquals(emptyList(), failing.identities("nobody"))
+        }
+
+    @Test
+    fun aLoginWithoutMailHasNoIdentitiesAndKeepsNoDrafts() =
+        runTest {
+            val contactsOnly = repository(CONTACTS_ONLY_SESSION) { error("No call without mail") }
+            assertEquals(emptyList(), contactsOnly.identities("ada"))
+            assertEquals(DraftFailure.ServerProblem, contactsOnly.save(reply).failure())
+            assertEquals(DraftFailure.ServerProblem, contactsOnly.discard("ada", "old").failure())
         }
 
     private fun method(body: String): JsonObject =

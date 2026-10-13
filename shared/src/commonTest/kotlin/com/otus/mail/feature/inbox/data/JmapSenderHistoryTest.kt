@@ -8,6 +8,8 @@ import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.testing.CONTACTS_ONLY_SESSION
+import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -27,9 +29,12 @@ class JmapSenderHistoryTest {
             emailId = "m1",
         )
 
-    private fun history(reply: (String) -> String): JmapSenderHistory {
+    private fun history(
+        session: String = STALWART_SESSION,
+        reply: (String) -> String,
+    ): JmapSenderHistory {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapSenderHistory(JmapConnections(JmapClient(stalwartLike(api = reply)), store), store)
+        return JmapSenderHistory(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store)
     }
 
     @Test
@@ -56,5 +61,12 @@ class JmapSenderHistoryTest {
             val failing = history { error("The server is down") }
             assertEquals(emptyList(), history { "not json" }.recentFolders(message))
             assertEquals(emptyList(), failing.recentFolders(message.copy(emailId = "")))
+        }
+
+    @Test
+    fun aLoginWithoutMailHasNoHistory() =
+        runTest {
+            val contactsOnly = history(CONTACTS_ONLY_SESSION) { error("Nothing is sent") }
+            assertEquals(emptyList(), contactsOnly.recentFolders(message))
         }
 }

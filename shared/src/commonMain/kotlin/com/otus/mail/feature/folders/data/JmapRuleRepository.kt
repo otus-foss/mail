@@ -8,8 +8,11 @@ import com.otus.jmap.JmapJson
 import com.otus.jmap.SetMethod
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.feature.folders.domain.AccountRules
 import com.otus.mail.feature.folders.domain.ApplyOutcome
+import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.MailRule
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.RuleChange
@@ -33,7 +36,7 @@ class JmapRuleRepository(
     connections: JmapConnections,
     logins: LoginStore,
 ) : RuleRepository {
-    private val accounts = MailAccounts(connections, logins)
+    private val accounts = MailAccounts(connections, logins, ::FolderStorageException)
 
     override suspend fun accounts(): List<AccountRules> =
         coroutineScope { accounts.logins().map { async { load(it) } }.awaitAll() }
@@ -55,7 +58,7 @@ class JmapRuleRepository(
     ): AccountRules {
         val scripts =
             account.connection.call(
-                GetMethod(SieveScriptType, account.accountId, properties = SCRIPT_PROPERTIES),
+                GetMethod(SieveScriptType, account.id, properties = SCRIPT_PROPERTIES),
             )
         val ours = scripts.list.firstOrNull { it.name == RULES_SCRIPT }
         val active = scripts.list.firstOrNull { it.isActive }
@@ -80,7 +83,7 @@ class JmapRuleRepository(
         support: RuleSupport,
     ): ReadRules {
         val limit = (support.maxScriptBytes ?: MAX_SCRIPT_BYTES).coerceIn(1, MAX_SCRIPT_BYTES)
-        val blob = account.connection.download(account.accountId, script.blobId, SIEVE_MEDIA_TYPE, limit)
+        val blob = account.connection.download(account.id, script.blobId, SIEVE_MEDIA_TYPE, limit)
         return decodeRules(blob.bytes.decodeToString(), support)
     }
 
@@ -112,12 +115,12 @@ class JmapRuleRepository(
         // The script id is looked up again; the state check and ifInState catch any change meanwhile.
         val current =
             account.connection.call(
-                GetMethod(SieveScriptType, account.accountId, properties = SCRIPT_PROPERTIES),
+                GetMethod(SieveScriptType, account.id, properties = SCRIPT_PROPERTIES),
             )
         if (version != null && current.state != version) return RuleOutcome.Failed(RuleFailure.ChangedElsewhere)
         val ours = current.list.firstOrNull { it.name == RULES_SCRIPT }
-        val blob = account.connection.upload(account.accountId, bytes, SIEVE_MEDIA_TYPE)
-        val result = account.connection.call(scriptSet(account.accountId, ours, blob.blobId, change, current.state))
+        val blob = account.connection.upload(account.id, bytes, SIEVE_MEDIA_TYPE)
+        val result = account.connection.call(scriptSet(account.id, ours, blob.blobId, change, current.state))
         return result.firstError?.let { RuleOutcome.Failed(it.toRuleFailure(), it.description) } ?: RuleOutcome.Saved
     }
 
@@ -175,7 +178,7 @@ class JmapRuleRepository(
 /** Rules need Sieve with filing by folder id; other extensions only unlock more conditions. */
 private fun availability(account: MailAccount): RuleAvailability {
     val capabilities =
-        account.session.accounts[account.accountId]
+        account.session.accounts[account.id]
             ?.capabilityObjects
             .orEmpty()
     val sieve = capabilities[JmapCapability.SIEVE] ?: return RuleAvailability.NoSieve

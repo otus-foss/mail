@@ -190,7 +190,7 @@ internal class MessageFiling(
         return when (shortcut) {
             FolderShortcut.Trash, FolderShortcut.Spam -> shown + folderIds
             FolderShortcut.Archive -> shown + setOfNotNull(inbox?.takeIf { it in folderIds })
-            FolderShortcut.Inbox, FolderShortcut.Spam, null -> shown
+            FolderShortcut.Inbox, null -> shown
         }
     }
 }
@@ -205,6 +205,5 @@ private fun shortcutFor(role: String?): FolderShortcut? =
         ARCHIVE_ROLE -> FolderShortcut.Archive
         JUNK_ROLE -> FolderShortcut.Spam
         TRASH_ROLE -> FolderShortcut.Trash
-        JUNK_ROLE -> FolderShortcut.Spam
         else -> null
     }

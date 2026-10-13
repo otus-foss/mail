@@ -1,20 +1,17 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.jmap.JmapCapability
-import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.SetMethod
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.feature.inbox.domain.MailMessage
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -80,7 +77,7 @@ private suspend fun updateAccountEmails(
     // A failed batch keeps the ones before it, so the caller knows which changed.
     return try {
         val account = mailAccount(connections, logins, loginId) ?: return emptySet()
-        emailIds.chunked(account.connection.session().setBatch).forEach { batch ->
+        emailIds.chunked(account.session.setBatch).forEach { batch ->
             val result =
                 account.connection.call(
                     SetMethod(EmailType, account.id, update = batch.associateWith { patch }),
@@ -95,22 +92,13 @@ private suspend fun updateAccountEmails(
     }
 }
 
-/** A login's connection and the id of its mail account on that server. */
-internal class MailAccount(
-    val connection: JmapConnection,
-    val id: String,
-)
-
 /**
- * The mail account of the saved login [loginId]; null when the login is gone or has no mail. It
+ * The mail account of the saved login [loginId], or null once the login was removed. Like
+ * [MailAccounts.open], it throws [JmapException.Unsupported] when the login has no mail, and it
  * throws what reading logins and the session throw.
  */
 internal suspend fun mailAccount(
     connections: JmapConnections,
     logins: LoginStore,
     loginId: String,
-): MailAccount? {
-    val login = withContext(Dispatchers.IO) { logins.logins() }.firstOrNull { it.id == loginId } ?: return null
-    val connection = connections.connection(login)
-    return connection.session().accountFor(JmapCapability.MAIL)?.let { MailAccount(connection, it) }
-}
+): MailAccount? = MailAccounts(connections, logins).open(loginId)
