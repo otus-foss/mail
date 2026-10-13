@@ -37,6 +37,7 @@ class AndroidMailBehaviorStore(
             actionBarMode =
                 ActionBarMode.fromStorageValue(preferences.getString(ACTION_BAR_MODE, null)) ?: defaults.actionBarMode,
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
+            websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
         )
     }
 
@@ -51,6 +52,7 @@ class AndroidMailBehaviorStore(
             behavior.actionBar.forEach { (place, layout) -> putString(actionBarKey(place), layout.encode()) }
             putString(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
+            putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
         }
     }
 
@@ -63,6 +65,7 @@ class AndroidMailBehaviorStore(
         const val SIDEBAR = "sidebar_layout"
         const val ACTION_BAR_MODE = "action_bar_mode"
         const val MINIMIZED_BAR = "action_bar_minimized"
+        const val WEBSITE_ICONS = "website_icons"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

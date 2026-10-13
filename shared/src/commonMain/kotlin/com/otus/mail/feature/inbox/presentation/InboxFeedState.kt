@@ -9,7 +9,7 @@ import com.otus.avatar.AvatarService
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.avatarEmailKey
 import com.otus.avatar.generatedAvatar
-import com.otus.mail.core.avatar.MailAvatarOptions
+import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -23,13 +23,14 @@ import kotlinx.coroutines.launch
 
 /**
  * Loaded messages of the unified inbox or one folder, or of the mailboxes a search or a folder
- * pill shows in their place. A refresh replaces any refresh still in flight.
+ * pill shows in their place. A refresh replaces any refresh still in flight. Each refresh looks up
+ * avatars with the [avatarOptions] of that moment, so a changed setting applies on the next one.
  */
 class InboxFeedState(
     private val source: MailSource,
     private val scope: CoroutineScope,
     private val avatars: AvatarService? = null,
-    private val avatarOptions: AvatarOptions = MailAvatarOptions,
+    private val avatarOptions: () -> AvatarOptions = { mailAvatarOptions(websiteIcons = true) },
     private val defaultScope: MailScope = MailScope.Inbox,
 ) {
     /** What the list loads: the page's own messages, or what a search or folder pill shows in their place. */
@@ -47,6 +48,9 @@ class InboxFeedState(
     private var job: Job? = null
     private var request = 0
     private val pending = PendingChanges()
+
+    // The options the shown avatars were found with.
+    private var shownOptions: AvatarOptions? = null
 
     /** Shows [text] in place of the last load's notice, such as a failed change. */
     fun report(text: String) {
@@ -109,6 +113,7 @@ class InboxFeedState(
     fun refresh() {
         val current = ++request
         val requestedScope = mailScope
+        val options = avatarOptions()
         job?.cancel()
         loading = true
         notice = null
@@ -116,9 +121,10 @@ class InboxFeedState(
             scope.launch {
                 try {
                     val snapshot = source.messages(requestedScope)
-                    val incoming = withCachedAvatars(snapshot.messages)
+                    val incoming = withCachedAvatars(snapshot.messages, options)
                     if (current != request) return@launch
                     messages = pending.publish(incoming, current, requestedScope)
+                    shownOptions = options
                     notice = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
                 } catch (expected: InboxStorageException) {
                     if (current == request) notice = "Couldn't load saved accounts. Try again in Settings."
@@ -127,27 +133,34 @@ class InboxFeedState(
                 }
                 if (current != request) return@launch
                 coroutineScope {
-                    launch { resolveAccountAvatars(current) }
-                    resolveAvatars(current)
+                    launch { resolveAccountAvatars(current, options) }
+                    resolveAvatars(current, options)
                 }
             }
     }
 
-    /** Restore local images before publishing; new senders still resolve progressively. */
-    private suspend fun withCachedAvatars(incoming: List<MailMessage>): List<MailMessage> {
+    /**
+     * Restore local images before publishing; new senders still resolve progressively. Avatars
+     * found with other [options], such as website icons since turned off, are not carried over.
+     */
+    private suspend fun withCachedAvatars(
+        incoming: List<MailMessage>,
+        options: AvatarOptions,
+    ): List<MailMessage> {
         val service = avatars ?: return incoming
+        val shown = messages.takeIf { options == shownOptions }.orEmpty()
         val previous =
-            messages.associate {
+            shown.associate {
                 (it.sender.accountKey to avatarEmailKey(it.sender.address)) to
                     it.sender.avatar
             }
-        val accounts = messages.associate { it.location.accountId to it.location.accountAvatar }
+        val accounts = shown.associate { it.location.accountId to it.location.accountAvatar }
         val restored = mutableMapOf<Pair<String, String>, ResolvedAvatar?>()
         return incoming.map { message ->
             val sender = message.sender
             val key = sender.accountKey to avatarEmailKey(sender.address)
             if (key !in restored) {
-                val cached = service.cached(AvatarRequest(sender.accountKey, sender.address), avatarOptions)
+                val cached = service.cached(AvatarRequest(sender.accountKey, sender.address), options)
                 restored[key] = keepIdenticalImage(cached, previous[key])
             }
             val avatar = restored[key]?.copy(fallback = generatedAvatar(sender.name, sender.address))
@@ -157,7 +170,10 @@ class InboxFeedState(
     }
 
     /** Each account's own address resolves like a sender, for the inbox picker. */
-    private suspend fun resolveAccountAvatars(current: Int) {
+    private suspend fun resolveAccountAvatars(
+        current: Int,
+        options: AvatarOptions,
+    ) {
         val service = avatars ?: return
         val accounts =
             messages
@@ -169,7 +185,7 @@ class InboxFeedState(
             accounts.forEach { account ->
                 launch {
                     val request = AvatarRequest(account.accountId, account.accountAddress, account.account)
-                    val resolved = service.resolve(request, avatarOptions)
+                    val resolved = service.resolve(request, options)
                     if (current != this@InboxFeedState.request) return@launch
                     val avatar = keepIdenticalImage(resolved, account.accountAvatar) ?: resolved
                     messages =
@@ -186,7 +202,10 @@ class InboxFeedState(
     }
 
     /** Optional network photos update rows without blocking mail or showing errors. */
-    private suspend fun resolveAvatars(current: Int) {
+    private suspend fun resolveAvatars(
+        current: Int,
+        options: AvatarOptions,
+    ) {
         val service = avatars ?: return
         val senders = messages.map { it.sender }.distinctBy { it.accountKey to avatarEmailKey(it.address) }
         coroutineScope {
@@ -195,7 +214,7 @@ class InboxFeedState(
                     val resolved =
                         service.resolve(
                             AvatarRequest(sender.accountKey, sender.address, sender.name),
-                            avatarOptions,
+                            options,
                         )
                     if (current != request) return@launch
                     val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved

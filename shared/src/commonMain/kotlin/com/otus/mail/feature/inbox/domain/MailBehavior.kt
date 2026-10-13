@@ -6,7 +6,8 @@ package com.otus.mail.feature.inbox.domain
  * action that saves mail there, and its pill. [pills] are the inbox row's pills, in order.
  * [sidebar] arranges the sidebar. [actionBar] holds each place's bar, and [actionBarMode] picks
  * whether places use their own or the Everywhere bar. A [minimizedBar] shows only its primary,
- * as a round button. A null swipe does nothing.
+ * as a round button. A null swipe does nothing. [websiteIcons] lets sender avatars load images
+ * from outside the user's servers, such as sender websites and DuckDuckGo.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -18,6 +19,7 @@ data class MailBehavior(
     val actionBar: Map<ActionBarPlace, ActionBarLayout> = ActionBarPlace.entries.associateWith { it.defaultLayout },
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
     val minimizedBar: Boolean = false,
+    val websiteIcons: Boolean = true,
 ) {
     /** What a swipe can be set to besides nothing; Read later only while it is on. */
     val swipeChoices: List<MailAction>

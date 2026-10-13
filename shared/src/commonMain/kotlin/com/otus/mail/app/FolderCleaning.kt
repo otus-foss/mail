@@ -123,4 +123,4 @@ internal class FolderCleaning(
         }
 }
 
-private fun countText(count: Int): String = if (count == 1) "1 message" else "$count messages"
+internal fun countText(count: Int): String = if (count == 1) "1 message" else "$count messages"
