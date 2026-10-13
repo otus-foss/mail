@@ -6,6 +6,10 @@ the public [otus-mail-nightly](https://github.com/reazndev/otus-mail-nightly) re
 source stays private. Each release is tagged `nightly-<number>`, where the number is main's commit
 count, and its notes list the commits since the previous nightly.
 
+The build uses otus-meta main, the way a local build with `otus.meta.path` does, because Meta
+publishing is paused and Mail main depends on unreleased Meta changes. A night with Meta changes
+but no Mail changes builds nothing; start the workflow by hand to pick them up.
+
 ## The nightly app
 
 The `nightly` build type is the release build with these changes:
@@ -39,7 +43,16 @@ the download finishes. A failed check shows nothing. Other builds never check.
 
 3. Create a fine-grained token with Contents read and write access to `otus-mail-nightly` only.
 
-4. Add the secrets to otus-mail:
+4. Create a read-only deploy key so the workflow can check out the private otus-meta:
+
+   ```sh
+   ssh-keygen -t ed25519 -N "" -C "otus-mail nightly" -f otus-meta-deploy
+   gh repo deploy-key add otus-meta-deploy.pub -R reazndev/otus-meta --title "otus-mail nightly"
+   gh secret set OTUS_META_DEPLOY_KEY -R reazndev/otus-mail < otus-meta-deploy
+   rm otus-meta-deploy otus-meta-deploy.pub
+   ```
+
+5. Add the other secrets to otus-mail:
 
    ```sh
    base64 -w0 otus-nightly.p12 | gh secret set OTUS_NIGHTLY_KEYSTORE -R reazndev/otus-mail
