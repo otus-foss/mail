@@ -1,23 +1,35 @@
 package com.otus.mail
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
 import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
+import com.otus.mail.app.MailServices
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val dateFormatState = DateFormatSettingsState(AndroidDateFormatPreferenceStore(this))
         val services = (application as OtusMailApplication).services
+        if (savedInstanceState == null) askForNotifications(services)
         val behaviorState = MailBehaviorState(AndroidMailBehaviorStore(this))
         val themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))
         val nightlyBuild = BuildConfig.VERSION_CODE.takeIf { BuildConfig.NIGHTLY }
@@ -31,6 +43,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
             App(dateFormatState, services, behaviorState, themeState, nightlyBuild)
+        }
+    }
+
+    /** Asks once per launch, and only when there is mail to notify about. */
+    private fun askForNotifications(services: MailServices) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        lifecycleScope.launch {
+            if (withContext(Dispatchers.IO) { services.logins().isNotEmpty() }) {
+                notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
     }
 }

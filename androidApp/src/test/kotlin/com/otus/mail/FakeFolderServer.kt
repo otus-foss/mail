@@ -4,6 +4,7 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.app.MailServices
+import com.otus.mail.feature.notifications.domain.InstantPush
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
@@ -56,10 +57,10 @@ class FakeFolderServer {
     private var uploaded = ""
     private var state = 1
 
-    fun services(): MailServices {
+    fun services(instantPush: InstantPush? = null): MailServices {
         val store = InMemoryLoginStore()
         store.save(JmapLogin("ada", "https://mail.example.org/jmap/session", "ada@example.org", "Ada"), "secret")
-        return MailServices(store) { JmapClient(engine) }
+        return MailServices(store, instantPush = instantPush) { JmapClient(engine) }
     }
 
     private val engine =

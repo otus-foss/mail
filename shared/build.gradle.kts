@@ -45,6 +45,7 @@ kotlin {
             api(libs.otus.designsystem)
             api(libs.otus.settings)
             api(libs.otus.accounts)
+            api(libs.otus.push)
             implementation(libs.ktor.client.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
