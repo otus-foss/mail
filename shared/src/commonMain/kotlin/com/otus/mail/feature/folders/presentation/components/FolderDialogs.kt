@@ -3,7 +3,6 @@ package com.otus.mail.feature.folders.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.otus.designsystem.components.ConfirmDialog
-import com.otus.designsystem.components.InputDialog
 import com.otus.designsystem.components.InputSheet
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
@@ -23,7 +22,7 @@ fun FolderDialogs(
     val folder = account?.let { folderOf(dialog, it) }
     when {
         account == null -> LaunchedEffect(dialog) { close() }
-        dialog is FolderDialog.Create -> CreateFolderDialog(account, dialog.parentId, actions, close)
+        dialog is FolderDialog.Create -> CreateFolderSheet(account, dialog.parentId, actions, close)
         folder == null -> LaunchedEffect(dialog) { close() }
         else -> FolderChangeDialog(dialog, folder, account, actions, onDialog)
     }
@@ -80,14 +79,14 @@ private fun FolderChangeDialog(
 }
 
 @Composable
-private fun CreateFolderDialog(
+private fun CreateFolderSheet(
     account: AccountFolders,
     parentId: String?,
     actions: FolderActions,
     onDismiss: () -> Unit,
 ) {
     val parent = parentId?.let { account.folder(it) }
-    InputDialog(
+    InputSheet(
         title = parent?.let { "New folder in ${it.name}" } ?: "New folder",
         label = "Name",
         confirmLabel = "Create",

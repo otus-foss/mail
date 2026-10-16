@@ -139,6 +139,7 @@ class FolderListUiTest {
         compose.onNode(hasSetTextAction()).performTextReplacement("Shopping")
         compose.onNodeWithText("Rename").performClick()
         compose.waitUntil(TIMEOUT) { server.calls.any { "Mailbox/set" in it && "Shopping" in it } }
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Rename Amazon")).fetchSemanticsNodes().isEmpty() }
     }
 
     /** Drags [name]'s handle so the row's center lands at [share] of [to]'s row height, and lifts. */
