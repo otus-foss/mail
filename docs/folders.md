@@ -241,7 +241,7 @@ row background, and selected state keep their usual look. Default keeps the plai
 
 ## Read later
 
-Off by default. The **Read later** switch in Appearance & behavior gives each account a folder named
+Off by default. The **Read later** switch at the top of Settings › Folders gives each account a folder named
 "Read later", adds a **Read later** button to an open message and to the swipe choices, and adds a
 Read later pill to the inbox row that shows every account's saved mail. See
 [inbox pills](inbox.md#inbox-pills).

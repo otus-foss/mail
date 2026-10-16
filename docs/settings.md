@@ -34,8 +34,8 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   [Inbox contents](inbox.md#inbox-contents). Under **Actions**, **Swipe right** and **Swipe
   left** open a `ChoiceSheet` of message actions, shown in a `ValueButton`. **Action bar** shows its
   mode, **Per screen** or **Same everywhere**, and opens its own page, and **Minimize action bar**
-  is a switch. Under **Reading**, **Mark as read when opened** and **Read later** are
-  `SettingToggleRow` switches. Under **Privacy**, the **Website icons** switch lets avatars load
+  is a switch. Under **Reading**, **Mark as read when opened** is a
+  `SettingToggleRow` switch. Under **Privacy**, the **Website icons** switch lets avatars load
   logos from sender websites and DuckDuckGo, and photos that contact cards link to; see
   [website icons](avatars.md#website-icons). Each change is saved before it is shown. See
   [inbox pills](inbox.md#inbox-pills), [swipe actions](inbox.md#swipe-actions), and
@@ -56,7 +56,9 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   in the preview, opens a `ChoiceSheet` for that slot with the place's default first. Choosing an
   action that another slot holds swaps the two, and a button slot can be **None**. Each change is
   saved at once. See [action bar](action-bar.md).
-- **Folders** lists every account's folders, or one account's through the account picker, as
+- **Folders** starts with the **Read later** switch, one list for mail saved from every account
+  (see [Read later](folders.md#read-later)). It lists every account's folders, or one account's
+  through the account picker, as
   trees. Dragging a folder's handle moves it to a new place or into another folder, holding a folder
   opens quick actions (Rename, Move into, Color, Delete), and a plus button
   creates a folder: on each account's row, or beside the hint when one account is shown. Tapping a folder opens its page: a summary line, then **Name**, **Move into**, **Color**
