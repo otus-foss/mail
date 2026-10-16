@@ -39,3 +39,14 @@ reusable element available for future screens; its welcome screen is unchanged.
 Mail's `AnimatedTextTest` checks both directions, interruption, latest-label accessibility, and
 unchanged text. Existing date-navigation and calendar-scroll tests cover the integrated header.
 Physical-device motion review and iOS runtime validation remain separate from local Android tests.
+
+## Launch
+
+Each launch opens on Meta's `MailLaunch`: the envelope pops up, the owl rises behind it, and tilts
+upright. The inbox starts loading underneath at once, and the animation keeps looping until that
+first load ends. Then the owl shrinks and fades out. It always lets the owl arrive first, about
+1.7 s at the Regular animation speed, and a tap ends it early. Rotating the phone does not replay
+it.
+
+The app icon is Meta's `otus_mail_icon`. On Android 12 and later the system splash shows only the
+brand background, so the animation brings the owl in itself instead of replacing a static icon.
