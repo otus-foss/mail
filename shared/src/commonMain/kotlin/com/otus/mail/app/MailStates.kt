@@ -13,6 +13,7 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.ComposeState
@@ -121,6 +122,9 @@ internal class MailStates(
             behavior = { behavior.behavior },
             cleanup = cleaning.cleanup(feed),
         )
+
+    /** The HTML body of an open message. */
+    suspend fun messageHtml(message: MailMessage): MessageHtml? = services.bodies.html(message)
 
     /** Starts a rule for the message's sender, where the account's server runs rules. */
     private fun ruleForSender(

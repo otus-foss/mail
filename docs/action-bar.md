@@ -40,9 +40,11 @@ Actions that need a message, such as Archive in **Same everywhere** mode, are di
 
 Tapping a row opens the message as a page over the list (`MessageScreen`). The header is a
 `ContextPanel` without pills: a back chevron, the subject, and a **More actions** button. The
-chevron and system Back close the page. The body shows the sender, the body as plain text (an
-HTML-only body converted, and a note when only its start was loaded), and the attachment names, and
-scrolls clear of the bar. While the page is open, accessibility services skip the list under it.
+chevron and system Back close the page. `MessageBody` shows the sender, the body, a note when only
+its start was loaded, and the attachment names, and stays clear of the bar. The text body shows at
+once. When the message has an HTML body, it replaces the text in the shared `HtmlView`, which
+scrolls on its own. Remote images stay hidden until the user taps **Show images**, and a tapped
+link opens in the browser or mail app. While the page is open, accessibility services skip the list under it.
 
 The bar shows the **Open message** layout. **More actions** opens an `ActionDialog` with every
 action the message can take that the bar leaves out, Reply, Reply all, and Forward included; the
