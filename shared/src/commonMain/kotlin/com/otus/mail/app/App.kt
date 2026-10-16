@@ -19,6 +19,7 @@ import com.otus.designsystem.components.SlidingPages
 import com.otus.designsystem.components.rememberSidebarState
 import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
@@ -40,10 +41,12 @@ fun App(
     val dateFormatter = rememberDateFormatter(dateFormatState)
     var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf<MailPage>(MailPage.Inbox) }
     val sidebar = rememberSidebarState()
-    // The account whose counts the sidebar shows; null shows every account's.
-    var sidebarAccount by rememberSaveable { mutableStateOf<String?>(null) }
+    // Whose mail the pages show; it lasts for the process, like the page.
+    var chosenScope by rememberSaveable(stateSaver = MailScopeChoiceSaver) {
+        mutableStateOf<MailScopeChoice>(MailScopeChoice.All)
+    }
     val scope = rememberCoroutineScope()
-    val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) }
+    val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) { chosenScope } }
     // Only nightly builds look for a newer nightly, once per launch.
     val nightly = remember(services, nightlyBuild) { nightlyBuild?.let { NightlyUpdateState(services.nightly, it) } }
     LaunchedEffect(nightly) { nightly?.check() }
@@ -79,9 +82,9 @@ fun App(
                     sidebar,
                     current = page.root,
                     states,
-                    sidebarAccount,
+                    states.mailScope,
                     update = nightly?.available,
-                    onSelectAccount = { sidebarAccount = it },
+                    onChooseScope = { chosenScope = it },
                     onSelect = {
                         page = it
                         scope.launch { sidebar.close() }

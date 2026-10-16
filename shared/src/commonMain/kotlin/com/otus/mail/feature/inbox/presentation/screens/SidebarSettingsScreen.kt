@@ -31,8 +31,9 @@ import com.otus.mail.feature.inbox.presentation.title
 
 /**
  * Arranges the sidebar for every account. Drag a section's handle to move it, or switch it off to
- * hide it; the layout rows choose how mailboxes show and which counts appear. Each change is saved
- * at once. [mailboxes] names the built-in mailboxes.
+ * hide it; the layout rows choose how mailboxes show and which counts appear, and a switch hides
+ * folder colors without forgetting them. Each change is saved at once. [mailboxes] names the
+ * built-in mailboxes.
  */
 @Composable
 fun SidebarSettingsScreen(
@@ -73,6 +74,14 @@ fun SidebarSettingsScreen(
                 ValueButton(layout.counts.label)
             }
         }
+        SettingsSection("Folders") {
+            SettingToggleRow(
+                "Folder colors",
+                checked = layout.folderColors,
+                onCheckedChange = { shown -> change { it.copy(folderColors = shown) } },
+                description = "Colors only change the folder icon. They stay on this device.",
+            )
+        }
         PageNote("Drag a section to reorder it. One section stays on. Changes apply to every account.")
     }
     choosing?.let { LayoutChoiceSheet(it, layout, change) { choosing = null } }
@@ -93,7 +102,7 @@ private fun LayoutChoiceSheet(
                     ChoiceOptions(
                         MailboxStyle.entries,
                         selected = layout.mailboxes,
-                        default = MailboxStyle.Chips,
+                        default = MailboxStyle.Grid,
                     ),
                 row = { ChoiceRow(it.label) },
                 onSelect = { style -> change { it.copy(mailboxes = style) } },

@@ -91,6 +91,39 @@ while that account is chosen in the rail.
 - `MailPage.Shared` saves the lower-case path. If no account has that path once every account's
   folders load, the page returns to the Inbox. While an account fails to load, the page stays.
 
+## Folder colors
+
+The user can give any of their own folders one of eight colors: Red, Orange, Yellow, Green, Teal,
+Blue, Purple, or Pink. The color tints only the `folder` and `folder_open` icon. The name, count,
+row background, and selected state keep their usual look. Default keeps the plain icon.
+
+- **Settings › Folders**: tapping a folder opens its actions, and **Color** opens a `ChoiceSheet`
+  with Default first in its own group, then the eight colors, each with a `FolderColorSwatch`.
+  A choice applies at once. Long-pressing a folder in the sidebar offers the same sheet.
+- Only folders without a role can have a color. Inbox, Drafts, Sent, Archive, Spam, Trash, and
+  Read later never offer **Color** and never show a tint.
+- `FolderColors` keys each color by login and mailbox id (`FolderKey`), never by name or path.
+  A rename or move keeps the color. A folder deleted and made again gets a new id and starts
+  without one.
+- RFC 8621, section 2 gives a Mailbox no color property, so the app does not write one to the
+  server. Colors stay on the device in `AndroidFolderColorStore` (SharedPreferences) or
+  `IosFolderColorStore` (NSUserDefaults) and do not sync. The store keeps the color's name, such
+  as `Teal`. The design system's `FolderColor.named` turns it into a tint for the current theme,
+  and an unknown or missing name reads as Default.
+- A [shared folder](#shared-folders) row has one color. Setting it writes the same name for every
+  account's folder in the group. If the accounts disagree, the row shows the first account's
+  color and keeps the others stored, so a rename that splits the group gives each folder back its
+  own color.
+- Deleting a folder forgets its color once the server confirms the delete. Removing an account
+  forgets all of that account's colors.
+- The **Folder colors** switch on the Sidebar settings page, on by default, hides every tint. It
+  does not delete the stored colors, and **Color** still shows the saved choice while it is off.
+- Tints show in the sidebar's folder rows, Settings › Folders, the Move to sheet's folder list and
+  suggestion, the rule editor's **Move to** row, and the action bar's **Move to** picker and its
+  folder sheet. A disabled row keeps its disabled icon color.
+- The color is decoration. It never appears in a row's content description, and the color sheet
+  reads each option by its name.
+
 ## Read later
 
 Off by default. The **Read later** switch in Appearance & behavior gives each account a folder named
@@ -258,6 +291,12 @@ targets and the rule shortcut as `MessageActions`. Popups reuse the design-syste
   Sieve, escaping, read-back, edits made elsewhere), `RuleScriptValidationTest` (invalid rules
   and kept scripts read back, control characters), `RuleEmailTest` (attachment fields cover every
   MIME part), `JmapMessageMoverTest`.
+- Folder colors: `FolderColorsTest` (keys, shared-folder groups, defaults for unknown names),
+  `FolderColorsStateTest` (the switch hides colors without forgetting them, role folders and Read
+  later stay plain, deletes and account removal forget colors), `FolderColorRemovalTest`,
+  `FolderColorStoreTest` (Android storage round trip), `MoveTargetPathTest` (move targets carry
+  their color), and the UI test `FolderColorsUiTest` (the sheet lists Default first and reads
+  names, a choice is saved at once, system folders offer no **Color**, the switch keeps colors).
 - Presentation: `RulesStateTest` (activation choices, vacation never kept, replacing drops a kept
   script, every change asks before replacing edits made elsewhere, failed saves keep the draft).
 - UI: `FoldersAndRulesTest` drives the app against a stateful fake server: sidebar folders and

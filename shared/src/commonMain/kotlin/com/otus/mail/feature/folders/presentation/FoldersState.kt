@@ -14,10 +14,12 @@ import kotlinx.coroutines.launch
 /**
  * Every account's folders, and the changes the user makes to them. One change runs at a time.
  * [loadAccounts] loads the list; app wiring has it find each account's Read later folder too.
+ * [onDeleted] runs once the server has deleted a folder.
  */
 class FoldersState(
     private val repository: FolderRepository,
     private val scope: CoroutineScope,
+    private val onDeleted: (MailFolder) -> Unit = {},
     private val loadAccounts: suspend () -> List<AccountFolders>,
 ) {
     var accounts by mutableStateOf(emptyList<AccountFolders>())
@@ -61,7 +63,7 @@ class FoldersState(
         parentId: String?,
     ) = change { repository.move(folder, parentId) }
 
-    fun delete(folder: MailFolder) = change { repository.delete(folder) }
+    fun delete(folder: MailFolder) = change({ onDeleted(folder) }) { repository.delete(folder) }
 
     fun dismissNotice() {
         notice = null

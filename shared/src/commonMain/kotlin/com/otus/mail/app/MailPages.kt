@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
@@ -14,6 +15,7 @@ import com.otus.mail.feature.folders.presentation.screens.RulesScreen
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.within
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
@@ -111,11 +113,19 @@ private fun SettingsPageContent(
         }
 
         MailPage.ActionBarSettings -> {
-            ActionBarSettingsScreen(states.behavior, rememberFolderPaths(states), onBack = back)
+            val shared = rememberSharedFolders(states)
+            ActionBarSettingsScreen(
+                states.behavior,
+                shared.map { it.path },
+                folderColor = { path ->
+                    shared.firstOrNull { it.path == path }?.let(states.folderColors::groupColorOf)
+                },
+                onBack = back,
+            )
         }
 
         MailPage.Folders -> {
-            FoldersScreen(states.folders, states.rules, states.folderSenders, onBack = back) {
+            FoldersScreen(states.folders, states.rules, states.folderSenders, states.folderColors, onBack = back) {
                 navigation.go(MailPage.Folder(it.accountId, it.id))
             }
         }
@@ -132,6 +142,7 @@ private fun SettingsPageContent(
                 states.ruleEditor,
                 states.rules,
                 states.folders,
+                states.folderColors,
                 page.accountId,
                 page.ruleId,
                 onDone = back,
@@ -252,21 +263,27 @@ private fun rememberMessageActions(
         states.messageActions(feed) { accountId -> navigation.go(MailPage.RuleEditor(accountId, null)) }
     }
 
-/** The path of each of every account's own folders, for Move to buttons. */
+/** Every account's own folders, nested ones included, for Move to buttons. */
 @Composable
-private fun rememberFolderPaths(states: MailStates): List<List<String>> =
-    remember(
-        states.folders.accounts,
-    ) { sharedFolders(states.folders.accounts).flatMap { it.flatten() }.map { it.path } }
+private fun rememberSharedFolders(states: MailStates): List<SharedFolder> =
+    remember(states.folders.accounts) { sharedFolders(states.folders.accounts).flatMap { it.flatten() } }
 
 /** The folder pills the loaded folders can fill, again whenever they change. */
 @Composable
 internal fun rememberFolderPills(states: MailStates): List<FolderPillOption> =
     remember(states.folders.accounts) { folderPillOptions(states.folders.accounts) }
 
-/** The feed's messages with their other folders named, again whenever messages or folders change. */
+/**
+ * The feed's messages that the chosen "Show mail from" scope shows, with their other folders named,
+ * again whenever messages, folders, or the scope change.
+ */
 @Composable
 private fun rememberLabeled(
     states: MailStates,
     feed: InboxFeedState,
-): List<MailMessage> = remember(feed.messages, states.folders.accounts) { states.filing.labeled(feed.messages) }
+): List<MailMessage> {
+    val scope = states.mailScope
+    return remember(feed.messages, states.folders.accounts, scope) {
+        states.filing.labeled(feed.messages.within(scope))
+    }
+}

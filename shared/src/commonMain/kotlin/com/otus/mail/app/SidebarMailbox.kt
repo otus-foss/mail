@@ -1,14 +1,13 @@
 package com.otus.mail.app
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
+import com.otus.designsystem.components.SidebarMailboxGrid
 import com.otus.designsystem.elements.SidebarCount
 import com.otus.designsystem.elements.SidebarEntry
-import com.otus.designsystem.elements.SidebarPill
+import com.otus.designsystem.elements.SidebarInboxEntry
+import com.otus.designsystem.elements.SidebarMailboxTile
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
-import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
@@ -40,6 +39,7 @@ internal fun sidebarMailboxes(accounts: List<AccountFolders>): List<SidebarMailb
         }
     }
 
+/** Inbox as a large row, then the other mailboxes as tiles in a grid or as rows, as [style] chooses. */
 @Composable
 internal fun SidebarMailboxList(
     mailboxes: List<SidebarMailbox>,
@@ -48,23 +48,30 @@ internal fun SidebarMailboxList(
     counter: SidebarCounter,
     onSelect: (MailPage) -> Unit,
 ) {
+    val inbox = mailboxes.first()
+    val others = mailboxes.drop(1)
+    SidebarInboxEntry(
+        inbox.title,
+        inbox.icon,
+        selected = current == inbox.page,
+        onClick = { onSelect(inbox.page) },
+        count = counter.of(inbox.folders),
+    )
     when (style) {
-        MailboxStyle.Chips -> {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
-                mailboxes.forEach { mailbox ->
-                    SidebarPill(
-                        mailbox.title,
-                        mailbox.icon,
-                        selected = current == mailbox.page,
-                        onClick = { onSelect(mailbox.page) },
-                        count = counter.of(mailbox.folders),
-                    )
-                }
+        MailboxStyle.Grid -> {
+            SidebarMailboxGrid(others) { mailbox ->
+                SidebarMailboxTile(
+                    mailbox.title,
+                    mailbox.icon,
+                    selected = current == mailbox.page,
+                    onClick = { onSelect(mailbox.page) },
+                    count = counter.badge(mailbox.folders),
+                )
             }
         }
 
         MailboxStyle.Rows -> {
-            mailboxes.forEach { mailbox ->
+            others.forEach { mailbox ->
                 SidebarEntry(
                     mailbox.title,
                     mailbox.icon,

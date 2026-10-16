@@ -5,6 +5,7 @@ import com.otus.avatar.AvatarOptions
 import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
+import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
@@ -12,9 +13,11 @@ import com.otus.mail.feature.folders.presentation.RulesState
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
+import com.otus.mail.feature.inbox.presentation.AddressPinsState
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -28,15 +31,28 @@ internal class MailStates(
     private val services: MailServices,
     private val scope: CoroutineScope,
     val behavior: MailBehaviorState = MailBehaviorState(),
+    private val chosenScope: () -> MailScopeChoice = { MailScopeChoice.All },
 ) {
+    /** Whose mail the pages show. A removed account's choice falls back to every account. */
+    val mailScope: MailScopeChoice
+        get() = chosenScope().within(accounts.accounts.map { it.id })
+
     val feed = InboxFeedState(services.mail, scope, services.avatars, ::avatarOptions)
-    val folders =
+    val folders: FoldersState =
         FoldersState(
             services.folders,
             scope,
             loadAccounts = { services.readLater.accounts { behavior.behavior.readLater } },
+            onDeleted = { folderColors.forget(it) },
         )
+
+    /** Colors the user gave their folders; the Folder colors switch hides them. */
+    val folderColors: FolderColorsState =
+        FolderColorsState(services.stores.folderColors, { folders.accounts }) { behavior.behavior.sidebar.folderColors }
     val rules = RulesState(services.rules, scope)
+
+    /** Addresses pinned in "Show mail from". */
+    val addressPins = AddressPinsState(services.stores.addressPins)
 
     /** Null where the platform has no instant pushes, which hides the Notifications page. */
     val notifications = services.instantPush?.let { NotificationSettingsState(it, scope) }
@@ -55,6 +71,8 @@ internal class MailStates(
             feed.refresh()
             folders.refresh()
             rules.refresh()
+            folderColors.reload()
+            addressPins.reload()
         }
 
     /**
@@ -94,7 +112,7 @@ internal class MailStates(
     }
 
     /** Moves messages between folders and in and out of Read later. */
-    val filing = MessageFiling(services, folders, scope)
+    val filing = MessageFiling(services, folders, folderColors, scope)
     private val cleaning = FolderCleaning(services, folders, scope)
     private val marking = MessageMarking(services, folders, scope)
 
