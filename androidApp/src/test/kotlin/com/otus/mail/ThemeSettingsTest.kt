@@ -11,8 +11,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import com.otus.designsystem.theme.AccentPreset
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusPalette
+import com.otus.designsystem.theme.ThemeBase
+import com.otus.designsystem.theme.ThemeChoice
+import com.otus.settings.presentation.themeTitle
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -32,6 +36,7 @@ class ThemeSettingsTest {
 
     @Test
     fun aThemeAndAnAccentApplyToTheWholeAppAndAreSaved() {
+        val lightGreen = ThemeChoice(ThemeBase.Light, AccentPreset.Green.color)
         openTheme()
         compose.onNode(hasText("Light") and isSelectable()).performScrollTo().performClick()
         // App applies the new palette on its next recomposition, a frame after the page shows it.
@@ -39,9 +44,13 @@ class ThemeSettingsTest {
         assertEquals("light #4D6F92", saved)
 
         compose.onNode(hasContentDescription("Green") and isSelectable()).performScrollTo().performClick()
+        compose.waitUntil(TIMEOUT) { OtusColors.palette == lightGreen.palette }
         assertEquals("light #3F8F6B", saved)
-        compose.onNodeWithText("Otus made the other two shades from green", substring = true).assertExists()
 
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNode(hasText("Theme") and hasText(lightGreen.themeTitle)).assertExists()
+
+        compose.onNode(hasText("Theme") and hasText("Colors across the whole app")).performClick()
         compose.onNodeWithText("Reset to Otus").performScrollTo().performClick()
         compose.waitUntil(TIMEOUT) { OtusColors.palette == OtusPalette.Otus }
         assertEquals("otus #4D6F92", saved)
