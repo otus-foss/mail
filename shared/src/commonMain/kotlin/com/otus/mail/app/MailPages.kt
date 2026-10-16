@@ -184,6 +184,7 @@ private fun InboxPage(
                         feed::show,
                     ),
                 onCompose = { navigation.go(MailPage.Compose(it)) },
+                loadHtml = states::messageHtml,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
@@ -237,6 +238,7 @@ internal fun FeedPage(
         context =
             InboxContext.folder(name, states.behavior.behavior.pills).copy(
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
+                loadHtml = states::messageHtml,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
