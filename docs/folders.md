@@ -131,7 +131,10 @@ and an empty folder reads "No messages". Then come these rows:
 - **Color**, "Only changes the folder icon", opens the color sheet. The color stays on this device
   (see [Folder colors](#folder-colors)).
 - **Rules**, "New mail that matches any of these goes here", lists the folder's rules as
-  full-width chips and ends with a dashed **Add rule** chip. See [Rules](#rules).
+  full-width chips and ends with a dashed **Add rule** chip. See [Rules](#rules). Below them,
+  each folder above it that has rules follows, top level first, under "Checked first, in
+  Clients. Mail that matches goes there." Those chips are faded, and tapping one opens that
+  folder's page.
 - **Delete folder** asks first and then deletes the folder and its rules. It stays off, with
   "Empty its messages and subfolders first", until the folder has no messages and no subfolders.
   Once the folder is gone, the page leads back to Settings › Folders.
@@ -314,7 +317,9 @@ if address :is "from" "jana@website-agency.example" {
   them gets the block at the top. The block's own `require` then still counts as leading.
 - The block uses CRLF line ends. The app finds it by its begin and end lines in any line ending.
 - Each folder's rules become one `if anyof (...)` that files the message and stops, in the
-  account's folder order, so the first folder that matches wins.
+  account's folder order, so the first folder that matches wins. A parent comes before its
+  subfolders, so mail its rules match lands in the parent and never reaches a subfolder. Rules
+  are not inherited: a parent's rules file only into the parent.
 - Filing uses `fileinto :mailboxid "<id>" "<path>"`. The path is the folder's names from the top
   joined with "/", which a server uses when the id no longer exists. Without `mailboxid`, the
   rule files into the path alone. Whether Stalwart resolves a "/" path to a nested folder is not

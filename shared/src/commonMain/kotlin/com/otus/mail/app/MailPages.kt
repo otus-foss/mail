@@ -117,7 +117,7 @@ private fun SettingsPageContent(
         }
 
         is MailPage.FolderDetail -> {
-            FolderDetailPage(page, states, back)
+            FolderDetailPage(page, states, navigation, back)
         }
 
         else -> {}

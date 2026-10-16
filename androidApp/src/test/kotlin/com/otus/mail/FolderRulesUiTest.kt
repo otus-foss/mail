@@ -45,12 +45,14 @@ class FolderRulesUiTest {
         compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
     }
 
-    private fun openReceipts() {
+    private fun openReceipts() = openFolder("Receipts")
+
+    private fun openFolder(name: String) {
         start()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Folders").performClick()
-        val row = hasText("Receipts") and hasClickAction() and !isSelectable()
+        val row = hasText(name) and hasClickAction() and !isSelectable()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(row).performClick()
         waitFor("Add rule")
@@ -149,6 +151,17 @@ class FolderRulesUiTest {
         compose.onNode(hasText("grace@example.org") and isSelectable()).assertIsSelected()
         compose.onNodeWithText("Add").performClick()
         assertTrue(savedScript(), "grace@example.org" in server.script.orEmpty())
+    }
+
+    @Test
+    fun aSubfolderShowsItsParentsRulesAsCheckedFirst() {
+        seedRule("""{"field":"from","operator":"is","value":"grace@example.org"}""")
+        openFolder("Amazon")
+        compose.onNodeWithText("Checked first, in Receipts. Mail that matches goes there.").performScrollTo()
+        chip("grace@example.org").performScrollTo().performClick()
+        // The parent's own page lists the rule as its own, with nothing checked before it.
+        compose.waitUntil(TIMEOUT) { count("Checked first") == 0 }
+        chip("grace@example.org").assertExists()
     }
 
     private companion object {

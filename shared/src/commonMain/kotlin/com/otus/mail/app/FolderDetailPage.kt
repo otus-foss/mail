@@ -14,6 +14,7 @@ import com.otus.mail.feature.folders.presentation.screens.FolderDetailStates
 internal fun FolderDetailPage(
     page: MailPage.FolderDetail,
     states: MailStates,
+    navigation: MailNavigation,
     back: () -> Unit,
 ) {
     val account = states.folders.account(page.accountId)
@@ -23,7 +24,13 @@ internal fun FolderDetailPage(
     if (folder == null) return Subpage("", back) {}
     val detail = remember(states) { FolderDetailStates(states.folders, states.folderColors, states.rules) }
     val known = remember(states.feed.messages, page.accountId) { states.knownAddresses(page.accountId) }
-    FolderDetailScreen(folder, detail, known, back)
+    FolderDetailScreen(
+        folder,
+        detail,
+        known,
+        onOpenFolder = { navigation.go(MailPage.FolderDetail(it.accountId, it.id, it.sharedIn)) },
+        onBack = back,
+    )
 }
 
 /** The senders and recipients of [accountId]'s loaded mail, once per message, for rule suggestions. */
