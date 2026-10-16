@@ -34,6 +34,9 @@ class FakeFolderServer {
             """{"id": "z", "name": "Amazon", "parentId": "r"}""",
         )
 
+    /** Mailboxes grace@example.org shares with Ada, in the session account `g1`; none leaves `g1` out. */
+    val sharedFolders = mutableListOf<String>()
+
     /** Folders the message is in besides the one it was loaded from. */
     val alsoIn = mutableListOf<String>()
 
@@ -45,6 +48,9 @@ class FakeFolderServer {
 
     /** Ids of older inbox messages from the sender that only a rule's inbox check sees. */
     val olderMail = mutableListOf<String>()
+
+    /** Whether the account offers JMAP for Sieve; without it the app runs no rules. */
+    var sieve = true
 
     /** When set, every `Email/set` update is refused as forbidden. */
     var refuseUpdates = false
@@ -84,7 +90,7 @@ class FakeFolderServer {
             check(request.headers[HttpHeaders.Authorization] in SIGN_INS)
             when (request.url.encodedPath) {
                 "/jmap/session" -> {
-                    json(SESSION)
+                    json(session(adaSignedIn = request.headers[HttpHeaders.Authorization] == SIGN_INS.first()))
                 }
 
                 "/upload/d1/" -> {
@@ -114,18 +120,25 @@ class FakeFolderServer {
         calls += body
         val reply =
             when {
-                "Mailbox/set" in body -> createFolder(body)
-                "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $folderList}, "c0"]"""
-                "Mailbox/query" in body -> draftsQuery()
+                "Mailbox/" in body -> mailbox(body)
                 "Email/set" in body -> setEmail(body)
                 "Identity/get" in body -> IDENTITIES
                 "Email/query" in body -> queryEmails(body)
-                "SieveScript/get" in body -> scripts()
-                "SieveScript/set" in body -> saveScript(body)
+                "SieveScript/" in body -> sieve(body)
                 else -> error("Unexpected call: $body")
             }
         return """{"methodResponses": [$reply]}"""
     }
+
+    private fun mailbox(body: String): String =
+        when {
+            "Mailbox/set" in body && "\"update\":" in body -> updateFolders(body)
+            "Mailbox/set" in body && "\"destroy\":" in body -> destroyFolders(body)
+            "Mailbox/set" in body -> createFolder(body)
+            "Mailbox/get" in body && SHARED_ACCOUNT in body -> mailboxes(sharedFolders)
+            "Mailbox/get" in body -> mailboxes(folders)
+            else -> draftsQuery()
+        }
 
     private fun draftsQuery(): String {
         val ids = listOfNotNull(draftsFolder).joinToString { "\"$it\"" }
@@ -136,14 +149,44 @@ class FakeFolderServer {
         val outcomes =
             buildList {
                 if ("\"create\":" in body) add(""""created": {"draft": {"id": "draft${++draftCount}"}}""")
-                if ("\"update\":" in body) add(if (refuseUpdates) REFUSED_UPDATE else """"updated": {"m1": null}""")
+                if ("\"update\":" in body) add(if (refuseUpdates) REFUSED_UPDATE else updatedEmails(body))
                 DESTROY.find(body)?.let { add(""""destroyed": [${it.groupValues[1]}]""") }
             }
         return """["Email/set", {"newState": "e2", ${outcomes.joinToString()}}, "c0"]"""
     }
 
-    private val folderList: String
-        get() = folders.joinToString(prefix = "[", postfix = "]")
+    /** Echoes every updated id; older mail a rule moves leaves [olderMail]. */
+    private fun updatedEmails(body: String): String {
+        val ids = UPDATED_EMAIL.findAll(body.substringAfter("\"update\":")).map { it.groupValues[1] }.toList()
+        olderMail -= ids.toSet()
+        return """"updated": {${ids.joinToString { "\"$it\": null" }}}"""
+    }
+
+    private fun mailboxes(list: List<String>) =
+        """["Mailbox/get", {"state": "m", "list": ${list.joinToString(prefix = "[", postfix = "]")}}, "c0"]"""
+
+    /** Accepts every update without applying it; tests read what was sent from [calls]. */
+    private fun updateFolders(body: String): String {
+        val ids =
+            UPDATED_ID
+                .findAll(
+                    body.substringAfter("\"update\":"),
+                ).joinToString { "\"${it.groupValues[1]}\": null" }
+        return """["Mailbox/set", {"newState": "m2", "updated": {$ids}}, "c0"]"""
+    }
+
+    /** Deletes the folders and answers like a server that found them all empty. */
+    private fun destroyFolders(body: String): String {
+        val ids = DESTROY.find(body)?.let { it.groupValues[1] }.orEmpty()
+        folders.removeAll { folder -> FOLDER_ID.find(folder)?.let { "\"${it.groupValues[1]}\"" in ids } == true }
+        return """["Mailbox/set", {"newState": "m2", "destroyed": [$ids]}, "c0"]"""
+    }
+
+    private fun session(adaSignedIn: Boolean): String {
+        val shared = if (adaSignedIn && sharedFolders.isNotEmpty()) SHARED_SESSION_ACCOUNT else ""
+        val withSieve = if (sieve) SESSION else SESSION.replace(SIEVE_SESSION, "").replace(SIEVE_ACCOUNT, "")
+        return withSieve.replace(SHARED_SLOT, shared)
+    }
 
     private fun createFolder(body: String): String {
         val name =
@@ -157,6 +200,13 @@ class FakeFolderServer {
         return """["Mailbox/set", {"newState": "m2", "created": {"folder": {"id": "$id"}}}, "c0"]"""
     }
 
+    private fun sieve(body: String): String =
+        when {
+            "SieveScript/get" in body -> scripts()
+            "SieveScript/set" in body -> saveScript(body)
+            else -> VALID_SCRIPT
+        }
+
     private fun scripts(): String {
         val list = script?.let { """[{"id": "S1", "name": "Otus Mail", "blobId": "S1", "isActive": $scriptActive}]""" }
         return """["SieveScript/get", {"state": "s$state", "list": ${list ?: "[]"}}, "c0"]"""
@@ -168,10 +218,11 @@ class FakeFolderServer {
             return """["SieveScript/set", {"newState": "s$state", "notCreated": {"rules": {"type": "invalidScript",
                 "description": "Undeclared capability 'mailbox'"}}}, "c0"]"""
         }
+        val outcome = if (script == null) """"created": {"rules": {"id": "S1"}}""" else """"updated": {"S1": null}"""
         script = uploaded
         scriptActive = scriptActive || "onSuccessActivateScript" in body
         state++
-        return """["SieveScript/set", {"newState": "s$state", "created": {"rules": {"id": "S1"}}}, "c0"]"""
+        return """["SieveScript/set", {"newState": "s$state", $outcome}, "c0"]"""
     }
 
     private fun emails(mailbox: String): String {
@@ -185,17 +236,15 @@ class FakeFolderServer {
     private fun queryEmails(body: String): String =
         when {
             FROM_FILTER in body -> senderMail()
-            "bodyStructure" in body -> ruleMatches()
+            "calculateTotal" in body -> """["Email/query", {"ids": [], "total": ${olderMail.size}}, "c0"]"""
+            RULE_FILTER in body -> ruleMatches(body)
             else -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
         }
 
-    /** The inbox as a rule's check reads it: the loaded message, then [olderMail]. */
-    private fun ruleMatches(): String {
-        val list =
-            (listOf("m1") + olderMail).joinToString(prefix = "[", postfix = "]") {
-                """{"id": "$it", "from": [{"email": "grace@example.org"}], "subject": "Welcome"}"""
-            }
-        return """["Email/query", {"ids": []}, "c0"], ["Email/get", {"state": "e", "list": $list}, "c1"]"""
+    /** The inbox mail a rule's filter finds: [olderMail], which the moved message already left. */
+    private fun ruleMatches(body: String): String {
+        val ids = if ("\"inMailbox\":\"a\"" in body) olderMail else emptyList()
+        return """["Email/query", {"ids": ${ids.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }}}, "c0"]"""
     }
 
     private fun senderMail(): String {
@@ -212,8 +261,22 @@ class FakeFolderServer {
     private companion object {
         val SIGN_INS = setOf("Basic YWRhQGV4YW1wbGUub3JnOnNlY3JldA==", "Basic Ym9iQGV4YW1wbGUub3JnOnNlY3JldA==")
         val IN_MAILBOX = Regex("\"inMailbox\":\"([^\"]+)\"")
+        const val VALID_SCRIPT = """["SieveScript/validate", {"accountId": "d1", "error": null}, "c0"]"""
         const val REFUSED_UPDATE = """"notUpdated": {"m1": {"type": "forbidden"}}"""
+        val FOLDER_ID = Regex("\"id\": \"([^\"]+)\"")
         val DESTROY = Regex("\"destroy\":\\[([^\\]]*)]")
+        const val RULE_FILTER = "\"filter\":{\"operator\":\"AND\""
+        val UPDATED_EMAIL = Regex("\"([^\"]+)\":\\{\"(?:mailboxIds|keywords)")
+        val UPDATED_ID = Regex("\"([^\"]+)\":\\{\"(?:sortOrder|parentId|name)\"")
+        const val SHARED_ACCOUNT = "\"accountId\":\"g1\""
+        const val SHARED_SLOT = "/*shared*/"
+        const val SIEVE_SESSION = """, "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}"""
+        const val SIEVE_EXTENSIONS = """["fileinto", "mailbox", "mailboxid", "include"]"""
+        const val SIEVE_ACCOUNT =
+            """,
+              "urn:ietf:params:jmap:sieve": {"sieveExtensions": """ + SIEVE_EXTENSIONS + "}"
+        const val SHARED_SESSION_ACCOUNT = """, "g1": {"name": "grace@example.org", "isPersonal": false,
+              "accountCapabilities": {"urn:ietf:params:jmap:mail": {}}}"""
         const val IDENTITIES = """["Identity/get", {"state": "i", "list": [
             {"id": "i1", "name": "Ada Lovelace", "email": "ada@example.org"}]}, "c0"]"""
         const val FROM_FILTER = "\"filter\":{\"from\":"
@@ -221,7 +284,7 @@ class FakeFolderServer {
             "urn:ietf:params:jmap:submission": {}, "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
             "accounts": {"d1": {"name": "Ada", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},
               "urn:ietf:params:jmap:submission": {},
-              "urn:ietf:params:jmap:sieve": {"sieveExtensions": ["fileinto", "mailbox", "mailboxid", "imap4flags", "include"]}}}},
+              "urn:ietf:params:jmap:sieve": {"sieveExtensions": ["fileinto", "mailbox", "mailboxid", "include"]}}}/*shared*/},
             "primaryAccounts": {"urn:ietf:params:jmap:mail": "d1"}, "username": "ada@example.org", "apiUrl": "/jmap/",
             "downloadUrl": "/download/{blobId}", "uploadUrl": "/upload/{accountId}/", "state": "x"}"""
     }

@@ -8,7 +8,7 @@ import com.otus.avatar.AvatarRequest
 import com.otus.avatar.AvatarService
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.avatarEmailKey
-import com.otus.mail.feature.folders.domain.AccountRules
+import com.otus.mail.feature.folders.domain.AccountFolderRules
 import com.otus.mail.feature.folders.domain.sendersByFolder
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -44,7 +44,7 @@ class FolderSenders(
     }
 
     /** Resolves the avatar of every sender in [accounts] that has none yet; failures keep initials. */
-    suspend fun resolve(accounts: List<AccountRules>) {
+    suspend fun resolve(accounts: List<AccountFolderRules>) {
         val service = avatars ?: return
         val options = avatarOptions()
         val missing =

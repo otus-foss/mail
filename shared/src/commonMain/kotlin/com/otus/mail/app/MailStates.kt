@@ -6,10 +6,10 @@ import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
+import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.folders.presentation.RuleEditorState
-import com.otus.mail.feature.folders.presentation.RulesState
+import com.otus.mail.feature.folders.presentation.forget
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -49,13 +49,18 @@ internal class MailStates(
             services.folders,
             scope,
             loadAccounts = { services.readLater.accounts { behavior.behavior.readLater } },
-            onDeleted = { folderColors.forget(it) },
+            onDeleted = {
+                folderColors.forget(it)
+                rules.forget(it)
+            },
         )
 
     /** Colors the user gave their folders; the Folder colors switch hides them. */
     val folderColors: FolderColorsState =
         FolderColorsState(services.stores.folderColors, { folders.accounts }) { behavior.behavior.sidebar.folderColors }
-    val rules = RulesState(services.rules, scope)
+
+    /** Each account's folder rules, kept in the Otus block of its active Sieve script. */
+    val rules = FolderRulesState(services.rules, scope)
 
     /** Addresses pinned in "Show mail from". */
     val addressPins = AddressPinsState(services.stores.addressPins)
@@ -71,7 +76,6 @@ internal class MailStates(
                 ?.sender
                 ?.name
         }
-    val ruleEditor = RuleEditorState(rules)
     val accounts =
         AccountsState(services.accounts, scope) {
             feed.refresh()
@@ -123,13 +127,13 @@ internal class MailStates(
     private val marking = MessageMarking(services, folders, scope)
 
     /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
-    val sorting = MessageSorting(rules, services.inboxMatcher, folders, filing, scope)
+    val sorting = MessageSorting(rules, services.rules, folders, filing, scope)
 
-    /** Moves, marks, and rules for messages shown by [feed]; [openRule] shows the rule editor for an account. */
-    fun messageActions(
-        feed: InboxFeedState,
-        openRule: (accountId: String) -> Unit,
-    ): MessageActions =
+    /** "Rule for sender": a folder, then the folder's Add rule sheet. */
+    val senderRules = SenderRules(rules, folders)
+
+    /** Moves, marks, and rules for messages shown by [feed]. */
+    fun messageActions(feed: InboxFeedState): MessageActions =
         MessageActions(
             moves =
                 MessageMoves(
@@ -140,24 +144,11 @@ internal class MailStates(
                 ),
             canMark = ::canMark,
             onMark = { messages, flag, on -> marking.mark(feed, messages, flag, on) },
-            ruleForSender = { ruleForSender(it, openRule) },
+            ruleForSender = senderRules::start,
             readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },
             cleanup = cleaning.cleanup(feed),
         )
-
-    /** Starts a rule for the message's sender, where the account's server runs rules. */
-    private fun ruleForSender(
-        message: MailMessage,
-        openRule: (accountId: String) -> Unit,
-    ): (() -> Unit)? {
-        val accountId = message.location.accountId
-        if (rules.account(accountId)?.support == null) return null
-        return {
-            ruleEditor.startForSender(accountId, message.sender.address)
-            openRule(accountId)
-        }
-    }
 
     /** Supplied messages have no server id, so only loaded mail can change its marks. */
     private fun canMark(

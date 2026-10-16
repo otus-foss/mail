@@ -9,9 +9,7 @@ import com.otus.mail.feature.folders.domain.MailFolder
 class FolderActions(
     val onCreate: (accountId: String, name: String, parentId: String?) -> Unit,
     val onRename: (MailFolder, String) -> Unit,
-    val onMove: (MailFolder, String?) -> Unit,
     val onDelete: (MailFolder) -> Unit,
-    val onOpen: (MailFolder) -> Unit,
     val color: (MailFolder) -> FolderColorChoice?,
 )
 

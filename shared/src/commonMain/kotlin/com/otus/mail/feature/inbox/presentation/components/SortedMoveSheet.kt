@@ -53,10 +53,25 @@ internal fun SortedMoveSheet(
         ) {
             PersonText("New mail ${move.catches} will go there too.", move.person?.namedByAddress, RowTextInset)
             when {
-                checking -> OlderMailCard("Checking Inbox…", "Older mail ${move.catches}")
-                older == null -> SheetCaption("Couldn't check Inbox for older mail.", RowTextInset, heading = false)
-                count == 0 -> SheetCaption("No older mail in Inbox matches.", RowTextInset, heading = false)
-                else -> OlderMailCard(olderTitle(count), "All ${move.catches}, still in Inbox")
+                checking -> {
+                    OlderMailCard("Checking Inbox and Archive…", "Older mail ${move.catches}")
+                }
+
+                older == null -> {
+                    SheetCaption(
+                        "Couldn't check Inbox and Archive for older mail.",
+                        RowTextInset,
+                        heading = false,
+                    )
+                }
+
+                count == 0 -> {
+                    SheetCaption("No older mail in Inbox or Archive matches.", RowTextInset, heading = false)
+                }
+
+                else -> {
+                    OlderMailCard(olderTitle(count), "All ${move.catches}, still in Inbox or Archive")
+                }
             }
             if (checking || count > 0) {
                 Row(horizontalArrangement = Arrangement.spacedBy(SheetTokens.gap)) {

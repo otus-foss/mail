@@ -4,6 +4,7 @@ import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderOutcome
+import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.READ_LATER_NAME
@@ -46,10 +47,7 @@ class FolderColorsStateTest {
             name: String,
         ) = FolderOutcome.Done(folder.id)
 
-        override suspend fun move(
-            folder: MailFolder,
-            parentId: String?,
-        ) = FolderOutcome.Done(folder.id)
+        override suspend fun place(placement: FolderPlacement) = FolderOutcome.Done(placement.folder.id)
 
         override suspend fun delete(folder: MailFolder) =
             if (refuse) FolderOutcome.Failed(FolderFailure.NotPermitted) else FolderOutcome.Done(folder.id)

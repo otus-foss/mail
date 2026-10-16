@@ -19,12 +19,10 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.folders.data.JmapFolderRepository
-import com.otus.mail.feature.folders.data.JmapInboxMatcher
-import com.otus.mail.feature.folders.data.JmapRuleRepository
+import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
-import com.otus.mail.feature.folders.domain.InboxMatcher
+import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
-import com.otus.mail.feature.folders.domain.RuleRepository
 import com.otus.mail.feature.folders.domain.forgetAccount
 import com.otus.mail.feature.inbox.data.JmapDraftRepository
 import com.otus.mail.feature.inbox.data.JmapMailSource
@@ -102,8 +100,7 @@ class MailServices(
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }
-    internal val rules: RuleRepository by lazy { JmapRuleRepository(connections, logins) }
-    internal val inboxMatcher: InboxMatcher by lazy { JmapInboxMatcher(connections, logins) }
+    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, logins) }
     internal val nightly by lazy(createNightlyFeed)
 
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */

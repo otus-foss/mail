@@ -3,9 +3,10 @@ package com.otus.mail.feature.folders.domain
 /** Which part of a message a [SortCondition] matches mail by. */
 enum class SortBy { Sender, Domain, Recipient, Subject }
 
-/** A rule condition that matches mail like one message, by its [kind]. */
+/** A rule condition that matches mail like one message, by its [kind]. [value] is what it matches, as shown. */
 data class SortCondition(
     val kind: SortBy,
+    val value: String,
     val condition: RuleCondition,
 )
 
@@ -22,20 +23,20 @@ fun sortConditions(
     buildList {
         val address = sender.trim()
         if (address.isNotEmpty()) {
-            add(
-                SortCondition(SortBy.Sender, RuleCondition(RuleField.From, RuleOperator.Is, address)),
-            )
+            add(SortCondition(SortBy.Sender, address, from(AddressMatch.Exact(address))))
         }
         address.substringAfterLast('@', "").takeIf { it.isNotEmpty() }?.let { domain ->
-            add(SortCondition(SortBy.Domain, RuleCondition(RuleField.From, RuleOperator.EndsWith, "@$domain")))
+            add(SortCondition(SortBy.Domain, "@$domain", from(AddressMatch.Domain(domain))))
         }
         recipient.trim().takeIf { it.isNotEmpty() }?.let {
-            add(SortCondition(SortBy.Recipient, RuleCondition(RuleField.Recipient, RuleOperator.Is, it)))
+            add(SortCondition(SortBy.Recipient, it, RuleCondition.Address(AddressField.To, AddressMatch.Exact(it))))
         }
         subjectKeyword(subject)?.let {
-            add(SortCondition(SortBy.Subject, RuleCondition(RuleField.Subject, RuleOperator.Contains, it)))
+            add(SortCondition(SortBy.Subject, it, RuleCondition.Text(TextField.Subject, TextOperator.Contains, it)))
         }
     }
+
+private fun from(match: AddressMatch) = RuleCondition.Address(AddressField.From, match)
 
 /**
  * The first word of [subject] with at least [MIN_KEYWORD_LENGTH] letters that is not a common
