@@ -27,6 +27,8 @@ internal fun FoldersPage(
                 states.rules.rules(folder).mapNotNull { it.chipTexts().firstOrNull()?.chipLine() }
             }
         },
+        readLater = states.behavior.behavior.readLater,
+        onReadLaterChange = { on -> states.behavior.update { it.withReadLater(on) } },
         onBack = back,
     ) { navigation.go(MailPage.FolderDetail(it.accountId, it.id, it.sharedIn)) }
 }

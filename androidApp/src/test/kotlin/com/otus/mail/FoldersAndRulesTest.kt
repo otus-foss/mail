@@ -7,6 +7,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -112,8 +113,8 @@ class FoldersAndRulesTest {
     @Test
     fun turningOnReadLaterAddsItsMailboxAfterTheInbox() {
         start()
-        openSettingsPage("Appearance & behavior")
-        compose.onNodeWithText("Read later").performScrollTo().performClick()
+        openSettingsPage("Folders")
+        compose.onNode(hasText("Read later") and isToggleable()).performClick()
         compose.waitUntil(TIMEOUT) {
             server.calls.any { "\"create\":{\"folder\":{\"name\":\"Read later\",\"parentId\":null" in it }
         }

@@ -15,7 +15,6 @@ import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.elements.ValueButton
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_collapse_content
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_inbox
@@ -112,12 +111,6 @@ fun MailBehaviorSettings(
             checked = behavior.markReadOnOpen,
             onCheckedChange = { on -> state.update { it.copy(markReadOnOpen = on) } },
             icon = Res.drawable.symbol_mark_email_read,
-        )
-        SettingToggleRow(
-            "Read later",
-            checked = behavior.readLater,
-            onCheckedChange = { on -> state.update { it.withReadLater(on) } },
-            icon = Res.drawable.symbol_bookmark,
         )
     }
     PrivacySettings(state)
