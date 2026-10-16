@@ -91,24 +91,42 @@ class FolderListUiTest {
     }
 
     @Test
-    fun draggingAFolderAboveAnotherSavesTheNewOrder() {
+    fun droppingAFolderInTheGapAboveAnotherSavesTheNewOrder() {
         server.folders += """{"id": "t", "name": "Travel"}"""
         openFolders()
-        dragRow("Travel", to = "Receipts", share = 0f)
+        dragRow("Travel", to = "Receipts", share = EDGE)
         val update = lastMailboxUpdate()
         assertTrue(update, "\"update\":{\"t\":{\"sortOrder\":10},\"r\":{\"sortOrder\":20}}" in update)
     }
 
     @Test
-    fun draggingAFolderAmongSubfoldersNestsItThere() {
+    fun droppingAFolderInTheGapAboveASubfolderNestsItThere() {
         server.folders += """{"id": "t", "name": "Travel"}"""
         openFolders()
-        dragRow("Travel", to = "Amazon", share = 0f)
+        dragRow("Travel", to = "Amazon", share = EDGE)
         val update = lastMailboxUpdate()
         assertTrue(update, Regex(""""t":\{[^}]*"parentId":"r"""").containsMatchIn(update))
     }
 
-    /** Holds [name]'s row, then drags its top edge to [share] of [to]'s row height. */
+    @Test
+    fun droppingAFolderOntoAnotherMakesItTheFirstSubfolder() {
+        server.folders += """{"id": "t", "name": "Travel"}"""
+        openFolders()
+        dragRow("Travel", to = "Receipts", share = MIDDLE)
+        val update = lastMailboxUpdate()
+        assertTrue(update, Regex(""""t":\{[^}]*"parentId":"r"""").containsMatchIn(update))
+        assertTrue(update, Regex(""""t":\{[^}]*"sortOrder":10""").containsMatchIn(update))
+        assertTrue(update, "\"z\":{\"sortOrder\":20}" in update)
+    }
+
+    @Test
+    fun droppingAFolderIntoItsOwnSubfolderSavesNothing() {
+        openFolders()
+        dragRow("Receipts", to = "Amazon", share = MIDDLE)
+        assertTrue(server.calls.none { "Mailbox/set" in it && "\"update\"" in it })
+    }
+
+    /** Holds [name]'s row, then drags its center to [share] of [to]'s row height and lifts. */
     private fun dragRow(
         name: String,
         to: String,
@@ -117,7 +135,7 @@ class FolderListUiTest {
         val target = folderRow(to).fetchSemanticsNode().boundsInRoot
         val row = folderRow(name)
         val start = row.fetchSemanticsNode().boundsInRoot
-        val distance = target.top + target.height * share - start.top
+        val distance = target.top + target.height * share - start.center.y
         row.performTouchInput { down(center) }
         compose.mainClock.advanceTimeBy(LONG_PRESS_MILLIS)
         row.performTouchInput {
@@ -151,5 +169,11 @@ class FolderListUiTest {
         const val TIMEOUT = 5_000L
         const val LONG_PRESS_MILLIS = 600L
         const val STEPS = 4
+
+        /** A share of a row's height in its upper quarter, which drops into the gap above it. */
+        const val EDGE = 0.1f
+
+        /** The middle of a row, which drops into it. */
+        const val MIDDLE = 0.5f
     }
 }

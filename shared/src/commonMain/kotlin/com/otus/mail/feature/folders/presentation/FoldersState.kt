@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderOutcome
+import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.MailFolder
@@ -78,7 +79,7 @@ class FoldersState(
         index: Int = Int.MAX_VALUE,
     ) {
         if (busy) return
-        val placement = account(folder.accountId)?.scopeOf(folder)?.placement(folder, parentId, index) ?: return
+        val placement = placement(folder, parentId, index) ?: return
         val before = accounts
         // A load already running read the old order; it must not undo the one shown now.
         loads.invalidate()
@@ -144,3 +145,10 @@ class FoldersState(
 }
 
 internal const val STORAGE_NOTICE = "Couldn't load saved accounts. Try again in Settings."
+
+/** Where [FoldersState.place] would put [folder], or null when it would do nothing. */
+fun FoldersState.placement(
+    folder: MailFolder,
+    parentId: String?,
+    index: Int = Int.MAX_VALUE,
+): FolderPlacement? = account(folder.accountId)?.scopeOf(folder)?.placement(folder, parentId, index)
