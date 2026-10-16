@@ -13,6 +13,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.TimeUnit
 
 /** Looks for new mail and posts notifications for it, periodically and after each push. */
@@ -22,7 +24,9 @@ class NewMailWorker(
 ) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
         val app = applicationContext as OtusMailApplication
-        app.services.newMail(AndroidMailStateStore(app)).check(MailNotifications(app)::show)
+        // A periodic run and a pushed one can overlap. Running both from the same saved state
+        // would post the same mail twice and bring back notifications the user dismissed.
+        checking.withLock { app.services.newMail(AndroidMailStateStore(app)).check(MailNotifications(app)::show) }
         // The periodic run also renews push subscriptions and registers new accounts.
         if (!inputData.getBoolean(PUSHED, false)) PushSyncWorker.enqueue(app)
         return Result.success()
@@ -37,6 +41,8 @@ class NewMailWorker(
 
         /** Android's shortest period for repeating work. Doze and app standby can stretch it. */
         private const val PERIOD_MINUTES = 15L
+
+        private val checking = Mutex()
 
         /** Keeps an existing schedule, so each app start does not restart the period. */
         fun schedule(context: Context) {
