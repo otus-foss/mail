@@ -66,13 +66,11 @@ fun FoldersScreen(
         }
     val tree =
         FolderTreeState(collapsed, { collapsed = it }, state.listActions(colors, rulesOf, onOpenFolder) { dialog = it })
-    val picker: (@Composable () -> Unit)? =
-        if (accounts.size > 1) {
-            { FolderAccountPicker(accounts, one) { chosen = it } }
-        } else {
-            null
-        }
-    Subpage("Folders", onBack, action = picker) {
+    Subpage(
+        "Folders",
+        onBack,
+        chips = { if (accounts.size > 1) FolderAccountPicker(accounts, one) { chosen = it } },
+    ) {
         state.notice?.let { PageNote(it) }
         if (accounts.isEmpty()) {
             PageNote(if (state.loading) "Loading folders…" else "Connect an account in Settings to manage its folders.")
