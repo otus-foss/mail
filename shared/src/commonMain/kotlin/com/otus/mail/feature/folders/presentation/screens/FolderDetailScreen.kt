@@ -30,6 +30,7 @@ import com.otus.mail.feature.folders.presentation.components.FolderNameRow
 import com.otus.mail.feature.folders.presentation.components.FolderRulesSection
 import com.otus.mail.feature.folders.presentation.deletable
 import com.otus.mail.feature.folders.presentation.message
+import com.otus.mail.feature.folders.presentation.parentRules
 import com.otus.mail.feature.folders.presentation.remove
 import com.otus.mail.feature.folders.presentation.sheetActions
 import com.otus.mail.feature.folders.presentation.sheetDraft
@@ -60,6 +61,7 @@ fun FolderDetailScreen(
     folder: MailFolder,
     states: FolderDetailStates,
     known: List<KnownAddress>,
+    onOpenFolder: (MailFolder) -> Unit,
     onBack: () -> Unit,
 ) {
     val folders = states.folders
@@ -87,6 +89,8 @@ fun FolderDetailScreen(
                     val folderRules = rules.rules(folder)
                     FolderRulesSection(
                         folderRules,
+                        parentRules(folders.account(id)?.folders.orEmpty(), folder, rules::rules),
+                        onOpenParent = onOpenFolder,
                         onOpen = { index ->
                             val draft = folderRules[index].sheetDraft(index)
                             popup = if (draft != null) RulePopup(sheet = draft) else RulePopup(locked = index)
