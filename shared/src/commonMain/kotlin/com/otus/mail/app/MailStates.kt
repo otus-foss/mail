@@ -85,7 +85,7 @@ internal class MailStates(
         val account =
             accounts.accounts.run { firstOrNull { it.id == request.accountId } ?: firstOrNull() } ?: return null
         val own = account.emailAddresses + account.username
-        return ComposeState(services.drafts, scope, request, account.id, own)
+        return ComposeState(services.drafts, services.sender, scope, request, account.id, own)
     }
 
     /** Mail and folder counts change together, so a pull refreshes both. */

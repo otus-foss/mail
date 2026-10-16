@@ -10,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
+import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -200,13 +201,4 @@ class JmapDraftRepositoryTest {
             .jsonObject
 
     private fun Result<*>.failure(): DraftFailure? = (exceptionOrNull() as? DraftException)?.failure
-
-    private companion object {
-        val SUBMISSION_SESSION =
-            STALWART_SESSION
-                .replace(
-                    "\"urn:ietf:params:jmap:mail\": {}}",
-                    "\"urn:ietf:params:jmap:mail\": {}, \"urn:ietf:params:jmap:submission\": {}}",
-                )
-    }
 }

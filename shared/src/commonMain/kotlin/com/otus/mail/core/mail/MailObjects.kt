@@ -3,6 +3,7 @@ package com.otus.mail.core.mail
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapType
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 /** Mailbox objects (RFC 8621, section 2). */
 val MailboxType: JmapType<MailboxObject> = JmapType("Mailbox", JmapCapability.MAIL, MailboxObject.serializer())
@@ -16,6 +17,10 @@ val EmailFoldersType: JmapType<EmailFolders> = JmapType("Email", JmapCapability.
 /** Identities an account may send as (RFC 8621, section 6). */
 val IdentityType: JmapType<IdentityObject> =
     JmapType("Identity", JmapCapability.SUBMISSION, IdentityObject.serializer())
+
+/** Submissions that send an Email (RFC 8621, section 7). Mail only creates them, so their objects stay JSON. */
+val EmailSubmissionType: JmapType<JsonObject> =
+    JmapType("EmailSubmission", JmapCapability.SUBMISSION, JsonObject.serializer())
 
 /** Email properties the inbox requests (RFC 8621, section 4.1). Recipients and ids let a reply quote and thread. */
 val EMAIL_PROPERTIES =

@@ -1,7 +1,7 @@
 # Compose
 
 The compose page writes a new message, a reply, a reply to all, or a forward. It saves drafts to
-the account's Drafts folder. Mail cannot send yet, so Send stays disabled.
+the account's Drafts folder and sends them through JMAP `EmailSubmission/set`.
 
 ## Implemented
 
@@ -44,8 +44,9 @@ A new message or forward starts with the cursor in To; a reply starts with nothi
 ### Action bar
 
 The bar uses the **Compose** layout: Attach and Discard, with Send as the main button. In Fixed
-mode it shows the shared layout, and every action except Discard is disabled there. Send and
-Attach stay disabled until Mail can send and attach. Once the draft has recipients, the main
+mode it shows the shared layout, and every action except Send and Discard is disabled there.
+Attach stays disabled until Mail can attach files. Send is enabled once the draft has a From
+address and at least one recipient in To, Cc, or Bcc. Once the draft has recipients, the main
 button names them: one person's avatar and "to Ada", or the first avatar, a count, and
 "3 people". Accessibility services read it as "Send, to Ada".
 
@@ -62,9 +63,34 @@ next save replaces that copy and a discard deletes it. A failed save keeps the p
 its id, so the next save replaces it, and shows a notice under the header until a later save
 succeeds. The notice says why: no Drafts folder, no permission, or an unreachable server.
 
+### Sending
+
+Send waits for any save in progress, so it knows the draft's saved copy, and then calls
+`JmapDraftSender`. The sender makes three requests (RFC 8621, section 7.5):
+
+1. `Identity/get` and two `Mailbox/query` calls find the identity for the From address and the
+   Drafts and Sent folders. An identity matches by exact address, or by a wildcard such as
+   `*@example.org` for any address in its domain.
+2. One request stores the draft as written with `Email/set` and submits that copy with
+   `EmailSubmission/set`. It sends no envelope, so the server takes the recipients from To, Cc,
+   and Bcc, and removes the Bcc header. `onSuccessUpdateEmail` moves the copy from Drafts to Sent
+   and clears `$draft`. Without a Sent folder the copy stays where it was stored, without `$draft`.
+3. Once the server accepts the message, one `Email/set` destroys the draft's earlier copy and sets
+   `$answered` on the original of a reply or `$forwarded` on the original of a forward. A failure
+   here is ignored, because the message is already sent.
+
+On success the page closes, and nothing is saved after that. A refused submission destroys the
+copy the request stored and keeps the earlier one, and the page shows why under the header:
+no identity for the From address, an invalid recipient, too many recipients, a message too large,
+no permission, or a lost connection. After a lost connection the outcome is unknown, so the
+notice asks the user to check Sent before trying again.
+
 ## Limits
 
-- Sending and attachments are not built.
+- Attachments are not built.
+- There is no outbox, retry, or undo-send window yet ([Mail #26](https://github.com/reazndev/otus-mail/issues/26)).
+  Send needs a connection, and the page stays open while it runs.
+- Nothing confirms a sent message once the page closes.
 - Rotating the device or the system ending the app returns to the page that opened the draft.
   The saved copy is kept in Drafts, but the page does not reopen it, and edits made in the last
   two seconds can be lost.
@@ -77,8 +103,11 @@ succeeds. The notice says why: no Drafts folder, no permission, or an unreachabl
 ## Validation
 
 `DraftStartTest` and `RecipientTextTest` cover starting drafts and the recipient text format.
-`ComposeStateTest` covers delayed saves, saving on close, discard, failure notices, keeping the
+`JmapDraftSenderTest` checks the send requests against a mock server: the stored copy and its
+submission in one request, filing in Sent, wildcard identities, the marks on the original, and
+cleanup after a refusal. `ComposeSendTest` covers when Send is enabled, waiting for a save in
+progress, and failure notices. `ComposeStateTest` covers delayed saves, saving on close, discard, failure notices, keeping the
 stored copy after a failed save, a change or discard during a save, and the sending identity.
-`ComposeScreenTest` types a draft, checks the disabled Send names its recipients, saves on Back,
+`ComposeScreenTest` types a draft, checks that Send names its recipients, sends a draft, saves on Back,
 chooses an identity, and confirms a discard. Its screenshot is written to
 `androidApp/build/reports/compose/`.

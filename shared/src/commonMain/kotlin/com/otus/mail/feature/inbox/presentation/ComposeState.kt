@@ -8,7 +8,11 @@ import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
+import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.SendException
+import com.otus.mail.feature.inbox.domain.SendFailure
+import com.otus.mail.feature.inbox.domain.answered
 import com.otus.mail.feature.inbox.domain.parseRecipients
 import com.otus.mail.feature.inbox.domain.preferredIdentity
 import com.otus.mail.feature.inbox.domain.recipientText
@@ -29,11 +33,12 @@ enum class RecipientField { To, Cc, Bcc }
  * The draft [request] starts in [accountId], as the user edits it. Each change saves to the
  * Drafts folder [saveDelayMillis] after the last one, and [close] saves at once; each save
  * replaces the earlier copy. Saves run one at a time, and a started save finishes, so each save knows
- * the copy it replaces. A failed save shows a [notice] until the next one succeeds. [scope] must
- * outlive the page, so a save started on closing finishes.
+ * the copy it replaces. A failed save shows a [notice] until the next one succeeds. [send] hands
+ * the draft to [sender]. [scope] must outlive the page, so a save started on closing finishes.
  */
 class ComposeState(
     private val drafts: DraftRepository,
+    private val sender: DraftSender,
     private val scope: CoroutineScope,
     val request: ComposeRequest,
     accountId: String,
@@ -56,6 +61,14 @@ class ComposeState(
     var notice by mutableStateOf<String?>(null)
         private set
 
+    /** Whether a [send] is under way. */
+    var sending by mutableStateOf(false)
+        private set
+
+    /** Whether Send can run: the draft has an address to send from and someone to go to. */
+    val canSend: Boolean
+        get() = !sending && draft.from != null && draft.recipients.isNotEmpty()
+
     /** Whether the user has written anything the draft did not start with. */
     val edited: Boolean
         get() = draft.content() != start.content()
@@ -63,7 +76,9 @@ class ComposeState(
     private val saving = Mutex()
     private var pending: Job? = null
     private var stored: Draft? = null
-    private var discarded = false
+
+    /** Set once the draft is discarded or sent; nothing saves after that. */
+    private var finished = false
 
     /** Loads the identities and picks the one to send from, unless the user already chose. */
     fun loadIdentities() {
@@ -95,9 +110,33 @@ class ComposeState(
 
     /** Stops saving and deletes the stored copy, after any save in progress. */
     fun discard() {
-        discarded = true
+        finished = true
         pending?.cancel()
         scope.launch { saving.withLock { draft.emailId?.let { drafts.discard(draft.accountId, it) } } }
+    }
+
+    /**
+     * Sends the draft once any save in progress ends, then runs [onSent]. A failed send shows a
+     * [notice] and leaves the draft to edit and save as before.
+     */
+    fun send(onSent: () -> Unit) {
+        if (!canSend) return
+        pending?.cancel()
+        sending = true
+        scope.launch {
+            val result =
+                saving.withLock {
+                    sender.send(draft, request.answered(draft.accountId)).onSuccess { finished = true }
+                }
+            sending = false
+            result.fold(
+                onSuccess = {
+                    notice = null
+                    onSent()
+                },
+                onFailure = { notice = ((it as? SendException)?.failure ?: SendFailure.ServerProblem).notice },
+            )
+        }
     }
 
     private fun scheduleSave() {
@@ -122,7 +161,7 @@ class ComposeState(
                 } else {
                     current.copy(emailId = null) == stored?.copy(emailId = null)
                 }
-            if (discarded || unchanged) return@withLock
+            if (finished || unchanged) return@withLock
             drafts.save(current).fold(
                 onSuccess = { id ->
                     stored = current
@@ -165,6 +204,18 @@ private val DraftFailure.notice: String
             DraftFailure.NotPermitted -> "The server doesn't allow saving this draft."
             DraftFailure.Unreachable -> "Couldn't reach the server. The draft saves with your next change."
             DraftFailure.ServerProblem -> "Couldn't save the draft. It saves again with your next change."
+        }
+
+private val SendFailure.notice: String
+    get() =
+        when (this) {
+            SendFailure.NoIdentity -> "The server doesn't let this account send from this address."
+            SendFailure.Recipients -> "Check the recipients. The server can't send to one of them."
+            SendFailure.TooManyRecipients -> "Too many recipients for this server. Remove some and try again."
+            SendFailure.TooLarge -> "The message is too large for this server to send."
+            SendFailure.NotPermitted -> "The server doesn't allow sending this message."
+            SendFailure.Unreachable -> "Lost the connection while sending. Check Sent before you try again."
+            SendFailure.ServerProblem -> "Couldn't send the message. Try again."
         }
 
 private const val SAVE_DELAY_MILLIS = 2_000L
