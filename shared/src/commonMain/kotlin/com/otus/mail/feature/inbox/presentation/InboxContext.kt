@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MessageHtml
 
 /**
  * What a message list shows by default, how it names itself, which other mailboxes its search
@@ -19,6 +21,8 @@ data class InboxContext(
     val folderPill: FolderPillOption? = null,
     /** Opens a draft for a new message, reply, or forward. */
     val onCompose: (ComposeRequest) -> Unit = {},
+    /** Loads an open message's HTML body; null shows its text body. */
+    val loadHtml: suspend (MailMessage) -> MessageHtml? = { null },
 ) {
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()

@@ -23,6 +23,7 @@ import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.ownFolders
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -87,16 +88,16 @@ internal class MessageFiling(
     /**
      * Takes the message out of [feed] at once and puts it back if the server refuses the move. A
      * successful move does not reload the list; [feed] keeps the message out of loads that may
-     * predate the move.
+     * predate the move. The returned job ends when the server has answered.
      */
     fun move(
         feed: InboxFeedState,
         message: MailMessage,
         target: MoveTarget,
-    ) {
+    ): Job {
         val leaving = leaving(message, target.shortcut)
         val change = feed.remove(message.id)
-        scope.launch {
+        return scope.launch {
             if (services.mover.move(message, target.folderId, leaving)) {
                 change.confirm()
                 folders.refresh()
@@ -109,14 +110,16 @@ internal class MessageFiling(
 
     /**
      * Puts [message] back in the folder it was shown in after a move to [target], then reloads
-     * [feed] so it shows again.
+     * [feed] so it shows again. It waits for [after], the move itself, so the two cannot cross.
      */
     fun moveBack(
         feed: InboxFeedState,
         message: MailMessage,
         target: MoveTarget,
+        after: Job? = null,
     ) {
         scope.launch {
+            after?.join()
             if (services.mover.move(message, message.location.mailboxId, setOf(target.folderId))) {
                 feed.refresh()
                 folders.refresh()

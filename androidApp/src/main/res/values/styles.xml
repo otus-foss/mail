@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
   <style name="OtusTheme" parent="android:style/Theme.Material.NoActionBar">
-    <item name="android:windowBackground">@color/otus_bg_regular</item>
+    <!-- The brand background, so the window matches the launch animation before it draws. -->
+    <item name="android:windowBackground">@color/otus_brand_background</item>
+    <!-- A blank system splash; the launch animation brings the icon in itself. -->
+    <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/otus_brand_background</item>
+    <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@android:color/transparent</item>
     <item name="android:colorBackground">@color/otus_bg_regular</item>
     <item name="android:textColorPrimary">@color/otus_text_1</item>
     <item name="android:colorAccent">@color/otus_accent_regular</item>

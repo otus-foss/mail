@@ -93,6 +93,8 @@ data class EmailObject(
     val hasAttachment: Boolean = false,
     val attachments: List<EmailBodyPart>? = null,
     val textBody: List<EmailBodyPart>? = null,
+    /** The parts to show as HTML, which may include plain parts (RFC 8621, section 4.1.4). */
+    val htmlBody: List<EmailBodyPart>? = null,
     val bodyValues: Map<String, EmailBodyValue> = emptyMap(),
 )
 
