@@ -25,6 +25,11 @@ script, so they keep working while the app is closed.
   user's own folders (no role) can be renamed, moved, or deleted, from the
   [folder page](#the-folder-page) and by dragging. Actions follow `myRights`,
   `mayCreateTopLevelMailbox`, `maxMailboxDepth`, and `maxSizeMailboxName`.
+- Otus nests folders at most five levels deep, a top-level folder being level 1, or less when the
+  server's `maxMailboxDepth` is lower (`FolderLimits.levels`). Creating, moving, and nesting a
+  folder, including the subfolders it brings along, stay within that. Folders another app nested
+  deeper still show and open; their indent stops growing after the fifth level so the name keeps
+  room.
 - New folders are created with `isSubscribed: true` so IMAP clients that list only subscribed
   folders show them.
 - Names are trimmed and must be unique among siblings without regard to case, as Stalwart checks.
@@ -85,7 +90,7 @@ down onto an open parent nests it as that parent's first subfolder.
   number is always strictly between its neighbors', so names never decide the order.
 - System folders and Read later never move. A folder needs `mayRename`, which RFC 8621 also
   requires to change its parent. Nesting checks the same rules as **Move**: the new parent needs
-  `mayCreateChild`, the result must fit `maxMailboxDepth`, a folder cannot go inside itself, and no
+  `mayCreateChild`, the result must fit `FolderLimits.levels`, a folder cannot go inside itself, and no
   sibling may have the same name in any case. A drop the server would refuse does nothing.
 - The list shows the new order at once. A load that started before the drop cannot bring the old
   order back. If the server refuses, the list goes back and the page says why. The next load

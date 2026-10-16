@@ -45,7 +45,17 @@ data class FolderLimits(
     val maxNameBytes: Int? = null,
     /** The most folders one message may be in at once; null when unlimited. */
     val maxFoldersPerMessage: Int? = null,
-)
+) {
+    /** The most levels a folder Otus creates or moves may sit at: the server's limit, at most [MAX_FOLDER_LEVELS]. */
+    val levels: Int
+        get() = minOf(maxDepth ?: MAX_FOLDER_LEVELS, MAX_FOLDER_LEVELS)
+}
+
+/**
+ * Otus nests folders at most this deep, a top-level folder being level 1, so names keep room
+ * beside their indent. Folders other apps nest deeper still show.
+ */
+const val MAX_FOLDER_LEVELS = 5
 
 /** One connected account's folders. [failure] is set when they could not be loaded. */
 data class AccountFolders(
