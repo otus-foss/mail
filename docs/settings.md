@@ -29,7 +29,9 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   many pills the inbox row shows and opens `InboxPillsSheet`, a
   `SelectionSheet` where the shown pills are reordered by their drag handles and others are added.
   Done saves the row. The date format closes the section. Below it, Mail adds
-  `MailBehaviorSettings` through the content slot. Under **Actions**, **Swipe right** and **Swipe
+  `MailBehaviorSettings` through the content slot. Under **Inbox**, **Inbox shows** sums up what
+  the Inbox lists, such as "All mail · Spam", and opens the Inbox page; see
+  [Inbox contents](inbox.md#inbox-contents). Under **Actions**, **Swipe right** and **Swipe
   left** open a `ChoiceSheet` of message actions, shown in a `ValueButton`. **Action bar** shows its
   mode, **Per screen** or **Same everywhere**, and opens its own page, and **Minimize action bar**
   is a switch. Under **Reading**, **Mark as read when opened** and **Read later** are

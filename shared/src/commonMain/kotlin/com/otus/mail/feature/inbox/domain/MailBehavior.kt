@@ -20,6 +20,7 @@ data class MailBehavior(
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
     val minimizedBar: Boolean = false,
     val websiteIcons: Boolean = true,
+    val inbox: InboxContents = InboxContents(),
 ) {
     /** What a swipe can be set to besides nothing; Read later only while it is on. */
     val swipeChoices: List<MailAction>

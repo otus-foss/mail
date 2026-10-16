@@ -103,6 +103,28 @@ accessibility label reads "<name> account" or "<count> accounts", followed by th
 Saved accounts remain available even when they have no loaded messages. Their selection remains
 named in the pill, with generated initials when no photo has resolved.
 
+## Inbox contents
+
+Appearance & behavior › **Inbox shows** opens the Inbox page, which chooses what the Inbox lists.
+The choice is saved in `MailBehavior.inbox` (`InboxContents`) on the device.
+
+- **Every address** is on by default. Turning it off lists each account's sign-in and sending
+  addresses under the account's name, all on at first. The Inbox then lists only mail sent to or
+  from an address that is on, in that address's account. Turning off the last address, or turning
+  every address back on, returns to **Every address**. Addresses of a removed account drop out.
+- **Spam** and **Trash** add every account's folder with the `junk` or `trash` role (RFC 8621,
+  section 2). The page loads them with `MailScope.Roles` and files their mail as Spam and Trash,
+  the names the sidebar uses, so rows, search, and actions still see where each message is.
+  Emptying a folder is not offered on the Inbox, even with Trash in it.
+- Mail stays in its own folders; only the Inbox page changes. The sidebar's Inbox count adds up
+  the folders the Inbox loads, for the accounts of the chosen addresses. It counts a chosen
+  account's whole inbox, because the server counts folders, not addresses.
+- "Show mail from" in the sidebar narrows the Inbox further, like every other page.
+
+`InboxContentsTest` covers the roles, the address filter, choosing and leaving out addresses,
+removed accounts, and saving. `JmapMailSourceRolesTest` loads the inbox and Spam under the app's
+names, and `InboxSettingsTest` drives the page.
+
 ## Searching other inboxes
 
 Choosing inboxes or accounts makes `InboxFeedState.show` load the selected scope, up to 50 of the

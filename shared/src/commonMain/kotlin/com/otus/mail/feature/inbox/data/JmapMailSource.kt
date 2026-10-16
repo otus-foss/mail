@@ -94,6 +94,10 @@ class JmapMailSource(
                     mailboxes.filter { it.role == scope.role }
                 }
 
+                is MailScope.Roles -> {
+                    mailboxes.filter { it.role in scope.names }
+                }
+
                 MailScope.AllMailboxes -> {
                     mailboxes
                 }
@@ -119,7 +123,12 @@ class JmapMailSource(
         // Each login loads its mailboxes sequentially instead of starting one request per folder.
         val loaded =
             chosen.map { mailbox ->
-                val name = if (scope is MailScope.Role) scope.name else mailboxName(mailbox.name, mailbox.role)
+                val name =
+                    when (scope) {
+                        is MailScope.Role -> scope.name
+                        is MailScope.Roles -> scope.names[mailbox.role] ?: mailboxName(mailbox.name, mailbox.role)
+                        else -> mailboxName(mailbox.name, mailbox.role)
+                    }
                 loadMailbox(connection, login, accountId, mailbox.id, name)
             }
         // A message can be in several chosen mailboxes; it is listed once, under the first.
@@ -173,7 +182,7 @@ class JmapMailSource(
 /** Whether this scope reads mail of the login with [loginId]. */
 private fun MailScope.reads(loginId: String): Boolean =
     when (this) {
-        MailScope.AllMailboxes, is MailScope.Role -> {
+        MailScope.AllMailboxes, is MailScope.Role, is MailScope.Roles -> {
             true
         }
 
