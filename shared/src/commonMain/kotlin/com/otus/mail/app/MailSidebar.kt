@@ -4,98 +4,97 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.otus.designsystem.components.ActionDialog
+import com.otus.designsystem.components.DialogAction
 import com.otus.designsystem.components.Sidebar
+import com.otus.designsystem.components.SidebarHeader
 import com.otus.designsystem.components.SidebarState
 import com.otus.designsystem.elements.IconButton
-import com.otus.designsystem.elements.SidebarHeading
+import com.otus.designsystem.elements.SectionCaption
+import com.otus.designsystem.elements.SidebarDivider
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_create_new_folder
+import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
-import com.otus.mail.feature.inbox.domain.SidebarCount
+import com.otus.mail.feature.folders.presentation.components.FolderColorSheet
+import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.SidebarSection
-import com.otus.mail.feature.inbox.presentation.label
+import com.otus.mail.feature.inbox.presentation.scopeHeader
 import com.otus.mail.feature.inbox.presentation.title
 import com.otus.mail.feature.updates.domain.NightlyBuild
 import com.otus.mail.feature.updates.presentation.components.NightlyUpdateEntry
 
 /**
- * The account rail beside the built-in mailboxes and the user's shared folders, in the order and
- * layout the user chose. Choosing an account in the rail, or All, changes only the counts:
- * [accountId] is the chosen account, or null for every account. Tapping All again opens the
- * inbox of every account. A newer nightly [update], when there is one, leads the list.
+ * The chosen [scope] in the header, over the built-in mailboxes and the user's shared folders in
+ * the order and layout the user chose. Every count follows the scope's account. Tapping the header
+ * opens "Show mail from", which calls [onChooseScope]. A newer nightly [update], when there is
+ * one, leads the list.
  */
 @Composable
 internal fun MailSidebar(
     state: SidebarState,
     current: MailPage,
     states: MailStates,
-    accountId: String?,
+    scope: MailScopeChoice,
     update: NightlyBuild?,
-    onSelectAccount: (String?) -> Unit,
+    onChooseScope: (MailScopeChoice) -> Unit,
     onSelect: (MailPage) -> Unit,
 ) {
-    val accounts = states.accounts.accounts
     val folders = states.folders.accounts
     val layout = states.behavior.behavior.sidebar
-    val account = accounts.firstOrNull { it.id == accountId }
-    val counter = SidebarCounter(account?.id, layout.counts)
-    var collapsedSections by rememberSaveable(stateSaver = SectionsSaver) { mutableStateOf(emptySet<SidebarSection>()) }
+    val counter = SidebarCounter(scope.accountId, layout.counts)
+    val header = scopeHeader(scope, states.accountAddresses())
+    var picking by rememberSaveable { mutableStateOf(false) }
     var collapsedFolders by rememberSaveable(stateSaver = KeysSaver) { mutableStateOf(emptySet<List<String>>()) }
     val mailboxes = remember(folders) { sidebarMailboxes(folders) }
     val shared = remember(folders) { sharedFolders(folders) }
-    val inboxes = folders.mapNotNull { it.inbox }
+    val actions = rememberFolderActions(states)
+    val tree =
+        SidebarFolderTree(
+            collapsedFolders,
+            onCollapse = { key, collapse ->
+                collapsedFolders = if (collapse) collapsedFolders + setOf(key) else collapsedFolders - setOf(key)
+            },
+            current,
+            counter,
+            colorOf = states.folderColors::groupColorOf,
+            onSelect,
+            onActions = actions::open,
+        )
     Sidebar(
         state,
-        title = account?.name ?: "All accounts",
-        subtitle =
-            account?.username
-                ?: allAccountsSummary(accounts.size, SidebarCounter(null, layout.counts).of(inboxes), layout.counts),
-        rail = { MailSidebarRail(accounts, inboxes, layout.counts, account?.id, onSelectAccount, onSelect) },
+        title = header.title,
+        header = {
+            SidebarHeader(
+                header.title,
+                header.avatars,
+                pickLabel = "Show mail from",
+                onPick = { picking = true },
+                onSettings = { onSelect(MailPage.Settings) },
+                subtitle = header.subtitle,
+            )
+        },
     ) {
         update?.let { NightlyUpdateEntry(it) }
-        layout.shown.forEach { section ->
-            val open = section !in collapsedSections
-            SidebarHeading(
-                section.title,
-                expanded = open,
-                onExpandedChange = {
-                    collapsedSections =
-                        if (it) collapsedSections - section else collapsedSections + section
-                },
-                action =
-                    if (section == SidebarSection.Folders) {
-                        { NewFolderButton { onSelect(MailPage.Folders) } }
-                    } else {
-                        null
-                    },
-            )
-            if (open) {
-                when (section) {
-                    SidebarSection.Mailboxes -> {
-                        SidebarMailboxList(mailboxes, layout.mailboxes, current, counter, onSelect)
-                    }
+        layout.shown.forEachIndexed { index, section ->
+            if (index > 0) SidebarDivider()
+            when (section) {
+                SidebarSection.Mailboxes -> {
+                    SidebarMailboxList(mailboxes, layout.mailboxes, current, counter, onSelect)
+                }
 
-                    SidebarSection.Folders -> {
-                        SidebarFolderList(
-                            shared,
-                            collapsedFolders,
-                            onCollapse = { key, collapse ->
-                                collapsedFolders =
-                                    if (collapse) collapsedFolders + setOf(key) else collapsedFolders - setOf(key)
-                            },
-                            current,
-                            counter,
-                            onSelect,
-                        )
-                    }
+                SidebarSection.Folders -> {
+                    SectionCaption(section.title, action = { NewFolderButton { onSelect(MailPage.Folders) } })
+                    tree.Rows(shared)
                 }
             }
         }
     }
+    if (picking) SidebarScopeSheet(states, scope, onChooseScope, onDismiss = { picking = false })
+    actions.Dialogs()
 }
 
 /** Folders are made per account, so this opens the folder settings, where each account has its own. */
@@ -104,41 +103,36 @@ private fun NewFolderButton(onClick: () -> Unit) {
     IconButton("New folder", onClick, outlined = false) { Symbol(Res.drawable.symbol_create_new_folder) }
 }
 
-/** The account count, then the inboxes' [count] in the user's chosen [counts], when there is one. */
-private fun allAccountsSummary(
-    accounts: Int,
-    count: String?,
-    counts: SidebarCount,
-): String =
-    when (accounts) {
-        0 -> "No accounts yet"
-        1 -> "1 account"
-        else -> "$accounts accounts"
-    } + count?.let { " · $it ${counts.label.lowercase()}" }.orEmpty()
+@Composable
+private fun rememberFolderActions(states: MailStates): SidebarFolderActions =
+    remember(states) { SidebarFolderActions(states) }
 
-private val SectionsSaver =
-    listSaver<Set<SidebarSection>, String>(
-        save = { sections -> sections.map { it.storageValue } },
-        restore = { saved ->
-            saved
-                .mapNotNull { value ->
-                    SidebarSection.entries.firstOrNull { it.storageValue == value }
-                }.toSet()
-        },
-    )
+/** A long-pressed folder's actions, then the sheet that colors it. Only the user's own folders have any. */
+private class SidebarFolderActions(
+    private val states: MailStates,
+) {
+    private var acting by mutableStateOf<SharedFolder?>(null)
+    private var coloring by mutableStateOf<SharedFolder?>(null)
 
-// Each key is saved as its length, then its levels, so no character in a folder name can split it.
-private val KeysSaver =
-    listSaver<Set<List<String>>, String>(
-        save = { keys -> keys.flatMap { listOf(it.size.toString()) + it } },
-        restore = { saved ->
-            buildSet {
-                var index = 0
-                while (index < saved.size) {
-                    val size = saved[index].toInt()
-                    add(saved.subList(index + 1, index + 1 + size).toList())
-                    index += size + 1
-                }
-            }
-        },
-    )
+    fun open(folder: SharedFolder) {
+        if (folder.folders.any(states.folderColors::colorable)) acting = folder
+    }
+
+    @Composable
+    fun Dialogs() {
+        acting?.let { folder ->
+            ActionDialog(
+                folder.name,
+                listOf(DialogAction("Color", { coloring = folder })),
+                onDismiss = { acting = null },
+            )
+        }
+        coloring?.let { folder ->
+            FolderColorSheet(
+                current = states.folderColors.colors.of(folder),
+                onPick = { states.folderColors.setColor(folder.folders, it) },
+                onDismiss = { coloring = null },
+            )
+        }
+    }
+}

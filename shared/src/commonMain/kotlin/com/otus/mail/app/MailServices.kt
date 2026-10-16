@@ -24,8 +24,8 @@ import com.otus.mail.feature.folders.data.JmapRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.InboxMatcher
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
-import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.folders.domain.RuleRepository
+import com.otus.mail.feature.folders.domain.forgetAccount
 import com.otus.mail.feature.inbox.data.JmapDraftRepository
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import com.otus.mail.feature.inbox.data.JmapMessageCleaner
@@ -38,6 +38,7 @@ import com.otus.mail.feature.inbox.domain.MessageCleaner
 import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
 import com.otus.mail.feature.inbox.domain.SenderHistory
+import com.otus.mail.feature.inbox.domain.forgetAccount
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -56,7 +57,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 class MailServices(
     private val logins: LoginStore = InMemoryLoginStore(),
     avatarStore: AvatarStore = EmptyAvatarStore,
-    readLaterStore: ReadLaterStore? = null,
+    internal val stores: MailDeviceStores = MailDeviceStores(),
     createNightlyFeed: () -> NightlyFeed = { GitHubNightlyFeed(HttpClient()) },
     /** Instant pushes through the user's UnifiedPush app; null where the platform has none. */
     internal val instantPush: InstantPush? = null,
@@ -84,7 +85,11 @@ class MailServices(
             logins,
             AccountService.Mail,
             onAccountChanged = avatars::removeAccount,
-            beforeRemove = { instantPush?.forget(it) },
+            beforeRemove = { loginId ->
+                instantPush?.forget(loginId)
+                stores.folderColors?.forgetAccount(loginId)
+                stores.addressPins?.forgetAccount(loginId)
+            },
         )
     }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins) }
@@ -96,7 +101,7 @@ class MailServices(
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins) }
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
-    internal val readLater by lazy { ReadLaterFolders(folders, readLaterStore) }
+    internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }
     internal val rules: RuleRepository by lazy { JmapRuleRepository(connections, logins) }
     internal val inboxMatcher: InboxMatcher by lazy { JmapInboxMatcher(connections, logins) }
     internal val nightly by lazy(createNightlyFeed)

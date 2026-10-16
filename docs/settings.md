@@ -23,8 +23,10 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   Every row has an icon. The **Look** section starts with **Theme**, which shows the theme's name
   and accent and opens the Theme page. Mail adds `MailLookSettings` through the screen's `look`
   slot: **Sidebar** shows **Edit** and opens the Sidebar page, which arranges the sidebar's
-  sections, mailboxes, and counts (see [Mail destinations](sidebar.md#mail-destinations)), and
-  **Pills** shows how many pills the inbox row shows and opens `InboxPillsSheet`, a
+  sections, mailboxes, and counts (see [Mail destinations](sidebar.md#mail-destinations)). Its
+  **Folder colors** switch, on by default, hides folder icon colors without deleting them, with the
+  caption "Colors only change the folder icon. They stay on this device." **Pills** shows how
+  many pills the inbox row shows and opens `InboxPillsSheet`, a
   `SelectionSheet` where the shown pills are reordered by their drag handles and others are added.
   Done saves the row. The date format closes the section. Below it, Mail adds
   `MailBehaviorSettings` through the content slot. Under **Actions**, **Swipe right** and **Swipe
@@ -53,8 +55,9 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   action that another slot holds swaps the two, and a button slot can be **None**. Each change is
   saved at once. See [action bar](action-bar.md).
 - **Folders** shows each account as a section of flat folder rows, indented by nesting, ending with
-  a **New folder** row. **Folders** and **Rules** manage each account's folders and the rules that
-  file arriving mail;
+  a **New folder** row. Tapping a folder opens its actions. For the user's own folders, **Color**
+  opens a `ChoiceSheet` of folder colors; see [Folder colors](folders.md#folder-colors).
+  **Folders** and **Rules** manage each account's folders and the rules that file arriving mail;
   see [Folders and rules](folders.md).
 
 ## Reusable pieces

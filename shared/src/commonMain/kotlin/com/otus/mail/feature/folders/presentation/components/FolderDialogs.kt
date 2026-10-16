@@ -82,6 +82,15 @@ private fun FolderChangeDialog(
             )
         }
 
+        is FolderDialog.Color -> {
+            val color = actions.color(folder)
+            if (color == null) {
+                LaunchedEffect(dialog) { close() }
+            } else {
+                FolderColorSheet(color.current, color.onPick, onDismiss = close)
+            }
+        }
+
         // Creating needs no existing folder; FolderDialogs shows it before looking one up.
         is FolderDialog.Create -> {}
     }
@@ -105,7 +114,10 @@ private fun CreateFolderDialog(
     )
 }
 
-/** Only the user's own folders can be renamed, moved, or deleted; system folders keep their place. */
+/**
+ * Only the user's own folders can be renamed, moved, colored, or deleted; system folders and Read
+ * later keep their place and icon.
+ */
 @Composable
 private fun FolderActionsDialog(
     folder: MailFolder,
@@ -123,6 +135,8 @@ private fun FolderActionsDialog(
                 .takeIf { folder.isCustom && folder.rights.mayRename },
             DialogAction("Move", { onDialog(FolderDialog.Move(id, folder.id)) })
                 .takeIf { folder.isCustom && folder.rights.mayRename && moveTargets(account, folder).size > 1 },
+            DialogAction("Color", { onDialog(FolderDialog.Color(id, folder.id)) })
+                .takeIf { actions.color(folder) != null },
             DialogAction("Delete", { onDialog(FolderDialog.Delete(id, folder.id)) })
                 .takeIf { folder.isCustom && folder.rights.mayDelete },
         )
@@ -138,5 +152,6 @@ private fun folderOf(
         is FolderDialog.Rename -> account.folder(dialog.folderId)
         is FolderDialog.Move -> account.folder(dialog.folderId)
         is FolderDialog.Delete -> account.folder(dialog.folderId)
+        is FolderDialog.Color -> account.folder(dialog.folderId)
         is FolderDialog.Create -> null
     }

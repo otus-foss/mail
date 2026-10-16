@@ -1,0 +1,42 @@
+package com.otus.mail.app
+
+import androidx.compose.runtime.Composable
+import com.otus.mail.feature.inbox.domain.AccountAddresses
+import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.feature.inbox.domain.addressCount
+import com.otus.mail.feature.inbox.presentation.components.MailScopeSheet
+
+/** Each account's sign-in and sending addresses, for "Show mail from". */
+internal fun MailStates.accountAddresses(): List<AccountAddresses> =
+    accounts.accounts.map { AccountAddresses.of(it.id, it.name, it.username, it.emailAddresses) }
+
+/**
+ * The count beside a "Show mail from" choice, by the Counts setting. Accounts and All mail count
+ * their inboxes on the server; an address counts the loaded inbox mail sent to it.
+ */
+internal fun MailStates.scopeCount(choice: MailScopeChoice): String? {
+    val counts = behavior.behavior.sidebar.counts
+    return when (choice) {
+        is MailScopeChoice.Address -> addressCount(feed.messages, choice, counts)?.toString()
+        else -> SidebarCounter(choice.accountId, counts).of(folders.accounts.mapNotNull { it.inbox })
+    }
+}
+
+/** "Show mail from", choosing [chosen] for every mail page and pinning addresses as the user asks. */
+@Composable
+internal fun SidebarScopeSheet(
+    states: MailStates,
+    chosen: MailScopeChoice,
+    onChoose: (MailScopeChoice) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    MailScopeSheet(
+        states.accountAddresses(),
+        chosen,
+        states.addressPins.pins,
+        count = states::scopeCount,
+        onChoose = onChoose,
+        onTogglePin = states.addressPins::toggle,
+        onDismiss = onDismiss,
+    )
+}

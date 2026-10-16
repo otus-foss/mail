@@ -21,12 +21,14 @@ import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.domain.sendersByFolder
+import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderDialog
 import com.otus.mail.feature.folders.presentation.FolderSender
 import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RulesState
 import com.otus.mail.feature.folders.presentation.components.FolderActions
+import com.otus.mail.feature.folders.presentation.components.FolderColorChoice
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.folders.presentation.components.FolderRow
 import com.otus.mail.feature.folders.presentation.message
@@ -40,6 +42,7 @@ fun FoldersScreen(
     state: FoldersState,
     rules: RulesState,
     senders: FolderSenders,
+    colors: FolderColorsState,
     onBack: () -> Unit,
     onOpenFolder: (MailFolder) -> Unit,
 ) {
@@ -59,6 +62,7 @@ fun FoldersScreen(
             AccountFolderSection(
                 account,
                 state.busy,
+                colorOf = colors::colorOf,
                 sendersOf = { folderId -> senders.of(account.accountId, byFolder[folderId].orEmpty()) },
                 onDialog = { dialog = it },
             )
@@ -75,6 +79,10 @@ fun FoldersScreen(
                 onMove = state::move,
                 onDelete = state::delete,
                 onOpen = onOpenFolder,
+                color = { folder ->
+                    FolderColorChoice(colors.colors.of(folder)) { colors.setColor(listOf(folder), it) }
+                        .takeIf { colors.colorable(folder) }
+                },
             ),
             onDialog = { dialog = it },
         )
@@ -85,6 +93,7 @@ fun FoldersScreen(
 private fun AccountFolderSection(
     account: AccountFolders,
     busy: Boolean,
+    colorOf: (MailFolder) -> String?,
     sendersOf: (folderId: String) -> List<FolderSender>,
     onDialog: (FolderDialog) -> Unit,
 ) {
@@ -92,7 +101,7 @@ private fun AccountFolderSection(
     SettingsSection(account.accountName, ChipAvatar(avatar.initials, avatar.colorIndex)) {
         account.failure?.let { PageNote(it.message()) }
         CollapsibleTree(account.folderTree(), { it.folder.id }, { it.depth }) { node, expanded, onExpandedChange ->
-            FolderRow(node, sendersOf(node.folder.id), expanded, onExpandedChange) {
+            FolderRow(node, colorOf(node.folder), sendersOf(node.folder.id), expanded, onExpandedChange) {
                 onDialog(FolderDialog.Actions(account.accountId, node.folder.id))
             }
         }

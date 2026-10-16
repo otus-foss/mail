@@ -20,6 +20,8 @@ The action bar work uses Meta's unreleased `ActionBar`, `ActionBarHost`, `BarAct
 [motion](motion.md). They join the tables below once a Meta release with them is tagged and
 pinned. See [action bar](action-bar.md). The compose page also uses the unreleased
 `ComposeField`, `ComposeValueField`, `ComposeBody`, and `ComposeTokens`; see [compose](compose.md).
+Folder colors use the unreleased `FolderColor`, `FolderColorSwatch`, `LocalIconTint`, and
+`ChoiceRow`'s `iconTint` and `swatch`; see [folder colors](folders.md#folder-colors).
 
 ## Shared now
 
@@ -113,7 +115,7 @@ pinned. See [action bar](action-bar.md). The compose page also uses the unreleas
 
 | File | UI declarations or supporting file | Owner | Reason |
 | --- | --- | --- | --- |
-| [FolderRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderRow.kt) | `FolderRow` | `otus-mail` | A compact folder row with the senders rules move there; uses shared `SettingRow`, `AvatarStack`, and `SidebarExpandButton`. |
+| [FolderRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderRow.kt) | `FolderRow`, `FolderSettingRow` | `otus-mail` | A compact folder row with the senders rules move there, its icon in the folder's color through `LocalIconTint`; uses shared `SettingRow`, `AvatarStack`, and `SidebarExpandButton`. |
 | [RuleRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/RuleRow.kt) | `RuleRow` | `otus-mail` | Maps rule labels and enabled state into shared DetailRow. |
 | [InboxBody](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/InboxBody.kt) | `InboxBody`, `InboxEmptyState` | `otus-mail` | Composes the message list and supplies feature text/actions to shared EmptyState. |
 | [MessageRow](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageRow.kt) | `MessageRow` | `otus-mail` | Maps the sender, arrival time, folder labels, unread state, and selection into shared ContentRow and LabelPill. |
@@ -131,10 +133,14 @@ pinned. See [action bar](action-bar.md). The compose page also uses the unreleas
 | [MailPages](../shared/src/commonMain/kotlin/com/otus/mail/app/MailPages.kt) | `MailPageContent`, `FolderPage`, `rememberMessageActions`, `rememberFolderPills` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailServices](../shared/src/commonMain/kotlin/com/otus/mail/app/MailServices.kt) | `MailServices` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailSettings](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSettings.kt) | `MailSettings` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
-| [MailSidebar](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSidebar.kt) | `MailSidebar`, `MailSidebarRail`, `SidebarMailboxList`, `SidebarFolderList` | `otus-mail` | Mail accounts, mailboxes, and shared folders; the drawer, rail, and rows are shared Sidebar components. |
+| [MailSidebar](../shared/src/commonMain/kotlin/com/otus/mail/app/MailSidebar.kt) | `MailSidebar`, `NewFolderButton`, `SidebarFolderActions` | `otus-mail` | The scope header, mailboxes, and shared folders in the user's order, and a folder's Color action; the drawer, header, and rows are shared Sidebar components. |
+| [SidebarMailbox](../shared/src/commonMain/kotlin/com/otus/mail/app/SidebarMailbox.kt) | `SidebarMailbox`, `SidebarMailboxList` | `otus-mail` | Inbox as shared `SidebarInboxEntry`, then the other mailboxes as shared `SidebarMailboxTile`s in a `SidebarMailboxGrid` or as `SidebarEntry` rows. |
+| [SidebarFolderTree](../shared/src/commonMain/kotlin/com/otus/mail/app/SidebarFolderTree.kt) | `SidebarFolderTree` | `otus-mail` | The shared folder tree as shared `SidebarFolderEntry` rows, each icon in its folder's color through `LocalIconTint`. |
+| [SidebarScope](../shared/src/commonMain/kotlin/com/otus/mail/app/SidebarScope.kt) | `SidebarScopeSheet`, `accountAddresses`, `scopeCount` | `otus-mail` | Supplies each account's addresses, the counts, and the pins to `MailScopeSheet`. |
 | [MailStates](../shared/src/commonMain/kotlin/com/otus/mail/app/MailStates.kt) | `MailStates` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [ConditionEditor](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/ConditionEditor.kt) | `ConditionEditor` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |
 | [FolderActions](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderActions.kt) | `FolderActions` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |
+| [FolderColorSheet](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderColorSheet.kt) | `FolderColorSheet` | `otus-mail` | Picks a folder's icon color: Default, then the eight `FolderColor`s with a `FolderColorSwatch` each, in shared `ChoiceSheet`. |
 | [FolderDialogs](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/FolderDialogs.kt) | `FolderDialogs`, `FolderChangeDialog`, `CreateFolderDialog`, `FolderActionsDialog` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |
 | [RuleEditorActions](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/RuleEditorActions.kt) | `RuleEditorActions` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |
 | [RuleEditorForm](../shared/src/commonMain/kotlin/com/otus/mail/feature/folders/presentation/components/RuleEditorForm.kt) | `RuleEditorForm`, `MatchChoice`, `FolderChoice` | `otus-mail` | Mail folders or Sieve rule behavior; uses shared controls. |
@@ -156,6 +162,8 @@ pinned. See [action bar](action-bar.md). The compose page also uses the unreleas
 | [MailBehaviorSettings](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailBehaviorSettings.kt) | `MailBehaviorSettings`, `PrivacySettings` | `otus-mail` | Mail pill, swipe, action bar, reading, Read later, and Website icons choices; uses shared rows and `ChoiceSheet`. |
 | [MessageActionLabels](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MessageActionLabels.kt) | `label`, `buttonLabel`, `swipeAction` | `otus-mail` | Names message actions and action bar modes, and maps actions to Meta's `SwipeActions`. |
 | [MoveChoice](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveChoice.kt) | `MoveChoice`, `rememberMoveChoice` | `otus-mail` | Opens the Move to sheet from an action bar or menu, for one message or a selection. |
+| [MailScopeSheet](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailScopeSheet.kt) | `MailScopeSheet`, `Pinned`, `addressOption` | `otus-mail` | "Show mail from": All mail, pinned addresses, then domains or accounts, in shared `ScopeSheet` with `PickerSearch`. |
+| [MailScopeRows](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MailScopeRows.kt) | `MailScopeRows`, `groupKey` | `otus-mail` | The sheet's address, account, and domain rows as shared `ScopeRow`s and `ScopeChildRow`s in `Collapsible` groups. |
 | [MoveSheet](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveSheet.kt) | `MoveSheet`, `MovePills`, `icon` | `otus-mail` | Moves one message or a selection; uses shared `SheetFrame`, `PickerSearch`, `SidebarPill`, and `SettingRow`. |
 | [MoveFolderList](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveFolderList.kt) | `MoveFolderList` | `otus-mail` | The move sheet's own folders as a tree that collapses; uses shared `SettingRow`, `SidebarExpandButton`, and `CollapsibleTree`. |
 | [MoveSummary](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/MoveSummary.kt) | `MoveSummary` | `otus-mail` | The message, or the selection's count and senders, on shared `SummaryCard`. |

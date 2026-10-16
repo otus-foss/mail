@@ -3,7 +3,9 @@ package com.otus.mail
 import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailServices
+import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.notifications.domain.InstantPush
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -57,15 +59,29 @@ class FakeFolderServer {
     private var uploaded = ""
     private var state = 1
 
-    fun services(instantPush: InstantPush? = null): MailServices {
+    /** Signs in as Ada, and also as Bob when [withBob], who shares Ada's mailboxes and identity. */
+    fun services(
+        instantPush: InstantPush? = null,
+        folderColorStore: FolderColorStore? = null,
+        withBob: Boolean = false,
+    ): MailServices {
         val store = InMemoryLoginStore()
         store.save(JmapLogin("ada", "https://mail.example.org/jmap/session", "ada@example.org", "Ada"), "secret")
-        return MailServices(store, instantPush = instantPush) { JmapClient(engine) }
+        if (withBob) {
+            store.save(JmapLogin("bob", "https://mail.example.org/jmap/session", "bob@example.org", "Bob"), "secret")
+        }
+        return MailServices(
+            store,
+            stores = MailDeviceStores(folderColors = folderColorStore),
+            instantPush = instantPush,
+        ) {
+            JmapClient(engine)
+        }
     }
 
     private val engine =
         MockEngine { request ->
-            check(request.headers[HttpHeaders.Authorization] == "Basic YWRhQGV4YW1wbGUub3JnOnNlY3JldA==")
+            check(request.headers[HttpHeaders.Authorization] in SIGN_INS)
             when (request.url.encodedPath) {
                 "/jmap/session" -> {
                     json(SESSION)
@@ -194,6 +210,7 @@ class FakeFolderServer {
         respond(text, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
 
     private companion object {
+        val SIGN_INS = setOf("Basic YWRhQGV4YW1wbGUub3JnOnNlY3JldA==", "Basic Ym9iQGV4YW1wbGUub3JnOnNlY3JldA==")
         val IN_MAILBOX = Regex("\"inMailbox\":\"([^\"]+)\"")
         const val REFUSED_UPDATE = """"notUpdated": {"m1": {"type": "forbidden"}}"""
         val DESTROY = Regex("\"destroy\":\\[([^\\]]*)]")

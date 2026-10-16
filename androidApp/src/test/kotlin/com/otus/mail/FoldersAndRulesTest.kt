@@ -7,7 +7,6 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
-import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -63,7 +62,7 @@ class FoldersAndRulesTest {
         compose.waitUntil(TIMEOUT) {
             compose.onAllNodes(hasText("Amazon") and isSelectable()).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNode(hasText("Inbox") and hasText("1") and isToggleable()).assertIsDisplayed()
+        compose.onNode(hasText("Inbox") and hasText("1") and isSelectable()).assertIsDisplayed()
         // A collapsed folder hides its subfolders and counts their mail with its own.
         compose.onNodeWithContentDescription("Collapse Receipts").performClick()
         compose.onNode(hasText("Amazon") and isSelectable()).assertDoesNotExist()
@@ -120,12 +119,12 @@ class FoldersAndRulesTest {
         }
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        val pill = hasText("Read later") and isToggleable()
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(pill).fetchSemanticsNodes().isNotEmpty() }
-        val inbox = compose.onNode(hasText("Inbox") and isToggleable()).fetchSemanticsNode().boundsInRoot
-        val readLater = compose.onNode(pill).fetchSemanticsNode().boundsInRoot
+        val tile = hasContentDescription("Read later")
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(tile).fetchSemanticsNodes().isNotEmpty() }
+        val inbox = compose.onNode(hasText("Inbox") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        val readLater = compose.onNode(tile).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
-        assertTrue(inbox.right <= readLater.left && readLater.bottom <= receipts.top)
+        assertTrue(inbox.bottom <= readLater.top && readLater.bottom <= receipts.top)
         // Read later is a mailbox, not one of the user's folders.
         compose.onNode(hasText("Read later") and isSelectable()).assertDoesNotExist()
     }
@@ -151,11 +150,11 @@ class FoldersAndRulesTest {
         start()
         waitFor("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        val spam = hasText("Spam") and hasText("3") and isToggleable()
+        val spam = hasContentDescription("Spam, 3")
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(spam).fetchSemanticsNodes().isNotEmpty() }
         // The app names each role in place of the server's names, above the user's own folders.
         assertTrue(compose.onAllNodes(hasText("Junk Mail")).fetchSemanticsNodes().isEmpty())
-        val trash = compose.onNode(hasText("Trash") and isToggleable()).fetchSemanticsNode().boundsInRoot
+        val trash = compose.onNode(hasContentDescription("Trash")).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
         assertTrue(trash.bottom <= receipts.top)
         compose.onNode(spam).performClick()

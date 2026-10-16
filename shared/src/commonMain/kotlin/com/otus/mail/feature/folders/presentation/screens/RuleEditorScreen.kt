@@ -6,6 +6,7 @@ import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.Subpage
 import com.otus.mail.feature.folders.domain.ruleProblem
 import com.otus.mail.feature.folders.domain.without
+import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
 import com.otus.mail.feature.folders.presentation.RulesState
@@ -20,6 +21,7 @@ fun RuleEditorScreen(
     editor: RuleEditorState,
     state: RulesState,
     folders: FoldersState,
+    colors: FolderColorsState,
     accountId: String,
     ruleId: String?,
     onDone: () -> Unit,
@@ -48,6 +50,7 @@ fun RuleEditorScreen(
             draft,
             support,
             accountFolders,
+            colors::colorOf,
             ruleProblem(draft.toRule(draft.ruleId ?: ""), support, folderExists)?.message(),
             state.busy || folders.busy,
             RuleEditorActions(

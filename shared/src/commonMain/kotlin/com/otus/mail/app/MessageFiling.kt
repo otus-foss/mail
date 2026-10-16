@@ -11,6 +11,7 @@ import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
 import com.otus.mail.feature.folders.domain.sharedFolders
+import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageLabel
@@ -31,6 +32,7 @@ import kotlinx.coroutines.launch
 internal class MessageFiling(
     private val services: MailServices,
     private val folders: FoldersState,
+    private val colors: FolderColorsState,
     private val scope: CoroutineScope,
 ) {
     /** [messages] with the other folders each one is in, named for its row. */
@@ -70,6 +72,7 @@ internal class MessageFiling(
                     depth = ownNode?.depth ?: 0,
                     own = ownNode != null,
                     path = paths[node.folder.id],
+                    color = colors.colorOf(node.folder),
                 )
             }
     }
