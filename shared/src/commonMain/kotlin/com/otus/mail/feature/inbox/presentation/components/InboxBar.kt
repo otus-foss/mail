@@ -30,5 +30,5 @@ internal fun InboxBar(
     val layout = behavior.barLayout(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke())
     MailActionBar(layout, list::offer, onAction = {
         it.run()
-    }, behavior.minimizedBar, hidden = state.searching)
+    }, Minimized(hidden = state.searching).takeIf { behavior.minimizedBar })
 }
