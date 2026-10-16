@@ -100,12 +100,12 @@ class FolderListUiTest {
     }
 
     @Test
-    fun droppingAFolderOntoAnotherNestsIt() {
+    fun draggingAFolderAmongSubfoldersNestsItThere() {
         server.folders += """{"id": "t", "name": "Travel"}"""
         openFolders()
-        dragRow("Travel", to = "Receipts", share = HALF)
+        dragRow("Travel", to = "Amazon", share = 0f)
         val update = lastMailboxUpdate()
-        assertTrue(update, "\"t\":{\"sortOrder\":10,\"parentId\":\"r\"}" in update)
+        assertTrue(update, Regex(""""t":\{[^}]*"parentId":"r"""").containsMatchIn(update))
     }
 
     /** Holds [name]'s row, then drags its top edge to [share] of [to]'s row height. */
@@ -151,6 +151,5 @@ class FolderListUiTest {
         const val TIMEOUT = 5_000L
         const val LONG_PRESS_MILLIS = 600L
         const val STEPS = 4
-        const val HALF = 0.5f
     }
 }

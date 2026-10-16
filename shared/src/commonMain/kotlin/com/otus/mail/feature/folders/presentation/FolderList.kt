@@ -75,20 +75,6 @@ fun List<FolderListRow>.moveDrop(
     }
 }
 
-/** The drop for releasing the row at [from] onto the row at [onto]: last inside it. */
-fun List<FolderListRow>.nestDrop(
-    from: Int,
-    onto: Int,
-): FolderDrop? {
-    val dragged = getOrNull(from)?.folder
-    val target = getOrNull(onto)?.folder
-    return if (dragged != null && target != null && dragged.sameScope(target)) {
-        FolderDrop(dragged, target.id, Int.MAX_VALUE)
-    } else {
-        null
-    }
-}
-
 /** Folders of one login and one JMAP account, which a drop can move between. */
 private fun MailFolder.sameScope(other: MailFolder): Boolean =
     accountId == other.accountId && sharedIn == other.sharedIn

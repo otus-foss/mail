@@ -6,7 +6,6 @@ import com.otus.designsystem.components.ReorderableColumn
 import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.hasChildren
 import com.otus.mail.feature.folders.presentation.moveDrop
-import com.otus.mail.feature.folders.presentation.nestDrop
 import com.otus.mail.feature.folders.presentation.visible
 
 /**
@@ -26,7 +25,6 @@ fun FolderReorderTree(
         visible,
         key = { it.key },
         onMove = { from, to -> visible.moveDrop(from, to, actions.placeable)?.let(actions.onDrop) },
-        onNest = { from, onto -> visible.nestDrop(from, onto)?.let(actions.onDrop) },
     ) { row ->
         FolderRow(
             row,
