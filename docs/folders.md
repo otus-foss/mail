@@ -146,7 +146,8 @@ Tapping a folder in Settings › Folders opens its page (`MailPage.FolderDetail`
 follows, such as "45 messages · 3 unread · 2 folders inside". Parts that are zero are left out,
 and an empty folder reads "No messages". Then come these rows:
 
-- **Name** shows the name in a value button and opens the rename popup. It does nothing for a
+- **Name** shows the name in a value button and opens the rename sheet, an `InputSheet`,
+  the same one Rename opens from a held folder. It does nothing for a
   folder without `mayRename`.
 - **Move into** shows the parent folder, or "Top level", and opens a `ChoiceSheet` of the places
   the folder can go: the top level and each folder by its path, such as "Clients / Acme". It
