@@ -10,6 +10,8 @@ class FolderActions(
     val onCreate: (accountId: String, name: String, parentId: String?) -> Unit,
     val onRename: (MailFolder, String) -> Unit,
     val onDelete: (MailFolder) -> Unit,
+    /** Moves the folder under the parent with this id, or to the top level for null. */
+    val onMove: (MailFolder, parentId: String?) -> Unit,
     val color: (MailFolder) -> FolderColorChoice?,
 )
 

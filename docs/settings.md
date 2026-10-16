@@ -58,7 +58,7 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   saved at once. See [action bar](action-bar.md).
 - **Folders** lists every account's folders, or one account's through the account picker, as
   trees. Holding a folder drags it to a new place or into another folder, and **New folder** ends
-  each account's list. Tapping a folder opens its page: a summary line, then **Name**, **Color**
+  each account's list. Tapping a folder opens its page: a summary line, then **Name**, **Move into**, **Color**
   (kept on this device), **Rules** (the chips that sort new mail into it, and **Add rule**), and
   **Delete folder**, which waits until the folder is empty. Rules live only on folder pages;
   there is no separate Rules page. See [Folders and rules](folders.md#the-folder-page).

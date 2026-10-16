@@ -5,6 +5,7 @@ import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.elements.ValueButton
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_delete
+import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.theme.FolderColor
@@ -16,6 +17,15 @@ internal fun FolderNameRow(
     onRename: (() -> Unit)?,
 ) {
     SettingRow("Name", onRename, icon = Res.drawable.symbol_edit) { ValueButton(name) }
+}
+
+/** Where the folder sits: under [parent], or at the top level. [onMove] is null when it cannot move. */
+@Composable
+internal fun FolderParentRow(
+    parent: String?,
+    onMove: (() -> Unit)?,
+) {
+    SettingRow("Move into", onMove, icon = Res.drawable.symbol_drive_file_move) { ValueButton(parent ?: TOP_LEVEL) }
 }
 
 /** The icon color stored on this device as [color], or Default for null. */
