@@ -54,13 +54,12 @@ fun FolderAccountPicker(
 }
 
 /**
- * One account's folders in All accounts, under a row with its avatar, name, and [folderCount]
- * that folds them away.
+ * One account's folders in All accounts, under a row with its avatar, name, and [action]; tapping
+ * the row folds them away.
  */
 @Composable
 fun AccountFolderGroup(
     account: AccountFolders,
-    folderCount: Int,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     action: (@Composable () -> Unit)?,
@@ -71,7 +70,6 @@ fun AccountFolderGroup(
         account.avatar(),
         expanded,
         onExpandedChange,
-        detail = folderCount.folders(),
         action = action,
     )
     Collapsible(expanded) { Column { content() } }
