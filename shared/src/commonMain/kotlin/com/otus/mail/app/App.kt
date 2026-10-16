@@ -1,7 +1,14 @@
 package com.otus.mail.app
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -13,11 +20,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.MailLaunch
 import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.SlidingPages
+import com.otus.designsystem.components.ToastHost
+import com.otus.designsystem.components.ToastState
 import com.otus.designsystem.components.rememberSidebarState
+import com.otus.designsystem.theme.ActionBarTokens
 import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -85,6 +96,7 @@ fun App(
                         }
                     }
                 }
+                AboveActionBar(states.moveToasts.toasts)
                 MailSidebar(
                     sidebar,
                     current = page.root,
@@ -103,4 +115,17 @@ fun App(
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
         }
     }
+}
+
+/** Shows [toasts] above where every page keeps its action bar, at the bar's inset from the edges. */
+@Composable
+private fun BoxScope.AboveActionBar(toasts: ToastState) {
+    ToastHost(
+        toasts,
+        Modifier
+            .align(Alignment.BottomCenter)
+            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+            .padding(ActionBarTokens.barInset)
+            .padding(bottom = ActionBarTokens.height + ActionBarTokens.barInset),
+    )
 }

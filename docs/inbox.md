@@ -146,6 +146,11 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
   only when that folder exists and the message is not already in it. Archive also takes the
   message out of the inbox, and Trash and Spam out of every folder. Trash moves the message;
   nothing is permanently deleted. Spam sets no keyword.
+- Every move, including Archive, Trash, Spam, and Move to, shows a toast above the action bar
+  with **Undo**, such as "Email deleted" or "Moved to Clients". Moves to the same folder while
+  its toast is up count up in it, such as "3 emails deleted", and Undo puts all of them back
+  once their own moves have finished. The toast comes from Meta's `ToastHost`; dismissing it
+  keeps the move.
 - **Read later**, when it is on, adds the account's Read later folder and keeps the message where
   it is; a saved message offers **Remove from Read later**. See
   [Folders and rules](folders.md#read-later).
