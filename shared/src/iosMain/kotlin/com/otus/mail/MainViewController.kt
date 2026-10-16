@@ -7,6 +7,7 @@ import com.otus.jmap.login.IosLoginStore
 import com.otus.mail.app.App
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
 import platform.Foundation.NSCachesDirectory
@@ -30,5 +31,6 @@ fun mainViewController() =
             )
         val behaviorState = MailBehaviorState(IosMailBehaviorStore())
         val themeState = ThemeSettingsState(IosThemePreferenceStore())
-        ComposeUIViewController { App(dateFormatState, services, behaviorState, themeState) }
+        val animationState = AnimationSettingsState(IosAnimationPreferenceStore())
+        ComposeUIViewController { App(dateFormatState, services, behaviorState, themeState, animationState) }
     }

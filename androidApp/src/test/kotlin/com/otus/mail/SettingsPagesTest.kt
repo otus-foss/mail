@@ -52,6 +52,18 @@ class SettingsPagesTest {
     }
 
     @Test
+    fun animationSpeedOffersInstantAndThreeSpeedsWithRegularByDefault() {
+        openSettings()
+        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Regular").assertIsDisplayed()
+        compose.onNodeWithText("Animations").performClick()
+        listOf("Instant", "Slow", "Fast", "No animations").forEach { compose.onNodeWithText(it).assertIsDisplayed() }
+        compose.onNodeWithText("Fast").performClick()
+        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithText("Fast").assertIsDisplayed()
+    }
+
+    @Test
     fun dismissingTheDateFormatPopupKeepsTheChoice() {
         openSettings()
         compose.onNodeWithText("Appearance & behavior").performClick()
