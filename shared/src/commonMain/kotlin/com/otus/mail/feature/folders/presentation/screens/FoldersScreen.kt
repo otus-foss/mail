@@ -1,5 +1,7 @@
 package com.otus.mail.feature.folders.presentation.screens
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -8,13 +10,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.PageNote
-import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.RuleChipLine
-import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.Subpage
+import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_create_new_folder
+import com.otus.designsystem.resources.symbol_add
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn
@@ -65,17 +69,24 @@ fun FoldersScreen(
         state.notice?.let { PageNote(it) }
         if (accounts.isEmpty()) {
             PageNote(if (state.loading) "Loading folders…" else "Connect an account in Settings to manage its folders.")
-        } else {
-            PageNote("Tap a folder to edit it, drag to reorder.")
         }
+        val newFolder = { account: AccountFolders -> newFolderButton(account, state.busy) { dialog = it } }
+        // With one account the hint holds its New folder button; each account's row holds it otherwise.
+        if (accounts.isNotEmpty()) FolderHint(one?.let(newFolder))
         groups.forEach { (account, rows) ->
             val key = ACCOUNT_KEY + account.accountId
             if (one == null) {
-                AccountFolderGroup(account, rows.size, key !in collapsed, { tree.toggle(key, it) }) {
-                    AccountFolders(account, rows, tree, state.busy) { dialog = it }
+                AccountFolderGroup(
+                    account,
+                    rows.size,
+                    key !in collapsed,
+                    { tree.toggle(key, it) },
+                    newFolder(account),
+                ) {
+                    AccountFolders(account, rows, tree)
                 }
             } else {
-                AccountFolders(account, rows, tree, state.busy) { dialog = it }
+                AccountFolders(account, rows, tree)
             }
         }
     }
@@ -104,21 +115,40 @@ private fun AccountFolders(
     account: AccountFolders,
     rows: List<FolderListRow>,
     tree: FolderTreeState,
-    busy: Boolean,
-    onDialog: (FolderDialog) -> Unit,
 ) {
     account.failure?.let { PageNote(it.message()) }
     FolderReorderTree(rows, tree.collapsed, tree.onCollapsedChange, tree.actions)
-    if (account.failure == null && canCreateIn(account, null)) {
-        // While a change is saving, the row stays visible but does nothing.
-        SettingRow(
-            if (busy) "Saving…" else "New folder",
-            { onDialog(FolderDialog.Create(account.accountId, null)) }.takeUnless { busy },
-            icon = Res.drawable.symbol_create_new_folder,
-            density = RowDensity.Compact,
-        )
+}
+
+/** How to use the page, with the New folder [button] at its end when one account is shown. */
+@Composable
+private fun FolderHint(button: (@Composable () -> Unit)?) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f)) { PageNote("Tap a folder to edit it, drag to reorder.") }
+        button?.invoke()
     }
 }
+
+/**
+ * A plus that creates a top-level folder in [account], or null where the account can't take one.
+ * While another change saves, it does nothing.
+ */
+private fun newFolderButton(
+    account: AccountFolders,
+    busy: Boolean,
+    onDialog: (FolderDialog) -> Unit,
+): (@Composable () -> Unit)? =
+    if (account.failure == null && canCreateIn(account, null)) {
+        {
+            IconButton("New folder", {
+                onDialog(FolderDialog.Create(account.accountId, null))
+            }, enabled = !busy, outlined = false) {
+                Symbol(Res.drawable.symbol_add)
+            }
+        }
+    } else {
+        null
+    }
 
 private fun FoldersState.listActions(
     colors: FolderColorsState,

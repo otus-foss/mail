@@ -96,7 +96,7 @@ class FoldersAndRulesTest {
         start()
         openSettingsPage("Folders")
         waitFor("Receipts")
-        compose.onNodeWithText("New folder").performScrollTo().performClick()
+        compose.onNode(hasContentDescription("New folder") and hasClickAction()).performClick()
         compose.onNodeWithContentDescription("Name").performTextInput("Travel")
         compose.onNodeWithText("Create").performClick()
         compose.waitUntil(TIMEOUT) {
