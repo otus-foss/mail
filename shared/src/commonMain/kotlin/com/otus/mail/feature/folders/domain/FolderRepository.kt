@@ -45,11 +45,8 @@ interface FolderRepository {
         name: String,
     ): FolderOutcome
 
-    /** Moves [folder] under [parentId], or to the top level when it is null. */
-    suspend fun move(
-        folder: MailFolder,
-        parentId: String?,
-    ): FolderOutcome
+    /** Saves a dragged folder's new parent and the `sortOrder` numbers [placement] changes, in one request. */
+    suspend fun place(placement: FolderPlacement): FolderOutcome
 
     /** Deletes an empty folder without subfolders; the server refuses otherwise and no mail is lost. */
     suspend fun delete(folder: MailFolder): FolderOutcome

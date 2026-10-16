@@ -63,10 +63,7 @@ class ReadLaterFoldersTest {
             name: String,
         ) = error("unused")
 
-        override suspend fun move(
-            folder: MailFolder,
-            parentId: String?,
-        ) = error("unused")
+        override suspend fun place(placement: FolderPlacement) = error("unused")
 
         override suspend fun delete(folder: MailFolder) = error("unused")
     }

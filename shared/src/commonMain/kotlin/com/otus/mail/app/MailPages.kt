@@ -7,9 +7,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
-import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
-import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
-import com.otus.mail.feature.folders.presentation.screens.RulesScreen
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.within
@@ -46,8 +43,7 @@ internal fun MailPageContent(
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Notifications,
         MailPage.SidebarSettings, MailPage.InboxSettings, MailPage.ThemeSettings, MailPage.ActionBarSettings,
-        MailPage.Folders, MailPage.Rules,
-        is MailPage.RuleEditor,
+        MailPage.Folders, is MailPage.FolderDetail,
         -> {
             SettingsPageContent(page, states, settings, navigation, back)
         }
@@ -117,28 +113,11 @@ private fun SettingsPageContent(
         }
 
         MailPage.Folders -> {
-            FoldersScreen(states.folders, states.rules, states.folderSenders, states.folderColors, onBack = back) {
-                navigation.go(MailPage.Folder(it.accountId, it.id))
-            }
+            FoldersPage(states, navigation, back)
         }
 
-        MailPage.Rules -> {
-            RulesScreen(states.rules, states.folders, onBack = back) { accountId, ruleId ->
-                states.ruleEditor.edit(accountId, ruleId)
-                navigation.go(MailPage.RuleEditor(accountId, ruleId))
-            }
-        }
-
-        is MailPage.RuleEditor -> {
-            RuleEditorScreen(
-                states.ruleEditor,
-                states.rules,
-                states.folders,
-                states.folderColors,
-                page.accountId,
-                page.ruleId,
-                onDone = back,
-            )
+        is MailPage.FolderDetail -> {
+            FolderDetailPage(page, states, back)
         }
 
         else -> {}
@@ -216,7 +195,7 @@ internal fun rememberMessageActions(
     navigation: MailNavigation,
 ): MessageActions =
     remember(states, feed, navigation) {
-        states.messageActions(feed) { accountId -> navigation.go(MailPage.RuleEditor(accountId, null)) }
+        states.messageActions(feed)
     }
 
 /** The folder pills the loaded folders can fill, again whenever they change. */

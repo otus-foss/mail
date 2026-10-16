@@ -164,42 +164,16 @@ class FoldersAndRulesTest {
     }
 
     @Test
-    fun aRuleIsSavedAsAnActiveSieveScript() {
-        start()
-        openSettingsPage("Rules")
-        waitFor("New rule")
-        compose.onNodeWithText("New rule").performClick()
-        compose.onNodeWithContentDescription("Condition 1 text").performTextInput("amazon")
-        compose.onNodeWithText("Choose a folder").performScrollTo().performClick()
-        compose.onNodeWithText("Receipts / Amazon").performClick()
-        compose.onNodeWithText("Save rule").performScrollTo().performClick()
-        waitFor("Rules are on")
-        val script = server.script.orEmpty()
-        assertTrue(script, "header :contains \"from\" \"amazon\"" in script)
-        assertTrue(script, "fileinto :mailboxid \"z\" \"INBOX\";" in script)
-        assertTrue("The first rule turns the rules on", server.scriptActive)
-        compose.onNodeWithText("From contains “amazon”").assertIsDisplayed()
-    }
-
-    @Test
-    fun settingsFoldersShowTheSendersRulesMoveThere() {
+    fun settingsFoldersShowEachFoldersFirstRule() {
         server.script =
             "# otus-rules-v1 " +
             """{"rules":[{"id":"1","conditions":[{"field":"from","operator":"is","value":"grace@example.org"}],""" +
             """"folder":"r"}]}"""
         server.scriptActive = true
         start()
-        // Grace's name comes from her message in the inbox.
-        waitFor("Welcome")
         openSettingsPage("Folders")
-        compose.waitUntil(TIMEOUT) {
-            compose
-                .onAllNodes(hasContentDescription("Rules move mail from Grace Hopper here"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
-        compose.onNodeWithText("Grace").assertIsDisplayed()
-        compose.onNodeWithText("Ada").assertIsDisplayed()
+        waitFor("grace@example.org")
+        compose.onNodeWithText("grace@example.org", substring = true).assertIsDisplayed()
     }
 
     private fun openWelcome() {
@@ -220,16 +194,6 @@ class FoldersAndRulesTest {
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "mailboxIds" in it } }
         val move = server.calls.first { "Email/set" in it && "mailboxIds" in it }
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/z\":true}}" in move)
-    }
-
-    @Test
-    fun anOpenMessageStartsARuleForItsSender() {
-        openWelcome()
-        compose.onNodeWithContentDescription("More actions").performClick()
-        compose.onNodeWithText("Rule for sender").performClick()
-        compose.onNodeWithText("New rule").assertIsDisplayed()
-        compose.onNodeWithText("grace@example.org").assertIsDisplayed()
-        compose.onNodeWithText("is").assertIsDisplayed()
     }
 
     private companion object {

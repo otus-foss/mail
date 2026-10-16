@@ -56,11 +56,12 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
   in the preview, opens a `ChoiceSheet` for that slot with the place's default first. Choosing an
   action that another slot holds swaps the two, and a button slot can be **None**. Each change is
   saved at once. See [action bar](action-bar.md).
-- **Folders** shows each account as a section of flat folder rows, indented by nesting, ending with
-  a **New folder** row. Tapping a folder opens its actions. For the user's own folders, **Color**
-  opens a `ChoiceSheet` of folder colors; see [Folder colors](folders.md#folder-colors).
-  **Folders** and **Rules** manage each account's folders and the rules that file arriving mail;
-  see [Folders and rules](folders.md).
+- **Folders** lists every account's folders, or one account's through the account picker, as
+  trees. Holding a folder drags it to a new place or into another folder, and **New folder** ends
+  each account's list. Tapping a folder opens its page: a summary line, then **Name**, **Color**
+  (kept on this device), **Rules** (the chips that sort new mail into it, and **Add rule**), and
+  **Delete folder**, which waits until the folder is empty. Rules live only on folder pages;
+  there is no separate Rules page. See [Folders and rules](folders.md#the-folder-page).
 
 ## Reusable pieces
 
@@ -74,7 +75,7 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
 - `DialogFrame` (component): the shared popup frame with a title and close button.
 - `SheetFrame` (component): the shared bottom sheet with a title, Done, and dismissal gestures.
 - `ConfirmDialog` (component): asks before a destructive change, with Cancel and the
-  confirming action. Removing an account and deleting a folder or rule use it.
+  confirming action. Removing an account and deleting a folder use it.
 - `ActionDialog` and `InputDialog` (components): a confirmation or menu of `DialogAction`s, and a
   popup with one validated text field.
 - `ActionRow`, `InputField`, and `InputKind` (elements).

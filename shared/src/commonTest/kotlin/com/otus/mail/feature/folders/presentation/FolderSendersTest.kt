@@ -4,12 +4,12 @@ import com.otus.avatar.AvatarImage
 import com.otus.avatar.AvatarImageLoader
 import com.otus.avatar.AvatarService
 import com.otus.mail.core.avatar.mailAvatarOptions
-import com.otus.mail.feature.folders.domain.AccountRules
-import com.otus.mail.feature.folders.domain.MailRule
+import com.otus.mail.feature.folders.domain.AccountFolderRules
+import com.otus.mail.feature.folders.domain.AddressField
+import com.otus.mail.feature.folders.domain.AddressMatch
+import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.RuleCondition
-import com.otus.mail.feature.folders.domain.RuleField
-import com.otus.mail.feature.folders.domain.RuleOperator
 import com.otus.mail.feature.folders.domain.RuleSupport
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -19,13 +19,13 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 class FolderSendersTest {
-    private val fromAda = RuleCondition(RuleField.From, RuleOperator.Is, "ada@example.org")
+    private val fromAda = RuleCondition.Address(AddressField.From, AddressMatch.Exact("ada@example.org"))
     private val rules =
-        AccountRules(
+        AccountFolderRules(
             "a",
             "Work",
             RuleAvailability.Available(RuleSupport(emptySet())),
-            listOf(MailRule("1", "Ada", listOf(fromAda), folderId = "f")),
+            mapOf("f" to listOf(FolderRule(fromAda))),
         )
 
     @Test

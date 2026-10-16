@@ -15,6 +15,8 @@ data class MailFolder(
     val unread: Long = 0,
     val total: Long = 0,
     val rights: FolderRights = FolderRights(),
+    /** The JMAP account another user shares this mailbox from; null for the login's own mailboxes. */
+    val sharedIn: String? = null,
 ) {
     /** Folders the user made. System folders keep their place and name. */
     val isCustom: Boolean
@@ -54,6 +56,10 @@ data class AccountFolders(
     val failure: FolderFailure? = null,
     /** The folder Read later files mail into; null while that setting is off or it has none. */
     val readLaterId: String? = null,
+    /** The name the server gives this login's own mail account, which other logins see as the owner. */
+    val mailboxOwner: String = "",
+    /** Mailboxes other users share with this login. They stay out of [folders], which the sidebar lists. */
+    val shared: List<SharedMailboxes> = emptyList(),
 ) {
     fun folder(id: String): MailFolder? = folders.firstOrNull { it.id == id }
 

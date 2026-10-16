@@ -30,9 +30,11 @@ val MailFolder.key: FolderKey
 
 /**
  * Whether the user may color [folder]: only their own folders. Folders with a role and the Read
- * later folder keep the plain icon.
+ * later folder keep the plain icon. Shared mailboxes get no color, because their ids can repeat
+ * the login's own, which key the stored colors.
  */
-fun AccountFolders.colorable(folder: MailFolder): Boolean = folder.isCustom && folder.id != readLaterId
+fun AccountFolders.colorable(folder: MailFolder): Boolean =
+    folder.isCustom && folder.id != readLaterId && folder.sharedIn == null
 
 /**
  * The colors the user gave their folders, as color names that the design system resolves. A folder

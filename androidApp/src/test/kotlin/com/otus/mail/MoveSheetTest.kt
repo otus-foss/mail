@@ -167,7 +167,7 @@ class MoveSheetTest {
         moveUpdate()
         compose.waitUntil(TIMEOUT) { server.script != null }
         val script = server.script.orEmpty()
-        assertTrue(script, "\"@example.org\"" in script)
+        assertTrue(script, "address :domain :is \"from\" \"example.org\"" in script)
         assertTrue(script, "\"z\"" in script)
     }
 
@@ -188,7 +188,7 @@ class MoveSheetTest {
     @Test
     fun undoMovesTheMessageBackAndDeletesTheRule() {
         moveAndSort()
-        waitFor("No older mail in Inbox matches.")
+        waitFor("No older mail in Inbox or Archive matches.")
         compose.onNodeWithText("Undo").performClick()
         val back = "\"update\":{\"m1\":{\"mailboxIds/z\":null,\"mailboxIds/a\":true}}"
         compose.waitUntil(TIMEOUT) { server.calls.any { back in it } }

@@ -11,10 +11,12 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import com.otus.mail.app.App
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.readColors
@@ -28,7 +30,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Choosing folder colors in Settings › Folders, and the switch that hides them. */
+/** Choosing folder colors from the sidebar, and the switch that hides them. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -47,22 +49,21 @@ class FolderColorsUiTest {
             }
         }
 
-    private fun openFolders() {
+    /** Starts the app and opens the sidebar, where a long press offers a folder's color. */
+    private fun openSidebar() {
         compose.runOnUiThread {
             compose.activity.setContent {
                 App(services = server.services(folderColorStore = store), behaviorState = behavior)
             }
         }
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Folders").performClick()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(folderRow("Receipts")).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun folderRow(name: String) = hasText(name) and hasClickAction() and !isSelectable()
+    private fun folderRow(name: String) = hasText(name) and hasClickAction()
 
     private fun openColorSheet(folder: String) {
-        compose.onNode(folderRow(folder)).performScrollTo().performClick()
+        compose.onAllNodes(folderRow(folder))[0].performScrollTo().performTouchInput { longClick() }
         compose.onNodeWithText("Color").performClick()
     }
 
@@ -75,7 +76,7 @@ class FolderColorsUiTest {
 
     @Test
     fun theColorSheetListsDefaultFirstAndReadsEachColorByName() {
-        openFolders()
+        openSidebar()
         openColorSheet("Receipts")
         val options =
             compose
@@ -98,7 +99,7 @@ class FolderColorsUiTest {
 
     @Test
     fun choosingAColorSavesItForTheFolderAndDefaultForgetsIt() {
-        openFolders()
+        openSidebar()
         openColorSheet("Receipts")
         compose.onNode(hasText("Teal") and isSelectable()).performClick()
         compose.onNode(hasText("Teal") and isSelectable()).assertIsSelected()
@@ -112,19 +113,19 @@ class FolderColorsUiTest {
 
     @Test
     fun systemFoldersOfferNoColor() {
-        openFolders()
-        compose.onNode(folderRow("Inbox")).performScrollTo().performClick()
-        compose.onNodeWithText("Open").assertExists()
+        openSidebar()
+        compose.onAllNodes(folderRow("Inbox"))[0].performTouchInput { longClick() }
+        compose.waitForIdle()
         compose.onNodeWithText("Color").assertDoesNotExist()
     }
 
     @Test
     fun turningFolderColorsOffKeepsTheSavedColors() {
-        openFolders()
+        openSidebar()
         openColorSheet("Receipts")
         compose.onNode(hasText("Purple") and isSelectable()).performClick()
         closeSheet()
-        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Appearance & behavior").performClick()
         compose.onNode(hasText("Sidebar") and hasText("Edit")).performScrollTo().performClick()
         compose
@@ -136,7 +137,7 @@ class FolderColorsUiTest {
         // The sheet still shows the saved color, ready for when the switch is back on.
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithText("Folders").performClick()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
         openColorSheet("Receipts")
         compose.onNode(hasText("Purple") and isSelectable()).assertIsSelected()
     }

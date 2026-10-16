@@ -1,0 +1,121 @@
+package com.otus.mail
+
+import androidx.activity.compose.setContent
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import com.otus.mail.app.App
+import com.otus.mail.feature.folders.domain.FolderColorStore
+import com.otus.mail.feature.folders.domain.readColors
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/** A folder's page from Settings › Folders: its rows, its color, deleting it, and when Rules hides. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class FolderDetailUiTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    private val server = FakeFolderServer()
+    private val store =
+        object : FolderColorStore {
+            var saved = emptyMap<String, String>()
+
+            override fun read() = saved
+
+            override fun write(names: Map<String, String>) {
+                saved = names
+            }
+        }
+
+    private fun openFolder(name: String) {
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                App(services = server.services(folderColorStore = store), behaviorState = MailBehaviorState())
+            }
+        }
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithText("Folders").performClick()
+        val row = hasText(name) and hasClickAction() and !isSelectable()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(row).performClick()
+        waitFor("Delete folder")
+    }
+
+    private fun waitFor(text: String) = compose.waitUntil(TIMEOUT) { count(text) > 0 }
+
+    private fun count(text: String) = compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().size
+
+    @Test
+    fun theDetailPageListsItsRowsAndKeepsDeleteOffWhileTheFolderHasMail() {
+        openFolder("Receipts")
+        compose.onNodeWithText("3 messages · 2 unread · 1 folder inside").assertExists()
+        compose.onNode(hasText("Name") and hasText("Receipts") and hasClickAction()).assertExists()
+        compose.onNodeWithText("Only changes the folder icon").assertExists()
+        waitFor("New mail that matches any of these goes here")
+        compose.onNodeWithText("Add rule").assertExists()
+        compose.onNodeWithText("Empty its messages and subfolders first").assertExists()
+        compose.onNode(hasText("Delete folder") and hasClickAction()).assertDoesNotExist()
+    }
+
+    @Test
+    fun anEmptyFolderIsDeletedAfterAskingAndThePageLeadsBack() {
+        server.folders += """{"id": "t", "name": "Travel"}"""
+        openFolder("Travel")
+        compose.onNodeWithText("No messages").assertExists()
+        compose.onNode(hasText("Delete folder") and hasClickAction()).performScrollTo().performClick()
+        compose.onNodeWithText("Delete Travel?").assertExists()
+        compose.onNodeWithText("Delete").performClick()
+        compose.waitUntil(TIMEOUT) { server.calls.any { "Mailbox/set" in it && "\"destroy\":[\"t\"]" in it } }
+        waitFor("Tap a folder to edit it, drag to reorder.")
+        compose.waitUntil(TIMEOUT) { count("Travel") == 0 }
+    }
+
+    @Test
+    fun choosingAColorKeepsItOnThisDevice() {
+        openFolder("Receipts")
+        compose.onNode(hasText("Color") and hasClickAction()).performClick()
+        compose.onNode(hasText("Green") and isSelectable()).performClick()
+        assertEquals(mapOf("r" to "Green"), store.readColors().names.mapKeys { it.key.mailboxId })
+        compose.onNodeWithText("Done").performClick()
+        compose.waitUntil(TIMEOUT) { count("Done") == 0 }
+        compose.onNode(hasText("Color") and hasText("Green") and hasClickAction()).assertExists()
+        assertTrue("Colors stay off the server", server.calls.none { "Mailbox/set" in it })
+    }
+
+    @Test
+    fun rulesHideWhenTheServerHasNoSieve() {
+        server.sieve = false
+        openFolder("Receipts")
+        compose.onNodeWithText("Only changes the folder icon").assertExists()
+        compose.onNodeWithText("Rules").assertDoesNotExist()
+        compose.onNodeWithText("Add rule").assertDoesNotExist()
+    }
+
+    @Test
+    fun aSharedMailboxHasNoColorOrRules() {
+        server.sharedFolders += """{"id": "d", "name": "Design reviews", "myRights": {"mayAddItems": false}}"""
+        openFolder("Design reviews")
+        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.waitForIdle()
+        compose.onNodeWithText("Only changes the folder icon").assertDoesNotExist()
+        compose.onNodeWithText("Rules").assertDoesNotExist()
+    }
+
+    private companion object {
+        const val TIMEOUT = 5_000L
+    }
+}

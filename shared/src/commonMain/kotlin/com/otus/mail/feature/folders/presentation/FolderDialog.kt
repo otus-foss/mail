@@ -6,12 +6,6 @@ import androidx.compose.runtime.saveable.Saver
 sealed interface FolderDialog {
     val accountId: String
 
-    /** What the user can do with one folder. */
-    data class Actions(
-        override val accountId: String,
-        val folderId: String,
-    ) : FolderDialog
-
     /** A new folder under [parentId], or at the top level when it is null. */
     data class Create(
         override val accountId: String,
@@ -19,11 +13,6 @@ sealed interface FolderDialog {
     ) : FolderDialog
 
     data class Rename(
-        override val accountId: String,
-        val folderId: String,
-    ) : FolderDialog
-
-    data class Move(
         override val accountId: String,
         val folderId: String,
     ) : FolderDialog
@@ -44,10 +33,8 @@ sealed interface FolderDialog {
             Saver(
                 save = { dialog ->
                     when (dialog) {
-                        is Actions -> listOf(ACTIONS, dialog.accountId, dialog.folderId)
                         is Create -> listOf(CREATE, dialog.accountId, dialog.parentId.orEmpty())
                         is Rename -> listOf(RENAME, dialog.accountId, dialog.folderId)
-                        is Move -> listOf(MOVE, dialog.accountId, dialog.folderId)
                         is Delete -> listOf(DELETE, dialog.accountId, dialog.folderId)
                         is Color -> listOf(COLOR, dialog.accountId, dialog.folderId)
                         null -> null
@@ -55,10 +42,8 @@ sealed interface FolderDialog {
                 },
                 restore = { (kind, accountId, target) ->
                     when (kind) {
-                        ACTIONS -> Actions(accountId, target)
                         CREATE -> Create(accountId, target.ifEmpty { null })
                         RENAME -> Rename(accountId, target)
-                        MOVE -> Move(accountId, target)
                         DELETE -> Delete(accountId, target)
                         COLOR -> Color(accountId, target)
                         else -> null
@@ -67,10 +52,8 @@ sealed interface FolderDialog {
             )
 
         // Fixed keys: release builds rename classes.
-        private const val ACTIONS = "actions"
         private const val CREATE = "create"
         private const val RENAME = "rename"
-        private const val MOVE = "move"
         private const val DELETE = "delete"
         private const val COLOR = "color"
     }

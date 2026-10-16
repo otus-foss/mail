@@ -93,6 +93,7 @@ fun App(
             }
             // Outlives the page a move closed, such as the open message.
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
+            SenderRuleSheets(states)
         }
     }
 }
