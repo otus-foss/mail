@@ -289,8 +289,12 @@ Read later pill to the inbox row that shows every account's saved mail. See
   needs `mayRemoveItems` on the folder the message is shown in. `readLaterStep` decides which
   of these a message gets, and IMAP apps see a saved message in both folders.
 - Turning the switch off hides the action, the swipe choice, and the pill, and returns a swipe set
-  to Read later to its default. The folder and its mail stay on the server as an ordinary folder. While
-  the switch is on, a deleted Read later folder is created again on the next load.
+  to Read later to its default. The folders and their mail stay on the server, but the app hides
+  every Read later folder this device saved: none shows in the sidebar, Settings › Folders, or
+  the move sheet, so Read later never turns into one folder per account. A folder the user named
+  Read later before ever turning the switch on was never saved and still shows. Subfolders of a
+  hidden Read later folder show at the top level. While the switch is on, a deleted Read later
+  folder is created again on the next load.
 
 ## Rules
 
