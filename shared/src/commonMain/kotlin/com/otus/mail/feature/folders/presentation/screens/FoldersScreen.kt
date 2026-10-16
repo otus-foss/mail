@@ -31,10 +31,11 @@ import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.components.AccountFolderGroup
 import com.otus.mail.feature.folders.presentation.components.FolderAccountPicker
-import com.otus.mail.feature.folders.presentation.components.FolderActions
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.folders.presentation.components.FolderListActions
 import com.otus.mail.feature.folders.presentation.components.FolderReorderTree
+import com.otus.mail.feature.folders.presentation.components.folderActions
+import com.otus.mail.feature.folders.presentation.components.folderMenu
 import com.otus.mail.feature.folders.presentation.folderRows
 import com.otus.mail.feature.folders.presentation.message
 import com.otus.mail.feature.folders.presentation.placement
@@ -63,7 +64,8 @@ fun FoldersScreen(
             val placements = sharedPlacements(accounts)
             (one?.let(::listOf) ?: accounts).map { it to it.folderRows(placements, allAccounts = one == null) }
         }
-    val tree = FolderTreeState(collapsed, { collapsed = it }, state.listActions(colors, rulesOf, onOpenFolder))
+    val tree =
+        FolderTreeState(collapsed, { collapsed = it }, state.listActions(colors, rulesOf, onOpenFolder) { dialog = it })
     Subpage("Folders", onBack) {
         if (accounts.size > 1) FolderAccountPicker(accounts, one, groups.sumOf { it.second.size }) { chosen = it }
         state.notice?.let { PageNote(it) }
@@ -91,7 +93,7 @@ fun FoldersScreen(
         }
     }
     dialog?.let { open ->
-        FolderDialogs(open, state.account(open.accountId), state.dialogActions()) {
+        FolderDialogs(open, state.account(open.accountId), folderActions(state, colors)) {
             dialog =
                 it
         }
@@ -154,6 +156,7 @@ private fun FoldersState.listActions(
     colors: FolderColorsState,
     rulesOf: (MailFolder) -> List<RuleChipLine>,
     onOpen: (MailFolder) -> Unit,
+    onDialog: (FolderDialog) -> Unit,
 ) = FolderListActions(
     colorOf = colors::colorOf,
     rulesOf = rulesOf,
@@ -166,17 +169,8 @@ private fun FoldersState.listActions(
     canDrop = { placement(it.folder, it.parentId, it.index) != null },
     onDrop = { place(it.folder, it.parentId, it.index) },
     onOpen = onOpen,
+    menuOf = { folder -> account(folder.accountId)?.folderMenu(folder, colors.colorable(folder), onDialog).orEmpty() },
 )
-
-/** Only New folder opens a popup here; the folder's own page offers the other changes. */
-private fun FoldersState.dialogActions() =
-    FolderActions(
-        onCreate = { accountId, name, parentId -> create(accountId, name, parentId) },
-        onRename = ::rename,
-        onDelete = ::delete,
-        onMove = { folder, parentId -> place(folder, parentId) },
-        color = { null },
-    )
 
 private const val ACCOUNT_KEY = "account:"
 

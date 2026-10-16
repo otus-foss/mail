@@ -31,11 +31,9 @@ fun FolderReorderTree(
     ) { row ->
         FolderRow(
             row,
-            actions.colorOf(row.folder),
-            actions.rulesOf(row.folder),
             expanded = (row.key !in collapsed).takeIf { rows.hasChildren(row) },
             onExpandedChange = { open -> onCollapsedChange(if (open) collapsed - row.key else collapsed + row.key) },
-            onClick = { actions.onOpen(row.folder) },
+            actions,
         )
     }
 }

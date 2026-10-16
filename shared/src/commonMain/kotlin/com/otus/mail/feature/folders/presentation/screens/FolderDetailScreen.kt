@@ -20,6 +20,7 @@ import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.KnownAddress
 import com.otus.mail.feature.folders.presentation.RuleSheetDraft
+import com.otus.mail.feature.folders.presentation.canMove
 import com.otus.mail.feature.folders.presentation.components.AddRuleSheet
 import com.otus.mail.feature.folders.presentation.components.DeleteFolderRow
 import com.otus.mail.feature.folders.presentation.components.FolderActions
@@ -29,9 +30,9 @@ import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.folders.presentation.components.FolderNameRow
 import com.otus.mail.feature.folders.presentation.components.FolderParentRow
 import com.otus.mail.feature.folders.presentation.components.FolderRulesSection
+import com.otus.mail.feature.folders.presentation.components.folderActions
 import com.otus.mail.feature.folders.presentation.deletable
 import com.otus.mail.feature.folders.presentation.message
-import com.otus.mail.feature.folders.presentation.parentChoices
 import com.otus.mail.feature.folders.presentation.parentRules
 import com.otus.mail.feature.folders.presentation.remove
 import com.otus.mail.feature.folders.presentation.sheetActions
@@ -85,9 +86,8 @@ fun FolderDetailScreen(
         if (own) {
             val account = folders.account(id)
             val parent = account?.folder(folder.parentId.orEmpty())
-            val canMove =
-                folder.rights.mayRename && account?.parentChoices(folder).orEmpty().any { it?.id != folder.parentId }
-            FolderParentRow(parent?.name, { dialog = FolderDialog.Move(id, folder.id) }.takeIf { canMove })
+            val move = { dialog = FolderDialog.Move(id, folder.id) }
+            FolderParentRow(parent?.name, move.takeIf { account?.canMove(folder) == true })
         }
         if (own && colors.colorable(folder)) {
             FolderColorRow(colors.colors.of(folder)) { dialog = FolderDialog.Color(id, folder.id) }
@@ -135,7 +135,7 @@ private fun FolderDetailDialogs(
     val close = { onPopup(RulePopup()) }
     dialog?.let { open ->
         val scope = states.folders.account(open.accountId)?.scopeOf(folder)
-        FolderDialogs(open, scope, states.detailActions(), onDialog)
+        FolderDialogs(open, scope, folderActions(states.folders, states.colors), onDialog)
     }
     popup.sheet?.let { draft ->
         val actions = rules.sheetActions(folder, draft.editing, onClose = close, onMoved = states.folders::refresh)
@@ -159,16 +159,3 @@ private fun FolderDetailDialogs(
         )
     }
 }
-
-/** Rename, delete, and the icon color, which is kept on this device. */
-private fun FolderDetailStates.detailActions() =
-    FolderActions(
-        onCreate = { accountId, name, parentId -> folders.create(accountId, name, parentId) },
-        onRename = folders::rename,
-        onDelete = folders::delete,
-        onMove = { folder, parentId -> folders.place(folder, parentId) },
-        color = { folder ->
-            FolderColorChoice(colors.colors.of(folder)) { colors.setColor(listOf(folder), it) }
-                .takeIf { colors.colorable(folder) && folder.sharedIn == null }
-        },
-    )
