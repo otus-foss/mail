@@ -90,6 +90,24 @@ class ReadLaterFoldersTest {
         }
 
     @Test
+    fun offHidesTheSavedFolderButNotAnotherNamedReadLater() =
+        runTest {
+            val saved = MailFolder("ada", "x", "Read later")
+            val repository = FakeFolders(listOf(ada(saved)), backgroundScope)
+            assertEquals(
+                listOf("i"),
+                ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x")))
+                    .accounts {
+                        false
+                    }.single()
+                    .folders
+                    .map { it.id },
+            )
+            val unsaved = ReadLaterFolders(repository, MemoryStore()).accounts { false }.single()
+            assertEquals(listOf("i", "x"), unsaved.folders.map { it.id }, "Never saved, so it is the user's own folder")
+        }
+
+    @Test
     fun createsAMissingFolderAtTheTopLevelAndSavesIt() =
         runTest {
             val repository = FakeFolders(listOf(ada()), backgroundScope)
