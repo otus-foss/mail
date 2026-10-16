@@ -3,6 +3,7 @@ package com.otus.mail.app
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,11 +15,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.SidebarSwipeArea
+import com.otus.designsystem.components.SlidingPages
 import com.otus.designsystem.components.rememberSidebarState
+import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
+import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
 import kotlinx.coroutines.flow.drop
@@ -30,6 +34,7 @@ fun App(
     services: MailServices = remember { MailServices() },
     behaviorState: MailBehaviorState = remember { MailBehaviorState() },
     themeState: ThemeSettingsState = remember { ThemeSettingsState() },
+    animationState: AnimationSettingsState = remember { AnimationSettingsState() },
     nightlyBuild: Int? = null,
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
@@ -54,29 +59,37 @@ fun App(
     }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
+    val settings =
+        remember(dateFormatState, themeState, animationState) {
+            SharedSettings(dateFormatState, themeState, animationState)
+        }
     val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
     OtusTheme(themeState.palette) {
-        Box(Modifier.fillMaxSize()) {
-            // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
-            SidebarSwipeArea(sidebar, enabled = page.parent == null) {
-                pages.SaveableStateProvider(page.toString()) {
-                    MailPageContent(page, states, dateFormatter, dateFormatState, themeState, navigation)
+        CompositionLocalProvider(LocalMotionScale provides animationState.speed.scale) {
+            Box(Modifier.fillMaxSize()) {
+                // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
+                SidebarSwipeArea(sidebar, enabled = page.parent == null) {
+                    SlidingPages(page, depth = MailPage::depth) { shown ->
+                        pages.SaveableStateProvider(shown.toString()) {
+                            MailPageContent(shown, states, dateFormatter, settings, navigation)
+                        }
+                    }
                 }
+                MailSidebar(
+                    sidebar,
+                    current = page.root,
+                    states,
+                    sidebarAccount,
+                    update = nightly?.available,
+                    onSelectAccount = { sidebarAccount = it },
+                    onSelect = {
+                        page = it
+                        scope.launch { sidebar.close() }
+                    },
+                )
             }
-            MailSidebar(
-                sidebar,
-                current = page.root,
-                states,
-                sidebarAccount,
-                update = nightly?.available,
-                onSelectAccount = { sidebarAccount = it },
-                onSelect = {
-                    page = it
-                    scope.launch { sidebar.close() }
-                },
-            )
+            // Outlives the page a move closed, such as the open message.
+            states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
         }
-        // Outlives the page a move closed, such as the open message.
-        states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
     }
 }

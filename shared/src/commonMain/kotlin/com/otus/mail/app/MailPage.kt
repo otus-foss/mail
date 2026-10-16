@@ -14,6 +14,10 @@ internal sealed interface MailPage {
     val root: MailPage
         get() = parent?.root ?: this
 
+    /** How many parents lead back to a sidebar destination, which is at depth 0. */
+    val depth: Int
+        get() = parent?.let { it.depth + 1 } ?: 0
+
     data object Inbox : MailPage
 
     data object Settings : MailPage
