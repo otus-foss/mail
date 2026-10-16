@@ -27,9 +27,11 @@ import com.otus.mail.feature.folders.presentation.components.FolderColorChoice
 import com.otus.mail.feature.folders.presentation.components.FolderColorRow
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.folders.presentation.components.FolderNameRow
+import com.otus.mail.feature.folders.presentation.components.FolderParentRow
 import com.otus.mail.feature.folders.presentation.components.FolderRulesSection
 import com.otus.mail.feature.folders.presentation.deletable
 import com.otus.mail.feature.folders.presentation.message
+import com.otus.mail.feature.folders.presentation.parentChoices
 import com.otus.mail.feature.folders.presentation.parentRules
 import com.otus.mail.feature.folders.presentation.remove
 import com.otus.mail.feature.folders.presentation.sheetActions
@@ -80,6 +82,13 @@ fun FolderDetailScreen(
             folder.name,
             { dialog = FolderDialog.Rename(id, folder.id) }.takeIf { folder.isCustom && folder.rights.mayRename },
         )
+        if (own) {
+            val account = folders.account(id)
+            val parent = account?.folder(folder.parentId.orEmpty())
+            val canMove =
+                folder.rights.mayRename && account?.parentChoices(folder).orEmpty().any { it?.id != folder.parentId }
+            FolderParentRow(parent?.name, { dialog = FolderDialog.Move(id, folder.id) }.takeIf { canMove })
+        }
         if (own && colors.colorable(folder)) {
             FolderColorRow(colors.colors.of(folder)) { dialog = FolderDialog.Color(id, folder.id) }
         }
@@ -157,6 +166,7 @@ private fun FolderDetailStates.detailActions() =
         onCreate = { accountId, name, parentId -> folders.create(accountId, name, parentId) },
         onRename = folders::rename,
         onDelete = folders::delete,
+        onMove = { folder, parentId -> folders.place(folder, parentId) },
         color = { folder ->
             FolderColorChoice(colors.colors.of(folder)) { colors.setColor(listOf(folder), it) }
                 .takeIf { colors.colorable(folder) && folder.sharedIn == null }

@@ -60,6 +60,10 @@ private fun FolderChangeDialog(
             )
         }
 
+        is FolderDialog.Move -> {
+            FolderParentSheet(folder, account, onPick = { actions.onMove(folder, it) }, onDismiss = close)
+        }
+
         is FolderDialog.Color -> {
             val color = actions.color(folder)
             if (color == null) {
@@ -100,5 +104,6 @@ private fun folderOf(
         is FolderDialog.Rename -> account.folder(dialog.folderId)
         is FolderDialog.Delete -> account.folder(dialog.folderId)
         is FolderDialog.Color -> account.folder(dialog.folderId)
+        is FolderDialog.Move -> account.folder(dialog.folderId)
         is FolderDialog.Create -> null
     }

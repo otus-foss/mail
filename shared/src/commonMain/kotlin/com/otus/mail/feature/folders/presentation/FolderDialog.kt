@@ -22,6 +22,12 @@ sealed interface FolderDialog {
         val folderId: String,
     ) : FolderDialog
 
+    /** The folder the folder moves into, or the top level. */
+    data class Move(
+        override val accountId: String,
+        val folderId: String,
+    ) : FolderDialog
+
     /** The folder's icon color, kept on this device. */
     data class Color(
         override val accountId: String,
@@ -37,6 +43,7 @@ sealed interface FolderDialog {
                         is Rename -> listOf(RENAME, dialog.accountId, dialog.folderId)
                         is Delete -> listOf(DELETE, dialog.accountId, dialog.folderId)
                         is Color -> listOf(COLOR, dialog.accountId, dialog.folderId)
+                        is Move -> listOf(MOVE, dialog.accountId, dialog.folderId)
                         null -> null
                     }
                 },
@@ -46,6 +53,7 @@ sealed interface FolderDialog {
                         RENAME -> Rename(accountId, target)
                         DELETE -> Delete(accountId, target)
                         COLOR -> Color(accountId, target)
+                        MOVE -> Move(accountId, target)
                         else -> null
                     }
                 },
@@ -56,5 +64,6 @@ sealed interface FolderDialog {
         private const val RENAME = "rename"
         private const val DELETE = "delete"
         private const val COLOR = "color"
+        private const val MOVE = "move"
     }
 }

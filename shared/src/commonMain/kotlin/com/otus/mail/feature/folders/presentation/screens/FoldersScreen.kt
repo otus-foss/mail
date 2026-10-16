@@ -142,6 +142,7 @@ private fun FoldersState.dialogActions() =
         onCreate = { accountId, name, parentId -> create(accountId, name, parentId) },
         onRename = ::rename,
         onDelete = ::delete,
+        onMove = { folder, parentId -> place(folder, parentId) },
         color = { null },
     )
 

@@ -115,6 +115,16 @@ class FolderDetailUiTest {
         compose.onNodeWithText("Rules").assertDoesNotExist()
     }
 
+    @Test
+    fun moveIntoPutsTheFolderUnderTheChosenParent() {
+        server.folders += """{"id": "t", "name": "Travel"}"""
+        openFolder("Travel")
+        compose.onNodeWithText("Top level").performClick()
+        compose.onNodeWithText("Receipts / Amazon").assertExists()
+        compose.onNode(hasText("Receipts") and isSelectable()).performClick()
+        compose.waitUntil(TIMEOUT) { server.calls.any { "Mailbox/set" in it && "\"parentId\":\"r\"" in it } }
+    }
+
     private companion object {
         const val TIMEOUT = 5_000L
     }

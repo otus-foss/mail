@@ -130,6 +130,12 @@ and an empty folder reads "No messages". Then come these rows:
 
 - **Name** shows the name in a value button and opens the rename popup. It does nothing for a
   folder without `mayRename`.
+- **Move into** shows the parent folder, or "Top level", and opens a `ChoiceSheet` of the places
+  the folder can go: the top level and each folder by its path, such as "Clients / Acme". It
+  leaves out the folder itself, its subfolders, folders that don't take subfolders, places deeper
+  than five levels, and folders that already hold one with its name. Choosing one moves the
+  folder at once with the same `Mailbox/set` as dragging. This is how a folder goes into one that
+  has no subfolders yet.
 - **Color**, "Only changes the folder icon", opens the color sheet. The color stays on this device
   (see [Folder colors](#folder-colors)).
 - **Rules**, "New mail that matches any of these goes here", lists the folder's rules as
