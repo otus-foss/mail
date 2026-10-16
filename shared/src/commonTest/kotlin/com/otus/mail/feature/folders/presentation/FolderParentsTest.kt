@@ -10,10 +10,11 @@ class FolderParentsTest {
     private val acme = MailFolder("ada", "a", "Acme", parentId = "c")
     private val otherAcme = MailFolder("ada", "o", "Acme")
     private val travel = MailFolder("ada", "t", "Travel")
-    private val account = AccountFolders("ada", "Ada", listOf(clients, acme, otherAcme, travel))
+    private val inbox = MailFolder("ada", "i", "Inbox", role = "inbox")
+    private val account = AccountFolders("ada", "Ada", listOf(inbox, clients, acme, otherAcme, travel))
 
     @Test
-    fun aFolderCanMoveToTheTopOrIntoAnyFolderButItselfOrOneWithItsName() {
+    fun aFolderMovesToTheTopOrIntoOwnFoldersButNotItselfOrOneWithItsName() {
         assertEquals(listOf(null, "o", "c", "a"), account.parentChoices(travel).map { it?.id })
         // Clients already holds an Acme, so the top-level Acme cannot move there.
         assertEquals(listOf(null, "a", "t"), account.parentChoices(otherAcme).map { it?.id })
