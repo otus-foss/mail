@@ -111,7 +111,7 @@ fun InboxScreen(
                     }
                 }
             },
-        ) { MessageScreen(it, messageActions, status.notice, context.onCompose) { openId = null } }
+        ) { MessageScreen(it, messageActions, status.notice, context.loadHtml, context.onCompose) { openId = null } }
         filter?.let { selected ->
             InboxFilterSheet(selected, messages, state.search, page, dateFormatter, state::update) { filter = null }
         }
