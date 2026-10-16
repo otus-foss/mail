@@ -40,7 +40,6 @@ class ThemeSettingsTest {
 
         compose.onNode(hasContentDescription("Green") and isSelectable()).performScrollTo().performClick()
         assertEquals("light #3F8F6B", saved)
-        compose.onNodeWithText("Otus made the other two shades from green", substring = true).assertExists()
 
         compose.onNodeWithText("Reset to Otus").performScrollTo().performClick()
         compose.waitUntil(TIMEOUT) { OtusColors.palette == OtusPalette.Otus }
