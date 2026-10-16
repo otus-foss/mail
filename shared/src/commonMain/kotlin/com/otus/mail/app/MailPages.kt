@@ -26,8 +26,6 @@ import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
-import com.otus.settings.presentation.DateFormatSettingsState
-import com.otus.settings.presentation.ThemeSettingsState
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
 
@@ -36,8 +34,7 @@ internal fun MailPageContent(
     page: MailPage,
     states: MailStates,
     dateFormatter: DateFormatter,
-    dateFormatState: DateFormatSettingsState,
-    themeState: ThemeSettingsState,
+    settings: SharedSettings,
     navigation: MailNavigation,
 ) {
     val back = { navigation.go(page.parent ?: page) }
@@ -54,7 +51,7 @@ internal fun MailPageContent(
         MailPage.SidebarSettings, MailPage.ThemeSettings, MailPage.ActionBarSettings, MailPage.Folders, MailPage.Rules,
         is MailPage.RuleEditor,
         -> {
-            SettingsPageContent(page, states, dateFormatState, themeState, navigation, back)
+            SettingsPageContent(page, states, settings, navigation, back)
         }
 
         is MailPage.Folder -> {
@@ -81,8 +78,7 @@ internal fun MailPageContent(
 private fun SettingsPageContent(
     page: MailPage,
     states: MailStates,
-    dateFormatState: DateFormatSettingsState,
-    themeState: ThemeSettingsState,
+    settings: SharedSettings,
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
@@ -99,7 +95,7 @@ private fun SettingsPageContent(
         }
 
         MailPage.Appearance -> {
-            AppearancePage(states, dateFormatState, themeState, navigation, back)
+            AppearancePage(states, settings, navigation, back)
         }
 
         MailPage.Notifications -> {
@@ -111,7 +107,7 @@ private fun SettingsPageContent(
         }
 
         MailPage.ThemeSettings -> {
-            ThemeSettingsScreen(themeState, onBack = back) { ThemeInboxPreview() }
+            ThemeSettingsScreen(settings.theme, onBack = back) { ThemeInboxPreview() }
         }
 
         MailPage.ActionBarSettings -> {
