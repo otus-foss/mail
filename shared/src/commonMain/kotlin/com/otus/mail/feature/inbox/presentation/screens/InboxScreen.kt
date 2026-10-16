@@ -23,6 +23,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.PullToRefresh
+import com.otus.designsystem.components.SlidingOverlay
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.panelTextStyle
@@ -77,39 +78,43 @@ fun InboxScreen(
     val closeSearch = searchCloser(state)
     BackHandler(selected.isNotEmpty(), clearSelection)
     ProvideTextStyle(panelTextStyle()) {
-        ActionBarHost(
-            bar =
-                inboxBar(messages, state, selected, messageActions, clearSelection, context.onCompose) {
-                    filter =
-                        InboxFilter.More
-                },
-            Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .imePadding()
-                // An open message covers the list, so accessibility services skip it too.
-                .then(if (opened == null) Modifier else Modifier.clearAndSetSemantics {}),
-        ) { barPadding ->
-            Column(Modifier.fillMaxSize().padding(vertical = InboxTokens.pageInset)) {
-                // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
-                InboxHeader(messages, state, page, dateFormatter, closeSearch, onOpenNavigation) { filter = it }
-                PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
-                    InboxResults(
-                        messages,
-                        status,
-                        state,
-                        dateFormatter,
-                        gestures,
-                        barPadding,
-                        emptyContent = { InboxEmptyContent(messages, status, state, page, onRefresh) },
-                    )
+        SlidingOverlay(
+            opened,
+            Modifier.fillMaxSize(),
+            base = {
+                ActionBarHost(
+                    bar =
+                        inboxBar(messages, state, selected, messageActions, clearSelection, context.onCompose) {
+                            filter = InboxFilter.More
+                        },
+                    Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .imePadding()
+                        // An open message covers the list, so accessibility services skip it too.
+                        .then(if (opened == null) Modifier else Modifier.clearAndSetSemantics {}),
+                ) { barPadding ->
+                    Column(Modifier.fillMaxSize().padding(vertical = InboxTokens.pageInset)) {
+                        // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
+                        InboxHeader(messages, state, page, dateFormatter, closeSearch, onOpenNavigation) { filter = it }
+                        PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
+                            InboxResults(
+                                messages,
+                                status,
+                                state,
+                                dateFormatter,
+                                gestures,
+                                barPadding,
+                                emptyContent = { InboxEmptyContent(messages, status, state, page, onRefresh) },
+                            )
+                        }
+                    }
                 }
-            }
-        }
+            },
+        ) { MessageScreen(it, messageActions, status.notice, context.onCompose) { openId = null } }
         filter?.let { selected ->
             InboxFilterSheet(selected, messages, state.search, page, dateFormatter, state::update) { filter = null }
         }
-        opened?.let { MessageScreen(it, messageActions, status.notice, context.onCompose) { openId = null } }
     }
 }
 
