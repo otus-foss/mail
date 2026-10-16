@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -134,6 +136,9 @@ class FolderListUiTest {
         listOf("Rename", "Move into", "Color").forEach { compose.onNodeWithContentDescription(it).assertExists() }
         compose.onNodeWithContentDescription("Rename").performClick()
         compose.onNodeWithText("Rename Amazon").assertExists()
+        compose.onNode(hasSetTextAction()).performTextReplacement("Shopping")
+        compose.onNodeWithText("Rename").performClick()
+        compose.waitUntil(TIMEOUT) { server.calls.any { "Mailbox/set" in it && "Shopping" in it } }
     }
 
     /** Drags [name]'s handle so the row's center lands at [share] of [to]'s row height, and lifts. */
