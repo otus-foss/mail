@@ -2,7 +2,6 @@ package com.otus.mail.feature.folders.presentation.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,7 +19,6 @@ import com.otus.designsystem.components.TrailingIcons
 import com.otus.designsystem.elements.BarIconButton
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
-import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn
@@ -132,7 +130,7 @@ private fun FolderHint(button: (@Composable () -> Unit)?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) { PageNote("Tap a folder to edit it, drag to reorder.") }
         // The empty last slot stands where the folder rows have their drag handles.
-        button?.let { Box(Modifier.padding(end = PageTokens.textInset)) { TrailingIcons(first = it, last = {}) } }
+        button?.let { TrailingIcons(first = it, last = {}) }
     }
 }
 
