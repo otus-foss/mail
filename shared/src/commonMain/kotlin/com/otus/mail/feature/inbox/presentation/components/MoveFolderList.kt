@@ -9,6 +9,7 @@ import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.elements.LocalIconTint
 import com.otus.designsystem.elements.SidebarExpandButton
+import com.otus.designsystem.elements.nestIndent
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.theme.FolderColor
@@ -38,7 +39,7 @@ internal fun MoveFolderList(
             SettingRow(
                 folder.name,
                 { onMove(folder) },
-                Modifier.padding(start = PageTokens.nestIndent * folder.depth),
+                Modifier.nestIndent(PageTokens.nestIndent, folder.depth),
                 icon = Res.drawable.symbol_folder,
                 density = RowDensity.Compact,
                 trailing = { expanded?.let { SidebarExpandButton(folder.name, it, onExpandedChange) } },

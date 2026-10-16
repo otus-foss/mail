@@ -40,14 +40,12 @@ fun canCreateIn(
     parent: MailFolder?,
 ): Boolean {
     if (parent == null) return account.limits.mayCreateTopLevel
-    val maxDepth = account.limits.maxDepth
-    return parent.rights.mayCreateChild &&
-        (maxDepth == null || ancestorCount(account.folders, parent) + 2 <= maxDepth)
+    return parent.rights.mayCreateChild && ancestorCount(account.folders, parent) + 2 <= account.limits.levels
 }
 
 /**
  * Where [folder] can move: the top level (null) or another folder that accepts children, never
- * into itself or anything nested below it, and within the server's depth limit.
+ * into itself or anything nested below it, and within [FolderLimits.levels].
  */
 fun moveTargets(
     account: AccountFolders,
@@ -55,12 +53,12 @@ fun moveTargets(
 ): List<MailFolder?> {
     val subtree = subtreeIds(account.folders, folder)
     val height = subtreeHeight(account.folders, folder)
-    val maxDepth = account.limits.maxDepth
+    val levels = account.limits.levels
     val folders =
         account.folderTree().map { it.folder }.filter { target ->
             target.id !in subtree &&
                 target.rights.mayCreateChild &&
-                (maxDepth == null || ancestorCount(account.folders, target) + 2 + height <= maxDepth)
+                ancestorCount(account.folders, target) + 2 + height <= levels
         }
     val topLevel: List<MailFolder?> = if (account.limits.mayCreateTopLevel) listOf(null) else emptyList()
     return topLevel + folders
