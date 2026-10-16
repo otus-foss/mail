@@ -34,7 +34,9 @@ that zone, so pages need no extra wiring.
 - It opens at `MotionSpeed.Relaxed` (300 ms) with `MotionCurve.Enter` and closes at
   `MotionSpeed.Normal` (240 ms) with `MotionCurve.Exit`. A sidebar released part-way animates only
   the remaining share of that time. One progress value drives slide and scrim, so swipes and
-  reversals stay continuous. Sizes live in `SidebarTokens`; see [motion](motion.md).
+  reversals stay continuous. These times are for the Regular speed; the **Animations** setting in
+  Appearance & behavior scales them like every other animation, and Instant opens and closes the
+  sidebar at once. Sizes live in `SidebarTokens`; see [motion](motion.md).
 
 ## Mail destinations
 
