@@ -1,12 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -40,9 +37,11 @@ import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailAction.SuggestedMove
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.domain.barLayout
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.MailActionBar
+import com.otus.mail.feature.inbox.presentation.components.MessageBody
 import com.otus.mail.feature.inbox.presentation.components.OfferedAction
 import com.otus.mail.feature.inbox.presentation.components.offer
 import com.otus.mail.feature.inbox.presentation.components.overflow
@@ -56,14 +55,15 @@ import com.otus.mail.feature.inbox.presentation.components.replyOffer
  * An open message as a page over the list. With [actions], its bar and menu act on it: an action
  * that takes the message away closes the page first, while marks keep it open and show their new
  * state. Reply, Reply all, Forward, and New mail start a draft through [onCompose]. A [notice],
- * such as a refused mark, shows under the header, since the page hides the list's. Back and the
- * chevron run [onClose].
+ * such as a refused mark, shows under the header, since the page hides the list's. [loadHtml]
+ * fetches the HTML body. Back and the chevron run [onClose].
  */
 @Composable
 fun MessageScreen(
     message: MailMessage,
     actions: MessageActions?,
     notice: String?,
+    loadHtml: suspend (MailMessage) -> MessageHtml?,
     onCompose: (ComposeRequest) -> Unit,
     onClose: () -> Unit,
 ) {
@@ -106,7 +106,7 @@ fun MessageScreen(
             Column(Modifier.fillMaxSize().padding(PageTokens.pageInset)) {
                 MessageHeader(message, onClose, onMore = { menu = true }.takeIf { more.isNotEmpty() })
                 notice?.let { MessageNotice(it) }
-                MessageBody(message, Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(padding))
+                MessageBody(message, loadHtml, padding, Modifier.weight(1f))
             }
         }
     }
@@ -159,25 +159,5 @@ private fun MessageHeader(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-@Composable
-private fun MessageBody(
-    message: MailMessage,
-    modifier: Modifier,
-) {
-    Column(
-        modifier.padding(horizontal = PageTokens.textInset, vertical = PageTokens.contentInset),
-        verticalArrangement = Arrangement.spacedBy(InboxTokens.itemGap),
-    ) {
-        Text("${message.sender.name} <${message.sender.address}>", color = OtusColors.text2)
-        Text(message.body)
-        if (message.bodyTruncated) {
-            Text("Only the start of this message was loaded.", color = OtusColors.text2)
-        }
-        if (message.attributes.attachments.isNotEmpty()) {
-            Text("Attachments: ${message.attributes.attachments.joinToString()}", color = OtusColors.text2)
-        }
     }
 }

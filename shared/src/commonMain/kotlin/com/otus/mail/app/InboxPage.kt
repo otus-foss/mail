@@ -54,6 +54,7 @@ internal fun InboxPage(
                         feed::show,
                     ),
                 onCompose = { navigation.go(MailPage.Compose(it)) },
+                loadHtml = states::messageHtml,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )

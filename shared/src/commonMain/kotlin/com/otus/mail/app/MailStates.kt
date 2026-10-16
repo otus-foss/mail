@@ -16,6 +16,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.AddressPinsState
@@ -123,6 +124,9 @@ internal class MailStates(
 
     /** Moves messages between folders and in and out of Read later. */
     val filing = MessageFiling(services, folders, folderColors, scope)
+
+    /** The toasts that offer to undo moves; they outlive the page a move closed, such as the open message. */
+    val moveToasts = MoveToasts()
     private val cleaning = FolderCleaning(services, folders, scope)
     private val marking = MessageMarking(services, folders, scope)
 
@@ -138,7 +142,10 @@ internal class MailStates(
             moves =
                 MessageMoves(
                     targets = filing::moveTargets,
-                    onMove = { message, target -> filing.move(feed, message, target) },
+                    onMove = { message, target ->
+                        val move = filing.move(feed, message, target)
+                        moveToasts.moved(target) { filing.moveBack(feed, message, target, after = move) }
+                    },
                     suggested = filing::suggestedTarget,
                     futureSorting = { sorting.futureSorting(it, feed) },
                 ),
@@ -149,6 +156,9 @@ internal class MailStates(
             behavior = { behavior.behavior },
             cleanup = cleaning.cleanup(feed),
         )
+
+    /** The HTML body of an open message. */
+    suspend fun messageHtml(message: MailMessage): MessageHtml? = services.bodies.html(message)
 
     /** Supplied messages have no server id, so only loaded mail can change its marks. */
     private fun canMark(
