@@ -17,30 +17,21 @@ import com.otus.designsystem.components.ScopePicker
 import com.otus.mail.feature.folders.domain.AccountFolders
 
 /**
- * Which account's folders the page shows: All accounts while [chosen] is null, else one account.
- * The card opens a sheet with All accounts first, then each account; [onChoose] gets the account
- * id, or null for All accounts. [folderCount] is how many folders the page lists.
+ * Which account's folders the page shows, for its header: All accounts while [chosen] is null, else
+ * one account, as their avatars. It opens a sheet with All accounts first, then each account;
+ * [onChoose] gets the account id, or null for All accounts.
  */
 @Composable
 fun FolderAccountPicker(
     accounts: List<AccountFolders>,
     chosen: AccountFolders?,
-    folderCount: Int,
     onChoose: (String?) -> Unit,
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
     ScopePicker(
-        title = chosen?.accountName ?: ALL_ACCOUNTS,
         avatars = (chosen?.let(::listOf) ?: accounts).map { it.avatar() },
+        label = "Showing folders of ${chosen?.accountName ?: ALL_ACCOUNTS}",
         onClick = { open = true },
-        subtitle =
-            listOfNotNull(
-                accounts.size.counted("account").takeIf {
-                    chosen == null
-                },
-                folderCount.folders(),
-            ).joinToString(" · "),
-        onClickLabel = "Choose account",
     )
     if (open) {
         ChoiceSheet(
@@ -77,9 +68,5 @@ fun AccountFolderGroup(
 
 private fun AccountFolders.avatar(): ChipAvatar =
     generatedAvatar(accountName, "").let { ChipAvatar(it.initials, it.colorIndex) }
-
-private fun Int.folders(): String = counted("folder")
-
-private fun Int.counted(noun: String): String = if (this == 1) "1 $noun" else "$this ${noun}s"
 
 private const val ALL_ACCOUNTS = "All accounts"

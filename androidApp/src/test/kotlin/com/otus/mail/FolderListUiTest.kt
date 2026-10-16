@@ -57,17 +57,16 @@ class FolderListUiTest {
     @Test
     fun thePickerSwitchesBetweenAllAccountsAndOne() {
         openFolders(withBob = true)
-        compose.onNodeWithText("All accounts").assertExists()
-        compose.onNodeWithText("2 accounts · 4 folders").assertExists()
+        compose.onNodeWithContentDescription("Showing folders of All accounts").assertExists()
         assertEquals("Each account lists its folders", 2, count("Amazon"))
         screenshot("all-accounts")
         compose.onNodeWithText("Ada").performClick()
         compose.waitUntil(TIMEOUT) { count("Amazon") == 1 }
 
-        compose.onNodeWithText("All accounts").performClick()
-        compose.onNode(hasText("Bob") and isSelectable() and !hasText("folders", substring = true)).performClick()
+        compose.onNodeWithContentDescription("Showing folders of All accounts").performClick()
+        compose.onNode(hasText("Bob") and isSelectable()).performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("2 folders").assertExists()
+        compose.onNodeWithContentDescription("Showing folders of Bob").assertExists()
         assertEquals(1, count("Amazon"))
         assertEquals("One account has no group rows", 0, count("Ada"))
     }

@@ -60,9 +60,9 @@ script, so they keep working while the app is closed.
 
 ## Settings › Folders
 
-The header has the back chevron and "Folders" only. With several accounts, a card under it picks
-whose folders show: "All accounts", with a subtitle such as "2 accounts · 11 folders", or one
-account, such as "6 folders". It opens a sheet with All accounts first, then each account. The hint
+The header has the back chevron and "Folders". With several accounts, the header's end holds a
+`ScopePicker`, the avatars of whoever is shown and an unfold icon, that picks whose folders show:
+All accounts or one account. It opens a sheet with All accounts first, then each account. The hint
 "Tap a folder to edit it, drag to reorder." follows.
 
 - In All accounts, each account's folders sit under a row with its avatar, name, and a plain
