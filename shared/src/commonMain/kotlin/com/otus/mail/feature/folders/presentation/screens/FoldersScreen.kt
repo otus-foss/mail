@@ -2,6 +2,7 @@ package com.otus.mail.feature.folders.presentation.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,9 +16,11 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.RuleChipLine
 import com.otus.designsystem.components.Subpage
+import com.otus.designsystem.components.TrailingIcons
 import com.otus.designsystem.elements.BarIconButton
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
+import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn
@@ -120,12 +123,16 @@ private fun AccountFolders(
     FolderReorderTree(rows, tree.collapsed, tree.onCollapsedChange, tree.actions)
 }
 
-/** How to use the page, with the New folder [button] at its end when one account is shown. */
+/**
+ * How to use the page, with the New folder [button] at its end when one account is shown, in the
+ * same column as the folder rows' settings icons.
+ */
 @Composable
 private fun FolderHint(button: (@Composable () -> Unit)?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) { PageNote("Tap a folder to edit it, drag to reorder.") }
-        button?.invoke()
+        // The empty last slot stands where the folder rows have their drag handles.
+        button?.let { Box(Modifier.padding(end = PageTokens.textInset)) { TrailingIcons(first = it, last = {}) } }
     }
 }
 
