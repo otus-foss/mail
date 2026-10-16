@@ -65,8 +65,8 @@ whose folders show: "All accounts", with a subtitle such as "2 accounts · 11 fo
 account, such as "6 folders". It opens a sheet with All accounts first, then each account. The hint
 "Tap a folder to edit it, drag to reorder." follows.
 
-- In All accounts, each account's folders sit under a row with its avatar, name, and folder count.
-  Tapping the row folds them away. With one account, or one account chosen, there are no account
+- In All accounts, each account's folders sit under a row with its avatar, name, and a plain
+  plus that creates a folder there. Tapping the row folds them away. With one account, or one account chosen, there are no account
   rows.
 - A folder row has the folder icon in the folder's color, the name, and its first rule as a
   compact chip, with "+1" and so on for the others. Rows show no message or folder counts. A
@@ -74,7 +74,8 @@ account, such as "6 folders". It opens a sheet with All accounts first, then eac
   they fold. The folded rows are kept in saved state.
 - Tapping a folder opens its page (`MailPage.FolderDetail`), which holds its name, color, rules,
   and delete. A plus button, labelled New folder for screen readers, opens a sheet that creates
-  a folder at the top level: in All accounts it sits on each account's row, and with one account it follows the hint.
+  a folder at the top level. It is a plain icon (`BarIconButton`) that shows its label on a long
+  press. In All accounts it sits on each account's row, and with one account it follows the hint.
   It does nothing while another change saves.
 - Thin `bgLight` lines run down under each parent's folder icon beside its subfolders, so the
   nesting reads as a tree.

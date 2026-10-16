@@ -15,8 +15,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.RuleChipLine
 import com.otus.designsystem.components.Subpage
-import com.otus.designsystem.elements.IconButton
-import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.elements.BarIconButton
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
 import com.otus.mail.feature.folders.domain.AccountFolders
@@ -80,7 +79,6 @@ fun FoldersScreen(
             if (one == null) {
                 AccountFolderGroup(
                     account,
-                    rows.size,
                     key !in collapsed,
                     { tree.toggle(key, it) },
                     newFolder(account),
@@ -142,11 +140,9 @@ private fun newFolderButton(
 ): (@Composable () -> Unit)? =
     if (account.failure == null && canCreateIn(account, null)) {
         {
-            IconButton("New folder", {
+            BarIconButton("New folder", Res.drawable.symbol_add, {
                 onDialog(FolderDialog.Create(account.accountId, null))
-            }, enabled = !busy, outlined = false) {
-                Symbol(Res.drawable.symbol_add)
-            }
+            }, enabled = !busy)
         }
     } else {
         null
