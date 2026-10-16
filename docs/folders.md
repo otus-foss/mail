@@ -79,9 +79,10 @@ account, such as "6 folders". It opens a sheet with All accounts first, then eac
 ### Reorder and nest
 
 Holding a row, or dragging the handle at its end beside the chevron, drags it. The dragged row
-gets a `bgLight` fill so it stands out from the rows it passes. Releasing it near the edge of another row moves it there. Releasing it
-over the middle half of a row nests it inside that row as its last subfolder. Moving a folder
-down onto an open parent nests it as that parent's first subfolder.
+gets a `bgLight` fill, and the other rows step aside into the places they would take. Releasing
+it moves the folder to that place, beside the folder it lands on. Landing among a parent's
+subfolders, or moving down onto an open parent, nests it in that parent. A folder without
+subfolders can't take one by dragging.
 
 - `FolderPlacement` turns a drop into one `Mailbox/set` (RFC 8621, section 2). It sets the new
   `parentId` when the parent changes, and the `sortOrder` of each folder that needs a new number.
