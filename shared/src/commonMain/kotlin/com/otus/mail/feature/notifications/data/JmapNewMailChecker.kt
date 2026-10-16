@@ -24,6 +24,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 /**
@@ -141,6 +142,7 @@ private fun EmailObject.toNewMail(account: MailAccount): NewMail {
         sender = from?.name?.takeIf { it.isNotBlank() } ?: from?.email.orEmpty(),
         subject = subject.orEmpty(),
         preview = preview,
-        receivedAt = Instant.parse(receivedAt),
+        // One malformed date must not stop every later check.
+        receivedAt = Instant.parseOrNull(receivedAt) ?: Clock.System.now(),
     )
 }

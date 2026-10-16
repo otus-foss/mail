@@ -82,6 +82,7 @@ class MailNotifications(
         base(latest)
             .setContentTitle(latest.accountName)
             .setGroupSummary(true)
+            .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
             .build()
 
     private fun base(mail: NewMail) =
@@ -93,6 +94,7 @@ class MailNotifications(
             .setGroup("mail/${mail.loginId}")
             .setContentIntent(openApp())
             .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
 
     private fun subject(mail: NewMail) = mail.subject.ifBlank { context.getString(R.string.notification_no_subject) }
 
