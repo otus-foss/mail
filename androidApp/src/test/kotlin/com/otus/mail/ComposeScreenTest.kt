@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -21,6 +22,7 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftRepository
+import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.ComposeState
@@ -35,13 +37,15 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
-/** The compose page against a fake Drafts folder: typing, the bar's context, leaving, and discarding. */
+/** The compose page against a fake Drafts folder: typing, the bar's context, sending, leaving, and discarding. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ComposeScreenTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val drafts = FakeDrafts()
+    private val sent = mutableListOf<Draft>()
+    private val sender = DraftSender { draft, _ -> Result.success(Unit).also { sent += draft } }
     private var closed = false
 
     private class FakeDrafts : DraftRepository {
@@ -77,6 +81,7 @@ class ComposeScreenTest {
                             remember {
                                 ComposeState(
                                     drafts,
+                                    sender,
                                     scope,
                                     ComposeRequest.New(),
                                     "a1",
@@ -110,12 +115,12 @@ class ComposeScreenTest {
         type("To", "Ada <ada@example.com>")
         type("Subject", "Lunch")
         type("Message", "Noon?")
-        button("Send, to Ada").assertIsNotEnabled()
+        button("Send, to Ada").assertIsEnabled()
         button("Attach").assertIsNotEnabled()
 
         button("Show Cc and Bcc").performClick()
         type("Cc", "bob@example.com")
-        button("Send, 2 people").assertIsNotEnabled()
+        button("Send, 2 people").assertIsEnabled()
         screenshot("compose-new")
         assertTrue(drafts.saved.isEmpty())
 
@@ -128,6 +133,19 @@ class ComposeScreenTest {
         assertEquals("Lunch", saved.subject)
         assertEquals("Noon?", saved.body)
         assertEquals("me@example.com", saved.from?.address)
+    }
+
+    @Test
+    fun sendSendsTheDraftAndClosesThePage() {
+        open()
+        button("Send").assertIsNotEnabled()
+        type("To", "ada@example.com")
+        type("Subject", "Lunch")
+        button("Send, to ada@example.com").performClick()
+        compose.waitUntil(TIMEOUT) { closed }
+        assertEquals("Lunch", sent.single().subject)
+        assertEquals("me@example.com", sent.single().from?.address)
+        assertTrue("A sent draft is not saved again", drafts.saved.isEmpty())
     }
 
     @Test

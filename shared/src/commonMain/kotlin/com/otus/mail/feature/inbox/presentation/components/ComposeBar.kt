@@ -11,14 +11,16 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.recipients
 
 /**
- * The compose page's bar for [layout]. Only Discard runs; Send and Attach stay disabled until
- * Mail can send, and actions for messages, which Fixed mode may place here, do not apply. The
- * main button names the draft's recipients once it has any. A [minimized] bar shows only the main button.
+ * The compose page's bar for [layout]. Send runs [onSend], and stays disabled while that is null;
+ * Attach stays disabled until Mail has attachments, and actions for messages, which Fixed mode may
+ * place here, do not apply. The main button names the draft's recipients once it has any. A
+ * [minimized] bar shows only the main button.
  */
 @Composable
 internal fun ComposeBar(
     layout: ActionBarLayout,
     draft: Draft,
+    onSend: (() -> Unit)?,
     onDiscard: () -> Unit,
     minimized: Boolean,
     modifier: Modifier = Modifier,
@@ -26,10 +28,13 @@ internal fun ComposeBar(
     MailActionBar(
         layout,
         offer = { action ->
-            OfferedAction(action.buttonLabel(), action.symbol, leaves = true, run = onDiscard).takeIf {
-                action ==
-                    MailAction.Discard
-            }
+            val run =
+                when (action) {
+                    MailAction.Send -> onSend
+                    MailAction.Discard -> onDiscard
+                    else -> null
+                }
+            run?.let { OfferedAction(action.buttonLabel(), action.symbol, leaves = true, run = it) }
         },
         onAction = { it.run() },
         minimized = minimized,

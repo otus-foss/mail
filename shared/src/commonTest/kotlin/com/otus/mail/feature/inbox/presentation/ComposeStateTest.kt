@@ -2,13 +2,11 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -22,37 +20,18 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ComposeStateTest {
-    private class FakeDrafts(
-        val identities: List<MailSender> = emptyList(),
-        /** Holds back the answer to a save, after the copy is stored, until it completes. */
-        private val answer: Deferred<Unit>? = null,
-    ) : DraftRepository {
-        val saved = mutableListOf<Draft>()
-        val discarded = mutableListOf<String>()
-        var failure: DraftFailure? = null
-
-        override suspend fun identities(accountId: String) = identities
-
-        override suspend fun save(draft: Draft): Result<String> {
-            failure?.let { return Result.failure(DraftException(it)) }
-            saved += draft
-            answer?.await()
-            return Result.success("d${saved.size}")
-        }
-
-        override suspend fun discard(
-            accountId: String,
-            emailId: String,
-        ): Result<Unit> {
-            discarded += emailId
-            return Result.success(Unit)
-        }
-    }
-
     private fun TestScope.state(
         drafts: DraftRepository,
         request: ComposeRequest = ComposeRequest.New(),
-    ) = ComposeState(drafts, backgroundScope, request, "a1", listOf("me@example.com"), saveDelayMillis = DELAY)
+    ) = ComposeState(
+        drafts,
+        { _, _ -> error("No sending here") },
+        backgroundScope,
+        request,
+        "a1",
+        listOf("me@example.com"),
+        saveDelayMillis = DELAY,
+    )
 
     @Test
     fun editsSaveOnceTheUserPausesAndEachSaveReplacesTheLastCopy() =

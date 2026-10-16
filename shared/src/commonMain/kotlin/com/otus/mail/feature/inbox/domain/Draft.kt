@@ -27,7 +27,7 @@ class DraftException(
     cause: Throwable? = null,
 ) : Exception("The draft could not be saved: $failure", cause)
 
-/** Saves drafts to an account's Drafts folder. Sending is not part of this contract yet. */
+/** Saves drafts to an account's Drafts folder; [DraftSender] sends them. */
 interface DraftRepository {
     /** Addresses the account may send from, from JMAP Identity/get; empty when the server has none. */
     suspend fun identities(accountId: String): List<MailSender>

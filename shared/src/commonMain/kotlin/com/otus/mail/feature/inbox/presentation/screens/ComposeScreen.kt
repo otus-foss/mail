@@ -54,7 +54,8 @@ import com.otus.mail.feature.inbox.presentation.components.ComposeFields
 
 /**
  * A new message, reply, or forward as a page. Leaving it by Back or the chevron runs [onClose]
- * and saves the draft if the user wrote anything. Discard asks first when there is something
+ * and saves the draft if the user wrote anything. Send closes the page once the server accepts
+ * the message; a failed send stays open with the reason under the header. Discard asks first when there is something
  * to lose, then deletes the saved copy and closes. A failed save shows under the header.
  */
 @Composable
@@ -82,6 +83,7 @@ fun ComposeScreen(
                 ComposeBar(
                     behavior.barLayout(ActionBarPlace.Compose),
                     state.draft,
+                    onSend = { state.send(onClose) }.takeIf { state.canSend },
                     onDiscard = { if (state.edited) confirming = true else discard() },
                     minimized = behavior.minimizedBar,
                 )

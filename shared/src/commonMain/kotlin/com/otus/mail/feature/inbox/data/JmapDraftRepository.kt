@@ -111,7 +111,7 @@ class JmapDraftRepository(
 }
 
 /** Identities and submission must live in the account that holds the drafts. */
-private fun MailAccount.mayUse(capability: String): Boolean =
+internal fun MailAccount.mayUse(capability: String): Boolean =
     capability in session.capabilities && session.accounts[id]?.capabilities?.contains(capability) == true
 
 private fun SetError.toDraftFailure(): DraftFailure =

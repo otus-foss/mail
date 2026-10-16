@@ -62,7 +62,7 @@ enum class ActionBarPlace(
     val adaptive: Boolean
         get() = this != Everywhere
 
-    /** The spec's layouts; until Mail can send, Reply opens a draft and Send stays disabled. */
+    /** The spec's layouts. Reply opens a draft, and Send sends it from the compose page. */
     val defaultLayout: ActionBarLayout
         get() =
             when (this) {
