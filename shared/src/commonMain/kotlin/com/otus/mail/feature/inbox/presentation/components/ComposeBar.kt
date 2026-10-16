@@ -32,7 +32,7 @@ internal fun ComposeBar(
             }
         },
         onAction = { it.run() },
-        minimized = minimized,
+        minimized = Minimized().takeIf { minimized },
         modifier = modifier,
         context = draft.recipients.barContext(),
     )
