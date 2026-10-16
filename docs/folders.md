@@ -73,8 +73,8 @@ account, such as "6 folders". It opens a sheet with All accounts first, then eac
   parent's icon is a toggle: it shows `folder_open` while its subfolders show and `folder` once
   they fold. The folded rows are kept in saved state.
 - Tapping a folder opens its page (`MailPage.FolderDetail`), which holds its name, color, rules,
-  and delete. A plus button, labelled New folder for screen readers, creates a folder at the top
-  level: in All accounts it sits on each account's row, and with one account it follows the hint.
+  and delete. A plus button, labelled New folder for screen readers, opens a sheet that creates
+  a folder at the top level: in All accounts it sits on each account's row, and with one account it follows the hint.
   It does nothing while another change saves.
 - Thin `bgLight` lines run down under each parent's folder icon beside its subfolders, so the
   nesting reads as a tree.
