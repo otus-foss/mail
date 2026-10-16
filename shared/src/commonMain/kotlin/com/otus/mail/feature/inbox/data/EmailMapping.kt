@@ -75,7 +75,7 @@ private fun EmailObject.textBodyValues(): List<EmailBodyValue> =
         part.partId?.let { bodyValues[it] }?.let { if (part.isHtml) it.copy(value = it.value.htmlToText()) else it }
     }
 
-private val EmailBodyPart.isHtml: Boolean
+internal val EmailBodyPart.isHtml: Boolean
     get() = type.equals(HTML_TYPE, ignoreCase = true)
 
 /** A blank display name shows the address instead. Both lose hidden characters. */

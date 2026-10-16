@@ -99,13 +99,24 @@ class FakeFolderServer {
         val reply =
             when {
                 "Mailbox/set" in body -> createFolder(body)
+
                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $folderList}, "c0"]"""
+
                 "Mailbox/query" in body -> draftsQuery()
+
                 "Email/set" in body -> setEmail(body)
+
                 "Identity/get" in body -> IDENTITIES
+
                 "Email/query" in body -> queryEmails(body)
+
+                // An open message asks for its HTML body; these messages have none.
+                "Email/get" in body -> """["Email/get", {"state": "e", "list": [], "notFound": []}, "c0"]"""
+
                 "SieveScript/get" in body -> scripts()
+
                 "SieveScript/set" in body -> saveScript(body)
+
                 else -> error("Unexpected call: $body")
             }
         return """{"methodResponses": [$reply]}"""

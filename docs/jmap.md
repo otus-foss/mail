@@ -27,14 +27,19 @@ Messages also load `to`, `cc`, `messageId`, and `references`, so a reply can add
 stay in its thread.
 
 The body is the `textBody` parts' values (RFC 8621, section 4.1.4), with each part's `type`. When a
-message has no plain alternative, that part is `text/html`; the app reads it as plain text and never
-renders it. It drops comments and the content of `script`, `style`, `title`, and `template`, breaks
+message has no plain alternative, that part is `text/html`; the list reads it as plain text. It drops comments and the content of `script`, `style`, `title`, and `template`, breaks
 lines at blocks and `<br>`, removes other tags, and decodes character references, in one pass that
 tolerates broken markup. A part longer than the limit comes back cut off with `isTruncated`. When
 another part's text follows the cut, the body says "[Part of the message is missing here.]" where
 the part stops. When the cut is at the end, the message has `bodyTruncated`: the open message says
 only its start was loaded, and a reply or forward ends the quoted text with "[The rest of the
 original message is not included.]".
+
+An open message loads its HTML body with a second `Email/get` (`JmapMessageBodies`): the
+`htmlBody` parts with `fetchHTMLBodyValues` and values up to 1 MB per part. The list skips this
+because HTML is often far larger than the text. When no `htmlBody` part is `text/html`, the reader
+keeps the text body. Plain parts between HTML parts keep their line breaks, and parts without a
+value, such as inline `cid:` images, are left out. A failed load also keeps the text body.
 
 Drafts (`JmapDraftRepository`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:
 

@@ -28,12 +28,14 @@ import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.folders.domain.RuleRepository
 import com.otus.mail.feature.inbox.data.JmapDraftRepository
 import com.otus.mail.feature.inbox.data.JmapMailSource
+import com.otus.mail.feature.inbox.data.JmapMessageBodies
 import com.otus.mail.feature.inbox.data.JmapMessageCleaner
 import com.otus.mail.feature.inbox.data.JmapMessageMarker
 import com.otus.mail.feature.inbox.data.JmapMessageMover
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSource
+import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageCleaner
 import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
@@ -89,6 +91,7 @@ class MailServices(
     }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins) }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins) }
+    internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins) }
     internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
     internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins) }
