@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -126,21 +127,31 @@ class FolderListUiTest {
         assertTrue(server.calls.none { "Mailbox/set" in it && "\"update\"" in it })
     }
 
-    /** Holds [name]'s row, then drags its center to [share] of [to]'s row height and lifts. */
+    @Test
+    fun longPressingAFolderOpensItsQuickActions() {
+        openFolders()
+        folderRow("Amazon").performTouchInput { longClick() }
+        listOf("Rename", "Move into", "Color").forEach { compose.onNodeWithContentDescription(it).assertExists() }
+        compose.onNodeWithContentDescription("Rename").performClick()
+        compose.onNodeWithText("Rename Amazon").assertExists()
+    }
+
+    /** Drags [name]'s handle so the row's center lands at [share] of [to]'s row height, and lifts. */
     private fun dragRow(
         name: String,
         to: String,
         share: Float,
     ) {
         val target = folderRow(to).fetchSemanticsNode().boundsInRoot
-        val row = folderRow(name)
-        val start = row.fetchSemanticsNode().boundsInRoot
+        val start = folderRow(name).fetchSemanticsNode().boundsInRoot
         val distance = target.top + target.height * share - start.center.y
-        row.performTouchInput { down(center) }
-        compose.mainClock.advanceTimeBy(LONG_PRESS_MILLIS)
-        row.performTouchInput {
+        // The handle sits on the row's center line, so its drag moves the row's center.
+        compose.onNodeWithContentDescription("Reorder $name", useUnmergedTree = true).performTouchInput {
             val from = center
-            (1..STEPS).forEach { step -> moveTo(from + Offset(0f, distance * step / STEPS)) }
+            // The drag starts once the finger passes the touch slop, so it travels that much further.
+            val slop = viewConfiguration.touchSlop * kotlin.math.sign(distance)
+            down(from)
+            (1..STEPS).forEach { step -> moveTo(from + Offset(0f, slop + distance * step / STEPS)) }
             up()
         }
         compose.waitForIdle()
@@ -167,7 +178,6 @@ class FolderListUiTest {
 
     private companion object {
         const val TIMEOUT = 5_000L
-        const val LONG_PRESS_MILLIS = 600L
         const val STEPS = 4
 
         /** A share of a row's height in its upper quarter, which drops into the gap above it. */

@@ -82,7 +82,10 @@ account, such as "6 folders". It opens a sheet with All accounts first, then eac
 
 ### Reorder and nest
 
-Holding a row, or dragging the handle at its end beside the chevron, drags it. The dragged row
+Dragging the handle at a row's end drags it. Holding a row instead opens a `QuickActionBar` at
+the finger with **Rename**, **Move into**, **Color**, and **Delete**, each as far as the server
+and the folder allow: Delete waits until the folder is empty, and a shared mailbox has none. Each
+opens the same popup as the folder's page. The dragged row
 follows the finger with a `bgLight` fill, and the other rows stay where they are. An accent line
 shows where the folder will land. The page uses the design system's `ReorderableTree`, which
 judges the target by the dragged row's center.

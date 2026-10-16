@@ -23,3 +23,7 @@ private fun AccountFolders.isOwn(folder: MailFolder?): Boolean =
 /** [folder]'s names from the top level down, such as "Clients / Acme". */
 fun AccountFolders.folderPath(folder: MailFolder): String =
     (ancestors(folders, folder).reversed() + folder).joinToString(" / ") { it.name }
+
+/** Whether [folder] has somewhere to move: the server lets it change parent and another place takes it. */
+fun AccountFolders.canMove(folder: MailFolder): Boolean =
+    folder.rights.mayRename && parentChoices(folder).any { it?.id != folder.parentId }
