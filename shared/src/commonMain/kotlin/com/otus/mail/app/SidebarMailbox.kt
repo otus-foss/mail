@@ -13,6 +13,7 @@ import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.combinedFolders
 import com.otus.mail.feature.folders.presentation.roleIcon
+import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.MailboxStyle
 import org.jetbrains.compose.resources.DrawableResource
 
@@ -24,10 +25,22 @@ internal data class SidebarMailbox(
     val folders: List<MailFolder>,
 )
 
-/** Inbox, then Read later while it is on, then each system folder some account has, in fixed order. */
-internal fun sidebarMailboxes(accounts: List<AccountFolders>): List<SidebarMailbox> =
+/**
+ * Inbox, then Read later while it is on, then each system folder some account has, in fixed order.
+ * The Inbox counts the folders [inbox] lists: each chosen address's account's inbox, and its Spam
+ * and Trash when chosen.
+ */
+internal fun sidebarMailboxes(
+    accounts: List<AccountFolders>,
+    inbox: InboxContents = InboxContents(),
+): List<SidebarMailbox> =
     buildList {
-        add(SidebarMailbox("Inbox", roleIcon(INBOX_ROLE), MailPage.Inbox, accounts.mapNotNull { it.inbox }))
+        val inboxAccounts = inbox.addresses.map { it.accountId }.toSet()
+        val inboxFolders =
+            accounts
+                .filter { inbox.everyAddress || it.accountId in inboxAccounts }
+                .flatMap { account -> account.folders.filter { it.role in inbox.roles } }
+        add(SidebarMailbox("Inbox", roleIcon(INBOX_ROLE), MailPage.Inbox, inboxFolders))
         val readLater = accounts.mapNotNull { it.readLater }
         if (readLater.isNotEmpty()) {
             add(

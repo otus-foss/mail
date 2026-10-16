@@ -11,6 +11,7 @@ import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleEditorState
 import com.otus.mail.feature.folders.presentation.RulesState
 import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
@@ -37,7 +38,12 @@ internal class MailStates(
     val mailScope: MailScopeChoice
         get() = chosenScope().within(accounts.accounts.map { it.id })
 
-    val feed = InboxFeedState(services.mail, scope, services.avatars, ::avatarOptions)
+    val feed =
+        InboxFeedState(services.mail, scope, services.avatars, ::avatarOptions, behavior.behavior.inbox.mailScope())
+
+    /** What the Inbox page lists; addresses of removed accounts drop out. */
+    val inboxContents: InboxContents
+        get() = behavior.behavior.inbox.within(accounts.accounts.map { it.id })
     val folders: FoldersState =
         FoldersState(
             services.folders,
