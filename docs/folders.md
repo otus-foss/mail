@@ -277,6 +277,10 @@ Read later pill to the inbox row that shows every account's saved mail. See
   running when the switch turns off shows no Read later folder.
 - Otus creates no folder for accounts that fail to load or whose server refuses top-level folders
   (`mayCreateTopLevelMailbox`). Such an account still uses a Read later folder it already has.
+- Read later is one list for every account. JMAP keeps each message in its own account, so each
+  account still has its own folder on the server, but the app shows them together: one sidebar
+  tile, one page, one pill, and one Move to choice. Settings › Folders leaves these folders out,
+  because the Read later switch manages them.
 - The folder sorts right after the inbox and has the bookmark symbol. The sidebar shows it as the
   Read later mailbox, after Inbox, which loads every account's Read later folder. Once every
   account's folders load without one, as after the switch turns off, its page returns to the Inbox. Its subfolders
