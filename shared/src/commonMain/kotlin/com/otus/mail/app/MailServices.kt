@@ -84,6 +84,7 @@ class MailServices(
             logins,
             AccountService.Mail,
             onAccountChanged = avatars::removeAccount,
+            beforeRemove = { instantPush?.forget(it) },
         )
     }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins) }

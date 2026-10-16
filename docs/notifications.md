@@ -58,7 +58,5 @@ is saved. Without it, the check still runs and saves state but posts nothing.
 - Removing a notification when the message is read elsewhere.
 - A device test of instant delivery with ntfy and Stalwart, with measured delay and battery use.
 - Showing when the last push arrived, and a button that sends a test notification.
-- Unregistering an account from the push app when the account is removed. Its server
-  subscription expires within 7 days.
 - A notification icon from the design system; the system mail icon stands in.
 - iOS background checks.
