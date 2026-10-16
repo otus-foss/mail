@@ -43,6 +43,8 @@ class NotificationSettingsTest {
         }
 
         override suspend fun statuses() = if (chosen == null) emptyMap() else mapOf("ada" to status)
+
+        override suspend fun forget(loginId: String) = Unit
     }
 
     private fun open(push: InstantPush?) {

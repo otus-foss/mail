@@ -39,6 +39,11 @@ class AndroidInstantPush(
 
     override suspend fun statuses(): Map<String, PushStatus> = app.push.status()
 
+    override suspend fun forget(loginId: String) {
+        withContext(Dispatchers.IO) { UnifiedPush.unregister(app, loginId) }
+        app.push.forget(loginId)
+    }
+
     /** Registers accounts that have no endpoint yet, such as one added since the app was chosen. */
     suspend fun registerMissing() {
         if (withContext(Dispatchers.IO) { UnifiedPush.getSavedDistributor(app) } == null) return
