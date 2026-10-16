@@ -26,6 +26,10 @@ internal sealed interface MailPage {
         override val parent = Settings
     }
 
+    data object Notifications : MailPage {
+        override val parent = Settings
+    }
+
     data object SidebarSettings : MailPage {
         override val parent = Appearance
     }
@@ -86,6 +90,7 @@ internal sealed interface MailPage {
                 Settings,
                 EmailAccounts,
                 Appearance,
+                Notifications,
                 ActionBarSettings,
                 Folders,
                 Rules,
