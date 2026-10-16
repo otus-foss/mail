@@ -63,6 +63,7 @@ fun AccountFolderGroup(
     folderCount: Int,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
+    action: (@Composable () -> Unit)?,
     content: @Composable () -> Unit,
 ) {
     AccountGroupRow(
@@ -71,6 +72,7 @@ fun AccountFolderGroup(
         expanded,
         onExpandedChange,
         detail = folderCount.folders(),
+        action = action,
     )
     Collapsible(expanded) { Column { content() } }
 }
