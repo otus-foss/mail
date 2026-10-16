@@ -8,6 +8,7 @@ import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.components.FolderOwnerLine
 import com.otus.designsystem.components.FolderRuleSummary
 import com.otus.designsystem.components.FolderSettingRow
+import com.otus.designsystem.components.ReorderableScope
 import com.otus.designsystem.components.RuleChipLine
 import com.otus.designsystem.elements.LocalIconTint
 import com.otus.designsystem.elements.SidebarFolder
@@ -20,10 +21,10 @@ import com.otus.mail.feature.folders.presentation.folderIcon
 /**
  * A folder in Settings › Folders: its icon in the folder's [color], the name, the first of its
  * [rules] as a compact chip with how many more there are, and who shares it. With subfolders,
- * [expanded] is set and the icon folds them.
+ * [expanded] is set and the icon folds them. A long press or the handle at the end drags it.
  */
 @Composable
-fun FolderRow(
+fun ReorderableScope.FolderRow(
     row: FolderListRow,
     color: String?,
     rules: List<RuleChipLine>,
@@ -35,12 +36,16 @@ fun FolderRow(
     val shared = row.sharingLine()
     CompositionLocalProvider(LocalIconTint provides FolderColor.named(color).tint) {
         FolderSettingRow(
-            SidebarFolder(row.folder.name, row.node.depth),
+            SidebarFolder(
+                row.folder.name,
+                row.node.depth,
+                icon = if (shared != null) Res.drawable.symbol_folder_shared else folderIcon(row.node),
+            ),
             expanded,
             onExpandedChange,
             onClick,
-            modifier,
-            icon = if (shared != null) Res.drawable.symbol_folder_shared else folderIcon(row.node),
+            modifier.dragOnLongPress(),
+            handle = { DragHandle(row.folder.name) },
             detail =
                 if (rules.isEmpty() && shared == null) {
                     null
