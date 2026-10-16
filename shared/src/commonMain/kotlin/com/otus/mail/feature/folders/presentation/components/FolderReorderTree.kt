@@ -35,7 +35,6 @@ fun FolderReorderTree(
             expanded = (row.key !in collapsed).takeIf { rows.hasChildren(row) },
             onExpandedChange = { open -> onCollapsedChange(if (open) collapsed - row.key else collapsed + row.key) },
             onClick = { actions.onOpen(row.folder) },
-            modifier = Modifier.dragOnLongPress(),
         )
     }
 }

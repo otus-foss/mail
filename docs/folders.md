@@ -78,7 +78,8 @@ account, such as "6 folders". It opens a sheet with All accounts first, then eac
 
 ### Reorder and nest
 
-Holding a row drags it. Releasing it near the edge of another row moves it there. Releasing it
+Holding a row, or dragging the handle at its end beside the chevron, drags it. The dragged row
+gets a `bgLight` fill so it stands out from the rows it passes. Releasing it near the edge of another row moves it there. Releasing it
 over the middle half of a row nests it inside that row as its last subfolder. Moving a folder
 down onto an open parent nests it as that parent's first subfolder.
 
