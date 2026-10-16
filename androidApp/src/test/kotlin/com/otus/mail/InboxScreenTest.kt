@@ -58,6 +58,8 @@ class InboxScreenTest {
 
     @Test
     fun searchTransitionCanReverseBeforeItFinishes() {
+        // The launch animation covers the inbox and would take the first tap.
+        compose.waitForIdle()
         compose.mainClock.autoAdvance = false
         compose.onNodeWithContentDescription("Search mailbox").performClick()
         compose.mainClock.advanceTimeBy(96)
