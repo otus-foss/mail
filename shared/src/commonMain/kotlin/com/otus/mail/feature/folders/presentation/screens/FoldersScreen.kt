@@ -33,6 +33,7 @@ import com.otus.mail.feature.folders.presentation.components.FolderListActions
 import com.otus.mail.feature.folders.presentation.components.FolderReorderTree
 import com.otus.mail.feature.folders.presentation.folderRows
 import com.otus.mail.feature.folders.presentation.message
+import com.otus.mail.feature.folders.presentation.placement
 
 /**
  * Settings › Folders: every account's folders as trees, or one account's when the picker chooses
@@ -132,6 +133,7 @@ private fun FoldersState.listActions(
         ->
         account(folder.accountId)?.scopeOf(folder)?.placeableChildren(parentId).orEmpty()
     },
+    canDrop = { placement(it.folder, it.parentId, it.index) != null },
     onDrop = { place(it.folder, it.parentId, it.index) },
     onOpen = onOpen,
 )

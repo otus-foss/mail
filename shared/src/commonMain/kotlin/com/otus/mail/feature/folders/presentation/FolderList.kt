@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.designsystem.components.TreeDropTarget
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.domain.MailFolder
@@ -52,41 +53,34 @@ data class FolderDrop(
 )
 
 /**
- * The drop for moving the visible row at [from] to [to]. The folder takes the place of the row
- * it lands on, beside it, or first inside it when that row is an open parent it moves down onto.
- * Null when it lands among its own subfolders or in another account.
+ * The drop for the visible row at [from] landing on [target]. In a gap, the folder goes right
+ * before the row below it, among that row's siblings, or after the last row among its siblings.
+ * Onto a row, it becomes that row's first subfolder. Null when [target] is in another account;
+ * `FolderPlacement` refuses the rest, such as a drop inside the folder itself.
  */
-fun List<FolderListRow>.moveDrop(
+fun List<FolderListRow>.treeDrop(
     from: Int,
-    to: Int,
+    target: TreeDropTarget,
     placeable: (MailFolder, parentId: String?) -> List<MailFolder>,
 ): FolderDrop? {
     val dragged = getOrNull(from)?.folder
-    val target = getOrNull(to)?.folder
-    if (dragged == null || target == null) return null
-    val outside = dragged.sameScope(target) && !isInside(target, from)
-    val opensBelow = to > from && (getOrNull(to + 1)?.node?.depth ?: 0) > this[to].node.depth
-    val at = placeable(dragged, target.parentId).filter { it.id != dragged.id }.indexOfFirst { it.id == target.id }
-    return when {
-        !outside -> null
-        opensBelow -> FolderDrop(dragged, target.id, 0)
-        at < 0 -> null
-        else -> FolderDrop(dragged, target.parentId, if (to > from) at + 1 else at)
+    val anchor = getOrNull(target.index.coerceAtMost(lastIndex))?.folder
+    if (dragged == null || anchor == null || !dragged.sameScope(anchor)) return null
+    return when (target) {
+        is TreeDropTarget.Into -> {
+            FolderDrop(dragged, anchor.id, 0)
+        }
+
+        is TreeDropTarget.Before -> {
+            val siblings = placeable(dragged, anchor.parentId).filter { it.id != dragged.id }
+            FolderDrop(dragged, anchor.parentId, take(target.index).count { it.folder in siblings })
+        }
     }
 }
 
 /** Folders of one login and one JMAP account, which a drop can move between. */
 private fun MailFolder.sameScope(other: MailFolder): Boolean =
     accountId == other.accountId && sharedIn == other.sharedIn
-
-/** Whether [target] is the row at [from] or one of its subfolders, which follow it with a greater depth. */
-private fun List<FolderListRow>.isInside(
-    target: MailFolder,
-    from: Int,
-): Boolean {
-    val depth = this[from].node.depth
-    return target == this[from].folder || drop(from + 1).takeWhile { it.node.depth > depth }.any { it.folder == target }
-}
 
 /** The rows left once the subfolders of every [collapsed] row, by [FolderListRow.key], are hidden. */
 fun List<FolderListRow>.visible(collapsed: Set<String>): List<FolderListRow> {
