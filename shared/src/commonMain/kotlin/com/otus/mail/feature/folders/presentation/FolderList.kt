@@ -25,8 +25,8 @@ data class FolderListRow(
 }
 
 /**
- * The account's own folders, without system folders, then the mailboxes shared with it, each
- * group as its own tree. In All accounts ([allAccounts]), a mailbox whose owner is connected is
+ * The account's own folders, without system folders or Read later, then the mailboxes shared with
+ * it, each group as its own tree. In All accounts ([allAccounts]), a mailbox whose owner is connected is
  * left to the owner's list, as [placements] says.
  */
 fun AccountFolders.folderRows(
@@ -36,7 +36,8 @@ fun AccountFolders.folderRows(
     val here = placements.filter { it.accountId == accountId }
     val sharing = here.filter { it.underOwner }.associate { it.folder.id to it.sharedBy }
     val listedHere = here.filterNot { it.underOwner }.map { it.folder.sharedIn to it.folder.id }
-    val own = folderTree { !it.isCustom }.map { FolderListRow(it, sharing[it.folder.id]) }
+    // Read later is one list across accounts that its switch manages, so no account lists its folder here.
+    val own = folderTree { !it.isCustom || it.id == readLaterId }.map { FolderListRow(it, sharing[it.folder.id]) }
     val shared =
         shared.flatMap { group ->
             val folders = group.folders.filter { !allAccounts || (it.sharedIn to it.id) in listedHere }
