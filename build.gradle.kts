@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinSerialization) apply false
+    alias(libs.plugins.kover)
 }
 
 spotless {
@@ -114,3 +115,6 @@ subprojects {
         dependsOn(rootProject.tasks.named("qualityCheck"))
     }
 }
+
+dependencies { subprojects.forEach { kover(it) } }
+subprojects { apply(plugin = "org.jetbrains.kotlinx.kover") }

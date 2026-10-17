@@ -7,6 +7,7 @@ import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
 import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
+import com.otus.settings.presentation.components.AppIconSetting
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
 /** Appearance & behavior, where Mail adds its look and behavior rows to the shared page. */
@@ -25,6 +26,7 @@ internal fun AppearancePage(
         onTheme = { navigation.go(MailPage.ThemeSettings) },
         onBack = back,
         look = {
+            settings.appIcon?.let { AppIconSetting(it) }
             MailLookSettings(
                 states.behavior,
                 folderPills,
