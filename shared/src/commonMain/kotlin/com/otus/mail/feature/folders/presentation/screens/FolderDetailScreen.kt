@@ -7,7 +7,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.designsystem.components.ActionDialog
-import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.DialogAction
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.Subpage
@@ -30,6 +29,7 @@ import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.folders.presentation.components.FolderNameRow
 import com.otus.mail.feature.folders.presentation.components.FolderParentRow
 import com.otus.mail.feature.folders.presentation.components.FolderRulesSection
+import com.otus.mail.feature.folders.presentation.components.RulesReplaceDialog
 import com.otus.mail.feature.folders.presentation.components.folderActions
 import com.otus.mail.feature.folders.presentation.deletable
 import com.otus.mail.feature.folders.presentation.message
@@ -135,7 +135,7 @@ private fun FolderDetailDialogs(
     val close = { onPopup(RulePopup()) }
     dialog?.let { open ->
         val scope = states.folders.account(open.accountId)?.scopeOf(folder)
-        FolderDialogs(open, scope, folderActions(states.folders, states.colors), onDialog)
+        FolderDialogs(open, scope, folderActions(states.folders, states.colors, rules) { known }, onDialog)
     }
     popup.sheet?.let { draft ->
         val actions = rules.sheetActions(folder, draft.editing, onClose = close, onMoved = states.folders::refresh)
@@ -149,13 +149,5 @@ private fun FolderDetailDialogs(
             message = "Only rules on one sender, recipient, subject, or mailing list can be edited here.",
         )
     }
-    rules.replaceRequest?.let { request ->
-        ConfirmDialog(
-            "Replace edits made elsewhere?",
-            "These rules were changed in another app. Saving replaces those changes.",
-            confirmLabel = "Replace",
-            onConfirm = request.replace,
-            onDismiss = rules::dismissReplace,
-        )
-    }
+    RulesReplaceDialog(rules)
 }
