@@ -9,6 +9,7 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
+import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
@@ -29,7 +30,8 @@ import kotlin.time.Instant
 
 /**
  * Reads `Email/changes` since each login's saved state (RFC 8620, section 5.2) and reports created
- * mail that is unread and in an inbox. Logins are checked in parallel and fail alone.
+ * mail that is unread and in an inbox. Logins are checked in parallel and fail alone. When the
+ * saved logins cannot be read, the check does nothing and the next one tries again.
  */
 class JmapNewMailChecker(
     connections: JmapConnections,
@@ -39,8 +41,14 @@ class JmapNewMailChecker(
     private val accounts = MailAccounts(connections, logins)
 
     override suspend fun check(show: suspend (List<NewMail>) -> Unit) {
+        val logins =
+            try {
+                accounts.logins()
+            } catch (_: LoginStoreException) {
+                return
+            }
         val saved = withContext(Dispatchers.IO) { states.read() }
-        val checked = coroutineScope { accounts.logins().map { async { check(it, saved[it.id]) } }.awaitAll() }
+        val checked = coroutineScope { logins.map { async { check(it, saved[it.id]) } }.awaitAll() }
         checked
             .flatMap { it.mail }
             .sortedBy { it.receivedAt }
@@ -58,6 +66,8 @@ class JmapNewMailChecker(
             val account = accounts.open(login)
             since?.let { changesSince(account, it) } ?: startFromNow(account)
         } catch (_: JmapException) {
+            LoginCheck(login.id, state = null, mail = emptyList())
+        } catch (_: LoginStoreException) {
             LoginCheck(login.id, state = null, mail = emptyList())
         }
 

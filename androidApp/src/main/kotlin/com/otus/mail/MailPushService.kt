@@ -47,10 +47,14 @@ class MailPushService : PushService() {
         instance: String,
     ) = Unit
 
-    /** Pushes the server did not encrypt are read too; at worst a forged one starts a check. */
+    /**
+     * Only pushes encrypted with this endpoint's keys (RFC 8291) are read. Anyone who learns the
+     * endpoint URL can post to it, but only the server holds the keys, and Mail never subscribes
+     * without them.
+     */
     private fun decode(message: PushMessage): JmapPush? =
         try {
-            JmapPush.decode(message.content.decodeToString())
+            if (message.decrypted) JmapPush.decode(message.content.decodeToString()) else null
         } catch (_: JmapException) {
             null
         }
