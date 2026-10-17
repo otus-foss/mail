@@ -28,9 +28,12 @@ jobs:
     outputs:
       number: ${{ steps.number.outputs.number }}
       previous: ${{ steps.number.outputs.previous }}
+      sha: ${{ steps.number.outputs.sha }}
     steps:
+      # A re-run keeps the commit of its first attempt, so check out main's current tip instead.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: main
           fetch-depth: 0
       # Main is squash-merged, so its commit count grows by one per merge and orders the builds.
       - id: number
@@ -38,8 +41,11 @@ jobs:
           number=$(git rev-list --count HEAD)
           latest=$(gh release view -R "$NIGHTLY_REPO" --json tagName -q .tagName 2>/dev/null || true)
           echo "previous=${latest#nightly-}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           if [ "$latest" != "nightly-$number" ]; then
             echo "number=$number" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$latest already covers main at $(git rev-parse --short HEAD), so there is nothing to build."
           fi
 
   build:
@@ -52,6 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ needs.version.outputs.sha }}
           fetch-depth: 0
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
