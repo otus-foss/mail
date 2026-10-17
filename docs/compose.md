@@ -119,7 +119,9 @@ succeeds. The notice says why: no Drafts folder, no permission, or an unreachabl
 ### Sending
 
 Send closes the page at once and hands the draft to `OutgoingMail`. A "Sending…" toast with Undo
-holds it on the device for five seconds; Undo opens the draft again as it was. Then the send
+holds it on the device for the **Undo send** delay in Appearance & behavior: 5, 10, 15, or 30
+seconds, 15 by default, with the toast's ring draining over that time. Undo opens the draft again
+as it was. With Undo send off, the message goes at once. Then the send
 waits for any save in progress, so it knows the draft's saved copy, and calls `JmapDraftSender`.
 The toast turns into "Sent", or into "Couldn't send" with Retry, which stays until it is handled.
 The hold is on the device, not the server's `HOLDFOR`, because `onSuccessUpdateEmail` files the
@@ -194,5 +196,5 @@ Send names its recipients, sends a draft, asks about a missing subject, saves on
 identity of another account from the dropdown, adds Bcc and discards from the ⋯ menu, and opens
 a reply's quote. `SignatureTest`, `SignaturesStateTest`, and `SignatureScreensTest` cover the
 signature HTML and images, copying and failed saves, `SendLaterTest` the Send later times,
-`OutgoingMailTest` the Undo window, Retry, and undoing a scheduled message, the list, the editor with its size list,
+`OutgoingMailTest` the Undo window and turning it off, `UndoSendSettingTest` the delay setting, Retry, and undoing a scheduled message, the list, the editor with its size list,
 and the copy sheet. Their screenshots of each state are written to `androidApp/build/reports/compose/`.

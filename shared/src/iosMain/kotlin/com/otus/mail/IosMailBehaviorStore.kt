@@ -35,6 +35,7 @@ class IosMailBehaviorStore(
             websiteIcons = bool(WEBSITE_ICONS, defaults.websiteIcons),
             recentFrom = decodeRecentFrom(preferences.stringForKey(RECENT_FROM)),
             signatureInReplies = bool(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
+            undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
         )
     }
 
@@ -53,6 +54,7 @@ class IosMailBehaviorStore(
         preferences.setBool(behavior.websiteIcons, forKey = WEBSITE_ICONS)
         preferences.setObject(encodeRecentFrom(behavior.recentFrom), forKey = RECENT_FROM)
         preferences.setBool(behavior.signatureInReplies, forKey = SIGNATURE_IN_REPLIES)
+        preferences.setInteger(behavior.undoSendSeconds.toLong(), forKey = UNDO_SEND_SECONDS)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -60,6 +62,11 @@ class IosMailBehaviorStore(
         key: String,
         default: Boolean,
     ): Boolean = if (preferences.objectForKey(key) == null) default else preferences.boolForKey(key)
+
+    private fun int(
+        key: String,
+        default: Int,
+    ): Int = if (preferences.objectForKey(key) == null) default else preferences.integerForKey(key).toInt()
 
     private companion object {
         const val START_TO_END = "otus.mail.swipe_start_to_end"
@@ -73,6 +80,7 @@ class IosMailBehaviorStore(
         const val WEBSITE_ICONS = "otus.mail.website_icons"
         const val RECENT_FROM = "otus.mail.recent_from"
         const val SIGNATURE_IN_REPLIES = "otus.mail.signature_in_replies"
+        const val UNDO_SEND_SECONDS = "otus.mail.undo_send_seconds"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"
     }

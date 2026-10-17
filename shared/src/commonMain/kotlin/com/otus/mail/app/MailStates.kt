@@ -123,7 +123,11 @@ internal class MailStates(
     val moveToasts = MoveToasts()
 
     /** Sends drafts after their page closes, with Undo and the outcome in a toast. */
-    val outgoing = OutgoingMail(scope, moveToasts.toasts, services.scheduled)
+    val outgoing =
+        OutgoingMail(scope, moveToasts.toasts, services.scheduled) {
+            behavior.behavior.undoSendSeconds *
+                MILLIS_PER_SECOND
+        }
     private val cleaning = FolderCleaning(services, folders, scope)
     private val marking = MessageMarking(services, folders, scope)
 
@@ -182,3 +186,5 @@ private fun FolderRights.allow(flag: MessageFlag): Boolean =
         MessageFlag.Read -> maySetSeen
         MessageFlag.Flagged -> maySetKeywords
     }
+
+private const val MILLIS_PER_SECOND = 1_000L

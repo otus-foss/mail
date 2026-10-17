@@ -61,7 +61,7 @@ fun MailLookSettings(
 }
 
 /**
- * Swipe, action bar, reading, and privacy choices for the appearance page. [onOpenActionBar] opens the
+ * Swipe, action bar, reading, sending, and privacy choices for the appearance page. [onOpenActionBar] opens the
  * action bar's page. Each swipe opens a choice of actions; the rows name the physical direction
  * for the current layout direction.
  */
@@ -104,6 +104,7 @@ fun MailBehaviorSettings(
             icon = Res.drawable.symbol_bookmark,
         )
     }
+    SendingSettings(state)
     PrivacySettings(state)
     choosing?.let { side -> SwipeChoice(state, side, side.title(rtl)) { choosing = null } }
 }
