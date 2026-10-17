@@ -5,7 +5,6 @@ import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_auto_filter
 import com.otus.designsystem.resources.symbol_bookmark
-import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_edit
@@ -110,7 +109,7 @@ internal val BarButton.symbol: DrawableResource
 
             MailAction.Attach -> Res.drawable.symbol_attach_file
 
-            MailAction.Discard -> Res.drawable.symbol_close
+            MailAction.Discard -> Res.drawable.symbol_delete
         }
 
 private fun MessageActions.offerMark(

@@ -10,6 +10,8 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.SidebarLayout
+import com.otus.mail.feature.inbox.domain.decodeRecentFrom
+import com.otus.mail.feature.inbox.domain.encodeRecentFrom
 
 class AndroidMailBehaviorStore(
     context: Context,
@@ -38,6 +40,7 @@ class AndroidMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.getString(ACTION_BAR_MODE, null)) ?: defaults.actionBarMode,
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
+            recentFrom = decodeRecentFrom(preferences.getString(RECENT_FROM, null)),
         )
     }
 
@@ -53,6 +56,7 @@ class AndroidMailBehaviorStore(
             putString(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
+            putString(RECENT_FROM, encodeRecentFrom(behavior.recentFrom))
         }
     }
 
@@ -66,6 +70,7 @@ class AndroidMailBehaviorStore(
         const val ACTION_BAR_MODE = "action_bar_mode"
         const val MINIMIZED_BAR = "action_bar_minimized"
         const val WEBSITE_ICONS = "website_icons"
+        const val RECENT_FROM = "recent_from"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

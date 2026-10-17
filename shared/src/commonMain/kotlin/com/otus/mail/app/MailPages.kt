@@ -7,10 +7,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.components.ToastMessage
+import com.otus.designsystem.elements.ToastAction
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
 import com.otus.mail.feature.folders.presentation.screens.RulesScreen
+import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
@@ -44,7 +47,7 @@ internal fun MailPageContent(
         }
 
         is MailPage.Compose -> {
-            ComposePage(page, states, back)
+            ComposePage(page, states, navigation, back)
         }
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Notifications,
@@ -142,15 +145,25 @@ private fun SettingsPageContent(
     }
 }
 
-/** A draft for the page's request; without an account there is nothing to write from. */
+/**
+ * A draft for the page's request; without an account there is nothing to write from. A discarded
+ * draft offers Undo, which opens it again, and its saved copy is deleted once the toast leaves.
+ */
 @Composable
 private fun ComposePage(
     page: MailPage.Compose,
     states: MailStates,
+    navigation: MailNavigation,
     onClose: () -> Unit,
 ) {
     val compose = remember(page) { states.compose(page.request) } ?: return LaunchedEffect(page) { onClose() }
-    ComposeScreen(compose, states.behavior.behavior, onClose)
+    ComposeScreen(compose, states.behavior.behavior, onClose) {
+        val request = compose.request
+        val reopen = ComposeRequest.Resume(compose.draft, (request as? ComposeRequest.Resume)?.from ?: request)
+        val undo = ToastAction("Undo") { navigation.go(page.copy(request = reopen)) }
+        states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = compose::deleteDiscarded))
+        onClose()
+    }
 }
 
 /** The unified inbox, whose folder pills load in place of its own mail. */

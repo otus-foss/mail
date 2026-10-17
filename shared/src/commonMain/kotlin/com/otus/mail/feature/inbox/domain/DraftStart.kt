@@ -8,6 +8,7 @@ val ComposeRequest.accountId: String?
             is ComposeRequest.Reply -> original.accountId
             is ComposeRequest.FollowUp -> original.accountId
             is ComposeRequest.Forward -> original.accountId
+            is ComposeRequest.Resume -> draft.accountId
         }
 
 /**
@@ -35,27 +36,50 @@ fun ComposeRequest.startDraft(
             Draft(
                 accountId,
                 subject = original.subject.prefixed(FORWARD_PREFIX, forwardPattern),
-                body = original.forwardBody(),
+                quote = original.forwardBody(),
             )
+        }
+
+        is ComposeRequest.Resume -> {
+            draft
         }
     }
 
 /**
- * The identity to send from: for a reply or forward, the one the original went to, so the
- * answer comes from the address the sender wrote to; for a follow-up, the one that sent the
- * original; otherwise the first.
+ * The identity to send from, among every account's [identities]. A reply or forward comes from the
+ * address the original went to, and a follow-up from the one that sent it, preferring the
+ * original's account. A new message from one account comes from that account; one from all
+ * accounts comes from the first of the [recent] addresses that is still an identity. Otherwise
+ * the account's first identity, or the first of all.
  */
-fun ComposeRequest.preferredIdentity(identities: List<MailSender>): MailSender? {
-    val senders =
-        when (this) {
-            is ComposeRequest.New -> emptyList()
-            is ComposeRequest.Reply -> original.to + original.cc
-            is ComposeRequest.FollowUp -> listOf(original.from)
-            is ComposeRequest.Forward -> original.to + original.cc
+fun ComposeRequest.preferredIdentity(
+    identities: List<MailSender>,
+    recent: List<String> = emptyList(),
+): MailSender? {
+    if (this is ComposeRequest.Resume) return draft.from ?: from.preferredIdentity(identities, recent)
+    val home = accountId
+    val addressed = addressedTo().map { it.address.lowercase() }.toSet()
+    val matching = identities.filter { it.address.lowercase() in addressed }
+    val lastUsed =
+        recent.firstNotNullOfOrNull { address ->
+            identities.firstOrNull { it.address.equals(address, ignoreCase = true) }
         }
-    val addresses = senders.map { it.address.lowercase() }
-    return identities.firstOrNull { it.address.lowercase() in addresses } ?: identities.firstOrNull()
+    return matching.firstOrNull { it.accountKey == home }
+        ?: matching.firstOrNull()
+        ?: lastUsed.takeIf { this is ComposeRequest.New && home == null }
+        ?: identities.firstOrNull { it.accountKey == home }
+        ?: identities.firstOrNull()
 }
+
+/** The people the original went to, whose address a reply or forward is sent from. */
+private fun ComposeRequest.addressedTo(): List<MailSender> =
+    when (this) {
+        is ComposeRequest.New -> emptyList()
+        is ComposeRequest.Reply -> original.to + original.cc
+        is ComposeRequest.FollowUp -> listOf(original.from)
+        is ComposeRequest.Forward -> original.to + original.cc
+        is ComposeRequest.Resume -> from.addressedTo()
+    }
 
 /**
  * A reply that goes to [from], or [fromSelf] to the recipients of a message the account sent. A
@@ -80,7 +104,7 @@ private fun OriginalMessage.reply(
         to = kept.filter { it.address.lowercase() in toAddresses },
         cc = kept.filterNot { it.address.lowercase() in toAddresses },
         subject = subject.prefixed(REPLY_PREFIX, replyPattern),
-        body = replyBody(),
+        quote = replyBody(),
         inReplyTo = messageIds,
         references = (references + messageIds).distinct(),
     )
@@ -88,8 +112,6 @@ private fun OriginalMessage.reply(
 
 private fun OriginalMessage.replyBody(): String =
     buildList {
-        add("")
-        add("")
         add("On $sentLabel, ${from.displayName} wrote:")
         addAll(body.lines().map { if (it.isEmpty()) QUOTE else "$QUOTE $it" })
         if (bodyTruncated) add("$QUOTE $TRUNCATED_NOTE")
@@ -97,8 +119,6 @@ private fun OriginalMessage.replyBody(): String =
 
 private fun OriginalMessage.forwardBody(): String =
     buildList {
-        add("")
-        add("")
         add("---------- Forwarded message ----------")
         add("From: ${from.recipientText()}")
         add("Date: $sentLabel")

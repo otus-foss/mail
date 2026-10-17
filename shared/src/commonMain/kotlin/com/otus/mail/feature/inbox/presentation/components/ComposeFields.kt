@@ -1,71 +1,92 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import com.otus.designsystem.components.AddressInput
+import com.otus.designsystem.components.Dropdown
+import com.otus.designsystem.components.DropdownRow
+import com.otus.designsystem.components.PersonAvatar
+import com.otus.designsystem.components.Recipient
+import com.otus.designsystem.components.RecipientLine
 import com.otus.designsystem.elements.ComposeField
-import com.otus.designsystem.elements.ComposeValueField
-import com.otus.designsystem.elements.IconButton
-import com.otus.designsystem.elements.InputKind
-import com.otus.designsystem.elements.Symbol
-import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_expand_more
-import com.otus.mail.feature.inbox.domain.recipientText
+import com.otus.designsystem.theme.ComposeTokens
+import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.RecipientField
+import com.otus.mail.feature.inbox.presentation.recipients
 
 /**
- * The header lines of a draft: From, To, Cc, Bcc, and Subject. Cc and Bcc stay behind a button
- * on the To line until the user asks for them or the draft already has copies. [onChooseFrom]
- * is null when there is nothing to choose. [focus] is the To line's, for a page that starts there.
+ * The header lines of a draft: To, then Cc and Bcc while [shown], then Subject. Each recipient line
+ * shows chips and suggests people as the user types. [focus] is the To line's, for a page that
+ * starts there.
  */
 @Composable
 internal fun ComposeFields(
     state: ComposeState,
-    onChooseFrom: (() -> Unit)?,
+    shown: Set<RecipientField>,
     focus: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
-    val draft = state.draft
-    var copies by remember { mutableStateOf(draft.cc.isNotEmpty() || draft.bcc.isNotEmpty()) }
     Column(modifier) {
-        draft.from?.let { ComposeValueField("From", it.recipientText(), onChooseFrom) }
-        RecipientLine(state, RecipientField.To, Modifier.focusRequester(focus)) {
-            if (!copies) {
-                IconButton(
-                    "Show Cc and Bcc",
-                    { copies = true },
-                    outlined = false,
-                ) { Symbol(Res.drawable.symbol_expand_more) }
+        RecipientField.entries
+            .filter { it == RecipientField.To || it in shown }
+            .forEach { field ->
+                RecipientRow(state, field, if (field == RecipientField.To) Modifier.focusRequester(focus) else Modifier)
             }
-        }
-        if (copies) {
-            RecipientLine(state, RecipientField.Cc)
-            RecipientLine(state, RecipientField.Bcc)
-        }
-        ComposeField("Subject", draft.subject, { subject -> state.edit { it.copy(subject = subject) } })
+        ComposeField(
+            "Subject",
+            state.draft.subject,
+            { subject -> state.edit { it.copy(subject = subject) } },
+            placeholder = "Subject",
+        )
     }
 }
 
 @Composable
-private fun RecipientLine(
+private fun RecipientRow(
     state: ComposeState,
     field: RecipientField,
-    modifier: Modifier = Modifier,
-    trailing: (@Composable () -> Unit)? = null,
+    modifier: Modifier,
 ) {
-    ComposeField(
-        field.name,
-        state.recipientText.getValue(field),
-        { state.editRecipients(field, it) },
-        modifier,
-        kind = InputKind.Email,
-        trailing = trailing,
-    )
+    val recipients = state.recipients
+    Box {
+        RecipientLine(
+            field.name,
+            state.draft.recipients(field).map { it.recipient() },
+            AddressInput(
+                recipients.typed.getValue(field),
+                onTextChange = { recipients.type(field, it) },
+                onCommit = { recipients.commit(field) },
+                onRemoveLast = { recipients.removeLast(field) },
+            ),
+            onChipClick = { recipients.edit(field, it) },
+            modifier = modifier,
+        )
+        val suggested =
+            recipients.suggestions
+                .takeIf { it.field == field }
+                ?.people
+                .orEmpty()
+        if (suggested.isNotEmpty()) {
+            Dropdown(recipients::dismissSuggestions, focusable = false) {
+                suggested.forEach { person ->
+                    DropdownRow(
+                        person.name.ifBlank { person.address },
+                        selected = false,
+                        onClick = { recipients.choose(field, person) },
+                        subtitle = person.address.takeIf { person.name.isNotBlank() },
+                    ) { PersonAvatar(person.chipAvatar(), ComposeTokens.dropdownAvatarSize) }
+                }
+            }
+        }
+    }
 }
+
+private fun MailSender.recipient(): Recipient =
+    Recipient(name.ifBlank { address }, chipAvatar(), if (name.isBlank()) address else "$name, $address")
+
+internal fun MailSender.chipAvatar() = chipAvatar(avatar, name, address)

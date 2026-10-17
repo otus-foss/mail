@@ -5,6 +5,7 @@ import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.SendIdentity
 import kotlinx.coroutines.Deferred
 
 /** A Drafts folder in memory; stored copies get the ids `d1`, `d2`, and so on. */
@@ -17,7 +18,7 @@ internal class FakeDrafts(
     val discarded = mutableListOf<String>()
     var failure: DraftFailure? = null
 
-    override suspend fun identities(accountId: String) = identities
+    override suspend fun identities(accountId: String) = identities.map { SendIdentity(it.address, it) }
 
     override suspend fun save(draft: Draft): Result<String> {
         failure?.let { return Result.failure(DraftException(it)) }

@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.SUBMISSION_SESSION
@@ -81,8 +82,8 @@ class JmapDraftRepositoryTest {
                 "from": [{"name": "Ada Lovelace", "email": "ada@example.org"}],
                 "to": [{"email": "grace@example.org"}], "subject": "Re: Compiler draft",
                 "inReplyTo": ["m1@example.org"], "references": ["m0@example.org", "m1@example.org"],
-                "bodyValues": {"body": {"value": "Looks good."}},
-                "textBody": [{"partId": "body", "type": "text/plain"}]}"""
+                "bodyValues": {"text": {"value": "Looks good."}},
+                "textBody": [{"partId": "text", "type": "text/plain"}]}"""
             assertEquals(Json.parseToJsonElement(expected), set.getValue("create").jsonObject.getValue("draft"))
         }
 
@@ -162,8 +163,8 @@ class JmapDraftRepositoryTest {
                 }.identities("ada")
             assertEquals(
                 listOf(
-                    MailSender("Ada Lovelace", "ada@example.org", "ada"),
-                    MailSender("team@example.org", "team@example.org", "ada"),
+                    SendIdentity("i1", MailSender("Ada Lovelace", "ada@example.org", "ada")),
+                    SendIdentity("i2", MailSender("team@example.org", "team@example.org", "ada")),
                 ),
                 identities,
             )
