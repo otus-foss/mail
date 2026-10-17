@@ -22,16 +22,20 @@ import com.otus.designsystem.resources.symbol_wb_twilight
 import com.otus.designsystem.resources.symbol_work
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.SendLaterChoice
+import com.otus.mail.feature.inbox.domain.earliestPick
+import com.otus.mail.feature.inbox.domain.pickableTimes
 import com.otus.mail.feature.inbox.domain.sendLaterChoices
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.atTime
 import kotlinx.datetime.yearMonth
 
 /**
  * Picks when the server sends the message: this evening, tomorrow morning, Monday morning, or a
- * date and time, up to [latest]. Choosing one runs [onSchedule] with the local time and closes the
- * sheet. With a time already [chosen], Send now clears it.
+ * date and time from the next five-minute step up to [latest]; earlier times never show.
+ * Choosing one runs [onSchedule] with the local time and closes the sheet. With a time already
+ * [chosen], Send now clears it.
  */
 @Composable
 internal fun SendLaterSheet(
@@ -41,6 +45,7 @@ internal fun SendLaterSheet(
     onSchedule: (LocalDateTime?) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val earliest = remember(now) { earliestPick(now) }
     var pickingDate by remember { mutableStateOf(false) }
     var pickedDate by remember { mutableStateOf<LocalDate?>(null) }
     val choose = { at: LocalDateTime? ->
@@ -60,34 +65,38 @@ internal fun SendLaterSheet(
                         { GroupRow(choice.symbol, choice.label, { choose(at) }, value = at.sendLaterLabel(now)) }
                     },
             )
-            RowGroup(
-                listOf {
-                    GroupRow(
-                        Res.drawable.symbol_edit_calendar,
-                        "Pick date and time",
-                        { pickingDate = true },
-                        opens = true,
-                    )
-                },
-            )
+            // A limit shorter than the next pickable step leaves nothing to pick.
+            if (earliest <= latest) {
+                RowGroup(
+                    listOf {
+                        GroupRow(
+                            Res.drawable.symbol_edit_calendar,
+                            "Pick date and time",
+                            { pickingDate = true },
+                            opens = true,
+                        )
+                    },
+                )
+            }
         }
     }
     if (pickingDate) {
         SpecificDatePicker(
-            now.date.yearMonth,
-            now.date..latest.date,
+            earliest.date.yearMonth,
+            earliest.date..latest.date,
             onDismiss = { pickingDate = false },
             onConfirm = { date ->
                 pickingDate = false
                 pickedDate = date
             },
-            initialDay = now.date.day,
+            initialDay = earliest.date.day,
         )
     }
     pickedDate?.let { date ->
-        TimeWheelPicker("Choose time", MORNING_HOUR, 0, "Schedule", { pickedDate = null }) { hour, minute ->
+        val allowed = pickableTimes(date, earliest, latest)
+        TimeWheelPicker("Choose time", MORNING.coerceIn(allowed), allowed, "Schedule", { pickedDate = null }) { time ->
             pickedDate = null
-            choose(date.atTime(hour, minute).coerceIn(now, latest))
+            choose(date.atTime(time))
         }
     }
 }
@@ -109,3 +118,4 @@ private val SendLaterChoice.symbol
         }
 
 private const val MORNING_HOUR = 8
+private val MORNING = LocalTime(MORNING_HOUR, 0)
