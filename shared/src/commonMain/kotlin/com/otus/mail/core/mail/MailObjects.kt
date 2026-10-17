@@ -136,4 +136,28 @@ data class IdentityObject(
     val id: String,
     val name: String = "",
     val email: String = "",
+    val textSignature: String = "",
+    val htmlSignature: String = "",
+)
+
+/** Contact cards suggested as recipients (RFC 9610, section 3); only their names and addresses. */
+val ContactCardType: JmapType<ContactCardObject> =
+    JmapType("ContactCard", JmapCapability.CONTACTS, ContactCardObject.serializer())
+
+@Serializable
+data class ContactCardObject(
+    val id: String,
+    val name: ContactName? = null,
+    val emails: Map<String, ContactEmailObject> = emptyMap(),
+)
+
+/** A JSContact name (RFC 9553, section 2.2.1); suggestions show only its full form. */
+@Serializable
+data class ContactName(
+    val full: String? = null,
+)
+
+@Serializable
+data class ContactEmailObject(
+    val address: String = "",
 )

@@ -1,9 +1,11 @@
 package com.otus.mail.feature.inbox.domain
 
 /**
- * A message being written. [emailId] is the server's copy in the Drafts folder once saved; JMAP
- * Email content cannot change, so each save replaces that copy. [inReplyTo] and [references] keep
- * a reply in its thread.
+ * A message being written. [body] is what the user wrote as plain text and [html] the same with
+ * its formatting, empty while it has none. [quote] is the original a reply quotes or a forward
+ * carries, which follows the body. [emailId] is the server's copy in the Drafts folder once saved;
+ * JMAP Email content cannot change, so each save replaces that copy. [inReplyTo] and [references]
+ * keep a reply in its thread.
  */
 data class Draft(
     val accountId: String,
@@ -13,6 +15,8 @@ data class Draft(
     val bcc: List<MailSender> = emptyList(),
     val subject: String = "",
     val body: String = "",
+    val html: String = "",
+    val quote: String = "",
     val inReplyTo: List<String> = emptyList(),
     val references: List<String> = emptyList(),
     val emailId: String? = null,
@@ -30,7 +34,7 @@ class DraftException(
 /** Saves drafts to an account's Drafts folder; [DraftSender] sends them. */
 interface DraftRepository {
     /** Addresses the account may send from, from JMAP Identity/get; empty when the server has none. */
-    suspend fun identities(accountId: String): List<MailSender>
+    suspend fun identities(accountId: String): List<SendIdentity>
 
     /**
      * Stores [draft] in the Drafts folder, replacing its earlier copy, and returns the new Email id.

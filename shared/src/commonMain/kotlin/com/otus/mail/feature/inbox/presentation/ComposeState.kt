@@ -3,6 +3,9 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import com.otus.designsystem.elements.RichText
+import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
@@ -12,50 +15,90 @@ import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
+import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.answered
-import com.otus.mail.feature.inbox.domain.parseRecipients
 import com.otus.mail.feature.inbox.domain.preferredIdentity
-import com.otus.mail.feature.inbox.domain.recipientText
 import com.otus.mail.feature.inbox.domain.startDraft
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/** A line of people a draft goes to. */
-enum class RecipientField { To, Cc, Bcc }
+/** An account a draft can be sent from, by its [name] in the Send-from list. */
+data class ComposeAccount(
+    val id: String,
+    val name: String,
+)
+
+/** Where a draft saves, sends, and finds people to suggest. */
+class ComposeServices(
+    val drafts: DraftRepository,
+    val sender: DraftSender,
+    val addressBook: AddressBook,
+)
 
 /**
- * The draft [request] starts in [accountId], as the user edits it. Each change saves to the
+ * The accounts around a draft: it starts in [accountId], and every one of [accounts] can send it.
+ * [ownAddresses] are left out of Reply all, and [recentFrom] picks the address of a new message
+ * from all accounts.
+ */
+class ComposeOrigin(
+    val accountId: String,
+    val accounts: List<ComposeAccount>,
+    val ownAddresses: Collection<String>,
+    val recentFrom: List<String> = emptyList(),
+)
+
+/**
+ * The draft [request] starts in the [origin] account, as the user edits it. Each change saves to the
  * Drafts folder [saveDelayMillis] after the last one, and [close] saves at once; each save
  * replaces the earlier copy. Saves run one at a time, and a started save finishes, so each save knows
  * the copy it replaces. A failed save shows a [notice] until the next one succeeds. [send] hands
- * the draft to [sender]. [scope] must outlive the page, so a save started on closing finishes.
+ * the draft to the sender of [services] and reports the address it went from to [onSent].
+ * [scope] must outlive the page, so a save started on closing finishes.
  */
 class ComposeState(
-    private val drafts: DraftRepository,
-    private val sender: DraftSender,
+    services: ComposeServices,
     private val scope: CoroutineScope,
     val request: ComposeRequest,
-    accountId: String,
-    ownAddresses: Collection<String>,
+    private val origin: ComposeOrigin,
+    private val onSent: (MailSender) -> Unit = {},
     private val saveDelayMillis: Long = SAVE_DELAY_MILLIS,
 ) {
-    private val start = request.startDraft(accountId, ownAddresses)
+    private val drafts = services.drafts
+    private val sender = services.sender
+    val accounts: List<ComposeAccount> get() = origin.accounts
+
+    private val start = request.startDraft(origin.accountId, origin.ownAddresses)
+
+    /** What tells an edit: a resumed draft compares with how it began, so it still counts as written. */
+    private val unwritten =
+        (request as? ComposeRequest.Resume)?.from?.startDraft(origin.accountId, origin.ownAddresses) ?: start
 
     var draft by mutableStateOf(start)
         private set
 
-    /** The recipient lines as typed, which [draft] holds parsed. */
-    var recipientText by mutableStateOf(RecipientField.entries.associateWith { start.recipients(it).recipientText() })
-        private set
+    /** The body as the user formats it; [followBody] copies each change into [draft]. */
+    val body = RichText(start.html.ifEmpty { start.body.plainHtml() })
 
-    /** Addresses the account may send from; the From line offers a choice when there are several. */
-    var identities by mutableStateOf<List<MailSender>>(emptyList())
+    val recipients =
+        ComposeRecipients(
+            services.addressBook,
+            scope,
+            accountId = { draft.accountId },
+            people = { draft.recipients(it) },
+            change = { field, people -> edit { it.withRecipients(field, people) } },
+        )
+
+    /** Addresses every account may send from, in account order. */
+    var identities by mutableStateOf<List<SendIdentity>>(emptyList())
         private set
 
     var notice by mutableStateOf<String?>(null)
@@ -71,22 +114,37 @@ class ComposeState(
 
     /** Whether the user has written anything the draft did not start with. */
     val edited: Boolean
-        get() = draft.content() != start.content()
+        get() = draft.content() != unwritten.content()
+
+    /** Whether the server holds the draft as it is now. */
+    val saved: Boolean
+        get() = draft.emailId != null && draft.content() == stored?.content()
 
     private val saving = Mutex()
     private var pending: Job? = null
-    private var stored: Draft? = null
+    private var stored by mutableStateOf<Draft?>(null)
 
     /** Set once the draft is discarded or sent; nothing saves after that. */
     private var finished = false
 
-    /** Loads the identities and picks the one to send from, unless the user already chose. */
+    /** Loads every account's identities and picks the one to send from, unless the user already chose. */
     fun loadIdentities() {
         scope.launch {
-            val found = drafts.identities(draft.accountId)
+            val found = accounts.map { async { drafts.identities(it.id) } }.awaitAll().flatten()
             identities = found
-            if (draft.from == null) draft = draft.copy(from = request.preferredIdentity(found))
+            if (draft.from ==
+                null
+            ) {
+                draft = draft.copy(from = request.preferredIdentity(found.map { it.sender }, origin.recentFrom))
+            }
         }
+    }
+
+    /** Copies every change of [body] into [draft], which saves it. Runs until cancelled. */
+    suspend fun followBody() {
+        snapshotFlow { body.text to body.html }
+            .drop(1)
+            .collect { (text, html) -> edit { it.copy(body = text, html = html) } }
     }
 
     fun edit(change: (Draft) -> Draft) {
@@ -94,12 +152,24 @@ class ComposeState(
         scheduleSave()
     }
 
-    fun editRecipients(
-        field: RecipientField,
-        text: String,
-    ) {
-        recipientText += field to text
-        edit { it.withRecipients(field, parseRecipients(text)) }
+    /**
+     * Sends from [identity]. One of another account moves the draft there: the next save stores it
+     * in that account's Drafts, and the copy in the old one is deleted.
+     */
+    fun chooseFrom(identity: SendIdentity) {
+        val left = draft.takeIf { it.accountId != identity.accountId }
+        edit {
+            it.copy(
+                from = identity.sender,
+                accountId = identity.accountId,
+                emailId =
+                    it.emailId.takeIf {
+                        left ==
+                            null
+                    },
+            )
+        }
+        left?.emailId?.let { id -> scope.launch { saving.withLock { drafts.discard(left.accountId, id) } } }
     }
 
     /** Saves what is new without waiting; for leaving the page. */
@@ -108,10 +178,14 @@ class ComposeState(
         scope.launch { save() }
     }
 
-    /** Stops saving and deletes the stored copy, after any save in progress. */
+    /** Stops saving and keeps the stored copy, so Undo can open the draft again; see [deleteDiscarded]. */
     fun discard() {
         finished = true
         pending?.cancel()
+    }
+
+    /** Deletes the stored copy of a discarded draft, after any save in progress. */
+    fun deleteDiscarded() {
         scope.launch { saving.withLock { draft.emailId?.let { drafts.discard(draft.accountId, it) } } }
     }
 
@@ -120,6 +194,7 @@ class ComposeState(
      * [notice] and leaves the draft to edit and save as before.
      */
     fun send(onSent: () -> Unit) {
+        recipients.commitAll()
         if (!canSend) return
         pending?.cancel()
         sending = true
@@ -132,6 +207,7 @@ class ComposeState(
             result.fold(
                 onSuccess = {
                     notice = null
+                    draft.from?.let(this@ComposeState.onSent)
                     onSent()
                 },
                 onFailure = { notice = ((it as? SendException)?.failure ?: SendFailure.ServerProblem).notice },
@@ -153,19 +229,13 @@ class ComposeState(
     private suspend fun save() =
         saving.withLock {
             val current = draft
-            val unchanged =
-                if (current.emailId ==
-                    null
-                ) {
-                    !edited
-                } else {
-                    current.copy(emailId = null) == stored?.copy(emailId = null)
-                }
+            val unchanged = if (current.emailId == null) !edited else current.content() == stored?.content()
             if (finished || unchanged) return@withLock
             drafts.save(current).fold(
                 onSuccess = { id ->
                     stored = current
-                    draft = draft.copy(emailId = id)
+                    // The user may have moved the draft to another account while it saved.
+                    if (draft.accountId == current.accountId) draft = draft.copy(emailId = id)
                     notice = null
                 },
                 onFailure = { notice = ((it as? DraftException)?.failure ?: DraftFailure.ServerProblem).notice },
@@ -177,7 +247,7 @@ class ComposeState(
 val Draft.recipients: List<MailSender>
     get() = (to + cc + bcc).distinctBy { it.address.lowercase() }
 
-private fun Draft.recipients(field: RecipientField): List<MailSender> =
+internal fun Draft.recipients(field: RecipientField): List<MailSender> =
     when (field) {
         RecipientField.To -> to
         RecipientField.Cc -> cc
@@ -194,28 +264,15 @@ private fun Draft.withRecipients(
         RecipientField.Bcc -> copy(bcc = people)
     }
 
-/** What the user wrote, without the sending identity or the stored copy's id. */
-private fun Draft.content(): Draft = copy(from = null, emailId = null)
+/** What the user wrote, without the sending identity, the account, or the stored copy's id. */
+private fun Draft.content(): Draft = copy(from = null, accountId = "", emailId = null)
 
-private val DraftFailure.notice: String
-    get() =
-        when (this) {
-            DraftFailure.NoDraftsFolder -> "This account has no Drafts folder, so the draft isn't saved."
-            DraftFailure.NotPermitted -> "The server doesn't allow saving this draft."
-            DraftFailure.Unreachable -> "Couldn't reach the server. The draft saves with your next change."
-            DraftFailure.ServerProblem -> "Couldn't save the draft. It saves again with your next change."
-        }
-
-private val SendFailure.notice: String
-    get() =
-        when (this) {
-            SendFailure.NoIdentity -> "The server doesn't let this account send from this address."
-            SendFailure.Recipients -> "Check the recipients. The server can't send to one of them."
-            SendFailure.TooManyRecipients -> "Too many recipients for this server. Remove some and try again."
-            SendFailure.TooLarge -> "The message is too large for this server to send."
-            SendFailure.NotPermitted -> "The server doesn't allow sending this message."
-            SendFailure.Unreachable -> "Lost the connection while sending. Check Sent before you try again."
-            SendFailure.ServerProblem -> "Couldn't send the message. Try again."
-        }
+/** Plain text as paragraphs, for a body that starts without formatting. */
+private fun String.plainHtml(): String =
+    if (isEmpty()) {
+        ""
+    } else {
+        lines().joinToString("") { "<p>" + it.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</p>" }
+    }
 
 private const val SAVE_DELAY_MILLIS = 2_000L

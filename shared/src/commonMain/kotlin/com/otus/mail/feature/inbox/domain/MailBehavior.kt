@@ -7,7 +7,9 @@ package com.otus.mail.feature.inbox.domain
  * [sidebar] arranges the sidebar. [actionBar] holds each place's bar, and [actionBarMode] picks
  * whether places use their own or the Everywhere bar. A [minimizedBar] shows only its primary,
  * as a round button. A null swipe does nothing. [websiteIcons] lets sender avatars load images
- * from outside the user's servers, such as sender websites and DuckDuckGo.
+ * from outside the user's servers, such as sender websites and DuckDuckGo. [recentFrom] holds the
+ * addresses the user last sent from, newest first, which compose offers first and a new message
+ * from all accounts sends from.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -20,7 +22,20 @@ data class MailBehavior(
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
     val minimizedBar: Boolean = false,
     val websiteIcons: Boolean = true,
+    val recentFrom: List<String> = emptyList(),
 ) {
+    /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
+    fun sentFrom(address: String): MailBehavior =
+        copy(
+            recentFrom =
+                (
+                    listOf(address) +
+                        recentFrom.filterNot {
+                            it.equals(address, ignoreCase = true)
+                        }
+                ).take(RECENT_FROM_LIMIT),
+        )
+
     /** What a swipe can be set to besides nothing; Read later only while it is on. */
     val swipeChoices: List<MailAction>
         get() = MailAction.entries.filter { it.swipeable && offers(it) }
@@ -89,6 +104,14 @@ data class MailBehavior(
         )
     }
 }
+
+/** How many addresses [MailBehavior.recentFrom] keeps: the Send-from list's Recent section. */
+const val RECENT_FROM_LIMIT = 2
+
+/** [MailBehavior.recentFrom] as one stored line, and back. Addresses cannot hold a newline. */
+fun encodeRecentFrom(addresses: List<String>): String = addresses.joinToString("\n")
+
+fun decodeRecentFrom(stored: String?): List<String> = stored?.lines()?.filter(String::isNotBlank).orEmpty()
 
 /** App-private storage for [MailBehavior]. Unknown or missing values read as the defaults. */
 interface MailBehaviorStore {

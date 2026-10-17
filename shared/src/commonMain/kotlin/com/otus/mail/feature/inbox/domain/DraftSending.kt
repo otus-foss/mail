@@ -16,6 +16,7 @@ fun ComposeRequest.answered(accountId: String): AnsweredMessage? {
             is ComposeRequest.Reply -> AnsweredMessage(original.emailId, forwarded = false)
             is ComposeRequest.Forward -> AnsweredMessage(original.emailId, forwarded = true)
             is ComposeRequest.New, is ComposeRequest.FollowUp -> null
+            is ComposeRequest.Resume -> return from.answered(accountId)
         }
     return answered?.takeIf { this.accountId == accountId }
 }

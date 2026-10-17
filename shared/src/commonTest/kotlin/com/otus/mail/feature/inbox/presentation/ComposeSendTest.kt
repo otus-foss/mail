@@ -43,8 +43,15 @@ class ComposeSendTest {
         drafts: FakeDrafts = FakeDrafts(listOf(me)),
         sender: DraftSender = FakeSender(),
         request: ComposeRequest = ComposeRequest.New(),
-    ) = ComposeState(drafts, sender, backgroundScope, request, "a1", listOf(me.address), saveDelayMillis = DELAY)
-        .apply { loadIdentities() }
+        onSent: (MailSender) -> Unit = {},
+    ) = ComposeState(
+        ComposeServices(drafts, sender, { _, _ -> emptyList() }),
+        backgroundScope,
+        request,
+        ComposeOrigin("a1", listOf(ComposeAccount("a1", "Work")), listOf(me.address)),
+        onSent = onSent,
+        saveDelayMillis = DELAY,
+    ).apply { loadIdentities() }
         .also { runCurrent() }
 
     @Test
@@ -52,12 +59,30 @@ class ComposeSendTest {
         runTest {
             val ready = state()
             assertFalse(ready.canSend, "No recipients yet")
-            ready.editRecipients(RecipientField.To, "ada@example.com")
+            ready.recipients.type(RecipientField.To, "ada@example.com,")
             assertTrue(ready.canSend)
 
             val noIdentity = state(FakeDrafts())
-            noIdentity.editRecipients(RecipientField.Bcc, "ada@example.com")
+            noIdentity.recipients.type(RecipientField.Bcc, "ada@example.com,")
             assertFalse(noIdentity.canSend, "Without an identity there is no From address")
+        }
+
+    @Test
+    fun sendTakesAnAddressStillBeingTypedAndRecordsTheAddressItWentFrom() =
+        runTest {
+            val sender = FakeSender()
+            var sentFrom: MailSender? = null
+            val state = state(sender = sender, onSent = { sentFrom = it })
+            state.recipients.type(RecipientField.To, "ada@example.com")
+            state.send {}
+            runCurrent()
+            assertEquals(
+                listOf(MailSender("", "ada@example.com")),
+                sender.sent
+                    .single()
+                    .first.to,
+            )
+            assertEquals(me.address, sentFrom?.address)
         }
 
     @Test
@@ -87,7 +112,7 @@ class ComposeSendTest {
             val drafts = FakeDrafts(listOf(me), answer)
             val sender = FakeSender()
             val state = state(drafts, sender)
-            state.editRecipients(RecipientField.To, "ada@example.com")
+            state.recipients.type(RecipientField.To, "ada@example.com,")
             advanceTimeBy(DELAY + 1)
             assertEquals(1, drafts.saved.size, "A save is under way")
 
@@ -115,7 +140,7 @@ class ComposeSendTest {
             val sender = FakeSender(SendFailure.Unreachable)
             val drafts = FakeDrafts(listOf(me))
             val state = state(drafts, sender)
-            state.editRecipients(RecipientField.To, "ada@example.com")
+            state.recipients.type(RecipientField.To, "ada@example.com,")
             var closed = false
             state.send { closed = true }
             runCurrent()

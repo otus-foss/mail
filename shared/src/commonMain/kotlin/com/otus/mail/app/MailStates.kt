@@ -16,6 +16,9 @@ import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
+import com.otus.mail.feature.inbox.presentation.ComposeAccount
+import com.otus.mail.feature.inbox.presentation.ComposeOrigin
+import com.otus.mail.feature.inbox.presentation.ComposeServices
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -79,13 +82,24 @@ internal class MailStates(
 
     /**
      * A draft for [request] from the account it names, or else the first one; null without
-     * accounts. Reply all leaves out the account's sign-in and sending addresses.
+     * accounts. Every account can send it. Reply all leaves out the account's sign-in and sending
+     * addresses. Sending records the address it went from, which later drafts offer first.
      */
     fun compose(request: ComposeRequest): ComposeState? {
-        val account =
-            accounts.accounts.run { firstOrNull { it.id == request.accountId } ?: firstOrNull() } ?: return null
-        val own = account.emailAddresses + account.username
-        return ComposeState(services.drafts, services.sender, scope, request, account.id, own)
+        val all = accounts.accounts
+        val account = all.firstOrNull { it.id == request.accountId } ?: all.firstOrNull() ?: return null
+        return ComposeState(
+            ComposeServices(services.drafts, services.sender, services.addressBook),
+            scope,
+            request,
+            ComposeOrigin(
+                account.id,
+                all.map { ComposeAccount(it.id, it.name) },
+                account.emailAddresses + account.username,
+                behavior.behavior.recentFrom,
+            ),
+            onSent = { from -> behavior.update { it.sentFrom(from.address) } },
+        )
     }
 
     /** Mail and folder counts change together, so a pull refreshes both. */

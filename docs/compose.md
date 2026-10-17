@@ -12,46 +12,73 @@ the account's Drafts folder and sends them through JMAP `EmailSubmission/set`.
 - **New message** starts blank, in the account the request names or else the first account.
 - **Reply** goes to the original's sender. The subject gets "Re: " unless it already starts with
   "Re:" in any case. `inReplyTo` holds the original's Message-ID, and `references` holds its
-  References followed by its Message-ID, so the reply stays in the thread. The body starts with
-  two blank lines, then "On <date>, <name> wrote:" and the original with each line quoted by
-  "> ". When only the start of the original was loaded, the quote ends with
-  "> [The rest of the original message is not included.]".
+  References followed by its Message-ID, so the reply stays in the thread. The body starts
+  empty. The quote, kept apart from it in `Draft.quote`, is "On <date>, <name> wrote:" and the
+  original with each line quoted by "> ". When only the start of the original was loaded, the
+  quote ends with "> [The rest of the original message is not included.]".
+- **Resume** opens a draft again as it was, such as after Undo on a discarded one, and counts as
+  written, so it saves.
 - **Reply all** also adds the original's To recipients to To and its Cc recipients to Cc. It
   leaves out the account's sign-in address and the sending addresses from `Identity/get`, and
   lists each address once. A reply to mail the account sent goes to that mail's recipients.
-- **Forward** gets "Fwd: " unless the subject already starts with "Fwd:" or "Fw:". The body
+- **Forward** gets "Fwd: " unless the subject already starts with "Fwd:" or "Fw:". The quote
   holds a "Forwarded message" block with From, Date, Subject, To, and Cc when present, then the
   original text, which ends with the same note when only its start was loaded.
 
-A reply or forward is sent from the identity the original went to, or else the first identity.
+### Sending from
+
+The From pill offers the identities of every account (RFC 8621, `Identity/get`). A reply or
+forward is sent from the address the original went to, preferring the original's account, and
+a follow-up from the one that sent it. A new message from one account's inbox comes from that
+account. A new message from all accounts comes from the address used last, which Mail keeps in
+its behavior settings as `recentFrom`. Otherwise the account's first identity is used. Choosing
+an identity of another account moves the draft: the next save stores it in that account's
+Drafts, and the copy in the old account is deleted.
+
+Delivered-To is not read yet, so a reply to mail that reached the account through an alias that
+is not in To or Cc falls back to the account's first identity.
 
 ### The page
 
-`ComposeScreen` opens over the page it came from, and Back or the chevron returns there. The
-header shows the page's title: **New message**, **Reply**, **Reply all**, or **Forward**. Below
-it are the header lines, built from Meta's `ComposeField` and `ComposeValueField`:
+`ComposeScreen` follows the "Write" boards. It opens over the page it came from, and Back or the
+chevron returns there. The floating panel shows the title, **New message**, **Reply**,
+**Reply all**, **Follow up**, or **Forward**, and **Saved** once the server holds the draft as
+it is. Below it are three pills: the Send-from pill, **+ Cc** until the Cc line shows, and ⋯.
 
-- **From** shows the sending identity. With several identities, tapping it opens a
-  **Send from** sheet.
-- **To** takes addresses or `Name <address>`, separated by commas or semicolons. A button at its
-  end shows **Cc** and **Bcc**, which stay hidden until needed unless the draft already has
-  copies.
-- **Subject**, then the body (`ComposeBody`), which fills the rest of the page. The lines and the
-  body scroll together.
+- The Send-from pill opens a dropdown with **Recent**, the last two addresses used, and then one
+  section per account. It has a search field once there are eight or more addresses. The current
+  address has a `bgRegular` fill without a checkmark.
+- **To**, then **Cc** and **Bcc** while shown, hold recipient chips. A comma, a semicolon, Next,
+  or leaving the line turns typed addresses into chips; text without an `@` stays to fix.
+  Tapping a chip puts it back into the text to edit, and Backspace in an empty line removes the
+  last chip. Typing two or more characters suggests people from JMAP contacts and from the From
+  and To of the account's newest matching mail (`JmapAddressBook`).
+- **Subject** shows a "Subject" placeholder.
+- The body is formatted text (`RichTextBody`), with "Write your message" while it is empty.
+- A reply or forward ends with the original behind a chip, such as "Grace Hopper wrote on
+  11 Oct" or "Forwarded message". Tapping it shows the quoted text.
 
-A new message or forward starts with the cursor in To; a reply starts with nothing focused.
+The ⋯ menu holds **Add Bcc**, which turns into **Remove Bcc** and then clears Bcc, and
+**Discard draft**. A new message or forward starts with the cursor in To; a reply starts with
+nothing focused.
 
-### Action bar
+### Bottom bar
 
-The bar uses the **Compose** layout: Attach and Discard, with Send as the main button. In Fixed
-mode it shows the shared layout, and every action except Send and Discard is disabled there.
-Attach stays disabled until Mail can attach files. Send is enabled once the draft has a From
-address and at least one recipient in To, Cc, or Bcc. Once the draft has recipients, the main
-button names them: one person's avatar and "to Ada", or the first avatar, a count, and
-"3 people". Accessibility services read it as "Send, to Ada".
+With the keyboard down, the bar uses the **Compose** layout: Attach and Discard, with Send as the
+main button. In Fixed mode it shows the shared layout, and every action except Send and Discard
+is disabled there. Attach stays disabled until Mail can attach files. Send is enabled once the
+draft has a From address and at least one recipient. The main button then reads "Send to" above
+the first recipient's first name with their avatar, or a count for several. Accessibility
+services read it as "Send, to Grace Hopper".
 
-**Discard** asks first when the user has written anything, then deletes the saved copy and
-closes the page. A draft the user has not changed closes at once.
+With the keyboard up, the formatting row replaces the bar: Attach, then Bold, Italic, Bulleted
+list, Numbered list, Link, and Clear formatting, with a compact Send pinned at the end. Link asks
+for a web address. The two fade into each other.
+
+Send without a subject asks first: **Send** or **Add subject**.
+
+**Discard** stops saving and closes the page with a "Draft discarded" toast. Undo opens the
+draft again as it was. The saved copy is deleted once the toast leaves without Undo.
 
 ### Saving
 
@@ -79,7 +106,12 @@ Send waits for any save in progress, so it knows the draft's saved copy, and the
    `$answered` on the original of a reply or `$forwarded` on the original of a forward. A failure
    here is ignored, because the message is already sent.
 
-On success the page closes, and nothing is saved after that. A refused submission destroys the
+The stored Email has a `text/plain` part: the body, a blank line, and the quote. Once the body
+has text it also has a `text/html` part, so the server builds `multipart/alternative`: the
+formatted body, then the quote with its quoted lines in a `blockquote`.
+
+On success the page closes, nothing is saved after that, and the From address goes first in
+`recentFrom`. A refused submission destroys the
 copy the request stored and keeps the earlier one, and the page shows why under the header:
 no identity for the From address, an invalid recipient, too many recipients, a message too large,
 no permission, or a lost connection. After a lost connection the outcome is unknown, so the
@@ -95,7 +127,10 @@ notice asks the user to check Sent before trying again.
   The saved copy is kept in Drafts, but the page does not reopen it, and edits made in the last
   two seconds can be lost.
 - Opening a saved draft from the Drafts folder is not built.
-- Recipient lines are plain text. There is no address completion from contacts yet.
+- Signatures, scheduled sending, and undo send are not built yet; the boards for them are next.
+- Mark as important, shown on the "⋯ more options" board, is out of scope.
+- The disabled Send keeps the bar's layout, its label then the icon, in `text3`; the board puts
+  the icon first.
 - A failed discard is not reported, because the page has already closed.
 - When a save stores the new copy but deleting the old one fails, the old one stays in Drafts as
   a duplicate.
@@ -106,8 +141,12 @@ notice asks the user to check Sent before trying again.
 `JmapDraftSenderTest` checks the send requests against a mock server: the stored copy and its
 submission in one request, filing in Sent, wildcard identities, the marks on the original, and
 cleanup after a refusal. `ComposeSendTest` covers when Send is enabled, waiting for a save in
-progress, and failure notices. `ComposeStateTest` covers delayed saves, saving on close, discard, failure notices, keeping the
-stored copy after a failed save, a change or discard during a save, and the sending identity.
-`ComposeScreenTest` types a draft, checks that Send names its recipients, sends a draft, saves on Back,
-chooses an identity, and confirms a discard. Its screenshot is written to
-`androidApp/build/reports/compose/`.
+progress, committing a typed address on Send, and failure notices. `ComposeStateTest` covers
+delayed saves, saving on close, discard and its later delete, failure notices, keeping the stored
+copy after a failed save, a change or discard during a save, the sending identity, resumed
+drafts, and moving a draft to another account.
+`DraftEmailTest` checks the text and HTML parts with the quote. `ComposeRecipientsTest` covers
+chips, editing a chip, and suggestions. `ComposeScreenTest` types a draft into chips, checks that
+Send names its recipients, sends a draft, asks about a missing subject, saves on Back, chooses an
+identity of another account from the dropdown, adds Bcc and discards from the ⋯ menu, and opens
+a reply's quote. Its screenshots of each state are written to `androidApp/build/reports/compose/`.
