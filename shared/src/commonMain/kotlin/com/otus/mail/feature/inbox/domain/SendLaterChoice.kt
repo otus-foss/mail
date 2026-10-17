@@ -2,10 +2,16 @@ package com.otus.mail.feature.inbox.domain
 
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 /** A ready-made time in the Send later sheet. */
 enum class SendLaterChoice { ThisEvening, TomorrowMorning, MondayMorning }
@@ -29,6 +35,32 @@ fun sendLaterChoices(now: LocalDateTime): List<Pair<SendLaterChoice, LocalDateTi
     }
 }
 
+/**
+ * The first time Pick date and time offers at [now]: the next five-minute step at least a minute
+ * ahead, so nothing in the past ever shows. It can fall on the next day.
+ */
+fun earliestPick(now: LocalDateTime): LocalDateTime {
+    val ahead = now.toInstant(TimeZone.UTC) + 1.minutes
+    val minutes = ahead.epochSeconds / SECONDS_PER_MINUTE
+    val step = (minutes + PICK_STEP_MINUTES - 1) / PICK_STEP_MINUTES * PICK_STEP_MINUTES
+    return Instant.fromEpochSeconds(step * SECONDS_PER_MINUTE).toLocalDateTime(TimeZone.UTC)
+}
+
+/** The times of [date] between [earliest] and [latest]; the whole day on any date in between. */
+fun pickableTimes(
+    date: LocalDate,
+    earliest: LocalDateTime,
+    latest: LocalDateTime,
+): ClosedRange<LocalTime> {
+    val start = if (date == earliest.date) earliest.time else LocalTime(0, 0)
+    val end = if (date == latest.date) latest.time else LocalTime(LAST_HOUR, LAST_MINUTE)
+    return start..end
+}
+
+private const val PICK_STEP_MINUTES = 5L
+private const val SECONDS_PER_MINUTE = 60L
+private const val LAST_HOUR = 23
+private const val LAST_MINUTE = 59
 private const val EVENING_HOUR = 18
 private const val EVENING_CUTOFF_HOUR = 17
 private const val MORNING_HOUR = 8
