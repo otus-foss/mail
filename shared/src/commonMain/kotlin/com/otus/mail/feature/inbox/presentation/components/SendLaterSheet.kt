@@ -3,7 +3,6 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,7 +20,6 @@ import com.otus.designsystem.resources.symbol_light_mode
 import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.resources.symbol_wb_twilight
 import com.otus.designsystem.resources.symbol_work
-import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.SendLaterChoice
 import com.otus.mail.feature.inbox.domain.sendLaterChoices
@@ -51,7 +49,7 @@ internal fun SendLaterSheet(
     }
     ClosableSheet("Send later", onDismiss) {
         Column(
-            Modifier.padding(horizontal = SheetTokens.inset),
+            Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             if (chosen != null) RowGroup(listOf { GroupRow(Res.drawable.symbol_send, "Send now", { choose(null) }) })
@@ -71,11 +69,6 @@ internal fun SendLaterSheet(
                         opens = true,
                     )
                 },
-            )
-            Text(
-                "Your mail server sends it, even if your phone is off.",
-                Modifier.padding(bottom = SheetTokens.inset),
-                color = OtusColors.text3,
             )
         }
     }
