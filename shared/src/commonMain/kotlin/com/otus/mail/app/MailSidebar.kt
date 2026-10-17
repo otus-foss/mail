@@ -11,12 +11,8 @@ import com.otus.designsystem.components.DialogAction
 import com.otus.designsystem.components.Sidebar
 import com.otus.designsystem.components.SidebarHeader
 import com.otus.designsystem.components.SidebarState
-import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.SectionCaption
 import com.otus.designsystem.elements.SidebarDivider
-import com.otus.designsystem.elements.Symbol
-import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_create_new_folder
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.components.FolderColorSheet
@@ -88,7 +84,7 @@ internal fun MailSidebar(
                 }
 
                 SidebarSection.Folders -> {
-                    SectionCaption(section.title, action = { NewFolderButton { onSelect(MailPage.Folders) } })
+                    SectionCaption(section.title)
                     tree.Rows(shared)
                 }
             }
@@ -96,12 +92,6 @@ internal fun MailSidebar(
     }
     if (picking) SidebarScopeSheet(states, scope, onChooseScope, onDismiss = { picking = false })
     actions.Dialogs()
-}
-
-/** Folders are made per account, so this opens the folder settings, where each account has its own. */
-@Composable
-private fun NewFolderButton(onClick: () -> Unit) {
-    IconButton("New folder", onClick, outlined = false) { Symbol(Res.drawable.symbol_create_new_folder) }
 }
 
 @Composable
