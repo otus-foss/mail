@@ -41,6 +41,7 @@ class AndroidMailBehaviorStore(
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
             recentFrom = decodeRecentFrom(preferences.getString(RECENT_FROM, null)),
+            signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
         )
     }
 
@@ -57,6 +58,7 @@ class AndroidMailBehaviorStore(
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
             putString(RECENT_FROM, encodeRecentFrom(behavior.recentFrom))
+            putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
         }
     }
 
@@ -71,6 +73,7 @@ class AndroidMailBehaviorStore(
         const val MINIMIZED_BAR = "action_bar_minimized"
         const val WEBSITE_ICONS = "website_icons"
         const val RECENT_FROM = "recent_from"
+        const val SIGNATURE_IN_REPLIES = "signature_in_replies"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

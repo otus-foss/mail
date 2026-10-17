@@ -80,6 +80,32 @@ Send without a subject asks first: **Send** or **Add subject**.
 **Discard** stops saving and closes the page with a "Draft discarded" toast. Undo opens the
 draft again as it was. The saved copy is deleted once the toast leaves without Undo.
 
+### Signatures
+
+Each identity has one signature, stored on the server identity as `htmlSignature` and
+`textSignature` (RFC 8621, section 6). A new message always gets the signature of its From
+address; replies, reply-all, follow-ups, and forwards get it only while **Add to replies** is
+on. Choosing another From address switches to that address's signature. The ⋯ menu's
+**Signature** switch removes it from this draft only. The page does not show the signature; the
+sent message has it after the body: in the text part after a `-- ` line, in the HTML part as its
+own block.
+
+Settings › **Signatures** lists every address by account with the start of its signature, or
+"No signature". **Edit signature** opens the editor: the address pill switches to another
+address in place, **Add image** (Android only), **Copy**, and **Remove signature**, which asks
+first. Edits save a second after the last one and when the page closes, with `Identity/set`. A
+failed save puts the old signature back and says so.
+
+An added image is shrunk to at most 600 px wide and about 50 KB: PNG when that is small enough,
+JPEG at falling quality otherwise. It is stored in the signature as a `data:` URI. A selected
+image has a `text2` outline, a ✕, and one corner handle that keeps its aspect ratio between 48
+and 300 px and snaps to Small (96), Medium (132), or Large (200) within 6 px. The size pill under
+it names the preset or the pixel size. When a draft is saved or sent, each image is uploaded and
+the HTML points at it by `cid:`, inside `multipart/related`, so the message carries it.
+
+**Copy signature** copies from one other address, which needs a signature, to this one, or from
+this one to several others, and shows "Signature copied".
+
 ### Saving
 
 `ComposeState` saves the draft two seconds after the last change, and again when the page
@@ -127,7 +153,10 @@ notice asks the user to check Sent before trying again.
   The saved copy is kept in Drafts, but the page does not reopen it, and edits made in the last
   two seconds can be lost.
 - Opening a saved draft from the Drafts folder is not built.
-- Signatures, scheduled sending, and undo send are not built yet; the boards for them are next.
+- Scheduled sending and undo send are not built yet.
+- iOS has no image picker for signatures yet, so Add image is hidden there.
+- The signature list's account sections and the copy sheet's rows are flat, without the boards'
+  grouped `bgRegular` background.
 - Mark as important, shown on the "⋯ more options" board, is out of scope.
 - The disabled Send keeps the bar's layout, its label then the icon, in `text3`; the board puts
   the icon first.
@@ -149,4 +178,6 @@ drafts, and moving a draft to another account.
 chips, editing a chip, and suggestions. `ComposeScreenTest` types a draft into chips, checks that
 Send names its recipients, sends a draft, asks about a missing subject, saves on Back, chooses an
 identity of another account from the dropdown, adds Bcc and discards from the ⋯ menu, and opens
-a reply's quote. Its screenshots of each state are written to `androidApp/build/reports/compose/`.
+a reply's quote. `SignatureTest`, `SignaturesStateTest`, and `SignatureScreensTest` cover the
+signature HTML and images, copying and failed saves, the list, the editor with its size list,
+and the copy sheet. Their screenshots of each state are written to `androidApp/build/reports/compose/`.

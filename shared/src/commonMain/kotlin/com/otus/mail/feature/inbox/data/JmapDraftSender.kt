@@ -78,11 +78,12 @@ class JmapDraftSender(
         route: SendRoute,
     ) {
         val folder = route.drafts ?: route.sent ?: failSend(SendFailure.ServerProblem)
+        val email = draft.toEmail(folder, inlineImages(draft.htmlContent()))
         lateinit var stored: JmapCall<SetResult>
         lateinit var submitted: JmapCall<SetResult>
         val response =
             connection.send {
-                stored = call(SetMethod(EmailType, id, create = mapOf(EMAIL to draft.toEmail(folder))))
+                stored = call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
                 submitted = call(submission(route, folder))
             }
         val created = response[stored]

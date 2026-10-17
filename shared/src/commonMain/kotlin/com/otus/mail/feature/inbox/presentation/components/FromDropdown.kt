@@ -8,8 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.Dropdown
-import com.otus.designsystem.components.DropdownCaption
 import com.otus.designsystem.components.DropdownRow
+import com.otus.designsystem.components.ListCaption
 import com.otus.designsystem.components.PersonAvatar
 import com.otus.designsystem.components.PickerSearch
 import com.otus.designsystem.theme.ComposeTokens
@@ -69,7 +69,7 @@ private fun IdentitySection(
     onSelect: (SendIdentity) -> Unit,
 ) {
     if (identities.isEmpty()) return
-    DropdownCaption(title)
+    ListCaption(title)
     identities.forEach { identity ->
         val sender = identity.sender
         DropdownRow(

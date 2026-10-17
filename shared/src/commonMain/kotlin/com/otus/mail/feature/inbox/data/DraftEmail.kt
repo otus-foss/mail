@@ -14,9 +14,14 @@ import kotlinx.serialization.json.putJsonObject
 /**
  * The Email object `Email/set` creates for this draft in the [draftsId] mailbox (RFC 8621,
  * section 4.6). It is marked `$draft`, and `$seen` so the Drafts folder does not count it as unread.
- * Empty recipient and thread headers are left out rather than written empty.
+ * Empty recipient and thread headers are left out rather than written empty. The body is plain
+ * text, or text and [html] as alternatives; HTML with inline images puts them beside it in a
+ * `multipart/related` part, which the HTML names by `cid:`.
  */
-internal fun Draft.toEmail(draftsId: String): JsonObject =
+internal fun Draft.toEmail(
+    draftsId: String,
+    html: EmailHtml? = htmlContent()?.let { EmailHtml(it) },
+): JsonObject =
     buildJsonObject {
         putJsonObject("mailboxIds") { put(draftsId, true) }
         putJsonObject("keywords") {
@@ -31,66 +36,76 @@ internal fun Draft.toEmail(draftsId: String): JsonObject =
         mapOf("inReplyTo" to inReplyTo, "references" to references)
             .filterValues { it.isNotEmpty() }
             .forEach { (header, ids) -> put(header, JsonArray(ids.map(::JsonPrimitive))) }
-        val html = htmlContent()
         putJsonObject("bodyValues") {
             putJsonObject(TEXT_PART) { put("value", textContent()) }
-            html?.let { putJsonObject(HTML_PART) { put("value", it) } }
+            html?.let { putJsonObject(HTML_PART) { put("value", it.html) } }
         }
-        put("textBody", bodyPart(TEXT_PART, "text/plain"))
-        html?.let { put("htmlBody", bodyPart(HTML_PART, "text/html")) }
-    }
+        when {
+            html == null -> {
+                put("textBody", JsonArray(listOf(bodyPart(TEXT_PART, "text/plain"))))
+            }
 
-/** What the user wrote, then the quote after a blank line. */
-internal fun Draft.textContent(): String = listOf(body, quote).filter(String::isNotBlank).joinToString("\n\n")
+            html.images.isEmpty() -> {
+                put("textBody", JsonArray(listOf(bodyPart(TEXT_PART, "text/plain"))))
+                put("htmlBody", JsonArray(listOf(bodyPart(HTML_PART, "text/html"))))
+            }
 
-/**
- * The formatted body with the quote after it, its quoted lines in a blockquote; null while the
- * body has no formatting, so the message stays plain text.
- */
-internal fun Draft.htmlContent(): String? =
-    html.takeIf(String::isNotBlank)?.let { body -> if (quote.isBlank()) body else body + quote.quoteHtml() }
-
-private fun String.quoteHtml(): String =
-    lines()
-        .chunkedBy { it.startsWith(QUOTE_MARK) }
-        .joinToString("", prefix = "<br>") { (quoted, lines) ->
-            if (quoted) {
-                lines.joinToString(
-                    "<br>",
-                    "<blockquote>",
-                    "</blockquote>",
-                ) { it.removePrefix(QUOTE_MARK).trimStart().escapeHtml() }
-            } else {
-                lines.joinToString("<br>", postfix = "<br>") { it.escapeHtml() }
+            else -> {
+                put("bodyStructure", html.structure())
             }
         }
-
-/** Runs of neighboring lines that agree on [key], in order. */
-private fun List<String>.chunkedBy(key: (String) -> Boolean): List<Pair<Boolean, List<String>>> =
-    fold(emptyList<Pair<Boolean, List<String>>>()) { runs, line ->
-        val quoted = key(line)
-        val last = runs.lastOrNull()
-        if (last?.first ==
-            quoted
-        ) {
-            runs.dropLast(1) + (quoted to last.second + line)
-        } else {
-            runs + (quoted to listOf(line))
-        }
     }
 
-private fun String.escapeHtml(): String =
-    replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+/** The HTML part of an Email and the images it shows inline, already uploaded. */
+internal class EmailHtml(
+    val html: String,
+    val images: List<InlineImage> = emptyList(),
+)
+
+/** An uploaded image an [EmailHtml] shows by its [cid]. */
+internal data class InlineImage(
+    val cid: String,
+    val blobId: String,
+    val type: String,
+)
+
+/** Text and HTML as alternatives, the HTML beside its images in `multipart/related`. */
+private fun EmailHtml.structure(): JsonObject =
+    multipart(
+        "multipart/alternative",
+        listOf(
+            bodyPart(TEXT_PART, "text/plain"),
+            multipart(
+                "multipart/related",
+                listOf(bodyPart(HTML_PART, "text/html")) +
+                    images.map { image ->
+                        buildJsonObject {
+                            put("blobId", image.blobId)
+                            put("type", image.type)
+                            put("cid", image.cid)
+                            put("disposition", "inline")
+                        }
+                    },
+            ),
+        ),
+    )
+
+private fun multipart(
+    type: String,
+    parts: List<JsonObject>,
+): JsonObject =
+    buildJsonObject {
+        put("type", type)
+        put("subParts", JsonArray(parts))
+    }
 
 private fun bodyPart(
     partId: String,
     type: String,
-): JsonArray =
-    buildJsonArray {
-        addJsonObject {
-            put("partId", partId)
-            put("type", type)
-        }
+): JsonObject =
+    buildJsonObject {
+        put("partId", partId)
+        put("type", type)
     }
 
 /** A name that is blank or only repeats the address is left out of the header. */
@@ -106,4 +121,3 @@ private fun addresses(senders: List<MailSender>): JsonArray =
 
 private const val TEXT_PART = "text"
 private const val HTML_PART = "html"
-private const val QUOTE_MARK = ">"

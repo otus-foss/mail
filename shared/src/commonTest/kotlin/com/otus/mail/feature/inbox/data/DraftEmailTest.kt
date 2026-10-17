@@ -1,6 +1,8 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.feature.inbox.domain.Draft
+import com.otus.mail.feature.inbox.domain.Signature
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
@@ -35,4 +37,30 @@ class DraftEmailTest {
             .jsonObject
             .getValue("value")
             .jsonPrimitive.content
+
+    @Test
+    fun theSignatureFollowsTheBodyInBothParts() {
+        val signature = Signature("<p><b>Alex</b></p>", "Alex")
+        val email = Draft("a1", body = "Thanks.", signature = signature, quote = quote).toEmail("dr")
+        assertEquals("Thanks.\n\n-- \nAlex\n\n$quote", email.part("text"))
+        assertTrue(email.part("html").startsWith("Thanks.<br><div><p><b>Alex</b></p></div><br>On 2026-10-11"))
+    }
+
+    @Test
+    fun inlineImagesSitBesideTheHtmlInARelatedPart() {
+        val html =
+            EmailHtml(
+                "<p>Hi</p><img src=\"cid:image0@otus.mail\">",
+                listOf(InlineImage("image0@otus.mail", "b1", "image/png")),
+            )
+        val email = Draft("a1", body = "Hi", html = "<p>Hi</p>").toEmail("dr", html)
+        assertFalse("textBody" in email.keys || "htmlBody" in email.keys)
+        val structure = email.getValue("bodyStructure").jsonObject
+        assertEquals("multipart/alternative", structure.getValue("type").jsonPrimitive.content)
+        val related = structure.getValue("subParts").jsonArray[1].jsonObject
+        assertEquals("multipart/related", related.getValue("type").jsonPrimitive.content)
+        val image = related.getValue("subParts").jsonArray[1].jsonObject
+        assertEquals("image0@otus.mail", image.getValue("cid").jsonPrimitive.content)
+        assertEquals("inline", image.getValue("disposition").jsonPrimitive.content)
+    }
 }

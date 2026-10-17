@@ -26,8 +26,11 @@ class OtusMailApplication :
             avatarStore = FileAvatarStore(File(cacheDir, "avatars-v1").absolutePath),
             readLaterStore = AndroidReadLaterStore(this),
             instantPush = instantPush,
+            signatureImages = signatureImages,
         )
     }
+
+    val signatureImages: AndroidSignatureImages by lazy { AndroidSignatureImages(this) }
 
     val instantPush: AndroidInstantPush by lazy { AndroidInstantPush(this) }
 
