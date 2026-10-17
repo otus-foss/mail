@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.plus
 
@@ -26,7 +27,11 @@ internal fun LocalDateTime.sendLaterLabel(now: LocalDateTime): String {
 internal fun LocalDateTime.scheduledLabel(): String = "Scheduled for $weekday $dayAndMonth, $clock"
 
 private val LocalDateTime.dayAndMonth: String
-    get() = "${date.day} ${month.name.take(ABBREVIATION).lowercase().replaceFirstChar(Char::uppercase)}"
+    get() = date.dayAndMonth
+
+/** A date as the day and the short month, such as "11 Oct". */
+internal val LocalDate.dayAndMonth: String
+    get() = "$day ${month.name.take(ABBREVIATION).lowercase().replaceFirstChar(Char::uppercase)}"
 
 private val LocalDateTime.weekday: String
     get() =

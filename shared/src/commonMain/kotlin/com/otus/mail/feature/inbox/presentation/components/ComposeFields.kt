@@ -65,6 +65,7 @@ private fun RecipientRow(
             ),
             onChipClick = { recipients.edit(field, it) },
             modifier = modifier,
+            collapsedAfter = FOLDED_RECIPIENTS,
         )
         val suggested =
             recipients.suggestions
@@ -90,3 +91,6 @@ private fun MailSender.recipient(): Recipient =
     Recipient(name.ifBlank { address }, chipAvatar(), if (name.isBlank()) address else "$name, $address")
 
 internal fun MailSender.chipAvatar() = chipAvatar(avatar, name, address)
+
+/** How many people a long recipient line shows before "+3 more". */
+private const val FOLDED_RECIPIENTS = 2

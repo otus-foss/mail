@@ -110,11 +110,14 @@ private fun OriginalMessage.reply(
     )
 }
 
-private fun OriginalMessage.replyBody(): String =
+private fun OriginalMessage.replyBody(): String = quoted(body)
+
+/** [text] of this message quoted line by line under "On <date>, <name> wrote:". */
+internal fun OriginalMessage.quoted(text: String): String =
     buildList {
         add("On $sentLabel, ${from.displayName} wrote:")
-        addAll(body.lines().map { if (it.isEmpty()) QUOTE else "$QUOTE $it" })
-        if (bodyTruncated) add("$QUOTE $TRUNCATED_NOTE")
+        addAll(text.lines().map { if (it.isEmpty()) QUOTE else "$QUOTE $it" })
+        if (bodyTruncated && text == body) add("$QUOTE $TRUNCATED_NOTE")
     }.joinToString("\n")
 
 private fun OriginalMessage.forwardBody(): String =
@@ -141,7 +144,7 @@ private fun String.prefixed(
 
 private const val REPLY_PREFIX = "Re:"
 private const val FORWARD_PREFIX = "Fwd:"
-private const val QUOTE = ">"
+internal const val QUOTE = ">"
 
 /** Ends a quoted or forwarded body that stops early, so no reader takes it for the whole message. */
 private const val TRUNCATED_NOTE = "[The rest of the original message is not included.]"

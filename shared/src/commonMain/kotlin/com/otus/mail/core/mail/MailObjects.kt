@@ -161,3 +161,21 @@ data class ContactName(
 data class ContactEmailObject(
     val address: String = "",
 )
+
+/** Only the thread of each Email, to find the rest of a conversation (RFC 8621, section 3). */
+val EmailThreadType: JmapType<EmailThread> = JmapType("Email", JmapCapability.MAIL, EmailThread.serializer())
+
+@Serializable
+data class EmailThread(
+    val id: String,
+    val threadId: String = "",
+)
+
+/** A conversation's Emails, oldest first (RFC 8621, section 3). */
+val ThreadType: JmapType<ThreadObject> = JmapType("Thread", JmapCapability.MAIL, ThreadObject.serializer())
+
+@Serializable
+data class ThreadObject(
+    val id: String,
+    val emailIds: List<String> = emptyList(),
+)

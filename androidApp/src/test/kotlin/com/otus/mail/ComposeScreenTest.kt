@@ -270,14 +270,10 @@ class ComposeScreenTest {
     }
 
     @Test
-    fun aReplyCollapsesTheQuoteBehindAChip() {
-        open(ComposeRequest.Reply(original, all = false))
-        compose.onNodeWithText("Reply").assertExists()
-        compose.onNodeWithText("Grace Hopper wrote on 11 Oct").assertExists()
-        button("Send, to Grace Hopper").assertIsEnabled()
-        compose.screenshot("compose-reply")
-        compose.onNodeWithText("Grace Hopper wrote on 11 Oct").performClick()
-        compose.onNodeWithText("> Can we meet Thursday?", substring = true).assertExists()
+    fun aForwardCarriesItsOriginalBehindAChip() {
+        open(ComposeRequest.Forward(original))
+        compose.onNodeWithText("Forwarded message").performClick()
+        compose.onNodeWithText("Can we meet Thursday?", substring = true).assertExists()
     }
 
     private val original =

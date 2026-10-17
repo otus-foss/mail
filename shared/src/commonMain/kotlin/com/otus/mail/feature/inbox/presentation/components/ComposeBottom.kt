@@ -35,8 +35,9 @@ import kotlin.time.Clock
 /**
  * The compose page's bottom: its action bar, or while the [keyboardUp] the formatting row with
  * Attach and a compact Send. While a time is scheduled, a notice above it names the time, and
- * Change runs [onChangeSchedule]. They fade into each other. Send runs [onSend] and is disabled while
- * it is null; Attach stays disabled until Mail has attachments.
+ * Change runs [onChangeSchedule]. A reply's earlier messages sit above the bar and open the
+ * thread's sheet. They fade into each other. Send runs [onSend] and is disabled while it is null;
+ * Attach stays disabled until Mail has attachments.
  */
 @Composable
 internal fun ComposeBottom(
@@ -50,11 +51,14 @@ internal fun ComposeBottom(
     var linking by remember { mutableStateOf(false) }
     val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
     val at = state.sendAt?.sendLaterLabel(now)
+    var showingThread by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(ActionBarTokens.gap)) {
         state.sendAt?.let { BarNotice(Res.drawable.symbol_schedule, it.scheduledLabel(), "Change", onChangeSchedule) }
+        state.thread?.takeIf { !keyboardUp }?.let { ReplyThreadStrip(it) { showingThread = true } }
         Bottom(state, behavior, keyboardUp, onSend, onDiscard, at) { linking = true }
     }
     if (linking) LinkDialog(state.body::addLink) { linking = false }
+    if (showingThread) state.thread?.let { ThreadSheet(it) { showingThread = false } }
 }
 
 /** The action bar, or the formatting row while the keyboard is up; they fade into each other. */

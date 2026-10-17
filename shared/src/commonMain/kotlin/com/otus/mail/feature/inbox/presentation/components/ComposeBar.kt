@@ -55,7 +55,7 @@ internal fun ComposeBar(
     )
 }
 
-/** [lead], "Send to" or "Sends to", above "Grace" with her avatar; the first avatar and a count for several. */
+/** [lead], "Send to" or "Sends to", above "Grace" with her avatar; the first two avatars and a count for several. */
 private fun List<MailSender>.barContext(lead: String): BarContext? {
     val first = firstOrNull() ?: return null
     val avatar = chipAvatar(first.avatar, first.name, first.address)
@@ -63,6 +63,7 @@ private fun List<MailSender>.barContext(lead: String): BarContext? {
     return if (size == 1) {
         BarContext(name.substringBefore(' '), BarToken.Person(avatar), "to $name", lead = lead)
     } else {
-        BarContext("$size people", BarToken.People(avatar, size), "to $size people", lead = lead)
+        val second = this[1].let { chipAvatar(it.avatar, it.name, it.address) }
+        BarContext("$size people", BarToken.People(avatar, size, second), "to $size people", lead = lead)
     }
 }
