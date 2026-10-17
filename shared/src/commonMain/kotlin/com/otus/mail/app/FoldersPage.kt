@@ -20,6 +20,8 @@ internal fun FoldersPage(
     FoldersScreen(
         states.folders,
         states.folderColors,
+        states.rules,
+        known = states::knownAddresses,
         rulesOf = { folder ->
             if (folder.sharedIn != null) {
                 emptyList()

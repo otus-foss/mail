@@ -17,6 +17,8 @@ import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.updates.domain.InstalledBuild
+import com.otus.mail.feature.updates.domain.ReleaseChannel
 import com.otus.settings.data.AndroidAnimationPreferenceStore
 import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.AppIconSettingsState
@@ -47,7 +49,13 @@ class MainActivity : ComponentActivity() {
                 .toDrawable(),
         )
         val animationState = AnimationSettingsState(AndroidAnimationPreferenceStore(this))
-        val nightlyBuild = BuildConfig.VERSION_CODE.takeIf { BuildConfig.NIGHTLY }
+        val build =
+            InstalledBuild(
+                ReleaseChannel.valueOf(BuildConfig.CHANNEL),
+                BuildConfig.VERSION_NAME,
+                BuildConfig.VERSION_CODE,
+                BuildConfig.COMMIT,
+            )
         setContent {
             // System bar icons stay readable on the theme's page color.
             val light = themeState.palette.isLight
@@ -57,7 +65,7 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = light
                 }
             }
-            App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, nightlyBuild)
+            App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
         }
     }
 

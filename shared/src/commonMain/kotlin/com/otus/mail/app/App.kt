@@ -30,7 +30,10 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
+import com.otus.mail.feature.updates.domain.InstalledBuild
+import com.otus.mail.feature.updates.domain.ReleaseChannel
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
+import com.otus.mail.feature.updates.presentation.components.BuildFooter
 import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.AppIconSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
@@ -47,7 +50,7 @@ fun App(
     animationState: AnimationSettingsState = remember { AnimationSettingsState() },
     // Null where the platform cannot switch its icon; the launch animation then uses the accent.
     appIconState: AppIconSettingsState? = null,
-    nightlyBuild: Int? = null,
+    build: InstalledBuild? = null,
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
     var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf<MailPage>(MailPage.Inbox) }
@@ -58,9 +61,7 @@ fun App(
     }
     val scope = rememberCoroutineScope()
     val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) { chosenScope } }
-    // Only nightly builds look for a newer nightly, once per launch.
-    val nightly = remember(services, nightlyBuild) { nightlyBuild?.let { NightlyUpdateState(services.nightly, it) } }
-    LaunchedEffect(nightly) { nightly?.check() }
+    val nightly = rememberNightlyUpdate(services, build)
     // Rules decide whether an open message offers to start one.
     LaunchedEffect(states) { states.rules.refresh() }
     // Folders fill the sidebar. Turning Read later on finds or creates its folders; off unmarks them.
@@ -95,7 +96,7 @@ fun App(
                     current = page.root,
                     states,
                     states.mailScope,
-                    update = nightly?.available,
+                    footer = { build?.let { BuildFooter(it, nightly?.available) } },
                     onChooseScope = { chosenScope = it },
                     onSelect = {
                         page = it
@@ -109,6 +110,22 @@ fun App(
             SenderRuleSheets(states)
         }
     }
+}
+
+/** Only nightly builds look for a newer nightly, once per launch. */
+@Composable
+private fun rememberNightlyUpdate(
+    services: MailServices,
+    build: InstalledBuild?,
+): NightlyUpdateState? {
+    val nightly =
+        remember(services, build) {
+            build
+                ?.takeIf { it.channel == ReleaseChannel.Nightly }
+                ?.let { NightlyUpdateState(services.nightly, it.versionCode) }
+        }
+    LaunchedEffect(nightly) { nightly?.check() }
+    return nightly
 }
 
 /** Shows [toasts] above where every page keeps its action bar, at the bar's inset from the edges. */

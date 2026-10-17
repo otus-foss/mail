@@ -28,12 +28,15 @@ import com.otus.mail.feature.folders.domain.sharedPlacements
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderDialog
 import com.otus.mail.feature.folders.presentation.FolderListRow
+import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
+import com.otus.mail.feature.folders.presentation.KnownAddress
 import com.otus.mail.feature.folders.presentation.components.AccountFolderGroup
 import com.otus.mail.feature.folders.presentation.components.FolderAccountPicker
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.folders.presentation.components.FolderListActions
 import com.otus.mail.feature.folders.presentation.components.FolderReorderTree
+import com.otus.mail.feature.folders.presentation.components.RulesReplaceDialog
 import com.otus.mail.feature.folders.presentation.components.folderActions
 import com.otus.mail.feature.folders.presentation.components.folderMenu
 import com.otus.mail.feature.folders.presentation.folderRows
@@ -44,12 +47,15 @@ import com.otus.mail.feature.folders.presentation.placement
  * Settings › Folders & rules: every account's folders as trees, or one account's when the picker
  * chooses it. Tapping a folder opens its settings through [onOpenFolder];
  * holding one opens its quick actions, and its handle drags it. [rulesOf] gives each folder's rules
- * as chip lines, first rule first.
+ * as chip lines, first rule first. A new folder can start with [rules], suggesting an account's
+ * [known] addresses.
  */
 @Composable
 fun FoldersScreen(
     state: FoldersState,
     colors: FolderColorsState,
+    rules: FolderRulesState,
+    known: (accountId: String) -> List<KnownAddress>,
     rulesOf: (MailFolder) -> List<RuleChipLine>,
     onBack: () -> Unit,
     onOpenFolder: (MailFolder) -> Unit,
@@ -72,7 +78,7 @@ fun FoldersScreen(
         onBack,
         chips = { if (accounts.size > 1) FolderAccountPicker(accounts, one) { chosen = it } },
     ) {
-        state.notice?.let { PageNote(it) }
+        listOfNotNull(state.notice, rules.notice).forEach { PageNote(it) }
         if (accounts.isEmpty()) {
             PageNote(if (state.loading) "Loading folders…" else "Connect an account in Settings to manage its folders.")
         }
@@ -96,11 +102,9 @@ fun FoldersScreen(
         }
     }
     dialog?.let { open ->
-        FolderDialogs(open, state.account(open.accountId), folderActions(state, colors)) {
-            dialog =
-                it
-        }
+        FolderDialogs(open, state.account(open.accountId), folderActions(state, colors, rules, known)) { dialog = it }
     }
+    RulesReplaceDialog(rules)
 }
 
 /** The collapsed rows and account groups by key, and what the folder rows do. */
