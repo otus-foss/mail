@@ -64,6 +64,19 @@ does not run them, and its macOS `ios` job is paused, so they run only when star
 Android setup installs `platform-tools`
 and the pinned platform/build-tools packages rather than the removed legacy `tools` package.
 
+## Coverage
+
+Kover measures line and branch coverage. It reports numbers but does not fail any build.
+
+```sh
+./gradlew koverHtmlReport
+./gradlew koverLog
+```
+
+`koverHtmlReport` writes one report for all modules to `build/reports/kover/html/` and one per
+module to `<module>/build/reports/kover/html/`. `koverLog` prints line coverage for each module.
+Only code that runs on the JVM counts; iOS tests and `iosMain` do not.
+
 ## File-length limits and exceptions
 
 Aim for 100–200 lines for most screens and components. The hard limits are **300 lines for Kotlin**
