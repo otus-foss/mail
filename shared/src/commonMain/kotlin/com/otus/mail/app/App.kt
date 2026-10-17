@@ -3,7 +3,6 @@ package com.otus.mail.app
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -25,7 +24,6 @@ import com.otus.designsystem.components.SlidingPages
 import com.otus.designsystem.components.ToastHost
 import com.otus.designsystem.components.ToastState
 import com.otus.designsystem.components.rememberSidebarState
-import com.otus.designsystem.theme.ActionBarTokens
 import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -117,8 +115,8 @@ fun App(
     }
 }
 
-/** Shows [toasts] at the bottom, above the page's action bar when it has one, at the bar's inset from the sides. */
+/** Shows [toasts] at the bottom, above the page's action bar when it has one. */
 @Composable
 private fun BoxScope.BottomToasts(toasts: ToastState) {
-    ToastHost(toasts, Modifier.align(Alignment.BottomCenter).padding(horizontal = ActionBarTokens.barInset))
+    ToastHost(toasts, Modifier.align(Alignment.BottomCenter))
 }
