@@ -39,6 +39,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -54,7 +55,7 @@ import kotlin.time.Instant
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ComposeScreenTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
-    private val drafts = FakeDrafts()
+    private val drafts = TwoAccountDrafts()
     private val sent = mutableListOf<Draft>()
     private val sender =
         DraftSender { draft, _, _ ->
@@ -72,40 +73,6 @@ class ComposeScreenTest {
             override suspend fun cancel(message: SentMessage) = Result.success(Unit)
         }
     private var discarded = false
-
-    private class FakeDrafts : DraftRepository {
-        val saved = mutableListOf<Draft>()
-
-        override suspend fun identities(accountId: String) =
-            when (accountId) {
-                "a1" -> {
-                    listOf(
-                        identity("Alex Rivera", "this@companya.com", "a1"),
-                        identity("Company A Sales", "sales@companya.com", "a1"),
-                    )
-                }
-
-                else -> {
-                    listOf(identity("Alex Rivera", "otus@rubylabs.design", "a2"))
-                }
-            }
-
-        override suspend fun save(draft: Draft): Result<String> {
-            saved += draft
-            return Result.success("d${saved.size}")
-        }
-
-        override suspend fun discard(
-            accountId: String,
-            emailId: String,
-        ) = Result.success(Unit)
-
-        private fun identity(
-            name: String,
-            address: String,
-            account: String,
-        ) = SendIdentity(address, MailSender(name, address, account))
-    }
 
     private fun open(request: ComposeRequest = ComposeRequest.New()) {
         compose.runOnUiThread {
@@ -251,7 +218,7 @@ class ComposeScreenTest {
     }
 
     @Test
-    fun scheduleSendOffersReadyTimesAndHandsTheDraftOver() {
+    fun scheduleSendPicksATimeThatShowsUntilSendSchedulesIt() {
         open(ComposeRequest.Reply(original, all = false))
         button("More options").performClick()
         compose.screenshot("compose-more-options-reply")
@@ -260,6 +227,12 @@ class ComposeScreenTest {
         compose.onNodeWithText("Your mail server sends it, even if your phone is off.").assertExists()
         compose.screenshot("compose-send-later")
         compose.onNodeWithText("Tomorrow morning").performClick()
+        compose.waitForIdle()
+        assertFalse("Choosing a time does not send", closed)
+        button("Send now instead").assertExists()
+        compose.screenshot("compose-scheduled")
+
+        compose.onNode(hasContentDescription("Send, to Grace Hopper") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { closed }
         assertEquals(8, scheduledAt?.hour)
     }

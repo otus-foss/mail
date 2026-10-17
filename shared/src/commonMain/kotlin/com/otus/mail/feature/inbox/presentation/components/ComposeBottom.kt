@@ -14,6 +14,8 @@ import com.otus.designsystem.components.FormatButton
 import com.otus.designsystem.components.FormattingBar
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
+import com.otus.designsystem.resources.symbol_schedule_send
+import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.theme.MotionCurve
 import com.otus.designsystem.theme.MotionSpeed
 import com.otus.designsystem.theme.motionTween
@@ -21,6 +23,9 @@ import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.recipients
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 /**
  * The compose page's bottom: its action bar, or while the [keyboardUp] the formatting row with
@@ -36,6 +41,8 @@ internal fun ComposeBottom(
     onDiscard: () -> Unit,
 ) {
     var linking by remember { mutableStateOf(false) }
+    val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
+    val at = state.sendAt?.sendLaterLabel(now)
     val arrive = motionTween<Float>(MotionSpeed.Fast, MotionCurve.Enter)
     val leave = motionTween<Float>(MotionSpeed.Fast, MotionCurve.Exit)
     AnimatedContent(
@@ -58,9 +65,10 @@ internal fun ComposeBottom(
                 },
                 trailing = {
                     CompactSendButton(
-                        sendDescription(state),
+                        sendDescription(state, at),
                         { onSend?.invoke() },
                         enabled = onSend != null,
+                        icon = if (at == null) Res.drawable.symbol_send else Res.drawable.symbol_schedule_send,
                     )
                 },
             )
@@ -71,14 +79,26 @@ internal fun ComposeBottom(
                 onSend = onSend,
                 onDiscard = onDiscard,
                 minimized = behavior.minimizedBar,
+                scheduled = at != null,
             )
         }
     }
     if (linking) LinkDialog(state.body::addLink) { linking = false }
 }
 
-private fun sendDescription(state: ComposeState): String {
+/** What screen readers hear for the compact Send, such as "Send Sun, 8:00, to Grace". */
+private fun sendDescription(
+    state: ComposeState,
+    at: String?,
+): String {
     val people = state.draft.recipients
-    val first = people.firstOrNull() ?: return "Send"
-    return if (people.size == 1) "Send to ${first.name.ifBlank { first.address }}" else "Send to ${people.size} people"
+    val send = at?.let { "Send $it," } ?: "Send"
+    val first = people.firstOrNull() ?: return send
+    return if (people.size ==
+        1
+    ) {
+        "$send to ${first.name.ifBlank { first.address }}"
+    } else {
+        "$send to ${people.size} people"
+    }
 }

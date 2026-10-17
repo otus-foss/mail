@@ -18,6 +18,7 @@ import com.otus.designsystem.components.TimeWheelPicker
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_edit_calendar
 import com.otus.designsystem.resources.symbol_light_mode
+import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.resources.symbol_wb_twilight
 import com.otus.designsystem.resources.symbol_work
 import com.otus.designsystem.theme.OtusColors
@@ -31,18 +32,20 @@ import kotlinx.datetime.yearMonth
 
 /**
  * Picks when the server sends the message: this evening, tomorrow morning, Monday morning, or a
- * date and time, up to [latest]. Choosing one runs [onSchedule] with the local time.
+ * date and time, up to [latest]. Choosing one runs [onSchedule] with the local time and closes the
+ * sheet. With a time already [chosen], Send now clears it.
  */
 @Composable
 internal fun SendLaterSheet(
     now: LocalDateTime,
     latest: LocalDateTime,
-    onSchedule: (LocalDateTime) -> Unit,
+    chosen: LocalDateTime?,
+    onSchedule: (LocalDateTime?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var pickingDate by remember { mutableStateOf(false) }
     var pickedDate by remember { mutableStateOf<LocalDate?>(null) }
-    val choose = { at: LocalDateTime ->
+    val choose = { at: LocalDateTime? ->
         onDismiss()
         onSchedule(at)
     }
@@ -51,6 +54,7 @@ internal fun SendLaterSheet(
             Modifier.padding(horizontal = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
+            if (chosen != null) RowGroup(listOf { GroupRow(Res.drawable.symbol_send, "Send now", { choose(null) }) })
             RowGroup(
                 sendLaterChoices(now)
                     .filter { it.second <= latest }

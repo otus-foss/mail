@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDateTime
 import kotlin.time.Instant
 
 /**
@@ -85,6 +86,9 @@ class ComposeState(
 
     /** How far ahead each account may schedule, in seconds, by account id. */
     private var delayLimits by mutableStateOf<Map<String, Long>>(emptyMap())
+
+    /** When Send has the server send the draft, as chosen in Send later; null sends it now. */
+    var sendAt by mutableStateOf<LocalDateTime?>(null)
 
     /** How far ahead the draft's account may schedule it, in seconds; 0 hides Schedule send. */
     val maxDelaySeconds: Long get() = delayLimits[draft.accountId] ?: 0L
