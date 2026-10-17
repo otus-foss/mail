@@ -29,6 +29,7 @@ import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.presentation.ComposeState
+import com.otus.mail.feature.inbox.presentation.RecipientField
 import kotlinx.datetime.LocalDate
 
 /**
@@ -38,7 +39,7 @@ import kotlinx.datetime.LocalDate
 @Composable
 internal fun ComposeContent(
     state: ComposeState,
-    lines: ComposeLines,
+    shown: Set<RecipientField>,
     modifier: Modifier,
     padding: PaddingValues,
 ) {
@@ -49,7 +50,7 @@ internal fun ComposeContent(
     BoxWithConstraints(modifier) {
         val bodyHeight = maxHeight - with(density) { fieldsHeight.toDp() } - padding.calculateBottomPadding()
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding)) {
-            ComposeFields(state, lines, focus, Modifier.onSizeChanged { fieldsHeight = it.height })
+            ComposeFields(state, shown, focus, Modifier.onSizeChanged { fieldsHeight = it.height })
             val quote = state.draft.quote
             RichTextBody(
                 state.body,

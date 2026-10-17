@@ -40,7 +40,6 @@ import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.RecipientField
 import com.otus.mail.feature.inbox.presentation.components.ComposeBottom
 import com.otus.mail.feature.inbox.presentation.components.ComposeContent
-import com.otus.mail.feature.inbox.presentation.components.ComposeLines
 import com.otus.mail.feature.inbox.presentation.components.ComposePanel
 import com.otus.mail.feature.inbox.presentation.components.SendLaterSheet
 import com.otus.mail.feature.inbox.presentation.recipients
@@ -53,7 +52,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * A new message, reply, or forward as a page. Leaving it by Back or the chevron closes it through
  * [exits] and saves the draft if the user wrote anything. Schedule send only picks a time, which
- * shows in the panel; Send, after asking about a missing subject, hands the draft to [exits] for
+ * shows above the bar; Send, after asking about a missing subject, hands the draft to [exits] for
  * that time or now and leaves the page. Discard stops saving and hands [exits] what deletes the
  * saved copy, to run once Undo has passed. While the keyboard is up, a formatting row takes the
  * action bar's place.
@@ -90,6 +89,7 @@ fun ComposeScreen(
                     keyboardUp = WindowInsets.isImeVisible,
                     onSend = send.takeIf { state.canSend },
                     onDiscard = discard,
+                    onChangeSchedule = { schedulingAt = true },
                 )
             },
             Modifier.safeDrawingPadding(),
@@ -97,7 +97,7 @@ fun ComposeScreen(
             ComposePage(
                 state,
                 behavior,
-                ComposeLines(shown, onChangeSchedule = { schedulingAt = true }),
+                shown,
                 onAddCc = { shown = shown + RecipientField.Cc }.takeIf { RecipientField.Cc !in shown },
                 onClose = onClose,
                 options =
@@ -122,12 +122,12 @@ fun ComposeScreen(
     }
 }
 
-/** The panel, any notice, and the page's [lines] and body. */
+/** The panel, any notice, and the page's lines and body; [shown] says which copy lines show. */
 @Composable
 private fun ComposePage(
     state: ComposeState,
     behavior: MailBehavior,
-    lines: ComposeLines,
+    shown: Set<RecipientField>,
     onAddCc: (() -> Unit)?,
     onClose: () -> Unit,
     options: List<OptionsItem>,
@@ -150,7 +150,7 @@ private fun ComposePage(
                 fontSize = InboxTokens.metadataSize,
             )
         }
-        ComposeContent(state, lines, Modifier.weight(1f), padding)
+        ComposeContent(state, shown, Modifier.weight(1f), padding)
     }
 }
 

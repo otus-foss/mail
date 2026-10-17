@@ -22,8 +22,11 @@ internal fun LocalDateTime.sendLaterLabel(now: LocalDateTime): String {
     return "$day, $clock"
 }
 
-/** The toast after scheduling, such as "Scheduled for Mon, 8:00". */
-internal fun LocalDateTime.scheduledLabel(): String = "Scheduled for $weekday, $clock"
+/** When a scheduled message goes, with its date, as the notice and toast say: "Scheduled for Mon 19 Oct, 8:00". */
+internal fun LocalDateTime.scheduledLabel(): String = "Scheduled for $weekday $dayAndMonth, $clock"
+
+private val LocalDateTime.dayAndMonth: String
+    get() = "${date.day} ${month.name.take(ABBREVIATION).lowercase().replaceFirstChar(Char::uppercase)}"
 
 private val LocalDateTime.weekday: String
     get() =
