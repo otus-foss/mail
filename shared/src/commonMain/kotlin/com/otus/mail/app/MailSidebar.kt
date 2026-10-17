@@ -19,14 +19,11 @@ import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.SidebarSection
 import com.otus.mail.feature.inbox.presentation.scopeHeader
 import com.otus.mail.feature.inbox.presentation.title
-import com.otus.mail.feature.updates.domain.NightlyBuild
-import com.otus.mail.feature.updates.presentation.components.NightlyUpdateEntry
 
 /**
  * The chosen [scope] in the header, over the built-in mailboxes and the user's shared folders in
  * the order and layout the user chose. Every count follows the scope's account. Tapping the header
- * opens "Show mail from", which calls [onChooseScope]. A newer nightly [update], when there is
- * one, leads the list.
+ * opens "Show mail from", which calls [onChooseScope]. The [footer] stays at the bottom.
  */
 @Composable
 internal fun MailSidebar(
@@ -34,7 +31,7 @@ internal fun MailSidebar(
     current: MailPage,
     states: MailStates,
     scope: MailScopeChoice,
-    update: NightlyBuild?,
+    footer: @Composable () -> Unit,
     onChooseScope: (MailScopeChoice) -> Unit,
     onSelect: (MailPage) -> Unit,
 ) {
@@ -73,10 +70,11 @@ internal fun MailSidebar(
                 subtitle = header.subtitle,
             )
         },
+        footer = footer,
     ) {
-        update?.let { NightlyUpdateEntry(it) }
-        layout.shown.forEachIndexed { index, section ->
-            if (index > 0) SidebarDivider()
+        // An account without folders would leave a divider over nothing.
+        layout.shown.filterNot { it == SidebarSection.Folders && shared.isEmpty() }.forEach { section ->
+            SidebarDivider()
             when (section) {
                 SidebarSection.Mailboxes -> {
                     SidebarMailboxList(mailboxes, layout.mailboxes, current, counter, onSelect)
