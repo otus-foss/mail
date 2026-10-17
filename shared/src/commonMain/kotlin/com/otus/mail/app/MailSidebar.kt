@@ -11,7 +11,6 @@ import com.otus.designsystem.components.DialogAction
 import com.otus.designsystem.components.Sidebar
 import com.otus.designsystem.components.SidebarHeader
 import com.otus.designsystem.components.SidebarState
-import com.otus.designsystem.elements.SectionCaption
 import com.otus.designsystem.elements.SidebarDivider
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
@@ -84,7 +83,6 @@ internal fun MailSidebar(
                 }
 
                 SidebarSection.Folders -> {
-                    SectionCaption(section.title)
                     tree.Rows(shared)
                 }
             }
