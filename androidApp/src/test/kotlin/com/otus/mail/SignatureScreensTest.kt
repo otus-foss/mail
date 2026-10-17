@@ -114,7 +114,7 @@ class SignatureScreensTest {
     @Test
     fun theEditorShowsTheTextAndASelectedImageWithItsSize() {
         show { state ->
-            state.load()
+            androidx.compose.runtime.LaunchedEffect(Unit) { state.load() }
             val editor = androidx.compose.runtime.remember { SignatureEditorState(state, alex) }
             SignatureEditorScreen(state, editor, onBack = {}, onCopied = {})
         }
@@ -131,7 +131,7 @@ class SignatureScreensTest {
     fun copyingFromAnotherAddressReplacesThisSignature() {
         var copied = false
         show { state ->
-            state.load()
+            androidx.compose.runtime.LaunchedEffect(Unit) { state.load() }
             val editor = androidx.compose.runtime.remember { SignatureEditorState(state, alex) }
             SignatureEditorScreen(state, editor, onBack = {}, onCopied = { copied = true })
         }

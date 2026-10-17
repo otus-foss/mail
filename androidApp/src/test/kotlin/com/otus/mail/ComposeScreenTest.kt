@@ -25,12 +25,19 @@ import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
+import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.presentation.ComposeAccount
+import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.ComposeOrigin
 import com.otus.mail.feature.inbox.presentation.ComposeServices
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -39,6 +46,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.time.Instant
 
 /** The compose page against a fake Drafts folder: chips, the bar's context, sending, leaving, and discarding. */
 @RunWith(RobolectricTestRunner::class)
@@ -48,8 +56,21 @@ class ComposeScreenTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val drafts = FakeDrafts()
     private val sent = mutableListOf<Draft>()
-    private val sender = DraftSender { draft, _ -> Result.success(Unit).also { sent += draft } }
+    private val sender =
+        DraftSender { draft, _, _ ->
+            Result.success(SentMessage(draft.accountId, "e1", "s1")).also {
+                sent +=
+                    draft
+            }
+        }
     private var closed = false
+    private var scheduledAt: LocalDateTime? = null
+    private val scheduling =
+        object : ScheduledSends {
+            override suspend fun maxDelaySeconds(accountId: String) = THIRTY_DAYS
+
+            override suspend fun cancel(message: SentMessage) = Result.success(Unit)
+        }
     private var discarded = false
 
     private class FakeDrafts : DraftRepository {
@@ -97,7 +118,7 @@ class ComposeScreenTest {
                         val state =
                             remember {
                                 ComposeState(
-                                    ComposeServices(drafts, sender, { _, _ -> emptyList() }),
+                                    ComposeServices(drafts, sender, { _, _ -> emptyList() }, scheduling),
                                     scope,
                                     request,
                                     ComposeOrigin(
@@ -112,11 +133,26 @@ class ComposeScreenTest {
                         ComposeScreen(
                             state,
                             MailBehavior(recentFrom = listOf("this@companya.com")),
-                            onClose = {
-                                shown = false
-                                closed = true
+                            object : ComposeExits {
+                                override fun close() {
+                                    shown = false
+                                    closed = true
+                                }
+
+                                override fun discarded(delete: () -> Unit) {
+                                    discarded = true
+                                    close()
+                                }
+
+                                override fun send(
+                                    run: suspend (Instant?) -> Result<SentMessage>,
+                                    at: LocalDateTime?,
+                                ) {
+                                    scheduledAt = at
+                                    scope.launch { run(at?.toInstant(TimeZone.UTC)) }
+                                    close()
+                                }
                             },
-                            onDiscard = { discarded = true },
                         )
                     }
                 }
@@ -215,6 +251,20 @@ class ComposeScreenTest {
     }
 
     @Test
+    fun scheduleSendOffersReadyTimesAndHandsTheDraftOver() {
+        open(ComposeRequest.Reply(original, all = false))
+        button("More options").performClick()
+        compose.screenshot("compose-more-options-reply")
+        compose.onNodeWithText("Schedule send").performClick()
+        compose.onNodeWithText("Send later").assertExists()
+        compose.onNodeWithText("Your mail server sends it, even if your phone is off.").assertExists()
+        compose.screenshot("compose-send-later")
+        compose.onNodeWithText("Tomorrow morning").performClick()
+        compose.waitUntil(TIMEOUT) { closed }
+        assertEquals(8, scheduledAt?.hour)
+    }
+
+    @Test
     fun aReplyCollapsesTheQuoteBehindAChip() {
         open(ComposeRequest.Reply(original, all = false))
         compose.onNodeWithText("Reply").assertExists()
@@ -239,5 +289,6 @@ class ComposeScreenTest {
 
     private companion object {
         const val TIMEOUT = 5_000L
+        const val THIRTY_DAYS = 30L * 24 * 60 * 60
     }
 }

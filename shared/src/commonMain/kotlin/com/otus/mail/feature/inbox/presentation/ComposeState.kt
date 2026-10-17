@@ -10,9 +10,8 @@ import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.SendException
-import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.answered
 import com.otus.mail.feature.inbox.domain.preferredIdentity
@@ -29,12 +28,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.time.Instant
 
 /**
  * The draft [request] starts in the [origin] account, as the user edits it. Each change saves to the
  * Drafts folder [saveDelayMillis] after the last one, and [close] saves at once; each save
  * replaces the earlier copy. Saves run one at a time, and a started save finishes, so each save knows
- * the copy it replaces. A failed save shows a [notice] until the next one succeeds. [send] hands
+ * the copy it replaces. A failed save shows a [notice] until the next one succeeds. [handOff] hands
  * the draft to the sender of [services] and reports the address it went from to [onSent].
  * [scope] must outlive the page, so a save started on closing finishes.
  */
@@ -48,6 +48,7 @@ class ComposeState(
 ) {
     private val drafts = services.drafts
     private val sender = services.sender
+    private val scheduled = services.scheduled
     val accounts: List<ComposeAccount> get() = origin.accounts
 
     private val start = request.startDraft(origin.accountId, origin.ownAddresses)
@@ -82,17 +83,19 @@ class ComposeState(
     var signatureOn by mutableStateOf(request is ComposeRequest.New || origin.signatureInReplies)
         private set
 
+    /** How far ahead each account may schedule, in seconds, by account id. */
+    private var delayLimits by mutableStateOf<Map<String, Long>>(emptyMap())
+
+    /** How far ahead the draft's account may schedule it, in seconds; 0 hides Schedule send. */
+    val maxDelaySeconds: Long get() = delayLimits[draft.accountId] ?: 0L
+
     /** The signature the draft goes out with: its From address's, while [signatureOn]. */
     val signature: Signature
         get() = if (signatureOn) identities.signatureOf(draft.from) else Signature()
 
-    /** Whether a [send] is under way. */
-    var sending by mutableStateOf(false)
-        private set
-
     /** Whether Send can run: the draft has an address to send from and someone to go to. */
     val canSend: Boolean
-        get() = !sending && draft.from != null && draft.recipients.isNotEmpty()
+        get() = draft.from != null && draft.recipients.isNotEmpty()
 
     /** Whether the user has written anything the draft did not start with. */
     val edited: Boolean
@@ -112,8 +115,13 @@ class ComposeState(
     /** Loads every account's identities and picks the one to send from, unless the user already chose. */
     fun loadIdentities() {
         scope.launch {
+            val limits =
+                accounts.map { account ->
+                    async { account.id to (scheduled?.maxDelaySeconds(account.id) ?: 0L) }
+                }
             val found = accounts.map { async { drafts.identities(it.id) } }.awaitAll().flatten()
             identities = found
+            delayLimits = limits.awaitAll().toMap()
             if (draft.from ==
                 null
             ) {
@@ -168,31 +176,21 @@ class ComposeState(
     }
 
     /**
-     * Sends the draft once any save in progress ends, then runs [onSent]. A failed send shows a
-     * [notice] and leaves the draft to edit and save as before.
+     * Stops saving and hands the draft over for sending: the returned send waits for any save in
+     * progress, so it knows the saved copy, and sends at `at`, or now when that is null. Null when
+     * the draft has no From address or no recipient. Typed addresses become recipients first.
      */
-    fun send(onSent: () -> Unit) {
+    fun handOff(): (suspend (at: Instant?) -> Result<SentMessage>)? {
         recipients.commitAll()
-        if (!canSend) return
+        if (!canSend) return null
+        finished = true
         pending?.cancel()
-        sending = true
-        scope.launch {
-            val result =
-                saving.withLock {
-                    sender.send(draft.copy(signature = signature), request.answered(draft.accountId)).onSuccess {
-                        finished =
-                            true
-                    }
-                }
-            sending = false
-            result.fold(
-                onSuccess = {
-                    notice = null
-                    draft.from?.let(this@ComposeState.onSent)
-                    onSent()
-                },
-                onFailure = { notice = ((it as? SendException)?.failure ?: SendFailure.ServerProblem).notice },
-            )
+        val outgoing = draft.copy(signature = signature)
+        val answered = request.answered(outgoing.accountId)
+        return { at ->
+            saving
+                .withLock { sender.send(outgoing.copy(emailId = draft.emailId), answered, at) }
+                .onSuccess { outgoing.from?.let(onSent) }
         }
     }
 
@@ -263,3 +261,7 @@ private fun String.plainHtml(): String =
     }
 
 private const val SAVE_DELAY_MILLIS = 2_000L
+
+/** The request that opens this draft again as it is, such as after Undo. */
+fun ComposeState.reopening(): ComposeRequest.Resume =
+    ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request)

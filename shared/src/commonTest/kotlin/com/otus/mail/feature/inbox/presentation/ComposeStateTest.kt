@@ -25,7 +25,7 @@ class ComposeStateTest {
         drafts: DraftRepository,
         request: ComposeRequest = ComposeRequest.New(),
     ) = ComposeState(
-        ComposeServices(drafts, { _, _ -> error("No sending here") }, { _, _ -> emptyList() }),
+        ComposeServices(drafts, { _, _, _ -> error("No sending here") }, { _, _ -> emptyList() }),
         backgroundScope,
         request,
         ComposeOrigin(
@@ -213,7 +213,7 @@ class ComposeStateTest {
         runTest {
             val state =
                 ComposeState(
-                    ComposeServices(SignedDrafts(), { _, _ -> error("No sending here") }, { _, _ -> emptyList() }),
+                    ComposeServices(SignedDrafts(), { _, _, _ -> error("No sending here") }, { _, _ -> emptyList() }),
                     backgroundScope,
                     ComposeRequest.Reply(original, all = false),
                     ComposeOrigin(

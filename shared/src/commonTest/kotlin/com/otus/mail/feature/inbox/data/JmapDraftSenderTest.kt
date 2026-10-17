@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
+import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
@@ -85,7 +86,7 @@ class JmapDraftSenderTest {
     @Test
     fun sendingStoresAndSubmitsTheDraftInOneRequestAndFilesItInSent() =
         runTest {
-            assertTrue(sender().send(reply, AnsweredMessage("m1", forwarded = false)).isSuccess)
+            assertTrue(sender().send(reply, AnsweredMessage("m1", forwarded = false), null).isSuccess)
             val (route, send, tidy) = calls.map(::methods)
             assertEquals(listOf("Identity/get", "Mailbox/query", "Mailbox/query"), route.map { it.name })
             assertEquals(listOf("Email/set", "EmailSubmission/set"), send.map { it.name })
@@ -118,12 +119,12 @@ class JmapDraftSenderTest {
     @Test
     fun aForwardMarksTheOriginalForwardedAndANewMessageNeedsNoTidying() =
         runTest {
-            sender().send(reply, AnsweredMessage("m1", forwarded = true)).getOrThrow()
+            sender().send(reply, AnsweredMessage("m1", forwarded = true), null).getOrThrow()
             val update = methods(calls.last()).single().arguments.at("update", "m1")
             assertEquals(setOf("keywords/${'$'}forwarded"), update.keys)
 
             calls.clear()
-            sender().send(reply.copy(emailId = null), answered = null).getOrThrow()
+            sender().send(reply.copy(emailId = null), answered = null, null).getOrThrow()
             assertEquals(2, calls.size, "Without a saved copy or an original, nothing is left to tidy")
         }
 
@@ -131,7 +132,7 @@ class JmapDraftSenderTest {
     fun aWildcardIdentitySendsForAnyAddressInItsDomain() =
         runTest {
             val wildcard = """{"id": "w1", "email": "*@EXAMPLE.org"}, {"id": "o1", "email": "ada@other.org"}"""
-            sender(identities = wildcard).send(reply, answered = null).getOrThrow()
+            sender(identities = wildcard).send(reply, answered = null, null).getOrThrow()
             assertEquals("w1", methods(calls[1])[1].arguments.at("create", "send").text("identityId"))
         }
 
@@ -139,19 +140,19 @@ class JmapDraftSenderTest {
     fun withoutAMatchingIdentityOrSubmissionNothingIsSent() =
         runTest {
             val other = sender(identities = """{"id": "o1", "email": "ada@other.org"}""")
-            assertEquals(SendFailure.NoIdentity, other.send(reply, answered = null).failure())
+            assertEquals(SendFailure.NoIdentity, other.send(reply, answered = null, null).failure())
             assertEquals(1, calls.size)
 
             calls.clear()
-            assertEquals(SendFailure.NoIdentity, sender(STALWART_SESSION).send(reply, null).failure())
-            assertEquals(SendFailure.NoIdentity, sender().send(reply.copy(from = null), null).failure())
+            assertEquals(SendFailure.NoIdentity, sender(STALWART_SESSION).send(reply, null, null).failure())
+            assertEquals(SendFailure.NoIdentity, sender().send(reply.copy(from = null), null, null).failure())
             assertTrue(calls.isEmpty())
         }
 
     @Test
     fun withoutASentFolderTheSentCopyOnlyLosesDraft() =
         runTest {
-            sender(sent = false).send(reply, answered = null).getOrThrow()
+            sender(sent = false).send(reply, answered = null, null).getOrThrow()
             val patch = methods(calls[1])[1].arguments.at("onSuccessUpdateEmail", "#send")
             assertEquals(setOf("keywords/${'$'}draft"), patch.keys)
         }
@@ -160,7 +161,11 @@ class JmapDraftSenderTest {
     fun aRefusedSubmissionDestroysOnlyTheNewCopyAndReportsWhy() =
         runTest {
             val refused = """"notCreated": {"send": {"type": "invalidRecipients", "invalidRecipients": ["x"]}}"""
-            val failure = sender(submitted = refused, tidied = """"destroyed": ["e9"]""").send(reply, null).failure()
+            val failure =
+                sender(
+                    submitted = refused,
+                    tidied = """"destroyed": ["e9"]""",
+                ).send(reply, null, null).failure()
             assertEquals(SendFailure.Recipients, failure)
             val cleanup = methods(calls.last()).single().arguments
             assertEquals(Json.parseToJsonElement("""["e9"]"""), cleanup["destroy"])
@@ -178,7 +183,7 @@ class JmapDraftSenderTest {
                 val error = """"notCreated": {"send": {"type": "$type"}}"""
                 assertEquals(
                     expected,
-                    sender(submitted = error, tidied = """"destroyed": ["e9"]""").send(reply, null).failure(),
+                    sender(submitted = error, tidied = """"destroyed": ["e9"]""").send(reply, null, null).failure(),
                 )
             }
         }
@@ -203,4 +208,20 @@ class JmapDraftSenderTest {
     private fun JsonObject.text(key: String): String = getValue(key).jsonPrimitive.content
 
     private fun Result<*>.failure(): SendFailure? = (exceptionOrNull() as? SendException)?.failure
+
+    @Test
+    fun aScheduledSendHoldsTheMessageAndLeavesItsCopyInDrafts() =
+        runTest {
+            val at = kotlin.time.Instant.parse("2026-10-19T06:00:00.500Z")
+            val sent = sender().send(reply, answered = null, at).getOrThrow()
+            assertEquals(SentMessage("ada", "e9", "s1"), sent)
+            val submission = methods(calls[1])[1].arguments
+            val envelope = submission.at("create", "send").getValue("envelope").jsonObject
+            val expected =
+                """{"mailFrom": {"email": "ada@example.org", "parameters": {"HOLDUNTIL": "2026-10-19T06:00:00Z"}},
+                "rcptTo": [{"email": "grace@example.org"}, {"email": "babbage@example.org"}]}"""
+            assertEquals(Json.parseToJsonElement(expected), envelope)
+            val held = """{"#send": {"keywords/${'$'}draft": null}}"""
+            assertEquals(Json.parseToJsonElement(held), submission["onSuccessUpdateEmail"])
+        }
 }

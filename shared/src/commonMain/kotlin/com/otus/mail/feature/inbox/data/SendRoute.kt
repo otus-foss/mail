@@ -7,12 +7,17 @@ import com.otus.mail.core.mail.IdentityObject
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
+import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
+import kotlin.time.Instant
 
 /** The identity a message is sent as, and the account's Drafts and Sent folders when it has them. */
 internal data class SendRoute(
@@ -33,6 +38,26 @@ internal data class SendRoute(
             put("keywords/$DRAFT_KEYWORD", JsonNull)
         }
 }
+
+/** The patch for a held copy: it stays where it was stored and only loses `$draft`. */
+internal fun SendRoute.heldPatch(): JsonObject = buildJsonObject { put("keywords/$DRAFT_KEYWORD", JsonNull) }
+
+/**
+ * The envelope that holds a draft until [at] (RFC 4865 HOLDUNTIL), from its From address to every
+ * recipient. An explicit envelope is needed to carry the parameter.
+ */
+internal fun Draft.heldEnvelope(at: Instant): JsonObject =
+    buildJsonObject {
+        putJsonObject("mailFrom") {
+            put("email", from?.address.orEmpty())
+            putJsonObject(
+                "parameters",
+            ) { put("HOLDUNTIL", Instant.fromEpochSeconds(at.epochSeconds).toString()) }
+        }
+        putJsonArray("rcptTo") {
+            (to + cc + bcc).distinctBy { it.address.lowercase() }.forEach { addJsonObject { put("email", it.address) } }
+        }
+    }
 
 /** The identity for [address]: one with that exact address, else a wildcard such as `*@example.org`. */
 internal fun List<IdentityObject>.sendingAs(address: String): IdentityObject? {

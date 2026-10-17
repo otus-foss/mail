@@ -26,6 +26,7 @@ import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_delete
+import com.otus.designsystem.resources.symbol_schedule_send
 import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.designsystem.theme.InboxTokens
@@ -33,28 +34,35 @@ import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.RecipientField
 import com.otus.mail.feature.inbox.presentation.components.ComposeBottom
 import com.otus.mail.feature.inbox.presentation.components.ComposeContent
 import com.otus.mail.feature.inbox.presentation.components.ComposePanel
+import com.otus.mail.feature.inbox.presentation.components.SendLaterSheet
 import com.otus.mail.feature.inbox.presentation.recipients
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 
 /**
- * A new message, reply, or forward as a page. Leaving it by Back or the chevron runs [onClose]
- * and saves the draft if the user wrote anything. Send closes the page once the server accepts
- * the message, after asking about a missing subject; a failed send stays open with the reason
- * under the header. Discard stops saving and passes [onDiscard] what deletes the saved copy, to run
- * once Undo has passed. While the keyboard is up, a formatting row takes the action bar's place.
+ * A new message, reply, or forward as a page. Leaving it by Back or the chevron closes it through
+ * [exits] and saves the draft if the user wrote anything. Send, after asking about a missing
+ * subject, and Schedule send hand the draft to [exits] and leave the page. Discard stops saving
+ * and hands [exits] what deletes the saved copy, to run once Undo has passed. While the keyboard
+ * is up, a formatting row takes the action bar's place.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ComposeScreen(
     state: ComposeState,
     behavior: MailBehavior,
-    onClose: () -> Unit,
-    onDiscard: (delete: () -> Unit) -> Unit,
+    exits: ComposeExits,
 ) {
+    val onClose = exits::close
     NavigationBackHandler(
         state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
         onBackCompleted = onClose,
@@ -70,8 +78,10 @@ fun ComposeScreen(
         )
     }
     var askingSubject by remember { mutableStateOf(false) }
-    val discard = { onDiscard(state.discard()) }
-    val send = { if (draft.subject.isBlank()) askingSubject = true else state.send(onClose) }
+    var schedulingAt by remember { mutableStateOf(false) }
+    val discard = { exits.discarded(state.discard()) }
+    val sendNow = { at: LocalDateTime? -> state.handOff()?.let { exits.send(it, at) } }
+    val send: () -> Unit = { if (draft.subject.isBlank()) askingSubject = true else sendNow(null) }
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar = {
@@ -89,14 +99,22 @@ fun ComposeScreen(
                 state,
                 behavior,
                 shown,
-                onShownChange = { shown = it },
+                onAddCc = { shown = shown + RecipientField.Cc }.takeIf { RecipientField.Cc !in shown },
                 onClose = onClose,
-                onDiscard = discard,
+                options =
+                    options(
+                        state,
+                        RecipientField.Bcc in shown,
+                        onSchedule = { schedulingAt = true },
+                        onToggleBcc = { shown = shown.toggled(RecipientField.Bcc, state) },
+                        onDiscard = discard,
+                    ),
                 padding = padding,
             )
         }
     }
-    if (askingSubject) SubjectPrompt({ state.send(onClose) }) { askingSubject = false }
+    if (askingSubject) SubjectPrompt({ sendNow(null) }) { askingSubject = false }
+    if (schedulingAt) SendLaterPrompt(state.maxDelaySeconds, { sendNow(it) }) { schedulingAt = false }
 }
 
 /** The panel, any notice, and the page's lines and body; [shown] says which copy lines show. */
@@ -105,9 +123,9 @@ private fun ComposePage(
     state: ComposeState,
     behavior: MailBehavior,
     shown: Set<RecipientField>,
-    onShownChange: (Set<RecipientField>) -> Unit,
+    onAddCc: (() -> Unit)?,
     onClose: () -> Unit,
-    onDiscard: () -> Unit,
+    options: List<OptionsItem>,
     padding: PaddingValues,
 ) {
     Column(Modifier.fillMaxSize().padding(PageTokens.pageInset)) {
@@ -116,14 +134,8 @@ private fun ComposePage(
             state.request.title,
             behavior.recentFrom,
             onBack = onClose,
-            onAddCc = { onShownChange(shown + RecipientField.Cc) }.takeIf { RecipientField.Cc !in shown },
-            options =
-                options(
-                    state,
-                    RecipientField.Bcc in shown,
-                    { onShownChange(shown.toggled(RecipientField.Bcc, state)) },
-                    onDiscard,
-                ),
+            onAddCc = onAddCc,
+            options = options,
         )
         state.notice?.let {
             Text(
@@ -135,6 +147,23 @@ private fun ComposePage(
         }
         ComposeContent(state, shown, Modifier.weight(1f), padding)
     }
+}
+
+/** The Send later sheet from now until [maxDelaySeconds] ahead, in the device's time zone. */
+@Composable
+private fun SendLaterPrompt(
+    maxDelaySeconds: Long,
+    onSchedule: (LocalDateTime) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val now = remember { Clock.System.now() }
+    val zone = TimeZone.currentSystemDefault()
+    SendLaterSheet(
+        now.toLocalDateTime(zone),
+        (now + maxDelaySeconds.seconds).toLocalDateTime(zone),
+        onSchedule,
+        onDismiss,
+    )
 }
 
 @Composable
@@ -152,14 +181,18 @@ private fun SubjectPrompt(
     )
 }
 
-/** The ⋯ menu: show or hide Bcc, the signature switch, then discard the draft. */
+/** The ⋯ menu: Schedule send where the server can, Bcc, the signature switch, then discard. */
 private fun options(
     state: ComposeState,
     bcc: Boolean,
+    onSchedule: () -> Unit,
     onToggleBcc: () -> Unit,
     onDiscard: () -> Unit,
 ): List<OptionsItem> =
-    listOf(
+    listOfNotNull(
+        OptionsItem
+            .Action("Schedule send", Res.drawable.symbol_schedule_send, onSchedule, opens = true)
+            .takeIf { state.maxDelaySeconds > 0 },
         OptionsItem.Action(if (bcc) "Remove Bcc" else "Add Bcc", Res.drawable.symbol_visibility_off, onToggleBcc),
         OptionsItem.Toggle("Signature", Res.drawable.symbol_signature, state.signatureOn, state::showSignature),
         OptionsItem.Divider,

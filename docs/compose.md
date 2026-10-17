@@ -118,8 +118,12 @@ succeeds. The notice says why: no Drafts folder, no permission, or an unreachabl
 
 ### Sending
 
-Send waits for any save in progress, so it knows the draft's saved copy, and then calls
-`JmapDraftSender`. The sender makes three requests (RFC 8621, section 7.5):
+Send closes the page at once and hands the draft to `OutgoingMail`. A "Sending…" toast with Undo
+holds it on the device for five seconds; Undo opens the draft again as it was. Then the send
+waits for any save in progress, so it knows the draft's saved copy, and calls `JmapDraftSender`.
+The toast turns into "Sent", or into "Couldn't send" with Retry, which stays until it is handled.
+The hold is on the device, not the server's `HOLDFOR`, because `onSuccessUpdateEmail` files the
+copy in Sent as soon as the submission is created, and a cancelled one would leave it there. The sender makes three requests (RFC 8621, section 7.5):
 
 1. `Identity/get` and two `Mailbox/query` calls find the identity for the From address and the
    Drafts and Sent folders. An identity matches by exact address, or by a wildcard such as
@@ -136,24 +140,34 @@ The stored Email has a `text/plain` part: the body, a blank line, and the quote.
 has text it also has a `text/html` part, so the server builds `multipart/alternative`: the
 formatted body, then the quote with its quoted lines in a `blockquote`.
 
-On success the page closes, nothing is saved after that, and the From address goes first in
-`recentFrom`. A refused submission destroys the
-copy the request stored and keeps the earlier one, and the page shows why under the header:
-no identity for the From address, an invalid recipient, too many recipients, a message too large,
-no permission, or a lost connection. After a lost connection the outcome is unknown, so the
-notice asks the user to check Sent before trying again.
+Nothing is saved after Send, and the From address goes first in `recentFrom`. A refused
+submission destroys the copy the request stored and keeps the earlier one in Drafts.
+
+### Schedule send
+
+The ⋯ menu offers **Schedule send** only where the account's submission capability has a
+`maxDelayedSend` above 0 (RFC 8621, section 7). The **Send later** sheet offers This evening at
+18:00 before 17:00, Tomorrow morning at 8:00, Monday morning at 8:00 from Friday to Sunday, and
+Pick date and time, within the server's limit. Choosing one sends at once with an explicit
+envelope whose `mailFrom` carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled
+for Mon, 8:00" with Undo. The scheduled copy stays in Drafts without `$draft` until the server
+sends it. Undo sets the submission's `undoStatus` to `canceled`, marks the copy `$draft` again,
+and opens it.
+
+
 
 ## Limits
 
 - Attachments are not built.
-- There is no outbox, retry, or undo-send window yet ([Mail #26](https://github.com/reazndev/otus-mail/issues/26)).
-  Send needs a connection, and the page stays open while it runs.
-- Nothing confirms a sent message once the page closes.
+- There is no outbox that survives the app closing: a message in its Undo window or waiting to
+  retry is lost with the process, though its saved copy stays in Drafts
+  ([Mail #26](https://github.com/reazndev/otus-mail/issues/26)).
+- Scheduled messages show only in Drafts. A Scheduled view with Send now and Cancel is not built;
+  it waits for a decision.
 - Rotating the device or the system ending the app returns to the page that opened the draft.
   The saved copy is kept in Drafts, but the page does not reopen it, and edits made in the last
   two seconds can be lost.
 - Opening a saved draft from the Drafts folder is not built.
-- Scheduled sending and undo send are not built yet.
 - iOS has no image picker for signatures yet, so Add image is hidden there.
 - The signature list's account sections and the copy sheet's rows are flat, without the boards'
   grouped `bgRegular` background.
@@ -179,5 +193,6 @@ chips, editing a chip, and suggestions. `ComposeScreenTest` types a draft into c
 Send names its recipients, sends a draft, asks about a missing subject, saves on Back, chooses an
 identity of another account from the dropdown, adds Bcc and discards from the ⋯ menu, and opens
 a reply's quote. `SignatureTest`, `SignaturesStateTest`, and `SignatureScreensTest` cover the
-signature HTML and images, copying and failed saves, the list, the editor with its size list,
+signature HTML and images, copying and failed saves, `SendLaterTest` the Send later times,
+`OutgoingMailTest` the Undo window, Retry, and undoing a scheduled message, the list, the editor with its size list,
 and the copy sheet. Their screenshots of each state are written to `androidApp/build/reports/compose/`.

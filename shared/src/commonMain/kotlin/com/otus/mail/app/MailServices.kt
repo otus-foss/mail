@@ -44,6 +44,7 @@ import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageCleaner
 import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
+import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.inbox.domain.SignatureImages
 import com.otus.mail.feature.inbox.domain.SignatureRepository
@@ -104,7 +105,9 @@ class MailServices(
     internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
     internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins) }
-    internal val sender: DraftSender by lazy { JmapDraftSender(connections, logins) }
+    private val jmapSender by lazy { JmapDraftSender(connections, logins) }
+    internal val sender: DraftSender get() = jmapSender
+    internal val scheduled: ScheduledSends get() = jmapSender
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections, logins) }
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }

@@ -90,7 +90,7 @@ internal class MailStates(
         val all = accounts.accounts
         val account = all.firstOrNull { it.id == request.accountId } ?: all.firstOrNull() ?: return null
         return ComposeState(
-            ComposeServices(services.drafts, services.sender, services.addressBook),
+            ComposeServices(services.drafts, services.sender, services.addressBook, services.scheduled),
             scope,
             request,
             ComposeOrigin(
@@ -121,6 +121,9 @@ internal class MailStates(
 
     /** The toasts that offer to undo moves; they outlive the page a move closed, such as the open message. */
     val moveToasts = MoveToasts()
+
+    /** Sends drafts after their page closes, with Undo and the outcome in a toast. */
+    val outgoing = OutgoingMail(scope, moveToasts.toasts, services.scheduled)
     private val cleaning = FolderCleaning(services, folders, scope)
     private val marking = MessageMarking(services, folders, scope)
 
