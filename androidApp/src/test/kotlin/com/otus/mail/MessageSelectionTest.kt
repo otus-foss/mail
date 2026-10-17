@@ -94,9 +94,9 @@ class MessageSelectionTest {
     fun aMinimizedBarListsTheActionsItLeavesOutInAMenu() {
         server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
         selectWelcome(MailBehavior(markReadOnOpen = false, minimizedBar = true))
-        compose.onNode(hasContentDescription("Trash") and hasClickAction()).assertDoesNotExist()
+        compose.onNode(hasContentDescription("Delete") and hasClickAction()).assertDoesNotExist()
         compose.onNodeWithContentDescription("More actions").performClick()
-        compose.onNode(hasText("Trash") and hasClickAction()).performClick()
+        compose.onNode(hasText("Delete") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it } }
         assertTrue(server.calls.last { "Email/set" in it }.contains("\"mailboxIds/t\":true"))
         selectionBar.assertDoesNotExist()
