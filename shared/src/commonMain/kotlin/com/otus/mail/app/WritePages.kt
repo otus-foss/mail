@@ -11,8 +11,6 @@ import com.otus.designsystem.components.ToastMessage
 import com.otus.designsystem.elements.ToastAction
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
-import com.otus.mail.feature.folders.presentation.screens.RuleEditorScreen
-import com.otus.mail.feature.folders.presentation.screens.RulesScreen
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage

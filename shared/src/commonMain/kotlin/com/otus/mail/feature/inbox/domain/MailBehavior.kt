@@ -15,7 +15,7 @@ package com.otus.mail.feature.inbox.domain
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
-    val endToStart: MailAction? = MailAction.Archive,
+    val endToStart: MailAction? = MailAction.Trash,
     val markReadOnOpen: Boolean = true,
     val readLater: Boolean = false,
     val pills: List<InboxPill> = InboxPill.defaults(readLater),
@@ -27,6 +27,7 @@ data class MailBehavior(
     val recentFrom: List<String> = emptyList(),
     val signatureInReplies: Boolean = true,
     val undoSendSeconds: Int = DEFAULT_UNDO_SEND_SECONDS,
+    val inbox: InboxContents = InboxContents(),
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =

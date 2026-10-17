@@ -18,23 +18,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.BottomClearance
 import com.otus.designsystem.components.LocalBottomClearance
-import com.otus.designsystem.components.MailLaunch
 import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.SlidingPages
 import com.otus.designsystem.components.ToastHost
 import com.otus.designsystem.components.ToastState
+import com.otus.designsystem.components.actionBarInset
 import com.otus.designsystem.components.rememberSidebarState
+import com.otus.designsystem.theme.AppIconStyle
 import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
+import com.otus.mail.feature.updates.domain.InstalledBuild
+import com.otus.mail.feature.updates.domain.ReleaseChannel
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
+import com.otus.mail.feature.updates.presentation.components.BuildFooter
 import com.otus.settings.presentation.AnimationSettingsState
+import com.otus.settings.presentation.AppIconSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.dropWhile
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,18 +48,20 @@ fun App(
     behaviorState: MailBehaviorState = remember { MailBehaviorState() },
     themeState: ThemeSettingsState = remember { ThemeSettingsState() },
     animationState: AnimationSettingsState = remember { AnimationSettingsState() },
-    nightlyBuild: Int? = null,
+    // Null where the platform cannot switch its icon; the launch animation then uses the accent.
+    appIconState: AppIconSettingsState? = null,
+    build: InstalledBuild? = null,
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
     var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf<MailPage>(MailPage.Inbox) }
     val sidebar = rememberSidebarState()
-    // The account whose counts the sidebar shows; null shows every account's.
-    var sidebarAccount by rememberSaveable { mutableStateOf<String?>(null) }
+    // Whose mail the pages show; it lasts for the process, like the page.
+    var chosenScope by rememberSaveable(stateSaver = MailScopeChoiceSaver) {
+        mutableStateOf<MailScopeChoice>(MailScopeChoice.All)
+    }
     val scope = rememberCoroutineScope()
-    val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) }
-    // Only nightly builds look for a newer nightly, once per launch.
-    val nightly = remember(services, nightlyBuild) { nightlyBuild?.let { NightlyUpdateState(services.nightly, it) } }
-    LaunchedEffect(nightly) { nightly?.check() }
+    val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) { chosenScope } }
+    val nightly = rememberNightlyUpdate(services, build)
     // Rules decide whether an open message offers to start one.
     LaunchedEffect(states) { states.rules.refresh() }
     // Folders fill the sidebar. Turning Read later on finds or creates its folders; off unmarks them.
@@ -68,16 +74,9 @@ fun App(
     }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
-    // The launch animation covers the inbox, once per launch, until its first load ends.
-    var launching by rememberSaveable { mutableStateOf(true) }
-    var inboxLoaded by remember { mutableStateOf(false) }
-    LaunchedEffect(states) {
-        snapshotFlow { states.feed.loading }.dropWhile { !it }.first { !it }
-        inboxLoaded = true
-    }
     val settings =
-        remember(dateFormatState, themeState, animationState) {
-            SharedSettings(dateFormatState, themeState, animationState)
+        remember(dateFormatState, themeState, animationState, appIconState) {
+            SharedSettings(dateFormatState, themeState, animationState, appIconState)
         }
     val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
     OtusTheme(themeState.palette) {
@@ -99,20 +98,37 @@ fun App(
                     sidebar,
                     current = page.root,
                     states,
-                    sidebarAccount,
-                    update = nightly?.available,
-                    onSelectAccount = { sidebarAccount = it },
+                    states.mailScope,
+                    footer = { build?.let { BuildFooter(it, nightly?.available) } },
+                    onChooseScope = { chosenScope = it },
                     onSelect = {
                         page = it
                         scope.launch { sidebar.close() }
                     },
                 )
-                if (launching) MailLaunch(loading = !inboxLoaded, onFinished = { launching = false })
+                LaunchCover(states.feed, appIconState?.style ?: AppIconStyle.Accent)
             }
             // Outlives the page a move closed, such as the open message.
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
+            SenderRuleSheets(states)
         }
     }
+}
+
+/** Only nightly builds look for a newer nightly, once per launch. */
+@Composable
+private fun rememberNightlyUpdate(
+    services: MailServices,
+    build: InstalledBuild?,
+): NightlyUpdateState? {
+    val nightly =
+        remember(services, build) {
+            build
+                ?.takeIf { it.channel == ReleaseChannel.Nightly }
+                ?.let { NightlyUpdateState(services.nightly, it.versionCode) }
+        }
+    LaunchedEffect(nightly) { nightly?.check() }
+    return nightly
 }
 
 /** Shows [toasts] at the bottom, above the page's action bar when it has one. */

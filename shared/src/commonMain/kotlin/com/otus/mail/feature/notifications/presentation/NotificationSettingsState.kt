@@ -25,14 +25,26 @@ class NotificationSettingsState(
     var statuses: Map<String, PushStatus> by mutableStateOf(emptyMap())
         private set
 
+    /** Choices made so far, so a load that read the saved app before a choice cannot undo it. */
+    private var choices = 0
+
+    /** Choices still being applied; until they finish, the saved app may be the old one. */
+    private var applying = 0
+
     init {
         scope.launch { load() }
     }
 
     fun choose(distributor: PushDistributor?) {
         current = distributor
+        choices++
+        applying++
         scope.launch {
-            push.use(distributor)
+            try {
+                push.use(distributor)
+            } finally {
+                applying--
+            }
             load()
         }
     }
@@ -47,7 +59,9 @@ class NotificationSettingsState(
 
     private suspend fun load() {
         distributors = push.distributors()
-        current = push.current()
+        val choice = choices
+        val saved = push.current()
+        if (applying == 0 && choice == choices) current = saved
         statuses = push.statuses()
     }
 }

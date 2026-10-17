@@ -4,7 +4,7 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_notifications
-import com.otus.designsystem.resources.symbol_rule_folder
+import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
@@ -34,20 +34,20 @@ internal fun mailSettingsEntries(
             ) { navigation.go(MailPage.Notifications) }
         },
         SettingsEntry(
-            "Appearance & behavior",
-            "Theme, dates, sidebar, swipes, and reading",
-            Res.drawable.symbol_tune,
+            "Appearance",
+            "Theme, sidebar, dates, and animations",
+            Res.drawable.symbol_palette,
         ) { navigation.go(MailPage.Appearance) },
         SettingsEntry(
-            "Folders",
-            "Create, rename, and nest folders",
+            "Mail behavior",
+            "Inbox, swipes, action bar, and reading",
+            Res.drawable.symbol_tune,
+        ) { navigation.go(MailPage.Behavior) },
+        SettingsEntry(
+            "Folders & rules",
+            "Nest folders and file arriving mail",
             Res.drawable.symbol_folder,
         ) { navigation.go(MailPage.Folders) },
-        SettingsEntry(
-            "Rules",
-            "Move arriving mail into folders",
-            Res.drawable.symbol_rule_folder,
-        ) { navigation.go(MailPage.Rules) },
         SettingsEntry(
             "Signatures",
             "One for each address you send from",

@@ -7,7 +7,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -48,7 +47,7 @@ class FolderActionsTest {
         }
         waitFor("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        val entry = hasText(folder) and isToggleable()
+        val entry = hasContentDescription(folder, substring = true)
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(entry).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(entry).performClick()
         waitFor(subject)

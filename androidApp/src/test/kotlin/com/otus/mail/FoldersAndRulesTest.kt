@@ -63,7 +63,7 @@ class FoldersAndRulesTest {
         compose.waitUntil(TIMEOUT) {
             compose.onAllNodes(hasText("Amazon") and isSelectable()).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNode(hasText("Inbox") and hasText("1") and isToggleable()).assertIsDisplayed()
+        compose.onNode(hasText("Inbox") and hasText("1") and isSelectable()).assertIsDisplayed()
         // A collapsed folder hides its subfolders and counts their mail with its own.
         compose.onNodeWithContentDescription("Collapse Receipts").performClick()
         compose.onNode(hasText("Amazon") and isSelectable()).assertDoesNotExist()
@@ -95,9 +95,9 @@ class FoldersAndRulesTest {
     @Test
     fun aNewFolderIsCreatedOnTheServerAndListed() {
         start()
-        openSettingsPage("Folders")
+        openSettingsPage("Folders & rules")
         waitFor("Receipts")
-        compose.onNodeWithText("New folder").performScrollTo().performClick()
+        compose.onNode(hasContentDescription("New folder") and hasClickAction()).performClick()
         compose.onNodeWithContentDescription("Name").performTextInput("Travel")
         compose.onNodeWithText("Create").performClick()
         compose.waitUntil(TIMEOUT) {
@@ -113,19 +113,19 @@ class FoldersAndRulesTest {
     @Test
     fun turningOnReadLaterAddsItsMailboxAfterTheInbox() {
         start()
-        openSettingsPage("Appearance & behavior")
-        compose.onNodeWithText("Read later").performScrollTo().performClick()
+        openSettingsPage("Mail behavior")
+        compose.onNode(hasText("Read later") and isToggleable()).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT) {
             server.calls.any { "\"create\":{\"folder\":{\"name\":\"Read later\",\"parentId\":null" in it }
         }
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        val pill = hasText("Read later") and isToggleable()
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(pill).fetchSemanticsNodes().isNotEmpty() }
-        val inbox = compose.onNode(hasText("Inbox") and isToggleable()).fetchSemanticsNode().boundsInRoot
-        val readLater = compose.onNode(pill).fetchSemanticsNode().boundsInRoot
+        val tile = hasContentDescription("Read later")
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(tile).fetchSemanticsNodes().isNotEmpty() }
+        val inbox = compose.onNode(hasText("Inbox") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        val readLater = compose.onNode(tile).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
-        assertTrue(inbox.right <= readLater.left && readLater.bottom <= receipts.top)
+        assertTrue(inbox.bottom <= readLater.top && readLater.bottom <= receipts.top)
         // Read later is a mailbox, not one of the user's folders.
         compose.onNode(hasText("Read later") and isSelectable()).assertDoesNotExist()
     }
@@ -151,11 +151,11 @@ class FoldersAndRulesTest {
         start()
         waitFor("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        val spam = hasText("Spam") and hasText("3") and isToggleable()
+        val spam = hasContentDescription("Spam, 3")
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(spam).fetchSemanticsNodes().isNotEmpty() }
         // The app names each role in place of the server's names, above the user's own folders.
         assertTrue(compose.onAllNodes(hasText("Junk Mail")).fetchSemanticsNodes().isEmpty())
-        val trash = compose.onNode(hasText("Trash") and isToggleable()).fetchSemanticsNode().boundsInRoot
+        val trash = compose.onNode(hasContentDescription("Trash")).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
         assertTrue(trash.bottom <= receipts.top)
         compose.onNode(spam).performClick()
@@ -165,42 +165,16 @@ class FoldersAndRulesTest {
     }
 
     @Test
-    fun aRuleIsSavedAsAnActiveSieveScript() {
-        start()
-        openSettingsPage("Rules")
-        waitFor("New rule")
-        compose.onNodeWithText("New rule").performClick()
-        compose.onNodeWithContentDescription("Condition 1 text").performTextInput("amazon")
-        compose.onNodeWithText("Choose a folder").performScrollTo().performClick()
-        compose.onNodeWithText("Receipts / Amazon").performClick()
-        compose.onNodeWithText("Save rule").performScrollTo().performClick()
-        waitFor("Rules are on")
-        val script = server.script.orEmpty()
-        assertTrue(script, "header :contains \"from\" \"amazon\"" in script)
-        assertTrue(script, "fileinto :mailboxid \"z\" \"INBOX\";" in script)
-        assertTrue("The first rule turns the rules on", server.scriptActive)
-        compose.onNodeWithText("From contains “amazon”").assertIsDisplayed()
-    }
-
-    @Test
-    fun settingsFoldersShowTheSendersRulesMoveThere() {
+    fun settingsFoldersShowEachFoldersFirstRule() {
         server.script =
             "# otus-rules-v1 " +
             """{"rules":[{"id":"1","conditions":[{"field":"from","operator":"is","value":"grace@example.org"}],""" +
             """"folder":"r"}]}"""
         server.scriptActive = true
         start()
-        // Grace's name comes from her message in the inbox.
-        waitFor("Welcome")
-        openSettingsPage("Folders")
-        compose.waitUntil(TIMEOUT) {
-            compose
-                .onAllNodes(hasContentDescription("Rules move mail from Grace Hopper here"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
-        compose.onNodeWithText("Grace").assertIsDisplayed()
-        compose.onNodeWithText("Ada").assertIsDisplayed()
+        openSettingsPage("Folders & rules")
+        waitFor("grace@example.org")
+        compose.onNodeWithText("grace@example.org", substring = true).assertIsDisplayed()
     }
 
     private fun openWelcome() {
@@ -221,16 +195,6 @@ class FoldersAndRulesTest {
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "mailboxIds" in it } }
         val move = server.calls.first { "Email/set" in it && "mailboxIds" in it }
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/z\":true}}" in move)
-    }
-
-    @Test
-    fun anOpenMessageStartsARuleForItsSender() {
-        openWelcome()
-        compose.onNodeWithContentDescription("More actions").performClick()
-        compose.onNodeWithText("Rule for sender").performClick()
-        compose.onNodeWithText("New rule").assertIsDisplayed()
-        compose.onNodeWithText("grace@example.org").assertIsDisplayed()
-        compose.onNodeWithText("is").assertIsDisplayed()
     }
 
     private companion object {

@@ -1,0 +1,92 @@
+package com.otus.mail
+
+import androidx.activity.compose.setContent
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import com.otus.mail.app.App
+import com.otus.mail.feature.folders.domain.FolderColorStore
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/** The New folder sheet's rules and color, given to the folder once the server creates it. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class NewFolderSheetTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    private val server = FakeFolderServer()
+    private val colors =
+        object : FolderColorStore {
+            var saved = emptyMap<String, String>()
+
+            override fun read() = saved
+
+            override fun write(names: Map<String, String>) {
+                saved = names
+            }
+        }
+
+    private fun openNewFolder() {
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                App(services = server.services(folderColorStore = colors), behaviorState = MailBehaviorState())
+            }
+        }
+        // Suggestions come from loaded mail, and Add rule from the loaded script.
+        waitFor("Welcome")
+        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithText("Folders & rules").performClick()
+        waitFor("Receipts")
+        compose.onNode(hasContentDescription("New folder") and hasClickAction()).performClick()
+        compose.onNodeWithContentDescription("Name").performTextInput("Travel")
+    }
+
+    private fun waitFor(text: String) =
+        compose.waitUntil(
+            TIMEOUT,
+        ) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty() }
+
+    @Test
+    fun aNewFolderStartsWithTheRulesAndColorChosenBeforeCreate() {
+        openNewFolder()
+        compose.onNodeWithText("Add rule").performClick()
+        compose.onNodeWithText("Sort into Travel").assertExists()
+        compose.onAllNodes(hasSetTextAction()).onLast().performTextInput("grace")
+        compose.onNode(hasText("grace@example.org") and isSelectable()).performClick()
+        compose.onNodeWithText("Add").performClick()
+        waitFor("grace@example.org")
+
+        compose.onNodeWithText("Default").performClick()
+        compose.onNodeWithText("Blue").performClick()
+        compose.onNodeWithText("Done").performClick()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Done")).fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithText("Blue").assertExists()
+
+        compose.onNodeWithText("Create").performClick()
+        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/set" in it } }
+        assertTrue(server.script.orEmpty(), "grace@example.org" in server.script.orEmpty())
+        assertEquals(listOf("Blue"), colors.saved.values.toList())
+    }
+
+    private companion object {
+        const val TIMEOUT = 5_000L
+    }
+}

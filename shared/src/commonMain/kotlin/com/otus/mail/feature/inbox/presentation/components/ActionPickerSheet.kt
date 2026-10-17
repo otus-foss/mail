@@ -29,15 +29,15 @@ import com.otus.mail.feature.inbox.domain.MailAction
 /**
  * Picks the action for [slot] of [layout] from [choices], grouped by what each acts on and narrowed
  * by search. Picking applies at once and moves the check; an action already elsewhere in the bar
- * says it will trade places. Where messages can move to [folders], the messages group ends in a
- * [MoveToChoice]. [onRemove], when given, empties the slot and closes the sheet.
+ * says it will trade places. Where messages can move to [folders], each with its icon color name,
+ * the messages group ends in a [MoveToChoice]. [onRemove], when given, empties the slot and closes the sheet.
  */
 @Composable
 internal fun ActionPickerSheet(
     slot: BarSlot,
     layout: ActionBarLayout,
     choices: List<MailAction>,
-    folders: List<BarButton.MoveTo>,
+    folders: Map<BarButton.MoveTo, String?>,
     onPick: (BarButton) -> Unit,
     onRemove: (() -> Unit)?,
     onDismiss: () -> Unit,

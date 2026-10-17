@@ -11,6 +11,7 @@ import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
 import com.otus.mail.feature.folders.domain.sharedFolders
+import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageLabel
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
 internal class MessageFiling(
     private val services: MailServices,
     private val folders: FoldersState,
+    private val colors: FolderColorsState,
     private val scope: CoroutineScope,
 ) {
     /** [messages] with the other folders each one is in, named for its row. */
@@ -71,6 +73,7 @@ internal class MessageFiling(
                     depth = ownNode?.depth ?: 0,
                     own = ownNode != null,
                     path = paths[node.folder.id],
+                    color = colors.colorOf(node.folder),
                 )
             }
     }
@@ -106,8 +109,9 @@ internal class MessageFiling(
     }
 
     /**
-     * Puts [message] back in the folder it was shown in after a move to [target], then reloads
-     * [feed] so it shows again. It waits for [after], the move itself, so the two cannot cross.
+     * Puts [message] back in every folder a move to [target] took it out of, such as the inbox
+     * after an archive or all its folders after a trash, then reloads [feed] so it shows again. It
+     * waits for [after], the move itself, so the two cannot cross.
      */
     fun moveBack(
         feed: InboxFeedState,
@@ -117,7 +121,7 @@ internal class MessageFiling(
     ) {
         scope.launch {
             after?.join()
-            if (services.mover.move(message, message.location.mailboxId, setOf(target.folderId))) {
+            if (services.mover.moveBack(message, target.folderId, leaving(message, target.shortcut))) {
                 feed.refresh()
                 folders.refresh()
             } else {

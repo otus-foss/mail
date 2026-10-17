@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.work.Configuration
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.AndroidLoginStore
+import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailServices
 import com.otus.push.PushSubscriptions
 import java.io.File
@@ -24,7 +25,12 @@ class OtusMailApplication :
         MailServices(
             AndroidLoginStore(this, preferencesName = "otus_accounts", keyAlias = "otus.account.credentials"),
             avatarStore = FileAvatarStore(File(cacheDir, "avatars-v1").absolutePath),
-            readLaterStore = AndroidReadLaterStore(this),
+            stores =
+                MailDeviceStores(
+                    AndroidReadLaterStore(this),
+                    AndroidFolderColorStore(this),
+                    AndroidAddressPinStore(this),
+                ),
             instantPush = instantPush,
             signatureImages = signatureImages,
         )

@@ -19,6 +19,15 @@ dependencies {
     testImplementation(libs.ktor.client.mock)
 }
 
+// Dev builds show the commit they came from. A checkout without Git history shows "unknown".
+val commit =
+    providers
+        .exec {
+            commandLine("git", "rev-parse", "--short", "HEAD")
+            isIgnoreExitValue = true
+        }.standardOutput.asText
+        .map { it.trim().ifEmpty { "unknown" } }
+
 android {
     testOptions.unitTests.isIncludeAndroidResources = true
     lint {
@@ -45,7 +54,8 @@ android {
         // The nightly workflow numbers each build by its commit count on main.
         versionCode = providers.gradleProperty("otus.versionCode").map(String::toInt).getOrElse(1)
         versionName = providers.gradleProperty("otus.versionName").getOrElse("1.0")
-        buildConfigField("boolean", "NIGHTLY", "false")
+        buildConfigField("String", "CHANNEL", "\"Dev\"")
+        buildConfigField("String", "COMMIT", "\"${commit.get()}\"")
     }
     buildFeatures { buildConfig = true }
     // CI decodes the keystore from a secret. Local nightly builds without it come out unsigned.
@@ -67,6 +77,7 @@ android {
     }
     buildTypes {
         getByName("release") {
+            buildConfigField("String", "CHANNEL", "\"Stable\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
@@ -75,7 +86,7 @@ android {
         create("nightly") {
             initWith(getByName("release"))
             applicationIdSuffix = ".nightly"
-            buildConfigField("boolean", "NIGHTLY", "true")
+            buildConfigField("String", "CHANNEL", "\"Nightly\"")
             signingConfig = nightlySigning
         }
     }
