@@ -27,13 +27,11 @@ import com.otus.designsystem.elements.RichTextBody
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.RecipientField
-import kotlinx.datetime.LocalDate
 
 /**
- * The header lines, then the body filling the rest of the page, then the quoted original
+ * The header lines, then the body filling the rest of the page, then a forward's original
  * collapsed behind a chip; all scroll together. A new message or forward starts in To.
  */
 @Composable
@@ -51,13 +49,17 @@ internal fun ComposeContent(
         val bodyHeight = maxHeight - with(density) { fieldsHeight.toDp() } - padding.calculateBottomPadding()
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding)) {
             ComposeFields(state, shown, focus, Modifier.onSizeChanged { fieldsHeight = it.height })
-            val quote = state.draft.quote
+            // A reply's thread shows above the bar instead; only a forward carries its original here.
+            val quote =
+                state.draft.quote
+                    .takeIf { state.thread == null }
+                    .orEmpty()
             RichTextBody(
                 state.body,
                 placeholder = "Write your message",
                 Modifier.heightIn(min = if (quote.isEmpty()) bodyHeight.coerceAtLeast(0.dp) else 0.dp),
             )
-            if (quote.isNotEmpty()) QuotedOriginal(quote, state.request.quoteLabel)
+            if (quote.isNotEmpty()) QuotedOriginal(quote, FORWARD_LABEL)
         }
     }
 }
@@ -83,30 +85,4 @@ private val ComposeRequest.startsInTo: Boolean
             is ComposeRequest.Reply, is ComposeRequest.FollowUp, is ComposeRequest.Resume -> false
         }
 
-/** What the collapsed quote says, such as "Grace Hopper wrote on 11 Oct". */
-private val ComposeRequest.quoteLabel: String
-    get() =
-        when (this) {
-            is ComposeRequest.Reply -> original.wroteLabel
-            is ComposeRequest.FollowUp -> original.wroteLabel
-            is ComposeRequest.Forward -> "Forwarded message"
-            is ComposeRequest.Resume -> from.quoteLabel
-            is ComposeRequest.New -> ""
-        }
-
-private val OriginalMessage.wroteLabel: String
-    get() {
-        val name = from.name.ifBlank { from.address }
-        val day = runCatching { LocalDate.parse(sentLabel.substringBefore(' ')) }.getOrNull()
-        return if (day ==
-            null
-        ) {
-            "$name wrote"
-        } else {
-            "$name wrote on ${day.day} ${day.month.name.take(
-                MONTH_ABBREVIATION,
-            ).lowercase().replaceFirstChar(Char::uppercase)}"
-        }
-    }
-
-private const val MONTH_ABBREVIATION = 3
+private const val FORWARD_LABEL = "Forwarded message"

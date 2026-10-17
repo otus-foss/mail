@@ -55,8 +55,21 @@ it is. Below it are three pills: the Send-from pill, **+ Cc** until the Cc line 
   and To of the account's newest matching mail (`JmapAddressBook`).
 - **Subject** shows a "Subject" placeholder.
 - The body is formatted text (`RichTextBody`), with "Write your message" while it is empty.
-- A reply or forward ends with the original behind a chip, such as "Grace Hopper wrote on
-  11 Oct" or "Forwarded message". Tapping it shows the quoted text.
+- A forward ends with the original behind a "Forwarded message" chip. Tapping it shows the
+  quoted text.
+- A reply, follow-up, or reply all shows its thread above the bar while the keyboard is down.
+  `JmapThreadHistory` loads it in one request: the original's `threadId` (`Email/get`), the
+  thread's mail (`Thread/get`), and each message's sender, date, and preview (`Email/get`), all
+  by result reference. Drafts and anything newer than the original are left out, newest first.
+  Up to three messages show as rows with avatar, name, and date, such as "11 Oct". A longer
+  thread folds into one row: stacked avatars, "5 earlier messages", and "Latest: Grace Hopper,
+  11 Oct". Until the thread loads, or if it fails, the original alone shows.
+- Tapping the thread opens **Earlier in this thread**: each message with its sender, date, and
+  preview, then **Quote in your reply** with **Whole thread**, **Latest only**, and **None**.
+  Whole thread, the default, quotes the original as it arrived. Latest only quotes its text up
+  to the first quoted line or "On … wrote:" or "Original message" marker. None sends no quote.
+- A To line with more than three people shows the first two and "+N more" until tapped; the
+  field for the next address returns once it opens.
 
 The ⋯ menu holds **Add Bcc**, which turns into **Remove Bcc** and then clears Bcc, and
 **Discard draft**. A new message or forward starts with the cursor in To; a reply starts with
@@ -194,7 +207,9 @@ drafts, and moving a draft to another account.
 chips, editing a chip, and suggestions. `ComposeScreenTest` types a draft into chips, checks that
 Send names its recipients, sends a draft, asks about a missing subject, saves on Back, chooses an
 identity of another account from the dropdown, adds Bcc and discards from the ⋯ menu, and opens
-a reply's quote. `SignatureTest`, `SignaturesStateTest`, and `SignatureScreensTest` cover the
+a forward's quote. `ReplyThreadScreenTest` covers the thread rows, the folded thread, the folded
+To line, and the quote choice in the sheet; `JmapThreadHistoryTest` the thread request and
+`ReplyQuoteTest` the quote modes. `SignatureTest`, `SignaturesStateTest`, and `SignatureScreensTest` cover the
 signature HTML and images, copying and failed saves, `SendLaterTest` the Send later times,
 `OutgoingMailTest` the Undo window and turning it off, `UndoSendSettingTest` the delay setting, Retry, and undoing a scheduled message, the list, the editor with its size list,
 and the copy sheet. Their screenshots of each state are written to `androidApp/build/reports/compose/`.

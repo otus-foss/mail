@@ -10,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.Signature
@@ -73,6 +74,16 @@ class ComposeState(
             change = { field, people -> edit { it.withRecipients(field, people) } },
         )
 
+    /** The thread a reply or follow-up answers; null for a new message or a forward. */
+    val thread: ReplyThread? =
+        request.answeredOriginal?.let {
+            ReplyThread(it, services.threads, scope) { quote ->
+                edit { d ->
+                    d.copy(quote = quote)
+                }
+            }
+        }
+
     /** Addresses every account may send from, in account order. */
     var identities by mutableStateOf<List<SendIdentity>>(emptyList())
         private set
@@ -124,6 +135,7 @@ class ComposeState(
                     async { account.id to (scheduled?.maxDelaySeconds(account.id) ?: 0L) }
                 }
             val found = accounts.map { async { drafts.identities(it.id) } }.awaitAll().flatten()
+            thread?.load()
             identities = found
             delayLimits = limits.awaitAll().toMap()
             if (draft.from ==
@@ -269,3 +281,13 @@ private const val SAVE_DELAY_MILLIS = 2_000L
 /** The request that opens this draft again as it is, such as after Undo. */
 fun ComposeState.reopening(): ComposeRequest.Resume =
     ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request)
+
+/** The message a reply or follow-up answers, whose thread it shows. */
+private val ComposeRequest.answeredOriginal: OriginalMessage?
+    get() =
+        when (this) {
+            is ComposeRequest.Reply -> original
+            is ComposeRequest.FollowUp -> original
+            is ComposeRequest.Resume -> from.answeredOriginal
+            is ComposeRequest.New, is ComposeRequest.Forward -> null
+        }

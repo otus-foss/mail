@@ -63,7 +63,7 @@ private fun peopleContext(people: List<MailSender>): BarContext? =
         else -> {
             BarContext(
                 "${people.size} people",
-                BarToken.People(people.first().chipAvatar, people.size),
+                BarToken.People(people.first().chipAvatar, people.size, people[1].chipAvatar),
                 "to ${people.size} people",
             )
         }

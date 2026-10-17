@@ -90,7 +90,13 @@ internal class MailStates(
         val all = accounts.accounts
         val account = all.firstOrNull { it.id == request.accountId } ?: all.firstOrNull() ?: return null
         return ComposeState(
-            ComposeServices(services.drafts, services.sender, services.addressBook, services.scheduled),
+            ComposeServices(
+                services.drafts,
+                services.sender,
+                services.addressBook,
+                services.scheduled,
+                services.threads,
+            ),
             scope,
             request,
             ComposeOrigin(
