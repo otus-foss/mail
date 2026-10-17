@@ -78,7 +78,7 @@ class InboxPillsTest {
     private fun openPillsSheet() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Mail behavior").performClick()
         compose.onNodeWithText("Pills").performScrollTo().performClick()
         waitFor("Shown")
     }

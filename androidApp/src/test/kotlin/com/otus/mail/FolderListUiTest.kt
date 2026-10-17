@@ -27,7 +27,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
-/** Settings › Folders: the account picker, folding, shared mailboxes, and dragging folders. */
+/** Settings › Folders & rules: the account picker, folding, shared mailboxes, and dragging folders. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -46,7 +46,7 @@ class FolderListUiTest {
         }
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Folders").performClick()
+        compose.onNodeWithText("Folders & rules").performClick()
         compose.waitUntil(TIMEOUT) { count("Amazon") > 0 }
     }
 

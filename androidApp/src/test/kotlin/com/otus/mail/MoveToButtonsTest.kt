@@ -68,7 +68,7 @@ class MoveToButtonsTest {
         start(MailBehaviorState(AndroidMailBehaviorStore(compose.activity)))
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Mail behavior").performClick()
         compose.onNode(hasText("Action bar") and hasClickAction()).performScrollTo().performClick()
         compose.onNodeWithText("Open message").performScrollTo().performClick()
 
@@ -76,7 +76,7 @@ class MoveToButtonsTest {
         pick("Move to folder…")
         pick("Receipts")
         done()
-        top("Trash").performClick()
+        top("Delete").performClick()
         pick("Move to folder…")
         // A folder another slot moves to would trade places with it.
         compose.onNodeWithText("Swaps with Button 1").assertExists()

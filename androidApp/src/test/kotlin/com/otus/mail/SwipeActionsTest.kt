@@ -64,14 +64,14 @@ class SwipeActionsTest {
     private fun updates(): List<String> = server.calls.filter { "Email/set" in it }
 
     @Test
-    fun swipingLeftArchivesTheMessageByDefault() {
-        server.folders += """{"id": "x", "name": "Old mail", "role": "archive"}"""
+    fun swipingLeftDeletesTheMessageIntoTrashByDefault() {
+        server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
         start()
-        waitForSwipe("Archive")
+        waitForSwipe("Delete")
         compose.onNodeWithText("Welcome").performTouchInput { swipeLeft() }
         compose.waitUntil(TIMEOUT) { updates().isNotEmpty() }
-        val archive = updates().single()
-        assertTrue(archive, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/x\":true}}" in archive)
+        val delete = updates().single()
+        assertTrue(delete, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/t\":true}}" in delete)
     }
 
     @Test
@@ -132,18 +132,19 @@ class SwipeActionsTest {
     }
 
     @Test
-    fun theAppearancePageSavesEachChange() {
+    fun theMailBehaviorPageSavesEachChange() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Mail behavior").performClick()
+        compose.onNodeWithText("Delete").assertIsDisplayed()
         compose.onNodeWithText("Swipe left").performClick()
-        compose.onNodeWithText("Trash").performClick()
+        compose.onNodeWithText("Archive").performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("Trash").assertIsDisplayed()
+        compose.onNodeWithText("Archive").assertIsDisplayed()
         compose.onNodeWithText("Mark as read when opened").performScrollTo().performClick()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
-        assertEquals(MailAction.Trash, saved.endToStart)
+        assertEquals(MailAction.Archive, saved.endToStart)
         assertEquals(MailAction.Read, saved.startToEnd)
         assertFalse(saved.markReadOnOpen)
     }

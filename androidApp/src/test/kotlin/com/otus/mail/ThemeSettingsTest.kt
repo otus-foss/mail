@@ -48,9 +48,7 @@ class ThemeSettingsTest {
         assertEquals("light #3F8F6B", saved)
 
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNode(hasText("Theme") and hasText(lightGreen.themeTitle)).assertExists()
-
-        compose.onNode(hasText("Theme") and hasText("Colors across the whole app")).performClick()
+        compose.onNode(hasText("Theme") and hasText(lightGreen.themeTitle)).assertExists().performClick()
         compose.onNodeWithText("Reset to Otus").performScrollTo().performClick()
         compose.waitUntil(TIMEOUT) { OtusColors.palette == OtusPalette.Otus }
         assertEquals("otus #4D6F92", saved)
@@ -72,8 +70,8 @@ class ThemeSettingsTest {
     private fun openTheme() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
-        compose.onNode(hasText("Theme") and hasText("Colors across the whole app")).performClick()
+        compose.onNodeWithText("Appearance").performClick()
+        compose.onNode(hasText("Theme") and hasText("Otus")).performClick()
     }
 
     private companion object {
