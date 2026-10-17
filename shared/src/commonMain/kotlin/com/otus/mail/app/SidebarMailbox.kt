@@ -27,19 +27,14 @@ internal data class SidebarMailbox(
 
 /**
  * Inbox, then Read later while it is on, then each system folder some account has, in fixed order.
- * The Inbox counts the folders [inbox] lists: each chosen address's account's inbox, and its Spam
- * and Trash when chosen.
+ * The Inbox counts the folders [inbox] lists: each account's inbox, and its Spam and Trash when chosen.
  */
 internal fun sidebarMailboxes(
     accounts: List<AccountFolders>,
     inbox: InboxContents = InboxContents(),
 ): List<SidebarMailbox> =
     buildList {
-        val inboxAccounts = inbox.addresses.map { it.accountId }.toSet()
-        val inboxFolders =
-            accounts
-                .filter { inbox.everyAddress || it.accountId in inboxAccounts }
-                .flatMap { account -> account.folders.filter { it.role in inbox.roles } }
+        val inboxFolders = accounts.flatMap { account -> account.folders.filter { it.role in inbox.roles } }
         add(SidebarMailbox("Inbox", roleIcon(INBOX_ROLE), MailPage.Inbox, inboxFolders))
         val readLater = accounts.mapNotNull { it.readLater }
         if (readLater.isNotEmpty()) {

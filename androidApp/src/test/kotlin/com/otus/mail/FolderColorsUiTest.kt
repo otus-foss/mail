@@ -126,8 +126,8 @@ class FolderColorsUiTest {
         compose.onNode(hasText("Purple") and isSelectable()).performClick()
         closeSheet()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
-        compose.onNode(hasText("Sidebar") and hasText("Edit")).performScrollTo().performClick()
+        compose.onNodeWithText("Appearance").performClick()
+        compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
         compose
             .onNode(hasText("Colors only change the folder icon. They stay on this device.") and isToggleable())
             .performScrollTo()

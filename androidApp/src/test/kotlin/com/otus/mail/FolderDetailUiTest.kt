@@ -22,7 +22,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** A folder's page from Settings › Folders: its rows, its color, deleting it, and when Rules hides. */
+/** A folder's page from Settings › Folders & rules: its rows, its color, deleting it, and when Rules hides. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -48,7 +48,7 @@ class FolderDetailUiTest {
         }
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Folders").performClick()
+        compose.onNodeWithText("Folders & rules").performClick()
         val row = hasText(name) and hasClickAction() and !isSelectable()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(row).performClick()

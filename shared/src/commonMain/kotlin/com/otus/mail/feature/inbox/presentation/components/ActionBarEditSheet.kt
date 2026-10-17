@@ -14,7 +14,7 @@ import com.otus.designsystem.components.SheetFrame
 import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_more_horiz
+import com.otus.designsystem.resources.symbol_content_copy
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
@@ -25,8 +25,8 @@ import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 /**
  * Edits [place]'s bar, saving each change at once. Tapping a button in the preview, or the Add
  * button after the last one, opens [ActionPickerSheet] for that slot. Its Move to buttons pick among
- * [folders], the paths of every account's own folders, each icon in its [folderColor]. The menu
- * opposite Done closes the sheet and runs [onCopy].
+ * [folders], the paths of every account's own folders, each icon in its [folderColor]. The copy
+ * button opposite Done closes the sheet and runs [onCopy].
  */
 @Composable
 internal fun ActionBarEditSheet(
@@ -50,7 +50,7 @@ internal fun ActionBarEditSheet(
             IconButton("Copy to other screens", {
                 copyNext = true
                 done()
-            }, outlined = false) { Symbol(Res.drawable.symbol_more_horiz) }
+            }, outlined = false) { Symbol(Res.drawable.symbol_content_copy) }
         },
     ) {
         Column(

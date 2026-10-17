@@ -102,8 +102,9 @@ none of them can take it.
   when all have it. The label says which, such as **Mark read** or **Mark unread**.
 - **Read later** saves the messages not saved yet. Once all are saved, it offers to remove them.
   It is a choice only while Read later is on; see [Read later](folders.md#read-later).
-- **Archive**, **Trash**, and **Spam** move each message that can take the action to its
-  account's folder with the `archive`, `trash`, or `junk` role. Spam is new and works like Trash:
+- **Archive**, **Delete**, and **Spam** move each message that can take the action to its
+  account's folder with the `archive`, `trash`, or `junk` role. Delete moves the message to Trash
+  rather than deleting it for good. Spam is new and works like Delete:
   the message leaves every folder it is in, Read later included. It moves the message and sets no
   keyword. Messages already in the folder, or whose account has none, are skipped.
 - **Move** needs messages from one account, because folders belong to an account. Its Move to
@@ -144,9 +145,9 @@ move. A swipe can be any action except Spam, Move, Rule for sender, and the fold
 
 ### Settings
 
-The appearance page has an **Action bar** section. Its **Action bar** row opens
-**Settings › Appearance & behavior › Action bar** (`ActionBarSettingsScreen`). Its **Minimize**
-switch shows only the main button, as a 62 dp round button at the bar's end, on every screen. The
+The Mail behavior page's **Actions** section has an **Action bar** row, which opens
+**Settings › Mail behavior › Action bar** (`ActionBarSettingsScreen`). The page's **Minimize**
+switch, below **Layout**, shows only the main button, as a 62 dp round button at the bar's end, on every screen. The
 other buttons then move into the page's menu, such as an open message's **More actions**.
 
 The action bar page starts with a **Layout** row that shows the mode and opens a `ChoiceSheet`
@@ -181,7 +182,7 @@ Tapping a button, or **Add button**, opens the picker for that slot (`ActionPick
   found. Pick another."
 - Each change is saved at once.
 
-The editor's ⋯ button opens **Copy to** (`ActionBarCopySheet`), which lists the other places to
+The editor's copy button opens **Copy to** (`ActionBarCopySheet`), which lists the other places to
 tick. Each row says what that place would get: only the actions it can offer, in the same order.
 When it cannot offer the main button, it keeps its own. A place that would get none of the buttons
 is named in a note instead. Done replaces the ticked places' bars; closing any other way changes

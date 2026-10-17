@@ -25,7 +25,7 @@ import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.folderIcon
 
 /**
- * A folder in Settings › Folders: its icon in the folder's color, the name, the first of its rules
+ * A folder in Settings › Folders & rules: its icon in the folder's color, the name, the first of its rules
  * as a compact chip with how many more there are, and who shares it. With subfolders, [expanded]
  * is set and the icon folds them. Tapping opens the folder, a long press opens its quick actions
  * at the pressed point, and the handle at the end drags it.

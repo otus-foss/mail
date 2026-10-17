@@ -44,7 +44,7 @@ internal fun MailSidebar(
     val header = scopeHeader(scope, states.accountAddresses())
     var picking by rememberSaveable { mutableStateOf(false) }
     var collapsedFolders by rememberSaveable(stateSaver = KeysSaver) { mutableStateOf(emptySet<List<String>>()) }
-    val inbox = states.inboxContents
+    val inbox = states.behavior.behavior.inbox
     val mailboxes = remember(folders, inbox) { sidebarMailboxes(folders, inbox) }
     val shared = remember(folders) { sharedFolders(folders) }
     val actions = rememberFolderActions(states)

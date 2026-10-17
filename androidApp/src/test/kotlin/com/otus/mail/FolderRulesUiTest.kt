@@ -51,7 +51,7 @@ class FolderRulesUiTest {
         start()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Folders").performClick()
+        compose.onNodeWithText("Folders & rules").performClick()
         val row = hasText(name) and hasClickAction() and !isSelectable()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(row).performClick()

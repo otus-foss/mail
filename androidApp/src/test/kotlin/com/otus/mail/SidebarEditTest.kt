@@ -108,8 +108,8 @@ class SidebarEditTest {
     fun theSidebarPageHidesFoldersListsMailboxesAsRowsAndTurnsCountsOff() {
         openSidebar()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
-        compose.onNode(hasText("Sidebar") and hasText("Edit")).performScrollTo().performClick()
+        compose.onNodeWithText("Appearance").performClick()
+        compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
         compose
             .onNodeWithText(
                 "Drag a section to reorder it. One section stays on. Changes apply to every account.",
@@ -124,7 +124,7 @@ class SidebarEditTest {
         closeChoice()
         assertEquals(MailboxStyle.Rows, behavior.behavior.sidebar.mailboxes)
         assertEquals(SidebarCount.None, behavior.behavior.sidebar.counts)
-        // Back leads to Appearance & behavior, then Settings.
+        // Back leads to Appearance, then Settings.
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()

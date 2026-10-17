@@ -7,12 +7,15 @@ import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 
-/** Files each message into its account's [shortcut] folder, skipping those already there or without one. */
+/**
+ * Files each message into its account's [shortcut] folder, skipping those already there or without
+ * one. The offer carries [action]'s name, so the Trash action reads Delete.
+ */
 internal fun MessageActions.offerFiling(
     messages: List<MailMessage>,
     shortcut: FolderShortcut,
     action: BarButton,
-): OfferedAction? = offerMoves(messages, shortcut.label, shortcut.label, action) { shortcutTarget(it, shortcut) }
+): OfferedAction? = offerMoves(messages, action.label, action.label, action) { shortcutTarget(it, shortcut) }
 
 /** Opens the Move to sheet with the folders every message can move to, all from one account. */
 internal fun MessageActions.offerMove(
