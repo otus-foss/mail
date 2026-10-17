@@ -110,7 +110,7 @@ class OutgoingMailTest {
             outgoing().schedule(message, LocalDateTime(2026, 10, 19, 8, 0))
             runCurrent()
             val toast = toasts.messages.single()
-            assertEquals("Scheduled for Mon, 8:00", toast.text)
+            assertEquals("Scheduled for Mon 19 Oct, 8:00", toast.text)
             assertNotNull(runs.single())
             assertNotNull(toast.action).onAction()
             runCurrent()

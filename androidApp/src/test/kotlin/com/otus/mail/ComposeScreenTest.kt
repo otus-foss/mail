@@ -229,7 +229,8 @@ class ComposeScreenTest {
         compose.onNodeWithText("Tomorrow morning").performClick()
         compose.waitForIdle()
         assertFalse("Choosing a time does not send", closed)
-        button("Send now instead").assertExists()
+        compose.onNodeWithText("Scheduled for", substring = true).assertExists()
+        compose.onNode(hasText("Change") and hasClickAction()).assertExists()
         compose.screenshot("compose-scheduled")
 
         compose.onNode(hasContentDescription("Send, to Grace Hopper") and hasClickAction()).performClick()
