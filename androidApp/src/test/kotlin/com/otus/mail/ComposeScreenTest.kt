@@ -224,7 +224,7 @@ class ComposeScreenTest {
         compose.screenshot("compose-more-options-reply")
         compose.onNodeWithText("Schedule send").performClick()
         compose.onNodeWithText("Send later").assertExists()
-        compose.onNodeWithText("Your mail server sends it, even if your phone is off.").assertExists()
+        compose.onNodeWithText("Pick date and time").assertExists()
         compose.screenshot("compose-send-later")
         compose.onNodeWithText("Tomorrow morning").performClick()
         compose.waitForIdle()
