@@ -15,6 +15,7 @@ import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.settings.data.AndroidAnimationPreferenceStore
 import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
