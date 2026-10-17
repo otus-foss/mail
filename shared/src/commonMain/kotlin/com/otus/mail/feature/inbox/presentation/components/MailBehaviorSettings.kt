@@ -15,19 +15,21 @@ import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.elements.ValueButton
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_collapse_content
 import com.otus.designsystem.resources.symbol_filter_list
+import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_menu
 import com.otus.designsystem.resources.symbol_swipe_left
 import com.otus.designsystem.resources.symbol_swipe_right
 import com.otus.designsystem.resources.symbol_view_agenda
+import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.inboxSummary
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
@@ -61,18 +63,31 @@ fun MailLookSettings(
 }
 
 /**
- * Swipe, action bar, reading, and privacy choices for the appearance page. [onOpenActionBar] opens the
- * action bar's page. Each swipe opens a choice of actions; the rows name the physical direction
- * for the current layout direction.
+ * Inbox, swipe, action bar, reading, and privacy choices for the appearance page. [inbox] is what
+ * the Inbox lists, and [onOpenInbox] opens its page. [onOpenActionBar] opens the action bar's
+ * page. Each swipe opens a choice of actions; the rows name the physical direction for the
+ * current layout direction.
  */
 @Composable
 fun MailBehaviorSettings(
     state: MailBehaviorState,
+    inbox: InboxContents,
+    onOpenInbox: () -> Unit,
     onOpenActionBar: () -> Unit,
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     var choosing by rememberSaveable { mutableStateOf<SwipeSide?>(null) }
     val behavior = state.behavior
+    SettingsSection("Inbox") {
+        SettingRow(
+            "Inbox shows",
+            onOpenInbox,
+            description = "Addresses, Spam, and Trash",
+            icon = Res.drawable.symbol_inbox,
+        ) {
+            ValueButton(inboxSummary(inbox))
+        }
+    }
     SettingsSection("Actions") {
         SwipeSide.entries.forEach { side ->
             SettingRow(side.title(rtl), { choosing = side }, icon = side.icon(rtl)) {
@@ -96,12 +111,6 @@ fun MailBehaviorSettings(
             checked = behavior.markReadOnOpen,
             onCheckedChange = { on -> state.update { it.copy(markReadOnOpen = on) } },
             icon = Res.drawable.symbol_mark_email_read,
-        )
-        SettingToggleRow(
-            "Read later",
-            checked = behavior.readLater,
-            onCheckedChange = { on -> state.update { it.withReadLater(on) } },
-            icon = Res.drawable.symbol_bookmark,
         )
     }
     PrivacySettings(state)

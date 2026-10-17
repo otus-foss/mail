@@ -3,7 +3,7 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isToggleable
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -110,7 +110,7 @@ class AccountConnectionTest {
         compose.onNodeWithText("1 account connected").assertIsDisplayed()
 
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
+        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Engine notes")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("1 message").assertIsDisplayed()
     }

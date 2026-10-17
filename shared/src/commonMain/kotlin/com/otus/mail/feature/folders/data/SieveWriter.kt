@@ -1,124 +1,145 @@
 package com.otus.mail.feature.folders.data
 
-import com.otus.mail.feature.folders.domain.MailRule
+import com.otus.mail.feature.folders.domain.AddressField
+import com.otus.mail.feature.folders.domain.AddressMatch
+import com.otus.mail.feature.folders.domain.FolderRule
+import com.otus.mail.feature.folders.domain.HeaderOperator
 import com.otus.mail.feature.folders.domain.RuleCondition
-import com.otus.mail.feature.folders.domain.RuleField
-import com.otus.mail.feature.folders.domain.RuleOperator
+import com.otus.mail.feature.folders.domain.RuleSupport
+import com.otus.mail.feature.folders.domain.TextField
+import com.otus.mail.feature.folders.domain.TextOperator
 
 /**
- * Writes [script] as Sieve (RFC 5228) with CRLF line ends. Each enabled rule files a match by
- * folder id (RFC 9042) and stops; the inbox is the fallback when that folder no longer exists, so
- * a deleted folder never loses mail. [metadata] is the line that lets the app read the rules back.
- * [extensions] are the server's, so a server that ties `:mailboxid` to `mailbox` gets it declared.
+ * The Sieve (RFC 5228) inside the Otus block, one line per entry, for [folders] in order. Each
+ * folder's rules become one `if anyof (…)` that files the message and stops, so the first folder
+ * that matches wins. With `mailboxid` (RFC 9042) a folder is filed by id and its [BlockFolder.path]
+ * is the fallback the server uses when the id no longer exists; without it, by that path alone.
+ * [zone] is the UTC offset, such as `+0200`, that day and time conditions use.
  */
-internal fun writeSieve(
-    script: RuleScript,
-    metadata: String,
-    extensions: Set<String> = emptySet(),
-): String {
-    val active = script.rules.filter { it.enabled }
-    val required = requiredExtensions(active, script.keep, extensions)
+internal fun sieveLines(
+    folders: List<BlockFolder>,
+    support: RuleSupport,
+    zone: String,
+): List<String> {
+    val filled =
+        folders
+            .map { folder -> folder.copy(rules = folder.rules.filter { it.conditions.isNotEmpty() }) }
+            .filter { it.rules.isNotEmpty() }
+    val required = requiredExtensions(filled.flatMap { it.rules }, support)
     return buildList {
-        add(HEADER)
-        add(metadata)
         if (required.isNotEmpty()) add("require ${sieveList(required)};")
-        active.forEach { rule ->
-            val flags = if (rule.markRead) ":flags \"\\\\Seen\" " else ""
-            add("")
-            add("# ${oneLine(rule.name).ifBlank { "Rule" }}")
-            add("if ${test(rule)} {")
-            add("    fileinto $flags:mailboxid ${sieveString(rule.folderId)} \"INBOX\";")
+        filled.forEach { folder ->
+            val tests = folder.rules.map { it.test(zone) }
+            add("if ${tests.singleOrNull() ?: anyOf(tests)} {")
+            add("    ${fileInto(folder, support)};")
             add("    stop;")
             add("}")
         }
-        script.keep?.let {
-            add("")
-            add("include :personal :optional ${sieveString(it)};")
-        }
-    }.joinToString(CRLF, postfix = CRLF)
+    }
 }
 
-internal const val HEADER = "# Otus Mail rules. Edit them in Otus Mail; changes made elsewhere are detected."
+/** A folder in the block: its rules, and the path of names a server without `mailboxid` files into. */
+internal data class BlockFolder(
+    val id: String,
+    val path: String,
+    val rules: List<FolderRule>,
+)
 
-private const val CRLF = "\r\n"
+/**
+ * Nested folders are named by their full path with `/` between names, which is Stalwart's
+ * hierarchy separator. JMAP does not report a separator (RFC 8621 has none), so other servers
+ * may differ; they only need the path when they lack `mailboxid`.
+ */
+internal const val FOLDER_PATH_SEPARATOR = "/"
 
-private const val MAILBOX = "mailbox"
+private fun fileInto(
+    folder: BlockFolder,
+    support: RuleSupport,
+): String =
+    if (support.filesById) {
+        "fileinto :mailboxid ${sieveString(folder.id)} ${sieveString(folder.path)}"
+    } else {
+        "fileinto ${sieveString(folder.path)}"
+    }
 
 private fun requiredExtensions(
-    rules: List<MailRule>,
-    keep: String?,
-    extensions: Set<String>,
+    rules: List<FolderRule>,
+    support: RuleSupport,
 ): List<String> {
     val conditions = rules.flatMap { it.conditions }
+    val extensions = support.extensions
     return buildSet {
-        if (rules.isNotEmpty()) addAll(listOf("fileinto", "mailboxid"))
-        // Stalwart refuses `:mailboxid` unless "mailbox" (RFC 5490) is declared too.
-        if (rules.isNotEmpty() && MAILBOX in extensions) add(MAILBOX)
-        if (rules.any { it.markRead }) add("imap4flags")
-        if (conditions.any { it.field == RuleField.Body }) add("body")
-        if (conditions.any { it.field == RuleField.AttachmentType || it.field == RuleField.AttachmentName }) add("mime")
-        if (conditions.any { it.operator == RuleOperator.MatchesRegex }) add("regex")
-        if (keep != null) add("include")
+        if (rules.isEmpty()) return@buildSet
+        add("fileinto")
+        if (support.filesById) {
+            add("mailboxid")
+            // Stalwart refuses `:mailboxid` unless "mailbox" (RFC 5490) is declared too.
+            if ("mailbox" in extensions) add("mailbox")
+        }
+        if (conditions.any { it is RuleCondition.Text && it.field == TextField.Body }) add("body")
+        conditions.filterIsInstance<RuleCondition.When>().forEach {
+            add("date")
+            if (it.range != null) add("relational")
+        }
+        if (conditions.any { it is RuleCondition.Spam }) {
+            add(if ("spamtest" in extensions) "spamtest" else "spamtestplus")
+            add("relational")
+            add("comparator-i;ascii-numeric")
+        }
     }.sorted()
 }
 
-private fun test(rule: MailRule): String {
-    val tests = rule.conditions.map(::test)
-    return tests.singleOrNull() ?: "${if (rule.matchAll) "allof" else "anyof"} (${tests.joinToString(", ")})"
+private fun FolderRule.test(zone: String): String {
+    val tests = conditions.map { it.test(zone) }
+    return tests.singleOrNull() ?: allOf(tests)
 }
 
-private fun test(condition: RuleCondition): String {
-    val match = matchType(condition)
-    val key = key(condition)
+internal fun anyOf(tests: List<String>) = tests.joinToString(", ", "anyof (", ")")
+
+internal fun allOf(tests: List<String>) = tests.joinToString(", ", "allof (", ")")
+
+private fun RuleCondition.test(zone: String): String {
     val positive =
-        when (val field = condition.field) {
-            RuleField.Body -> {
-                "body :text $match $key"
-            }
-
-            RuleField.AttachmentType -> {
-                "header :mime :anychild :contenttype $match \"Content-Type\" $key"
-            }
-
-            RuleField.AttachmentName -> {
-                "anyof (header :mime :anychild :param \"filename\" $match \"Content-Disposition\" $key, " +
-                    "header :mime :anychild :param \"name\" $match \"Content-Type\" $key)"
-            }
-
-            else -> {
-                // Exact and prefix or suffix comparisons use the address; the rest the whole header.
-                val test = if (field.isAddress && condition.operator in ADDRESS_OPERATORS) "address :all" else "header"
-                "$test $match ${headers(field)} $key"
-            }
+        when (this) {
+            is RuleCondition.Address -> addressTest()
+            is RuleCondition.Text -> textTest()
+            is RuleCondition.Header -> headerTest()
+            is RuleCondition.MailingList -> "header :contains \"list-id\" ${sieveString("<${oneLine(listId)}>")}"
+            is RuleCondition.Size -> "size ${if (over) ":over" else ":under"} $bytes"
+            is RuleCondition.When -> whenTest(zone)
+            is RuleCondition.Spam -> "spamtest :value \"ge\" :comparator \"i;ascii-numeric\" \"$minScore\""
         }
-    return if (condition.operator.negated) "not $positive" else positive
+    return if (negated) "not $positive" else positive
 }
 
-private fun matchType(condition: RuleCondition): String =
-    when (condition.operator) {
-        RuleOperator.Contains, RuleOperator.DoesNotContain -> ":contains"
-        RuleOperator.Is, RuleOperator.IsNot -> ":is"
-        RuleOperator.StartsWith, RuleOperator.EndsWith -> ":matches"
-        RuleOperator.MatchesRegex -> ":regex"
-    }
+private fun RuleCondition.Address.addressTest(): String {
+    val part =
+        when (match) {
+            is AddressMatch.Exact -> ":all"
+            is AddressMatch.Domain -> ":domain"
+            is AddressMatch.LocalPart -> ":localpart"
+        }
+    return "address $part :is ${sieveString(field.header)} ${sieveString(oneLine(match.value))}"
+}
 
-private fun key(condition: RuleCondition): String {
-    val value = oneLine(condition.value)
-    return when (condition.operator) {
-        RuleOperator.StartsWith -> sieveString(literalWildcards(value) + "*")
-        RuleOperator.EndsWith -> sieveString("*" + literalWildcards(value))
-        else -> sieveString(value)
+internal val AddressField.header: String
+    get() = name.lowercase()
+
+private fun RuleCondition.Text.textTest(): String {
+    val value = oneLine(value)
+    val (match, key) =
+        when (operator) {
+            TextOperator.Contains -> ":contains" to value
+            TextOperator.StartsWith -> ":matches" to literalWildcards(value) + "*"
+            TextOperator.Matches -> ":matches" to value
+        }
+    return when (field) {
+        TextField.Subject -> "header $match \"subject\" ${sieveString(key)}"
+        TextField.Body -> "body :text $match ${sieveString(key)}"
     }
 }
 
-private fun headers(field: RuleField): String =
-    when (field) {
-        RuleField.From -> "\"from\""
-        RuleField.To -> "\"to\""
-        RuleField.Cc -> "\"cc\""
-        RuleField.Recipient -> sieveList(listOf("to", "cc"))
-        else -> "\"subject\""
-    }
-
-private val ADDRESS_OPERATORS =
-    setOf(RuleOperator.Is, RuleOperator.IsNot, RuleOperator.StartsWith, RuleOperator.EndsWith)
+private fun RuleCondition.Header.headerTest(): String {
+    val match = if (operator == HeaderOperator.Is) ":is" else ":contains"
+    return "header $match ${sieveString(oneLine(name))} ${sieveString(oneLine(value))}"
+}

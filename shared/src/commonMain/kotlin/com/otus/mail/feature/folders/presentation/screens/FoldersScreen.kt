@@ -1,109 +1,193 @@
 package com.otus.mail.feature.folders.presentation.screens
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.otus.avatar.generatedAvatar
-import com.otus.designsystem.components.ChipAvatar
-import com.otus.designsystem.components.CollapsibleTree
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.PageNote
-import com.otus.designsystem.components.RowDensity
-import com.otus.designsystem.components.SettingRow
-import com.otus.designsystem.components.SettingsSection
+import com.otus.designsystem.components.RuleChipLine
+import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.Subpage
+import com.otus.designsystem.components.TrailingIcons
+import com.otus.designsystem.elements.BarIconButton
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_create_new_folder
+import com.otus.designsystem.resources.symbol_add
+import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn
-import com.otus.mail.feature.folders.domain.folderTree
-import com.otus.mail.feature.folders.domain.sendersByFolder
+import com.otus.mail.feature.folders.domain.placeableChildren
+import com.otus.mail.feature.folders.domain.scopeOf
+import com.otus.mail.feature.folders.domain.sharedPlacements
+import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderDialog
-import com.otus.mail.feature.folders.presentation.FolderSender
-import com.otus.mail.feature.folders.presentation.FolderSenders
+import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.folders.presentation.RulesState
-import com.otus.mail.feature.folders.presentation.components.FolderActions
+import com.otus.mail.feature.folders.presentation.components.AccountFolderGroup
+import com.otus.mail.feature.folders.presentation.components.FolderAccountPicker
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
-import com.otus.mail.feature.folders.presentation.components.FolderRow
+import com.otus.mail.feature.folders.presentation.components.FolderListActions
+import com.otus.mail.feature.folders.presentation.components.FolderReorderTree
+import com.otus.mail.feature.folders.presentation.components.folderActions
+import com.otus.mail.feature.folders.presentation.components.folderMenu
+import com.otus.mail.feature.folders.presentation.folderRows
 import com.otus.mail.feature.folders.presentation.message
+import com.otus.mail.feature.folders.presentation.placement
 
 /**
- * Each account's folders as a tree under the account's name and avatar, with the senders that
- * rules move into each folder. Tapping a folder offers what the server allows for it.
+ * Settings › Folders: the [readLater] switch, then every account's folders as trees, or one
+ * account's when the picker chooses it. Tapping a folder opens its settings through [onOpenFolder];
+ * holding one opens its quick actions, and its handle drags it. [rulesOf] gives each folder's rules
+ * as chip lines, first rule first.
  */
 @Composable
 fun FoldersScreen(
     state: FoldersState,
-    rules: RulesState,
-    senders: FolderSenders,
+    colors: FolderColorsState,
+    rulesOf: (MailFolder) -> List<RuleChipLine>,
+    readLater: Boolean,
+    onReadLaterChange: (Boolean) -> Unit,
     onBack: () -> Unit,
     onOpenFolder: (MailFolder) -> Unit,
 ) {
     var dialog by rememberSaveable(stateSaver = FolderDialog.Saver) { mutableStateOf<FolderDialog?>(null) }
-    LaunchedEffect(Unit) {
-        state.refresh()
-        rules.refresh()
-    }
-    LaunchedEffect(rules.accounts) { senders.resolve(rules.accounts) }
-    Subpage("Folders", onBack) {
+    var chosen by rememberSaveable { mutableStateOf<String?>(null) }
+    var collapsed by rememberSaveable(stateSaver = KeysSaver) { mutableStateOf(emptySet<String>()) }
+    LaunchedEffect(Unit) { state.refresh() }
+    val accounts = state.accounts
+    val one = accounts.singleOrNull() ?: accounts.firstOrNull { it.accountId == chosen }
+    val groups =
+        remember(accounts, one) {
+            val placements = sharedPlacements(accounts)
+            (one?.let(::listOf) ?: accounts).map { it to it.folderRows(placements, allAccounts = one == null) }
+        }
+    val tree =
+        FolderTreeState(collapsed, { collapsed = it }, state.listActions(colors, rulesOf, onOpenFolder) { dialog = it })
+    Subpage(
+        "Folders",
+        onBack,
+        chips = { if (accounts.size > 1) FolderAccountPicker(accounts, one) { chosen = it } },
+    ) {
         state.notice?.let { PageNote(it) }
-        if (state.accounts.isEmpty()) {
+        SettingToggleRow(
+            "Read later",
+            checked = readLater,
+            onCheckedChange = onReadLaterChange,
+            description = "One list for mail you save from every account",
+            icon = Res.drawable.symbol_bookmark,
+        )
+        if (accounts.isEmpty()) {
             PageNote(if (state.loading) "Loading folders…" else "Connect an account in Settings to manage its folders.")
         }
-        state.accounts.forEach { account ->
-            val byFolder = rules.account(account.accountId)?.sendersByFolder().orEmpty()
-            AccountFolderSection(
-                account,
-                state.busy,
-                sendersOf = { folderId -> senders.of(account.accountId, byFolder[folderId].orEmpty()) },
-                onDialog = { dialog = it },
-            )
+        val newFolder = { account: AccountFolders -> newFolderButton(account, state.busy) { dialog = it } }
+        // With one account the hint holds its New folder button; each account's row holds it otherwise.
+        if (accounts.isNotEmpty()) FolderHint(one?.let(newFolder))
+        groups.forEach { (account, rows) ->
+            val key = ACCOUNT_KEY + account.accountId
+            if (one == null) {
+                AccountFolderGroup(
+                    account,
+                    key !in collapsed,
+                    { tree.toggle(key, it) },
+                    newFolder(account),
+                ) {
+                    AccountFolders(account, rows, tree)
+                }
+            } else {
+                AccountFolders(account, rows, tree)
+            }
         }
-        PageNote("Folders are stored on your mail server, so other mail apps show them too.")
     }
     dialog?.let { open ->
-        FolderDialogs(
-            open,
-            state.account(open.accountId),
-            FolderActions(
-                onCreate = { accountId, name, parentId -> state.create(accountId, name, parentId) },
-                onRename = state::rename,
-                onMove = state::move,
-                onDelete = state::delete,
-                onOpen = onOpenFolder,
-            ),
-            onDialog = { dialog = it },
-        )
+        FolderDialogs(open, state.account(open.accountId), folderActions(state, colors)) {
+            dialog =
+                it
+        }
     }
 }
 
-@Composable
-private fun AccountFolderSection(
-    account: AccountFolders,
-    busy: Boolean,
-    sendersOf: (folderId: String) -> List<FolderSender>,
-    onDialog: (FolderDialog) -> Unit,
+/** The collapsed rows and account groups by key, and what the folder rows do. */
+private class FolderTreeState(
+    val collapsed: Set<String>,
+    val onCollapsedChange: (Set<String>) -> Unit,
+    val actions: FolderListActions,
 ) {
-    val avatar = generatedAvatar(account.accountName, "")
-    SettingsSection(account.accountName, ChipAvatar(avatar.initials, avatar.colorIndex)) {
-        account.failure?.let { PageNote(it.message()) }
-        CollapsibleTree(account.folderTree(), { it.folder.id }, { it.depth }) { node, expanded, onExpandedChange ->
-            FolderRow(node, sendersOf(node.folder.id), expanded, onExpandedChange) {
-                onDialog(FolderDialog.Actions(account.accountId, node.folder.id))
-            }
-        }
-        if (account.failure == null && canCreateIn(account, null)) {
-            // While a change is saving, the row stays visible but does nothing.
-            SettingRow(
-                if (busy) "Saving…" else "New folder",
-                { onDialog(FolderDialog.Create(account.accountId, null)) }.takeUnless { busy },
-                icon = Res.drawable.symbol_create_new_folder,
-                density = RowDensity.Compact,
-            )
-        }
+    fun toggle(
+        key: String,
+        expanded: Boolean,
+    ) = onCollapsedChange(if (expanded) collapsed - key else collapsed + key)
+}
+
+@Composable
+private fun AccountFolders(
+    account: AccountFolders,
+    rows: List<FolderListRow>,
+    tree: FolderTreeState,
+) {
+    account.failure?.let { PageNote(it.message()) }
+    FolderReorderTree(rows, tree.collapsed, tree.onCollapsedChange, tree.actions)
+}
+
+/**
+ * How to use the page, with the New folder [button] at its end when one account is shown, in the
+ * same column as the folder rows' settings icons.
+ */
+@Composable
+private fun FolderHint(button: (@Composable () -> Unit)?) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f)) { PageNote("Tap a folder to edit it, drag to reorder.") }
+        // The empty last slot stands where the folder rows have their drag handles.
+        button?.let { TrailingIcons(first = it, last = {}) }
     }
 }
+
+/**
+ * A plus that creates a top-level folder in [account], or null where the account can't take one.
+ * While another change saves, it does nothing.
+ */
+private fun newFolderButton(
+    account: AccountFolders,
+    busy: Boolean,
+    onDialog: (FolderDialog) -> Unit,
+): (@Composable () -> Unit)? =
+    if (account.failure == null && canCreateIn(account, null)) {
+        {
+            BarIconButton("New folder", Res.drawable.symbol_add, {
+                onDialog(FolderDialog.Create(account.accountId, null))
+            }, enabled = !busy)
+        }
+    } else {
+        null
+    }
+
+private fun FoldersState.listActions(
+    colors: FolderColorsState,
+    rulesOf: (MailFolder) -> List<RuleChipLine>,
+    onOpen: (MailFolder) -> Unit,
+    onDialog: (FolderDialog) -> Unit,
+) = FolderListActions(
+    colorOf = colors::colorOf,
+    rulesOf = rulesOf,
+    placeable = {
+        folder,
+        parentId,
+        ->
+        account(folder.accountId)?.scopeOf(folder)?.placeableChildren(parentId).orEmpty()
+    },
+    canDrop = { placement(it.folder, it.parentId, it.index) != null },
+    onDrop = { place(it.folder, it.parentId, it.index) },
+    onOpen = onOpen,
+    menuOf = { folder -> account(folder.accountId)?.folderMenu(folder, colors.colorable(folder), onDialog).orEmpty() },
+)
+
+private const val ACCOUNT_KEY = "account:"
+
+private val KeysSaver = listSaver<Set<String>, String>(save = { it.toList() }, restore = { it.toSet() })

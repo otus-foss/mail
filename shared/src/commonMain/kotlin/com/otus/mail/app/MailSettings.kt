@@ -4,7 +4,6 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_notifications
-import com.otus.designsystem.resources.symbol_rule_folder
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.settings.presentation.SettingsEntry
@@ -42,9 +41,4 @@ internal fun mailSettingsEntries(
             "Create, rename, and nest folders",
             Res.drawable.symbol_folder,
         ) { navigation.go(MailPage.Folders) },
-        SettingsEntry(
-            "Rules",
-            "Move arriving mail into folders",
-            Res.drawable.symbol_rule_folder,
-        ) { navigation.go(MailPage.Rules) },
     )

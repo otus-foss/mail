@@ -22,6 +22,13 @@ internal class LatestLoad(
         job = scope.launch { load { started == generation } }
     }
 
+    /** Cancels the running load and keeps it from showing what it read, as when the list changes locally. */
+    fun invalidate() {
+        job?.cancel()
+        job = null
+        generation++
+    }
+
     /** Waits until the newest load finishes, following every load that replaces it meanwhile. */
     suspend fun awaitLatest() {
         do {

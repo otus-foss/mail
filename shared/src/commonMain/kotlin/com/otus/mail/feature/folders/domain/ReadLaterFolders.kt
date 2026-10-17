@@ -33,14 +33,27 @@ class ReadLaterFolders(
     private val lock = Mutex()
 
     /**
-     * Every account's folders, with [AccountFolders.readLaterId] set while [enabled] says so. Reads
-     * [enabled] again at the end, so a load still running when the switch turns off shows no Read
-     * later folder.
+     * Every account's folders, with [AccountFolders.readLaterId] set while [enabled] says so. While
+     * it is off, the Read later folders this device saved are left out, so they show nowhere; they
+     * stay on the server. Reads [enabled] again at the end, so a load still running when the switch
+     * turns off shows no Read later folder.
      */
     suspend fun accounts(enabled: () -> Boolean): List<AccountFolders> {
-        if (!enabled()) return repository.accounts()
+        if (!enabled()) return withoutReadLater(repository.accounts())
         val accounts = lock.withLock { withReadLater(repository.accounts()) }
-        return if (enabled()) accounts else accounts.map { it.copy(readLaterId = null) }
+        return if (enabled()) accounts else withoutReadLater(accounts.map { it.copy(readLaterId = null) })
+    }
+
+    /**
+     * [loaded] without the Read later folder saved for each account. Only saved folders are left
+     * out, so a folder the user named Read later before ever turning the switch on still shows.
+     */
+    private fun withoutReadLater(loaded: List<AccountFolders>): List<AccountFolders> {
+        val saved = saved()
+        return loaded.map { account ->
+            saved[account.accountId]?.let { id -> account.copy(folders = account.folders.filterNot { it.id == id }) }
+                ?: account
+        }
     }
 
     /** [loaded] with each account's Read later folder, created where one is missing and allowed. */

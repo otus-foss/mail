@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
@@ -38,6 +39,7 @@ class AndroidMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.getString(ACTION_BAR_MODE, null)) ?: defaults.actionBarMode,
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
+            inbox = preferences.getString(INBOX, null)?.let(InboxContents::decode) ?: defaults.inbox,
         )
     }
 
@@ -53,6 +55,7 @@ class AndroidMailBehaviorStore(
             putString(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
+            putString(INBOX, InboxContents.encode(behavior.inbox))
         }
     }
 
@@ -66,6 +69,7 @@ class AndroidMailBehaviorStore(
         const val ACTION_BAR_MODE = "action_bar_mode"
         const val MINIMIZED_BAR = "action_bar_minimized"
         const val WEBSITE_ICONS = "website_icons"
+        const val INBOX = "inbox_contents"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

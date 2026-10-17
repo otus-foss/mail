@@ -23,6 +23,14 @@ sealed interface MailScope {
         val name: String,
     ) : MailScope
 
+    /**
+     * Every account's folders of several roles, such as the inbox with Spam and Trash. [names]
+     * maps each role to the name its messages are filed under.
+     */
+    data class Roles(
+        val names: Map<String, String>,
+    ) : MailScope
+
     data object AllMailboxes : MailScope
 
     /** The chosen mailboxes of [accounts]. Empty choices load every mailbox or account. */
