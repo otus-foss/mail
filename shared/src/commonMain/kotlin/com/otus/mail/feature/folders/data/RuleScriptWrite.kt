@@ -70,9 +70,10 @@ private const val SIEVE_INBOX = "INBOX"
 private fun mailboxPaths(mailboxes: List<MailboxObject>): Map<String, String> {
     val byId = mailboxes.associateBy { it.id }
     return mailboxes.associate { mailbox ->
+        val seen = mutableSetOf<String>()
         val chain =
             generateSequence(mailbox) { byId[it.parentId] }
-                .take(mailboxes.size)
+                .takeWhile { seen.add(it.id) }
                 .toList()
                 .reversed()
         val path =

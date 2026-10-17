@@ -50,6 +50,9 @@ internal fun readLegacyRules(text: String): LegacyRules? {
 
 private const val LEGACY_PREFIX = "# otus-rules-v1 "
 
+/** The most folder rules one old rule may split into; the old script is not trusted to be small. */
+private const val MAX_SPLIT_RULES = 64
+
 private val json = Json { ignoreUnknownKeys = true }
 
 @Serializable
@@ -76,12 +79,16 @@ private class LegacyConditionDto(
 /**
  * "To or Cc" becomes two alternatives, one for To and one for Cc; "neither To nor Cc" becomes one
  * group of both. When every condition had to match, the rule splits into one rule per combination
- * of alternatives, which together match the same mail.
+ * of alternatives, which together match the same mail. The combinations double with each "To or
+ * Cc", so a rule that would split into more than [MAX_SPLIT_RULES] is dropped instead.
  */
 private fun LegacyRuleDto.toFolderRules(): List<FolderRule> {
     val converted = conditions.map { it.alternatives() }
     return if (matchAll) {
         if (converted.any { it.isEmpty() }) return emptyList()
+        val combinations =
+            converted.fold(1) { count, options -> (count * options.size).coerceAtMost(MAX_SPLIT_RULES + 1) }
+        if (combinations > MAX_SPLIT_RULES) return emptyList()
         converted
             .fold(listOf(emptyList<RuleCondition>())) { rules, options ->
                 rules.flatMap { rule ->
