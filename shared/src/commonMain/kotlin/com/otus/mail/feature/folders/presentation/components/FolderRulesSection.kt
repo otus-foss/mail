@@ -60,7 +60,7 @@ internal fun FolderRulesSection(
 
 /** One rule as a full-width chip, or an "All of" group when it has several conditions. */
 @Composable
-private fun FolderRuleChip(
+internal fun FolderRuleChip(
     rule: FolderRule,
     modifier: Modifier,
     onClick: () -> Unit,

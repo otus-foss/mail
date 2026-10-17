@@ -22,7 +22,7 @@ fun FolderDialogs(
     val folder = account?.let { folderOf(dialog, it) }
     when {
         account == null -> LaunchedEffect(dialog) { close() }
-        dialog is FolderDialog.Create -> CreateFolderSheet(account, dialog.parentId, actions, close)
+        dialog is FolderDialog.Create -> NewFolderSheet(account, dialog.parentId, actions, close)
         folder == null -> LaunchedEffect(dialog) { close() }
         else -> FolderChangeDialog(dialog, folder, account, actions, onDialog)
     }
@@ -76,24 +76,6 @@ private fun FolderChangeDialog(
         // Creating needs no existing folder; FolderDialogs shows it before looking one up.
         is FolderDialog.Create -> {}
     }
-}
-
-@Composable
-private fun CreateFolderSheet(
-    account: AccountFolders,
-    parentId: String?,
-    actions: FolderActions,
-    onDismiss: () -> Unit,
-) {
-    val parent = parentId?.let { account.folder(it) }
-    InputSheet(
-        title = parent?.let { "New folder in ${it.name}" } ?: "New folder",
-        label = "Name",
-        confirmLabel = "Create",
-        onConfirm = { actions.onCreate(account.accountId, it, parentId) },
-        onDismiss = onDismiss,
-        problem = { folderNameProblem(it, parentId, account)?.message() },
-    )
 }
 
 private fun folderOf(

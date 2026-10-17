@@ -4,14 +4,14 @@ package com.otus.mail.feature.inbox.domain
 enum class SidebarSection(
     val storageValue: String,
 ) {
-    /** The built-in mailboxes, such as Inbox and Sent. */
+    /** The Inbox, then the mailboxes and folders the user pinned. It keeps its older stored value. */
     Mailboxes("mailboxes"),
 
     /** The user's own folders, shared by every account. */
     Folders("folders"),
 }
 
-/** How the sidebar lists the built-in mailboxes. */
+/** How the sidebar lists the pinned mailboxes below the Inbox. */
 enum class MailboxStyle(
     val storageValue: String,
 ) {
@@ -31,12 +31,13 @@ enum class SidebarCount(
 
 /**
  * How the sidebar is arranged, the same for every account. [sections] lists every section in
- * order; [hidden] ones are left out. Turning [folderColors] off hides folder colors everywhere
- * without forgetting them.
+ * order; [hidden] ones are left out. [pinned] lists what the Pinned section shows below the Inbox,
+ * in order. Turning [folderColors] off hides folder colors everywhere without forgetting them.
  */
 data class SidebarLayout(
     val sections: List<SidebarSection> = SidebarSection.entries,
     val hidden: Set<SidebarSection> = emptySet(),
+    val pinned: List<SidebarPin> = SidebarPin.defaults,
     val mailboxes: MailboxStyle = MailboxStyle.Grid,
     val counts: SidebarCount = SidebarCount.Unread,
     val folderColors: Boolean = true,
@@ -69,12 +70,16 @@ data class SidebarLayout(
             listOf(
                 SECTIONS to layout.sections.joinToString(",") { it.storageValue },
                 HIDDEN to layout.hidden.joinToString(",") { it.storageValue },
+                PINNED to SidebarPin.encode(layout.pinned),
                 MAILBOXES to layout.mailboxes.storageValue,
                 COUNTS to layout.counts.storageValue,
                 FOLDER_COLORS to layout.folderColors.toString(),
             ).joinToString("\n") { (name, value) -> "$name=$value" }
 
-        /** Unknown values read as the defaults, and sections missing from the saved order go last. */
+        /**
+         * Unknown values read as the defaults, and sections missing from the saved order go last.
+         * A layout saved before pins existed pins the mailboxes the sidebar always showed.
+         */
         fun decode(saved: String): SidebarLayout {
             val values = saved.lines().associate { it.substringBefore("=") to it.substringAfter("=", "") }
 
@@ -88,6 +93,7 @@ data class SidebarLayout(
             return SidebarLayout(
                 sections = sections(SECTIONS).let { it + (SidebarSection.entries - it.toSet()) },
                 hidden = sections(HIDDEN).toSet(),
+                pinned = values[PINNED]?.let(SidebarPin::decode) ?: defaults.pinned,
                 mailboxes =
                     MailboxStyle.entries.firstOrNull { it.storageValue == values[MAILBOXES] } ?: defaults.mailboxes,
                 counts = SidebarCount.entries.firstOrNull { it.storageValue == values[COUNTS] } ?: defaults.counts,
@@ -97,6 +103,7 @@ data class SidebarLayout(
 
         private const val SECTIONS = "sections"
         private const val HIDDEN = "hidden"
+        private const val PINNED = "pinned"
         private const val MAILBOXES = "mailboxes"
         private const val COUNTS = "counts"
         private const val FOLDER_COLORS = "folderColors"
