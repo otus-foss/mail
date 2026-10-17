@@ -19,10 +19,16 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftSender
+import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
+import com.otus.mail.feature.inbox.domain.SentMessage
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
+import kotlin.time.Instant
 
 /**
  * Sends a draft with `EmailSubmission/set` (RFC 8621, section 7.5). One request stores the draft
@@ -32,17 +38,19 @@ import kotlinx.serialization.json.put
 class JmapDraftSender(
     private val connections: JmapConnections,
     private val logins: LoginStore,
-) : DraftSender {
+) : DraftSender,
+    ScheduledSends {
     override suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
-    ): Result<Unit> =
+        at: Instant?,
+    ): Result<SentMessage> =
         try {
             val account = mailAccount(connections, logins, draft.accountId) ?: failSend(SendFailure.ServerProblem)
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
-            account.submit(draft, account.route(from ?: failSend(SendFailure.NoIdentity)))
+            val sent = account.submit(draft, account.route(from ?: failSend(SendFailure.NoIdentity)), at)
             account.tidy(draft.emailId, answered)
-            Result.success(Unit)
+            Result.success(sent)
         } catch (error: SendException) {
             Result.failure(error)
         } catch (error: JmapException) {
@@ -76,7 +84,8 @@ class JmapDraftSender(
     private suspend fun MailAccount.submit(
         draft: Draft,
         route: SendRoute,
-    ) {
+        at: Instant?,
+    ): SentMessage {
         val folder = route.drafts ?: route.sent ?: failSend(SendFailure.ServerProblem)
         val email = draft.toEmail(folder, inlineImages(draft.htmlContent()))
         lateinit var stored: JmapCall<SetResult>
@@ -84,7 +93,7 @@ class JmapDraftSender(
         val response =
             connection.send {
                 stored = call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
-                submitted = call(submission(route, folder))
+                submitted = call(submission(route, folder, at?.let { draft.heldEnvelope(it) }))
             }
         val created = response[stored]
         created.notCreated[EMAIL]?.let { failSend(it.toSendFailure()) }
@@ -99,11 +108,21 @@ class JmapDraftSender(
             bestEffort { connection.call(SetMethod(EmailType, id, destroy = listOf(copy))) }
             failSend(refusal)
         }
+        return SentMessage(
+            draft.accountId,
+            copy,
+            response[submitted].createdId(SUBMISSION) ?: failSend(SendFailure.ServerProblem),
+        )
     }
 
+    /**
+     * The submission of the stored copy. A held one carries its [envelope] and stays in [folder],
+     * only losing `$draft`, since the server sends it later; any other moves to Sent at once.
+     */
     private fun MailAccount.submission(
         route: SendRoute,
         folder: String,
+        envelope: JsonObject?,
     ) = SetMethod(
         EmailSubmissionType,
         id,
@@ -113,10 +132,70 @@ class JmapDraftSender(
                     buildJsonObject {
                         put("emailId", "#$EMAIL")
                         put("identityId", route.identityId)
+                        envelope?.let { put("envelope", it) }
                     },
             ),
-        extra = mapOf("onSuccessUpdateEmail" to buildJsonObject { put("#$SUBMISSION", route.sentPatch(folder)) }),
+        extra =
+            mapOf(
+                "onSuccessUpdateEmail" to
+                    buildJsonObject {
+                        put("#$SUBMISSION", if (envelope == null) route.sentPatch(folder) else route.heldPatch())
+                    },
+            ),
     )
+
+    override suspend fun maxDelaySeconds(accountId: String): Long =
+        try {
+            mailAccount(connections, logins, accountId)
+                ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
+                ?.let { account ->
+                    account.session.accounts[account.id]
+                        ?.capabilityObjects
+                        ?.get(JmapCapability.SUBMISSION)
+                        ?.get("maxDelayedSend")
+                        ?.jsonPrimitive
+                        ?.longOrNull
+                } ?: 0L
+        } catch (expected: JmapException) {
+            0L
+        } catch (expected: LoginStoreException) {
+            0L
+        }
+
+    override suspend fun cancel(message: SentMessage): Result<Unit> =
+        try {
+            val account = mailAccount(connections, logins, message.accountId) ?: failSend(SendFailure.ServerProblem)
+            lateinit var undone: JmapCall<SetResult>
+            val response =
+                account.connection.send {
+                    undone =
+                        call(
+                            SetMethod(
+                                EmailSubmissionType,
+                                account.id,
+                                update =
+                                    mapOf(
+                                        message.submissionId to buildJsonObject { put("undoStatus", "canceled") },
+                                    ),
+                            ),
+                        )
+                    call(
+                        SetMethod(
+                            EmailType,
+                            account.id,
+                            update = mapOf(message.emailId to buildJsonObject { put("keywords/$DRAFT_KEYWORD", true) }),
+                        ),
+                    )
+                }
+            response[undone].notUpdated[message.submissionId]?.let { failSend(it.toSendFailure()) }
+            Result.success(Unit)
+        } catch (error: SendException) {
+            Result.failure(error)
+        } catch (error: JmapException) {
+            Result.failure(SendException(error.toSendFailure(), error))
+        } catch (error: LoginStoreException) {
+            Result.failure(SendException(SendFailure.ServerProblem, error))
+        }
 
     /** Deletes the draft's earlier copy [draftId] and marks the answered message. */
     private suspend fun MailAccount.tidy(

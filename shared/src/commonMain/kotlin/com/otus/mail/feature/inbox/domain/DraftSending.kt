@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import kotlin.time.Instant
+
 /** The message a draft answers; [forwarded] when the draft passes it on rather than replying. */
 data class AnsweredMessage(
     val emailId: String,
@@ -33,15 +35,33 @@ class SendException(
     cause: Throwable? = null,
 ) : Exception("The message could not be sent: $failure", cause)
 
+/** A message the server accepted: its stored copy [emailId] and its submission [submissionId]. */
+data class SentMessage(
+    val accountId: String,
+    val emailId: String,
+    val submissionId: String,
+)
+
 /** Sends drafts from the identity their From line names. */
 fun interface DraftSender {
     /**
      * Sends [draft], files the sent copy in Sent, deletes the draft's saved copy, and marks
-     * [answered] as answered or forwarded. A failed result holds a [SendException] and leaves the
-     * saved copy in Drafts.
+     * [answered] as answered or forwarded. With [at], the server holds the message until then and
+     * the copy stays in Drafts, no longer marked as a draft, until it goes. A failed result holds a
+     * [SendException] and leaves the saved copy in Drafts.
      */
     suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
-    ): Result<Unit>
+        at: Instant?,
+    ): Result<SentMessage>
+}
+
+/** Sending at a later time (RFC 8621, `maxDelayedSend`, with the RFC 4865 HOLDUNTIL parameter). */
+interface ScheduledSends {
+    /** How far ahead the account may schedule, in seconds; 0 when it cannot. */
+    suspend fun maxDelaySeconds(accountId: String): Long
+
+    /** Cancels a scheduled [message] and makes its copy a draft again. */
+    suspend fun cancel(message: SentMessage): Result<Unit>
 }

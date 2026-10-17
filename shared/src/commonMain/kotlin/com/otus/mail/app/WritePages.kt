@@ -17,6 +17,8 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.SentMessage
+import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
@@ -26,6 +28,7 @@ import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
+import com.otus.mail.feature.inbox.presentation.reopening
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
@@ -34,6 +37,8 @@ import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
+import kotlinx.datetime.LocalDateTime
+import kotlin.time.Instant
 
 /**
  * A draft for the page's request; without an account there is nothing to write from. A discarded
@@ -47,13 +52,28 @@ internal fun ComposePage(
     onClose: () -> Unit,
 ) {
     val compose = remember(page) { states.compose(page.request) } ?: return LaunchedEffect(page) { onClose() }
-    ComposeScreen(compose, states.behavior.behavior, onClose) { delete ->
-        val request = compose.request
-        val reopen = ComposeRequest.Resume(compose.draft, (request as? ComposeRequest.Resume)?.from ?: request)
-        val undo = ToastAction("Undo") { navigation.go(page.copy(request = reopen)) }
-        states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = delete))
-        onClose()
-    }
+    val exits =
+        remember(compose) {
+            object : ComposeExits {
+                override fun close() = onClose()
+
+                override fun discarded(delete: () -> Unit) {
+                    val undo = ToastAction("Undo") { navigation.go(page.copy(request = compose.reopening())) }
+                    states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = delete))
+                    onClose()
+                }
+
+                override fun send(
+                    run: suspend (Instant?) -> Result<SentMessage>,
+                    at: LocalDateTime?,
+                ) {
+                    val outgoing = Outgoing(run, compose.reopening()) { navigation.go(page.copy(request = it)) }
+                    if (at == null) states.outgoing.send(outgoing) else states.outgoing.schedule(outgoing, at)
+                    onClose()
+                }
+            }
+        }
+    ComposeScreen(compose, states.behavior.behavior, exits)
 }
 
 /** Settings › Signatures; tapping an address opens its signature. */

@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
+import com.otus.mail.feature.inbox.domain.ScheduledSends
 
 /** An account a draft can be sent from, by its [name] in the Send-from list. */
 data class ComposeAccount(
@@ -10,11 +11,12 @@ data class ComposeAccount(
     val name: String,
 )
 
-/** Where a draft saves, sends, and finds people to suggest. */
+/** Where a draft saves, sends, and finds people to suggest; [scheduled] where sending later works. */
 class ComposeServices(
     val drafts: DraftRepository,
     val sender: DraftSender,
     val addressBook: AddressBook,
+    val scheduled: ScheduledSends? = null,
 )
 
 /**
