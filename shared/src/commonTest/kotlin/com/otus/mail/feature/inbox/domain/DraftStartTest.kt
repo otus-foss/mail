@@ -46,9 +46,10 @@ class DraftStartTest {
     }
 
     @Test
-    fun aReplyQuotesTheOriginalBelowBlankLines() {
-        val expected = "\n\nOn 2026-10-11 12:30, Ada Lovelace wrote:\n> Noon?\n>\n> Ada"
-        assertEquals(expected, reply().body)
+    fun aReplyQuotesTheOriginalAfterAnEmptyBody() {
+        val expected = "On 2026-10-11 12:30, Ada Lovelace wrote:\n> Noon?\n>\n> Ada"
+        assertEquals(expected, reply().quote)
+        assertEquals("", reply().body)
     }
 
     @Test
@@ -95,8 +96,6 @@ class DraftStartTest {
         assertEquals(emptyList(), draft.inReplyTo)
         val expected =
             listOf(
-                "",
-                "",
                 "---------- Forwarded message ----------",
                 "From: Ada Lovelace <ada@example.com>",
                 "Date: 2026-10-11 12:30",
@@ -106,7 +105,7 @@ class DraftStartTest {
                 "",
                 "Noon?\n\nAda",
             ).joinToString("\n")
-        assertEquals(expected, draft.body)
+        assertEquals(expected, draft.quote)
         assertEquals(
             "FW: Lunch",
             ComposeRequest.Forward(original.copy(subject = "FW: Lunch")).startDraft("a1", own).subject,
@@ -119,15 +118,15 @@ class DraftStartTest {
         val message = MailMessage("a1/m1", ada, "Lunch", "Noon?", received, MailLocation("Inbox", "Work", "a1"))
         val cut = message.copy(bodyTruncated = true).original()
         val note = "[The rest of the original message is not included.]"
-        assertEquals("\n\nOn 2026-10-11 12:30, Ada Lovelace wrote:\n> Noon?\n> $note", reply(cut).body)
+        assertEquals("On 2026-10-11 12:30, Ada Lovelace wrote:\n> Noon?\n> $note", reply(cut).quote)
         assertTrue(
             ComposeRequest
                 .Forward(cut)
                 .startDraft("a1", own)
-                .body
+                .quote
                 .endsWith("\n\nNoon?\n$note"),
         )
-        assertFalse(note in reply(message.original()).body, "A complete body gets no note")
+        assertFalse(note in reply(message.original()).quote, "A complete body gets no note")
     }
 
     @Test
@@ -137,5 +136,25 @@ class DraftStartTest {
         assertEquals(me, ComposeRequest.Reply(original, all = false).preferredIdentity(identities))
         assertEquals(work, ComposeRequest.New().preferredIdentity(identities))
         assertEquals(null, ComposeRequest.New().preferredIdentity(emptyList()))
+    }
+
+    @Test
+    fun aNewMessageComesFromItsAccountOrElseTheAddressUsedLast() {
+        val home = MailSender("Me", "me@home.example", "a2")
+        val work = MailSender("Me", "me@work.example", "a1")
+        val identities = listOf(work, home)
+        assertEquals(home, ComposeRequest.New("a2").preferredIdentity(identities, recent = listOf(work.address)))
+        assertEquals(
+            work,
+            ComposeRequest.New().preferredIdentity(identities, recent = listOf("gone@x.example", work.address)),
+        )
+        assertEquals(work, ComposeRequest.New().preferredIdentity(identities))
+    }
+
+    @Test
+    fun aReplyPrefersTheAddressItWentToInTheOriginalsAccount() {
+        val elsewhere = MailSender("Me", "me@example.com", "a2")
+        val here = MailSender("Me", "me@example.com", "a1")
+        assertEquals(here, ComposeRequest.Reply(original, all = false).preferredIdentity(listOf(elsewhere, here)))
     }
 }

@@ -2,13 +2,12 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
+import com.otus.mail.feature.inbox.domain.SendIdentity
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -22,44 +21,27 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ComposeStateTest {
-    private class FakeDrafts(
-        val identities: List<MailSender> = emptyList(),
-        /** Holds back the answer to a save, after the copy is stored, until it completes. */
-        private val answer: Deferred<Unit>? = null,
-    ) : DraftRepository {
-        val saved = mutableListOf<Draft>()
-        val discarded = mutableListOf<String>()
-        var failure: DraftFailure? = null
-
-        override suspend fun identities(accountId: String) = identities
-
-        override suspend fun save(draft: Draft): Result<String> {
-            failure?.let { return Result.failure(DraftException(it)) }
-            saved += draft
-            answer?.await()
-            return Result.success("d${saved.size}")
-        }
-
-        override suspend fun discard(
-            accountId: String,
-            emailId: String,
-        ): Result<Unit> {
-            discarded += emailId
-            return Result.success(Unit)
-        }
-    }
-
     private fun TestScope.state(
         drafts: DraftRepository,
         request: ComposeRequest = ComposeRequest.New(),
-    ) = ComposeState(drafts, backgroundScope, request, "a1", listOf("me@example.com"), saveDelayMillis = DELAY)
+    ) = ComposeState(
+        ComposeServices(drafts, { _, _, _ -> error("No sending here") }, { _, _ -> emptyList() }),
+        backgroundScope,
+        request,
+        ComposeOrigin(
+            "a1",
+            listOf(ComposeAccount("a1", "Work"), ComposeAccount("a2", "Home")),
+            listOf("me@example.com"),
+        ),
+        saveDelayMillis = DELAY,
+    )
 
     @Test
     fun editsSaveOnceTheUserPausesAndEachSaveReplacesTheLastCopy() =
         runTest {
             val drafts = FakeDrafts()
             val state = state(drafts)
-            state.editRecipients(RecipientField.To, "Ada <ada@example.com>, ")
+            state.recipients.type(RecipientField.To, "Ada <ada@example.com>,")
             advanceTimeBy(DELAY / 2)
             state.edit { it.copy(subject = "Lunch") }
             advanceTimeBy(DELAY / 2 + 1)
@@ -67,7 +49,7 @@ class ComposeStateTest {
             advanceTimeBy(DELAY)
             assertEquals(listOf(MailSender("Ada", "ada@example.com")), drafts.saved.single().to)
             assertEquals("d1", state.draft.emailId)
-            assertEquals("Ada <ada@example.com>, ", state.recipientText.getValue(RecipientField.To))
+            assertEquals("", state.recipients.typed.getValue(RecipientField.To))
 
             state.edit { it.copy(body = "Noon?") }
             state.close()
@@ -89,16 +71,19 @@ class ComposeStateTest {
         }
 
     @Test
-    fun discardingDeletesTheSavedCopyAndStopsSaving() =
+    fun discardingStopsSavingAndDeletesTheCopyOnlyOnceUndoHasPassed() =
         runTest {
             val drafts = FakeDrafts()
             val state = state(drafts)
             state.edit { it.copy(subject = "Hi") }
             advanceTimeBy(DELAY + 1)
             state.edit { it.copy(subject = "Hi there") }
-            state.discard()
+            val delete = state.discard()
             state.close()
             advanceTimeBy(DELAY * 2)
+            assertTrue(drafts.discarded.isEmpty())
+            delete()
+            runCurrent()
             assertEquals(listOf("d1"), drafts.discarded)
             assertEquals(1, drafts.saved.size)
         }
@@ -161,7 +146,7 @@ class ComposeStateTest {
             val state = state(drafts)
             state.edit { it.copy(subject = "Hi") }
             advanceTimeBy(DELAY + 1)
-            state.discard()
+            state.discard()()
             answer.complete(Unit)
             runCurrent()
             assertEquals(listOf("d1"), drafts.discarded)
@@ -177,9 +162,80 @@ class ComposeStateTest {
             state.loadIdentities()
             runCurrent()
             assertEquals(me, state.draft.from)
-            assertEquals(listOf(work, me), state.identities)
+            assertEquals(listOf(work, me, work, me), state.identities.map { it.sender })
             assertFalse(state.edited)
         }
+
+    @Test
+    fun aResumedDraftCountsAsWrittenSoItSaves() =
+        runTest {
+            val drafts = FakeDrafts()
+            val resumed = Draft("a1", subject = "Hi", body = "Back again")
+            val state = state(drafts, ComposeRequest.Resume(resumed, ComposeRequest.New()))
+            assertTrue(state.edited)
+            state.close()
+            runCurrent()
+            assertEquals("Back again", drafts.saved.single().body)
+        }
+
+    @Test
+    fun sendingFromAnotherAccountMovesTheDraftThere() =
+        runTest {
+            val drafts = FakeDrafts()
+            val state = state(drafts)
+            state.edit { it.copy(subject = "Hi") }
+            advanceTimeBy(DELAY + 1)
+            state.chooseFrom(SendIdentity("i2", MailSender("Me", "me@home.example", "a2")))
+            runCurrent()
+            assertEquals(listOf("d1"), drafts.discarded)
+            advanceTimeBy(DELAY + 1)
+            assertEquals("a2", drafts.saved.last().accountId)
+            assertNull(drafts.saved.last().emailId)
+        }
+
+    @Test
+    fun aNewMessageGetsTheSignatureOfItsAddressAndSwitchesWithIt() =
+        runTest {
+            val drafts = SignedDrafts()
+            val state = state(drafts)
+            state.loadIdentities()
+            runCurrent()
+            assertEquals("Work", state.signature.text)
+            state.chooseFrom(drafts.home)
+            assertEquals("Home", state.signature.text)
+            state.showSignature(false)
+            assertTrue(state.signature.isEmpty)
+            assertFalse(state.edited, "A signature alone is not something the user wrote")
+        }
+
+    @Test
+    fun aReplyGetsNoSignatureWhileRepliesAreLeftOut() =
+        runTest {
+            val state =
+                ComposeState(
+                    ComposeServices(SignedDrafts(), { _, _, _ -> error("No sending here") }, { _, _ -> emptyList() }),
+                    backgroundScope,
+                    ComposeRequest.Reply(original, all = false),
+                    ComposeOrigin(
+                        "a1",
+                        listOf(ComposeAccount("a1", "Work")),
+                        listOf("me@example.com"),
+                        signatureInReplies = false,
+                    ),
+                )
+            state.loadIdentities()
+            runCurrent()
+            assertFalse(state.signatureOn)
+            assertTrue(state.signature.isEmpty)
+        }
+
+    /** One identity in each account, each signed with its account's name. */
+    private class SignedDrafts : DraftRepository by FakeDrafts() {
+        val work = SendIdentity("w", MailSender("Me", "me@example.com", "a1"), textSignature = "Work")
+        val home = SendIdentity("h", MailSender("Me", "me@home.example", "a2"), textSignature = "Home")
+
+        override suspend fun identities(accountId: String) = listOf(work, home).filter { it.accountId == accountId }
+    }
 
     private val original =
         OriginalMessage(

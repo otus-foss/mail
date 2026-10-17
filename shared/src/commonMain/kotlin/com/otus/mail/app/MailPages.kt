@@ -7,6 +7,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.components.ToastMessage
+import com.otus.designsystem.elements.ToastAction
+import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.within
@@ -15,9 +18,12 @@ import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
 import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
+import com.otus.mail.feature.inbox.presentation.screens.SignatureEditorScreen
+import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
@@ -37,7 +43,15 @@ internal fun MailPageContent(
         }
 
         is MailPage.Compose -> {
-            ComposePage(page, states, back)
+            ComposePage(page, states, navigation, back)
+        }
+
+        MailPage.Signatures -> {
+            SignaturesPage(states, navigation, back)
+        }
+
+        is MailPage.SignatureEditor -> {
+            SignatureEditorPage(page, states, back)
         }
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
@@ -121,17 +135,6 @@ private fun SettingsPageContent(
 
         else -> {}
     }
-}
-
-/** A draft for the page's request; without an account there is nothing to write from. */
-@Composable
-private fun ComposePage(
-    page: MailPage.Compose,
-    states: MailStates,
-    onClose: () -> Unit,
-) {
-    val compose = remember(page) { states.compose(page.request) } ?: return LaunchedEffect(page) { onClose() }
-    ComposeScreen(compose, states.behavior.behavior, onClose)
 }
 
 @Composable

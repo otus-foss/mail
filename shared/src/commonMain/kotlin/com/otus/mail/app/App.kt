@@ -3,7 +3,6 @@ package com.otus.mail.app
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -17,13 +16,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.components.BottomClearance
+import com.otus.designsystem.components.LocalBottomClearance
 import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.SlidingPages
 import com.otus.designsystem.components.ToastHost
 import com.otus.designsystem.components.ToastState
 import com.otus.designsystem.components.actionBarInset
 import com.otus.designsystem.components.rememberSidebarState
-import com.otus.designsystem.theme.ActionBarTokens
 import com.otus.designsystem.theme.AppIconStyle
 import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
@@ -80,7 +80,10 @@ fun App(
         }
     val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
     OtusTheme(themeState.palette) {
-        CompositionLocalProvider(LocalMotionScale provides animationState.speed.scale) {
+        CompositionLocalProvider(
+            LocalMotionScale provides animationState.speed.scale,
+            LocalBottomClearance provides remember { BottomClearance() },
+        ) {
             Box(Modifier.fillMaxSize()) {
                 // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
                 SidebarSwipeArea(sidebar, enabled = page.parent == null) {
@@ -90,7 +93,7 @@ fun App(
                         }
                     }
                 }
-                AboveActionBar(states.moveToasts.toasts)
+                BottomToasts(states.moveToasts.toasts)
                 MailSidebar(
                     sidebar,
                     current = page.root,
@@ -128,14 +131,8 @@ private fun rememberNightlyUpdate(
     return nightly
 }
 
-/** Shows [toasts] above where every page keeps its action bar, at the bar's inset from the edges. */
+/** Shows [toasts] at the bottom, above the page's action bar when it has one. */
 @Composable
-private fun BoxScope.AboveActionBar(toasts: ToastState) {
-    ToastHost(
-        toasts,
-        Modifier
-            .align(Alignment.BottomCenter)
-            .actionBarInset()
-            .padding(bottom = ActionBarTokens.height + ActionBarTokens.barInset),
-    )
+private fun BoxScope.BottomToasts(toasts: ToastState) {
+    ToastHost(toasts, Modifier.align(Alignment.BottomCenter))
 }

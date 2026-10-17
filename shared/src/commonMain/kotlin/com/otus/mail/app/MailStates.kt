@@ -19,11 +19,15 @@ import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.AddressPinsState
+import com.otus.mail.feature.inbox.presentation.ComposeAccount
+import com.otus.mail.feature.inbox.presentation.ComposeOrigin
+import com.otus.mail.feature.inbox.presentation.ComposeServices
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MessageMoves
+import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import kotlinx.coroutines.CoroutineScope
 
@@ -103,14 +107,38 @@ internal class MailStates(
 
     /**
      * A draft for [request] from the account it names, or else the first one; null without
-     * accounts. Reply all leaves out the account's sign-in and sending addresses.
+     * accounts. Every account can send it. Reply all leaves out the account's sign-in and sending
+     * addresses. Sending records the address it went from, which later drafts offer first.
      */
     fun compose(request: ComposeRequest): ComposeState? {
-        val account =
-            accounts.accounts.run { firstOrNull { it.id == request.accountId } ?: firstOrNull() } ?: return null
-        val own = account.emailAddresses + account.username
-        return ComposeState(services.drafts, scope, request, account.id, own)
+        val all = accounts.accounts
+        val account = all.firstOrNull { it.id == request.accountId } ?: all.firstOrNull() ?: return null
+        return ComposeState(
+            ComposeServices(
+                services.drafts,
+                services.sender,
+                services.addressBook,
+                services.scheduled,
+                services.threads,
+            ),
+            scope,
+            request,
+            ComposeOrigin(
+                account.id,
+                all.map { ComposeAccount(it.id, it.name) },
+                account.emailAddresses + account.username,
+                behavior.behavior.recentFrom,
+                behavior.behavior.signatureInReplies,
+            ),
+            onSent = { from -> behavior.update { it.sentFrom(from.address) } },
+        )
     }
+
+    /** Every address's signature, for Settings › Signatures. */
+    val signatures =
+        SignaturesState(services.drafts, services.signatures, services.signatureImages, scope) {
+            accounts.accounts.map { ComposeAccount(it.id, it.name) }
+        }
 
     /** Mail and folder counts change together, so a pull refreshes both. */
     fun refreshInbox() {
@@ -123,6 +151,13 @@ internal class MailStates(
 
     /** The toasts that offer to undo moves; they outlive the page a move closed, such as the open message. */
     val moveToasts = MoveToasts()
+
+    /** Sends drafts after their page closes, with Undo and the outcome in a toast. */
+    val outgoing =
+        OutgoingMail(scope, moveToasts.toasts, services.scheduled) {
+            behavior.behavior.undoSendSeconds *
+                MILLIS_PER_SECOND
+        }
     private val cleaning = FolderCleaning(services, folders, scope)
     private val marking = MessageMarking(services, folders, scope)
 
@@ -168,3 +203,5 @@ private fun FolderRights.allow(flag: MessageFlag): Boolean =
         MessageFlag.Read -> maySetSeen
         MessageFlag.Flagged -> maySetKeywords
     }
+
+private const val MILLIS_PER_SECOND = 1_000L

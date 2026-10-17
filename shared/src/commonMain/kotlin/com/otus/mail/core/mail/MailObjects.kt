@@ -3,6 +3,7 @@ package com.otus.mail.core.mail
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapType
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 /** Mailbox objects (RFC 8621, section 2). */
 val MailboxType: JmapType<MailboxObject> = JmapType("Mailbox", JmapCapability.MAIL, MailboxObject.serializer())
@@ -16,6 +17,10 @@ val EmailFoldersType: JmapType<EmailFolders> = JmapType("Email", JmapCapability.
 /** Identities an account may send as (RFC 8621, section 6). */
 val IdentityType: JmapType<IdentityObject> =
     JmapType("Identity", JmapCapability.SUBMISSION, IdentityObject.serializer())
+
+/** Submissions that send an Email (RFC 8621, section 7). Mail only creates them, so their objects stay JSON. */
+val EmailSubmissionType: JmapType<JsonObject> =
+    JmapType("EmailSubmission", JmapCapability.SUBMISSION, JsonObject.serializer())
 
 /** Email properties the inbox requests (RFC 8621, section 4.1). Recipients and ids let a reply quote and thread. */
 val EMAIL_PROPERTIES =
@@ -131,4 +136,46 @@ data class IdentityObject(
     val id: String,
     val name: String = "",
     val email: String = "",
+    val textSignature: String = "",
+    val htmlSignature: String = "",
+)
+
+/** Contact cards suggested as recipients (RFC 9610, section 3); only their names and addresses. */
+val ContactCardType: JmapType<ContactCardObject> =
+    JmapType("ContactCard", JmapCapability.CONTACTS, ContactCardObject.serializer())
+
+@Serializable
+data class ContactCardObject(
+    val id: String,
+    val name: ContactName? = null,
+    val emails: Map<String, ContactEmailObject> = emptyMap(),
+)
+
+/** A JSContact name (RFC 9553, section 2.2.1); suggestions show only its full form. */
+@Serializable
+data class ContactName(
+    val full: String? = null,
+)
+
+@Serializable
+data class ContactEmailObject(
+    val address: String = "",
+)
+
+/** Only the thread of each Email, to find the rest of a conversation (RFC 8621, section 3). */
+val EmailThreadType: JmapType<EmailThread> = JmapType("Email", JmapCapability.MAIL, EmailThread.serializer())
+
+@Serializable
+data class EmailThread(
+    val id: String,
+    val threadId: String = "",
+)
+
+/** A conversation's Emails, oldest first (RFC 8621, section 3). */
+val ThreadType: JmapType<ThreadObject> = JmapType("Thread", JmapCapability.MAIL, ThreadObject.serializer())
+
+@Serializable
+data class ThreadObject(
+    val id: String,
+    val emailIds: List<String> = emptyList(),
 )

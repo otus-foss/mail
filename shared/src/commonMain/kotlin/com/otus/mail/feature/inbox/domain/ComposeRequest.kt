@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
-/** What a new draft starts from: a blank message, a reply, a follow-up, or a forward. */
+/** What a draft starts from: a blank message, a reply, a follow-up, a forward, or an earlier draft. */
 sealed interface ComposeRequest {
     /** A blank message, from [accountId] when given, else the first account that can send. */
     data class New(
@@ -21,6 +21,12 @@ sealed interface ComposeRequest {
     /** [original] passed on to new recipients. */
     data class Forward(
         val original: OriginalMessage,
+    ) : ComposeRequest
+
+    /** A [draft] opened again as it was, such as after Undo on a discarded one; [from] says what it began as. */
+    data class Resume(
+        val draft: Draft,
+        val from: ComposeRequest,
     ) : ComposeRequest
 }
 

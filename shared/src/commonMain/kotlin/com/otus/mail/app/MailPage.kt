@@ -60,6 +60,18 @@ internal sealed interface MailPage {
         override val parent = Settings
     }
 
+    data object Signatures : MailPage {
+        override val parent = Settings
+    }
+
+    /** Edits the signature of the identity [identityId] of [accountId]. */
+    data class SignatureEditor(
+        val accountId: String,
+        val identityId: String,
+    ) : MailPage {
+        override val parent = Signatures
+    }
+
     /**
      * One folder's settings from Settings › Folders & rules: [accountId] is the login, [folderId]
      * the mailbox id, and [sharedIn] the JMAP account of a mailbox shared with the login, else null.
