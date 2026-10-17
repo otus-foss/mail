@@ -57,7 +57,13 @@ class JmapDraftRepository(
     override suspend fun save(draft: Draft): Result<String> =
         attempt(draft.accountId) { account ->
             val drafts = draftsFolder(account) ?: throw DraftException(DraftFailure.NoDraftsFolder)
-            val create = SetMethod(EmailType, account.id, create = mapOf(CREATION_ID to draft.toEmail(drafts)))
+            val create =
+                SetMethod(
+                    EmailType,
+                    account.id,
+                    create =
+                        mapOf(CREATION_ID to draft.toEmail(drafts, account.inlineImages(draft.htmlContent()))),
+                )
             val result = account.connection.call(create)
             result.notCreated[CREATION_ID]?.let { throw DraftException(it.toDraftFailure()) }
             val id = result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.ServerProblem)

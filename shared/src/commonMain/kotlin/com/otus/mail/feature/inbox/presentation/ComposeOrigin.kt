@@ -1,0 +1,32 @@
+package com.otus.mail.feature.inbox.presentation
+
+import com.otus.mail.feature.inbox.domain.AddressBook
+import com.otus.mail.feature.inbox.domain.DraftRepository
+import com.otus.mail.feature.inbox.domain.DraftSender
+
+/** An account a draft can be sent from, by its [name] in the Send-from list. */
+data class ComposeAccount(
+    val id: String,
+    val name: String,
+)
+
+/** Where a draft saves, sends, and finds people to suggest. */
+class ComposeServices(
+    val drafts: DraftRepository,
+    val sender: DraftSender,
+    val addressBook: AddressBook,
+)
+
+/**
+ * The accounts around a draft: it starts in [accountId], and every one of [accounts] can send it.
+ * [ownAddresses] are left out of Reply all, and [recentFrom] picks the address of a new message
+ * from all accounts. A new message always gets the identity's signature; replies and forwards
+ * get it only with [signatureInReplies].
+ */
+class ComposeOrigin(
+    val accountId: String,
+    val accounts: List<ComposeAccount>,
+    val ownAddresses: Collection<String>,
+    val recentFrom: List<String> = emptyList(),
+    val signatureInReplies: Boolean = true,
+)

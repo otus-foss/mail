@@ -24,6 +24,7 @@ import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MessageMoves
+import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import kotlinx.coroutines.CoroutineScope
 
@@ -97,10 +98,17 @@ internal class MailStates(
                 all.map { ComposeAccount(it.id, it.name) },
                 account.emailAddresses + account.username,
                 behavior.behavior.recentFrom,
+                behavior.behavior.signatureInReplies,
             ),
             onSent = { from -> behavior.update { it.sentFrom(from.address) } },
         )
     }
+
+    /** Every address's signature, for Settings › Signatures. */
+    val signatures =
+        SignaturesState(services.drafts, services.signatures, services.signatureImages, scope) {
+            accounts.accounts.map { ComposeAccount(it.id, it.name) }
+        }
 
     /** Mail and folder counts change together, so a pull refreshes both. */
     fun refreshInbox() {

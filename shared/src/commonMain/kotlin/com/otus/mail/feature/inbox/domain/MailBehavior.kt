@@ -9,7 +9,8 @@ package com.otus.mail.feature.inbox.domain
  * as a round button. A null swipe does nothing. [websiteIcons] lets sender avatars load images
  * from outside the user's servers, such as sender websites and DuckDuckGo. [recentFrom] holds the
  * addresses the user last sent from, newest first, which compose offers first and a new message
- * from all accounts sends from.
+ * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
+ * forwards too; new messages always get it.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -23,6 +24,7 @@ data class MailBehavior(
     val minimizedBar: Boolean = false,
     val websiteIcons: Boolean = true,
     val recentFrom: List<String> = emptyList(),
+    val signatureInReplies: Boolean = true,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =

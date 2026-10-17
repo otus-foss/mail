@@ -26,6 +26,7 @@ import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_delete
+import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
@@ -43,8 +44,8 @@ import com.otus.mail.feature.inbox.presentation.recipients
  * A new message, reply, or forward as a page. Leaving it by Back or the chevron runs [onClose]
  * and saves the draft if the user wrote anything. Send closes the page once the server accepts
  * the message, after asking about a missing subject; a failed send stays open with the reason
- * under the header. Discard stops saving and runs [onDiscard], which offers Undo before the saved
- * copy is deleted. While the keyboard is up, a formatting row takes the action bar's place.
+ * under the header. Discard stops saving and passes [onDiscard] what deletes the saved copy, to run
+ * once Undo has passed. While the keyboard is up, a formatting row takes the action bar's place.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -52,7 +53,7 @@ fun ComposeScreen(
     state: ComposeState,
     behavior: MailBehavior,
     onClose: () -> Unit,
-    onDiscard: () -> Unit,
+    onDiscard: (delete: () -> Unit) -> Unit,
 ) {
     NavigationBackHandler(
         state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
@@ -69,10 +70,7 @@ fun ComposeScreen(
         )
     }
     var askingSubject by remember { mutableStateOf(false) }
-    val discard = {
-        state.discard()
-        onDiscard()
-    }
+    val discard = { onDiscard(state.discard()) }
     val send = { if (draft.subject.isBlank()) askingSubject = true else state.send(onClose) }
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
@@ -121,6 +119,7 @@ private fun ComposePage(
             onAddCc = { onShownChange(shown + RecipientField.Cc) }.takeIf { RecipientField.Cc !in shown },
             options =
                 options(
+                    state,
                     RecipientField.Bcc in shown,
                     { onShownChange(shown.toggled(RecipientField.Bcc, state)) },
                     onDiscard,
@@ -153,14 +152,16 @@ private fun SubjectPrompt(
     )
 }
 
-/** The ⋯ menu: show or hide Bcc, then discard the draft. */
+/** The ⋯ menu: show or hide Bcc, the signature switch, then discard the draft. */
 private fun options(
+    state: ComposeState,
     bcc: Boolean,
     onToggleBcc: () -> Unit,
     onDiscard: () -> Unit,
 ): List<OptionsItem> =
     listOf(
         OptionsItem.Action(if (bcc) "Remove Bcc" else "Add Bcc", Res.drawable.symbol_visibility_off, onToggleBcc),
+        OptionsItem.Toggle("Signature", Res.drawable.symbol_signature, state.signatureOn, state::showSignature),
         OptionsItem.Divider,
         OptionsItem.Action("Discard draft", Res.drawable.symbol_delete, onDiscard),
     )

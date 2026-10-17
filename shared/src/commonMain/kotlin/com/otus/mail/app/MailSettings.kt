@@ -5,6 +5,7 @@ import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.resources.symbol_rule_folder
+import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.settings.presentation.SettingsEntry
@@ -47,4 +48,9 @@ internal fun mailSettingsEntries(
             "Move arriving mail into folders",
             Res.drawable.symbol_rule_folder,
         ) { navigation.go(MailPage.Rules) },
+        SettingsEntry(
+            "Signatures",
+            "One for each address you send from",
+            Res.drawable.symbol_signature,
+        ) { navigation.go(MailPage.Signatures) },
     )

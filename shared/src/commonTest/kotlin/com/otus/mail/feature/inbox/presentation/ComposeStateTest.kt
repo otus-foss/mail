@@ -78,11 +78,11 @@ class ComposeStateTest {
             state.edit { it.copy(subject = "Hi") }
             advanceTimeBy(DELAY + 1)
             state.edit { it.copy(subject = "Hi there") }
-            state.discard()
+            val delete = state.discard()
             state.close()
             advanceTimeBy(DELAY * 2)
             assertTrue(drafts.discarded.isEmpty())
-            state.deleteDiscarded()
+            delete()
             runCurrent()
             assertEquals(listOf("d1"), drafts.discarded)
             assertEquals(1, drafts.saved.size)
@@ -146,8 +146,7 @@ class ComposeStateTest {
             val state = state(drafts)
             state.edit { it.copy(subject = "Hi") }
             advanceTimeBy(DELAY + 1)
-            state.discard()
-            state.deleteDiscarded()
+            state.discard()()
             answer.complete(Unit)
             runCurrent()
             assertEquals(listOf("d1"), drafts.discarded)
@@ -193,6 +192,50 @@ class ComposeStateTest {
             assertEquals("a2", drafts.saved.last().accountId)
             assertNull(drafts.saved.last().emailId)
         }
+
+    @Test
+    fun aNewMessageGetsTheSignatureOfItsAddressAndSwitchesWithIt() =
+        runTest {
+            val drafts = SignedDrafts()
+            val state = state(drafts)
+            state.loadIdentities()
+            runCurrent()
+            assertEquals("Work", state.signature.text)
+            state.chooseFrom(drafts.home)
+            assertEquals("Home", state.signature.text)
+            state.showSignature(false)
+            assertTrue(state.signature.isEmpty)
+            assertFalse(state.edited, "A signature alone is not something the user wrote")
+        }
+
+    @Test
+    fun aReplyGetsNoSignatureWhileRepliesAreLeftOut() =
+        runTest {
+            val state =
+                ComposeState(
+                    ComposeServices(SignedDrafts(), { _, _ -> error("No sending here") }, { _, _ -> emptyList() }),
+                    backgroundScope,
+                    ComposeRequest.Reply(original, all = false),
+                    ComposeOrigin(
+                        "a1",
+                        listOf(ComposeAccount("a1", "Work")),
+                        listOf("me@example.com"),
+                        signatureInReplies = false,
+                    ),
+                )
+            state.loadIdentities()
+            runCurrent()
+            assertFalse(state.signatureOn)
+            assertTrue(state.signature.isEmpty)
+        }
+
+    /** One identity in each account, each signed with its account's name. */
+    private class SignedDrafts : DraftRepository by FakeDrafts() {
+        val work = SendIdentity("w", MailSender("Me", "me@example.com", "a1"), textSignature = "Work")
+        val home = SendIdentity("h", MailSender("Me", "me@home.example", "a2"), textSignature = "Home")
+
+        override suspend fun identities(accountId: String) = listOf(work, home).filter { it.accountId == accountId }
+    }
 
     private val original =
         OriginalMessage(

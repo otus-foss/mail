@@ -35,6 +35,7 @@ import com.otus.mail.feature.inbox.data.JmapMessageCleaner
 import com.otus.mail.feature.inbox.data.JmapMessageMarker
 import com.otus.mail.feature.inbox.data.JmapMessageMover
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
+import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
@@ -44,6 +45,8 @@ import com.otus.mail.feature.inbox.domain.MessageCleaner
 import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
 import com.otus.mail.feature.inbox.domain.SenderHistory
+import com.otus.mail.feature.inbox.domain.SignatureImages
+import com.otus.mail.feature.inbox.domain.SignatureRepository
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -66,6 +69,8 @@ class MailServices(
     createNightlyFeed: () -> NightlyFeed = { GitHubNightlyFeed(HttpClient()) },
     /** Instant pushes through the user's UnifiedPush app; null where the platform has none. */
     internal val instantPush: InstantPush? = null,
+    /** Picks and shrinks signature images; null where the platform has no picker. */
+    internal val signatureImages: SignatureImages? = null,
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     private val client by lazy(createClient)
@@ -100,6 +105,7 @@ class MailServices(
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
     internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins) }
     internal val sender: DraftSender by lazy { JmapDraftSender(connections, logins) }
+    internal val signatures: SignatureRepository by lazy { JmapSignatures(connections, logins) }
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins) }

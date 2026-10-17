@@ -1,8 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.view.View
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +39,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.File
 
 /** The compose page against a fake Drafts folder: chips, the bar's context, sending, leaving, and discarding. */
 @RunWith(RobolectricTestRunner::class)
@@ -142,7 +138,7 @@ class ComposeScreenTest {
         compose.onNodeWithText("New message").assertExists()
         button("Send from this@companya.com. Change").assertExists()
         button("Send").assertIsNotEnabled()
-        screenshot("compose-new-empty")
+        compose.screenshot("compose-new-empty")
     }
 
     @Test
@@ -154,7 +150,7 @@ class ComposeScreenTest {
         button("Send, to Grace Hopper").assertIsEnabled()
         compose.onNodeWithText("Grace Hopper").assertExists()
         button("Attach").assertIsNotEnabled()
-        screenshot("compose-new-filled")
+        compose.screenshot("compose-new-filled")
 
         button("Add Cc").performClick()
         type("Cc", "bob@example.com")
@@ -198,7 +194,7 @@ class ComposeScreenTest {
         button("Send from this@companya.com. Change").performClick()
         compose.onNodeWithText("Recent").assertExists()
         compose.onNodeWithText("Rubylabs").assertExists()
-        screenshot("compose-from-dropdown")
+        compose.screenshot("compose-from-dropdown")
         compose.onNodeWithText("otus@rubylabs.design").performClick()
         compose.waitForIdle()
         button("Send from otus@rubylabs.design. Change").assertExists()
@@ -208,7 +204,7 @@ class ComposeScreenTest {
     fun theMoreMenuAddsBccAndDiscards() {
         open()
         button("More options").performClick()
-        screenshot("compose-more-options")
+        compose.screenshot("compose-more-options")
         compose.onNodeWithText("Add Bcc").performClick()
         compose.onNodeWithContentDescription("Bcc").assertExists()
         button("More options").performClick()
@@ -224,7 +220,7 @@ class ComposeScreenTest {
         compose.onNodeWithText("Reply").assertExists()
         compose.onNodeWithText("Grace Hopper wrote on 11 Oct").assertExists()
         button("Send, to Grace Hopper").assertIsEnabled()
-        screenshot("compose-reply")
+        compose.screenshot("compose-reply")
         compose.onNodeWithText("Grace Hopper wrote on 11 Oct").performClick()
         compose.onNodeWithText("> Can we meet Thursday?", substring = true).assertExists()
     }
@@ -240,36 +236,6 @@ class ComposeScreenTest {
             sentLabel = "2026-10-11 09:12",
             body = "Can we meet Thursday?",
         )
-
-    /** The page with any open menu or dropdown, which draw in windows of their own, laid over it. */
-    private fun screenshot(name: String) {
-        val bitmap =
-            compose.runOnIdle {
-                val decor = compose.activity.window.decorView
-                Bitmap.createBitmap(decor.width, decor.height, Bitmap.Config.ARGB_8888).also { bitmap ->
-                    val canvas = Canvas(bitmap)
-                    decor.draw(canvas)
-                    windowViews().filter { it !== decor && it.isShown }.forEach { view ->
-                        val at = IntArray(2).also(view::getLocationOnScreen)
-                        canvas.save()
-                        canvas.translate(at[0].toFloat(), at[1].toFloat())
-                        view.draw(canvas)
-                        canvas.restore()
-                    }
-                }
-            }
-        val file = File("build/reports/compose/$name.png")
-        requireNotNull(file.parentFile).mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
-
-    /** Every window's root view, the page's and each popup's, from the framework's window list. */
-    private fun windowViews(): List<View> {
-        val global = Class.forName("android.view.WindowManagerGlobal")
-        val instance = global.getMethod("getInstance").invoke(null)
-        val views = global.getDeclaredField("mViews").apply { isAccessible = true }.get(instance) as List<*>
-        return views.filterIsInstance<View>()
-    }
 
     private companion object {
         const val TIMEOUT = 5_000L

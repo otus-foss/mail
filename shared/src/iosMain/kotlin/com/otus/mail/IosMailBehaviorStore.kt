@@ -34,6 +34,7 @@ class IosMailBehaviorStore(
             minimizedBar = bool(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = bool(WEBSITE_ICONS, defaults.websiteIcons),
             recentFrom = decodeRecentFrom(preferences.stringForKey(RECENT_FROM)),
+            signatureInReplies = bool(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
         )
     }
 
@@ -51,6 +52,7 @@ class IosMailBehaviorStore(
         preferences.setBool(behavior.minimizedBar, forKey = MINIMIZED_BAR)
         preferences.setBool(behavior.websiteIcons, forKey = WEBSITE_ICONS)
         preferences.setObject(encodeRecentFrom(behavior.recentFrom), forKey = RECENT_FROM)
+        preferences.setBool(behavior.signatureInReplies, forKey = SIGNATURE_IN_REPLIES)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -70,6 +72,7 @@ class IosMailBehaviorStore(
         const val MINIMIZED_BAR = "otus.mail.action_bar_minimized"
         const val WEBSITE_ICONS = "otus.mail.website_icons"
         const val RECENT_FROM = "otus.mail.recent_from"
+        const val SIGNATURE_IN_REPLIES = "otus.mail.signature_in_replies"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"
     }

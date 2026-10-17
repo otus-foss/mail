@@ -5,19 +5,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.otus.designsystem.elements.RichText
-import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
-import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.answered
 import com.otus.mail.feature.inbox.domain.preferredIdentity
+import com.otus.mail.feature.inbox.domain.signature
 import com.otus.mail.feature.inbox.domain.startDraft
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -30,31 +29,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-
-/** An account a draft can be sent from, by its [name] in the Send-from list. */
-data class ComposeAccount(
-    val id: String,
-    val name: String,
-)
-
-/** Where a draft saves, sends, and finds people to suggest. */
-class ComposeServices(
-    val drafts: DraftRepository,
-    val sender: DraftSender,
-    val addressBook: AddressBook,
-)
-
-/**
- * The accounts around a draft: it starts in [accountId], and every one of [accounts] can send it.
- * [ownAddresses] are left out of Reply all, and [recentFrom] picks the address of a new message
- * from all accounts.
- */
-class ComposeOrigin(
-    val accountId: String,
-    val accounts: List<ComposeAccount>,
-    val ownAddresses: Collection<String>,
-    val recentFrom: List<String> = emptyList(),
-)
 
 /**
  * The draft [request] starts in the [origin] account, as the user edits it. Each change saves to the
@@ -103,6 +77,14 @@ class ComposeState(
 
     var notice by mutableStateOf<String?>(null)
         private set
+
+    /** Whether the draft carries its identity's signature; the ⋯ menu turns it off for this draft. */
+    var signatureOn by mutableStateOf(request is ComposeRequest.New || origin.signatureInReplies)
+        private set
+
+    /** The signature the draft goes out with: its From address's, while [signatureOn]. */
+    val signature: Signature
+        get() = if (signatureOn) identities.signatureOf(draft.from) else Signature()
 
     /** Whether a [send] is under way. */
     var sending by mutableStateOf(false)
@@ -158,18 +140,15 @@ class ComposeState(
      */
     fun chooseFrom(identity: SendIdentity) {
         val left = draft.takeIf { it.accountId != identity.accountId }
-        edit {
-            it.copy(
-                from = identity.sender,
-                accountId = identity.accountId,
-                emailId =
-                    it.emailId.takeIf {
-                        left ==
-                            null
-                    },
-            )
-        }
+        val kept = draft.emailId.takeIf { left == null }
+        edit { it.copy(from = identity.sender, accountId = identity.accountId, emailId = kept) }
         left?.emailId?.let { id -> scope.launch { saving.withLock { drafts.discard(left.accountId, id) } } }
+    }
+
+    /** Adds or removes the signature in this draft only. */
+    fun showSignature(on: Boolean) {
+        signatureOn = on
+        scheduleSave()
     }
 
     /** Saves what is new without waiting; for leaving the page. */
@@ -178,15 +157,14 @@ class ComposeState(
         scope.launch { save() }
     }
 
-    /** Stops saving and keeps the stored copy, so Undo can open the draft again; see [deleteDiscarded]. */
-    fun discard() {
+    /**
+     * Stops saving and keeps the stored copy, so Undo can open the draft again. Returns what deletes
+     * that copy, after any save in progress, once Undo has passed.
+     */
+    fun discard(): () -> Unit {
         finished = true
         pending?.cancel()
-    }
-
-    /** Deletes the stored copy of a discarded draft, after any save in progress. */
-    fun deleteDiscarded() {
-        scope.launch { saving.withLock { draft.emailId?.let { drafts.discard(draft.accountId, it) } } }
+        return { scope.launch { saving.withLock { draft.emailId?.let { drafts.discard(draft.accountId, it) } } } }
     }
 
     /**
@@ -201,7 +179,10 @@ class ComposeState(
         scope.launch {
             val result =
                 saving.withLock {
-                    sender.send(draft, request.answered(draft.accountId)).onSuccess { finished = true }
+                    sender.send(draft.copy(signature = signature), request.answered(draft.accountId)).onSuccess {
+                        finished =
+                            true
+                    }
                 }
             sending = false
             result.fold(
@@ -228,7 +209,7 @@ class ComposeState(
 
     private suspend fun save() =
         saving.withLock {
-            val current = draft
+            val current = draft.copy(signature = signature)
             val unchanged = if (current.emailId == null) !edited else current.content() == stored?.content()
             if (finished || unchanged) return@withLock
             drafts.save(current).fold(
@@ -242,6 +223,9 @@ class ComposeState(
             )
         }
 }
+
+private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =
+    firstOrNull { it.sender.address.equals(from?.address, ignoreCase = true) }?.signature ?: Signature()
 
 /** Every recipient once, in line order, for the bar's context. */
 val Draft.recipients: List<MailSender>
@@ -264,8 +248,11 @@ private fun Draft.withRecipients(
         RecipientField.Bcc -> copy(bcc = people)
     }
 
-/** What the user wrote, without the sending identity, the account, or the stored copy's id. */
-private fun Draft.content(): Draft = copy(from = null, accountId = "", emailId = null)
+/**
+ * What the user wrote, without the sending identity, the account, the stored copy's id, or the
+ * signature, which follows the identity.
+ */
+private fun Draft.content(): Draft = copy(from = null, accountId = "", emailId = null, signature = Signature())
 
 /** Plain text as paragraphs, for a body that starts without formatting. */
 private fun String.plainHtml(): String =
