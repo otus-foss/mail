@@ -84,22 +84,24 @@ private class LegacyConditionDto(
  */
 private fun LegacyRuleDto.toFolderRules(): List<FolderRule> {
     val converted = conditions.map { it.alternatives() }
-    return if (matchAll) {
-        if (converted.any { it.isEmpty() }) return emptyList()
-        val combinations =
-            converted.fold(1) { count, options -> (count * options.size).coerceAtMost(MAX_SPLIT_RULES + 1) }
-        if (combinations > MAX_SPLIT_RULES) return emptyList()
-        converted
-            .fold(listOf(emptyList<RuleCondition>())) { rules, options ->
-                rules.flatMap { rule ->
-                    options.map {
-                        rule +
-                            it
-                    }
-                }
-            }.map(::FolderRule)
-    } else {
-        converted.flatten().map(::FolderRule)
+    // A condition without an equivalent has no alternatives, which leaves no combinations.
+    val combinations =
+        converted.fold(1) { count, options -> (count * options.size).coerceAtMost(MAX_SPLIT_RULES + 1) }
+    return when {
+        !matchAll -> {
+            converted.flatten().map(::FolderRule)
+        }
+
+        combinations == 0 || combinations > MAX_SPLIT_RULES -> {
+            emptyList()
+        }
+
+        else -> {
+            converted
+                .fold(listOf(emptyList<RuleCondition>())) { rules, options ->
+                    rules.flatMap { rule -> options.map { rule + it } }
+                }.map(::FolderRule)
+        }
     }
 }
 
