@@ -2,13 +2,8 @@ package com.otus.mail.app
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +22,7 @@ import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.SlidingPages
 import com.otus.designsystem.components.ToastHost
 import com.otus.designsystem.components.ToastState
+import com.otus.designsystem.components.actionBarInset
 import com.otus.designsystem.components.rememberSidebarState
 import com.otus.designsystem.theme.ActionBarTokens
 import com.otus.designsystem.theme.LocalMotionScale
@@ -124,8 +120,7 @@ private fun BoxScope.AboveActionBar(toasts: ToastState) {
         toasts,
         Modifier
             .align(Alignment.BottomCenter)
-            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
-            .padding(ActionBarTokens.barInset)
+            .actionBarInset()
             .padding(bottom = ActionBarTokens.height + ActionBarTokens.barInset),
     )
 }
