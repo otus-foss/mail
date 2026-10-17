@@ -9,10 +9,26 @@ class SortConditionsTest {
     fun aMessageOffersItsSenderDomainRecipientAndSubjectWord() {
         assertEquals(
             listOf(
-                SortCondition(SortBy.Sender, RuleCondition(RuleField.From, RuleOperator.Is, "billing@acme.example")),
-                SortCondition(SortBy.Domain, RuleCondition(RuleField.From, RuleOperator.EndsWith, "@acme.example")),
-                SortCondition(SortBy.Recipient, RuleCondition(RuleField.Recipient, RuleOperator.Is, "me@home.example")),
-                SortCondition(SortBy.Subject, RuleCondition(RuleField.Subject, RuleOperator.Contains, "Invoice")),
+                SortCondition(
+                    SortBy.Sender,
+                    "billing@acme.example",
+                    RuleCondition.Address(AddressField.From, AddressMatch.Exact("billing@acme.example")),
+                ),
+                SortCondition(
+                    SortBy.Domain,
+                    "@acme.example",
+                    RuleCondition.Address(AddressField.From, AddressMatch.Domain("acme.example")),
+                ),
+                SortCondition(
+                    SortBy.Recipient,
+                    "me@home.example",
+                    RuleCondition.Address(AddressField.To, AddressMatch.Exact("me@home.example")),
+                ),
+                SortCondition(
+                    SortBy.Subject,
+                    "Invoice",
+                    RuleCondition.Text(TextField.Subject, TextOperator.Contains, "Invoice"),
+                ),
             ),
             sortConditions("billing@acme.example", "me@home.example", "Your Invoice #1042"),
         )

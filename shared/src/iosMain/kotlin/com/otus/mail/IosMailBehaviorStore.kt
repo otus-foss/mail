@@ -3,6 +3,7 @@ package com.otus.mail
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
@@ -31,6 +32,7 @@ class IosMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.stringForKey(ACTION_BAR_MODE)) ?: defaults.actionBarMode,
             minimizedBar = bool(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = bool(WEBSITE_ICONS, defaults.websiteIcons),
+            inbox = preferences.stringForKey(INBOX)?.let(InboxContents::decode) ?: defaults.inbox,
         )
     }
 
@@ -47,6 +49,7 @@ class IosMailBehaviorStore(
         preferences.setObject(behavior.actionBarMode.storageValue, forKey = ACTION_BAR_MODE)
         preferences.setBool(behavior.minimizedBar, forKey = MINIMIZED_BAR)
         preferences.setBool(behavior.websiteIcons, forKey = WEBSITE_ICONS)
+        preferences.setObject(InboxContents.encode(behavior.inbox), forKey = INBOX)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -65,6 +68,7 @@ class IosMailBehaviorStore(
         const val ACTION_BAR_MODE = "otus.mail.action_bar_mode"
         const val MINIMIZED_BAR = "otus.mail.action_bar_minimized"
         const val WEBSITE_ICONS = "otus.mail.website_icons"
+        const val INBOX = "otus.mail.inbox_contents"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"
     }

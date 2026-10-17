@@ -23,7 +23,7 @@ internal class SidebarCounter(
     /** Null when counts are off or there is nothing to count. */
     fun of(folders: List<MailFolder>): String? = sum(folders)?.toString()
 
-    /** [of], capped so a large count fits a rail badge. */
+    /** [of], capped so a large count fits a mailbox tile's badge. */
     fun badge(folders: List<MailFolder>): String? =
         sum(folders)?.let { if (it > BADGE_MAX) "$BADGE_MAX+" else it.toString() }
 

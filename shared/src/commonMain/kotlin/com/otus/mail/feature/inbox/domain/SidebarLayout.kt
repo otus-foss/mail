@@ -15,7 +15,8 @@ enum class SidebarSection(
 enum class MailboxStyle(
     val storageValue: String,
 ) {
-    Chips("chips"),
+    /** Tiles in three columns. It keeps the stored value of the pills it replaced, so saved choices still read. */
+    Grid("chips"),
     Rows("rows"),
 }
 
@@ -30,13 +31,15 @@ enum class SidebarCount(
 
 /**
  * How the sidebar is arranged, the same for every account. [sections] lists every section in
- * order; [hidden] ones are left out.
+ * order; [hidden] ones are left out. Turning [folderColors] off hides folder colors everywhere
+ * without forgetting them.
  */
 data class SidebarLayout(
     val sections: List<SidebarSection> = SidebarSection.entries,
     val hidden: Set<SidebarSection> = emptySet(),
-    val mailboxes: MailboxStyle = MailboxStyle.Chips,
+    val mailboxes: MailboxStyle = MailboxStyle.Grid,
     val counts: SidebarCount = SidebarCount.Unread,
+    val folderColors: Boolean = true,
 ) {
     val shown: List<SidebarSection>
         get() = sections - hidden
@@ -68,6 +71,7 @@ data class SidebarLayout(
                 HIDDEN to layout.hidden.joinToString(",") { it.storageValue },
                 MAILBOXES to layout.mailboxes.storageValue,
                 COUNTS to layout.counts.storageValue,
+                FOLDER_COLORS to layout.folderColors.toString(),
             ).joinToString("\n") { (name, value) -> "$name=$value" }
 
         /** Unknown values read as the defaults, and sections missing from the saved order go last. */
@@ -87,6 +91,7 @@ data class SidebarLayout(
                 mailboxes =
                     MailboxStyle.entries.firstOrNull { it.storageValue == values[MAILBOXES] } ?: defaults.mailboxes,
                 counts = SidebarCount.entries.firstOrNull { it.storageValue == values[COUNTS] } ?: defaults.counts,
+                folderColors = values[FOLDER_COLORS]?.toBooleanStrictOrNull() ?: defaults.folderColors,
             )
         }
 
@@ -94,5 +99,6 @@ data class SidebarLayout(
         private const val HIDDEN = "hidden"
         private const val MAILBOXES = "mailboxes"
         private const val COUNTS = "counts"
+        private const val FOLDER_COLORS = "folderColors"
     }
 }

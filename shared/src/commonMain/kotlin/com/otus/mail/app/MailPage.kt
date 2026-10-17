@@ -38,6 +38,10 @@ internal sealed interface MailPage {
         override val parent = Appearance
     }
 
+    data object InboxSettings : MailPage {
+        override val parent = Appearance
+    }
+
     data object ThemeSettings : MailPage {
         override val parent = Appearance
     }
@@ -56,16 +60,16 @@ internal sealed interface MailPage {
         override val parent = Settings
     }
 
-    data object Rules : MailPage {
-        override val parent = Settings
-    }
-
-    /** Edits one rule of [accountId]; a null [ruleId] starts a new rule. */
-    data class RuleEditor(
+    /**
+     * One folder's settings from Settings › Folders: [accountId] is the login, [folderId] the
+     * mailbox id, and [sharedIn] the JMAP account of a mailbox shared with the login, else null.
+     */
+    data class FolderDetail(
         val accountId: String,
-        val ruleId: String?,
+        val folderId: String,
+        val sharedIn: String? = null,
     ) : MailPage {
-        override val parent = Rules
+        override val parent = Folders
     }
 
     /** One folder's messages; [accountId] is the login and [folderId] the server's mailbox id. */
@@ -97,9 +101,9 @@ internal sealed interface MailPage {
                 Notifications,
                 ActionBarSettings,
                 Folders,
-                Rules,
                 ReadLater,
                 SidebarSettings,
+                InboxSettings,
                 ThemeSettings,
             )
 
@@ -109,7 +113,7 @@ internal sealed interface MailPage {
                 restore = { saved ->
                     when (saved.firstOrNull()) {
                         FOLDER -> Folder(saved[1], saved[2])
-                        RULE -> RuleEditor(saved[1], saved[2].ifEmpty { null })
+                        FOLDER_DETAIL -> FolderDetail(saved[1], saved[2], saved[3].ifEmpty { null })
                         COMBINED -> CombinedFolder.entries.firstOrNull { it.name == saved[1] }?.let(::Combined) ?: Inbox
                         SHARED -> Shared(saved.drop(1))
                         else -> fixed.firstOrNull { it.toString() == saved.firstOrNull() } ?: Inbox
@@ -121,7 +125,7 @@ internal sealed interface MailPage {
         private fun saved(page: MailPage): List<String> =
             when (page) {
                 is Folder -> listOf(FOLDER, page.accountId, page.folderId)
-                is RuleEditor -> listOf(RULE, page.accountId, page.ruleId.orEmpty())
+                is FolderDetail -> listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
                 is Combined -> listOf(COMBINED, page.folder.name)
                 is Shared -> listOf(SHARED) + page.key
                 is Compose -> saved(page.parent)
@@ -129,7 +133,7 @@ internal sealed interface MailPage {
             }
 
         private const val FOLDER = "Folder"
-        private const val RULE = "RuleEditor"
+        private const val FOLDER_DETAIL = "FolderDetail"
         private const val COMBINED = "Combined"
         private const val SHARED = "Shared"
     }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +25,7 @@ import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SheetFrame
 import com.otus.designsystem.elements.IconPill
+import com.otus.designsystem.elements.LocalIconTint
 import com.otus.designsystem.elements.SidebarPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
@@ -33,6 +35,7 @@ import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
+import com.otus.designsystem.theme.FolderColor
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.SheetTokens
@@ -153,18 +156,20 @@ private fun MoveSuggestion(
     onMove: (MoveTarget) -> Unit,
 ) {
     SheetCaption("Suggested", RowTextInset)
-    SettingRow(
-        target.name,
-        { onMove(target) },
-        // A nested folder's path tells it apart; a top-level one would only repeat its name.
-        description =
-            listOfNotNull(target.label.takeIf { it != target.name }, "where ${sender.name} usually goes")
-                .joinToString(" · ")
-                .replaceFirstChar { it.uppercase() },
-        person = NamedAvatar(sender.name, sender.chipAvatar),
-        icon = Res.drawable.symbol_folder,
-        density = RowDensity.Compact,
-    )
+    CompositionLocalProvider(LocalIconTint provides FolderColor.named(target.color).tint) {
+        SettingRow(
+            target.name,
+            { onMove(target) },
+            // A nested folder's path tells it apart; a top-level one would only repeat its name.
+            description =
+                listOfNotNull(target.label.takeIf { it != target.name }, "where ${sender.name} usually goes")
+                    .joinToString(" · ")
+                    .replaceFirstChar { it.uppercase() },
+            person = NamedAvatar(sender.name, sender.chipAvatar),
+            icon = Res.drawable.symbol_folder,
+            density = RowDensity.Compact,
+        )
+    }
 }
 
 /** Lines captions up with the text inside the settings rows below them. */

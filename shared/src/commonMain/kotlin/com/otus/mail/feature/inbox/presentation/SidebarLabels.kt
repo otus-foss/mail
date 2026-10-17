@@ -14,7 +14,7 @@ val SidebarSection.title: String
 val MailboxStyle.label: String
     get() =
         when (this) {
-            MailboxStyle.Chips -> "Chips"
+            MailboxStyle.Grid -> "Grid"
             MailboxStyle.Rows -> "Rows"
         }
 

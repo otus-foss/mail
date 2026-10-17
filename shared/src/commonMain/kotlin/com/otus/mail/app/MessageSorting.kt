@@ -3,17 +3,15 @@ package com.otus.mail.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.folders.domain.InboxMatcher
-import com.otus.mail.feature.folders.domain.MailRule
-import com.otus.mail.feature.folders.domain.RuleChange
+import com.otus.mail.feature.folders.domain.FolderRule
+import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.SortBy
 import com.otus.mail.feature.folders.domain.SortCondition
 import com.otus.mail.feature.folders.domain.sortConditions
-import com.otus.mail.feature.folders.domain.withRule
-import com.otus.mail.feature.folders.domain.without
+import com.otus.mail.feature.folders.domain.withAdded
+import com.otus.mail.feature.folders.domain.withRemoved
+import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.folders.presentation.RuleDraft
-import com.otus.mail.feature.folders.presentation.RulesState
 import com.otus.mail.feature.folders.presentation.catches
 import com.otus.mail.feature.folders.presentation.keyword
 import com.otus.mail.feature.folders.presentation.phrase
@@ -33,11 +31,11 @@ import kotlinx.coroutines.launch
 
 /**
  * Rules that sort future mail like a moved message into the same folder. Once such a rule is saved,
- * [sorted] offers to undo the move or to move older inbox mail the rule matches too.
+ * [sorted] offers to undo the move or to move older Inbox and Archive mail the rule matches too.
  */
 internal class MessageSorting(
-    private val rules: RulesState,
-    private val matcher: InboxMatcher,
+    private val rules: FolderRulesState,
+    private val repository: FolderRuleRepository,
     private val folders: FoldersState,
     private val filing: MessageFiling,
     private val scope: CoroutineScope,
@@ -50,15 +48,15 @@ internal class MessageSorting(
     }
 
     /**
-     * Rules that sort future mail like [message], where its account's server files mail by
-     * folder id. A rule that is not saved is reported in [feed].
+     * Rules that sort future mail like [message], where its account's server runs rules. A rule
+     * that is not saved is reported in [feed].
      */
     fun futureSorting(
         message: MailMessage,
         feed: InboxFeedState,
     ): FutureSorting? {
         val account = rules.account(message.location.accountId)
-        if (account?.support?.canMoveToFolders != true) return null
+        if (account?.support == null) return null
         val recipient =
             message.to
                 .firstOrNull()
@@ -82,26 +80,19 @@ internal class MessageSorting(
         moved: List<MailMessage>,
         feed: InboxFeedState,
     ) {
-        val rule =
-            RuleDraft(
-                accountId,
-                ruleId = null,
-                name = "Move mail that ${sort.phrase} to ${target.name}",
-                conditions = listOf(sort.condition),
-                folderId = target.folderId,
-            ).toRule()
+        val rule = FolderRule(sort.condition)
         rules.submit(
             accountId,
             onSaved = { sorted = sortedMove(accountId, sort.catches, person, rule, target, moved, feed) },
             onFailed = { feed.report("Couldn't add the rule. $it") },
-        ) { it.withRule(rule) }
+        ) { it.withAdded(target.folderId, rule) }
     }
 
     private fun sortedMove(
         accountId: String,
         catches: String,
         person: MailSender?,
-        rule: MailRule,
+        rule: FolderRule,
         target: MoveTarget,
         moved: List<MailMessage>,
         feed: InboxFeedState,
@@ -112,17 +103,15 @@ internal class MessageSorting(
         undo = {
             moved.forEach { filing.moveBack(feed, it, target) }
             rules.submit(accountId, onFailed = { feed.report("Couldn't delete the rule. $it") }) {
-                RuleChange(it.rules.without(rule.id), it.keep)
+                it.withRemoved(target.folderId, it[target.folderId].orEmpty().lastIndexOf(rule))
             }
         },
         older = {
-            // The moved messages may still be in the inbox while their own move is in flight.
-            val movedIds = moved.map { it.emailId }.toSet()
-            matcher.matches(accountId, rule)?.let { found ->
-                val matches = found.copy(ids = found.ids - movedIds)
-                OlderMail(matches.ids.size) {
+            // Inbox and Archive mail the rule matches; the moved messages left the inbox first.
+            repository.existingCount(accountId, target.folderId, rule)?.let { found ->
+                OlderMail(found) {
                     scope.launch {
-                        if (matcher.move(accountId, rule, matches) == null) {
+                        if (repository.moveExisting(accountId, target.folderId, rule) == null) {
                             feed.report("Couldn't move the older messages to ${target.label}. Try again.")
                         }
                         feed.refresh()

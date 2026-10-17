@@ -18,6 +18,7 @@ import com.otus.designsystem.components.ReorderableColumn
 import com.otus.designsystem.components.SelectionSheet
 import com.otus.designsystem.elements.SelectionRow
 import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.elements.nestIndent
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.SheetTokens
@@ -79,7 +80,7 @@ internal fun InboxPillsSheet(
                         title,
                         selected = false,
                         onClick = { draft = draft + choice.pill },
-                        modifier = Modifier.padding(start = PageTokens.nestIndent * depth),
+                        modifier = Modifier.nestIndent(PageTokens.nestIndent, depth),
                         leading = { Symbol(choice.icon) },
                     )
                 }

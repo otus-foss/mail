@@ -2,10 +2,15 @@ package com.otus.mail.feature.folders.data
 
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapException
+import com.otus.jmap.JmapJson
+import com.otus.jmap.JmapMethod
 import com.otus.jmap.JmapType
 import com.otus.jmap.SetError
 import com.otus.mail.feature.folders.domain.RuleFailure
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 
 /** SieveScript objects (RFC 9661, section 2). */
 internal val SieveScriptType: JmapType<SieveScriptObject> =
@@ -26,6 +31,29 @@ internal data class SieveScriptObject(
 internal data class SieveCapability(
     val sieveExtensions: List<String> = emptyList(),
     val maxSizeScript: Long? = null,
+)
+
+/**
+ * `SieveScript/validate` (RFC 9661, section 2.4): checks an uploaded script without storing it.
+ * The result is the server's objection, or null when the script is valid.
+ */
+internal class SieveValidateMethod(
+    accountId: String,
+    private val blobId: String,
+) : JmapMethod<SetError?>("SieveScript/validate", JmapCapability.SIEVE, accountId) {
+    override fun arguments(): JsonObject =
+        buildJsonObject {
+            put("accountId", JsonPrimitive(accountId))
+            put("blobId", JsonPrimitive(blobId))
+        }
+
+    override fun decode(arguments: JsonObject): SetError? =
+        JmapJson.decodeFromJsonElement(ValidateDto.serializer(), arguments).error
+}
+
+@Serializable
+private class ValidateDto(
+    val error: SetError? = null,
 )
 
 internal fun SetError.toRuleFailure(): RuleFailure =

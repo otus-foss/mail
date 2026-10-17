@@ -1,26 +1,23 @@
 package com.otus.mail.feature.folders.domain
 
 /**
- * For each folder id, the senders whose mail a running rule moves there, in rule order and once
- * each regardless of letter case. Paused rules move nothing, so they are left out.
+ * For each folder id, the senders whose mail a rule moves there, in rule order and once each
+ * regardless of letter case.
  */
-fun AccountRules.sendersByFolder(): Map<String, List<String>> =
+fun AccountFolderRules.sendersByFolder(): Map<String, List<String>> =
     rules
-        .filter { it.enabled }
-        .flatMap { rule -> rule.senders().map { rule.folderId to it } }
-        .groupBy({ it.first }, { it.second })
-        .mapValues { (_, senders) -> senders.distinctBy { it.lowercase() } }
+        .mapValues { (_, folderRules) -> folderRules.flatMap { it.senders() }.distinctBy { it.lowercase() } }
+        .filterValues { it.isNotEmpty() }
 
 /**
- * The addresses this rule moves every message from: a "from is" condition that matches on its
- * own. A rule that also needs another condition moves only some of a sender's mail.
+ * The address this rule moves every message from: a single "From is" condition. A group that also
+ * needs another condition moves only some of a sender's mail.
  */
-fun MailRule.senders(): List<String> =
-    if (matchAll && conditions.size > 1) {
-        emptyList()
-    } else {
-        conditions
-            .filter { it.field == RuleField.From && it.operator == RuleOperator.Is }
-            .map { it.value.trim() }
-            .filter { it.isNotEmpty() }
-    }
+fun FolderRule.senders(): List<String> =
+    conditions
+        .singleOrNull()
+        ?.let { it as? RuleCondition.Address }
+        ?.takeIf { it.field == AddressField.From && !it.negated }
+        ?.let { (it.match as? AddressMatch.Exact)?.address?.trim() }
+        ?.takeIf { it.isNotEmpty() }
+        .let(::listOfNotNull)

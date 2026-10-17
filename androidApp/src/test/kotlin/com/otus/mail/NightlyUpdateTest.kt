@@ -55,7 +55,7 @@ class NightlyUpdateTest {
     @Test
     fun otherBuildsOfferNoNightly() {
         show(installed = null)
-        compose.onNodeWithText("All accounts").assertIsDisplayed()
+        compose.onNodeWithText("All mail").assertIsDisplayed()
         compose.onNodeWithText("Get nightly 142").assertDoesNotExist()
     }
 }
