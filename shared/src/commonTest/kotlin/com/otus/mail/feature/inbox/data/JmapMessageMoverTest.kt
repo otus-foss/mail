@@ -76,6 +76,26 @@ class JmapMessageMoverTest {
         }
 
     @Test
+    fun movingBackReturnsToEveryFolderTheMoveLeft() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val mover =
+                mover {
+                    sent += it
+                    """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
+                }
+            val inTwo = message.copy(location = message.location.copy(mailboxIds = setOf("a", "l")))
+            assertTrue(mover.moveBack(inTwo, "t", returning = setOf("a", "l")))
+            val alreadyInTarget = message.copy(location = message.location.copy(mailboxIds = setOf("a", "t")))
+            assertTrue(mover.moveBack(alreadyInTarget, "t", returning = setOf("a")))
+            assertTrue(
+                "\"update\":{\"m1\":{\"mailboxIds/t\":null,\"mailboxIds/a\":true,\"mailboxIds/l\":true}}" in sent[0],
+                sent[0],
+            )
+            assertTrue("\"update\":{\"m1\":{\"mailboxIds/a\":true}}" in sent[1], sent[1])
+        }
+
+    @Test
     fun folderIdsAreEscapedInPatchPaths() =
         runTest {
             val sent = mutableListOf<String>()

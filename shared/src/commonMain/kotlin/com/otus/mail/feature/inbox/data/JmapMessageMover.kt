@@ -31,6 +31,20 @@ class JmapMessageMover(
         return left.isNotEmpty() && updateEmail(connections, logins, message, patch)
     }
 
+    override suspend fun moveBack(
+        message: MailMessage,
+        folderId: String,
+        returning: Set<String>,
+    ): Boolean {
+        val back = returning - folderId - ""
+        val patch =
+            buildJsonObject {
+                if (folderId !in message.location.mailboxIds) put("mailboxIds/${pointer(folderId)}", JsonNull)
+                back.forEach { put("mailboxIds/${pointer(it)}", JsonPrimitive(true)) }
+            }
+        return back.isNotEmpty() && updateEmail(connections, logins, message, patch)
+    }
+
     override suspend fun setInFolder(
         message: MailMessage,
         folderId: String,
