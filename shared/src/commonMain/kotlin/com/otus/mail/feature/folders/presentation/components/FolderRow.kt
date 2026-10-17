@@ -1,70 +1,89 @@
 package com.otus.mail.feature.folders.presentation.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import com.otus.avatar.generatedAvatar
-import com.otus.designsystem.components.AvatarStack
 import com.otus.designsystem.components.ChipAvatar
-import com.otus.designsystem.components.RowDensity
-import com.otus.designsystem.components.SettingRow
-import com.otus.designsystem.elements.SidebarExpandButton
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.PanelTokens
-import com.otus.mail.feature.folders.domain.FolderNode
-import com.otus.mail.feature.folders.presentation.FolderSender
+import com.otus.designsystem.components.FolderOwnerLine
+import com.otus.designsystem.components.FolderRuleSummary
+import com.otus.designsystem.components.FolderSettingRow
+import com.otus.designsystem.components.QuickActionBar
+import com.otus.designsystem.components.ReorderableScope
+import com.otus.designsystem.components.RuleChipLine
+import com.otus.designsystem.elements.LocalIconTint
+import com.otus.designsystem.elements.SidebarFolder
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_folder_shared
+import com.otus.designsystem.theme.FolderColor
+import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.folderIcon
 
 /**
- * A folder as a compact row, indented by its nesting depth, as in the sidebar and the move sheet.
- * At its end, the [senders] whose mail rules move here, then a chevron when [expanded] is set.
+ * A folder in Settings › Folders & rules: its icon in the folder's color, the name, the first of its rules
+ * as a compact chip with how many more there are, and who shares it. With subfolders, [expanded]
+ * is set and the icon folds them. Tapping opens the folder, a long press opens its quick actions
+ * at the pressed point, and the handle at the end drags it.
  */
 @Composable
-fun FolderRow(
-    node: FolderNode,
-    senders: List<FolderSender>,
+fun ReorderableScope.FolderRow(
+    row: FolderListRow,
     expanded: Boolean?,
     onExpandedChange: (Boolean) -> Unit,
-    onClick: () -> Unit,
+    actions: FolderListActions,
+    modifier: Modifier = Modifier,
 ) {
-    val folder = node.folder
-    SettingRow(
-        folder.name,
-        onClick,
-        Modifier.padding(start = PageTokens.nestIndent * node.depth),
-        icon = folderIcon(node),
-        density = RowDensity.Compact,
-        trailing = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (senders.isNotEmpty()) {
-                    AvatarStack(
-                        senders.map { it.chipAvatar },
-                        label = senders.label(),
-                        description = "Rules move mail from ${senders.joinToString { it.name }} here",
-                    )
-                }
-                expanded?.let { SidebarExpandButton(folder.name, it, onExpandedChange) }
-            }
-        },
-    )
+    val folder = row.folder
+    val rules = actions.rulesOf(folder)
+    val shared = row.sharingLine()
+    val menu = actions.menuOf(folder)
+    var menuAt by remember { mutableStateOf<Offset?>(null) }
+    CompositionLocalProvider(LocalIconTint provides FolderColor.named(actions.colorOf(folder)).tint) {
+        FolderSettingRow(
+            SidebarFolder(
+                folder.name,
+                row.node.depth,
+                icon = if (shared != null) Res.drawable.symbol_folder_shared else folderIcon(row.node),
+            ),
+            expanded,
+            onExpandedChange,
+            onClick = { actions.onOpen(folder) },
+            modifier,
+            onLongClick = { at: Offset -> menuAt = at }.takeIf { menu.isNotEmpty() },
+            detail =
+                if (rules.isEmpty() && shared == null) {
+                    null
+                } else {
+                    { FolderRowDetail(rules, shared) }
+                },
+        )
+        menuAt?.let { at -> QuickActionBar(menu, at, onDismiss = { menuAt = null }) }
+    }
 }
 
-/** The first sender's first name, and how many others there are; screen readers hear every name. */
-private fun List<FolderSender>.label(): String = first().shortName + if (size > 1) " +${size - 1}" else ""
-
-private val FolderSender.shortName: String
-    get() =
-        name.trim().split(Regex("\\s+")).firstOrNull { it.isNotBlank() && '@' !in it }
-            ?: address.substringBefore('@')
-
-private val FolderSender.chipAvatar: ChipAvatar
-    get() {
-        val fallback = avatar?.fallback ?: generatedAvatar(name, address)
-        return ChipAvatar(fallback.initials, fallback.colorIndex, avatar?.image?.bytes)
+/** The first rule, or else who shares the folder: the row has room for one line. */
+@Composable
+private fun FolderRowDetail(
+    rules: List<RuleChipLine>,
+    shared: Pair<ChipAvatar, String>?,
+) {
+    val first = rules.firstOrNull()
+    when {
+        first != null -> FolderRuleSummary(first, "+${rules.size - 1}".takeIf { rules.size > 1 })
+        shared != null -> FolderOwnerLine(shared.first, shared.second)
     }
+}
+
+/** The owner's avatar and "Shared by <owner> · can read"; null for a folder nobody shares. */
+private fun FolderListRow.sharingLine(): Pair<ChipAvatar, String>? =
+    sharedBy?.let { (owner, canEdit) ->
+        owner.avatar() to "Shared by $owner · ${if (canEdit) "can edit" else "can read"}"
+    }
+
+private fun String.avatar(): ChipAvatar =
+    generatedAvatar(this, takeIf { '@' in it }.orEmpty()).let { ChipAvatar(it.initials, it.colorIndex) }

@@ -23,6 +23,14 @@ sealed interface MailScope {
         val name: String,
     ) : MailScope
 
+    /**
+     * Every account's folders of several roles, such as the inbox with Spam and Trash. [names]
+     * maps each role to the name its messages are filed under.
+     */
+    data class Roles(
+        val names: Map<String, String>,
+    ) : MailScope
+
     data object AllMailboxes : MailScope
 
     /** The chosen mailboxes of [accounts]. Empty choices load every mailbox or account. */
@@ -80,6 +88,16 @@ interface MessageMover {
         message: MailMessage,
         folderId: String,
         leaving: Set<String>,
+    ): Boolean
+
+    /**
+     * Undoes a [move] of [message] into [folderId]: puts it back in [returning], the mailboxes the
+     * move took it out of, and takes it out of [folderId] unless it was already there before.
+     */
+    suspend fun moveBack(
+        message: MailMessage,
+        folderId: String,
+        returning: Set<String>,
     ): Boolean
 
     /** Adds [message] to [folderId], or takes it out, and leaves its other mailboxes as they are. */

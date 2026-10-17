@@ -2,6 +2,7 @@ package com.otus.mail.feature.folders.presentation
 
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderOutcome
+import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.MailFolder
 import kotlinx.coroutines.CompletableDeferred
@@ -35,10 +36,7 @@ class FoldersStateTest {
             name: String,
         ): FolderOutcome = FolderOutcome.Done(folder.id)
 
-        override suspend fun move(
-            folder: MailFolder,
-            parentId: String?,
-        ): FolderOutcome = FolderOutcome.Done(folder.id)
+        override suspend fun place(placement: FolderPlacement): FolderOutcome = FolderOutcome.Done(placement.folder.id)
 
         override suspend fun delete(folder: MailFolder): FolderOutcome = FolderOutcome.Done(folder.id)
     }

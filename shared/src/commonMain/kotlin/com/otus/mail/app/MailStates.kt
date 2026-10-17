@@ -5,17 +5,20 @@ import com.otus.avatar.AvatarOptions
 import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
+import com.otus.mail.feature.folders.presentation.FolderColorsState
+import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.folders.presentation.RuleEditorState
-import com.otus.mail.feature.folders.presentation.RulesState
+import com.otus.mail.feature.folders.presentation.forget
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
+import com.otus.mail.feature.inbox.presentation.AddressPinsState
 import com.otus.mail.feature.inbox.presentation.ComposeAccount
 import com.otus.mail.feature.inbox.presentation.ComposeOrigin
 import com.otus.mail.feature.inbox.presentation.ComposeServices
@@ -33,15 +36,35 @@ internal class MailStates(
     private val services: MailServices,
     private val scope: CoroutineScope,
     val behavior: MailBehaviorState = MailBehaviorState(),
+    private val chosenScope: () -> MailScopeChoice = { MailScopeChoice.All },
 ) {
-    val feed = InboxFeedState(services.mail, scope, services.avatars, ::avatarOptions)
-    val folders =
+    /** Whose mail the pages show. A removed account's choice falls back to every account. */
+    val mailScope: MailScopeChoice
+        get() = chosenScope().within(accounts.accounts.map { it.id })
+
+    val feed =
+        InboxFeedState(services.mail, scope, services.avatars, ::avatarOptions, behavior.behavior.inbox.mailScope())
+
+    val folders: FoldersState =
         FoldersState(
             services.folders,
             scope,
             loadAccounts = { services.readLater.accounts { behavior.behavior.readLater } },
+            onDeleted = {
+                folderColors.forget(it)
+                rules.forget(it)
+            },
         )
-    val rules = RulesState(services.rules, scope)
+
+    /** Colors the user gave their folders; the Folder colors switch hides them. */
+    val folderColors: FolderColorsState =
+        FolderColorsState(services.stores.folderColors, { folders.accounts }) { behavior.behavior.sidebar.folderColors }
+
+    /** Each account's folder rules, kept in the Otus block of its active Sieve script. */
+    val rules = FolderRulesState(services.rules, scope)
+
+    /** Addresses pinned in "Show mail from". */
+    val addressPins = AddressPinsState(services.stores.addressPins)
 
     /** Null where the platform has no instant pushes, which hides the Notifications page. */
     val notifications = services.instantPush?.let { NotificationSettingsState(it, scope) }
@@ -54,12 +77,13 @@ internal class MailStates(
                 ?.sender
                 ?.name
         }
-    val ruleEditor = RuleEditorState(rules)
     val accounts =
         AccountsState(services.accounts, scope) {
             feed.refresh()
             folders.refresh()
             rules.refresh()
+            folderColors.reload()
+            addressPins.reload()
         }
 
     /**
@@ -123,7 +147,7 @@ internal class MailStates(
     }
 
     /** Moves messages between folders and in and out of Read later. */
-    val filing = MessageFiling(services, folders, scope)
+    val filing = MessageFiling(services, folders, folderColors, scope)
 
     /** The toasts that offer to undo moves; they outlive the page a move closed, such as the open message. */
     val moveToasts = MoveToasts()
@@ -138,13 +162,13 @@ internal class MailStates(
     private val marking = MessageMarking(services, folders, scope)
 
     /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
-    val sorting = MessageSorting(rules, services.inboxMatcher, folders, filing, scope)
+    val sorting = MessageSorting(rules, services.rules, folders, filing, scope)
 
-    /** Moves, marks, and rules for messages shown by [feed]; [openRule] shows the rule editor for an account. */
-    fun messageActions(
-        feed: InboxFeedState,
-        openRule: (accountId: String) -> Unit,
-    ): MessageActions =
+    /** "Rule for sender": a folder, then the folder's Add rule sheet. */
+    val senderRules = SenderRules(rules, folders)
+
+    /** Moves, marks, and rules for messages shown by [feed]. */
+    fun messageActions(feed: InboxFeedState): MessageActions =
         MessageActions(
             moves =
                 MessageMoves(
@@ -158,7 +182,7 @@ internal class MailStates(
                 ),
             canMark = ::canMark,
             onMark = { messages, flag, on -> marking.mark(feed, messages, flag, on) },
-            ruleForSender = { ruleForSender(it, openRule) },
+            ruleForSender = senderRules::start,
             readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },
             cleanup = cleaning.cleanup(feed),
@@ -166,19 +190,6 @@ internal class MailStates(
 
     /** The HTML body of an open message. */
     suspend fun messageHtml(message: MailMessage): MessageHtml? = services.bodies.html(message)
-
-    /** Starts a rule for the message's sender, where the account's server runs rules. */
-    private fun ruleForSender(
-        message: MailMessage,
-        openRule: (accountId: String) -> Unit,
-    ): (() -> Unit)? {
-        val accountId = message.location.accountId
-        if (rules.account(accountId)?.support == null) return null
-        return {
-            ruleEditor.startForSender(accountId, message.sender.address)
-            openRule(accountId)
-        }
-    }
 
     /** Supplied messages have no server id, so only loaded mail can change its marks. */
     private fun canMark(

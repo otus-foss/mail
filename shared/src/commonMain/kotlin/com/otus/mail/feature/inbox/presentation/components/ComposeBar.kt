@@ -49,7 +49,7 @@ internal fun ComposeBar(
             run?.let { OfferedAction(action.buttonLabel(), symbol, leaves = true, run = it) }
         },
         onAction = { it.run() },
-        minimized = minimized,
+        minimized = Minimized().takeIf { minimized },
         modifier = modifier,
         context = draft.recipients.barContext(if (scheduled) "Sends to" else "Send to"),
     )

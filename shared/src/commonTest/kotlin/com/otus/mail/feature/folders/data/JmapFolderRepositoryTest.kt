@@ -7,6 +7,7 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderLimits
 import com.otus.mail.feature.folders.domain.FolderOutcome
+import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -107,7 +108,7 @@ class JmapFolderRepositoryTest {
             val outcome =
                 repository {
                     """{"methodResponses": [["Mailbox/set", {"newState": "m2", "updated": {"z": null}}, "c0"]]}"""
-                }.move(folder, null)
+                }.place(FolderPlacement(folder, null, emptyMap()))
             assertEquals(FolderOutcome.Done("z"), outcome)
             assertTrue("\"update\":{\"z\":{\"parentId\":null}}" in sent.single(), sent.single())
         }

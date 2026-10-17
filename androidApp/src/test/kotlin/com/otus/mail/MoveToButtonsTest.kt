@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isToggleable
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -68,7 +68,7 @@ class MoveToButtonsTest {
         start(MailBehaviorState(AndroidMailBehaviorStore(compose.activity)))
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Mail behavior").performClick()
         compose.onNode(hasText("Action bar") and hasClickAction()).performScrollTo().performClick()
         compose.onNodeWithText("Open message").performScrollTo().performClick()
 
@@ -76,7 +76,7 @@ class MoveToButtonsTest {
         pick("Move to folder…")
         pick("Receipts")
         done()
-        top("Trash").performClick()
+        top("Delete").performClick()
         pick("Move to folder…")
         // A folder another slot moves to would trade places with it.
         compose.onNodeWithText("Swaps with Button 1").assertExists()
@@ -100,7 +100,7 @@ class MoveToButtonsTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
+        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
         compose.onNodeWithText("Welcome").performClick()
         button("Move to Travel").performClick()
         assertTrue(moveUpdate(), "\"mailboxIds/t\":true" in moveUpdate())

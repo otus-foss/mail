@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -49,14 +50,14 @@ class ActionBarSettingsTest {
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Welcome")).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun openAppearance() {
+    private fun openBehavior() {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Mail behavior").performClick()
     }
 
     private fun openActionBarSettings() {
-        openAppearance()
+        openBehavior()
         compose.onNode(hasText("Action bar") and hasClickAction()).performScrollTo().performClick()
     }
 
@@ -94,7 +95,7 @@ class ActionBarSettingsTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
+        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
         compose.onNodeWithText("Welcome").performClick()
         button("Spam").assertIsEnabled()
         button("Archive").assertDoesNotExist()
@@ -123,17 +124,18 @@ class ActionBarSettingsTest {
     @Test
     fun aMinimizedBarShowsOnlyTheMainButton() {
         start()
-        openAppearance()
+        openActionBarSettings()
         compose
-            .onNode(hasText("Minimize action bar") and isToggleable())
-            .performScrollTo()
+            .onNode(hasText("Minimize") and isToggleable())
             .performClick()
             .assertIsOn()
         assertEquals(true, AndroidMailBehaviorStore(compose.activity).read().minimizedBar)
 
+        // Back leads to Mail behavior, then Settings.
+        compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isToggleable()).performClick()
+        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
         compose.onNodeWithText("Welcome").performClick()
         compose.onNode(hasContentDescription("Reply", substring = true) and hasClickAction()).assertIsDisplayed()
         button("Archive").assertDoesNotExist()

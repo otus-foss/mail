@@ -4,6 +4,8 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.jmap.login.LoginStore
+import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.testing.stalwartLike
@@ -143,6 +145,19 @@ class JmapNewMailCheckerTest {
             val states = States(mapOf("ada" to "e1"))
             val shown = check(states) { """{"methodResponses": [["error", {"type": "serverFail"}, "c0"]]}""" }
             assertEquals(emptyList(), shown)
+            assertEquals(mapOf("ada" to "e1"), states.saved)
+        }
+
+    @Test
+    fun unreadableLoginsLeaveEveryStateAsItIs() =
+        runTest {
+            val states = States(mapOf("ada" to "e1"))
+            val locked =
+                object : LoginStore by InMemoryLoginStore() {
+                    override fun logins(): List<JmapLogin> = throw LoginStoreException("locked")
+                }
+            JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike()), locked), locked, states)
+                .check { error("Nothing is shown") }
             assertEquals(mapOf("ada" to "e1"), states.saved)
         }
 

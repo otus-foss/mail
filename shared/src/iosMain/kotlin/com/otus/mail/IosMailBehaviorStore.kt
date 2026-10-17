@@ -3,6 +3,7 @@ package com.otus.mail
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
@@ -36,6 +37,7 @@ class IosMailBehaviorStore(
             recentFrom = decodeRecentFrom(preferences.stringForKey(RECENT_FROM)),
             signatureInReplies = bool(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
+            inbox = preferences.stringForKey(INBOX)?.let(InboxContents::decode) ?: defaults.inbox,
         )
     }
 
@@ -55,6 +57,7 @@ class IosMailBehaviorStore(
         preferences.setObject(encodeRecentFrom(behavior.recentFrom), forKey = RECENT_FROM)
         preferences.setBool(behavior.signatureInReplies, forKey = SIGNATURE_IN_REPLIES)
         preferences.setInteger(behavior.undoSendSeconds.toLong(), forKey = UNDO_SEND_SECONDS)
+        preferences.setObject(InboxContents.encode(behavior.inbox), forKey = INBOX)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -81,6 +84,7 @@ class IosMailBehaviorStore(
         const val RECENT_FROM = "otus.mail.recent_from"
         const val SIGNATURE_IN_REPLIES = "otus.mail.signature_in_replies"
         const val UNDO_SEND_SECONDS = "otus.mail.undo_send_seconds"
+        const val INBOX = "otus.mail.inbox_contents"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"
     }

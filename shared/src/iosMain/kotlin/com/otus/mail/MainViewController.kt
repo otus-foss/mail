@@ -5,8 +5,10 @@ import com.otus.avatar.FileAvatarStore
 import com.otus.dateformat.IosDateFormatPreferenceStore
 import com.otus.jmap.login.IosLoginStore
 import com.otus.mail.app.App
+import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.settings.data.IosAnimationPreferenceStore
 import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
@@ -27,7 +29,7 @@ fun mainViewController() =
             MailServices(
                 IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
                 avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
-                readLaterStore = IosReadLaterStore(),
+                stores = MailDeviceStores(IosReadLaterStore(), IosFolderColorStore(), IosAddressPinStore()),
             )
         val behaviorState = MailBehaviorState(IosMailBehaviorStore())
         val themeState = ThemeSettingsState(IosThemePreferenceStore())

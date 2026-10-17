@@ -6,7 +6,7 @@ import com.otus.mail.feature.folders.domain.SortCondition
 /** The condition as it completes "Mail that", such as "is from billing@acme.example". */
 val SortCondition.phrase: String
     get() {
-        val value = condition.value
+        val value = value
         return when (kind) {
             SortBy.Sender -> "is from $value"
             SortBy.Domain -> "is from anyone at ${value.removePrefix("@")}"
@@ -18,7 +18,7 @@ val SortCondition.phrase: String
 /** The mail the condition catches, as it follows "New mail", such as "from billing@acme.example". */
 val SortCondition.catches: String
     get() {
-        val value = condition.value
+        val value = value
         return when (kind) {
             SortBy.Sender -> "from $value"
             SortBy.Domain -> "from anyone at ${value.removePrefix("@")}"
@@ -38,7 +38,7 @@ val SortCondition.keyword: String
 
 /** The value the condition matches, as it follows [keyword], such as “Invoice”. */
 val SortCondition.shown: String
-    get() = if (kind == SortBy.Subject) "“${condition.value}”" else condition.value
+    get() = if (kind == SortBy.Subject) "“$value”" else value
 
 /** Who else the condition catches besides this message's sender. */
 val SortCondition.reach: String

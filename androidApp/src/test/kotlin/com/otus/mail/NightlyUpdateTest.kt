@@ -11,8 +11,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.mail.app.App
 import com.otus.mail.app.MailServices
+import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.NightlyBuild
 import com.otus.mail.feature.updates.domain.NightlyFeed
+import com.otus.mail.feature.updates.domain.ReleaseChannel
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -35,11 +37,11 @@ class NightlyUpdateTest {
             }
         }
 
-    private fun show(installed: Int?) {
+    private fun show(installed: InstalledBuild) {
         val services = MailServices(createNightlyFeed = { NightlyFeed { NightlyBuild(142, "https://x/142.apk") } })
         compose.activity.setContent {
             CompositionLocalProvider(LocalUriHandler provides uriHandler) {
-                App(services = services, nightlyBuild = installed)
+                App(services = services, build = installed)
             }
         }
         compose.onNodeWithContentDescription("Open navigation").performClick()
@@ -47,15 +49,21 @@ class NightlyUpdateTest {
 
     @Test
     fun aNightlyBuildOffersTheNewerNightlyAndOpensItsApk() {
-        show(installed = 141)
-        compose.onNodeWithText("Get nightly 142").assertIsDisplayed().performClick()
+        show(InstalledBuild(ReleaseChannel.Nightly, "nightly-141", 141, "abc1234"))
+        compose.onNodeWithText("Nightly").assertIsDisplayed()
+        compose.onNodeWithContentDescription(UPDATE_141).assertIsDisplayed().performClick()
         assertEquals(listOf("https://x/142.apk"), opened)
     }
 
     @Test
-    fun otherBuildsOfferNoNightly() {
-        show(installed = null)
-        compose.onNodeWithText("All accounts").assertIsDisplayed()
-        compose.onNodeWithText("Get nightly 142").assertDoesNotExist()
+    fun aDevBuildShowsItsCommitAndOffersNoNightly() {
+        show(InstalledBuild(ReleaseChannel.Dev, "1.0", 141, "abc1234"))
+        compose.onNodeWithText("Dev").assertIsDisplayed()
+        compose.onNodeWithText("abc1234").assertIsDisplayed()
+        compose.onNodeWithContentDescription(UPDATE_141).assertDoesNotExist()
+    }
+
+    private companion object {
+        const val UPDATE_141 = "Update available, Build 141 installed"
     }
 }

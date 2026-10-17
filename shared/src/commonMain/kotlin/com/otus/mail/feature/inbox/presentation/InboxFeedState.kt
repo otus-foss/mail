@@ -31,8 +31,19 @@ class InboxFeedState(
     private val scope: CoroutineScope,
     private val avatars: AvatarService? = null,
     private val avatarOptions: () -> AvatarOptions = { mailAvatarOptions(websiteIcons = true) },
-    private val defaultScope: MailScope = MailScope.Inbox,
+    defaultScope: MailScope = MailScope.Inbox,
 ) {
+    /**
+     * The page's own messages, such as the inbox with Spam and Trash as the user chose. A new one
+     * loads at once while the page shows its own messages, not while a search shows others.
+     */
+    var defaultScope = defaultScope
+        set(scope) {
+            val showingOwn = mailScope == field
+            field = scope
+            if (showingOwn) show(null)
+        }
+
     /** What the list loads: the page's own messages, or what a search or folder pill shows in their place. */
     var mailScope by mutableStateOf(defaultScope)
         private set

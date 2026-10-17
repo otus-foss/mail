@@ -5,6 +5,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -97,7 +98,7 @@ class MessageFilingRollbackTest {
         val action =
             async {
                 coroutineScope {
-                    val filing = MessageFiling(services, folders, this)
+                    val filing = MessageFiling(services, folders, FolderColorsState(), this)
                     if (readLater) {
                         assertNotNull(filing.readLater(feed, initial)).apply()
                     } else {

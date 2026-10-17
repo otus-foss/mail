@@ -12,8 +12,16 @@ class SidebarLayoutTest {
                 hidden = setOf(SidebarSection.Mailboxes),
                 mailboxes = MailboxStyle.Rows,
                 counts = SidebarCount.None,
+                folderColors = false,
             )
         assertEquals(layout, SidebarLayout.decode(SidebarLayout.encode(layout)))
+    }
+
+    @Test
+    fun folderColorsStayOnUntilTurnedOff() {
+        assertEquals(true, SidebarLayout.decode("counts=total").folderColors)
+        assertEquals(true, SidebarLayout.decode("folderColors=maybe").folderColors)
+        assertEquals(false, SidebarLayout.decode("folderColors=false").folderColors)
     }
 
     @Test

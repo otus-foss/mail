@@ -7,14 +7,14 @@ import com.otus.mail.feature.inbox.domain.SidebarSection
 val SidebarSection.title: String
     get() =
         when (this) {
-            SidebarSection.Mailboxes -> "Mailboxes"
+            SidebarSection.Mailboxes -> "Pinned"
             SidebarSection.Folders -> "Folders"
         }
 
 val MailboxStyle.label: String
     get() =
         when (this) {
-            MailboxStyle.Chips -> "Chips"
+            MailboxStyle.Grid -> "Grid"
             MailboxStyle.Rows -> "Rows"
         }
 

@@ -63,10 +63,7 @@ class ReadLaterFoldersTest {
             name: String,
         ) = error("unused")
 
-        override suspend fun move(
-            folder: MailFolder,
-            parentId: String?,
-        ) = error("unused")
+        override suspend fun place(placement: FolderPlacement) = error("unused")
 
         override suspend fun delete(folder: MailFolder) = error("unused")
     }
@@ -90,6 +87,24 @@ class ReadLaterFoldersTest {
             val accounts = ReadLaterFolders(repository).accounts { false }
             assertNull(accounts.single().readLaterId)
             assertTrue(repository.created.isEmpty())
+        }
+
+    @Test
+    fun offHidesTheSavedFolderButNotAnotherNamedReadLater() =
+        runTest {
+            val saved = MailFolder("ada", "x", "Read later")
+            val repository = FakeFolders(listOf(ada(saved)), backgroundScope)
+            assertEquals(
+                listOf("i"),
+                ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x")))
+                    .accounts {
+                        false
+                    }.single()
+                    .folders
+                    .map { it.id },
+            )
+            val unsaved = ReadLaterFolders(repository, MemoryStore()).accounts { false }.single()
+            assertEquals(listOf("i", "x"), unsaved.folders.map { it.id }, "Never saved, so it is the user's own folder")
         }
 
     @Test

@@ -12,12 +12,12 @@ on:
 permissions:
   contents: read
 
+# The release token goes only to the steps that call gh, never to the Gradle build, which runs
+# otus-meta's build scripts and every plugin. The build reads Meta from its checkout, so it needs
+# no packages token.
 env:
-  ORG_GRADLE_PROJECT_otusMetaUsername: ${{ github.repository_owner }}
-  ORG_GRADLE_PROJECT_otusMetaPassword: ${{ secrets.OTUS_META_PACKAGES_TOKEN }}
   # GitHubNightlyFeed reads releases from this repository.
   NIGHTLY_REPO: reazndev/otus-mail-nightly
-  GH_TOKEN: ${{ secrets.OTUS_NIGHTLY_TOKEN }}
 
 concurrency:
   group: nightly
@@ -28,18 +28,27 @@ jobs:
     outputs:
       number: ${{ steps.number.outputs.number }}
       previous: ${{ steps.number.outputs.previous }}
+      sha: ${{ steps.number.outputs.sha }}
     steps:
+      # A re-run keeps the commit of its first attempt, so check out main's current tip instead.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: main
           fetch-depth: 0
+          persist-credentials: false
       # Main is squash-merged, so its commit count grows by one per merge and orders the builds.
       - id: number
+        env:
+          GH_TOKEN: ${{ secrets.OTUS_NIGHTLY_TOKEN }}
         run: |
           number=$(git rev-list --count HEAD)
           latest=$(gh release view -R "$NIGHTLY_REPO" --json tagName -q .tagName 2>/dev/null || true)
           echo "previous=${latest#nightly-}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           if [ "$latest" != "nightly-$number" ]; then
             echo "number=$number" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$latest already covers main at $(git rev-parse --short HEAD), so there is nothing to build."
           fi
 
   build:
@@ -52,7 +61,9 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ needs.version.outputs.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: reazndev/otus-meta
@@ -78,6 +89,8 @@ jobs:
           ./gradlew :androidApp:assembleNightly --console=plain \
             -Potus.meta.path=otus-meta -Potus.versionCode="$NUMBER" -Potus.versionName="nightly-$NUMBER"
       - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.OTUS_NIGHTLY_TOKEN }}
         run: |
           apk="otus-mail-nightly-$NUMBER.apk"
           cp androidApp/build/outputs/apk/nightly/androidApp-nightly.apk "$apk"
