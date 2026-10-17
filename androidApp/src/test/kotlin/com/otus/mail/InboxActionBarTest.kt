@@ -79,7 +79,7 @@ class InboxActionBarTest {
         start(MailBehavior(markReadOnOpen = false, actionBarMode = ActionBarMode.Fixed))
         button("Search").assertIsEnabled()
         button("New mail").assertIsEnabled()
-        listOf("Archive", "Trash").forEach { button(it).assertIsNotEnabled() }
+        listOf("Archive", "Delete").forEach { button(it).assertIsNotEnabled() }
 
         compose.onNodeWithText("Welcome").performClick()
         button("Search").assertIsNotEnabled()

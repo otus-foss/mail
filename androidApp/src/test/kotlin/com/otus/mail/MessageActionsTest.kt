@@ -122,7 +122,7 @@ class MessageActionsTest {
     fun trashFilesTheMessageIntoTheTrashFolder() {
         server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
         openMessage(MailBehavior(markReadOnOpen = false))
-        button("Trash").performClick()
+        button("Delete").performClick()
         val trash = lastUpdate()
         assertTrue(trash, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/t\":true}}" in trash)
     }
@@ -148,7 +148,7 @@ class MessageActionsTest {
         server.folders += """{"id": "l", "name": "Read later"}"""
         server.alsoIn += "l"
         openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
-        button("Trash").performClick()
+        button("Delete").performClick()
         val trash = lastUpdate()
         val patch = "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/l\":null,\"mailboxIds/t\":true}}"
         assertTrue(trash, patch in trash)
@@ -162,7 +162,7 @@ class MessageActionsTest {
         server.folders += """{"id": "l", "name": "Read later"}"""
         openMessage(MailBehavior(markReadOnOpen = false))
         // Unavailable actions keep their slots, disabled, so the bar never shifts.
-        listOf("Archive", "Trash").forEach { button(it).assertIsNotEnabled() }
+        listOf("Archive", "Delete").forEach { button(it).assertIsNotEnabled() }
         assertFalse(menuOffers("Flag"))
         assertTrue(menuOffers("Mark read"))
         assertFalse(menuOffers("Read later"))

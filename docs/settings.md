@@ -2,69 +2,78 @@
 
 Implemented through the shared `settings` and `accounts` libraries from otus-meta, with
 Mail-specific destination entries in `app/MailSettings.kt`. Mail pins both libraries to Meta
-0.7.0; the appearance page's content slot arrived in 0.5.0. Settings is a sidebar destination
-with subpages.
+0.7.0. The Appearance page's title and the removal of its `content` slot are unreleased Meta
+changes, so Mail builds against Meta's `feat/settings-layout` until the next release. Settings is
+a sidebar destination with subpages.
 
 Meta 0.7.0 includes the connection sheet and sending-address list described below.
 
 ## Pages
 
-- **Settings** lists four subpages as flat `SettingRow`s, each with an icon, a summary, and a
-  chevron, separated by hairlines. Settings pages follow Notion's layout: title and description on
-  the left, the control on the right, and large section titles.
+Each page has one subject, and no page is more than two levels below Settings except a folder's
+own page.
+
+- **Settings** lists five subpages as `SettingPageRow`s, each with an icon, a summary, and a
+  chevron, separated by hairlines: **Email accounts**, **Notifications**, **Appearance**, **Mail
+  behavior**, and **Folders & rules**. Settings pages follow Notion's layout: title and
+  description on the left, the control on the right, and large section titles.
 - **Email accounts** (`com.otus.accounts`) lists connected accounts as flat rows with a Remove
   button, under large section titles, and connects new ones with a JMAP
   server, username, and password or app password. It supports compatible JMAP mail servers with
   HTTP Basic authentication, such as Stalwart; no provider-specific behavior exists.
-- **Appearance & behavior** shows the date format's pattern in a `ValueButton`, with an example
-  date below the title. Tapping the row opens a `ChoiceSheet` with every format and its example;
-  choosing one applies it at once and moves the check, and Done, the scrim, Back, or swiping
-  down anywhere on the sheet closes it. A short, slow pull springs back.
-  Every row has an icon. The **Look** section starts with **Theme**, which shows the theme's name
-  and accent and opens the Theme page. Mail adds `MailLookSettings` through the screen's `look`
-  slot: **Sidebar** shows **Edit** and opens the Sidebar page, which arranges the sidebar's
-  sections, mailboxes, and counts (see [Mail destinations](sidebar.md#mail-destinations)). Its
-  **Folder colors** switch, on by default, hides folder icon colors without deleting them, with the
-  caption "Colors only change the folder icon. They stay on this device." **Pills** shows how
-  many pills the inbox row shows and opens `InboxPillsSheet`, a
-  `SelectionSheet` where the shown pills are reordered by their drag handles and others are added.
-  Done saves the row. The date format closes the section. Below it, Mail adds
-  `MailBehaviorSettings` through the content slot. Under **Inbox**, **Inbox shows** sums up what
-  the Inbox lists, such as "All mail · Spam", and opens the Inbox page; see
-  [Inbox contents](inbox.md#inbox-contents). Under **Actions**, **Swipe right** and **Swipe
-  left** open a `ChoiceSheet` of message actions, shown in a `ValueButton`. **Action bar** shows its
-  mode, **Per screen** or **Same everywhere**, and opens its own page, and **Minimize action bar**
-  is a switch. Under **Reading**, **Mark as read when opened** is a
-  `SettingToggleRow` switch. Under **Privacy**, the **Website icons** switch lets avatars load
+- **Notifications** chooses the UnifiedPush app for instant delivery and shows each account's push
+  status; see [notifications](notifications.md).
+- **Appearance** (`AppearanceSettingsScreen` from `com.otus.settings`) holds only visual choices,
+  in one **Look** section, and every row has an icon. Rows that open a page are Meta's `SettingPageRow`s: they end in a
+  chevron and name the page's value under the title. **Theme** names the theme and opens the Theme
+  page. Mail adds `MailLookSettings` through the screen's `look` slot:
+  **Sidebar** names how many sections the sidebar shows, such as "2 sections", and opens the
+  Sidebar page, which arranges the sidebar's sections, mailboxes, and counts (see
+  [Mail destinations](sidebar.md#mail-destinations)). Its **Folder colors** switch, on by default,
+  hides folder icon colors without deleting them, with the caption "Colors only change the folder
+  icon. They stay on this device." **Date format** shows the pattern in a `ValueButton`, with an
+  example date below the title. Tapping the row opens a `ChoiceSheet` with every format and its
+  example; choosing one applies it at once and moves the check, and Done, the scrim, Back, or
+  swiping down anywhere on the sheet closes it. A short, slow pull springs back. **Animations**
+  chooses Instant, Slow, Regular, or Fast.
+- **Mail behavior** (`MailBehaviorScreen`) holds how Mail acts. Under **Inbox**, **Inbox shows**
+  names what the Inbox lists in a `ValueButton`: **Inbox**, **Inbox + Spam**, **Inbox + Trash**, or
+  **All mail**, and opens a sheet with
+  **Spam** and **Trash** switches; see
+  [Inbox contents](inbox.md#inbox-contents). **Pills** shows how many pills the inbox row shows and
+  opens `InboxPillsSheet`, a `SelectionSheet` where the shown pills are reordered by their drag
+  handles and others are added; Done saves the row. The **Read later** switch, off by default,
+  gives each account a Read later folder and adds its pill, swipe, and button; see
+  [Read later](folders.md#read-later). Under **Actions**, **Swipe right** and **Swipe left** open
+  a `ChoiceSheet` of message actions, shown in a `ValueButton`, and **Action bar**, also a
+  `SettingPageRow`, opens its page; it names no mode, since the page shows it first. Under **Reading**, **Mark as read
+  when opened** is a switch. Under **Privacy**, the **Website icons** switch lets avatars load
   logos from sender websites and DuckDuckGo, and photos that contact cards link to; see
   [website icons](avatars.md#website-icons). Each change is saved before it is shown. See
-  [inbox pills](inbox.md#inbox-pills), [swipe actions](inbox.md#swipe-actions), and
-  [Read later](folders.md#read-later).
-- **Theme** (`ThemeSettingsScreen` from `com.otus.settings`), a subpage of Appearance &
-  behavior, previews the inbox in the current colors with `ThemeInboxPreview`, then offers the
+  [inbox pills](inbox.md#inbox-pills) and [swipe actions](inbox.md#swipe-actions).
+- **Theme** (`ThemeSettingsScreen` from `com.otus.settings`), a subpage of Appearance, previews
+  the inbox in the current colors with `ThemeInboxPreview`, then offers the
   **Otus**, **Light**, **Graphite** (warm grey, after Notion), and **Black** (true black, after
   the X app) themes as cards and seven accent swatches. The plus swatch opens a **Custom color**
   sheet with hue and intensity sliders, a hex field, and the shades in each theme; Done applies
   it. Otus derives each accent's fill, outline, and text shades for the theme and shows them with
   their hex codes. **Reset to Otus** restores the default. Every choice applies to the whole app
   at once and is saved by `AndroidThemePreferenceStore` or `IosThemePreferenceStore`.
-- **Action bar** (`ActionBarSettingsScreen`), a subpage of Appearance & behavior, starts with a
-  **Layout** row whose `ChoiceSheet` picks **Per screen** or **Same everywhere**. **Per screen**
-  shows a section for **Message list**, **Selected messages**, **Open message**, and **Writing**;
-  **Same everywhere** shows one **Every screen** section. Each section shows a preview of the
-  saved bar, then **Main button** and a row per button slot, up to **Button 3**. A row, or a button
-  in the preview, opens a `ChoiceSheet` for that slot with the place's default first. Choosing an
-  action that another slot holds swaps the two, and a button slot can be **None**. Each change is
-  saved at once. See [action bar](action-bar.md).
-- **Folders** starts with the **Read later** switch, one list for mail saved from every account
-  (see [Read later](folders.md#read-later)). It lists every account's folders, or one account's
+- **Action bar** (`ActionBarSettingsScreen`), a subpage of Mail behavior, starts with a
+  **Layout** row whose `ChoiceSheet` picks **Per screen** or **Same everywhere**, then the
+  **Minimize** switch, which shrinks every bar to a round button for its main action. **Per
+  screen** shows a card for **Message list**, **Selected messages**, **Open message**, and
+  **Writing**; **Same everywhere** shows one **Every screen** card. Each card previews the saved
+  bar and opens its editor. Each change is saved at once. See [action bar](action-bar.md).
+- **Folders & rules** lists every account's folders, or one account's
   through the account picker, as
   trees. Dragging a folder's handle moves it to a new place or into another folder, holding a folder
   opens quick actions (Rename, Move into, Color, Delete), and a plus button
   creates a folder: on each account's row, or beside the hint when one account is shown. Tapping a folder opens its page: a summary line, then **Name**, **Move into**, **Color**
   (kept on this device), **Rules** (the chips that sort new mail into it, and **Add rule**), and
   **Delete folder**, which waits until the folder is empty. Rules live only on folder pages;
-  there is no separate Rules page. See [Folders and rules](folders.md#the-folder-page).
+  there is no separate Rules page, because Otus writes only rules that file mail into a folder, and
+  each folder row on this page shows its rules. See [Folders and rules](folders.md#the-folder-page).
 
 ## Reusable pieces
 
