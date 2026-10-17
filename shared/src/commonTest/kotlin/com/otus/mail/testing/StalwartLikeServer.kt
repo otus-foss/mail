@@ -18,6 +18,13 @@ const val STALWART_SESSION = """
  "username": "ada@example.org", "apiUrl": "/jmap/", "state": "s1"}
 """
 
+/** [STALWART_SESSION] with submission on the session and the mail account, so it can send. */
+val SUBMISSION_SESSION =
+    STALWART_SESSION.replace(
+        "\"urn:ietf:params:jmap:mail\": {}}",
+        "\"urn:ietf:params:jmap:mail\": {}, \"urn:ietf:params:jmap:submission\": {}}",
+    )
+
 /** A session whose only account holds contacts, so the login has no mail account. */
 const val CONTACTS_ONLY_SESSION = """
 {"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:contacts": {}},

@@ -9,6 +9,8 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.SidebarLayout
+import com.otus.mail.feature.inbox.domain.decodeRecentFrom
+import com.otus.mail.feature.inbox.domain.encodeRecentFrom
 import platform.Foundation.NSUserDefaults
 
 class IosMailBehaviorStore(
@@ -32,6 +34,9 @@ class IosMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.stringForKey(ACTION_BAR_MODE)) ?: defaults.actionBarMode,
             minimizedBar = bool(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = bool(WEBSITE_ICONS, defaults.websiteIcons),
+            recentFrom = decodeRecentFrom(preferences.stringForKey(RECENT_FROM)),
+            signatureInReplies = bool(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
+            undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.stringForKey(INBOX)?.let(InboxContents::decode) ?: defaults.inbox,
         )
     }
@@ -49,6 +54,9 @@ class IosMailBehaviorStore(
         preferences.setObject(behavior.actionBarMode.storageValue, forKey = ACTION_BAR_MODE)
         preferences.setBool(behavior.minimizedBar, forKey = MINIMIZED_BAR)
         preferences.setBool(behavior.websiteIcons, forKey = WEBSITE_ICONS)
+        preferences.setObject(encodeRecentFrom(behavior.recentFrom), forKey = RECENT_FROM)
+        preferences.setBool(behavior.signatureInReplies, forKey = SIGNATURE_IN_REPLIES)
+        preferences.setInteger(behavior.undoSendSeconds.toLong(), forKey = UNDO_SEND_SECONDS)
         preferences.setObject(InboxContents.encode(behavior.inbox), forKey = INBOX)
     }
 
@@ -57,6 +65,11 @@ class IosMailBehaviorStore(
         key: String,
         default: Boolean,
     ): Boolean = if (preferences.objectForKey(key) == null) default else preferences.boolForKey(key)
+
+    private fun int(
+        key: String,
+        default: Int,
+    ): Int = if (preferences.objectForKey(key) == null) default else preferences.integerForKey(key).toInt()
 
     private companion object {
         const val START_TO_END = "otus.mail.swipe_start_to_end"
@@ -68,6 +81,9 @@ class IosMailBehaviorStore(
         const val ACTION_BAR_MODE = "otus.mail.action_bar_mode"
         const val MINIMIZED_BAR = "otus.mail.action_bar_minimized"
         const val WEBSITE_ICONS = "otus.mail.website_icons"
+        const val RECENT_FROM = "otus.mail.recent_from"
+        const val SIGNATURE_IN_REPLIES = "otus.mail.signature_in_replies"
+        const val UNDO_SEND_SECONDS = "otus.mail.undo_send_seconds"
         const val INBOX = "otus.mail.inbox_contents"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"

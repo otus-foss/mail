@@ -1,0 +1,78 @@
+package com.otus.mail.feature.inbox.data
+
+import com.otus.jmap.GetMethod
+import com.otus.jmap.JmapConnections
+import com.otus.jmap.JmapException
+import com.otus.jmap.JmapIds
+import com.otus.jmap.jmapDecoding
+import com.otus.jmap.login.LoginStore
+import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.EmailThreadType
+import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.ThreadType
+import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.ThreadHistory
+import com.otus.mail.feature.inbox.domain.ThreadMessage
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
+
+/**
+ * Reads a message's thread in one request: `Email/get` for its `threadId`, `Thread/get` for the
+ * thread's Emails, and `Email/get` for who sent each and when (RFC 8621, sections 3 and 4.2).
+ * Drafts and messages that came after the original are left out.
+ */
+class JmapThreadHistory(
+    private val connections: JmapConnections,
+    private val logins: LoginStore,
+    private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
+) : ThreadHistory {
+    override suspend fun earlier(
+        accountId: String,
+        emailId: String,
+    ): List<ThreadMessage> =
+        try {
+            mailAccount(connections, logins, accountId)
+                ?.let { account ->
+                    val emails = account.thread(emailId)
+                    jmapDecoding { emails.list.upTo(emailId).map { it.threadMessage() } }
+                }.orEmpty()
+        } catch (expected: JmapException) {
+            emptyList()
+        } catch (expected: LoginStoreException) {
+            emptyList()
+        }
+
+    /** Every Email in the thread of [emailId], in one request of three chained calls. */
+    private suspend fun MailAccount.thread(emailId: String) =
+        connection.request {
+            val original = call(GetMethod(EmailThreadType, id, JmapIds.Of(listOf(emailId)), THREAD_PROPERTIES))
+            val thread = call(GetMethod(ThreadType, id, JmapIds.Result(original.resultOf("/list/*/threadId"))))
+            call(GetMethod(EmailType, id, JmapIds.Result(thread.resultOf("/list/*/emailIds")), PROPERTIES))
+        }
+
+    /** The messages received no later than [emailId], newest first, without drafts. */
+    private fun List<EmailObject>.upTo(emailId: String): List<EmailObject> {
+        val cutoff = firstOrNull { it.id == emailId }?.receivedAt ?: return emptyList()
+        return filter {
+            it.keywords[DRAFT_KEYWORD] != true && it.receivedAt <= cutoff
+        }.sortedByDescending { it.receivedAt }
+    }
+
+    private fun EmailObject.threadMessage(): ThreadMessage {
+        val sender = from?.firstOrNull()
+        return ThreadMessage(
+            id,
+            MailSender(sender?.name.orEmpty().ifBlank { sender?.email.orEmpty() }, sender?.email.orEmpty()),
+            Instant.parse(receivedAt).toLocalDateTime(zone()).date,
+            preview,
+        )
+    }
+
+    private companion object {
+        val PROPERTIES = listOf("id", "from", "receivedAt", "preview", "keywords")
+        val THREAD_PROPERTIES = listOf("id", "threadId")
+    }
+}

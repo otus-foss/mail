@@ -32,8 +32,11 @@ class OtusMailApplication :
                     AndroidAddressPinStore(this),
                 ),
             instantPush = instantPush,
+            signatureImages = signatureImages,
         )
     }
+
+    val signatureImages: AndroidSignatureImages by lazy { AndroidSignatureImages(this) }
 
     val instantPush: AndroidInstantPush by lazy { AndroidInstantPush(this) }
 

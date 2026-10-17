@@ -18,6 +18,7 @@ import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.SendIdentity
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -30,15 +31,22 @@ class JmapDraftRepository(
     private val connections: JmapConnections,
     private val logins: LoginStore,
 ) : DraftRepository {
-    override suspend fun identities(accountId: String): List<MailSender> =
+    override suspend fun identities(accountId: String): List<SendIdentity> =
         try {
             mailAccount(connections, logins, accountId)
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
                 ?.let { account ->
                     account.connection
-                        .call(GetMethod(IdentityType, account.id, properties = listOf("id", "name", "email")))
+                        .call(GetMethod(IdentityType, account.id, properties = IDENTITY_PROPERTIES))
                         .list
-                        .map { MailSender(it.name.ifBlank { it.email }, it.email, accountId) }
+                        .map {
+                            SendIdentity(
+                                it.id,
+                                MailSender(it.name.ifBlank { it.email }, it.email, accountId),
+                                it.textSignature,
+                                it.htmlSignature,
+                            )
+                        }
                 }.orEmpty()
         } catch (expected: JmapException) {
             emptyList()
@@ -49,7 +57,13 @@ class JmapDraftRepository(
     override suspend fun save(draft: Draft): Result<String> =
         attempt(draft.accountId) { account ->
             val drafts = draftsFolder(account) ?: throw DraftException(DraftFailure.NoDraftsFolder)
-            val create = SetMethod(EmailType, account.id, create = mapOf(CREATION_ID to draft.toEmail(drafts)))
+            val create =
+                SetMethod(
+                    EmailType,
+                    account.id,
+                    create =
+                        mapOf(CREATION_ID to draft.toEmail(drafts, account.inlineImages(draft.htmlContent()))),
+                )
             val result = account.connection.call(create)
             result.notCreated[CREATION_ID]?.let { throw DraftException(it.toDraftFailure()) }
             val id = result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.ServerProblem)
@@ -105,13 +119,14 @@ class JmapDraftRepository(
         }
 
     private companion object {
+        val IDENTITY_PROPERTIES = listOf("id", "name", "email", "textSignature", "htmlSignature")
         const val CREATION_ID = "draft"
         const val DRAFTS_ROLE = "drafts"
     }
 }
 
 /** Identities and submission must live in the account that holds the drafts. */
-private fun MailAccount.mayUse(capability: String): Boolean =
+internal fun MailAccount.mayUse(capability: String): Boolean =
     capability in session.capabilities && session.accounts[id]?.capabilities?.contains(capability) == true
 
 private fun SetError.toDraftFailure(): DraftFailure =

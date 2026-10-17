@@ -7,7 +7,11 @@ package com.otus.mail.feature.inbox.domain
  * [sidebar] arranges the sidebar. [actionBar] holds each place's bar, and [actionBarMode] picks
  * whether places use their own or the Everywhere bar. A [minimizedBar] shows only its primary,
  * as a round button. A null swipe does nothing. [websiteIcons] lets sender avatars load images
- * from outside the user's servers, such as sender websites and DuckDuckGo.
+ * from outside the user's servers, such as sender websites and DuckDuckGo. [recentFrom] holds the
+ * addresses the user last sent from, newest first, which compose offers first and a new message
+ * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
+ * forwards too; new messages always get it. [undoSendSeconds] holds each sent message on the device
+ * that long so Undo can stop it; 0 sends at once.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -20,8 +24,23 @@ data class MailBehavior(
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
     val minimizedBar: Boolean = false,
     val websiteIcons: Boolean = true,
+    val recentFrom: List<String> = emptyList(),
+    val signatureInReplies: Boolean = true,
+    val undoSendSeconds: Int = DEFAULT_UNDO_SEND_SECONDS,
     val inbox: InboxContents = InboxContents(),
 ) {
+    /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
+    fun sentFrom(address: String): MailBehavior =
+        copy(
+            recentFrom =
+                (
+                    listOf(address) +
+                        recentFrom.filterNot {
+                            it.equals(address, ignoreCase = true)
+                        }
+                ).take(RECENT_FROM_LIMIT),
+        )
+
     /** What a swipe can be set to besides nothing; Read later only while it is on. */
     val swipeChoices: List<MailAction>
         get() = MailAction.entries.filter { it.swipeable && offers(it) }
@@ -90,6 +109,23 @@ data class MailBehavior(
         )
     }
 }
+
+/** The Undo send delays settings offer, in seconds; 0 turns Undo send off. */
+val UNDO_SEND_CHOICES =
+    listOf(0, SHORT_UNDO_SEND_SECONDS, MEDIUM_UNDO_SEND_SECONDS, DEFAULT_UNDO_SEND_SECONDS, LONG_UNDO_SEND_SECONDS)
+
+const val DEFAULT_UNDO_SEND_SECONDS = 15
+private const val SHORT_UNDO_SEND_SECONDS = 5
+private const val MEDIUM_UNDO_SEND_SECONDS = 10
+private const val LONG_UNDO_SEND_SECONDS = 30
+
+/** How many addresses [MailBehavior.recentFrom] keeps: the Send-from list's Recent section. */
+const val RECENT_FROM_LIMIT = 2
+
+/** [MailBehavior.recentFrom] as one stored line, and back. Addresses cannot hold a newline. */
+fun encodeRecentFrom(addresses: List<String>): String = addresses.joinToString("\n")
+
+fun decodeRecentFrom(stored: String?): List<String> = stored?.lines()?.filter(String::isNotBlank).orEmpty()
 
 /** App-private storage for [MailBehavior]. Unknown or missing values read as the defaults. */
 interface MailBehaviorStore {

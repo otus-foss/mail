@@ -37,7 +37,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val dateFormatState = DateFormatSettingsState(AndroidDateFormatPreferenceStore(this))
-        val services = (application as OtusMailApplication).services
+        val app = application as OtusMailApplication
+        app.signatureImages.attach(this)
+        val services = app.services
         if (savedInstanceState == null) askForNotifications(services)
         val behaviorState = MailBehaviorState(AndroidMailBehaviorStore(this))
         themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))

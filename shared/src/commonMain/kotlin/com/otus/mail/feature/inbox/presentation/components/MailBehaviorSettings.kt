@@ -92,9 +92,9 @@ fun InboxBehaviorSettings(
 }
 
 /**
- * Swipe, action bar, reading, and privacy choices for the Mail behavior page. [onOpenActionBar]
- * opens the action bar's page. Each swipe opens a choice of actions; the rows name the physical
- * direction for the current layout direction.
+ * Swipe, action bar, reading, sending, and privacy choices for the Mail behavior page.
+ * [onOpenActionBar] opens the action bar's page. Each swipe opens a choice of actions; the rows
+ * name the physical direction for the current layout direction.
  */
 @Composable
 fun MailBehaviorSettings(
@@ -120,6 +120,7 @@ fun MailBehaviorSettings(
             icon = Res.drawable.symbol_mark_email_read,
         )
     }
+    SendingSettings(state)
     PrivacySettings(state)
     choosing?.let { side -> SwipeChoice(state, side, side.title(rtl)) { choosing = null } }
 }
