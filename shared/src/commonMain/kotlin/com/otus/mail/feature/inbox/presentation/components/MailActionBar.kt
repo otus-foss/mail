@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ActionBar
 import com.otus.designsystem.components.BarAction
 import com.otus.designsystem.components.BarContext
+import com.otus.designsystem.components.MenuAction
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton
@@ -15,19 +16,18 @@ import com.otus.mail.feature.inbox.domain.barLayout
 /**
  * Any screen's bar for [layout]. [offer] gives each action as it applies on this screen; one it
  * cannot offer stays in its slot, disabled, so the buttons never move. [context] describes what
- * the primary applies to, such as a reply's recipient. A [minimized] bar shows only the primary,
- * and scales it out while [hidden]. An action that asks to be confirmed reaches [onAction] only
- * once the user confirms it.
+ * the primary applies to, such as a reply's recipient. A [minimized] bar shows only the primary;
+ * without one the bar is full. An action that asks to be confirmed reaches [onAction] only once
+ * the user confirms it.
  */
 @Composable
 internal fun MailActionBar(
     layout: ActionBarLayout,
     offer: (BarButton) -> OfferedAction?,
     onAction: (OfferedAction) -> Unit,
-    minimized: Boolean,
+    minimized: Minimized?,
     modifier: Modifier = Modifier,
     context: BarContext? = null,
-    hidden: Boolean = false,
 ) {
     val confirmation = rememberConfirmation()
 
@@ -47,13 +47,23 @@ internal fun MailActionBar(
     ActionBar(
         barAction(layout.primary, primary = true),
         modifier,
-        secondary = if (minimized) emptyList() else layout.secondary.map { barAction(it, primary = false) },
+        secondary = if (minimized != null) emptyList() else layout.secondary.map { barAction(it, primary = false) },
         context = context,
-        minimized = minimized,
-        hidden = hidden,
+        minimized = minimized != null,
+        hidden = minimized?.hidden == true,
+        more = minimized?.more.orEmpty().map { MenuAction(it.label, it.symbol) { confirmation.run(it, onAction) } },
     )
     confirmation.Dialog()
 }
+
+/**
+ * How a minimized bar differs from the full one: [hidden] scales its button out, and [more] lists
+ * actions in a menu behind a round button at its start.
+ */
+internal class Minimized(
+    val hidden: Boolean = false,
+    val more: List<OfferedAction> = emptyList(),
+)
 
 /**
  * Actions [place] can offer that its bar leaves out, for a page's menu, after the secondary

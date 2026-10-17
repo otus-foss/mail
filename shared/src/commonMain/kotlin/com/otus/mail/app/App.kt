@@ -2,13 +2,8 @@ package com.otus.mail.app
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -22,13 +17,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.MailLaunch
 import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.SlidingPages
 import com.otus.designsystem.components.ToastHost
 import com.otus.designsystem.components.ToastState
+import com.otus.designsystem.components.actionBarInset
 import com.otus.designsystem.components.rememberSidebarState
 import com.otus.designsystem.theme.ActionBarTokens
+import com.otus.designsystem.theme.AppIconStyle
 import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
@@ -36,11 +32,10 @@ import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
 import com.otus.settings.presentation.AnimationSettingsState
+import com.otus.settings.presentation.AppIconSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.dropWhile
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
@@ -50,6 +45,8 @@ fun App(
     behaviorState: MailBehaviorState = remember { MailBehaviorState() },
     themeState: ThemeSettingsState = remember { ThemeSettingsState() },
     animationState: AnimationSettingsState = remember { AnimationSettingsState() },
+    // Null where the platform cannot switch its icon; the launch animation then uses the accent.
+    appIconState: AppIconSettingsState? = null,
     nightlyBuild: Int? = null,
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
@@ -76,16 +73,9 @@ fun App(
     }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
-    // The launch animation covers the inbox, once per launch, until its first load ends.
-    var launching by rememberSaveable { mutableStateOf(true) }
-    var inboxLoaded by remember { mutableStateOf(false) }
-    LaunchedEffect(states) {
-        snapshotFlow { states.feed.loading }.dropWhile { !it }.first { !it }
-        inboxLoaded = true
-    }
     val settings =
-        remember(dateFormatState, themeState, animationState) {
-            SharedSettings(dateFormatState, themeState, animationState)
+        remember(dateFormatState, themeState, animationState, appIconState) {
+            SharedSettings(dateFormatState, themeState, animationState, appIconState)
         }
     val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
     OtusTheme(themeState.palette) {
@@ -112,7 +102,7 @@ fun App(
                         scope.launch { sidebar.close() }
                     },
                 )
-                if (launching) MailLaunch(loading = !inboxLoaded, onFinished = { launching = false })
+                LaunchCover(states.feed, appIconState?.style ?: AppIconStyle.Accent)
             }
             // Outlives the page a move closed, such as the open message.
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
@@ -128,8 +118,7 @@ private fun BoxScope.AboveActionBar(toasts: ToastState) {
         toasts,
         Modifier
             .align(Alignment.BottomCenter)
-            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
-            .padding(ActionBarTokens.barInset)
+            .actionBarInset()
             .padding(bottom = ActionBarTokens.height + ActionBarTokens.barInset),
     )
 }
