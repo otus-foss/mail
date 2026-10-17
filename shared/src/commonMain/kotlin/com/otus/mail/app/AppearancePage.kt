@@ -4,12 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
-import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
 import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
+import com.otus.mail.feature.inbox.presentation.screens.MailBehaviorScreen
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
-/** Appearance & behavior, where Mail adds its look and behavior rows to the shared page. */
+/** Appearance, where Mail adds its sidebar row to the shared page. */
 @Composable
 internal fun AppearancePage(
     states: MailStates,
@@ -17,28 +17,29 @@ internal fun AppearancePage(
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
-    val folderPills = rememberFolderPills(states)
     AppearanceSettingsScreen(
         settings.dateFormat,
         settings.theme,
         settings.animation,
         onTheme = { navigation.go(MailPage.ThemeSettings) },
         onBack = back,
-        look = {
-            MailLookSettings(
-                states.behavior,
-                folderPills,
-                onSidebar = { navigation.go(MailPage.SidebarSettings) },
-            )
-        },
-    ) {
-        MailBehaviorSettings(
-            states.behavior,
-            states.inboxContents,
-            onOpenInbox = { navigation.go(MailPage.InboxSettings) },
-            onOpenActionBar = { navigation.go(MailPage.ActionBarSettings) },
-        )
-    }
+        look = { MailLookSettings(states.behavior.behavior.sidebar) { navigation.go(MailPage.SidebarSettings) } },
+    )
+}
+
+/** Mail behavior, whose Action bar row opens its own page. */
+@Composable
+internal fun MailBehaviorPage(
+    states: MailStates,
+    navigation: MailNavigation,
+    back: () -> Unit,
+) {
+    MailBehaviorScreen(
+        states.behavior,
+        rememberFolderPills(states),
+        onOpenActionBar = { navigation.go(MailPage.ActionBarSettings) },
+        onBack = back,
+    )
 }
 
 /** The action bar's page, whose Move to buttons show each shared folder's color. */

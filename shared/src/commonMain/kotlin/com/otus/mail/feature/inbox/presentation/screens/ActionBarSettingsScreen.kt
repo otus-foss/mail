@@ -14,6 +14,7 @@ import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.PreviewCard
 import com.otus.designsystem.components.SettingRow
+import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.Subpage
 import com.otus.designsystem.elements.ValueButton
 import com.otus.designsystem.theme.PageTokens
@@ -33,7 +34,8 @@ import com.otus.mail.feature.inbox.presentation.components.title
  * Chooses whether each screen has its own action bar or one bar is used everywhere. A card per
  * bar that mode shows previews it as saved, and tapping the card opens its editor, where Move to
  * buttons pick among [folders], the paths of every account's own folders, each icon in its
- * [folderColor]. The editor's menu copies the bar to other screens.
+ * [folderColor]. The editor's menu copies the bar to other screens. Minimize shrinks every bar to
+ * a round button for its main action.
  */
 @Composable
 fun ActionBarSettingsScreen(
@@ -48,6 +50,12 @@ fun ActionBarSettingsScreen(
     val mode = state.behavior.actionBarMode
     Subpage("Action bar", onBack) {
         SettingRow("Layout", { choosingMode = true }, description = mode.description) { ValueButton(mode.label) }
+        SettingToggleRow(
+            "Minimize",
+            checked = state.behavior.minimizedBar,
+            onCheckedChange = { on -> state.update { it.copy(minimizedBar = on) } },
+            description = "One round button for the main action",
+        )
         Column(
             Modifier.padding(top = PageTokens.rowGap),
             verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap),

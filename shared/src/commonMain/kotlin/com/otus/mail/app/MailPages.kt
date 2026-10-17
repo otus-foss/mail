@@ -18,7 +18,6 @@ import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
 import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
-import com.otus.mail.feature.inbox.presentation.screens.InboxSettingsScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
@@ -41,8 +40,8 @@ internal fun MailPageContent(
             ComposePage(page, states, back)
         }
 
-        MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Notifications,
-        MailPage.SidebarSettings, MailPage.InboxSettings, MailPage.ThemeSettings, MailPage.ActionBarSettings,
+        MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
+        MailPage.SidebarSettings, MailPage.ThemeSettings, MailPage.ActionBarSettings,
         MailPage.Folders, is MailPage.FolderDetail,
         -> {
             SettingsPageContent(page, states, settings, navigation, back)
@@ -92,16 +91,16 @@ private fun SettingsPageContent(
             AppearancePage(states, settings, navigation, back)
         }
 
+        MailPage.Behavior -> {
+            MailBehaviorPage(states, navigation, back)
+        }
+
         MailPage.Notifications -> {
             states.notifications?.let { NotificationsScreen(it, states.accounts.accounts, onBack = back) }
         }
 
         MailPage.SidebarSettings -> {
             SidebarSettingsPage(states, back)
-        }
-
-        MailPage.InboxSettings -> {
-            InboxSettingsScreen(states.behavior, states.accountAddresses(), onBack = back)
         }
 
         MailPage.ThemeSettings -> {

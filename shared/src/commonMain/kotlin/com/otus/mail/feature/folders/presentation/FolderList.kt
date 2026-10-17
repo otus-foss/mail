@@ -9,7 +9,7 @@ import com.otus.mail.feature.folders.domain.SharedPlacement
 import com.otus.mail.feature.folders.domain.folderTree
 
 /**
- * A folder row in Settings › Folders. [sharedBy] says who shares the mailbox, both for a mailbox
+ * A folder row in Settings › Folders & rules. [sharedBy] says who shares the mailbox, both for a mailbox
  * shared with this login and for one of its own folders it shares with another connected login.
  */
 data class FolderListRow(

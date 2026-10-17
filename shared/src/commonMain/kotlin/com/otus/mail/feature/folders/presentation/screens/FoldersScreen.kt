@@ -14,13 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.RuleChipLine
-import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.Subpage
 import com.otus.designsystem.components.TrailingIcons
 import com.otus.designsystem.elements.BarIconButton
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
-import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn
@@ -43,8 +41,8 @@ import com.otus.mail.feature.folders.presentation.message
 import com.otus.mail.feature.folders.presentation.placement
 
 /**
- * Settings › Folders: the [readLater] switch, then every account's folders as trees, or one
- * account's when the picker chooses it. Tapping a folder opens its settings through [onOpenFolder];
+ * Settings › Folders & rules: every account's folders as trees, or one account's when the picker
+ * chooses it. Tapping a folder opens its settings through [onOpenFolder];
  * holding one opens its quick actions, and its handle drags it. [rulesOf] gives each folder's rules
  * as chip lines, first rule first.
  */
@@ -53,8 +51,6 @@ fun FoldersScreen(
     state: FoldersState,
     colors: FolderColorsState,
     rulesOf: (MailFolder) -> List<RuleChipLine>,
-    readLater: Boolean,
-    onReadLaterChange: (Boolean) -> Unit,
     onBack: () -> Unit,
     onOpenFolder: (MailFolder) -> Unit,
 ) {
@@ -72,18 +68,11 @@ fun FoldersScreen(
     val tree =
         FolderTreeState(collapsed, { collapsed = it }, state.listActions(colors, rulesOf, onOpenFolder) { dialog = it })
     Subpage(
-        "Folders",
+        "Folders & rules",
         onBack,
         chips = { if (accounts.size > 1) FolderAccountPicker(accounts, one) { chosen = it } },
     ) {
         state.notice?.let { PageNote(it) }
-        SettingToggleRow(
-            "Read later",
-            checked = readLater,
-            onCheckedChange = onReadLaterChange,
-            description = "One list for mail you save from every account",
-            icon = Res.drawable.symbol_bookmark,
-        )
         if (accounts.isEmpty()) {
             PageNote(if (state.loading) "Loading folders…" else "Connect an account in Settings to manage its folders.")
         }
