@@ -35,8 +35,8 @@ class SettingsPagesTest {
     @Test
     fun dateFormatShowsTheCurrentChoiceAndChangesItInAPopup() {
         openSettings()
-        compose.onNodeWithText("Theme, dates, sidebar, swipes, and reading").assertIsDisplayed()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Theme, sidebar, dates, and animations").assertIsDisplayed()
+        compose.onNodeWithText("Appearance").performClick()
         compose.onNodeWithText("Date format").assertIsDisplayed()
         compose.onNodeWithText("YYYY-MM-DD").assertDoesNotExist()
         compose.onNodeWithText("Date format").performClick()
@@ -47,14 +47,14 @@ class SettingsPagesTest {
         compose.onNodeWithContentDescription("Dismiss Date format").assertDoesNotExist()
         compose.onNodeWithText("YYYY-MM-DD", substring = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Appearance").performClick()
         compose.onNodeWithText("YYYY-MM-DD", substring = true).assertIsDisplayed()
     }
 
     @Test
     fun animationSpeedOffersInstantAndThreeSpeedsWithRegularByDefault() {
         openSettings()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Appearance").performClick()
         compose.onNodeWithText("Regular").assertIsDisplayed()
         compose.onNodeWithText("Animations").performClick()
         listOf("Instant", "Slow", "Fast", "No animations").forEach { compose.onNodeWithText(it).assertIsDisplayed() }
@@ -66,7 +66,7 @@ class SettingsPagesTest {
     @Test
     fun dismissingTheDateFormatPopupKeepsTheChoice() {
         openSettings()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Appearance").performClick()
         compose.onNodeWithText("Date format").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Device").assertIsDisplayed()
@@ -75,7 +75,7 @@ class SettingsPagesTest {
     @Test
     fun swipingTheChoiceSheetDownFromItsOptionsClosesIt() {
         openSettings()
-        compose.onNodeWithText("Appearance & behavior").performClick()
+        compose.onNodeWithText("Appearance").performClick()
         compose.onNodeWithText("Date format").performClick()
         // A short, slow pull springs back.
         compose.onNodeWithText("DD.MM.YYYY").performTouchInput {
@@ -96,7 +96,7 @@ class SettingsPagesTest {
         compose.onNodeWithText("Connect an account").assertIsDisplayed()
         compose.onNodeWithContentDescription("Server").assertDoesNotExist()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.onNodeWithText("Appearance & behavior").assertIsDisplayed()
+        compose.onNodeWithText("Appearance").assertIsDisplayed()
     }
 
     @Test

@@ -35,7 +35,7 @@ that zone, so pages need no extra wiring.
   `MotionSpeed.Normal` (240 ms) with `MotionCurve.Exit`. A sidebar released part-way animates only
   the remaining share of that time. One progress value drives slide and scrim, so swipes and
   reversals stay continuous. These times are for the Regular speed; the **Animations** setting in
-  Appearance & behavior scales them like every other animation, and Instant opens and closes the
+  Appearance scales them like every other animation, and Instant opens and closes the
   sidebar at once. Sizes live in `SidebarTokens`; see [motion](motion.md).
 
 ## Mail destinations
@@ -60,7 +60,7 @@ fills the sidebar for the chosen scope.
   fill. Spam keeps the app's name, although the design calls it Junk; see
   [combined folders](folders.md#combined-folders).
 - **Folders** starts with a "Folders" caption in `text2` that ends with a New folder button, which
-  opens Settings › Folders, because each account still creates its own folders. The user's own
+  opens Settings › Folders & rules, because each account still creates its own folders. The user's own
   folders, [shared by every account](folders.md#shared-folders), follow as 36 dp
   `SidebarFolderEntry` rows, indented 16 dp per level, with the count at the end. A folder with
   subfolders shows an open folder icon while expanded and a closed one while collapsed. Tapping
@@ -68,12 +68,12 @@ fills the sidebar for the chosen scope.
   the row opens the folder. Collapsed folders last until the app process ends.
 - A folder's icon shows the folder's color, both the closed `folder` icon and the open
   `folder_open` one. A long press on one of the user's own folders offers **Color**, which opens
-  the same `FolderColorSheet` as Settings › Folders. A shared folder row has one color, and
+  the same `FolderColorSheet` as Settings › Folders & rules. A shared folder row has one color, and
   setting it writes that color to every account's folder in the group. The **Folder colors**
   switch on the Sidebar page hides every tint without deleting the stored colors. See
   [folder colors](folders.md#folder-colors).
 - A hairline divider separates the two sections, in the order the user chose.
-- Settings › Appearance & behavior › Sidebar arranges the sidebar for every account. Dragging a
+- Settings › Appearance › Sidebar arranges the sidebar for every account. Dragging a
   section's handle moves it, and its switch hides it, except for the last section shown.
   **Mailboxes** chooses Grid or Rows, and **Counts** chooses Unread, Total, or Off. Each change is
   saved at once in `MailBehavior.sidebar` (`SidebarLayout`). Grid keeps the stored value `chips`

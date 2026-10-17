@@ -69,7 +69,7 @@ class MessageSelectionTest {
     fun trashFilesTheSelectionAndEndsIt() {
         server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
         selectWelcome()
-        compose.onNode(hasContentDescription("Trash") and hasClickAction()).performClick()
+        compose.onNode(hasContentDescription("Delete") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it } }
         val trash = server.calls.last { "Email/set" in it }
         assertTrue(trash, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/t\":true}}" in trash)

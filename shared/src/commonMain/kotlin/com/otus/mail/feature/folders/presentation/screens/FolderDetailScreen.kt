@@ -54,7 +54,7 @@ internal class RulePopup(
 )
 
 /**
- * One folder's settings from Settings › Folders: its counts, name, icon color, the rules that sort
+ * One folder's settings from Settings › Folders & rules: its counts, name, icon color, the rules that sort
  * new mail into it, and Delete once it is empty. A mailbox shared with the login has no color or
  * rules here: colors are for the login's own folders, and Sieve files only into those. [known]
  * holds the addresses of loaded mail for the Add rule sheet's suggestions.

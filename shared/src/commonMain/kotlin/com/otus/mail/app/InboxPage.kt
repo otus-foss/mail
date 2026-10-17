@@ -27,7 +27,7 @@ internal fun InboxPage(
     navigation: MailNavigation,
 ) {
     val feed = states.feed
-    val contents = states.inboxContents
+    val contents = states.behavior.behavior.inbox
     val ownScope = contents.mailScope()
     LaunchedEffect(ownScope) { feed.defaultScope = ownScope }
     val pills =
@@ -38,7 +38,7 @@ internal fun InboxPage(
         )
     val labeled = rememberLabeled(states, feed)
     InboxScreen(
-        if (feed.mailScope == ownScope) labeled.filter(contents::shows) else labeled,
+        labeled,
         dateFormatter,
         navigation.openSidebar,
         InboxStatus(states.accounts.accounts.isNotEmpty(), feed.loading, feed.notice),

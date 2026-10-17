@@ -9,7 +9,7 @@ import com.otus.mail.feature.folders.domain.moveTargets
 /**
  * Where [folder] can move: the top level (null) and the user's own folders that take it, within
  * the depth limit and without a sibling of the same name. System folders and Read later are left
- * out, because Settings › Folders lists only the user's own folders. Its current parent stays.
+ * out, because Settings › Folders & rules lists only the user's own folders. Its current parent stays.
  */
 fun AccountFolders.parentChoices(folder: MailFolder): List<MailFolder?> =
     moveTargets(this, folder).filter { parent ->

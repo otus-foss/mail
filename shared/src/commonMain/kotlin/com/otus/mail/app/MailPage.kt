@@ -34,11 +34,11 @@ internal sealed interface MailPage {
         override val parent = Settings
     }
 
-    data object SidebarSettings : MailPage {
-        override val parent = Appearance
+    data object Behavior : MailPage {
+        override val parent = Settings
     }
 
-    data object InboxSettings : MailPage {
+    data object SidebarSettings : MailPage {
         override val parent = Appearance
     }
 
@@ -47,7 +47,7 @@ internal sealed interface MailPage {
     }
 
     data object ActionBarSettings : MailPage {
-        override val parent = Appearance
+        override val parent = Behavior
     }
 
     /** A draft started from [request]; it closes back to [parent], the page that opened it. */
@@ -61,8 +61,8 @@ internal sealed interface MailPage {
     }
 
     /**
-     * One folder's settings from Settings › Folders: [accountId] is the login, [folderId] the
-     * mailbox id, and [sharedIn] the JMAP account of a mailbox shared with the login, else null.
+     * One folder's settings from Settings › Folders & rules: [accountId] is the login, [folderId]
+     * the mailbox id, and [sharedIn] the JMAP account of a mailbox shared with the login, else null.
      */
     data class FolderDetail(
         val accountId: String,
@@ -99,11 +99,11 @@ internal sealed interface MailPage {
                 EmailAccounts,
                 Appearance,
                 Notifications,
+                Behavior,
                 ActionBarSettings,
                 Folders,
                 ReadLater,
                 SidebarSettings,
-                InboxSettings,
                 ThemeSettings,
             )
 

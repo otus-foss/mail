@@ -9,7 +9,7 @@ import com.otus.mail.feature.folders.presentation.KnownAddress
 import com.otus.mail.feature.folders.presentation.screens.FolderDetailScreen
 import com.otus.mail.feature.folders.presentation.screens.FolderDetailStates
 
-/** One folder's settings page, opened from Settings › Folders. A folder that is gone leads back. */
+/** One folder's settings page, opened from Folders & rules. A folder that is gone leads back. */
 @Composable
 internal fun FolderDetailPage(
     page: MailPage.FolderDetail,
