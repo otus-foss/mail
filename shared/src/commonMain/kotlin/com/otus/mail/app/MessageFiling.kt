@@ -106,8 +106,9 @@ internal class MessageFiling(
     }
 
     /**
-     * Puts [message] back in the folder it was shown in after a move to [target], then reloads
-     * [feed] so it shows again. It waits for [after], the move itself, so the two cannot cross.
+     * Puts [message] back in every folder a move to [target] took it out of, such as the inbox
+     * after an archive or all its folders after a trash, then reloads [feed] so it shows again. It
+     * waits for [after], the move itself, so the two cannot cross.
      */
     fun moveBack(
         feed: InboxFeedState,
@@ -117,7 +118,7 @@ internal class MessageFiling(
     ) {
         scope.launch {
             after?.join()
-            if (services.mover.move(message, message.location.mailboxId, setOf(target.folderId))) {
+            if (services.mover.moveBack(message, target.folderId, leaving(message, target.shortcut))) {
                 feed.refresh()
                 folders.refresh()
             } else {

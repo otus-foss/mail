@@ -82,6 +82,16 @@ interface MessageMover {
         leaving: Set<String>,
     ): Boolean
 
+    /**
+     * Undoes a [move] of [message] into [folderId]: puts it back in [returning], the mailboxes the
+     * move took it out of, and takes it out of [folderId] unless it was already there before.
+     */
+    suspend fun moveBack(
+        message: MailMessage,
+        folderId: String,
+        returning: Set<String>,
+    ): Boolean
+
     /** Adds [message] to [folderId], or takes it out, and leaves its other mailboxes as they are. */
     suspend fun setInFolder(
         message: MailMessage,
