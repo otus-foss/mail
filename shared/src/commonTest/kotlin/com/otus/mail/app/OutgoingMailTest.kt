@@ -26,6 +26,7 @@ class OutgoingMailTest {
     private val opened = mutableListOf<ComposeRequest>()
     private val cancelled = mutableListOf<SentMessage>()
     private var failing = false
+    private var hold = HOLD
     private val draft = Draft("a1", subject = "Lunch", emailId = "d1")
 
     private val scheduled =
@@ -35,7 +36,7 @@ class OutgoingMailTest {
             override suspend fun cancel(message: SentMessage) = Result.success(Unit).also { cancelled += message }
         }
 
-    private fun TestScope.outgoing() = OutgoingMail(backgroundScope, toasts, scheduled, holdMillis = HOLD)
+    private fun TestScope.outgoing() = OutgoingMail(backgroundScope, toasts, scheduled) { hold }
 
     private val message =
         Outgoing(
@@ -58,9 +59,20 @@ class OutgoingMailTest {
         runTest {
             outgoing().send(message)
             assertEquals(listOf("Sending…"), toasts.messages.map { it.text })
+            assertEquals(HOLD, toasts.messages.single().durationMillis)
             advanceTimeBy(HOLD - 1)
             assertTrue(runs.isEmpty(), "Nothing goes before the Undo window ends")
             advanceTimeBy(2)
+            runCurrent()
+            assertEquals(listOf<Instant?>(null), runs)
+            assertEquals(listOf("Sent"), toasts.messages.map { it.text })
+        }
+
+    @Test
+    fun withUndoSendOffAMessageGoesAtOnce() =
+        runTest {
+            hold = 0L
+            outgoing().send(message)
             runCurrent()
             assertEquals(listOf<Instant?>(null), runs)
             assertEquals(listOf("Sent"), toasts.messages.map { it.text })

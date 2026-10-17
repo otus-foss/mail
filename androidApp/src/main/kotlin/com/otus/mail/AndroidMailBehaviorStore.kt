@@ -42,6 +42,7 @@ class AndroidMailBehaviorStore(
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
             recentFrom = decodeRecentFrom(preferences.getString(RECENT_FROM, null)),
             signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
+            undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
         )
     }
 
@@ -59,6 +60,7 @@ class AndroidMailBehaviorStore(
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
             putString(RECENT_FROM, encodeRecentFrom(behavior.recentFrom))
             putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
+            putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
         }
     }
 
@@ -74,6 +76,7 @@ class AndroidMailBehaviorStore(
         const val WEBSITE_ICONS = "website_icons"
         const val RECENT_FROM = "recent_from"
         const val SIGNATURE_IN_REPLIES = "signature_in_replies"
+        const val UNDO_SEND_SECONDS = "undo_send_seconds"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }
