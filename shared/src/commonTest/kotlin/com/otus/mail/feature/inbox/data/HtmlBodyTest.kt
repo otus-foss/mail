@@ -53,8 +53,15 @@ class HtmlBodyTest {
             "<td background=http://cdn.example/bg.png>",
             "<div style=\"background: url( 'https://cdn.example/x.png')\">",
             "<link rel=stylesheet href=\"https://cdn.example/a.css\">",
+            "<style>@import \"https://cdn.example/a.css\";</style>",
+            "<style>@import'//cdn.example/a.css';</style>",
+            "<svg><image width=\"10\" href=\"https://cdn.example/a.png\"/></svg>",
+            "<svg><image xlink:href=\"https://cdn.example/a.png\"/></svg>",
+            "<video poster=\"https://cdn.example/p.jpg\"></video>",
+            "<object data=\"https://cdn.example/a.svg\"></object>",
         ).forEach { assertTrue(html("text/html" to EmailBodyValue(it))!!.remoteContent, it) }
         assertFalse(html("text/html" to EmailBodyValue("<img src=\"data:image/png;base64,AA\">"))!!.remoteContent)
+        assertFalse(html("text/html" to EmailBodyValue("<p data-href=\"https://otus.example\">Hi</p>"))!!.remoteContent)
     }
 
     @Test

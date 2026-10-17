@@ -25,6 +25,19 @@ internal fun EmailObject.toMessageHtml(): MessageHtml? {
 private fun String.escapeHtml(): String =
     replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 
-/** An image, background, or stylesheet address on another server; a plain link does not count. */
+/**
+ * An address on another server that the page would load: an image, video poster, embedded object,
+ * background, stylesheet, CSS import, or SVG image. A plain link does not count.
+ */
 private val REMOTE_RESOURCE =
-    Regex("""(?i)(?:\bsrc|srcset|background)\s*=\s*["']?\s*(?:https?:)?//|url\(\s*["']?\s*(?:https?:)?//|<link\b""")
+    Regex(
+        listOf(
+            """(?:\bsrc|srcset|background|\bposter|\bdata|xlink:href)\s*=\s*["']?\s*$REMOTE""",
+            """<(?:image|use|feImage)\b[^>]*\shref\s*=\s*["']?\s*$REMOTE""",
+            """url\(\s*["']?\s*$REMOTE""",
+            """@import\s*["']\s*$REMOTE""",
+            """<link\b""",
+        ).joinToString("|", prefix = "(?i)"),
+    )
+
+private const val REMOTE = """(?:https?:)?//"""
