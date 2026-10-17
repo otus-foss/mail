@@ -7,6 +7,7 @@ import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.MailBehaviorScreen
+import com.otus.settings.presentation.components.AppIconSetting
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
 /** Appearance, where Mail adds its sidebar row to the shared page. */
@@ -23,7 +24,10 @@ internal fun AppearancePage(
         settings.animation,
         onTheme = { navigation.go(MailPage.ThemeSettings) },
         onBack = back,
-        look = { MailLookSettings(states.behavior.behavior.sidebar) { navigation.go(MailPage.SidebarSettings) } },
+        look = {
+            settings.appIcon?.let { AppIconSetting(it) }
+            MailLookSettings(states.behavior.behavior.sidebar) { navigation.go(MailPage.SidebarSettings) }
+        },
     )
 }
 

@@ -34,12 +34,12 @@ class MessageSelectionTest {
     private val selectionBar get() = compose.onNode(hasContentDescription(SHELL) and hasClickAction())
 
     /** Opens the inbox once folders and rules have loaded, then long-presses the one message. */
-    private fun selectWelcome() {
+    private fun selectWelcome(behavior: MailBehavior = MailBehavior(markReadOnOpen = false)) {
         compose.runOnUiThread {
             compose.activity.setContent {
                 App(
                     services = server.services(),
-                    behaviorState = MailBehaviorState(initial = MailBehavior(markReadOnOpen = false)),
+                    behaviorState = MailBehaviorState(initial = behavior),
                 )
             }
         }
@@ -88,6 +88,18 @@ class MessageSelectionTest {
         selectWelcome()
         compose.onNodeWithText("Welcome").performClick()
         assertNothingSelected()
+    }
+
+    @Test
+    fun aMinimizedBarListsTheActionsItLeavesOutInAMenu() {
+        server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
+        selectWelcome(MailBehavior(markReadOnOpen = false, minimizedBar = true))
+        compose.onNode(hasContentDescription("Trash") and hasClickAction()).assertDoesNotExist()
+        compose.onNodeWithContentDescription("More actions").performClick()
+        compose.onNode(hasText("Trash") and hasClickAction()).performClick()
+        compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it } }
+        assertTrue(server.calls.last { "Email/set" in it }.contains("\"mailboxIds/t\":true"))
+        selectionBar.assertDoesNotExist()
     }
 
     private companion object {

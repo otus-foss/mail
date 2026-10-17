@@ -48,5 +48,15 @@ first load ends. Then the owl shrinks and fades out. It always lets the owl arri
 1.7 s at the Regular animation speed, and a tap ends it early. Rotating the phone does not replay
 it.
 
-The app icon is Meta's `otus_mail_icon`. On Android 12 and later the system splash shows only the
-brand background, so the animation brings the owl in itself instead of replacing a static icon.
+The animation follows the theme: the owl is in the accent color, or in the text color when App
+icon is set to Monochrome, on the theme's `bgDark`. The window takes that color before Compose
+draws. On Android 12 and later the system splash shows only the Otus background, so the animation
+brings the owl in itself instead of replacing a static icon.
+
+## App icon
+
+Appearance & behavior has an App icon row: Accent or Monochrome. The manifest declares one
+launcher alias per icon, Monochrome plus one per preset accent, all opening `MainActivity`.
+`showLauncherIcon` enables the one that matches the setting and the accent, using the closest
+preset for a custom accent. It runs when Mail goes to the background, because some launchers
+close an app whose launcher entry changes.
