@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.components.AccountGroupRow
 import com.otus.designsystem.components.ChipAvatar
@@ -34,6 +35,7 @@ fun ContextPanelScope.FolderAccountPicker(
             avatars = (chosen?.let(::listOf) ?: accounts).map { it.avatar() },
             label = chosen?.accountName ?: ALL_ACCOUNTS,
             onClick = { open = true },
+            modifier = Modifier.fillRail(),
         )
     }
     if (open) {
