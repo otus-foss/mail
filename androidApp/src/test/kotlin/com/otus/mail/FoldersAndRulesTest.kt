@@ -95,7 +95,7 @@ class FoldersAndRulesTest {
     @Test
     fun aNewFolderIsCreatedOnTheServerAndListed() {
         start()
-        openSettingsPage("Folders")
+        openSettingsPage("Folders & rules")
         waitFor("Receipts")
         compose.onNode(hasContentDescription("New folder") and hasClickAction()).performClick()
         compose.onNodeWithContentDescription("Name").performTextInput("Travel")
@@ -113,8 +113,8 @@ class FoldersAndRulesTest {
     @Test
     fun turningOnReadLaterAddsItsMailboxAfterTheInbox() {
         start()
-        openSettingsPage("Folders")
-        compose.onNode(hasText("Read later") and isToggleable()).performClick()
+        openSettingsPage("Mail behavior")
+        compose.onNode(hasText("Read later") and isToggleable()).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT) {
             server.calls.any { "\"create\":{\"folder\":{\"name\":\"Read later\",\"parentId\":null" in it }
         }
@@ -172,7 +172,7 @@ class FoldersAndRulesTest {
             """"folder":"r"}]}"""
         server.scriptActive = true
         start()
-        openSettingsPage("Folders")
+        openSettingsPage("Folders & rules")
         waitFor("grace@example.org")
         compose.onNodeWithText("grace@example.org", substring = true).assertIsDisplayed()
     }

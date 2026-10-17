@@ -1,7 +1,7 @@
 # Color theme
 
 The user picks one of four themes, **Otus**, **Light**, **Graphite**, or **Black**, and an accent
-color on Settings › Appearance & behavior › Theme. System light/dark settings do not change the
+color on Settings › Appearance › Theme. System light/dark settings do not change the
 app theme. `OtusColors` holds named tokens that follow the picked theme, and `OtusTheme` supplies
 Material colors and default content styling. Ordinary text inherits `text1` at full opacity; muted
 text requires an explicit `text2` or `text3` choice. The default, Otus with Otus blue, uses the

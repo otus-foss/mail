@@ -29,7 +29,7 @@ internal val BarButton.label: String
             MailAction.Flag -> "Flag / unflag"
             MailAction.ReadLater -> "Read later"
             MailAction.Archive -> "Archive"
-            MailAction.Trash -> "Trash"
+            MailAction.Trash -> "Delete"
             MailAction.Spam -> "Spam"
             MailAction.NotSpam -> "Not spam"
             MailAction.Restore -> "Restore"

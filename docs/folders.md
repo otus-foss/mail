@@ -20,8 +20,8 @@ script, so they keep working while the app is closed.
 - The sidebar lists the built-in mailboxes once for every account, then the user's own folders,
   [shared by every account](#shared-folders), indented, with counts. Tapping a folder opens it as
   a page that reuses the inbox screen with "Search <folder>" and all of the folder's messages.
-- **Settings › Folders** lists the user's own folders, without system folders, as trees. See
-  [Settings › Folders](#settings--folders). Changes go to the server with `Mailbox/set`. Only the
+- **Settings › Folders & rules** lists the user's own folders, without system folders, as trees. See
+  [Settings › Folders & rules](#settings--folders--rules). Changes go to the server with `Mailbox/set`. Only the
   user's own folders (no role) can be renamed, moved, or deleted, from the
   [folder page](#the-folder-page) and by dragging. Actions follow `myRights`,
   `mayCreateTopLevelMailbox`, `maxMailboxDepth`, and `maxSizeMailboxName`.
@@ -58,7 +58,7 @@ script, so they keep working while the app is closed.
   notice to change them on the folder's page first.
   Read later never gets a rule, because it is a reading list rather than a destination.
 
-## Settings › Folders
+## Settings › Folders & rules
 
 The header has the back chevron and "Folders". With several accounts, its chip row holds a
 `PickerChip` with the avatars and name of whoever is shown, "All accounts" or one account, and a
@@ -128,7 +128,7 @@ that fails to load is left out. The code calls these `SharedMailboxes`, to keep 
 [shared folders](#shared-folders), which merge the user's own folders by path.
 
 - They stay out of `AccountFolders.folders`, so the sidebar, folder pages, move sheet, and pills
-  don't list them yet. Settings › Folders lists them after the login's own folders.
+  don't list them yet. Settings › Folders & rules lists them after the login's own folders.
 - A shared mailbox's row reads "Shared by <owner> · can read", or "· can edit" when it has
   `mayAddItems`. The owner is the name the server gives the shared account, usually an address.
 - In All accounts, a shared mailbox shows once. When its owner is another connected account (by
@@ -142,7 +142,7 @@ that fails to load is left out. The code calls these `SharedMailboxes`, to keep 
 
 ### The folder page
 
-Tapping a folder in Settings › Folders opens its page (`MailPage.FolderDetail`,
+Tapping a folder in Settings › Folders & rules opens its page (`MailPage.FolderDetail`,
 `FolderDetailScreen`). The header has the back chevron and the folder's name. A line in `text2`
 follows, such as "45 messages · 3 unread · 2 folders inside". Parts that are zero are left out,
 and an empty folder reads "No messages". Then come these rows:
@@ -165,7 +165,7 @@ and an empty folder reads "No messages". Then come these rows:
   folder's page.
 - **Delete folder** asks first and then deletes the folder and its rules. It stays off, with
   "Empty its messages and subfolders first", until the folder has no messages and no subfolders.
-  Once the folder is gone, the page leads back to Settings › Folders.
+  Once the folder is gone, the page leads back to Settings › Folders & rules.
 
 A mailbox shared with the login shows no Color and no Rules row. The Rules row also hides when the
 account's server has no Sieve. System folders don't open this page, and the page shows them no
@@ -186,7 +186,7 @@ The **Combined folders** switch that turned this on is gone; a saved value is ig
 - Tapping an entry opens a folder page that loads every account's folder with that role
   (`MailScope.Role`) and files its messages under the app's name, so search treats them as one
   folder. Moves, marks, and Read later act on each message's own account, as on any folder page.
-- Settings › Folders still lists every account's folders in full, and the move picker still names
+- Settings › Folders & rules still lists every account's folders in full, and the move picker still names
   the server's folders, because a move stays inside one account.
 
 ## Shared folders
@@ -202,7 +202,7 @@ while that account is chosen in the rail.
   follow.
 - System folders and Read later are left out, and their subfolders move up a level. Folders inside
   Trash or Junk are left out entirely.
-- Creating, renaming, moving, and deleting still act on one account's folder in Settings › Folders.
+- Creating, renaming, moving, and deleting still act on one account's folder in Settings › Folders & rules.
   Renaming a folder in one account splits it from the others until their names match again.
 - `MailPage.Shared` saves the lower-case path. If no account has that path once every account's
   folders load, the page returns to the Inbox. While an account fails to load, the page stays.
@@ -215,7 +215,7 @@ row background, and selected state keep their usual look. Default keeps the plai
 
 - Long-pressing a folder in the sidebar offers **Color**, which opens a `ChoiceSheet` with Default
   first in its own group, then the eight colors, each with a `FolderColorSwatch`. A choice applies
-  at once. The folder's page in Settings › Folders offers the same sheet.
+  at once. The folder's page in Settings › Folders & rules offers the same sheet.
 - Only folders without a role can have a color. Inbox, Drafts, Sent, Archive, Spam, Trash, and
   Read later never offer **Color** and never show a tint.
 - `FolderColors` keys each color by login and mailbox id (`FolderKey`), never by name or path.
@@ -234,14 +234,14 @@ row background, and selected state keep their usual look. Default keeps the plai
   forgets all of that account's colors.
 - The **Folder colors** switch on the Sidebar settings page, on by default, hides every tint. It
   does not delete the stored colors, and **Color** still shows the saved choice while it is off.
-- Tints show in the sidebar's folder rows, Settings › Folders, the Move to sheet's folder list and
+- Tints show in the sidebar's folder rows, Settings › Folders & rules, the Move to sheet's folder list and
   suggestion, and the action bar's **Move to** picker and its folder sheet. A disabled row keeps its disabled icon color.
 - The color is decoration. It never appears in a row's content description, and the color sheet
   reads each option by its name.
 
 ## Read later
 
-Off by default. The **Read later** switch at the top of Settings › Folders gives each account a folder named
+Off by default. The **Read later** switch in Settings › Mail behavior › Inbox gives each account a folder named
 "Read later", adds a **Read later** button to an open message and to the swipe choices, and adds a
 Read later pill to the inbox row that shows every account's saved mail. See
 [inbox pills](inbox.md#inbox-pills).
@@ -279,7 +279,7 @@ Read later pill to the inbox row that shows every account's saved mail. See
   (`mayCreateTopLevelMailbox`). Such an account still uses a Read later folder it already has.
 - Read later is one list for every account. JMAP keeps each message in its own account, so each
   account still has its own folder on the server, but the app shows them together: one sidebar
-  tile, one page, one pill, and one Move to choice. Settings › Folders leaves these folders out,
+  tile, one page, one pill, and one Move to choice. Settings › Folders & rules leaves these folders out,
   because the Read later switch manages them.
 - The folder sorts right after the inbox and has the bookmark symbol. The sidebar shows it as the
   Read later mailbox, after Inbox, which loads every account's Read later folder. Once every
@@ -290,7 +290,7 @@ Read later pill to the inbox row that shows every account's saved mail. See
   of these a message gets, and IMAP apps see a saved message in both folders.
 - Turning the switch off hides the action, the swipe choice, and the pill, and returns a swipe set
   to Read later to its default. The folders and their mail stay on the server, but the app hides
-  every Read later folder this device saved: none shows in the sidebar, Settings › Folders, or
+  every Read later folder this device saved: none shows in the sidebar, Settings › Folders & rules, or
   the move sheet, so Read later never turns into one folder per account. A folder the user named
   Read later before ever turning the switch on was never saved and still shows. Subfolders of a
   hidden Read later folder show at the top level. While the switch is on, a deleted Read later

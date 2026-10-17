@@ -7,7 +7,7 @@ Its choices, platform behavior, and API are documented in
 ## Settings state
 
 `DateFormatSettingsState` is a presentation adapter around `DateFormatPreferenceStore`.
-Settings › Appearance & behavior shows `DateFormatPreference.entries`, uses `patternLabel` as the
+Settings › Appearance shows `DateFormatPreference.entries`, uses `patternLabel` as the
 current English label, and shows a sample date for each choice. Translate the labels with the
 app's string resources when localization is added. The screen calls `state.select(choice)`;
 persistence stays outside the selection controls.

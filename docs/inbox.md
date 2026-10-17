@@ -105,25 +105,23 @@ named in the pill, with generated initials when no photo has resolved.
 
 ## Inbox contents
 
-Appearance & behavior › **Inbox shows** opens the Inbox page, which chooses what the Inbox lists.
-The choice is saved in `MailBehavior.inbox` (`InboxContents`) on the device.
+Mail behavior › **Inbox shows** opens `InboxContentsSheet`, a `SheetFrame` whose **Spam** and
+**Trash** switches choose whether those folders join
+the Inbox. The row names the choice: **Inbox**, **Inbox + Spam**, **Inbox + Trash**, or **All mail** with both. The choice is saved in `MailBehavior.inbox`
+(`InboxContents`) on the device.
 
-- **Every address** is on by default. Turning it off lists each account's sign-in and sending
-  addresses under the account's name, all on at first. The Inbox then lists only mail sent to or
-  from an address that is on, in that address's account. Turning off the last address, or turning
-  every address back on, returns to **Every address**. Addresses of a removed account drop out.
 - **Spam** and **Trash** add every account's folder with the `junk` or `trash` role (RFC 8621,
   section 2). The page loads them with `MailScope.Roles` and files their mail as Spam and Trash,
   the names the sidebar uses, so rows, search, and actions still see where each message is.
   Emptying a folder is not offered on the Inbox, even with Trash in it.
 - Mail stays in its own folders; only the Inbox page changes. The sidebar's Inbox count adds up
-  the folders the Inbox loads, for the accounts of the chosen addresses. It counts a chosen
-  account's whole inbox, because the server counts folders, not addresses.
-- "Show mail from" in the sidebar narrows the Inbox further, like every other page.
+  the folders the Inbox loads.
+- Whose mail the Inbox shows is "Show mail from" in the sidebar, which every page shares. The Inbox
+  page has no address choice of its own, so there is one place to pick addresses. Address choices
+  saved by earlier versions are ignored.
 
-`InboxContentsTest` covers the roles, the address filter, choosing and leaving out addresses,
-removed accounts, and saving. `JmapMailSourceRolesTest` loads the inbox and Spam under the app's
-names, and `InboxSettingsTest` drives the page.
+`InboxContentsTest` covers the roles and saving. `JmapMailSourceRolesTest` loads the inbox and Spam under the app's
+names, and `InboxSettingsTest` drives the sheet.
 
 ## Searching other inboxes
 
@@ -152,7 +150,7 @@ system roles, and [shared folders](folders.md#shared-folders) load each account'
 path. Messages keep their server and mailbox IDs so actions use the correct account.
 
 An open message or a selection can offer **Mark read**/**Mark unread**, **Flag**/**Unflag**,
-**Read later**, **Archive**, **Trash**, **Spam**, **Move**, and **Rule for sender** through
+**Read later**, **Archive**, **Delete**, **Spam**, **Move**, and **Rule for sender** through
 `MessageActions`, which app wiring builds from the loaded folders and rules. The action bar and
 the open message's **More actions** menu show them; see [action bar](action-bar.md).
 
@@ -181,7 +179,7 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
   Archive, Trash, Spam, Move, Not spam, Restore, and deleting for good. The target must allow `mayAddItems`. The server still checks every
   other mailbox the message belongs to.
 - Opening an unread message marks it read with the same `$seen` patch, unless **Mark as read when
-  opened** is off in Appearance & behavior. Undo is not implemented yet; see issue #27.
+  opened** is off in Mail behavior. Undo is not implemented yet; see issue #27.
 - In Spam and Trash, **Not spam** and **Restore** move a message to the inbox, and **Delete
   forever** and **Empty spam** or **Empty trash** delete messages for good after a confirm dialog.
   In Sent, **Follow up** writes to the people a message went to. See
@@ -237,10 +235,10 @@ the name.
 
 ## Swipe actions
 
-Each inbox and folder row is wrapped in Meta's `SwipeActions`. Appearance & behavior chooses what
+Each inbox and folder row is wrapped in Meta's `SwipeActions`. Mail behavior chooses what
 a swipe right and a swipe left do: **Read / unread**, **Flag / unflag**, **Read later** (while it
-is on), **Archive**, **Trash**, or **Nothing**. The defaults are mark read or unread on a swipe right and archive on a
-swipe left. Right-to-left layouts mirror the directions.
+is on), **Archive**, **Delete**, or **Nothing**. Delete moves the message to Trash. The defaults
+are mark read or unread on a swipe right and delete on a swipe left. Right-to-left layouts mirror the directions.
 
 - A swipe runs the same action as the open message's button, with the same folder rights and role
   checks. A row whose message cannot take the chosen action does not move in that direction.
@@ -259,8 +257,8 @@ swipe left. Right-to-left layouts mirror the directions.
 
 ## Inbox pills
 
-The row under the search prompt shows the user's pills in the user's order. **Appearance &
-behavior › Pills** opens a `SelectionSheet` that starts with the shown pills in row order. Dragging
+The row under the search prompt shows the user's pills in the user's order. **Mail behavior
+› Pills** opens a `SelectionSheet` that starts with the shown pills in row order. Dragging
 a pill's handle moves it, using Meta's `ReorderableColumn`, and tapping a shown pill takes it off
 the row. TalkBack and VoiceOver offer Move up and Move down on each shown pill. Below follow the
 pills to add, grouped as filters, folders every account has, and each account's own folders;
