@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performTouchInput
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailboxStyle
 import com.otus.mail.feature.inbox.domain.SidebarCount
+import com.otus.mail.feature.inbox.domain.SidebarPin
 import com.otus.mail.feature.inbox.domain.SidebarSection
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
@@ -110,11 +111,7 @@ class SidebarEditTest {
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Appearance").performClick()
         compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
-        compose
-            .onNodeWithText(
-                "Drag a section to reorder it. One section stays on. Changes apply to every account.",
-            ).assertIsDisplayed()
-        compose.onNode(hasText("Shared by all accounts") and isToggleable()).performClick()
+        compose.onNode(hasText("Folders") and isToggleable()).performClick()
         assertEquals(setOf(SidebarSection.Folders), behavior.behavior.sidebar.hidden)
         compose.onNodeWithText("Grid").performClick()
         compose.onNodeWithText("Rows").performClick()
@@ -131,6 +128,24 @@ class SidebarEditTest {
         compose.onNode(hasText("Receipts") and isSelectable()).assertDoesNotExist()
         compose.onNode(hasText("Inbox") and isSelectable()).assertIsDisplayed()
         compose.onNode(hasText("Inbox") and hasText("1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun aPinnedFolderShowsBelowTheInboxAndStaysInFolders() {
+        openSidebar()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithText("Appearance").performClick()
+        compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
+        compose.onNode(hasText("Shown below the Inbox")).performClick()
+        compose.onNodeWithText("Nothing shown yet. Add something below.").assertIsDisplayed()
+        row("Receipts").performClick()
+        closeChoice()
+        assertEquals(SidebarPin.defaults + SidebarPin.Folder(listOf("receipts")), behavior.behavior.sidebar.pinned)
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onAllNodes(hasText("Receipts") and isSelectable()).assertCountEquals(1)
+        compose.onAllNodes(hasContentDescription("Receipts, 2") and isSelectable()).assertCountEquals(1)
     }
 
     private fun closeChoice() {
