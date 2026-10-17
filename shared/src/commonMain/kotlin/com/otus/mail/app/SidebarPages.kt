@@ -4,10 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.sharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.screens.SidebarSettingsScreen
 
 @Composable
@@ -16,9 +18,21 @@ internal fun SidebarSettingsPage(
     onBack: () -> Unit,
 ) {
     val accounts = states.folders.accounts
-    val mailboxes = remember(accounts) { sidebarMailboxes(accounts).map { it.title } }
-    SidebarSettingsScreen(states.behavior, mailboxes, onBack)
+    val options = remember(accounts) { sidebarPinOptions(accounts) }
+    SidebarSettingsScreen(states.behavior, options, onBack)
 }
+
+private fun sidebarPinOptions(accounts: List<AccountFolders>): List<SidebarPinOption> =
+    pinnableMailboxes(accounts).map { (pin, mailbox) ->
+        val folder = mailbox.shared
+        SidebarPinOption(
+            pin,
+            mailbox.title,
+            mailbox.icon,
+            group = if (folder == null) "Mailboxes" else "Folders",
+            path = folder?.path?.joinToString(" / ") ?: mailbox.title,
+        )
+    }
 
 /** Every account's Read later folder. */
 @Composable

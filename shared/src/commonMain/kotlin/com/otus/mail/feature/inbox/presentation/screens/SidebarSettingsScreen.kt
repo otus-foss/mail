@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ChoiceOptions
 import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
-import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.ReorderableColumn
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingToggleRow
@@ -24,21 +23,25 @@ import com.otus.designsystem.resources.symbol_inbox
 import com.otus.mail.feature.inbox.domain.MailboxStyle
 import com.otus.mail.feature.inbox.domain.SidebarCount
 import com.otus.mail.feature.inbox.domain.SidebarLayout
+import com.otus.mail.feature.inbox.domain.SidebarPin
 import com.otus.mail.feature.inbox.domain.SidebarSection
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.SidebarPinOption
+import com.otus.mail.feature.inbox.presentation.components.OrderedChoice
+import com.otus.mail.feature.inbox.presentation.components.OrderedChoiceSheet
 import com.otus.mail.feature.inbox.presentation.label
 import com.otus.mail.feature.inbox.presentation.title
 
 /**
  * Arranges the sidebar for every account. Drag a section's handle to move it, or switch it off to
- * hide it; the layout rows choose how mailboxes show and which counts appear, and a switch hides
- * folder colors without forgetting them. Each change is saved at once. [mailboxes] names the
- * built-in mailboxes.
+ * hide it. The Pinned rows choose what shows below the Inbox, from [pins], and how; the layout rows
+ * choose which counts appear, and a switch hides folder colors without forgetting them. Each change
+ * is saved at once.
  */
 @Composable
 fun SidebarSettingsScreen(
     state: MailBehaviorState,
-    mailboxes: List<String>,
+    pins: List<SidebarPinOption>,
     onBack: () -> Unit,
 ) {
     val layout = state.behavior.sidebar
@@ -46,6 +49,7 @@ fun SidebarSettingsScreen(
         (SidebarLayout) -> SidebarLayout,
     ) -> Unit = { update -> state.update { it.copy(sidebar = update(it.sidebar)) } }
     var choosing by rememberSaveable { mutableStateOf<LayoutChoice?>(null) }
+    val pinned = layout.pinned.mapNotNull { pin -> pins.firstOrNull { it.pin == pin } }
     Subpage("Sidebar", onBack) {
         SettingsSection("Sections") {
             ReorderableColumn(
@@ -54,27 +58,33 @@ fun SidebarSettingsScreen(
                 onMove = { from, to -> change { it.moved(from, to) } },
             ) { section ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    DragHandle(section.title)
                     SettingToggleRow(
                         section.title,
                         checked = section !in layout.hidden,
                         onCheckedChange = { shown -> change { it.withShown(section, shown) } },
                         modifier = Modifier.weight(1f),
-                        description = section.description(mailboxes),
                         icon = section.icon,
                     )
+                    DragHandle(section.title)
                 }
             }
         }
-        SettingsSection("Layout") {
-            SettingRow("Mailboxes", { choosing = LayoutChoice.Mailboxes }, description = "The built-in mailboxes") {
+        SettingsSection("Pinned") {
+            SettingRow(
+                "Mailboxes and folders",
+                { choosing = LayoutChoice.Pinned },
+                description = "Shown below the Inbox",
+            ) {
+                ValueButton(pinned.size.toString())
+            }
+            SettingRow("Show as", { choosing = LayoutChoice.Mailboxes }) {
                 ValueButton(layout.mailboxes.label)
             }
+        }
+        SettingsSection("Layout") {
             SettingRow("Counts", { choosing = LayoutChoice.Counts }, description = "Next to mailboxes and folders") {
                 ValueButton(layout.counts.label)
             }
-        }
-        SettingsSection("Folders") {
             SettingToggleRow(
                 "Folder colors",
                 checked = layout.folderColors,
@@ -82,22 +92,33 @@ fun SidebarSettingsScreen(
                 description = "Colors only change the folder icon. They stay on this device.",
             )
         }
-        PageNote("Drag a section to reorder it. One section stays on. Changes apply to every account.")
     }
-    choosing?.let { LayoutChoiceSheet(it, layout, change) { choosing = null } }
+    choosing?.let { LayoutChoiceSheet(it, layout, pins, change) { choosing = null } }
 }
 
 @Composable
 private fun LayoutChoiceSheet(
     choice: LayoutChoice,
     layout: SidebarLayout,
+    pins: List<SidebarPinOption>,
     change: ((SidebarLayout) -> SidebarLayout) -> Unit,
     onDismiss: () -> Unit,
 ) {
     when (choice) {
+        LayoutChoice.Pinned -> {
+            OrderedChoiceSheet(
+                "Pinned",
+                layout.pinned,
+                pins.map { OrderedChoice(it.pin, it.pin.storageValue, it.path, it.icon, it.group) },
+                keyOf = SidebarPin::storageValue,
+                onApply = { pinned -> change { it.copy(pinned = pinned) } },
+                onDismiss = onDismiss,
+            )
+        }
+
         LayoutChoice.Mailboxes -> {
             ChoiceSheet(
-                title = "Mailboxes",
+                title = "Show pinned as",
                 choices =
                     ChoiceOptions(
                         MailboxStyle.entries,
@@ -122,7 +143,7 @@ private fun LayoutChoiceSheet(
     }
 }
 
-private enum class LayoutChoice { Mailboxes, Counts }
+private enum class LayoutChoice { Pinned, Mailboxes, Counts }
 
 private val SidebarSection.icon
     get() =
@@ -130,9 +151,3 @@ private val SidebarSection.icon
             SidebarSection.Mailboxes -> Res.drawable.symbol_inbox
             SidebarSection.Folders -> Res.drawable.symbol_folder
         }
-
-private fun SidebarSection.description(mailboxes: List<String>): String =
-    when (this) {
-        SidebarSection.Mailboxes -> mailboxes.joinToString(", ")
-        SidebarSection.Folders -> "Shared by all accounts"
-    }
