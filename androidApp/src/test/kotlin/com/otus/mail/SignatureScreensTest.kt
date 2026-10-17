@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -117,6 +118,10 @@ class SignatureScreensTest {
             androidx.compose.runtime.LaunchedEffect(Unit) { state.load() }
             val editor = androidx.compose.runtime.remember { SignatureEditorState(state, alex) }
             SignatureEditorScreen(state, editor, onBack = {}, onCopied = {})
+        }
+        // The image decodes off the first frame.
+        compose.waitUntil(TIMEOUT) {
+            compose.onAllNodesWithContentDescription("Signature image").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("Signature image").performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("150 × 50 px").assertExists()
