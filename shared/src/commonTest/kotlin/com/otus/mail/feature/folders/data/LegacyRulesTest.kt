@@ -124,6 +124,14 @@ class LegacyRulesTest {
     }
 
     @Test
+    fun aRuleThatWouldSplitIntoTooManyRulesIsDropped() {
+        val recipients = { count: Int -> Array(count) { Triple("recipient", "is", "r$it@x.example") } }
+        val read = readLegacyRules(v1("${rule("K", *recipients(6))},${rule("D", *recipients(30))}"))
+        assertEquals(64, read?.rules?.get("K")?.size)
+        assertNull(read?.rules?.get("D"))
+    }
+
+    @Test
     fun pausedRulesRegexAndAttachmentsAreDropped() {
         val read =
             readLegacyRules(
