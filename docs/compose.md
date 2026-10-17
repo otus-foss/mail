@@ -150,13 +150,13 @@ submission destroys the copy the request stored and keeps the earlier one in Dra
 The ⋯ menu offers **Schedule send** only where the account's submission capability has a
 `maxDelayedSend` above 0 (RFC 8621, section 7). The **Send later** sheet offers This evening at
 18:00 before 17:00, Tomorrow morning at 8:00, Monday morning at 8:00 from Friday to Sunday, and
-Pick date and time, within the server's limit. Choosing one sends at once with an explicit
-envelope whose `mailFrom` carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled
-for Mon, 8:00" with Undo. The scheduled copy stays in Drafts without `$draft` until the server
-sends it. Undo sets the submission's `undoStatus` to `canceled`, marks the copy `$draft` again,
-and opens it.
-
-
+Pick date and time, within the server's limit. Choosing one only picks the time: the sheet closes,
+the page stays open, and a **Send** line under Subject shows it, such as "Sun, 8:00". Tapping the
+line changes the time, its ✕ clears it, and the sheet offers Send now once a time is set. The main
+button then shows the schedule-send symbol. Send sends with an explicit envelope whose `mailFrom`
+carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled for Mon, 8:00" with Undo.
+The scheduled copy stays in Drafts without `$draft` until the server sends it. Undo sets the
+submission's `undoStatus` to `canceled`, marks the copy `$draft` again, and opens it.
 
 ## Limits
 

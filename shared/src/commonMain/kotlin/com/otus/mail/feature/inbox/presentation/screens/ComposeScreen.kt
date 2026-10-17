@@ -33,12 +33,14 @@ import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.RecipientField
 import com.otus.mail.feature.inbox.presentation.components.ComposeBottom
 import com.otus.mail.feature.inbox.presentation.components.ComposeContent
+import com.otus.mail.feature.inbox.presentation.components.ComposeLines
 import com.otus.mail.feature.inbox.presentation.components.ComposePanel
 import com.otus.mail.feature.inbox.presentation.components.SendLaterSheet
 import com.otus.mail.feature.inbox.presentation.recipients
@@ -50,10 +52,11 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * A new message, reply, or forward as a page. Leaving it by Back or the chevron closes it through
- * [exits] and saves the draft if the user wrote anything. Send, after asking about a missing
- * subject, and Schedule send hand the draft to [exits] and leave the page. Discard stops saving
- * and hands [exits] what deletes the saved copy, to run once Undo has passed. While the keyboard
- * is up, a formatting row takes the action bar's place.
+ * [exits] and saves the draft if the user wrote anything. Schedule send only picks a time, which
+ * shows in the panel; Send, after asking about a missing subject, hands the draft to [exits] for
+ * that time or now and leaves the page. Discard stops saving and hands [exits] what deletes the
+ * saved copy, to run once Undo has passed. While the keyboard is up, a formatting row takes the
+ * action bar's place.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -72,16 +75,12 @@ fun ComposeScreen(
     // Leaving the page by any route, Back or another page, saves what is new.
     DisposableEffect(state) { onDispose { state.close() } }
     val draft = state.draft
-    var shown by remember {
-        mutableStateOf(
-            RecipientField.entries.filter { draft.recipients(it).isNotEmpty() }.toSet(),
-        )
-    }
+    var shown by remember { mutableStateOf(draft.copyLines()) }
     var askingSubject by remember { mutableStateOf(false) }
     var schedulingAt by remember { mutableStateOf(false) }
     val discard = { exits.discarded(state.discard()) }
     val sendNow = { at: LocalDateTime? -> state.handOff()?.let { exits.send(it, at) } }
-    val send: () -> Unit = { if (draft.subject.isBlank()) askingSubject = true else sendNow(null) }
+    val send: () -> Unit = { if (draft.subject.isBlank()) askingSubject = true else sendNow(state.sendAt) }
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar = {
@@ -98,7 +97,7 @@ fun ComposeScreen(
             ComposePage(
                 state,
                 behavior,
-                shown,
+                ComposeLines(shown, onChangeSchedule = { schedulingAt = true }),
                 onAddCc = { shown = shown + RecipientField.Cc }.takeIf { RecipientField.Cc !in shown },
                 onClose = onClose,
                 options =
@@ -113,16 +112,22 @@ fun ComposeScreen(
             )
         }
     }
-    if (askingSubject) SubjectPrompt({ sendNow(null) }) { askingSubject = false }
-    if (schedulingAt) SendLaterPrompt(state.maxDelaySeconds, { sendNow(it) }) { schedulingAt = false }
+    if (askingSubject) SubjectPrompt({ sendNow(state.sendAt) }) { askingSubject = false }
+    if (schedulingAt) {
+        SendLaterPrompt(
+            state.maxDelaySeconds,
+            state.sendAt,
+            { state.sendAt = it },
+        ) { schedulingAt = false }
+    }
 }
 
-/** The panel, any notice, and the page's lines and body; [shown] says which copy lines show. */
+/** The panel, any notice, and the page's [lines] and body. */
 @Composable
 private fun ComposePage(
     state: ComposeState,
     behavior: MailBehavior,
-    shown: Set<RecipientField>,
+    lines: ComposeLines,
     onAddCc: (() -> Unit)?,
     onClose: () -> Unit,
     options: List<OptionsItem>,
@@ -145,15 +150,19 @@ private fun ComposePage(
                 fontSize = InboxTokens.metadataSize,
             )
         }
-        ComposeContent(state, shown, Modifier.weight(1f), padding)
+        ComposeContent(state, lines, Modifier.weight(1f), padding)
     }
 }
 
-/** The Send later sheet from now until [maxDelaySeconds] ahead, in the device's time zone. */
+/**
+ * The Send later sheet from now until [maxDelaySeconds] ahead, in the device's time zone. Choosing
+ * sets the time Send uses, [chosen] until then, or none for Send now.
+ */
 @Composable
 private fun SendLaterPrompt(
     maxDelaySeconds: Long,
-    onSchedule: (LocalDateTime) -> Unit,
+    chosen: LocalDateTime?,
+    onChoose: (LocalDateTime?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val now = remember { Clock.System.now() }
@@ -161,7 +170,8 @@ private fun SendLaterPrompt(
     SendLaterSheet(
         now.toLocalDateTime(zone),
         (now + maxDelaySeconds.seconds).toLocalDateTime(zone),
-        onSchedule,
+        chosen,
+        onChoose,
         onDismiss,
     )
 }
@@ -198,6 +208,13 @@ private fun options(
         OptionsItem.Divider,
         OptionsItem.Action("Discard draft", Res.drawable.symbol_delete, onDiscard),
     )
+
+/** The copy lines a draft opens with: those that already hold people. */
+private fun Draft.copyLines(): Set<RecipientField> =
+    RecipientField.entries
+        .filter {
+            recipients(it).isNotEmpty()
+        }.toSet()
 
 /** Shows [field], or hides it and drops its people from the draft. */
 private fun Set<RecipientField>.toggled(
