@@ -12,6 +12,7 @@ import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.forget
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.MessageFlag
@@ -189,6 +190,15 @@ internal class MailStates(
             behavior = { behavior.behavior },
             cleanup = cleaning.cleanup(feed),
         )
+
+    /** Each page's applied filters while the app runs. */
+    val pageFilters = PageFilters()
+
+    /** How many messages of [scope] [query] keeps; null when the accounts could not count them. */
+    suspend fun countMail(
+        scope: MailScope,
+        query: MailQuery,
+    ): Long? = services.mail.count(scope, query)
 
     /** The HTML body of an open message. */
     suspend fun messageHtml(message: MailMessage): MessageHtml? = services.bodies.html(message)

@@ -50,16 +50,26 @@ class InboxSearchTest {
     @Test
     fun allTermsAndAllFiltersMustMatch() {
         assertTrue(results(InboxSearch(query = "Alex lake")).isEmpty())
-        assertEquals(listOf("older"), results(InboxSearch(unreadOnly = true, attachmentsOnly = true)))
-        assertTrue(results(InboxSearch(query = "Weekend", unreadOnly = true)).isEmpty())
+        val unreadWithFiles = InboxFilters(show = setOf(ShowFacet.Unread, ShowFacet.Attachments))
+        assertEquals(listOf("older"), results(InboxSearch(), unreadWithFiles))
+        assertTrue(results(InboxSearch(query = "Weekend"), InboxFilters(show = setOf(ShowFacet.Unread))).isEmpty())
     }
 
     @Test
     fun aFilterPillTurnsItsFilterOnAndOff() {
-        val flagged = InboxSearch().with(InboxPill.Filter.Flagged, on = true)
+        val flagged = InboxFilters().with(InboxPill.Filter.Flagged, on = true)
         assertTrue(flagged.has(InboxPill.Filter.Flagged))
-        assertEquals(listOf("newer"), results(flagged))
-        assertEquals(InboxSearch(), flagged.with(InboxPill.Filter.Flagged, on = false))
+        assertEquals(listOf("newer"), results(InboxSearch(), flagged))
+        assertEquals(InboxFilters(), flagged.with(InboxPill.Filter.Flagged, on = false))
+    }
+
+    @Test
+    fun oldestFirstReversesTheOrder() {
+        val all = results(InboxSearch(mailboxes = emptySet()))
+        assertEquals(
+            all.reversed(),
+            results(InboxSearch(mailboxes = emptySet()), InboxFilters(sort = FilterSort.OldestFirst)),
+        )
     }
 
     @Test
@@ -109,7 +119,10 @@ class InboxSearchTest {
         assertEquals(listOf("newer", "archive", "older"), results(InboxSearch(mailboxes = emptySet())))
     }
 
-    private fun results(search: InboxSearch): List<String> = searchMessages(messages, search).map { it.id }
+    private fun results(
+        search: InboxSearch,
+        filters: InboxFilters = InboxFilters(),
+    ): List<String> = searchMessages(messages, search, filters).map { it.id }
 
     @Test
     fun selectedSendersResolveNamesAndKeepUnknownAddresses() {

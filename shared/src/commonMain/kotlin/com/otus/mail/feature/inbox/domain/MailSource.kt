@@ -58,6 +58,18 @@ sealed interface MailScope {
 
 interface MailSource {
     suspend fun messages(scope: MailScope): InboxSnapshot
+
+    /** [scope]'s messages that [query] keeps, in its order. Sources without a server ignore the query. */
+    suspend fun messages(
+        scope: MailScope,
+        query: MailQuery,
+    ): InboxSnapshot = messages(scope)
+
+    /** How many messages of [scope] [query] keeps; null when the source cannot count them. */
+    suspend fun count(
+        scope: MailScope,
+        query: MailQuery,
+    ): Long? = null
 }
 
 /** Saved account metadata could not be read. Existing inbox data should be retained. */

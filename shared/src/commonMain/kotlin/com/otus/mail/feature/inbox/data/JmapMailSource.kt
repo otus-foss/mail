@@ -14,16 +14,17 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailboxType
-import com.otus.mail.core.mail.NEWEST_FIRST
-import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
+import com.otus.mail.feature.inbox.domain.ShowFacet
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
-import com.otus.mail.feature.inbox.domain.mailboxName
+import com.otus.mail.feature.inbox.domain.fromAny
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
@@ -32,7 +33,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.time.Clock
 
 /**
  * Loads all or named mailboxes of each login, or chosen folders, newest first. Logins load in
@@ -43,27 +46,101 @@ class JmapMailSource(
     private val logins: LoginStore,
     private val limit: Int = DEFAULT_LIMIT,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
+    private val clock: Clock = Clock.System,
 ) : MailSource {
-    override suspend fun messages(scope: MailScope): InboxSnapshot {
-        val saved =
-            withContext(Dispatchers.IO) {
-                try {
-                    logins.logins()
-                } catch (error: LoginStoreException) {
-                    throw InboxStorageException(error)
-                }
-            }
+    override suspend fun messages(scope: MailScope): InboxSnapshot = messages(scope, MailQuery())
+
+    override suspend fun messages(
+        scope: MailScope,
+        query: MailQuery,
+    ): InboxSnapshot {
+        val saved = withContext(Dispatchers.IO) { savedLogins() }
+        val now = clock.now()
         val selected = saved.filter { scope.reads(it.id) }
-        val results = coroutineScope { selected.map { async { load(it, scope) } }.awaitAll() }
+        val results =
+            coroutineScope {
+                selected
+                    .map { login ->
+                        async {
+                            val conditions = emailConditions(query, login.id, now, zone())
+                            if (conditions ==
+                                null
+                            ) {
+                                AccountLoad.Loaded(emptyList())
+                            } else {
+                                load(login, scope, query, conditions)
+                            }
+                        }
+                    }.awaitAll()
+            }
+        val own = query.ownAddresses
         return InboxSnapshot(
-            messages = results.filterIsInstance<AccountLoad.Loaded>().flatMap { it.messages },
+            messages =
+                results
+                    .filterIsInstance<AccountLoad.Loaded>()
+                    .flatMap { it.messages }
+                    .filter { !query.filters.has(ShowFacet.WaitingForReply) || it.fromAny(own) },
             unavailable = results.filterIsInstance<AccountLoad.Failed>().map { it.account },
         )
     }
 
+    /** Sums each login's total; null when no login could be counted. */
+    override suspend fun count(
+        scope: MailScope,
+        query: MailQuery,
+    ): Long? {
+        val saved = withContext(Dispatchers.IO) { savedLogins() }
+        val now = clock.now()
+        val totals =
+            coroutineScope {
+                saved
+                    .filter { scope.reads(it.id) }
+                    .mapNotNull { login -> emailConditions(query, login.id, now, zone())?.let { login to it } }
+                    .map { (login, conditions) -> async { countLogin(login, scope, query, conditions) } }
+                    .awaitAll()
+            }
+        return totals.filterNotNull().takeIf { it.isNotEmpty() || totals.isEmpty() }?.sum()
+    }
+
+    private suspend fun countLogin(
+        login: JmapLogin,
+        scope: MailScope,
+        query: MailQuery,
+        conditions: List<JsonObject>,
+    ): Long? =
+        try {
+            val connection = connections.connection(login)
+            connection.session().accountFor(JmapCapability.MAIL)?.let { accountId ->
+                val ids = scope.chosen(mailboxesOf(connection, accountId), login.id, query).map { it.id }
+                if (ids.isEmpty()) {
+                    0L
+                } else {
+                    connection
+                        .call(QueryMethod(EmailType, accountId, mailFilter(ids, conditions), limit = 0, extra = COUNT))
+                        .total
+                }
+            }
+        } catch (error: JmapException) {
+            null
+        }
+
+    private fun savedLogins(): List<JmapLogin> =
+        try {
+            logins.logins()
+        } catch (error: LoginStoreException) {
+            throw InboxStorageException(error)
+        }
+
+    private suspend fun mailboxesOf(
+        connection: JmapConnection,
+        accountId: String,
+    ) = connection.call(GetMethod(MailboxType, accountId, properties = listOf("id", "name", "role"))).list
+
     private suspend fun load(
         login: JmapLogin,
         scope: MailScope,
+        query: MailQuery,
+        conditions: List<JsonObject>,
     ): AccountLoad =
         try {
             val connection = connections.connection(login)
@@ -71,7 +148,7 @@ class JmapMailSource(
             if (accountId == null) {
                 AccountLoad.Failed(UnavailableAccount(login.name, InboxFailure.NoMail))
             } else {
-                AccountLoad.Loaded(loadMailboxes(connection, login, accountId, scope))
+                AccountLoad.Loaded(loadMailboxes(connection, login, accountId, scope, query, conditions))
             }
         } catch (error: JmapException) {
             AccountLoad.Failed(UnavailableAccount(login.name, error.toInboxFailure()))
@@ -82,54 +159,15 @@ class JmapMailSource(
         login: JmapLogin,
         accountId: String,
         scope: MailScope,
+        query: MailQuery,
+        conditions: List<JsonObject>,
     ): List<MailMessage> {
-        val mailboxes =
-            connection
-                .call(
-                    GetMethod(MailboxType, accountId, properties = listOf("id", "name", "role")),
-                ).list
-        val chosen =
-            when (scope) {
-                is MailScope.Role -> {
-                    mailboxes.filter { it.role == scope.role }
-                }
-
-                is MailScope.Roles -> {
-                    mailboxes.filter { it.role in scope.names }
-                }
-
-                MailScope.AllMailboxes -> {
-                    mailboxes
-                }
-
-                is MailScope.Mailboxes -> {
-                    mailboxes.filter { mailbox ->
-                        scope.mailboxes.isEmpty() ||
-                            scope.mailboxes.any {
-                                it.name == mailboxName(mailbox.name, mailbox.role) &&
-                                    (it.account == null || it.account == login.id)
-                            }
-                    }
-                }
-
-                is MailScope.Folder -> {
-                    mailboxes.filter { it.id == scope.folderId }
-                }
-
-                is MailScope.Folders -> {
-                    mailboxes.filter { MailScope.Folder(login.id, it.id) in scope.folders }
-                }
-            }
+        val chosen = scope.chosen(mailboxesOf(connection, accountId), login.id, query)
         // Each login loads its mailboxes sequentially instead of starting one request per folder.
         val loaded =
             chosen.map { mailbox ->
-                val name =
-                    when (scope) {
-                        is MailScope.Role -> scope.name
-                        is MailScope.Roles -> scope.names[mailbox.role] ?: mailboxName(mailbox.name, mailbox.role)
-                        else -> mailboxName(mailbox.name, mailbox.role)
-                    }
-                loadMailbox(connection, login, accountId, mailbox.id, name)
+                val filter = mailFilter(listOf(mailbox.id), conditions)
+                loadMailbox(connection, login, accountId, mailbox.id, scope.nameOf(mailbox), filter, query.filters.sort)
             }
         // A message can be in several chosen mailboxes; it is listed once, under the first.
         return loaded.flatten().distinctBy { it.id }
@@ -141,10 +179,12 @@ class JmapMailSource(
         accountId: String,
         mailboxId: String,
         name: String,
+        filter: JsonObject,
+        sort: FilterSort,
     ): List<MailMessage> {
         val emails =
             connection.request {
-                val query = call(QueryMethod(EmailType, accountId, inMailbox(mailboxId), NEWEST_FIRST, limit))
+                val query = call(QueryMethod(EmailType, accountId, filter, receivedOrder(sort), limit))
                 call(
                     GetMethod(
                         EmailType,
@@ -166,6 +206,9 @@ class JmapMailSource(
 
         const val MAX_BODY_BYTES = 20_000
 
+        /** Only the number of matches (RFC 8620, section 5.5). */
+        val COUNT = mapOf("calculateTotal" to JsonPrimitive(true))
+
         /**
          * Text bodies up to [MAX_BODY_BYTES] per part, marked `isTruncated` when cut off (RFC 8621,
          * section 4.2). Each part's `type` tells an HTML body from a plain one.
@@ -178,27 +221,6 @@ class JmapMailSource(
             )
     }
 }
-
-/** Whether this scope reads mail of the login with [loginId]. */
-private fun MailScope.reads(loginId: String): Boolean =
-    when (this) {
-        MailScope.AllMailboxes, is MailScope.Role, is MailScope.Roles -> {
-            true
-        }
-
-        is MailScope.Mailboxes -> {
-            (accounts.isEmpty() || loginId in accounts) &&
-                (mailboxes.isEmpty() || mailboxes.any { it.account == null || it.account == loginId })
-        }
-
-        is MailScope.Folder -> {
-            accountId == loginId
-        }
-
-        is MailScope.Folders -> {
-            folders.any { it.accountId == loginId }
-        }
-    }
 
 private sealed interface AccountLoad {
     class Loaded(

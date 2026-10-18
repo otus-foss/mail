@@ -15,37 +15,44 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
+import androidx.compose.ui.unit.dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.PullToRefresh
 import com.otus.designsystem.components.SlidingOverlay
+import com.otus.designsystem.theme.FilterTokens
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.panelTextStyle
-import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.scopeToLoad
+import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxContext
+import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.components.InboxBar
+import com.otus.mail.feature.inbox.presentation.components.ActiveFilters
+import com.otus.mail.feature.inbox.presentation.components.BackHandler
 import com.otus.mail.feature.inbox.presentation.components.InboxBody
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxFilter
+import com.otus.mail.feature.inbox.presentation.components.InboxFilterPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxFilterSheet
 import com.otus.mail.feature.inbox.presentation.components.InboxPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.InboxResults
-import com.otus.mail.feature.inbox.presentation.components.RowGestures
-import com.otus.mail.feature.inbox.presentation.components.SelectionBar
+import com.otus.mail.feature.inbox.presentation.components.inboxBar
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
+import com.otus.mail.feature.inbox.presentation.components.rowGestures
+import com.otus.mail.feature.inbox.presentation.components.toggled
 
 @Composable
 fun InboxScreen(
@@ -56,6 +63,8 @@ fun InboxScreen(
     onRefresh: () -> Unit = {},
     context: InboxContext = InboxContext(),
     messageActions: MessageActions? = null,
+    filters: InboxFilterState = remember { InboxFilterState() },
+    filterOptions: FilterOptions = FilterOptions(),
 ) {
     val state =
         rememberSaveable(saver = InboxState.saver(context.defaultSearch)) {
@@ -76,6 +85,10 @@ fun InboxScreen(
         ) { openId = it.id }
     val page = shownPage(state, context)
     val closeSearch = searchCloser(state)
+    val filterButton = remember { FocusRequester() }
+    var headerHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+    ReturnFocus(filters.isOpen, filterButton)
     BackHandler(selected.isNotEmpty(), clearSelection)
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
@@ -84,34 +97,62 @@ fun InboxScreen(
             base = {
                 ActionBarHost(
                     bar =
-                        inboxBar(messages, state, selected, messageActions, clearSelection, context.onCompose) {
-                            filter = InboxFilter.More
-                        },
+                        inboxBar(
+                            messages,
+                            state,
+                            selected,
+                            messageActions,
+                            clearSelection,
+                            context.onCompose,
+                            filters.applied,
+                            filters::open,
+                        ),
                     Modifier
                         .fillMaxSize()
                         .safeDrawingPadding()
                         .imePadding()
                         // An open message covers the list, so accessibility services skip it too.
-                        .then(if (opened == null) Modifier else Modifier.clearAndSetSemantics {}),
+                        .then(if (opened == null && !filters.isOpen) Modifier else Modifier.clearAndSetSemantics {}),
                 ) { barPadding ->
                     Column(Modifier.fillMaxSize().padding(vertical = InboxTokens.pageInset)) {
                         // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
-                        InboxHeader(messages, state, page, dateFormatter, closeSearch, onOpenNavigation) { filter = it }
+                        InboxHeader(
+                            messages,
+                            state,
+                            page,
+                            dateFormatter,
+                            InboxHeaderActions(closeSearch, onOpenNavigation, { filter = it }, filters::open),
+                            ActiveFilters(filters.applied, filterOptions, dateFormatter, filters::update),
+                            filterButton,
+                            Modifier.onSizeChanged { headerHeight = with(density) { it.height.toDp() } },
+                        )
                         PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
                             InboxResults(
                                 messages,
                                 status,
                                 state,
+                                filters.applied,
                                 dateFormatter,
                                 gestures,
                                 barPadding,
-                                emptyContent = { InboxEmptyContent(messages, status, state, page, onRefresh) },
+                                emptyContent = { InboxEmptyContent(messages, status, state, page, filters, onRefresh) },
                             )
                         }
                     }
                 }
             },
         ) { MessageScreen(it, messageActions, status.notice, context.loadHtml, context.onCompose) { openId = null } }
+        InboxFilterPanel(
+            filters,
+            filterOptions,
+            dateFormatter,
+            headerHeight,
+            Modifier
+                .safeDrawingPadding()
+                .imePadding()
+                .padding(start = InboxTokens.pageInset, end = InboxTokens.pageInset, top = InboxTokens.pageInset)
+                .padding(bottom = FilterTokens.screenInset),
+        )
         filter?.let { selected ->
             InboxFilterSheet(selected, messages, state.search, page, dateFormatter, state::update) { filter = null }
         }
@@ -130,36 +171,33 @@ private fun searchCloser(state: InboxState): () -> Unit {
     return closeSearch
 }
 
-/** Runs [onBack] on system back while [enabled]. */
-@Composable
-private fun BackHandler(
-    enabled: Boolean,
-    onBack: () -> Unit,
-) {
-    NavigationBackHandler(
-        state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
-        isBackEnabled = enabled,
-        onBackCompleted = onBack,
-    )
-}
+/** What the control panel's buttons do besides editing the search. */
+private class InboxHeaderActions(
+    val closeSearch: () -> Unit,
+    val onOpenNavigation: () -> Unit,
+    val onFilter: (InboxFilter) -> Unit,
+    val onOpenFilters: () -> Unit,
+)
 
 @Composable
 private fun inboxPanelActions(
     state: InboxState,
-    closeSearch: () -> Unit,
-    onOpenNavigation: () -> Unit,
-    onFilter: (InboxFilter) -> Unit,
+    actions: InboxHeaderActions,
 ): InboxPanelActions {
     val focus = LocalFocusManager.current
     return InboxPanelActions(
         onChange = state::update,
-        onSearchingChange = { searching -> if (searching) state.startSearch() else closeSearch() },
+        onSearchingChange = { searching -> if (searching) state.startSearch() else actions.closeSearch() },
         onFilter = {
             focus.clearFocus()
-            onFilter(it)
+            actions.onFilter(it)
+        },
+        onOpenFilters = {
+            focus.clearFocus()
+            actions.onOpenFilters()
         },
         onSubmit = { focus.clearFocus() },
-        onOpenNavigation = onOpenNavigation,
+        onOpenNavigation = actions.onOpenNavigation,
         onFolder = state::showFolder,
     )
 }
@@ -170,20 +208,36 @@ private fun InboxHeader(
     state: InboxState,
     context: InboxContext,
     dateFormatter: DateFormatter,
-    closeSearch: () -> Unit,
-    onOpenNavigation: () -> Unit,
-    onFilter: (InboxFilter) -> Unit,
+    actions: InboxHeaderActions,
+    filters: ActiveFilters,
+    filterButton: FocusRequester,
+    modifier: Modifier,
 ) {
-    val actions = inboxPanelActions(state, closeSearch, onOpenNavigation, onFilter)
-    Box(Modifier.padding(horizontal = InboxTokens.pageInset)) {
+    Box(modifier.padding(horizontal = InboxTokens.pageInset)) {
         InboxPanel(
             state.searching,
             state.search,
             dateFormatter,
             context,
-            actions,
+            inboxPanelActions(state, actions),
             rememberFilterSelection(messages, state.search, context.mailboxSearch.accounts),
+            filters,
+            filterButton,
         )
+    }
+}
+
+/** Gives focus back to the filter button once the panel that opened from it closes. */
+@Composable
+private fun ReturnFocus(
+    open: Boolean,
+    button: FocusRequester,
+) {
+    var wasOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(open) {
+        // The button is missing only while the page is leaving, when focus does not matter.
+        if (wasOpen && !open) button.runCatching { requestFocus() }
+        wasOpen = open
     }
 }
 
@@ -193,15 +247,21 @@ private fun InboxEmptyContent(
     status: InboxStatus,
     state: InboxState,
     context: InboxContext,
+    filters: InboxFilterState,
     onRefresh: () -> Unit,
 ) {
+    // The server leaves out mail the applied filters hide, so an empty list may still be a filtered one.
+    val narrowed = !filters.applied.isDefault
     InboxEmptyState(
         context.emptyTitle,
         state.searching,
-        messages.isNotEmpty(),
-        state.filtered,
+        messages.isNotEmpty() || narrowed,
+        state.filtered || narrowed,
         status,
-        onReset = state::reset,
+        onReset = {
+            state.reset()
+            filters.update(InboxFilters())
+        },
         onRefresh = onRefresh,
     )
 }
@@ -231,46 +291,3 @@ private fun shownPage(
         context.copy(searchPrompt = "Search ${it.label}", emptyTitle = "${it.label} is empty", folderPill = it)
     } ?: context
 }
-
-/**
- * The bar under the list: the selection's while rows are selected, none while searching, and the
- * list's otherwise. A minimized bar stays while searching, so it can sink under the keyboard
- * instead of vanishing. Without [actions] there is no bar.
- */
-private fun inboxBar(
-    messages: List<MailMessage>,
-    state: InboxState,
-    selected: List<MailMessage>,
-    actions: MessageActions?,
-    clearSelection: () -> Unit,
-    onCompose: (ComposeRequest) -> Unit,
-    onFilters: () -> Unit,
-): (@Composable () -> Unit)? =
-    when {
-        actions == null || (state.searching && !actions.behavior().minimizedBar) -> {
-            null
-        }
-
-        selected.isNotEmpty() -> {
-            { SelectionBar(selected, actions, clearSelection) }
-        }
-
-        else -> {
-            { InboxBar(messages, state, actions, onFilters, onCompose) }
-        }
-    }
-
-/** Row taps, long presses, and drags: opening marks a message read as the saved behavior asks. */
-private fun rowGestures(
-    actions: MessageActions?,
-    selected: List<MailMessage>,
-    onToggle: (MailMessage) -> Unit,
-    onSelect: (Set<String>) -> Unit,
-    onOpen: (MailMessage) -> Unit,
-): RowGestures =
-    RowGestures(actions, selected.map { it.id }.toSet(), onToggle, onSelect) { message ->
-        actions?.opened(message)
-        onOpen(message)
-    }
-
-private fun List<String>.toggled(id: String): List<String> = if (id in this) this - id else this + id

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
+import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
@@ -27,17 +28,18 @@ internal fun InboxResults(
     messages: List<MailMessage>,
     status: InboxStatus,
     state: InboxState,
+    filters: InboxFilters,
     dateFormatter: DateFormatter,
     gestures: RowGestures,
     padding: PaddingValues,
     emptyContent: @Composable () -> Unit,
 ) {
     val matching = state.matching
-    val results = remember(messages, matching) { searchMessages(messages, matching) }
+    val results = remember(messages, matching, filters) { searchMessages(messages, matching, filters) }
     val inboxScroll = rememberLazyListState()
     val searchScroll = rememberLazyListState()
     val listState = if (state.searching) searchScroll else inboxScroll
-    LaunchedEffect(state.search, state.folderPill) { listState.scrollToItem(0) }
+    LaunchedEffect(state.search, state.folderPill, filters) { listState.scrollToItem(0) }
     val noun = if (state.searching) "result" else "message"
     val countLabel =
         if (status.loading &&
