@@ -24,9 +24,7 @@ class JmapMailSourceRolesTest {
                 {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
         } else {
             val id = Regex("\"inMailbox\":\"(\\w)\"").find(body)!!.groupValues[1]
-            """{"methodResponses": [["Email/query", {"ids": ["m$id"]}, "c0"],
-                ["Email/get", {"state": "e", "list": [{"id": "m$id", "subject": "Hi",
-                 "receivedAt": "2026-10-04T09:30:00Z"}]}, "c1"]]}"""
+            emailListResponse("\"m$id\"", """{"id": "m$id", "subject": "Hi", "receivedAt": "2026-10-04T09:30:00Z"}""")
         }
     }
 

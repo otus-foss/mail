@@ -22,10 +22,14 @@ val IdentityType: JmapType<IdentityObject> =
 val EmailSubmissionType: JmapType<JsonObject> =
     JmapType("EmailSubmission", JmapCapability.SUBMISSION, JsonObject.serializer())
 
-/** Email properties the inbox requests (RFC 8621, section 4.1). Recipients and ids let a reply quote and thread. */
+/**
+ * Email properties the inbox requests for each row (RFC 8621, section 4.1). Recipients and ids let
+ * a reply quote and thread. The list shows `preview`; an open message loads its body separately.
+ */
 val EMAIL_PROPERTIES =
     listOf(
         "id",
+        "threadId",
         "mailboxIds",
         "keywords",
         "from",
@@ -38,8 +42,6 @@ val EMAIL_PROPERTIES =
         "preview",
         "hasAttachment",
         "attachments",
-        "textBody",
-        "bodyValues",
     )
 
 /** The Email properties [EmailFolders] reads. */
@@ -85,6 +87,7 @@ data class MailCapability(
 @Serializable
 data class EmailObject(
     val id: String,
+    val threadId: String = "",
     val mailboxIds: Map<String, Boolean> = emptyMap(),
     val keywords: Map<String, Boolean> = emptyMap(),
     val from: List<EmailAddress>? = null,

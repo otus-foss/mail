@@ -6,6 +6,7 @@ import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
+import com.otus.mail.feature.folders.presentation.FolderNudgeState
 import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
@@ -14,8 +15,8 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.AddressPinsState
@@ -59,6 +60,12 @@ internal class MailStates(
     /** Colors the user gave their folders; the Folder colors switch hides them. */
     val folderColors: FolderColorsState =
         FolderColorsState(services.stores.folderColors, { folders.accounts }) { behavior.behavior.sidebar.folderColors }
+
+    /** Which folder the color nudge offers a color for; only while folder colors and folder icons are on. */
+    val folderNudge =
+        FolderNudgeState(services.stores.folderNudges, folderColors, { folders.accounts }) {
+            behavior.behavior.sidebar.folderColors && behavior.behavior.list.folderIcons
+        }
 
     /** Each account's folder rules, kept in the Otus block of its active Sieve script. */
     val rules = FolderRulesState(services.rules, scope)
@@ -190,8 +197,8 @@ internal class MailStates(
             cleanup = cleaning.cleanup(feed),
         )
 
-    /** The HTML body of an open message. */
-    suspend fun messageHtml(message: MailMessage): MessageHtml? = services.bodies.html(message)
+    /** The full body of an open message. */
+    suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)
 
     /** Supplied messages have no server id, so only loaded mail can change its marks. */
     private fun canMark(

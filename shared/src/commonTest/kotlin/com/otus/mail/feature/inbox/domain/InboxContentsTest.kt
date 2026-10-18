@@ -16,6 +16,13 @@ class InboxContentsTest {
     }
 
     @Test
+    fun archiveJoinsTheRolesAndOwnFoldersAreSavedApart() {
+        val contents = InboxContents(archive = true, ownFolders = true)
+        assertEquals(listOf("inbox", "archive"), contents.roles)
+        assertEquals(contents, InboxContents.decode(InboxContents.encode(contents)))
+    }
+
+    @Test
     fun savedContentsReadBackAndUnknownValuesReadAsDefaults() {
         val contents = InboxContents(spam = true)
         assertEquals(contents, InboxContents.decode(InboxContents.encode(contents)))

@@ -2,11 +2,14 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
+import com.otus.mail.feature.inbox.presentation.components.MailListPreview
 import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.MailBehaviorScreen
+import com.otus.mail.feature.inbox.presentation.screens.MailListSettingsScreen
 import com.otus.settings.presentation.components.AppIconSetting
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
@@ -26,9 +29,23 @@ internal fun AppearancePage(
         onBack = back,
         look = {
             settings.appIcon?.let { AppIconSetting(it) }
-            MailLookSettings(states.behavior.behavior.sidebar) { navigation.go(MailPage.SidebarSettings) }
+            MailLookSettings(
+                states.behavior.behavior,
+                onSidebar = { navigation.go(MailPage.SidebarSettings) },
+                onMailList = { navigation.go(MailPage.MailListSettings) },
+            )
         },
     )
+}
+
+/** How the mail list's rows read. Its preview stays empty until the list's row can draw a sample. */
+@Composable
+internal fun MailListSettingsPage(
+    states: MailStates,
+    dateFormatter: DateFormatter,
+    back: () -> Unit,
+) {
+    MailListSettingsScreen(states.behavior, preview = { MailListPreview(it, dateFormatter) }, onBack = back)
 }
 
 /** Mail behavior, whose Action bar row opens its own page. */

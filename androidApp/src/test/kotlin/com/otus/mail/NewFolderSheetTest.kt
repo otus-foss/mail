@@ -74,7 +74,8 @@ class NewFolderSheetTest {
         compose.onNodeWithText("Add").performClick()
         waitFor("grace@example.org")
 
-        compose.onNodeWithText("Default").performClick()
+        // No folder has a color yet, so the first one is preselected.
+        compose.onNodeWithText("Red").performClick()
         compose.onNodeWithText("Blue").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Done")).fetchSemanticsNodes().isEmpty() }

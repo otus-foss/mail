@@ -84,11 +84,11 @@ class InboxHeaderActionsTest {
         show(InboxPill.defaults(readLater = false))
         val prompt = bounds(compose.onNodeWithText("Tap to search"))
         assertTrue("With pills, the button ends their row", bounds(filters()).top >= prompt.bottom)
-        val listWithPills = bounds(compose.onNodeWithText("0 messages")).top
+        val listWithPills = bounds(compose.onNodeWithText("Your inbox is empty")).top
         show(emptyList())
         val button = bounds(filters())
         assertTrue("Without pills, it sits beside the prompt", abs(button.center.y - prompt.center.y) < 2f)
-        assertTrue(bounds(compose.onNodeWithText("0 messages")).top < listWithPills)
+        assertTrue(bounds(compose.onNodeWithText("Your inbox is empty")).top < listWithPills)
         // Search still lists its filters, and the button stays available.
         compose.onNodeWithText("Tap to search").performClick()
         compose.onNodeWithText("People").assertIsDisplayed()
