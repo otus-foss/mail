@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import com.otus.designsystem.elements.RichText
 import com.otus.mail.feature.inbox.domain.AttachmentBlob
 import com.otus.mail.feature.inbox.domain.DraftAttachment
 import com.otus.mail.feature.inbox.domain.PickedFile
@@ -29,11 +30,13 @@ class ComposeAttachmentsTest {
         var files by mutableStateOf<List<DraftAttachment>>(emptyList())
         val uploads = mutableListOf<String>()
         var failNext: UploadFailure? = null
+        val body = RichText()
+        var picks = listOf<PickedFile>()
     }
 
     private fun TestScope.attachments(draft: Draft) =
         ComposeAttachments(
-            files = { listOf(file) },
+            files = { draft.picks.ifEmpty { listOf(file) } },
             uploads = { account, _, _ ->
                 draft.uploads += account
                 draft.failNext?.let {
@@ -42,6 +45,7 @@ class ComposeAttachmentsTest {
                 } ?: Result.success(AttachmentBlob(account, "b${draft.uploads.size}"))
             },
             scope = backgroundScope,
+            body = draft.body,
             accountId = { draft.accountId },
             attachments = { draft.files },
             change = { draft.files = it(draft.files) },
@@ -79,7 +83,7 @@ class ComposeAttachmentsTest {
         runTest {
             val draft = Draft()
             val attachments = attachments(draft)
-            backgroundScope.launch { attachments.followAccount() }
+            backgroundScope.launch { attachments.follow() }
             attachments.attach()
             runCurrent()
             draft.accountId = "a2"
@@ -98,5 +102,21 @@ class ComposeAttachmentsTest {
             runCurrent()
             attachments.remove(draft.files.single().id)
             assertTrue(draft.files.isEmpty())
+        }
+
+    @Test
+    fun aPickedImageShowsInTheBodyUntilItBecomesAFile() =
+        runTest {
+            val draft = Draft().apply { picks = listOf(PickedFile("board.png", "image/png", 3) { byteArrayOf(1) }) }
+            val attachments = attachments(draft)
+            attachments.attach()
+            runCurrent()
+            val image = draft.files.single()
+            assertTrue(image.inline)
+            assertEquals(listOf("cid:${image.cid}"), draft.body.imageSources)
+
+            attachments.showInline(image.id, false)
+            assertFalse(draft.files.single().inline)
+            assertTrue(draft.body.imageSources.isEmpty())
         }
 }

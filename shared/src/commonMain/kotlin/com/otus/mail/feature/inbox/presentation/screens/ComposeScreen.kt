@@ -68,7 +68,7 @@ fun ComposeScreen(
     )
     LaunchedEffect(state) { state.loadIdentities() }
     LaunchedEffect(state) { state.followBody() }
-    LaunchedEffect(state) { state.attachments.followAccount() }
+    LaunchedEffect(state) { state.attachments.follow() }
     // Leaving the page by any route, Back or another page, saves what is new.
     DisposableEffect(state) { onDispose { state.close() } }
     val draft = state.draft
