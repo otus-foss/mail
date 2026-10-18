@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -15,8 +14,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -43,9 +45,12 @@ import com.otus.mail.feature.inbox.presentation.components.InboxFilterSheet
 import com.otus.mail.feature.inbox.presentation.components.InboxPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.InboxResults
-import com.otus.mail.feature.inbox.presentation.components.RowGestures
+import com.otus.mail.feature.inbox.presentation.components.PanelLook
+import com.otus.mail.feature.inbox.presentation.components.PanelOverList
 import com.otus.mail.feature.inbox.presentation.components.SelectionBar
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
+import com.otus.mail.feature.inbox.presentation.components.rememberListSelection
+import com.otus.mail.feature.inbox.presentation.listFrame
 
 @Composable
 fun InboxScreen(
@@ -57,26 +62,18 @@ fun InboxScreen(
     context: InboxContext = InboxContext(),
     messageActions: MessageActions? = null,
 ) {
+    // A new default, such as folders added to what the Inbox shows, starts a fresh search from it.
     val state =
-        rememberSaveable(saver = InboxState.saver(context.defaultSearch)) {
+        rememberSaveable(context.defaultSearch, saver = InboxState.saver(context.defaultSearch)) {
             InboxState(defaultSearch = context.defaultSearch)
         }
     var filter by rememberSaveable { mutableStateOf<InboxFilter?>(null) }
     var openId by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedIds by rememberSaveable { mutableStateOf(listOf<String>()) }
     val opened = messages.firstOrNull { it.id == openId }
-    val selected = remember(messages, selectedIds) { messages.filter { it.id in selectedIds } }
-    val clearSelection = { selectedIds = emptyList() }
-    val gestures =
-        rowGestures(
-            messageActions,
-            selected,
-            onToggle = { selectedIds = selectedIds.toggled(it.id) },
-            onSelect = { selectedIds = it.toList() },
-        ) { openId = it.id }
+    val selection = rememberListSelection(messages, messageActions) { openId = it.id }
     val page = shownPage(state, context)
-    val closeSearch = searchCloser(state)
-    BackHandler(selected.isNotEmpty(), clearSelection)
+    val panelActions = inboxPanelActions(state, searchCloser(state), onOpenNavigation) { filter = it }
+    BackHandler(selection.selected.isNotEmpty(), selection.clear)
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
             opened,
@@ -84,7 +81,14 @@ fun InboxScreen(
             base = {
                 ActionBarHost(
                     bar =
-                        inboxBar(messages, state, selected, messageActions, clearSelection, context.onCompose) {
+                        inboxBar(
+                            messages,
+                            state,
+                            selection.selected,
+                            messageActions,
+                            selection.clear,
+                            context.onCompose,
+                        ) {
                             filter = InboxFilter.More
                         },
                     Modifier
@@ -94,24 +98,26 @@ fun InboxScreen(
                         // An open message covers the list, so accessibility services skip it too.
                         .then(if (opened == null) Modifier else Modifier.clearAndSetSemantics {}),
                 ) { barPadding ->
-                    Column(Modifier.fillMaxSize().padding(vertical = InboxTokens.pageInset)) {
-                        // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
-                        InboxHeader(messages, state, page, dateFormatter, closeSearch, onOpenNavigation) { filter = it }
-                        PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
-                            InboxResults(
-                                messages,
-                                status,
-                                state,
-                                dateFormatter,
-                                gestures,
-                                barPadding,
-                                emptyContent = { InboxEmptyContent(messages, status, state, page, onRefresh) },
-                            )
+                    // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
+                    PanelOverList(status.loading, onRefresh, panel = { compact, modifier ->
+                        InboxHeader(
+                            messages,
+                            state,
+                            page,
+                            dateFormatter,
+                            panelActions,
+                            compact && !state.searching,
+                            modifier,
+                        )
+                    }) { topInset, onCompactChange ->
+                        val frame = context.listFrame(state.searching, topInset, barPadding, onCompactChange)
+                        InboxResults(messages, status, state, dateFormatter, selection.gestures, frame) {
+                            InboxEmptyContent(messages, status, state, page, onRefresh)
                         }
                     }
                 }
             },
-        ) { MessageScreen(it, messageActions, status.notice, context.loadHtml, context.onCompose) { openId = null } }
+        ) { MessageScreen(it, messageActions, status.notice, context.loadContent, context.onCompose) { openId = null } }
         filter?.let { selected ->
             InboxFilterSheet(selected, messages, state.search, page, dateFormatter, state::update) { filter = null }
         }
@@ -170,12 +176,12 @@ private fun InboxHeader(
     state: InboxState,
     context: InboxContext,
     dateFormatter: DateFormatter,
-    closeSearch: () -> Unit,
-    onOpenNavigation: () -> Unit,
-    onFilter: (InboxFilter) -> Unit,
+    actions: InboxPanelActions,
+    compact: Boolean,
+    modifier: Modifier,
 ) {
-    val actions = inboxPanelActions(state, closeSearch, onOpenNavigation, onFilter)
-    Box(Modifier.padding(horizontal = InboxTokens.pageInset)) {
+    val unread = remember(messages) { messages.count { it.attributes.unread } }
+    Box(modifier.padding(horizontal = InboxTokens.pageInset)) {
         InboxPanel(
             state.searching,
             state.search,
@@ -183,6 +189,7 @@ private fun InboxHeader(
             context,
             actions,
             rememberFilterSelection(messages, state.search, context.mailboxSearch.accounts),
+            PanelLook(compact, unread),
         )
     }
 }
@@ -259,18 +266,3 @@ private fun inboxBar(
             { InboxBar(messages, state, actions, onFilters, onCompose) }
         }
     }
-
-/** Row taps, long presses, and drags: opening marks a message read as the saved behavior asks. */
-private fun rowGestures(
-    actions: MessageActions?,
-    selected: List<MailMessage>,
-    onToggle: (MailMessage) -> Unit,
-    onSelect: (Set<String>) -> Unit,
-    onOpen: (MailMessage) -> Unit,
-): RowGestures =
-    RowGestures(actions, selected.map { it.id }.toSet(), onToggle, onSelect) { message ->
-        actions?.opened(message)
-        onOpen(message)
-    }
-
-private fun List<String>.toggled(id: String): List<String> = if (id in this) this - id else this + id

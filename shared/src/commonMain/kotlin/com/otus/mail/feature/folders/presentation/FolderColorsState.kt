@@ -3,6 +3,7 @@ package com.otus.mail.feature.folders.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.otus.designsystem.theme.FolderColor
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderColors
@@ -50,6 +51,9 @@ class FolderColorsState(
     /** Forgets [folder]'s color once the server has deleted it. */
     fun forget(folder: MailFolder) = update { it.without(folder) }
 
+    /** The color a new folder starts with: the next one no folder has, or null while colors are hidden. */
+    fun newFolderColor(): String? = if (shown()) nextFolderColor(colors.names.values).name else null
+
     /** Reads the store again, as after an account is removed. */
     fun reload() {
         colors = store?.readColors() ?: colors
@@ -68,4 +72,13 @@ class FolderColorsState(
         store?.writeColors(next)
         colors = next
     }
+}
+
+/**
+ * The first color in [FolderColor] order that is used least often among the [used] color names,
+ * leaving out [FolderColor.Default], so new folders get every color once before any color repeats.
+ */
+fun nextFolderColor(used: Collection<String>): FolderColor {
+    val counts = used.groupingBy { it }.eachCount()
+    return FolderColor.entries.filter { it != FolderColor.Default }.minBy { counts[it.name] ?: 0 }
 }

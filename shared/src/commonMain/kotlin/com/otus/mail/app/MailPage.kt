@@ -46,6 +46,10 @@ internal sealed interface MailPage {
         override val parent = Appearance
     }
 
+    data object MailListSettings : MailPage {
+        override val parent = Appearance
+    }
+
     data object ActionBarSettings : MailPage {
         override val parent = Behavior
     }
@@ -98,6 +102,9 @@ internal sealed interface MailPage {
     /** Every account's Read later folder. */
     data object ReadLater : MailPage
 
+    /** Every thread where the user and someone else both wrote, across accounts. */
+    data object Conversations : MailPage
+
     /** One of the user's folders, merged across accounts; [key] is its lower-case path. */
     data class Shared(
         val key: List<String>,
@@ -115,8 +122,10 @@ internal sealed interface MailPage {
                 ActionBarSettings,
                 Folders,
                 ReadLater,
+                Conversations,
                 SidebarSettings,
                 ThemeSettings,
+                MailListSettings,
             )
 
         val Saver: Saver<MailPage, List<String>> =

@@ -117,6 +117,7 @@ private val InboxPill.Filter.sheetTitle: String
             InboxPill.Filter.Unread -> "Unread only"
             InboxPill.Filter.Attachments -> "Has attachments"
             InboxPill.Filter.Flagged -> "Flagged only"
+            InboxPill.Filter.Conversations -> "Conversations"
         }
 
 private fun InboxSearch.selectionCount(filter: InboxFilter): Int =

@@ -10,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
+import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.decodeRecentFrom
 import com.otus.mail.feature.inbox.domain.encodeRecentFrom
@@ -45,6 +46,7 @@ class AndroidMailBehaviorStore(
             signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.getString(INBOX, null)?.let(InboxContents::decode) ?: defaults.inbox,
+            list = preferences.getString(LIST, null)?.let(MailListLayout::decode) ?: defaults.list,
         )
     }
 
@@ -64,6 +66,7 @@ class AndroidMailBehaviorStore(
             putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
             putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
             putString(INBOX, InboxContents.encode(behavior.inbox))
+            putString(LIST, MailListLayout.encode(behavior.list))
         }
     }
 
@@ -81,6 +84,7 @@ class AndroidMailBehaviorStore(
         const val SIGNATURE_IN_REPLIES = "signature_in_replies"
         const val UNDO_SEND_SECONDS = "undo_send_seconds"
         const val INBOX = "inbox_contents"
+        const val LIST = "mail_list"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

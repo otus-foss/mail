@@ -102,6 +102,7 @@ class MailServices(
                 instantPush?.forget(loginId)
                 stores.folderColors?.forgetAccount(loginId)
                 stores.addressPins?.forgetAccount(loginId)
+                stores.folderNudges?.forgetAccount(loginId)
             },
         )
     }
