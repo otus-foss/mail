@@ -146,13 +146,11 @@ class InboxPickerTest {
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("kept query").assertIsDisplayed()
         compose.onNodeWithContentDescription("Open filters").performClick()
-        compose.onNodeWithText("Unread only").performClick()
+        compose.onNodeWithContentDescription("Unread").performClick()
+        compose.onNodeWithText("conversation", substring = true).performClick()
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithText("Unread only").assertIsOn()
-        compose.onNodeWithText("Done").performClick()
-        compose.activityRule.scenario.recreate()
-        compose.onNodeWithContentDescription("Open filters").performClick()
-        compose.onNodeWithText("Unread only").assertIsOn()
+        compose.onNodeWithContentDescription("Open filters, 1 active").performClick()
+        compose.onNodeWithContentDescription("Unread").assertIsOn()
     }
 
     @Test

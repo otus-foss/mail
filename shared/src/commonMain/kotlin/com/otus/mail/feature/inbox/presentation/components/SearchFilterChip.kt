@@ -11,9 +11,7 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_calendar_add_on
 import com.otus.designsystem.resources.symbol_person
-import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.has
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import org.jetbrains.compose.resources.DrawableResource
 
@@ -54,10 +52,6 @@ fun SearchFilterChip(
                 search.accounts.isNotEmpty() ||
                     (context.allowsMailboxSelection && search.mailboxes != context.defaultSearch.mailboxes)
             }
-
-            InboxFilter.More -> {
-                InboxPill.Filter.entries.any(search::has)
-            }
         }
     val label = filterLabel(filter, search, selected, dateFormatter)
     Chip(
@@ -79,7 +73,7 @@ private fun filterIcon(filter: InboxFilter): DrawableResource =
     when (filter) {
         InboxFilter.People -> Res.drawable.symbol_person
         InboxFilter.Date -> Res.drawable.symbol_calendar_add_on
-        else -> Res.drawable.symbol_alternate_email
+        InboxFilter.Accounts -> Res.drawable.symbol_alternate_email
     }
 
 private fun filterLabel(
@@ -99,9 +93,5 @@ private fun filterLabel(
 
         InboxFilter.Accounts -> {
             if (search.accounts.isNotEmpty()) "Accounts · ${search.accounts.size}" else "All accounts"
-        }
-
-        InboxFilter.More -> {
-            filter.title
         }
     }

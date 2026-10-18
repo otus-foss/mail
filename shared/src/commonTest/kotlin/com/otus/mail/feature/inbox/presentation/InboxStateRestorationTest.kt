@@ -20,7 +20,6 @@ class InboxStateRestorationTest {
         val search =
             InboxSearch(
                 query = "saved query",
-                flaggedOnly = true,
                 accounts = setOf("ada"),
                 mailboxes = setOf(MailboxScope("ada", "Receipts")),
             )
@@ -41,7 +40,7 @@ class InboxStateRestorationTest {
     @Test
     fun aFolderPageRestoresItsOwnDefaultInsteadOfTheInbox() {
         val default = InboxSearch(mailboxes = emptySet())
-        val state = InboxState(true, default.copy(flaggedOnly = true), default)
+        val state = InboxState(true, default.copy(query = "invoices"), default)
         val saver = InboxState.saver(default)
         val saved = with(saver) { saveScope.save(state) }
         val restored = assertNotNull(saver.restore(assertNotNull(saved)))

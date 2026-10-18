@@ -2,10 +2,6 @@ package com.otus.mail.feature.inbox.domain
 
 data class InboxSearch(
     val query: String = "",
-    val unreadOnly: Boolean = false,
-    val attachmentsOnly: Boolean = false,
-    val flaggedOnly: Boolean = false,
-    val conversationsOnly: Boolean = false,
     val senders: Set<String> = emptySet(),
     val dateStart: String? = null,
     val dateEnd: String? = null,
@@ -13,26 +9,32 @@ data class InboxSearch(
     val accounts: Set<String> = emptySet(),
 )
 
-/** All whitespace-separated terms must match; terms can match different message fields. */
+/**
+ * All whitespace-separated terms must match; terms can match different message fields. The
+ * [filters] the loaded data can tell, such as Unread or Flagged, apply here too, so mail changed
+ * since it loaded and mail from sources without a server follow them. [filters] also set the order.
+ */
 fun searchMessages(
     messages: List<MailMessage>,
     search: InboxSearch,
+    filters: InboxFilters = InboxFilters(),
 ): List<MailMessage> {
     val terms =
         search.query
             .trim()
             .split(Regex("\\s+"))
             .filter(String::isNotEmpty)
+    val newestFirst =
+        compareByDescending<MailMessage> { it.lastReceived.date }.thenByDescending { it.lastReceived.time }
     return messages
         .filter { message ->
             matchesFilters(message, search) &&
+                filters.show.all(message::passes) &&
                 terms.all { term ->
                     listOf(message.subject, message.body, message.sender.name, message.sender.address)
                         .any { it.contains(term, ignoreCase = true) }
                 }
-        }.sortedWith(
-            compareByDescending<MailMessage> { it.lastReceived.date }.thenByDescending { it.lastReceived.time },
-        )
+        }.sortedWith(if (filters.sort == FilterSort.NewestFirst) newestFirst else newestFirst.reversed())
 }
 
 /** A conversation sorts by its newest email, so a reply moves it to the top. */
@@ -43,40 +45,23 @@ private fun matchesFilters(
     message: MailMessage,
     search: InboxSearch,
 ): Boolean =
-    InboxPill.Filter.entries.all { !search.has(it) || message.passes(it) } &&
-        (search.senders.isEmpty() || message.sender.address in search.senders) &&
+    (search.senders.isEmpty() || message.sender.address in search.senders) &&
         (search.dateStart == null || message.received.date >= search.dateStart) &&
         (search.dateEnd == null || message.received.date <= search.dateEnd) &&
         (search.mailboxes.isEmpty() || search.mailboxes.any { it.matches(message.location) }) &&
         (search.accounts.isEmpty() || message.location.accountId in search.accounts)
 
-private fun MailMessage.passes(filter: InboxPill.Filter): Boolean =
-    when (filter) {
-        InboxPill.Filter.Unread -> attributes.unread
-        InboxPill.Filter.Attachments -> attributes.attachments.isNotEmpty()
-        InboxPill.Filter.Flagged -> attributes.flagged
-        InboxPill.Filter.Conversations -> conversation?.exchanged == true
-    }
-
-/** Whether this search has [filter] on. */
-fun InboxSearch.has(filter: InboxPill.Filter): Boolean =
-    when (filter) {
-        InboxPill.Filter.Unread -> unreadOnly
-        InboxPill.Filter.Attachments -> attachmentsOnly
-        InboxPill.Filter.Flagged -> flaggedOnly
-        InboxPill.Filter.Conversations -> conversationsOnly
-    }
-
-/** This search with [filter] turned [on] or off. */
-fun InboxSearch.with(
-    filter: InboxPill.Filter,
-    on: Boolean,
-): InboxSearch =
-    when (filter) {
-        InboxPill.Filter.Unread -> copy(unreadOnly = on)
-        InboxPill.Filter.Attachments -> copy(attachmentsOnly = on)
-        InboxPill.Filter.Flagged -> copy(flaggedOnly = on)
-        InboxPill.Filter.Conversations -> copy(conversationsOnly = on)
+/** Whether the message meets [facet] as far as its loaded data tells; the server checks the rest. */
+private fun MailMessage.passes(facet: ShowFacet): Boolean =
+    when (facet) {
+        ShowFacet.Unread -> attributes.unread
+        ShowFacet.Read -> !attributes.unread
+        ShowFacet.Flagged -> attributes.flagged
+        ShowFacet.NotFlagged -> !attributes.flagged
+        ShowFacet.Attachments -> attributes.attachments.isNotEmpty()
+        ShowFacet.CalendarInvites -> attributes.invite
+        ShowFacet.Conversations -> conversation?.exchanged == true
+        else -> true
     }
 
 /**

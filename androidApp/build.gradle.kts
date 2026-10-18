@@ -12,6 +12,8 @@ dependencies {
     implementation(libs.unifiedpush.connector)
     implementation(libs.compose.foundation)
     testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.compose.material)
     testImplementation(libs.androidx.compose.ui.test)
@@ -103,7 +105,14 @@ kotlin {
     }
 }
 
+// Screenshot tests compare against the PNGs in src/test/screenshots. Pass -Proborazzi.record to
+// write new ones instead, as Meta's design system does.
+val screenshots = layout.projectDirectory.dir("src/test/screenshots")
+val recordScreenshots = providers.gradleProperty("roborazzi.record").isPresent
+
 tasks.withType<Test>().configureEach {
+    inputs.dir(screenshots).withPropertyName("screenshots").optional()
+    systemProperty(if (recordScreenshots) "roborazzi.test.record" else "roborazzi.test.verify", "true")
     jvmArgs(
         "--add-opens=java.base/java.lang=ALL-UNNAMED",
         "--add-opens=java.base/java.util=ALL-UNNAMED",

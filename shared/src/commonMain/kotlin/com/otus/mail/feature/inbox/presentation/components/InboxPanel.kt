@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ChipPlacement
 import com.otus.designsystem.components.ContextPanel
+import com.otus.designsystem.elements.BadgedSymbol
 import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.SearchField
 import com.otus.designsystem.elements.SearchPrompt
@@ -42,9 +43,9 @@ fun InboxPanel(
     look: PanelLook = PanelLook(),
 ) {
     val compact = look.compact
+    val filters = look.filters
     val onChange = actions.onChange
     val onSearchingChange = actions.onSearchingChange
-    val onFilter = actions.onFilter
     val onSubmit = actions.onSubmit
     val onOpenNavigation = actions.onOpenNavigation
     ContextPanel(
@@ -57,11 +58,14 @@ fun InboxPanel(
             },
         navigation = { InboxNavigation(searching, onOpenNavigation) { onSearchingChange(false) } },
         trailingAction = {
-            IconButton("Open filters", { onFilter(InboxFilter.More) }) {
-                Symbol(Res.drawable.symbol_filter_list)
-            }
+            val count = filters.applied.activeCount
+            IconButton(
+                if (count == 0) "Open filters" else "Open filters, $count active",
+                actions.onOpenFilters,
+                Modifier.focusRequester(filters.button),
+            ) { BadgedSymbol(Res.drawable.symbol_filter_list, count) }
         },
-        chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, look.unreadCount) },
+        chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, look) },
         // Scrolled down, the pills join a shorter header as in search, so the list gets more room.
         compact = compact && !searching,
     ) {
@@ -132,8 +136,13 @@ private fun InboxSearchInput(
     }
 }
 
-/** A [compact] panel is shorter, as while its list scrolls down; [unreadCount] shows on the Unread pill. */
-data class PanelLook(
+/**
+ * How the panel looks right now: a [compact] panel is shorter, as while its list scrolls down;
+ * [unreadCount] shows on the Unread pill; [filters] are the page's active filters, which lead the
+ * pill row and count on the filter button.
+ */
+class PanelLook(
     val compact: Boolean = false,
     val unreadCount: Int = 0,
+    val filters: ActiveFilters = ActiveFilters(),
 )

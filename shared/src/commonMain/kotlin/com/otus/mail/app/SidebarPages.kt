@@ -68,7 +68,6 @@ internal fun ConversationsPage(
         states,
         dateFormatter,
         navigation,
-        conversationsOnly = true,
     )
 }
 
