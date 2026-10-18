@@ -1,9 +1,10 @@
 # Nightly builds
 
-`.github/workflows/nightly.yml` runs at 02:00 UTC and can also be started by hand. When main has
-new commits since the last nightly, it builds a signed APK of main and publishes it as a release of
-the public [otus-mail-nightly](https://github.com/reazndev/otus-mail-nightly) repository. The
-source stays private. Each release is tagged `nightly-<number>`, where the number is main's commit
+`.github/workflows/nightly.yml` runs at 03:00 UTC, which is 04:00 in Berlin in winter and 05:00 in
+summer. It can also be started by hand. When main has new commits since the last nightly, it builds
+a signed APK of main and publishes it as a release of the public
+[otus-mail-nightly](https://github.com/reazndev/otus-mail-nightly) repository. The source stays
+private. Each release is tagged `nightly-<number>`, where the number is main's commit
 count, and its notes list the commits since the previous nightly.
 
 The build uses otus-meta main, the way a local build with `otus.meta.path` does, because Meta
