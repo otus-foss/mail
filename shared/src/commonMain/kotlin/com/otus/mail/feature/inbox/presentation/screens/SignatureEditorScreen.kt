@@ -23,17 +23,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.ConfirmDialog
+import com.otus.designsystem.components.EditableImage
 import com.otus.designsystem.components.FormattingBar
 import com.otus.designsystem.components.ImagePreset
 import com.otus.designsystem.components.ImageSizing
 import com.otus.designsystem.components.ResizableImage
-import com.otus.designsystem.elements.RichTextBody
+import com.otus.designsystem.components.RichTextBody
 import com.otus.designsystem.elements.rememberAvatarImage
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
@@ -138,7 +140,7 @@ private fun SignatureImageView(
 ) {
     val bitmap = rememberAvatarImage(remember(image.base64) { Base64.decode(image.base64) }) ?: return
     ResizableImage(
-        bitmap,
+        EditableImage(remember(bitmap) { BitmapPainter(bitmap) }, "Signature image"),
         ImageSizing(image.width.dp, presets) { editor.resize(index, it.value.toInt()) },
         selected = editor.selected == index,
         onSelect = { editor.selected = index },
