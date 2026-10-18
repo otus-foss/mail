@@ -31,6 +31,7 @@ class OtusMailApplication :
                     AndroidReadLaterStore(this),
                     AndroidFolderColorStore(this),
                     AndroidAddressPinStore(this),
+                    AndroidFolderNudgeStore(this),
                 ),
             instantPush = instantPush,
             pickers = MailPickers(signatureImages, attachmentFiles),

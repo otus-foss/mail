@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -156,6 +157,21 @@ class JmapMessageMarkerTest {
                 setOf("ada/m1"),
                 marker { setReply(it) }.mark(listOf(gone, message("m1")), MessageFlag.Read, true),
             )
+        }
+
+    @Test
+    fun aMarkAppliesToEveryEmailOfAConversationInTheMailbox() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val members = listOf("m1", "m2", "m3").map { ThreadMember(it, setOf("a"), "a") }
+            val thread = message("m1").copy(conversation = conversationOf(members))
+            val marked =
+                marker(smallBatches) {
+                    sent += it
+                    setReply(it, refused = setOf("m2"))
+                }.mark(listOf(thread, message("m4")), MessageFlag.Read, true)
+            assertEquals(setOf("ada/m1", "ada/m4"), marked, "A row counts when its own email changed")
+            assertEquals(listOf(listOf("m1", "m2"), listOf("m3", "m4")), sent.map(::updateIds))
         }
 
     private companion object {

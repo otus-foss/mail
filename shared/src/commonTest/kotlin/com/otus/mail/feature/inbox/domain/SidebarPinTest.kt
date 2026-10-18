@@ -11,6 +11,7 @@ class SidebarPinTest {
                 SidebarPin.Folder(listOf("clients, 2026", "a/b 100%")),
                 SidebarPin.Role("sent"),
                 SidebarPin.ReadLater,
+                SidebarPin.Conversations,
             )
         val layout = SidebarLayout(pinned = pins)
         assertEquals(layout, SidebarLayout.decode(SidebarLayout.encode(layout)))

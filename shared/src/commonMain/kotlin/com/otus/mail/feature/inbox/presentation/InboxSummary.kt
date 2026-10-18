@@ -2,11 +2,16 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.InboxContents
 
-/** How the Inbox shows row names [contents]: "Inbox", "Inbox + Spam", "Inbox + Trash", or "All mail". */
-fun inboxSummary(contents: InboxContents): String =
-    when {
-        contents.spam && contents.trash -> "All mail"
-        contents.spam -> "Inbox + Spam"
-        contents.trash -> "Inbox + Trash"
-        else -> "Inbox"
-    }
+/** How the Inbox shows row names [contents], such as "Inbox", "Inbox + Spam", or "All mail" with everything on. */
+fun inboxSummary(contents: InboxContents): String {
+    val extras =
+        listOfNotNull(
+            "Archive".takeIf { contents.archive },
+            "Your folders".takeIf { contents.ownFolders },
+            "Spam".takeIf { contents.spam },
+            "Trash".takeIf { contents.trash },
+        )
+    return if (extras.size == EVERY_EXTRA) "All mail" else (listOf("Inbox") + extras).joinToString(" + ")
+}
+
+private const val EVERY_EXTRA = 4

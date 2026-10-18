@@ -26,10 +26,11 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
 /**
- * Not spam is one `Email/set` patch of `mailboxIds` and `keywords` (RFC 8621, sections 4.1.1 and
- * 4.6). Deleting destroys a message that is only in the folder and takes any other one out of
- * it, in `Email/set` calls of at most the session's `maxObjectsInSet` objects (RFC 8620, section 2).
- * Emptying finds the folder's messages with `Email/query` and `Email/get` first.
+ * Not spam is an `Email/set` patch of `mailboxIds` and `keywords` (RFC 8621, sections 4.1.1 and
+ * 4.6) for each email of the row's conversation. Deleting destroys each email that is only in its
+ * folder and takes any other one out of it, in `Email/set` calls of at most the session's
+ * `maxObjectsInSet` objects (RFC 8620, section 2). Emptying finds the folder's messages with
+ * `Email/query` and `Email/get` first.
  */
 class JmapMessageCleaner(
     private val connections: JmapConnections,
@@ -41,17 +42,20 @@ class JmapMessageCleaner(
         keywords: Boolean,
     ): Boolean {
         val shown = message.location.mailboxId
-        if (shown.isEmpty() || shown == inboxId) return false
-        val patch =
-            buildJsonObject {
-                put("mailboxIds/${pointer(shown)}", JsonNull)
-                put("mailboxIds/${pointer(inboxId)}", JsonPrimitive(true))
-                if (keywords) {
-                    put("keywords/$JUNK_KEYWORD", JsonNull)
-                    put("keywords/$NOT_JUNK_KEYWORD", JsonPrimitive(true))
-                }
+        if (shown.isEmpty() || shown == inboxId || message.emailId.isEmpty()) return false
+        val patches =
+            message.listedMembers().associate { member ->
+                member.emailId to
+                    buildJsonObject {
+                        if (member.folderId != inboxId) put("mailboxIds/${pointer(member.folderId)}", JsonNull)
+                        put("mailboxIds/${pointer(inboxId)}", JsonPrimitive(true))
+                        if (keywords) {
+                            put("keywords/$JUNK_KEYWORD", JsonNull)
+                            put("keywords/$NOT_JUNK_KEYWORD", JsonPrimitive(true))
+                        }
+                    }
             }
-        return updateEmail(connections, logins, message, patch)
+        return message.emailId in updateAccountEmails(connections, logins, message.location.accountId, patches)
     }
 
     override suspend fun delete(messages: List<MailMessage>): Set<String> =
@@ -59,7 +63,7 @@ class JmapMessageCleaner(
             .filter { it.emailId.isNotEmpty() && it.location.mailboxId.isNotEmpty() }
             .groupBy { it.location.accountId }
             .flatMap { (loginId, group) ->
-                val stored = group.map { FolderEmail(it.emailId, it.location.mailboxId, it.location.mailboxIds) }
+                val stored = group.flatMap { it.listedMembers() }.distinctBy { it.emailId }
                 val removed = remove(loginId) { stored }.emailIds
                 group.filter { it.emailId in removed }.map { it.id }
             }.toSet()
@@ -141,6 +145,17 @@ class JmapMessageCleaner(
         }
     }
 }
+
+/**
+ * Each email of this row's conversation in the folder it is listed in, or the row's own email
+ * when it stands alone. Each decides from its own mailboxes whether deleting destroys it.
+ */
+private fun MailMessage.listedMembers(): List<FolderEmail> =
+    conversation
+        ?.members
+        ?.filter { it.emailId.isNotEmpty() }
+        ?.map { FolderEmail(it.emailId, it.mailboxId.ifEmpty { location.mailboxId }, it.mailboxIds) }
+        ?: listOf(FolderEmail(emailId, location.mailboxId, location.mailboxIds))
 
 /** An email in [folderId] that is [elsewhere] when it is in other mailboxes too. */
 private class FolderEmail(

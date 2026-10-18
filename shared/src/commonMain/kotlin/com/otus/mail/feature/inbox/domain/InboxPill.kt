@@ -13,6 +13,9 @@ sealed interface InboxPill {
         Unread("unread"),
         Attachments("attachments"),
         Flagged("flagged"),
+
+        /** Conversations: threads where the user and someone else both wrote. */
+        Conversations("conversations"),
     }
 
     sealed interface FolderPill : InboxPill

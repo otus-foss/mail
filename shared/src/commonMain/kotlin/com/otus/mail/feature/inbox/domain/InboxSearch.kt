@@ -5,6 +5,7 @@ data class InboxSearch(
     val unreadOnly: Boolean = false,
     val attachmentsOnly: Boolean = false,
     val flaggedOnly: Boolean = false,
+    val conversationsOnly: Boolean = false,
     val senders: Set<String> = emptySet(),
     val dateStart: String? = null,
     val dateEnd: String? = null,
@@ -29,8 +30,14 @@ fun searchMessages(
                     listOf(message.subject, message.body, message.sender.name, message.sender.address)
                         .any { it.contains(term, ignoreCase = true) }
                 }
-        }.sortedWith(compareByDescending<MailMessage> { it.received.date }.thenByDescending { it.received.time })
+        }.sortedWith(
+            compareByDescending<MailMessage> { it.lastReceived.date }.thenByDescending { it.lastReceived.time },
+        )
 }
+
+/** A conversation sorts by its newest email, so a reply moves it to the top. */
+private val MailMessage.lastReceived: ReceivedAt
+    get() = conversation?.last?.received ?: received
 
 private fun matchesFilters(
     message: MailMessage,
@@ -48,6 +55,7 @@ private fun MailMessage.passes(filter: InboxPill.Filter): Boolean =
         InboxPill.Filter.Unread -> attributes.unread
         InboxPill.Filter.Attachments -> attributes.attachments.isNotEmpty()
         InboxPill.Filter.Flagged -> attributes.flagged
+        InboxPill.Filter.Conversations -> conversation?.exchanged == true
     }
 
 /** Whether this search has [filter] on. */
@@ -56,6 +64,7 @@ fun InboxSearch.has(filter: InboxPill.Filter): Boolean =
         InboxPill.Filter.Unread -> unreadOnly
         InboxPill.Filter.Attachments -> attachmentsOnly
         InboxPill.Filter.Flagged -> flaggedOnly
+        InboxPill.Filter.Conversations -> conversationsOnly
     }
 
 /** This search with [filter] turned [on] or off. */
@@ -67,6 +76,7 @@ fun InboxSearch.with(
         InboxPill.Filter.Unread -> copy(unreadOnly = on)
         InboxPill.Filter.Attachments -> copy(attachmentsOnly = on)
         InboxPill.Filter.Flagged -> copy(flaggedOnly = on)
+        InboxPill.Filter.Conversations -> copy(conversationsOnly = on)
     }
 
 /**
