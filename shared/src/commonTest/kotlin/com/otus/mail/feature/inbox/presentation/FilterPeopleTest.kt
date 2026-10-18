@@ -119,4 +119,13 @@ class FilterPeopleTest {
         assertTrue(picked.hasRecipient(people[2]))
         assertFalse(picked.withRecipient(people[0], false).hasRecipient(people[0]))
     }
+
+    @Test
+    fun anOwnAddressSavedInAnotherCaseStillCountsAsPicked() {
+        val own = OwnAddress("ada", "ada@example.org")
+        val person = FilterPerson("Work", listOf(own.address), own = own)
+        val saved = InboxFilters(sentTo = setOf(OwnAddress("ada", "Ada@Example.org")))
+        assertTrue(saved.hasRecipient(person))
+        assertEquals(emptySet(), saved.withRecipient(person, on = false).sentTo)
+    }
 }

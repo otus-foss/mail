@@ -56,4 +56,26 @@ class FilterPeopleSearchTest {
             assertFalse(search.searching)
             assertEquals(listOf(grace), search.found)
         }
+
+    @Test
+    fun aFailedSearchDropsTheLastResults() =
+        runTest {
+            var calls = 0
+            val scope =
+                CoroutineScope(
+                    StandardTestDispatcher(testScheduler) + SupervisorJob() + CoroutineExceptionHandler { _, _ -> },
+                )
+            val search =
+                FilterPeopleSearch(PeopleField.From, scope) { _, _ ->
+                    if (calls++ == 0) listOf(grace) else error("The server went away")
+                }
+            search.search("gr")
+            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            runCurrent()
+            assertEquals(listOf(grace), search.found)
+            search.search("grace")
+            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            runCurrent()
+            assertEquals(emptyList(), search.found, "Results for other text do not stay on screen")
+        }
 }
