@@ -1,56 +1,28 @@
 package com.otus.mail.feature.inbox.domain
 
-import kotlinx.datetime.LocalDate
-
-/** A condition of the Show section; all that are on must hold. */
-enum class ShowFacet { Unread, Flagged, ReadLater, Attachments, WaitingForReply }
-
-/** One of the user's own addresses: [accountId] is the login that receives mail at it. */
-data class OwnAddress(
-    val accountId: String,
-    val address: String,
-)
-
-/** A folder to filter by: [loginId] is the login, [mailboxId] the server's id. */
-data class FolderRef(
-    val loginId: String,
-    val mailboxId: String,
-    val includeSubfolders: Boolean = true,
-)
-
-/** When the mail arrived, in the user's time zone. */
-sealed interface DateFilter {
-    data object Any : DateFilter
-
-    data object Today : DateFilter
-
-    data object Last7 : DateFilter
-
-    data object Last30 : DateFilter
-
-    /** From the start of [from] to the end of [to]. */
-    data class Range(
-        val from: LocalDate,
-        val to: LocalDate,
-    ) : DateFilter
-}
-
-enum class FilterSort { NewestFirst, OldestFirst }
-
 /**
  * What a page's list is narrowed to. The quick pills and the filter panel edit the same value.
- * [show] conditions must all hold; [sentTo] and [folders] each match any of their choices.
+ * [show] conditions must all hold. [from] senders, [accounts], [sentTo] addresses, [receivedAs]
+ * fields, and [folders] each match any of their choices. Mail in [skipFolders] is left out.
  */
 data class InboxFilters(
     val show: Set<ShowFacet> = emptySet(),
+    val from: Set<String> = emptySet(),
+    val accounts: Set<String> = emptySet(),
     val sentTo: Set<OwnAddress> = emptySet(),
+    val receivedAs: Set<RecipientField> = emptySet(),
     val folders: Set<FolderRef> = emptySet(),
+    val skipFolders: Set<FolderRef> = emptySet(),
     val date: DateFilter = DateFilter.Any,
+    val size: SizeFilter = SizeFilter.Any,
     val sort: FilterSort = FilterSort.NewestFirst,
 ) {
     /** How many choices differ from the defaults, one per pill the row shows; the order is not one. */
     val activeCount: Int
-        get() = show.size + sentTo.size + folders.size + (if (date == DateFilter.Any) 0 else 1)
+        get() =
+            listOf(show, from, accounts, sentTo, receivedAs, folders, skipFolders).sumOf { it.size } +
+                (if (date == DateFilter.Any) 0 else 1) +
+                (if (size == SizeFilter.Any) 0 else 1)
 
     /** Nothing narrows the list, and it is newest first. */
     val isDefault: Boolean
@@ -58,11 +30,11 @@ data class InboxFilters(
 
     fun has(facet: ShowFacet): Boolean = facet in show
 
-    /** These filters with [facet] turned [on] or off. */
+    /** These filters with [facet] turned [on] or off; turning it on turns its opposite off. */
     fun with(
         facet: ShowFacet,
         on: Boolean,
-    ): InboxFilters = copy(show = if (on) show + facet else show - facet)
+    ): InboxFilters = copy(show = if (on) show - setOfNotNull(facet.opposite) + facet else show - facet)
 
     fun has(pill: InboxPill.Filter): Boolean = has(pill.facet)
 
@@ -75,58 +47,22 @@ data class InboxFilters(
     fun withFolder(
         ref: FolderRef,
         on: Boolean,
-    ): InboxFilters {
-        val others = folders.filterNot { it.loginId == ref.loginId && it.mailboxId == ref.mailboxId }.toSet()
-        return copy(folders = if (on) others + ref else others)
-    }
+    ): InboxFilters = copy(folders = folders.toggled(ref, on))
+
+    /** [ref]'s folder left out, or no longer left out. */
+    fun withSkipped(
+        ref: FolderRef,
+        on: Boolean,
+    ): InboxFilters = copy(skipFolders = skipFolders.toggled(ref, on))
 }
 
-/** The Show condition a row pill turns on. */
-val InboxPill.Filter.facet: ShowFacet
-    get() =
-        when (this) {
-            InboxPill.Filter.Unread -> ShowFacet.Unread
-            InboxPill.Filter.Attachments -> ShowFacet.Attachments
-            InboxPill.Filter.Flagged -> ShowFacet.Flagged
-        }
-
-/**
- * [filters] with what the server needs to run them: each login's folder ids with subfolders
- * already added, each login's Read later folder, the user's own [ownAddresses], which tell mail
- * the user sent, and the [logins] the page shows, or null for all.
- */
-data class MailQuery(
-    val filters: InboxFilters = InboxFilters(),
-    val folderIds: Map<String, Set<String>> = emptyMap(),
-    val readLaterIds: Map<String, String> = emptyMap(),
-    val ownAddresses: Set<String> = emptySet(),
-    val logins: Set<String>? = null,
-) {
-    /** Whether this query reads mail of [loginId] at all; selected addresses and folders leave out other logins. */
-    fun reads(loginId: String): Boolean =
-        (logins == null || loginId in logins) &&
-            (filters.sentTo.isEmpty() || filters.sentTo.any { it.accountId == loginId }) &&
-            (filters.folders.isEmpty() || loginId in folderIds) &&
-            (ShowFacet.ReadLater !in filters.show || loginId in readLaterIds)
+private fun Set<FolderRef>.toggled(
+    ref: FolderRef,
+    on: Boolean,
+): Set<FolderRef> {
+    val others = filterNot { it.loginId == ref.loginId && it.mailboxId == ref.mailboxId }.toSet()
+    return if (on) others + ref else others
 }
-
-/**
- * Each login's folder ids for [refs]: the folder, and with [FolderRef.includeSubfolders] every
- * folder [descendants] names below it.
- */
-fun folderIds(
-    refs: Set<FolderRef>,
-    descendants: (loginId: String, mailboxId: String) -> Set<String>,
-): Map<String, Set<String>> =
-    refs
-        .groupBy { it.loginId }
-        .mapValues { (login, own) ->
-            own
-                .flatMap { ref ->
-                    setOf(ref.mailboxId) +
-                        if (ref.includeSubfolders) descendants(login, ref.mailboxId) else emptySet()
-                }.toSet()
-        }
 
 /** Mail the user sent, which waits for a reply while it is the latest of its conversation. */
 fun MailMessage.fromAny(addresses: Set<String>): Boolean =

@@ -50,8 +50,9 @@ fun MailLookSettings(
 }
 
 /**
- * The Mail behavior page's Inbox section: what the Inbox lists, the inbox pills, and Read later,
- * the first two in sheets. [folderPills] are the folder pills the accounts' folders can fill.
+ * The Mail behavior page's Inbox section: what the Inbox lists, the inbox pills, the filter
+ * panel's sections and choices, and Read later, all but the last in sheets. [folderPills] are the
+ * folder pills the accounts' folders can fill.
  */
 @Composable
 fun InboxBehaviorSettings(
@@ -72,6 +73,7 @@ fun InboxBehaviorSettings(
             description = "Filters and folders above your mail",
             icon = Res.drawable.symbol_filter_list,
         ) { ValueButton(if (shown == 0) "None" else "$shown shown") }
+        FilterPanelSettings(state)
         SettingToggleRow(
             "Read later",
             checked = behavior.readLater,

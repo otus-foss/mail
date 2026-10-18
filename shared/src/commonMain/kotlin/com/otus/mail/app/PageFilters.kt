@@ -52,16 +52,16 @@ internal class PageFilters {
 internal fun MailStates.mailQuery(filters: InboxFilters): MailQuery {
     if (filters.isDefault) return MailQuery()
     val accounts = folders.accounts
+    val descendants = { login: String, id: String ->
+        val account = accounts.firstOrNull { it.accountId == login }
+        account?.folder(id)?.let { subtreeIds(account.folders, it) - id }.orEmpty()
+    }
     return MailQuery(
         filters = filters,
-        folderIds =
-            folderIds(filters.folders) { login, id ->
-                val account = accounts.firstOrNull { it.accountId == login }
-                val folder = account?.folder(id) ?: return@folderIds emptySet()
-                subtreeIds(account.folders, folder) - id
-            },
+        folderIds = folderIds(filters.folders, descendants),
+        skipIds = folderIds(filters.skipFolders, descendants),
         readLaterIds = accounts.mapNotNull { account -> account.readLaterId?.let { account.accountId to it } }.toMap(),
-        ownAddresses = accountAddresses().flatMap { it.addresses }.toSet(),
+        addresses = accountAddresses().associate { it.accountId to it.addresses.toSet() },
         logins = mailScope.accountId?.let(::setOf),
     )
 }
@@ -112,4 +112,5 @@ internal fun rememberFilterOptions(
         states.mailScope,
         states.folderColors.colors,
         states.behavior.behavior.sidebar,
+        states.behavior.behavior.filters,
     ) { states.filterOptions(page) }

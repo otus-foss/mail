@@ -79,7 +79,8 @@ class JmapMailSource(
                 results
                     .filterIsInstance<AccountLoad.Loaded>()
                     .flatMap { it.messages }
-                    .filter { !query.filters.has(ShowFacet.WaitingForReply) || it.fromAny(own) },
+                    .filter { !query.filters.has(ShowFacet.WaitingForReply) || it.fromAny(own) }
+                    .filter { !query.filters.has(ShowFacet.CalendarInvites) || it.attributes.invite },
             unavailable = results.filterIsInstance<AccountLoad.Failed>().map { it.account },
         )
     }
@@ -89,6 +90,8 @@ class JmapMailSource(
         scope: MailScope,
         query: MailQuery,
     ): Long? {
+        // No query finds invites, so only the loaded mail can be counted.
+        if (query.filters.has(ShowFacet.CalendarInvites)) return null
         val saved = withContext(Dispatchers.IO) { savedLogins() }
         val now = clock.now()
         val totals =

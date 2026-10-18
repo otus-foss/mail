@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.otus.designsystem.theme.OtusTheme
@@ -82,7 +83,7 @@ class FilterPanelScreenshotTest {
     @Test
     fun allFoldersNestedAndSearching() {
         show()
-        compose.onNodeWithContentDescription("All folders…").performClick()
+        compose.onNodeWithContentDescription("All folders…").performScrollTo().performClick()
         compose.waitForIdle()
         shot("filter_panel_all_folders")
         compose.onNodeWithContentDescription("Search folders").performTextInput("inv")

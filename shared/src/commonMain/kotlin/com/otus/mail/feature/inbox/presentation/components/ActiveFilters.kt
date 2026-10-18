@@ -2,7 +2,9 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderLabel
 import com.otus.mail.feature.inbox.presentation.key
@@ -28,20 +30,39 @@ class ActiveFilters(
                 applied.show.sortedBy { it.ordinal }.forEach { facet ->
                     add(ActiveFacet(facet, facet.label) { it.with(facet, false) })
                 }
+                applied.from.forEach { address ->
+                    add(ActiveFacet("from" to address, "From $address") { it.copy(from = it.from - address) })
+                }
+                applied.accounts.forEach { id ->
+                    val name = options.account(id)?.name ?: id
+                    add(ActiveFacet("account" to id, name) { it.copy(accounts = it.accounts - id) })
+                }
                 applied.sentTo.forEach { address ->
                     add(ActiveFacet(address, address.address) { it.copy(sentTo = it.sentTo - address) })
                 }
+                applied.receivedAs.sortedBy { it.ordinal }.forEach { field ->
+                    add(ActiveFacet(field, "As ${field.label}") { it.copy(receivedAs = it.receivedAs - field) })
+                }
                 applied.folders.forEach { ref ->
-                    val label = options.labels[ref.key] ?: FolderLabel(options.folder(ref.key)?.name ?: "Folder")
-                    add(ActiveFacet(ref, label.withIncluded(ref, options)) { it.withFolder(ref, false) })
+                    add(ActiveFacet(ref, folderName(ref).withIncluded(ref, options)) { it.withFolder(ref, false) })
+                }
+                applied.skipFolders.forEach { ref ->
+                    add(ActiveFacet("skip" to ref, "Not in ${folderName(ref).name}") { it.withSkipped(ref, false) })
                 }
                 applied.date.takeIf { it != DateFilter.Any }?.let { date ->
                     val label = (date as? DateFilter.Range)?.let { rangeLabel(it, dateFormatter) } ?: date.label
                     add(ActiveFacet(DATE_KEY, label) { it.copy(date = DateFilter.Any) })
                 }
+                applied.size.takeIf { it != SizeFilter.Any }?.let { size ->
+                    add(ActiveFacet(SIZE_KEY, size.label) { it.copy(size = SizeFilter.Any) })
+                }
             }
+
+    private fun folderName(ref: FolderRef): FolderLabel =
+        options.labels[ref.key] ?: FolderLabel(options.folder(ref.key)?.name ?: "Folder")
 
     private companion object {
         const val DATE_KEY = "date"
+        const val SIZE_KEY = "size"
     }
 }

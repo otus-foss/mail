@@ -62,11 +62,20 @@ class JmapFilteredMailTest {
             val query =
                 MailQuery(
                     InboxFilters(show = setOf(ShowFacet.WaitingForReply)),
-                    ownAddresses = setOf("ada@example.org"),
+                    addresses = mapOf("ada" to setOf("ada@example.org")),
                     logins = setOf("ada"),
                 )
             val messages = source.messages(MailScope.Inbox, query).messages
             assertEquals(listOf("mine"), messages.map { it.emailId })
+        }
+
+    @Test
+    fun calendarInvitesAreCheckedOnTheLoadedMailAndNotCounted() =
+        runTest {
+            val source = source { body -> if ("Mailbox/get" in body) MAILBOXES else INVITES }
+            val query = MailQuery(InboxFilters(show = setOf(ShowFacet.CalendarInvites)), logins = setOf("ada"))
+            assertEquals(listOf("invite"), source.messages(MailScope.Inbox, query).messages.map { it.emailId })
+            assertEquals(null, source.count(MailScope.Inbox, query))
         }
 
     @Test
@@ -93,6 +102,11 @@ class JmapFilteredMailTest {
             ["Email/get", {"state": "e", "list": [
             {"id": "mine", "receivedAt": "2026-10-18T09:00:00Z", "from": [{"email": "Ada@example.org"}]},
             {"id": "theirs", "receivedAt": "2026-10-18T08:00:00Z", "from": [{"email": "bo@example.org"}]}]}, "c1"]]}"""
+        const val INVITES = """{"methodResponses": [["Email/query", {"ids": ["invite", "plain"]}, "c0"],
+            ["Email/get", {"state": "e", "list": [
+            {"id": "invite", "receivedAt": "2026-10-18T09:00:00Z", "hasAttachment": true,
+             "attachments": [{"partId": "2", "type": "text/calendar", "name": "invite.ics"}]},
+            {"id": "plain", "receivedAt": "2026-10-18T08:00:00Z"}]}, "c1"]]}"""
         const val COUNT = """{"methodResponses": [["Email/query", {"ids": [], "total": 7}, "c0"]]}"""
     }
 }

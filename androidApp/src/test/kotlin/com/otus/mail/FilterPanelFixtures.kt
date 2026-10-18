@@ -59,6 +59,7 @@ internal object FilterPanelFixtures {
                     "dev",
                     "travel",
                 ).map { FolderKey("ada", it) },
+            skip = listOf(FolderKey("ada", "sent"), FolderKey("ada", "trash")),
             folders = true,
             readLater = true,
         )

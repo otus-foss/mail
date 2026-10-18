@@ -2,10 +2,13 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.FilterSort
+import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.OwnAddress
+import com.otus.mail.feature.inbox.domain.RecipientField
 import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.SizeFilter
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonArray
@@ -31,13 +34,52 @@ class EmailConditionsTest {
             MailQuery(
                 InboxFilters(show = ShowFacet.entries.toSet()),
                 readLaterIds = mapOf("ada" to "later"),
-                ownAddresses = setOf("ada@example.org"),
+                addresses = mapOf("ada" to setOf("ada@example.org"), "bo" to setOf("bo@example.org")),
             )
         assertEquals(
-            """[{"notKeyword":"${'$'}seen"},{"hasKeyword":"${'$'}flagged"},{"hasAttachment":true},""" +
-                """{"inMailbox":"later"},{"from":"ada@example.org"}]""",
+            """[{"notKeyword":"${'$'}seen"},{"hasKeyword":"${'$'}seen"},{"hasKeyword":"${'$'}flagged"},""" +
+                """{"notKeyword":"${'$'}flagged"},{"inMailbox":"later"},{"hasAttachment":true},""" +
+                """{"hasKeyword":"${'$'}answered"},{"notKeyword":"${'$'}answered"},""" +
+                """{"hasKeyword":"${'$'}forwarded"},""" +
+                """{"from":"ada@example.org"},""" +
+                """{"operator":"OR","conditions":[{"header":["List-Id"]},{"header":["List-Unsubscribe"]}]}]""",
             conditions(query),
         )
+    }
+
+    @Test
+    fun receivedAsUsesTheLoginsOwnAddressesUnlessSomeAreChosen() {
+        val addresses = mapOf("ada" to setOf("a@x.org", "b@x.org"))
+        val cc = MailQuery(InboxFilters(receivedAs = setOf(RecipientField.Cc)), addresses = addresses)
+        assertEquals("""[{"operator":"OR","conditions":[{"cc":"a@x.org"},{"cc":"b@x.org"}]}]""", conditions(cc))
+        val chosen =
+            cc.copy(
+                filters =
+                    cc.filters.copy(
+                        sentTo = setOf(OwnAddress("ada", "b@x.org")),
+                        receivedAs = setOf(RecipientField.To, RecipientField.Bcc),
+                    ),
+            )
+        assertEquals("""[{"operator":"OR","conditions":[{"to":"b@x.org"},{"bcc":"b@x.org"}]}]""", conditions(chosen))
+    }
+
+    @Test
+    fun sendersSkippedFoldersAndSizeNarrowTheMail() {
+        val query =
+            MailQuery(
+                InboxFilters(
+                    from = setOf("sam@x.org"),
+                    size = SizeFilter.Over5Mb,
+                    skipFolders = setOf(FolderRef("ada", "t")),
+                ),
+                skipIds = mapOf("ada" to setOf("t", "t2")),
+            )
+        assertEquals(
+            """[{"from":"sam@x.org"},{"operator":"NOT","conditions":[{"inMailbox":"t"},{"inMailbox":"t2"}]},""" +
+                """{"minSize":5000000}]""",
+            conditions(query),
+        )
+        assertNull(conditions(MailQuery(InboxFilters(accounts = setOf("bo")))), "Accounts not chosen are skipped")
     }
 
     @Test
@@ -62,13 +104,7 @@ class EmailConditionsTest {
         assertNull(conditions(sentTo, login = "bo"))
         val folders =
             MailQuery(
-                InboxFilters(
-                    folders =
-                        setOf(
-                            com.otus.mail.feature.inbox.domain
-                                .FolderRef("ada", "f"),
-                        ),
-                ),
+                InboxFilters(folders = setOf(FolderRef("ada", "f"))),
                 folderIds = mapOf("ada" to setOf("f")),
             )
         assertNull(conditions(folders, login = "bo"))

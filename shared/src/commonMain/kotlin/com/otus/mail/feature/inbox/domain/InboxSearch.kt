@@ -11,8 +11,8 @@ data class InboxSearch(
 
 /**
  * All whitespace-separated terms must match; terms can match different message fields. The
- * Unread, Flagged, and Attachments [filters] apply here too, so mail changed since it loaded and
- * mail from sources without a server follow them. [filters] also set the order.
+ * [filters] the loaded data can tell, such as Unread or Flagged, apply here too, so mail changed
+ * since it loaded and mail from sources without a server follow them. [filters] also set the order.
  */
 fun searchMessages(
     messages: List<MailMessage>,
@@ -28,7 +28,7 @@ fun searchMessages(
     return messages
         .filter { message ->
             matchesFilters(message, search) &&
-                InboxPill.Filter.entries.all { !filters.has(it) || message.passes(it) } &&
+                filters.show.all(message::passes) &&
                 terms.all { term ->
                     listOf(message.subject, message.body, message.sender.name, message.sender.address)
                         .any { it.contains(term, ignoreCase = true) }
@@ -46,11 +46,16 @@ private fun matchesFilters(
         (search.mailboxes.isEmpty() || search.mailboxes.any { it.matches(message.location) }) &&
         (search.accounts.isEmpty() || message.location.accountId in search.accounts)
 
-private fun MailMessage.passes(filter: InboxPill.Filter): Boolean =
-    when (filter) {
-        InboxPill.Filter.Unread -> attributes.unread
-        InboxPill.Filter.Attachments -> attributes.attachments.isNotEmpty()
-        InboxPill.Filter.Flagged -> attributes.flagged
+/** Whether the message meets [facet] as far as its loaded data tells; the server checks the rest. */
+private fun MailMessage.passes(facet: ShowFacet): Boolean =
+    when (facet) {
+        ShowFacet.Unread -> attributes.unread
+        ShowFacet.Read -> !attributes.unread
+        ShowFacet.Flagged -> attributes.flagged
+        ShowFacet.NotFlagged -> !attributes.flagged
+        ShowFacet.Attachments -> attributes.attachments.isNotEmpty()
+        ShowFacet.CalendarInvites -> attributes.invite
+        else -> true
     }
 
 /**
