@@ -110,7 +110,6 @@ class JmapMailboxScopeTest {
         const val MAILBOXES = """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
             {"id": "a", "name": "Posteingang", "role": "inbox"},
             {"id": "r", "name": "Receipts"}, {"id": "s", "name": "Sent", "role": "sent"}]}, "c0"]]}"""
-        const val EMAILS = """{"methodResponses": [["Email/query", {"ids": []}, "c0"],
-            ["Email/get", {"state": "e", "list": []}, "c1"]]}"""
+        val EMAILS = emailListResponse(ids = "", list = "")
     }
 }

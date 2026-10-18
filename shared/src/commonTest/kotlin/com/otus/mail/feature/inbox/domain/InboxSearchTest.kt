@@ -63,6 +63,29 @@ class InboxSearchTest {
     }
 
     @Test
+    fun conversationsKeepThreadsWhereBothSidesWroteAndSortByTheNewestEmail() {
+        val sam = MailSender("Sam", "sam@example.com")
+
+        fun thread(
+            lastDate: String,
+            exchanged: Boolean,
+        ) = MailConversation(
+            "t",
+            2,
+            ThreadEmail(sam, emptyList(), ReceivedAt(lastDate, "08:00")),
+            listOf(sam),
+            false,
+            emptyList(),
+            exchanged,
+        )
+        val replied = messages[0].copy(conversation = thread("2026-10-05", exchanged = true))
+        val unanswered = messages[1].copy(conversation = thread("2026-10-04", exchanged = false))
+        val search = InboxSearch().with(InboxPill.Filter.Conversations, on = true)
+        assertEquals(listOf("older"), searchMessages(listOf(unanswered, replied), search).map { it.id })
+        assertEquals(listOf("older", "newer"), searchMessages(listOf(unanswered, replied), InboxSearch()).map { it.id })
+    }
+
+    @Test
     fun explicitMailboxAndAccountScopeAreRespected() {
         assertEquals(listOf("archive", "older"), results(InboxSearch(mailboxes = emptySet(), accounts = setOf("Work"))))
         assertEquals(listOf("archive"), results(InboxSearch(mailboxes = setOf(MailboxScope(null, "Archive")))))

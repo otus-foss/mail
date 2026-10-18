@@ -5,9 +5,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.feature.folders.domain.CombinedFolder
+import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.feature.folders.domain.SENT_ROLE
 import com.otus.mail.feature.folders.domain.sharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
+import com.otus.mail.feature.inbox.domain.INBOX_MAILBOX
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.screens.SidebarSettingsScreen
@@ -44,6 +48,28 @@ internal fun ReadLaterPage(
     val folders = states.folders.accounts.mapNotNull { it.readLater }
     LeaveWhenGone(states, navigation, gone = folders.isEmpty())
     FeedPage(MailPage.ReadLater, folders.toScope(), "Read later", states, dateFormatter, navigation)
+}
+
+/**
+ * Every conversation: each account's inbox and Sent, kept to threads where the user and someone
+ * else both wrote. Sent lists what the user sent whether or not anyone answered.
+ */
+@Composable
+internal fun ConversationsPage(
+    states: MailStates,
+    dateFormatter: DateFormatter,
+    navigation: MailNavigation,
+) {
+    val scope = MailScope.Roles(mapOf(INBOX_ROLE to INBOX_MAILBOX, SENT_ROLE to CombinedFolder.Sent.title))
+    FeedPage(
+        MailPage.Conversations,
+        scope,
+        "Conversations",
+        states,
+        dateFormatter,
+        navigation,
+        conversationsOnly = true,
+    )
 }
 
 /** One of the user's folders, holding each account's folder at its path. */

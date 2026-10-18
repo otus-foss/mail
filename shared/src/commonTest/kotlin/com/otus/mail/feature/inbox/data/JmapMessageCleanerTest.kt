@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
@@ -106,6 +107,42 @@ class JmapMessageCleanerTest {
             assertEquals(2, sent.size, "Two objects per call")
             assertTrue("\"update\":{\"m2\":{\"mailboxIds/t\":null}},\"destroy\":[\"m1\"]" in sent[0], sent[0])
             assertTrue("\"destroy\":[\"m3\"]" in sent[1], sent[1])
+        }
+
+    @Test
+    fun deletingAConversationRemovesEachEmailFromTheFolderItIsListedIn() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val members =
+                listOf(
+                    ThreadMember("m1", setOf("t"), "t"),
+                    ThreadMember("m2", setOf("t", "p"), "t"),
+                    ThreadMember("m3", setOf("l", "a"), "l"),
+                )
+            val deleted =
+                cleaner {
+                    sent += it
+                    setReply(it)
+                }.delete(listOf(message("m1").copy(conversation = conversationOf(members))))
+            assertEquals(setOf("ada/m1"), deleted)
+            assertTrue("\"update\":{\"m2\":{\"mailboxIds/t\":null}},\"destroy\":[\"m1\"]" in sent[0], sent[0])
+            assertTrue("\"update\":{\"m3\":{\"mailboxIds/l\":null}}" in sent[1], "m3 is also in another mailbox")
+        }
+
+    @Test
+    fun notSpamMovesEveryEmailOfTheConversation() =
+        runTest {
+            val sent = mutableListOf<String>()
+            val members = listOf(ThreadMember("m1", setOf("j"), "j"), ThreadMember("m2", setOf("j"), "j"))
+            val spam = message("m1", folder = "j").copy(conversation = conversationOf(members))
+            val cleaner =
+                cleaner {
+                    sent += it
+                    setReply(it)
+                }
+            assertTrue(cleaner.notSpam(spam, "i", keywords = false))
+            val moved = "{\"mailboxIds/j\":null,\"mailboxIds/i\":true}"
+            assertTrue("\"m1\":$moved" in sent.single() && "\"m2\":$moved" in sent.single(), sent.single())
         }
 
     @Test

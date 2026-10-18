@@ -10,8 +10,29 @@ data class MessageHtml(
     val truncated: Boolean = false,
 )
 
-/** Loads the full body of an open message. */
+/**
+ * An open message's full body. [text] is the plain body, HTML read as text when the message has
+ * no plain part; [truncated] when the server sent only its start. [html] is null for plain mail.
+ */
+data class MessageContent(
+    val text: String,
+    val truncated: Boolean,
+    val html: MessageHtml?,
+)
+
+/** Loads the full body of an open message, since the list loads only previews. */
 interface MessageBodies {
-    /** The message's HTML body; null when it has none or the server could not be reached. */
-    suspend fun html(message: MailMessage): MessageHtml?
+    /** The message's body; null when the server could not be reached. */
+    suspend fun content(message: MailMessage): MessageContent?
 }
+
+/**
+ * This message with its full text from [content], so a reply or forward quotes all of it. Without
+ * content, or with an empty text, it keeps the preview it has.
+ */
+fun MailMessage.withContent(content: MessageContent?): MailMessage =
+    if (content == null || content.text.isBlank()) {
+        this
+    } else {
+        copy(body = content.text, bodyTruncated = content.truncated)
+    }

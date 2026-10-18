@@ -9,6 +9,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -25,8 +26,8 @@ import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.MessageLabel
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.RowFolder
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Rule
 import org.junit.Test
@@ -81,12 +82,13 @@ class InboxScreenTest {
     @Test
     fun liveSearchFiltersFixturesAndResetRestoresList() {
         showFixtures()
-        // Two accounts, so rows name theirs; the saved message also names Read later.
+        // The saved message's row marks its attachment and Read later, which its description says.
         compose
             .onNode(
-                hasText("Design review") and hasText("Read later") and hasText("Work · 1 file"),
+                hasText("Design review") and
+                    hasContentDescription("Attachment. Read later.", substring = true),
             ).assertIsDisplayed()
-        compose.onNode(hasText("Weekend plans") and hasText("Personal")).assertIsDisplayed()
+        compose.onNode(hasText("Weekend plans")).assertIsDisplayed()
         screenshot("inbox-fixtures")
         compose.onNodeWithContentDescription("Search mailbox").performClick()
         compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("prototype")
@@ -158,7 +160,7 @@ class InboxScreenTest {
                     ReceivedAt("2026-10-03", "10:30"),
                     MailLocation("Inbox", "Work"),
                     MailAttributes(true, listOf("draft.pdf")),
-                    labels = listOf(MessageLabel("Read later", readLater = true)),
+                    labels = listOf(RowFolder("later", "Read later", readLater = true)),
                 ),
                 MailMessage(
                     "sam",

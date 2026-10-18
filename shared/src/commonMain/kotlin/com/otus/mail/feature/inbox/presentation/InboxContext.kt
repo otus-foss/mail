@@ -4,7 +4,7 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageHtml
+import com.otus.mail.feature.inbox.domain.MessageContent
 
 /**
  * What a message list shows by default, how it names itself, which other mailboxes its search
@@ -21,20 +21,28 @@ data class InboxContext(
     val folderPill: FolderPillOption? = null,
     /** Opens a draft for a new message, reply, or forward. */
     val onCompose: (ComposeRequest) -> Unit = {},
-    /** Loads an open message's HTML body; null shows its text body. */
-    val loadHtml: suspend (MailMessage) -> MessageHtml? = { null },
+    /** Loads an open message's full body; null keeps the preview the list loaded. */
+    val loadContent: suspend (MailMessage) -> MessageContent? = { null },
+    /** How rows look: the Mail list settings and the user's own addresses. */
+    val rowLook: RowLook = RowLook(),
+    /** The folder color nudge above the first row; null shows none. */
+    val nudge: ListNudge? = null,
 ) {
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()
 
     companion object {
-        /** A folder's page shows only the filter pills of [pills]: folder pills would leave the folder. */
+        /**
+         * A folder's page shows only the filter pills of [pills]: folder pills would leave the
+         * folder. A page of [conversationsOnly] starts filtered to conversations the user wrote in.
+         */
         fun folder(
             name: String,
             pills: List<InboxPill>,
+            conversationsOnly: Boolean = false,
         ): InboxContext =
             InboxContext(
-                defaultSearch = InboxSearch(mailboxes = emptySet()),
+                defaultSearch = InboxSearch(mailboxes = emptySet(), conversationsOnly = conversationsOnly),
                 searchPrompt = "Search $name",
                 emptyTitle = "$name is empty",
                 pills = InboxPills(pills.filterIsInstance<InboxPill.Filter>()),

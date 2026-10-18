@@ -5,17 +5,12 @@ import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.JmapIds
-import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
-import com.otus.mail.core.mail.EMAIL_PROPERTIES
-import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
-import com.otus.mail.core.mail.NEWEST_FIRST
-import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
@@ -31,12 +26,10 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * Loads all or named mailboxes of each login, or chosen folders, newest first. Logins load in
- * parallel and fail alone.
+ * Loads all or named mailboxes of each login, or chosen folders, as one row per conversation,
+ * newest first. Logins load in parallel and fail alone.
  */
 class JmapMailSource(
     private val connections: JmapConnections,
@@ -88,38 +81,13 @@ class JmapMailSource(
                 .call(
                     GetMethod(MailboxType, accountId, properties = listOf("id", "name", "role")),
                 ).list
-        val chosen =
-            when (scope) {
-                is MailScope.Role -> {
-                    mailboxes.filter { it.role == scope.role }
-                }
-
-                is MailScope.Roles -> {
-                    mailboxes.filter { it.role in scope.names }
-                }
-
-                MailScope.AllMailboxes -> {
-                    mailboxes
-                }
-
-                is MailScope.Mailboxes -> {
-                    mailboxes.filter { mailbox ->
-                        scope.mailboxes.isEmpty() ||
-                            scope.mailboxes.any {
-                                it.name == mailboxName(mailbox.name, mailbox.role) &&
-                                    (it.account == null || it.account == login.id)
-                            }
-                    }
-                }
-
-                is MailScope.Folder -> {
-                    mailboxes.filter { it.id == scope.folderId }
-                }
-
-                is MailScope.Folders -> {
-                    mailboxes.filter { MailScope.Folder(login.id, it.id) in scope.folders }
-                }
-            }
+        val chosen = scope.chosen(mailboxes, login.id)
+        val view =
+            ThreadView(
+                shown = chosen.map { it.id }.toSet(),
+                trashAndJunk = mailboxes.filter { it.role in HIDDEN_ROLES }.map { it.id }.toSet(),
+                sent = mailboxes.filter { it.role == SENT_ROLE }.map { it.id }.toSet(),
+            )
         // Each login loads its mailboxes sequentially instead of starting one request per folder.
         val loaded =
             chosen.map { mailbox ->
@@ -129,10 +97,10 @@ class JmapMailSource(
                         is MailScope.Roles -> scope.names[mailbox.role] ?: mailboxName(mailbox.name, mailbox.role)
                         else -> mailboxName(mailbox.name, mailbox.role)
                     }
-                loadMailbox(connection, login, accountId, mailbox.id, name)
+                loadMailbox(connection, login, accountId, mailbox.id, name, view)
             }
-        // A message can be in several chosen mailboxes; it is listed once, under the first.
-        return loaded.flatten().distinctBy { it.id }
+        // A thread can be in several chosen mailboxes; it is listed once.
+        return loaded.flatten().mergedByThread()
     }
 
     private suspend fun loadMailbox(
@@ -141,43 +109,65 @@ class JmapMailSource(
         accountId: String,
         mailboxId: String,
         name: String,
+        view: ThreadView,
     ): List<MailMessage> {
-        val emails =
-            connection.request {
-                val query = call(QueryMethod(EmailType, accountId, inMailbox(mailboxId), NEWEST_FIRST, limit))
-                call(
-                    GetMethod(
-                        EmailType,
-                        accountId,
-                        JmapIds.Result(query.resultOf("/ids")),
-                        EMAIL_PROPERTIES,
-                        BODY_ARGUMENTS,
-                    ),
-                )
-            }
+        val emails = connection.threadedEmails(accountId, mailboxId, limit)
         val local = zone()
         return jmapDecoding {
-            emails.list.map { it.toMessage(login.id, login.name, name, local, login.username, mailboxId) }
+            emails.rows.map { row ->
+                row
+                    .toMessage(login.id, login.name, name, local, login.username, mailboxId)
+                    .inConversation(row, emails.threads[row.threadId].orEmpty(), mailboxId, view, local)
+            }
         }
     }
 
     private companion object {
         const val DEFAULT_LIMIT = 50
 
-        const val MAX_BODY_BYTES = 20_000
+        /** Roles whose emails a conversation counts only when the list shows them. */
+        val HIDDEN_ROLES = setOf("trash", "junk")
 
-        /**
-         * Text bodies up to [MAX_BODY_BYTES] per part, marked `isTruncated` when cut off (RFC 8621,
-         * section 4.2). Each part's `type` tells an HTML body from a plain one.
-         */
-        val BODY_ARGUMENTS =
-            mapOf(
-                "bodyProperties" to JsonArray(listOf("partId", "name", "type").map(::JsonPrimitive)),
-                "fetchTextBodyValues" to JsonPrimitive(true),
-                "maxBodyValueBytes" to JsonPrimitive(MAX_BODY_BYTES),
-            )
+        const val SENT_ROLE = "sent"
     }
 }
+
+/** The mailboxes of [all] of the login with [loginId] that this scope loads. */
+private fun MailScope.chosen(
+    all: List<MailboxObject>,
+    loginId: String,
+): List<MailboxObject> =
+    when (this) {
+        is MailScope.Role -> {
+            all.filter { it.role == role }
+        }
+
+        is MailScope.Roles -> {
+            all.filter { it.role in names || (ownFolders && it.role == null) }
+        }
+
+        MailScope.AllMailboxes -> {
+            all
+        }
+
+        is MailScope.Mailboxes -> {
+            all.filter { mailbox ->
+                mailboxes.isEmpty() ||
+                    mailboxes.any {
+                        it.name == mailboxName(mailbox.name, mailbox.role) &&
+                            (it.account == null || it.account == loginId)
+                    }
+            }
+        }
+
+        is MailScope.Folder -> {
+            all.filter { it.id == folderId }
+        }
+
+        is MailScope.Folders -> {
+            all.filter { MailScope.Folder(loginId, it.id) in folders }
+        }
+    }
 
 /** Whether this scope reads mail of the login with [loginId]. */
 private fun MailScope.reads(loginId: String): Boolean =
