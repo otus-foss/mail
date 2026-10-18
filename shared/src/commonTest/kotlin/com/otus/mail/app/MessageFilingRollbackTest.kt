@@ -6,7 +6,6 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.presentation.FolderColorsState
-import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -82,7 +81,7 @@ class MessageFilingRollbackTest {
                 save(JmapLogin("ada", "https://mail.example.org/jmap/session", "ada@example.org", "Ada"), "secret")
             }
         val services = MailServices(logins = store, createClient = { JmapClient(engine) })
-        val folders = FoldersState(services.folders, this, loadAccounts = { listOf(account) })
+        val folders = testFolders(services) { listOf(account) }
         folders.refresh()
         runCurrent()
         val initialScope = if (readLater) MailScope.Folder("ada", "l") else MailScope.Inbox

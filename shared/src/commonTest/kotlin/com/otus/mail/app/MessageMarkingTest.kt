@@ -3,7 +3,6 @@ package com.otus.mail.app
 import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
-import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -54,7 +53,7 @@ class MessageMarkingTest {
             }
         val services = MailServices(logins = store, createClient = { JmapClient(engine) })
         val folders =
-            FoldersState(services.folders, this) {
+            testFolders(services) {
                 folderLoads++
                 emptyList()
             }
