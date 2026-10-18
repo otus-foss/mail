@@ -21,6 +21,7 @@ import com.otus.designsystem.components.LocalBottomClearance
 import com.otus.designsystem.components.SidebarSwipeArea
 import com.otus.designsystem.components.SlidingPages
 import com.otus.designsystem.components.ToastHost
+import com.otus.designsystem.components.ToastMessage
 import com.otus.designsystem.components.ToastState
 import com.otus.designsystem.components.actionBarInset
 import com.otus.designsystem.components.rememberSidebarState
@@ -99,7 +100,7 @@ fun App(
                     current = page.root,
                     states,
                     states.mailScope,
-                    footer = { build?.let { BuildFooter(it, nightly?.available) } },
+                    footer = { build?.let { UpdatingFooter(it, nightly, states.moveToasts.toasts) } },
                     onChooseScope = { chosenScope = it },
                     onSelect = {
                         page = it
@@ -115,7 +116,7 @@ fun App(
     }
 }
 
-/** Only nightly builds look for a newer nightly, once per launch. */
+/** Only nightly builds on a platform that can install one look for a newer nightly, once per launch. */
 @Composable
 private fun rememberNightlyUpdate(
     services: MailServices,
@@ -125,10 +126,33 @@ private fun rememberNightlyUpdate(
         remember(services, build) {
             build
                 ?.takeIf { it.channel == ReleaseChannel.Nightly }
-                ?.let { NightlyUpdateState(services.nightly, it.versionCode) }
+                ?.let { installed ->
+                    services.nightly.installer?.let {
+                        NightlyUpdateState(
+                            services.nightly.feed,
+                            installed.versionCode,
+                            it,
+                        )
+                    }
+                }
         }
     LaunchedEffect(nightly) { nightly?.check() }
     return nightly
+}
+
+/** The [BuildFooter], which installs [nightly] in the background and says in [toasts] when that fails. */
+@Composable
+private fun UpdatingFooter(
+    build: InstalledBuild,
+    nightly: NightlyUpdateState?,
+    toasts: ToastState,
+) {
+    val scope = rememberCoroutineScope()
+    BuildFooter(build, nightly) {
+        scope.launch {
+            if (nightly?.install() == false) toasts.show(ToastMessage("Couldn't download the update"))
+        }
+    }
 }
 
 /** Shows [toasts] at the bottom, above the page's action bar when it has one. */

@@ -7,6 +7,7 @@ import com.otus.jmap.login.AndroidLoginStore
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailPickers
 import com.otus.mail.app.MailServices
+import com.otus.mail.app.NightlyUpdates
 import com.otus.push.PushSubscriptions
 import java.io.File
 import java.util.UUID
@@ -32,6 +33,7 @@ class OtusMailApplication :
                     AndroidFolderColorStore(this),
                     AndroidAddressPinStore(this),
                 ),
+            nightly = NightlyUpdates(installer = AndroidUpdateInstaller(this)),
             instantPush = instantPush,
             pickers = MailPickers(signatureImages, attachmentFiles),
         )
