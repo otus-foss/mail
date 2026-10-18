@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -50,15 +51,31 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.io)
+            implementation(libs.sqldelight.runtime)
         }
         androidMain.dependencies { implementation(libs.ktor.client.okhttp) }
-        iosMain.dependencies { implementation(libs.ktor.client.darwin) }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+            implementation(libs.sqldelight.native.driver)
+        }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.ktor.client.mock)
             implementation(libs.kotlinx.coroutines.test)
         }
-        getByName("androidHostTest").dependencies { implementation(libs.robolectric) }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.robolectric)
+            implementation(libs.sqldelight.sqlite.driver)
+        }
+    }
+}
+
+// The device's copy of each login's mail. SqlMailCache in core/cache reads and writes it.
+sqldelight {
+    databases {
+        create("MailDatabase") {
+            packageName.set("com.otus.mail.core.cache")
+        }
     }
 }
 

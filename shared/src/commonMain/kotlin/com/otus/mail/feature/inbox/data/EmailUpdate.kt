@@ -5,6 +5,7 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.SetMethod
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
@@ -17,13 +18,14 @@ import kotlinx.serialization.json.JsonObject
 /**
  * Applies [patch] to [message], and to every email of its conversation, with `Email/set` updates
  * (RFC 8621, section 4.6) in the mail account of the message's login. False when the server did
- * not update the row email or could not be reached.
+ * not update the row email or could not be reached. The emails it updated change in [cache] too.
  */
 internal suspend fun updateEmail(
     connections: JmapConnections,
     logins: LoginStore,
     message: MailMessage,
     patch: JsonObject,
+    cache: MailCache? = null,
 ): Boolean =
     message.emailId.isNotEmpty() &&
         message.emailId in
@@ -32,6 +34,7 @@ internal suspend fun updateEmail(
             logins,
             message.location.accountId,
             message.memberIds.associateWith { patch },
+            cache,
         )
 
 /**
@@ -39,13 +42,14 @@ internal suspend fun updateEmail(
  * updates: per account, one call for each batch of at most the session's `maxObjectsInSet` emails.
  * Accounts are asked at the same time, so a slow one holds up only its own messages. Returns the
  * [MailMessage.id]s whose row email the server updated; the others were refused, have no server id,
- * or their account could not be reached.
+ * or their account could not be reached. The emails it updated change in [cache] too.
  */
 internal suspend fun updateEmails(
     connections: JmapConnections,
     logins: LoginStore,
     messages: List<MailMessage>,
     patch: JsonObject,
+    cache: MailCache? = null,
 ): Set<String> =
     coroutineScope {
         messages
@@ -54,7 +58,7 @@ internal suspend fun updateEmails(
             .map { (loginId, group) ->
                 async {
                     val patches = group.flatMap { it.memberIds }.associateWith { patch }
-                    val updated = updateAccountEmails(connections, logins, loginId, patches)
+                    val updated = updateAccountEmails(connections, logins, loginId, patches, cache)
                     group.filter { it.emailId in updated }.map { it.id }
                 }
             }.awaitAll()
@@ -69,8 +73,23 @@ internal suspend fun updateEmails(
 internal val MailMessage.memberIds: List<String>
     get() = (conversation?.members?.map { it.emailId } ?: listOf(emailId)).filter { it.isNotEmpty() }.distinct()
 
-/** The emails of [loginId] that their [patches] updated, batch by batch. */
+/**
+ * The emails of [loginId] that their [patches] updated, batch by batch. Those emails change in
+ * [cache] too, so lists show the change before the next sync.
+ */
 internal suspend fun updateAccountEmails(
+    connections: JmapConnections,
+    logins: LoginStore,
+    loginId: String,
+    patches: Map<String, JsonObject>,
+    cache: MailCache? = null,
+): Set<String> {
+    val updated = sendUpdates(connections, logins, loginId, patches)
+    cache?.patchEmails(loginId, patches.filterKeys { it in updated })
+    return updated
+}
+
+private suspend fun sendUpdates(
     connections: JmapConnections,
     logins: LoginStore,
     loginId: String,

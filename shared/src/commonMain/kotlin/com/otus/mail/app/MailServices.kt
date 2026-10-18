@@ -17,6 +17,8 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.cache.CacheKind
+import com.otus.mail.core.cache.MailCache
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
@@ -59,6 +61,9 @@ import com.otus.push.PushStateStore
 import com.otus.push.PushSubscriptions
 import io.ktor.client.HttpClient
 import org.jetbrains.compose.resources.ExperimentalResourceApi
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Instant
 
 /**
  * Connects data implementations to feature contracts. Create one per process: it owns the HTTP
@@ -74,6 +79,8 @@ class MailServices(
     internal val pickers: MailPickers = MailPickers(),
     createClient: () -> JmapClient = { JmapClient() },
 ) {
+    /** The device's copy of each login's mail; see docs/storage.md. */
+    internal val cache: MailCache get() = stores.cache
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
@@ -101,13 +108,14 @@ class MailServices(
                 stores.folderColors?.forgetAccount(loginId)
                 stores.addressPins?.forgetAccount(loginId)
                 stores.folderNudges?.forgetAccount(loginId)
+                cache.forget(loginId)
             },
         )
     }
-    internal val mail: MailSource by lazy { JmapMailSource(connections, logins) }
-    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins) }
-    internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins) }
-    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins) }
+    internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache) }
+    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache) }
+    internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
+    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
     internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins) }
     private val jmapSender by lazy { JmapDraftSender(connections, logins) }
@@ -118,7 +126,7 @@ class MailServices(
     internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
-    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins) }
+    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins, cache) }
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }
@@ -136,6 +144,14 @@ class MailServices(
         deviceClientId: String,
     ): PushSubscriptions = PushSubscriptions(connections, logins, states, deviceClientId, listOf("EmailDelivery"))
 
+    /**
+     * Drops cached bodies of mail received more than [BODY_RETENTION] before [now], so the cache
+     * does not grow without bound. Call it once at start; it runs off the main thread.
+     */
+    suspend fun trimCache(now: Instant = Clock.System.now()) {
+        cache.trim(CacheKind.Body, (now - BODY_RETENTION).toEpochMilliseconds())
+    }
+
     /** The saved logins; none when storage cannot be read. Call it off the main thread. */
     fun logins(): List<JmapLogin> =
         try {
@@ -144,6 +160,9 @@ class MailServices(
             emptyList()
         }
 }
+
+/** How long a cached body stays after its mail arrived. Opening older mail fetches it again. */
+private val BODY_RETENTION = 90.days
 
 @OptIn(ExperimentalResourceApi::class)
 private suspend fun avatarSuffixRules(): String = Res.readBytes("files/public_suffix_list.dat").decodeToString()

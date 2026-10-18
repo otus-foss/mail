@@ -8,10 +8,14 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.mailboxes
+import com.otus.mail.core.mail.replaceMailboxes
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderOutcome
@@ -32,22 +36,35 @@ import kotlinx.serialization.json.JsonPrimitive
  * Folders through `Mailbox/get` and `Mailbox/set` (RFC 8621, section 2). Logins load in parallel
  * and fail alone. Each login also loads the mailboxes other users share with it, from every session
  * account with mail and `isPersonal: false` (RFC 8620, section 2); a shared account that fails is
- * left out.
+ * left out. Each login's own mailboxes replace the ones in [cache], which the inbox shares.
  */
 class JmapFolderRepository(
     connections: JmapConnections,
     logins: LoginStore,
+    private val cache: MailCache = InMemoryMailCache(),
 ) : FolderRepository {
     private val accounts = MailAccounts(connections, logins, ::FolderStorageException)
 
     override suspend fun accounts(): List<AccountFolders> =
         coroutineScope { accounts.logins().map { async { load(it) } }.awaitAll() }
 
+    override suspend fun cachedAccounts(): List<AccountFolders> =
+        accounts.logins().map { login ->
+            AccountFolders(login.id, login.name, cache.mailboxes(login.id).map { it.toFolder(login.id) })
+        }
+
     private suspend fun load(login: JmapLogin): AccountFolders =
         try {
             val account = accounts.open(login)
             coroutineScope {
-                val shared = account.sharedAccountIds().map { async { loadShared(account, it) } }
+                val shared =
+                    account.sharedAccountIds().map {
+                        async {
+                            account.loadShared(
+                                it,
+                            ) { id -> folders(account, id) }
+                        }
+                    }
                 AccountFolders(
                     login.id,
                     login.name,
@@ -64,23 +81,6 @@ class JmapFolderRepository(
             AccountFolders(login.id, login.name, failure = error.toFolderFailure())
         }
 
-    private suspend fun loadShared(
-        account: MailAccount,
-        jmapAccountId: String,
-    ): SharedMailboxes? =
-        try {
-            SharedMailboxes(
-                jmapAccountId,
-                account.session.accounts[jmapAccountId]
-                    ?.name
-                    .orEmpty(),
-                folders(account, jmapAccountId),
-                limits(account.mailCapability(jmapAccountId)),
-            )
-        } catch (expected: JmapException) {
-            null
-        }
-
     private suspend fun folders(
         account: MailAccount,
         jmapAccountId: String,
@@ -88,7 +88,10 @@ class JmapFolderRepository(
         val mailboxes =
             account.connection.call(GetMethod(MailboxType, jmapAccountId, properties = MAILBOX_PROPERTIES))
         val sharedIn = jmapAccountId.takeIf { it != account.id }
-        return jmapDecoding { mailboxes.list.map { it.toFolder(account.login.id, sharedIn) } }
+        val folders = jmapDecoding { mailboxes.list.map { it.toFolder(account.login.id, sharedIn) } }
+        // Only the login's own mailboxes: the cache keeps one set per login, which the inbox reads too.
+        if (sharedIn == null) cache.write(account.login.id) { replaceMailboxes(mailboxes.list) }
+        return folders
     }
 
     override suspend fun create(
@@ -180,3 +183,20 @@ private fun MailAccount.mailCapability(jmapAccountId: String): JsonObject? =
     session.accounts[jmapAccountId]?.capabilityObjects?.get(JmapCapability.MAIL)
 
 private fun String?.json(): JsonElement = this?.let(::JsonPrimitive) ?: JsonNull
+
+private suspend fun MailAccount.loadShared(
+    jmapAccountId: String,
+    folders: suspend (jmapAccountId: String) -> List<MailFolder>,
+): SharedMailboxes? =
+    try {
+        SharedMailboxes(
+            jmapAccountId,
+            session.accounts[jmapAccountId]
+                ?.name
+                .orEmpty(),
+            folders(jmapAccountId),
+            limits(mailCapability(jmapAccountId)),
+        )
+    } catch (expected: JmapException) {
+        null
+    }

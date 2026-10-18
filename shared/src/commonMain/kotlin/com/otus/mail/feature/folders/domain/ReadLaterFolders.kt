@@ -45,6 +45,17 @@ class ReadLaterFolders(
     }
 
     /**
+     * The device's copy of every account's folders, marked like [accounts] but without creating a
+     * missing Read later folder; the server load that follows does that.
+     */
+    suspend fun cachedAccounts(enabled: () -> Boolean): List<AccountFolders> {
+        val cached = repository.cachedAccounts()
+        if (!enabled()) return withoutReadLater(cached)
+        val saved = saved()
+        return cached.map { it.copy(readLaterId = it.readLaterIn(saved)?.id) }
+    }
+
+    /**
      * [loaded] without the Read later folder saved for each account. Only saved folders are left
      * out, so a folder the user named Read later before ever turning the switch on still shows.
      */

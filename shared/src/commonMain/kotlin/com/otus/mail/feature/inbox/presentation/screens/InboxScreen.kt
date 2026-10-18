@@ -90,7 +90,10 @@ fun InboxScreen(
                         .then(if (covered) Modifier.clearAndSetSemantics {} else Modifier),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
-                    PanelOverList(status.loading, onRefresh, panel = { compact, modifier ->
+                    PanelOverList(status.loading, rowsShown = messages.isNotEmpty(), onRefresh, panel = {
+                        compact,
+                        modifier,
+                        ->
                         InboxHeader(
                             messages,
                             state,
