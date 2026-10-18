@@ -68,15 +68,14 @@ class JmapMailSource(
         query: MailQuery,
     ): InboxSnapshot = snapshot(selected(scope), scope, query, clock.now(), unavailable = emptyList())
 
-    private fun savedLogins(): List<JmapLogin> =
-        try {
-            logins.logins()
-        } catch (error: LoginStoreException) {
-            throw InboxStorageException(error)
-        }
-
     private suspend fun selected(scope: MailScope): List<JmapLogin> =
-        withContext(Dispatchers.IO) { savedLogins() }.filter { scope.reads(it.id) }
+        withContext(Dispatchers.IO) {
+            try {
+                logins.logins()
+            } catch (error: LoginStoreException) {
+                throw InboxStorageException(error)
+            }
+        }.filter { scope.reads(it.id) }
 
     /** Runs [sync] for each login [scope] reads, then reads the lists from the cache. */
     private suspend fun load(
