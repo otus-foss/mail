@@ -38,6 +38,7 @@ internal fun SelectionBar(
             Minimized(
                 more = behavior.overflow(ActionBarPlace.Selection, offer, role),
             ).takeIf { behavior.minimizedBar },
+        everyAction = behavior.everyAction(ActionBarPlace.Selection, offer),
         context = selectionContext(selected.size),
     )
     moveChoice.Sheet(actions)
