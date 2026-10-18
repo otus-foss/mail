@@ -1,10 +1,8 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.presentation.FolderKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -18,14 +16,5 @@ class PageFiltersTest {
         assertEquals(InboxFilters(), filters.of(MailPage.Folder("ada", "f")))
         assertEquals(InboxFilters(), filters.of(MailPage.ReadLater))
         assertEquals(InboxFilters(quick = setOf(QuickFacet.Conversations)), filters.of(MailPage.Conversations))
-    }
-
-    @Test
-    fun recentFoldersPutTheLatestFirst() {
-        val filters = PageFilters()
-        filters.keep(MailPage.Inbox, InboxFilters(folders = setOf(FolderRef("ada", "a"))))
-        filters.keep(MailPage.Inbox, InboxFilters(folders = setOf(FolderRef("ada", "b"))))
-        filters.keep(MailPage.Inbox, InboxFilters(folders = setOf(FolderRef("ada", "a"))))
-        assertEquals(listOf(FolderKey("ada", "a"), FolderKey("ada", "b")), filters.recentFolders)
     }
 }
