@@ -113,7 +113,7 @@ shows there as a preview, as wide as the text, without a chip. "Uploading…" or
 failure shows over its corner. Tapping it gives it an outline and a corner handle, and the
 bottom bar morphs into the image bar: Small, Medium, Large, and Full, ⋯, and ✓ to finish.
 Dragging the handle shows dashed guides at each size and snaps to them with a haptic tick. ⋯
-holds **Send as file**, which takes the image out of the body and gives it a chip,
+grows the bar's group upward into its options: **Send as file**, which takes the image out of the body and gives it a chip,
 **Description**, its `alt` text, **Replace**, which picks another image for the same spot and
 size, **Remove image**, and Retry after a failed upload. A file image's chip offers **Show in
 message**, which puts it back at the cursor. The width and description go into the `<img>`
