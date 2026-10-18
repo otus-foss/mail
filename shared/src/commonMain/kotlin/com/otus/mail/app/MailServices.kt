@@ -26,6 +26,7 @@ import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.folders.domain.forgetAccount
 import com.otus.mail.feature.inbox.data.JmapAddressBook
+import com.otus.mail.feature.inbox.data.JmapAttachmentUploads
 import com.otus.mail.feature.inbox.data.JmapDraftRepository
 import com.otus.mail.feature.inbox.data.JmapDraftSender
 import com.otus.mail.feature.inbox.data.JmapMailSource
@@ -37,6 +38,7 @@ import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
 import com.otus.mail.feature.inbox.domain.AddressBook
+import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailSource
@@ -46,7 +48,6 @@ import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SenderHistory
-import com.otus.mail.feature.inbox.domain.SignatureImages
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 import com.otus.mail.feature.inbox.domain.forgetAccount
@@ -72,8 +73,7 @@ class MailServices(
     createNightlyFeed: () -> NightlyFeed = { GitHubNightlyFeed(HttpClient()) },
     /** Instant pushes through the user's UnifiedPush app; null where the platform has none. */
     internal val instantPush: InstantPush? = null,
-    /** Picks and shrinks signature images; null where the platform has no picker. */
-    internal val signatureImages: SignatureImages? = null,
+    internal val pickers: MailPickers = MailPickers(),
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     private val client by lazy(createClient)
@@ -116,6 +116,7 @@ class MailServices(
     internal val scheduled: ScheduledSends get() = jmapSender
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections, logins) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
+    internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins) }

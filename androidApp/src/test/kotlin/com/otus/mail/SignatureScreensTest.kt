@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -124,12 +125,13 @@ class SignatureScreensTest {
             compose.onAllNodesWithContentDescription("Signature image").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("Signature image").performSemanticsAction(SemanticsActions.OnClick)
-        compose.onNodeWithText("150 × 50 px").assertExists()
-        compose.screenshot("signature-editor")
-        compose.onNodeWithText("150 × 50 px").performClick()
-        compose.screenshot("signature-image-size")
-        compose.onNodeWithText("Medium").performClick()
         compose.onNodeWithText("Medium").assertExists()
+        compose.screenshot("signature-editor")
+        compose.onNodeWithText("Medium").performClick()
+        compose.onNodeWithText("Medium").assertIsSelected()
+        compose.onNodeWithContentDescription("Image options").performClick()
+        compose.screenshot("signature-image-size")
+        compose.onNodeWithText("Remove image").assertExists()
     }
 
     @Test
