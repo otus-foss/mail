@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.hasContentDescription
@@ -146,11 +147,11 @@ class InboxPickerTest {
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("kept query").assertIsDisplayed()
         compose.onNodeWithContentDescription("Open filters").performClick()
-        compose.onNodeWithContentDescription("Unread").performClick()
+        compose.filterTab("Unread").performClick()
         compose.onNodeWithText("conversation", substring = true).performClick()
         compose.activityRule.scenario.recreate()
         compose.onNodeWithContentDescription("Open filters, 1 active").performClick()
-        compose.onNodeWithContentDescription("Unread").assertIsOn()
+        compose.filterTab("Unread").assertIsSelected()
     }
 
     @Test

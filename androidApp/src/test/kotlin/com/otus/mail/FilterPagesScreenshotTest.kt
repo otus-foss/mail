@@ -6,10 +6,12 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.domain.TypeFacet
+import kotlinx.datetime.LocalDate
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,10 +58,9 @@ class FilterPagesScreenshotTest {
 
     @Test
     fun datePageCustomRange() {
-        compose.showFilterPanel()
+        // A range in a past month keeps the calendar free of today's marker, so the golden never drifts.
+        compose.showFilterPanel(InboxFilters(date = DateFilter.Range(LocalDate(2025, 3, 10), LocalDate(2025, 3, 16))))
         compose.openFilterPage("Date, ")
-        compose.onNodeWithText("Custom").performClick()
-        compose.waitForIdle()
         compose.filterShot("filter_panel_page_date_custom")
     }
 
