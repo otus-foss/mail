@@ -14,6 +14,7 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
+import com.otus.designsystem.resources.symbol_more_horiz
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.resources.symbol_send
@@ -110,6 +111,8 @@ internal val BarButton.symbol: DrawableResource
             MailAction.Attach -> Res.drawable.symbol_attach_file
 
             MailAction.Discard -> Res.drawable.symbol_delete
+
+            MailAction.AllActions -> Res.drawable.symbol_more_horiz
         }
 
 private fun MessageActions.offerMark(

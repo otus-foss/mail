@@ -62,6 +62,11 @@ class MailBehaviorTest {
     }
 
     @Test
+    fun everyBarCanHoldAllActions() {
+        ActionBarPlace.entries.forEach { assertTrue(MailAction.AllActions in MailBehavior().barChoices(it)) }
+    }
+
+    @Test
     fun selectedMessagesNeverOfferARuleForTheSender() {
         val behavior = MailBehavior(readLater = true)
         assertTrue(MailAction.RuleForSender in behavior.barChoices(ActionBarPlace.Message))

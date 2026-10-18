@@ -51,6 +51,9 @@ enum class MailAction(
     Send("send", ActionTarget.Draft),
     Attach("attach", ActionTarget.Draft),
     Discard("discard", ActionTarget.Draft),
+
+    /** Lists every action the screen offers in a menu, so a bar can reach those it leaves out. */
+    AllActions("all_actions", ActionTarget.Anywhere),
     ;
 
     companion object {
