@@ -12,14 +12,11 @@ import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.forget
 import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.FoundPerson
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.domain.PeopleField
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.AddressPinsState
@@ -203,20 +200,8 @@ internal class MailStates(
     /** Each page's applied filters while the app runs. */
     val pageFilters = PageFilters()
 
-    /** How many messages of [scope] [query] keeps; null when the accounts could not count them. */
-    suspend fun countMail(
-        scope: MailScope,
-        query: MailQuery,
-    ): Long? = services.mail.count(scope, query)
-
-    /** Starts the counts of one filter panel session. */
-    fun beginCounting() = services.mail.beginCounting()
-
-    /** People of the shown accounts' mail, or contacts, that [text] finds on [field]. */
-    suspend fun findPeople(
-        field: PeopleField,
-        text: String,
-    ): List<FoundPerson> = services.people.find(field, text, mailScope.accountId?.let(::setOf))
+    /** The counts and people search of the filter panels. */
+    val filterLookups = FilterLookups(services.mail, services.people) { mailScope.accountId?.let(::setOf) }
 
     /** The full body of an open message. */
     suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)

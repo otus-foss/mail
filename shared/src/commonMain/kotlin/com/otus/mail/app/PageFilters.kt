@@ -80,13 +80,13 @@ internal fun rememberPageFilters(
             InboxFilterState(
                 saved,
                 scope,
-                counter = { states.countMail(feed.mailScope, states.mailQuery(it)) },
+                counter = { states.filterLookups.count(feed.mailScope, states.mailQuery(it)) },
                 onApplied = {
                     states.pageFilters.keep(page, it)
                     saved = it
                 },
-                onOpen = states::beginCounting,
-                findPeople = states::findPeople,
+                onOpen = states.filterLookups::beginCounting,
+                findPeople = states.filterLookups::findPeople,
             )
         }
     LaunchedEffect(filters.applied, states.folders.accounts, states.mailScope) {

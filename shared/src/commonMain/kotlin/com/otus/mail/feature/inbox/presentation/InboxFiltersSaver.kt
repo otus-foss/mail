@@ -28,10 +28,10 @@ val InboxFiltersSaver: Saver<InboxFilters, Any> =
                 add(filters.date.saved())
                 add(filters.size.name)
                 add(line(STATUS, filters.status.name))
-                add(line(FIELDS, *filters.receivedIn.map { it.name }.toTypedArray()))
+                add(line(FIELDS, filters.receivedIn.map { it.name }))
                 filters.quick.forEach { add(line(QUICK, it.name)) }
                 filters.types.forEach { add(line(TYPE, it.name)) }
-                filters.from.forEach { add(line(SENDER, it.name, *it.addresses.toTypedArray())) }
+                filters.from.forEach { add(line(SENDER, listOf(it.name) + it.addresses)) }
                 filters.account?.let { add(line(ACCOUNT, it)) }
                 filters.sentTo.forEach { add(line(SENT_TO, it.accountId, it.address)) }
                 filters.to.forEach { add(line(RECIPIENT, it)) }
@@ -97,6 +97,11 @@ private fun legacyShow(name: String): Any? =
 private inline fun <reified T : Enum<T>> enumOf(name: String?): T? = enumValues<T>().firstOrNull { it.name == name }
 
 private fun line(vararg values: String): String = values.joinToString(SEPARATOR)
+
+private fun line(
+    kind: String,
+    values: Collection<String>,
+): String = (listOf(kind) + values).joinToString(SEPARATOR)
 
 private fun FolderRef.saved(): String = line(FOLDER, loginId, mailboxId, includeSubfolders.toString())
 

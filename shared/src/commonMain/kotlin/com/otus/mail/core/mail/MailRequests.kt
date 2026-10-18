@@ -1,6 +1,8 @@
 package com.otus.mail.core.mail
 
 import com.otus.jmap.JmapSort
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -9,7 +11,26 @@ import kotlinx.serialization.json.buildJsonObject
 internal val NEWEST_FIRST = listOf(JmapSort("receivedAt", isAscending = false))
 
 /** The `Email/query` filter for the mail in mailbox [id] (RFC 8621, section 4.4.1). */
-internal fun inMailbox(id: String): JsonObject = buildJsonObject { put("inMailbox", JsonPrimitive(id)) }
+internal fun inMailbox(id: String): JsonObject = condition("inMailbox", JsonPrimitive(id))
+
+/** One `FilterCondition` property, such as `{"from": "jana@example.com"}` (RFC 8621, section 4.4.1). */
+internal fun condition(
+    name: String,
+    value: JsonElement,
+): JsonObject = buildJsonObject { put(name, value) }
+
+/** A `FilterOperator` (RFC 8620, section 5.5) such as `AND`, `OR`, or `NOT` over [conditions]. */
+internal fun operator(
+    name: String,
+    conditions: List<JsonObject>,
+): JsonObject =
+    buildJsonObject {
+        put("operator", JsonPrimitive(name))
+        put("conditions", JsonArray(conditions))
+    }
+
+/** One condition as itself; several under `OR`. */
+internal fun anyOf(conditions: List<JsonObject>): JsonObject = conditions.singleOrNull() ?: operator("OR", conditions)
 
 /** A JSON Pointer token (RFC 6901), as patch paths use (RFC 8620, section 5.3). */
 internal fun pointer(id: String): String = id.replace("~", "~0").replace("/", "~1")
