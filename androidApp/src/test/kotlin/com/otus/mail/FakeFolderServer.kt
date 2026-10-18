@@ -17,12 +17,23 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * A JMAP server shaped like Stalwart that remembers changes: folders created with `Mailbox/set`
- * and the rules script uploaded and activated with `SieveScript/set`. Drafts saved with `Email/set`
- * get the ids `draft1`, `draft2`, and so on, in the [draftsFolder] that `Mailbox/query` finds by role.
+ * A JMAP server shaped like Stalwart that answers each method call of a request by name and
+ * remembers changes: folders created with `Mailbox/set` and the rules script uploaded and
+ * activated with `SieveScript/set`. Drafts saved with `Email/set` go in the [draftsFolder] that
+ * `Mailbox/query` finds by role. [FakeFolderMail] holds the mail.
  */
 class FakeFolderServer {
     /** Every API request body, in order. The client adds to it while tests read it. */
@@ -57,13 +68,13 @@ class FakeFolderServer {
 
     /** The id of the mailbox with role `drafts`; null when the account has none. */
     var draftsFolder: String? = "dr"
-    private var draftCount = 0
 
     /** The rules script as last uploaded and saved, or the one a test starts with. */
     var script: String? = null
     var scriptActive = false
     private var uploaded = ""
     private var state = 1
+    private val mail = FakeFolderMail(this)
 
     /** Signs in as Ada, and also as Bob when [withBob], who shares Ada's mailboxes and identity. */
     fun services(
@@ -118,76 +129,54 @@ class FakeFolderServer {
 
     private fun api(body: String): String {
         calls += body
-        val reply =
-            when {
-                "Mailbox/" in body -> mailbox(body)
-
-                "Email/set" in body -> setEmail(body)
-
-                "Identity/get" in body -> IDENTITIES
-
-                "Email/query" in body -> queryEmails(body)
-
-                // An open message asks for its HTML body; these messages have none.
-                "Email/get" in body -> """["Email/get", {"state": "e", "list": [], "notFound": []}, "c0"]"""
-
-                "SieveScript/" in body -> sieve(body)
-
-                else -> error("Unexpected call: $body")
-            }
-        return """{"methodResponses": [$reply]}"""
+        return jmapReply(body, ::answer)
     }
 
-    private fun mailbox(body: String): String =
-        when {
-            "Mailbox/set" in body && "\"update\":" in body -> updateFolders(body)
-            "Mailbox/set" in body && "\"destroy\":" in body -> destroyFolders(body)
-            "Mailbox/set" in body -> createFolder(body)
-            "Mailbox/get" in body && SHARED_ACCOUNT in body -> mailboxes(sharedFolders)
-            "Mailbox/get" in body -> mailboxes(folders)
-            else -> draftsQuery()
+    private fun answer(
+        method: String,
+        arguments: JsonObject,
+    ): JsonObject? =
+        when (method) {
+            "Mailbox/get" -> mailboxes(arguments)
+            "Mailbox/query" -> buildJsonObject { put("ids", listOfNotNull(draftsFolder).toJsonArray()) }
+            "Mailbox/set" -> setFolders(arguments)
+            "Identity/get" -> IDENTITIES
+            "SieveScript/get" -> scripts()
+            "SieveScript/set" -> saveScript(arguments)
+            "SieveScript/validate" -> buildJsonObject { put("error", JsonNull) }
+            else -> mail.answer(method, arguments)
         }
 
-    private fun draftsQuery(): String {
-        val ids = listOfNotNull(draftsFolder).joinToString { "\"$it\"" }
-        return """["Mailbox/query", {"ids": [$ids]}, "c0"]"""
+    private fun mailboxes(arguments: JsonObject): JsonObject {
+        val shared = arguments["accountId"] == JsonPrimitive(SHARED_ACCOUNT)
+        return listResult("m", (if (shared) sharedFolders else folders).map(Json::parseToJsonElement))
     }
 
-    private fun setEmail(body: String): String {
-        val outcomes =
-            buildList {
-                if ("\"create\":" in body) add(""""created": {"draft": {"id": "draft${++draftCount}"}}""")
-                if ("\"update\":" in body) add(if (refuseUpdates) REFUSED_UPDATE else updatedEmails(body))
-                DESTROY.find(body)?.let { add(""""destroyed": [${it.groupValues[1]}]""") }
+    /**
+     * Creates folders as `n<count>` and deletes them like a server that found them all empty.
+     * Accepts every update without applying it; tests read what was sent from [calls].
+     */
+    private fun setFolders(arguments: JsonObject): JsonObject =
+        buildJsonObject {
+            put("newState", "m2")
+            (arguments["create"] as? JsonObject)?.let { creates ->
+                put("created", JsonObject(creates.mapValues { (_, folder) -> createFolder(folder.jsonObject) }))
             }
-        return """["Email/set", {"newState": "e2", ${outcomes.joinToString()}}, "c0"]"""
-    }
+            (arguments["update"] as? JsonObject)?.let { put("updated", JsonObject(it.mapValues { JsonNull })) }
+            (arguments["destroy"] as? JsonArray)?.let { ids ->
+                folders.removeAll { Json.parseToJsonElement(it).jsonObject.id in ids.strings() }
+                put("destroyed", ids)
+            }
+        }
 
-    /** Echoes every updated id; older mail a rule moves leaves [olderMail]. */
-    private fun updatedEmails(body: String): String {
-        val ids = UPDATED_EMAIL.findAll(body.substringAfter("\"update\":")).map { it.groupValues[1] }.toList()
-        olderMail -= ids.toSet()
-        return """"updated": {${ids.joinToString { "\"$it\": null" }}}"""
-    }
-
-    private fun mailboxes(list: List<String>) =
-        """["Mailbox/get", {"state": "m", "list": ${list.joinToString(prefix = "[", postfix = "]")}}, "c0"]"""
-
-    /** Accepts every update without applying it; tests read what was sent from [calls]. */
-    private fun updateFolders(body: String): String {
-        val ids =
-            UPDATED_ID
-                .findAll(
-                    body.substringAfter("\"update\":"),
-                ).joinToString { "\"${it.groupValues[1]}\": null" }
-        return """["Mailbox/set", {"newState": "m2", "updated": {$ids}}, "c0"]"""
-    }
-
-    /** Deletes the folders and answers like a server that found them all empty. */
-    private fun destroyFolders(body: String): String {
-        val ids = DESTROY.find(body)?.let { it.groupValues[1] }.orEmpty()
-        folders.removeAll { folder -> FOLDER_ID.find(folder)?.let { "\"${it.groupValues[1]}\"" in ids } == true }
-        return """["Mailbox/set", {"newState": "m2", "destroyed": [$ids]}, "c0"]"""
+    private fun createFolder(folder: JsonObject): JsonObject {
+        val id = "n${folders.size}"
+        folders +=
+            buildJsonObject {
+                put("id", id)
+                put("name", folder.getValue("name"))
+            }.toString()
+        return buildJsonObject { put("id", id) }
     }
 
     private fun session(adaSignedIn: Boolean): String {
@@ -196,69 +185,37 @@ class FakeFolderServer {
         return withSieve.replace(SHARED_SLOT, shared)
     }
 
-    private fun createFolder(body: String): String {
-        val name =
-            Regex("\"name\":\"([^\"]+)\"")
-                .find(body)
-                ?.groupValues
-                ?.get(1)
-                .orEmpty()
-        val id = "n${folders.size}"
-        folders += """{"id": "$id", "name": "$name"}"""
-        return """["Mailbox/set", {"newState": "m2", "created": {"folder": {"id": "$id"}}}, "c0"]"""
-    }
-
-    private fun sieve(body: String): String =
-        when {
-            "SieveScript/get" in body -> scripts()
-            "SieveScript/set" in body -> saveScript(body)
-            else -> VALID_SCRIPT
-        }
-
-    private fun scripts(): String {
+    private fun scripts(): JsonObject {
         val list = script?.let { """[{"id": "S1", "name": "Otus Mail", "blobId": "S1", "isActive": $scriptActive}]""" }
-        return """["SieveScript/get", {"state": "s$state", "list": ${list ?: "[]"}}, "c0"]"""
+        return listResult("s$state", Json.parseToJsonElement(list ?: "[]").jsonArray)
     }
 
-    private fun saveScript(body: String): String {
+    private fun saveScript(arguments: JsonObject): JsonObject {
+        val creation = (arguments["create"] as? JsonObject)?.keys?.firstOrNull() ?: "rules"
         // Like Stalwart, which ties `:mailboxid` to the "mailbox" extension.
         if (":mailboxid" in uploaded && "\"mailbox\"" !in uploaded) {
-            return """["SieveScript/set", {"newState": "s$state", "notCreated": {"rules": {"type": "invalidScript",
-                "description": "Undeclared capability 'mailbox'"}}}, "c0"]"""
+            return buildJsonObject {
+                put("newState", "s$state")
+                putJsonObject("notCreated") {
+                    putJsonObject(creation) {
+                        put("type", "invalidScript")
+                        put("description", "Undeclared capability 'mailbox'")
+                    }
+                }
+            }
         }
-        val outcome = if (script == null) """"created": {"rules": {"id": "S1"}}""" else """"updated": {"S1": null}"""
+        val created = script == null
         script = uploaded
-        scriptActive = scriptActive || "onSuccessActivateScript" in body
+        scriptActive = scriptActive || "onSuccessActivateScript" in arguments
         state++
-        return """["SieveScript/set", {"newState": "s$state", $outcome}, "c0"]"""
-    }
-
-    private fun emails(mailbox: String): String {
-        val subject = subjects[mailbox] ?: "Welcome"
-        val mailboxIds = (listOf(mailbox) + alsoIn).distinct().joinToString { "\"$it\": true" }
-        return oneThreadReply(graceEmail(subject, mailboxIds))
-    }
-
-    private fun queryEmails(body: String): String =
-        when {
-            FROM_FILTER in body -> senderMail()
-            "calculateTotal" in body -> """["Email/query", {"ids": [], "total": ${olderMail.size}}, "c0"]"""
-            RULE_FILTER in body -> ruleMatches(body)
-            else -> emails(IN_MAILBOX.find(body)?.groupValues?.get(1) ?: "a")
+        return buildJsonObject {
+            put("newState", "s$state")
+            if (created) {
+                putJsonObject("created") { putJsonObject(creation) { put("id", "S1") } }
+            } else {
+                putJsonObject("updated") { put("S1", JsonNull) }
+            }
         }
-
-    /** The inbox mail a rule's filter finds: [olderMail], which the moved message already left. */
-    private fun ruleMatches(body: String): String {
-        val ids = if ("\"inMailbox\":\"a\"" in body) olderMail else emptyList()
-        return """["Email/query", {"ids": ${ids.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }}}, "c0"]"""
-    }
-
-    private fun senderMail(): String {
-        val list =
-            senderFolders
-                .mapIndexed { index, folder -> """{"id": "h$index", "mailboxIds": {"$folder": true}}""" }
-                .joinToString(prefix = "[", postfix = "]")
-        return """["Email/query", {"ids": []}, "c0"], ["Email/get", {"state": "e", "list": $list}, "c1"]"""
     }
 
     private fun MockRequestHandleScope.json(text: String): HttpResponseData =
@@ -266,15 +223,7 @@ class FakeFolderServer {
 
     private companion object {
         val SIGN_INS = setOf("Basic YWRhQGV4YW1wbGUub3JnOnNlY3JldA==", "Basic Ym9iQGV4YW1wbGUub3JnOnNlY3JldA==")
-        val IN_MAILBOX = Regex("\"inMailbox\":\"([^\"]+)\"")
-        const val VALID_SCRIPT = """["SieveScript/validate", {"accountId": "d1", "error": null}, "c0"]"""
-        const val REFUSED_UPDATE = """"notUpdated": {"m1": {"type": "forbidden"}}"""
-        val FOLDER_ID = Regex("\"id\": \"([^\"]+)\"")
-        val DESTROY = Regex("\"destroy\":\\[([^\\]]*)]")
-        const val RULE_FILTER = "\"filter\":{\"operator\":\"AND\""
-        val UPDATED_EMAIL = Regex("\"([^\"]+)\":\\{\"(?:mailboxIds|keywords)")
-        val UPDATED_ID = Regex("\"([^\"]+)\":\\{\"(?:sortOrder|parentId|name)\"")
-        const val SHARED_ACCOUNT = "\"accountId\":\"g1\""
+        const val SHARED_ACCOUNT = "g1"
         const val SHARED_SLOT = "/*shared*/"
         const val SIEVE_SESSION = """, "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}"""
         const val SIEVE_EXTENSIONS = """["fileinto", "mailbox", "mailboxid", "include"]"""
@@ -283,9 +232,11 @@ class FakeFolderServer {
               "urn:ietf:params:jmap:sieve": {"sieveExtensions": """ + SIEVE_EXTENSIONS + "}"
         const val SHARED_SESSION_ACCOUNT = """, "g1": {"name": "grace@example.org", "isPersonal": false,
               "accountCapabilities": {"urn:ietf:params:jmap:mail": {}}}"""
-        const val IDENTITIES = """["Identity/get", {"state": "i", "list": [
-            {"id": "i1", "name": "Ada Lovelace", "email": "ada@example.org"}]}, "c0"]"""
-        const val FROM_FILTER = "\"filter\":{\"from\":"
+        val IDENTITIES =
+            Json
+                .parseToJsonElement(
+                    """{"state": "i", "list": [{"id": "i1", "name": "Ada Lovelace", "email": "ada@example.org"}]}""",
+                ).jsonObject
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:mail": {},
             "urn:ietf:params:jmap:submission": {}, "urn:ietf:params:jmap:sieve": {"implementation": "Stalwart"}},
             "accounts": {"d1": {"name": "Ada", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},
