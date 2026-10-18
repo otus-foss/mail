@@ -1,6 +1,8 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.feature.inbox.domain.AttachmentBlob
 import com.otus.mail.feature.inbox.domain.Draft
+import com.otus.mail.feature.inbox.domain.DraftAttachment
 import com.otus.mail.feature.inbox.domain.Signature
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -63,4 +65,29 @@ class DraftEmailTest {
         assertEquals("image0@otus.mail", image.getValue("cid").jsonPrimitive.content)
         assertEquals("inline", image.getValue("disposition").jsonPrimitive.content)
     }
+
+    @Test
+    fun uploadedFilesFollowTheBodyInAMixedPart() {
+        val file = DraftAttachment("f1", "plan.pdf", "application/pdf", 2048, AttachmentBlob("a1", "b9"))
+        val email = Draft("a1", body = "See attached.", attachments = listOf(file)).toEmail("dr")
+        assertFalse("textBody" in email.keys)
+        val structure = email.getValue("bodyStructure").jsonObject
+        assertEquals("multipart/mixed", structure.type)
+        val (body, part) = structure.getValue("subParts").jsonArray.map { it.jsonObject }
+        assertEquals("text/plain", body.type)
+        assertEquals("b9", part.getValue("blobId").jsonPrimitive.content)
+        assertEquals("plan.pdf", part.getValue("name").jsonPrimitive.content)
+        assertEquals("attachment", part.getValue("disposition").jsonPrimitive.content)
+    }
+
+    @Test
+    fun aFileStillUploadingToTheDraftsAccountWaitsForALaterSave() {
+        val moved = DraftAttachment("f1", "plan.pdf", "application/pdf", 2048, AttachmentBlob("a2", "b9"))
+        val email = Draft("a1", body = "See attached.", attachments = listOf(moved)).toEmail("dr")
+        assertFalse("bodyStructure" in email.keys)
+        assertTrue("textBody" in email.keys)
+    }
+
+    private val kotlinx.serialization.json.JsonObject.type: String
+        get() = getValue("type").jsonPrimitive.content
 }

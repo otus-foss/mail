@@ -1,11 +1,8 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.Surface
@@ -24,6 +21,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.OptionsItem
+import com.otus.designsystem.elements.isKeyboardUp
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_schedule_send
@@ -57,7 +55,6 @@ import kotlin.time.Duration.Companion.seconds
  * saved copy, to run once Undo has passed. While the keyboard is up, a formatting row takes the
  * action bar's place.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ComposeScreen(
     state: ComposeState,
@@ -71,6 +68,7 @@ fun ComposeScreen(
     )
     LaunchedEffect(state) { state.loadIdentities() }
     LaunchedEffect(state) { state.followBody() }
+    LaunchedEffect(state) { state.attachments.follow() }
     // Leaving the page by any route, Back or another page, saves what is new.
     DisposableEffect(state) { onDispose { state.close() } }
     val draft = state.draft
@@ -86,7 +84,7 @@ fun ComposeScreen(
                 ComposeBottom(
                     state,
                     behavior,
-                    keyboardUp = WindowInsets.isImeVisible,
+                    keyboardUp = isKeyboardUp(),
                     onSend = send.takeIf { state.canSend },
                     onDiscard = discard,
                     onChangeSchedule = { schedulingAt = true },
