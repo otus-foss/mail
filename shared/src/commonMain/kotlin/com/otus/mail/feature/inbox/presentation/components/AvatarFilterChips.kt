@@ -45,7 +45,7 @@ internal fun AccountsFilterChip(
 
 /** One selection shows its avatar and [singleLabel]; several show overlapping avatars only. */
 @Composable
-private fun AvatarFilterChip(
+internal fun AvatarFilterChip(
     avatars: List<ChipAvatar>,
     singleLabel: String?,
     description: String,
