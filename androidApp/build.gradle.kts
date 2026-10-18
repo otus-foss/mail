@@ -37,6 +37,8 @@ android {
         abortOnError = true
         warningsAsErrors = true
         checkDependencies = true
+        // ktlint and detekt cover test code; Android lint on tests took a third of its time.
+        ignoreTestSources = true
     }
     namespace = "com.otus.mail"
     compileSdk =
