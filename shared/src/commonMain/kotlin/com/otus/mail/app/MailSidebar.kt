@@ -12,6 +12,7 @@ import com.otus.designsystem.components.Sidebar
 import com.otus.designsystem.components.SidebarHeader
 import com.otus.designsystem.components.SidebarState
 import com.otus.designsystem.elements.SidebarDivider
+import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.components.FolderColorSheet
@@ -22,7 +23,8 @@ import com.otus.mail.feature.inbox.presentation.title
 
 /**
  * The chosen [scope] in the header, over the pinned mailboxes and the user's shared folders in
- * the order and layout the user chose. Every count follows the scope's account. Tapping the header
+ * the order and layout the user chose. An account or address scope lists only its account's
+ * mailboxes and folders, and every count follows the scope's account. Tapping the header
  * opens "Show mail from", which calls [onChooseScope]. The [footer] stays at the bottom.
  */
 @Composable
@@ -35,7 +37,7 @@ internal fun MailSidebar(
     onChooseScope: (MailScopeChoice) -> Unit,
     onSelect: (MailPage) -> Unit,
 ) {
-    val folders = states.folders.accounts
+    val folders = states.folders.accounts.inScope(scope)
     val layout = states.behavior.behavior.sidebar
     val counter = SidebarCounter(scope.accountId, layout.counts)
     val header = scopeHeader(scope, states.accountAddresses())
@@ -124,3 +126,7 @@ private class SidebarFolderActions(
         }
     }
 }
+
+/** The folders of [scope]'s account, or every account's while it shows all mail. */
+internal fun List<AccountFolders>.inScope(scope: MailScopeChoice): List<AccountFolders> =
+    scope.accountId?.let { id -> filter { it.accountId == id } } ?: this
