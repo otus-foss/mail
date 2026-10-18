@@ -26,7 +26,7 @@ import kotlin.time.TimeSource
 /**
  * Suggests the account's contact cards (RFC 9610, section 3), then the people of its newest mail
  * (RFC 8621, section 4.4), most frequent first. Server search matches whole words only, so it
- * loads both lists once per [maxAge] and matches the typed prefix on the device.
+ * loads both lists once per [maxAge] and matches the typed text on the device.
  */
 class JmapAddressBook(
     private val connections: JmapConnections,
@@ -110,7 +110,7 @@ class JmapAddressBook(
     )
 
     private companion object {
-        const val DEFAULT_LIMIT = 6
+        const val DEFAULT_LIMIT = 20
         const val CONTACT_SCAN = 500
         const val MAIL_SCAN = 200
         val CARD_PROPERTIES = listOf("id", "name", "emails")
