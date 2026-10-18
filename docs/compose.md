@@ -42,8 +42,7 @@ is not in To or Cc falls back to the account's first identity.
 
 `ComposeScreen` follows the "Write" boards. It opens over the page it came from, and Back or the
 chevron returns there. The floating panel shows the title, **New message**, **Reply**,
-**Reply all**, **Follow up**, or **Forward**, and **Saved** once the server holds the draft as
-it is. Below it are three pills: the Send-from pill, **+ Cc** until the Cc line shows, and ⋯.
+**Reply all**, **Follow up**, or **Forward**. Below it are three pills: the Send-from pill, **+ Cc** until the Cc line shows, and ⋯.
 
 - The Send-from pill opens a dropdown with **Recent**, the last two addresses used, and then one
   section per account. It has a search field once there are eight or more addresses. The current

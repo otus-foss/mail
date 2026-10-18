@@ -1,14 +1,12 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -26,14 +24,13 @@ import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.resources.symbol_more_horiz
 import com.otus.designsystem.theme.ComposeTokens
-import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.presentation.ComposeState
 
 /**
- * The compose page's floating panel: Back, the [title], and "Saved" once the server holds the
- * draft, over pills for the address it is sent from and for adding Cc, and a ⋯ menu of [options].
+ * The compose page's floating panel: Back and the [title], over pills for the address it is sent
+ * from and for adding Cc, and a ⋯ menu of [options].
  * [onAddCc] is null once the Cc line shows.
  */
 @Composable
@@ -60,10 +57,7 @@ internal fun ComposePanel(
             }
         },
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, Modifier.weight(1f).semantics { heading() }, maxLines = 1)
-            if (state.saved) Text("Saved", color = OtusColors.text3)
-        }
+        Text(title, Modifier.semantics { heading() }, maxLines = 1)
     }
 }
 
