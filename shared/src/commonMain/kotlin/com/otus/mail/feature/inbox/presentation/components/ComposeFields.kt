@@ -78,7 +78,7 @@ private fun RecipientRow(
                         person.name.ifBlank { person.address },
                         selected = false,
                         onClick = { recipients.choose(field, person) },
-                        subtitle = person.address.takeIf { person.name.isNotBlank() },
+                        detail = person.address.takeIf { person.name.isNotBlank() },
                     ) { PersonAvatar(person.chipAvatar(), ComposeTokens.dropdownAvatarSize) }
                 }
             }
