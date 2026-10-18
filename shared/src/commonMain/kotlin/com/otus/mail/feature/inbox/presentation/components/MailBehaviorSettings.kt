@@ -18,6 +18,7 @@ import com.otus.designsystem.elements.ValueButton
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_filter_list
+import com.otus.designsystem.resources.symbol_format_list_bulleted
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_menu
@@ -27,25 +28,35 @@ import com.otus.designsystem.resources.symbol_swipe_right
 import com.otus.designsystem.resources.symbol_view_agenda
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.inboxSummary
+import com.otus.mail.feature.inbox.presentation.summary
 import org.jetbrains.compose.resources.DrawableResource
 
-/** Mail's row in the appearance page's Look section: the sidebar's page, opened with [onSidebar]. */
+/**
+ * Mail's rows in the appearance page's Look section: the sidebar's page, opened with [onSidebar],
+ * and the mail list's, opened with [onMailList].
+ */
 @Composable
 fun MailLookSettings(
-    layout: SidebarLayout,
+    behavior: MailBehavior,
     onSidebar: () -> Unit,
+    onMailList: () -> Unit,
 ) {
-    val sections = layout.shown.size
+    val sections = behavior.sidebar.shown.size
     SettingPageRow(
         "Sidebar",
         onSidebar,
         description = if (sections == 1) "1 section" else "$sections sections",
         icon = Res.drawable.symbol_menu,
+    )
+    SettingPageRow(
+        "Mail list",
+        onMailList,
+        description = behavior.list.summary,
+        icon = Res.drawable.symbol_format_list_bulleted,
     )
 }
 

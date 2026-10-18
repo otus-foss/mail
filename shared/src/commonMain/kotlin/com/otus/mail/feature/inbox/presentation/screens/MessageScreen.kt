@@ -9,6 +9,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -37,8 +38,9 @@ import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailAction.SuggestedMove
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageHtml
+import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.barLayout
+import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.MailActionBar
 import com.otus.mail.feature.inbox.presentation.components.MessageBody
@@ -56,15 +58,15 @@ import com.otus.mail.feature.inbox.presentation.components.replyOffer
  * An open message as a page over the list. With [actions], its bar and menu act on it: an action
  * that takes the message away closes the page first, while marks keep it open and show their new
  * state. Reply, Reply all, Forward, and New mail start a draft through [onCompose]. A [notice],
- * such as a refused mark, shows under the header, since the page hides the list's. [loadHtml]
- * fetches the HTML body. Back and the chevron run [onClose].
+ * such as a refused mark, shows under the header, since the page hides the list's. [loadContent]
+ * fetches the full body, which replies and forwards then quote. Back and the chevron run [onClose].
  */
 @Composable
 fun MessageScreen(
     message: MailMessage,
     actions: MessageActions?,
     notice: String?,
-    loadHtml: suspend (MailMessage) -> MessageHtml?,
+    loadContent: suspend (MailMessage) -> MessageContent?,
     onCompose: (ComposeRequest) -> Unit,
     onClose: () -> Unit,
 ) {
@@ -72,6 +74,8 @@ fun MessageScreen(
         state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
         onBackCompleted = onClose,
     )
+    val content by produceState<MessageContent?>(null, message.id) { value = loadContent(message) }
+    val opened = message.withContent(content)
     val moveChoice = rememberMoveChoice { onClose() }
     val confirmation = rememberConfirmation()
     var menu by remember { mutableStateOf(false) }
@@ -85,7 +89,7 @@ fun MessageScreen(
     val suggestion = rememberSuggestedMove(listOf(message), actions, layout?.buttons.orEmpty().contains(SuggestedMove))
     val offerFor = { action: BarButton ->
         actions?.offer(listOf(message), action, moveChoice::choose, suggestion)
-            ?: replyOffer(message, action, role, onCompose)
+            ?: replyOffer(opened, action, role, onCompose)
     }
     val more = behavior?.overflow(ActionBarPlace.Message, offerFor, role).orEmpty()
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
@@ -107,7 +111,7 @@ fun MessageScreen(
             Column(Modifier.fillMaxSize().padding(PageTokens.pageInset)) {
                 MessageHeader(message, onClose, onMore = { menu = true }.takeIf { more.isNotEmpty() })
                 notice?.let { MessageNotice(it) }
-                MessageBody(message, loadHtml, padding, Modifier.weight(1f))
+                MessageBody(opened, content?.html, padding, Modifier.weight(1f))
             }
         }
     }

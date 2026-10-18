@@ -29,6 +29,8 @@ sealed interface MailScope {
      */
     data class Roles(
         val names: Map<String, String>,
+        /** Also every account's own folders, which have no role, under their own names. */
+        val ownFolders: Boolean = false,
     ) : MailScope
 
     data object AllMailboxes : MailScope

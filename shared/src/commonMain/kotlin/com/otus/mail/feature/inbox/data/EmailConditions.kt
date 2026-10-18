@@ -19,7 +19,7 @@ import kotlin.time.Instant
  * The `Email/query` conditions (RFC 8621, section 4.4.1) [query] puts on the mail of [loginId],
  * all of which must hold; null when the query reads none of that login's mail. Mailboxes are left
  * to the caller. Waiting for reply asks only for mail from the login's own addresses, and calendar
- * invites have no condition; the caller checks both after loading.
+ * invites and conversations have no condition; the caller checks them after loading.
  */
 internal fun emailConditions(
     query: MailQuery,
@@ -41,7 +41,7 @@ internal fun emailConditions(
     }
 }
 
-/** This choice's condition for [loginId]; null for calendar invites, which the caller checks. */
+/** This choice's condition for [loginId]; null for calendar invites and conversations, which the caller checks. */
 private fun ShowFacet.condition(
     query: MailQuery,
     loginId: String,
@@ -94,7 +94,7 @@ private fun ShowFacet.condition(
             anyOf(LIST_HEADERS.map { condition("header", JsonArray(listOf(JsonPrimitive(it)))) })
         }
 
-        ShowFacet.CalendarInvites -> {
+        ShowFacet.CalendarInvites, ShowFacet.Conversations -> {
             null
         }
     }

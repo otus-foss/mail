@@ -112,7 +112,6 @@ class AccountConnectionTest {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNode(hasText("Inbox") and isSelectable()).performClick()
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Engine notes")).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("1 message").assertIsDisplayed()
     }
 
     private companion object {
@@ -128,10 +127,9 @@ class AccountConnectionTest {
             "c0"]]}"""
         const val IDENTITIES = """{"methodResponses": [["Identity/get", {"state": "i", "list": [
             {"email": "ada@example.org"}, {"email": "ada@other.example"}, {"email": "ada@example.org"}]}, "c0"]]}"""
-        const val EMAILS = """{"methodResponses": [["Email/query", {"ids": ["m1"]}, "c0"],
-            ["Email/get", {"state": "e", "list": [
-            {"id": "m1", "keywords": {}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
-             "subject": "Engine notes", "receivedAt": "2026-10-04T09:30:00Z",
-             "preview": "Weaving patterns"}]}, "c1"]]}"""
+        const val EMAIL = """{"id": "m1", "threadId": "T1", "keywords": {},
+            "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
+            "subject": "Engine notes", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Weaving patterns"}"""
+        val EMAILS = """{"methodResponses": [${oneThreadReply(EMAIL)}]}"""
     }
 }

@@ -96,17 +96,20 @@ class JmapFilteredMailTest {
     private companion object {
         const val MAILBOXES = """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
             {"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
-        const val EMAILS = """{"methodResponses": [["Email/query", {"ids": []}, "c0"],
-            ["Email/get", {"state": "e", "list": []}, "c1"]]}"""
-        const val MIXED = """{"methodResponses": [["Email/query", {"ids": ["mine", "theirs"]}, "c0"],
-            ["Email/get", {"state": "e", "list": [
-            {"id": "mine", "receivedAt": "2026-10-18T09:00:00Z", "from": [{"email": "Ada@example.org"}]},
-            {"id": "theirs", "receivedAt": "2026-10-18T08:00:00Z", "from": [{"email": "bo@example.org"}]}]}, "c1"]]}"""
-        const val INVITES = """{"methodResponses": [["Email/query", {"ids": ["invite", "plain"]}, "c0"],
-            ["Email/get", {"state": "e", "list": [
-            {"id": "invite", "receivedAt": "2026-10-18T09:00:00Z", "hasAttachment": true,
-             "attachments": [{"partId": "2", "type": "text/calendar", "name": "invite.ics"}]},
-            {"id": "plain", "receivedAt": "2026-10-18T08:00:00Z"}]}, "c1"]]}"""
+        val EMAILS = emailListResponse("", "")
+        val MIXED =
+            emailListResponse(
+                "\"mine\", \"theirs\"",
+                """{"id": "mine", "receivedAt": "2026-10-18T09:00:00Z", "from": [{"email": "Ada@example.org"}]},
+                {"id": "theirs", "receivedAt": "2026-10-18T08:00:00Z", "from": [{"email": "bo@example.org"}]}""",
+            )
+        val INVITES =
+            emailListResponse(
+                "\"invite\", \"plain\"",
+                """{"id": "invite", "receivedAt": "2026-10-18T09:00:00Z", "hasAttachment": true,
+                 "attachments": [{"partId": "2", "type": "text/calendar", "name": "invite.ics"}]},
+                {"id": "plain", "receivedAt": "2026-10-18T08:00:00Z"}""",
+            )
         const val COUNT = """{"methodResponses": [["Email/query", {"ids": [], "total": 7}, "c0"]]}"""
     }
 }

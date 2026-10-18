@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import com.otus.mail.feature.folders.domain.subtreeIds
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
+import com.otus.mail.feature.inbox.domain.ShowFacet
 import com.otus.mail.feature.inbox.domain.folderIds
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderKey
@@ -29,7 +30,16 @@ internal class PageFilters {
     var recentFolders: List<FolderKey> = emptyList()
         private set
 
-    fun of(page: MailPage): InboxFilters = applied[page] ?: InboxFilters()
+    /** The filters [page] last applied, or the ones it starts with: Conversations keeps only conversations. */
+    fun of(page: MailPage): InboxFilters =
+        applied[page]
+            ?: if (page ==
+                MailPage.Conversations
+            ) {
+                InboxFilters(show = setOf(ShowFacet.Conversations))
+            } else {
+                InboxFilters()
+            }
 
     fun keep(
         page: MailPage,

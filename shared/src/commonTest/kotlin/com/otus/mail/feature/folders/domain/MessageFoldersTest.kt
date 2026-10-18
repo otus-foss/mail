@@ -45,12 +45,12 @@ class MessageFoldersTest {
 
     @Test
     fun rowsNameTheInboxAndTheUsersFoldersExceptTheOneShown() {
-        val labels = account().labelFolders(setOf("i", "s", "l", "r"), shownId = "r")
+        val labels = account().folderTree().labelFolders(setOf("i", "s", "l", "r"), shownId = "r")
         assertEquals(listOf("Inbox", "Read later"), labels.map { it.folder.name })
         assertEquals(listOf(false, true), labels.map { it.readLater })
         assertEquals(
             listOf("Read later", "Receipts"),
-            account().labelFolders(setOf("i", "l", "r"), "i").map { it.folder.name },
+            account().folderTree().labelFolders(setOf("i", "l", "r"), "i").map { it.folder.name },
         )
     }
 }

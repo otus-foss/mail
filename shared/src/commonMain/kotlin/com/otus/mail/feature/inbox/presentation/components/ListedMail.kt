@@ -7,4 +7,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 internal class ListedMail(
     val messages: List<MailMessage>,
     val filters: InboxFilters,
-)
+) {
+    /** How many loaded conversations are unread, which the Unread pill shows. */
+    val unreadCount: Int by lazy { messages.count { it.attributes.unread } }
+}

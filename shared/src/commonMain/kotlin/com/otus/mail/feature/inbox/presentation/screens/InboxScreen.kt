@@ -44,10 +44,13 @@ import com.otus.mail.feature.inbox.presentation.components.InboxPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.InboxResults
 import com.otus.mail.feature.inbox.presentation.components.ListedMail
+import com.otus.mail.feature.inbox.presentation.components.PanelLook
+import com.otus.mail.feature.inbox.presentation.components.PanelOverList
 import com.otus.mail.feature.inbox.presentation.components.inboxBar
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterAnchor
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberInboxRows
+import com.otus.mail.feature.inbox.presentation.listFrame
 
 @Composable
 fun InboxScreen(
@@ -59,8 +62,9 @@ fun InboxScreen(
     context: InboxContext = InboxContext(),
     messageActions: MessageActions? = null,
 ) {
+    // A new default, such as folders added to what the Inbox shows, starts a fresh search from it.
     val state =
-        rememberSaveable(saver = InboxState.saver(context.defaultSearch)) {
+        rememberSaveable(context.defaultSearch, saver = InboxState.saver(context.defaultSearch)) {
             InboxState(defaultSearch = context.defaultSearch)
         }
     var filter by rememberSaveable { mutableStateOf<InboxFilter?>(null) }
@@ -78,34 +82,33 @@ fun InboxScreen(
             Modifier.fillMaxSize(),
             base = {
                 ActionBarHost(
-                    bar =
-                        inboxBar(
-                            listed,
-                            state,
-                            rows.selected,
-                            messageActions,
-                            rows.clearSelection,
-                            context.onCompose,
-                            filters::open,
-                        ),
+                    bar = inboxBar(listed, state, rows, messageActions, context.onCompose, filters::open),
                     Modifier
                         .fillMaxSize()
                         .safeDrawingPadding()
                         .imePadding()
                         .then(if (covered) Modifier.clearAndSetSemantics {} else Modifier),
                 ) { barPadding ->
-                    Column(Modifier.fillMaxSize().padding(vertical = InboxTokens.pageInset)) {
-                        // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
-                        InboxHeader(messages, state, page, dateFormatter, headerActions, anchor)
-                        PullToRefresh(status.loading, onRefresh, Modifier.weight(1f)) {
-                            InboxResults(listed, status, state, dateFormatter, rows.gestures, barPadding) {
-                                InboxEmptyContent(messages, status, state, page, filters, onRefresh)
-                            }
+                    // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
+                    PanelOverList(status.loading, onRefresh, panel = { compact, modifier ->
+                        InboxHeader(
+                            messages,
+                            state,
+                            page,
+                            dateFormatter,
+                            headerActions,
+                            PanelLook(compact && !state.searching, listed.unreadCount, anchor.filters),
+                            anchor.measure.then(modifier),
+                        )
+                    }) { topInset, onCompactChange ->
+                        val frame = context.listFrame(state.searching, topInset, barPadding, onCompactChange)
+                        InboxResults(listed, status, state, dateFormatter, rows.gestures, frame) {
+                            InboxEmptyContent(messages, status, state, page, filters, onRefresh)
                         }
                     }
                 }
             },
-        ) { MessageScreen(it, messageActions, status.notice, context.loadHtml, context.onCompose, rows.close) }
+        ) { MessageScreen(it, messageActions, status.notice, context.loadContent, context.onCompose, rows.close) }
         InboxFilterLayer(filters, messages, dateFormatter, anchor)
         filter?.let { selected ->
             InboxFilterSheet(selected, messages, state.search, page, dateFormatter, state::update) { filter = null }
@@ -163,9 +166,10 @@ private fun InboxHeader(
     context: InboxContext,
     dateFormatter: DateFormatter,
     actions: InboxHeaderActions,
-    anchor: FilterAnchor,
+    look: PanelLook,
+    modifier: Modifier,
 ) {
-    Box(anchor.measure.padding(horizontal = InboxTokens.pageInset)) {
+    Box(modifier.padding(horizontal = InboxTokens.pageInset)) {
         InboxPanel(
             state.searching,
             state.search,
@@ -173,7 +177,7 @@ private fun InboxHeader(
             context,
             inboxPanelActions(state, actions),
             rememberFilterSelection(messages, state.search, context.mailboxSearch.accounts),
-            anchor.filters,
+            look,
         )
     }
 }

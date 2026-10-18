@@ -14,6 +14,7 @@ import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_event
 import com.otus.designsystem.resources.symbol_flag
+import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_forward
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
@@ -47,6 +48,7 @@ internal val ShowFacet.label: String
             ShowFacet.WaitingForReply -> "Waiting for reply"
             ShowFacet.Newsletters -> "Newsletters"
             ShowFacet.CalendarInvites -> "Calendar invites"
+            ShowFacet.Conversations -> "Conversations"
         }
 
 internal val ShowFacet.icon: DrawableResource
@@ -62,6 +64,7 @@ internal val ShowFacet.icon: DrawableResource
             ShowFacet.Forwarded -> Res.drawable.symbol_forward
             ShowFacet.Newsletters -> Res.drawable.symbol_newspaper
             ShowFacet.CalendarInvites -> Res.drawable.symbol_event
+            ShowFacet.Conversations -> Res.drawable.symbol_forum
         }
 
 internal val RecipientField.label: String
@@ -134,7 +137,7 @@ internal fun FolderChip(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             account?.let { PersonAvatar(it.avatar, FilterTokens.chipIconSize) }
-            FolderGlyph(folder.color, folder.icon)
+            FolderGlyph(folder.color, icon = folder.icon, size = FilterTokens.chipIconSize)
         }
     }
 }

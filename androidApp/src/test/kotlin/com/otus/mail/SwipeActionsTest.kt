@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -110,8 +111,8 @@ class SwipeActionsTest {
         compose.waitUntil(TIMEOUT) { updates().isNotEmpty() }
         val save = updates().single()
         assertTrue(save, "\"update\":{\"m1\":{\"mailboxIds/l\":true}}" in save)
-        // The row stays, names its new folder, and now offers to leave it.
-        compose.onNode(hasText("Welcome") and hasText("Read later")).assertIsDisplayed()
+        // The row stays, marks it saved, and now offers to leave it.
+        compose.onNode(hasText("Welcome") and hasContentDescription("Read later", substring = true)).assertIsDisplayed()
         waitForSwipe("Remove from Read later")
         // The existing folder is used, not created again.
         assertTrue(server.calls.none { "Mailbox/set" in it })

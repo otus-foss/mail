@@ -81,15 +81,17 @@ class FoldersAndRulesTest {
         start()
         waitFor("Welcome")
         compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("Welcome") and hasText("Receipts")).fetchSemanticsNodes().isNotEmpty()
+            compose
+                .onAllNodes(hasText("Welcome") and hasContentDescription("Folders: Receipts", substring = true))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
-        // Without labels or files, the row shows the start of the message instead.
         server.alsoIn.clear()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         // Message rows are selectable too, so this picks the sidebar's folder.
         compose.onNode(hasText("Receipts") and isSelectable() and !hasText("Welcome")).performClick()
         waitFor("Order shipped")
-        compose.onNode(hasText("Order shipped") and hasText("Hello")).assertIsDisplayed()
+        compose.onNodeWithText("Order shipped").assertIsDisplayed()
     }
 
     @Test

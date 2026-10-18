@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.feature.inbox.domain.DateStyle
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
@@ -23,6 +24,23 @@ fun DateFormatter.receivedLabel(
         else -> format(date)
     }
 }
+
+/** When a message arrived, in the mail list's [style]: [receivedLabel], or the date with the time for today. */
+fun DateFormatter.listDateLabel(
+    received: ReceivedAt,
+    today: LocalDate,
+    style: DateStyle,
+): String =
+    when (style) {
+        DateStyle.Relative -> {
+            receivedLabel(received, today)
+        }
+
+        DateStyle.Full -> {
+            val date = LocalDate.parse(received.date)
+            if (date == today) "${format(date)} ${received.time}" else format(date)
+        }
+    }
 
 private const val WEEK = 7
 private const val SHORT_DAY = 3

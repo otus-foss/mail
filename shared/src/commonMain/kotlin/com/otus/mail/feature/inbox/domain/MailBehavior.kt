@@ -11,7 +11,8 @@ package com.otus.mail.feature.inbox.domain
  * addresses the user last sent from, newest first, which compose offers first and a new message
  * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
  * forwards too; new messages always get it. [undoSendSeconds] holds each sent message on the device
- * that long so Undo can stop it; 0 sends at once. [filters] arranges the filter panel.
+ * that long so Undo can stop it; 0 sends at once. [filters] arranges the filter panel. [list] sets
+ * how the mail list's rows read.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -29,6 +30,7 @@ data class MailBehavior(
     val undoSendSeconds: Int = DEFAULT_UNDO_SEND_SECONDS,
     val inbox: InboxContents = InboxContents(),
     val filters: FilterLayout = FilterLayout(),
+    val list: MailListLayout = MailListLayout(),
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =

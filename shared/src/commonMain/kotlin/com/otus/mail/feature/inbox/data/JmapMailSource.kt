@@ -80,7 +80,8 @@ class JmapMailSource(
                     .filterIsInstance<AccountLoad.Loaded>()
                     .flatMap { it.messages }
                     .filter { !query.filters.has(ShowFacet.WaitingForReply) || it.fromAny(own) }
-                    .filter { !query.filters.has(ShowFacet.CalendarInvites) || it.attributes.invite },
+                    .filter { !query.filters.has(ShowFacet.CalendarInvites) || it.attributes.invite }
+                    .filter { !query.filters.has(ShowFacet.Conversations) || it.conversation?.exchanged == true },
             unavailable = results.filterIsInstance<AccountLoad.Failed>().map { it.account },
         )
     }
@@ -90,8 +91,8 @@ class JmapMailSource(
         scope: MailScope,
         query: MailQuery,
     ): Long? {
-        // No query finds invites, so only the loaded mail can be counted.
-        if (query.filters.has(ShowFacet.CalendarInvites)) return null
+        // No query finds invites or two-sided threads, so only the loaded mail can be counted.
+        if (query.filters.has(ShowFacet.CalendarInvites) || query.filters.has(ShowFacet.Conversations)) return null
         val saved = withContext(Dispatchers.IO) { savedLogins() }
         val now = clock.now()
         val totals =
@@ -166,65 +167,63 @@ class JmapMailSource(
         query: MailQuery,
         conditions: List<JsonObject>,
     ): List<MailMessage> {
-        val chosen = scope.chosen(mailboxesOf(connection, accountId), login.id, query)
+        val mailboxes = mailboxesOf(connection, accountId)
+        val chosen = scope.chosen(mailboxes, login.id, query)
+        val view =
+            ThreadView(
+                shown = chosen.map { it.id }.toSet(),
+                trashAndJunk = mailboxes.filter { it.role in HIDDEN_ROLES }.map { it.id }.toSet(),
+                sent = mailboxes.filter { it.role == SENT_ROLE }.map { it.id }.toSet(),
+            )
         // Each login loads its mailboxes sequentially instead of starting one request per folder.
         val loaded =
             chosen.map { mailbox ->
                 val filter = mailFilter(listOf(mailbox.id), conditions)
-                loadMailbox(connection, login, accountId, mailbox.id, scope.nameOf(mailbox), filter, query.filters.sort)
+                val listed = Listed(mailbox.id, scope.nameOf(mailbox), filter, query.filters.sort)
+                loadMailbox(connection, login, accountId, listed, view)
             }
-        // A message can be in several chosen mailboxes; it is listed once, under the first.
-        return loaded.flatten().distinctBy { it.id }
+        // A thread can be in several chosen mailboxes; it is listed once, with all of their emails.
+        return loaded.flatten().mergedByThread()
     }
 
     private suspend fun loadMailbox(
         connection: JmapConnection,
         login: JmapLogin,
         accountId: String,
-        mailboxId: String,
-        name: String,
-        filter: JsonObject,
-        sort: FilterSort,
+        listed: Listed,
+        view: ThreadView,
     ): List<MailMessage> {
-        val emails =
-            connection.request {
-                val query = call(QueryMethod(EmailType, accountId, filter, receivedOrder(sort), limit))
-                call(
-                    GetMethod(
-                        EmailType,
-                        accountId,
-                        JmapIds.Result(query.resultOf("/ids")),
-                        EMAIL_PROPERTIES,
-                        BODY_ARGUMENTS,
-                    ),
-                )
-            }
+        val emails = connection.threadedEmails(accountId, listed.filter, receivedOrder(listed.sort), limit)
         val local = zone()
         return jmapDecoding {
-            emails.list.map { it.toMessage(login.id, login.name, name, local, login.username, mailboxId) }
+            emails.rows.map { row ->
+                row
+                    .toMessage(login.id, login.name, listed.name, local, login.username, listed.mailboxId)
+                    .inConversation(row, emails.threads[row.threadId].orEmpty(), listed.mailboxId, view, local)
+            }
         }
     }
 
     private companion object {
         const val DEFAULT_LIMIT = 50
 
-        const val MAX_BODY_BYTES = 20_000
+        /** Only the number of matching conversations (RFC 8620, section 5.5; RFC 8621, section 4.4.3). */
+        val COUNT = mapOf("calculateTotal" to JsonPrimitive(true), "collapseThreads" to JsonPrimitive(true))
 
-        /** Only the number of matches (RFC 8620, section 5.5). */
-        val COUNT = mapOf("calculateTotal" to JsonPrimitive(true))
+        /** Roles whose emails a conversation counts only when the list shows them. */
+        val HIDDEN_ROLES = setOf("trash", "junk")
 
-        /**
-         * Text bodies up to [MAX_BODY_BYTES] per part, marked `isTruncated` when cut off (RFC 8621,
-         * section 4.2). Each part's `type` tells an HTML body from a plain one.
-         */
-        val BODY_ARGUMENTS =
-            mapOf(
-                "bodyProperties" to JsonArray(listOf("partId", "name", "type").map(::JsonPrimitive)),
-                "fetchTextBodyValues" to JsonPrimitive(true),
-                "maxBodyValueBytes" to JsonPrimitive(MAX_BODY_BYTES),
-            )
+        const val SENT_ROLE = "sent"
     }
 }
+
+/** One mailbox a list loads: its [mailboxId], the [name] its mail is filed under, and the query. */
+private class Listed(
+    val mailboxId: String,
+    val name: String,
+    val filter: JsonObject,
+    val sort: FilterSort,
+)
 
 private sealed interface AccountLoad {
     class Loaded(

@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
+import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.decodeRecentFrom
 import com.otus.mail.feature.inbox.domain.encodeRecentFrom
@@ -40,6 +41,7 @@ class IosMailBehaviorStore(
             undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.stringForKey(INBOX)?.let(InboxContents::decode) ?: defaults.inbox,
             filters = preferences.stringForKey(FILTERS)?.let(FilterLayout::decode) ?: defaults.filters,
+            list = preferences.stringForKey(LIST)?.let(MailListLayout::decode) ?: defaults.list,
         )
     }
 
@@ -61,6 +63,7 @@ class IosMailBehaviorStore(
         preferences.setInteger(behavior.undoSendSeconds.toLong(), forKey = UNDO_SEND_SECONDS)
         preferences.setObject(InboxContents.encode(behavior.inbox), forKey = INBOX)
         preferences.setObject(FilterLayout.encode(behavior.filters), forKey = FILTERS)
+        preferences.setObject(MailListLayout.encode(behavior.list), forKey = LIST)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -89,6 +92,7 @@ class IosMailBehaviorStore(
         const val UNDO_SEND_SECONDS = "otus.mail.undo_send_seconds"
         const val INBOX = "otus.mail.inbox_contents"
         const val FILTERS = "otus.mail.filter_layout"
+        const val LIST = "otus.mail.mail_list"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"
     }

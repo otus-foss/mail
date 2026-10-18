@@ -12,6 +12,11 @@ sealed interface SidebarPin {
         override val storageValue = "read_later"
     }
 
+    /** Every thread where the user and someone else both wrote, from each account's inbox and Sent. */
+    data object Conversations : SidebarPin {
+        override val storageValue = "conversations"
+    }
+
     /** Each account's folder with [role], such as `sent` (RFC 8621, section 2). */
     data class Role(
         val role: String,
@@ -27,9 +32,9 @@ sealed interface SidebarPin {
     }
 
     companion object {
-        /** Read later, then the system folders in the order the sidebar always listed them. */
+        /** Read later and Conversations, then the system folders in the order the sidebar always listed them. */
         val defaults: List<SidebarPin> =
-            listOf(ReadLater) + listOf("drafts", "sent", "archive", "junk", "trash").map(::Role)
+            listOf(ReadLater, Conversations) + listOf("drafts", "sent", "archive", "junk", "trash").map(::Role)
 
         /** [pins] saved as one value without commas or line breaks, so it fits one layout line. */
         fun encode(pins: List<SidebarPin>): String = pins.joinToString(SEPARATOR) { it.storageValue }
@@ -45,6 +50,7 @@ sealed interface SidebarPin {
         fun fromStorageValue(value: String): SidebarPin? =
             when {
                 value == ReadLater.storageValue -> ReadLater
+                value == Conversations.storageValue -> Conversations
                 value.startsWith(ROLE_PREFIX) -> Role(value.removePrefix(ROLE_PREFIX)).takeIf { it.role.isNotEmpty() }
                 value.startsWith(FOLDER_PREFIX) -> folder(value.removePrefix(FOLDER_PREFIX))
                 else -> null

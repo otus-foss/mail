@@ -13,6 +13,7 @@ import com.otus.mail.feature.folders.presentation.KnownAddress
  * Everything the folder popups can ask for. Folder changes go to the server. [color] offers a
  * folder's color, kept on this device, or null for a folder that cannot have one. [ruleAddresses]
  * gives the addresses an account's new rules can suggest, or null when its server keeps no rules.
+ * [newFolderColor] is the color name a new folder starts with, or null for the default.
  */
 class FolderActions(
     val onCreate: (accountId: String, name: String, parentId: String?, setup: NewFolderSetup) -> Unit,
@@ -22,6 +23,7 @@ class FolderActions(
     val onMove: (MailFolder, parentId: String?) -> Unit,
     val color: (MailFolder) -> FolderColorChoice?,
     val ruleAddresses: (accountId: String) -> List<KnownAddress>?,
+    val newFolderColor: () -> String?,
 )
 
 /** What a new folder starts with besides its name: its icon [color] and the [rules] that sort mail into it. */
@@ -69,4 +71,5 @@ fun folderActions(
     ruleAddresses = { accountId ->
         known(accountId).takeIf { rules.account(accountId)?.availability is RuleAvailability.Available }
     },
+    newFolderColor = colors::newFolderColor,
 )

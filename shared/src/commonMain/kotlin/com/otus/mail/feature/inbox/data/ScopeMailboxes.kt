@@ -42,7 +42,7 @@ internal fun MailScope.chosen(
         }
 
         is MailScope.Roles -> {
-            mailboxes.filter { it.role in names }
+            mailboxes.filter { it.role in names || (ownFolders && it.role == null) }
         }
 
         MailScope.AllMailboxes -> {

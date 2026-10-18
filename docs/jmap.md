@@ -10,9 +10,12 @@ guide covers what Mail builds on top of it.
 
 `core/mail` defines `MailboxType` and `EmailType` (RFC 8621). Connecting fetches the session, checks
 the mail account with a `Mailbox/get`, and saves the login; reconnecting the same user replaces it.
-The inbox finds the mailbox with role `inbox`, then runs `Email/query` and `Email/get` in one request
-(newest 50, text bodies up to 20 000 bytes per part). Each login loads in parallel and fails alone,
-with a reason. `OtusMailApplication` owns one `MailServices` per process. Mail and the first release
+The inbox finds the mailbox with role `inbox`, then lists one row per conversation in one request:
+`Email/query` with `collapseThreads` (newest 50 threads), `Email/get` of those rows with their
+`preview`, `Thread/get` by back-reference to their `threadId`, and a second `Email/get` of every
+thread email with only its people, date, keywords, and mailboxes (RFC 8621, sections 3 and 4.4). A
+refused thread call leaves each row standing for its own email. Each login loads in parallel and
+fails alone, with a reason. `OtusMailApplication` owns one `MailServices` per process. Mail and the first release
 use the same storage names, so earlier accounts keep working.
 
 `core/mail` also holds what the features' data layers share. `MailAccounts` resolves a saved login
@@ -46,8 +49,19 @@ with `Email/set` patches. See [Folders and rules](folders.md).
 Messages also load `to`, `cc`, `messageId`, and `references`, so a reply can address everyone and
 stay in its thread.
 
-The body is the `textBody` parts' values (RFC 8621, section 4.1.4), with each part's `type`. When a
-message has no plain alternative, that part is `text/html`; the list reads it as plain text. It drops comments and the content of `script`, `style`, `title`, and `template`, breaks
+A row (`data/Conversations.kt`) is the thread's newest email in the shown mailbox, with a
+`MailConversation`. Its count, participants, and newest email leave out drafts and Trash or Junk
+mail unless the list shows that mailbox; Sent mail counts. The row is unread when any of its emails
+in the mailbox is, flagged when any counted email is, and its `mailboxIds` cover the whole thread.
+When several chosen mailboxes hold one thread, their rows merge into one. Marks, moves, Delete, and
+Not spam apply to every email of the row in the shown mailboxes, and Delete decides for each email
+whether it is only in that folder.
+
+The list shows each email's `preview`. An open message loads its body with a second `Email/get`
+(`JmapMessageBodies`): the `textBody` and `htmlBody` parts with `fetchAllBodyValues` and values up
+to 1 MB per part. The text shows the preview at once and then the full text, which replies and
+forwards quote. The text is the `textBody` parts' values (RFC 8621, section 4.1.4), with each
+part's `type`. When a message has no plain alternative, that part is `text/html`, read as plain text. It drops comments and the content of `script`, `style`, `title`, and `template`, breaks
 lines at blocks and `<br>`, removes other tags, and decodes character references, in one pass that
 tolerates broken markup. A part longer than the limit comes back cut off with `isTruncated`. When
 another part's text follows the cut, the body says "[Part of the message is missing here.]" where
@@ -55,10 +69,8 @@ the part stops. When the cut is at the end, the message has `bodyTruncated`: the
 only its start was loaded, and a reply or forward ends the quoted text with "[The rest of the
 original message is not included.]".
 
-An open message loads its HTML body with a second `Email/get` (`JmapMessageBodies`): the
-`htmlBody` parts with `fetchHTMLBodyValues` and values up to 1 MB per part. The list skips this
-because HTML is often far larger than the text. When no `htmlBody` part is `text/html`, the reader
-keeps the text body. Plain parts between HTML parts keep their line breaks, and parts without a
+When an `htmlBody` part is `text/html`, the reader shows the HTML body instead of the text; otherwise
+it keeps the text body. Plain parts between HTML parts keep their line breaks, and parts without a
 value, such as inline `cid:` images, are left out. A failed load also keeps the text body.
 
 Drafts (`JmapDraftRepository`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:

@@ -236,9 +236,7 @@ class FakeFolderServer {
     private fun emails(mailbox: String): String {
         val subject = subjects[mailbox] ?: "Welcome"
         val mailboxIds = (listOf(mailbox) + alsoIn).distinct().joinToString { "\"$it\": true" }
-        return """["Email/query", {"ids": ["m1"]}, "c0"], ["Email/get", {"state": "e", "list": [{"id": "m1",
-           "mailboxIds": {$mailboxIds}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
-           "subject": "$subject", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Hello"}]}, "c1"]"""
+        return oneThreadReply(graceEmail(subject, mailboxIds))
     }
 
     private fun queryEmails(body: String): String =

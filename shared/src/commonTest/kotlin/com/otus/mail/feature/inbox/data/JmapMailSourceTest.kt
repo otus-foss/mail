@@ -30,18 +30,21 @@ class JmapMailSourceTest {
                 "\"inMailbox\":\"a\"" in body && "\"#ids\"" in body,
             ) { "Queries the inbox by role, chained by back-reference" }
             check("\"messageId\"" in body && "\"cc\"" in body) { "Requests what a reply needs" }
-            """{"methodResponses": [
-                ["Email/query", {"ids": ["m1", "m2"]}, "c0"],
-                ["Email/get", {"state": "e", "list": [
+            check("\"collapseThreads\":true" in body && "\"Thread/get\"" in body) { "Lists one row per thread" }
+            check("\"textBody\"" !in body) { "The list shows previews and loads no bodies" }
+            emailListResponse(
+                "\"m1\", \"m2\"",
+                """
                   {"id": "m1", "keywords": {}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
                    "to": [{"name": "Ada", "email": "ada@example.org"}], "cc": [{"email": "team@example.org"}],
                    "messageId": ["m1@example.org"], "references": ["m0@example.org"],
                    "subject": "Compiler draft", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Attached…",
-                   "hasAttachment": true, "attachments": [{"partId": "2", "name": "draft.pdf"}],
-                   "textBody": [{"partId": "1"}], "bodyValues": {"1": {"value": "Attached is the first draft."}}},
-                  {"id": "m2", "keywords": {"${'$'}seen": true, "${'$'}flagged": true}, "from": [{"email": "ada@example.org"}],
-                   "subject": null, "receivedAt": "2026-10-03T23:05:00Z", "preview": "Notes", "hasAttachment": false}
-                ]}, "c1"]]}"""
+                   "hasAttachment": true, "attachments": [{"partId": "2", "name": "draft.pdf"}]},
+                  {"id": "m2", "keywords": {"${'$'}seen": true, "${'$'}flagged": true},
+                   "from": [{"email": "ada@example.org"}],
+                   "subject": null, "receivedAt": "2026-10-03T23:05:00Z", "preview": "Notes",
+                   "hasAttachment": false}""",
+            )
         }
 
     private fun source(store: InMemoryLoginStore): JmapMailSource {
@@ -58,7 +61,8 @@ class JmapMailSourceTest {
             val (first, second) = snapshot.messages
             assertEquals("ada/m1", first.id)
             assertEquals("Grace Hopper", first.sender.name)
-            assertEquals("Attached is the first draft.", first.body)
+            assertEquals("Attached…", first.body)
+            assertEquals("Attached…", first.preview)
             assertEquals("2026-10-04", first.received.date)
             assertEquals("09:30", first.received.time)
             assertEquals("Inbox", first.location.mailbox, "The inbox role maps to the app's Inbox, whatever its name")
@@ -78,35 +82,6 @@ class JmapMailSourceTest {
         }
 
     @Test
-    fun htmlBodiesReadAsTextAndACutOffBodyIsMarked() =
-        runTest {
-            val bodyApi = { body: String ->
-                if ("Mailbox/get" in body) {
-                    """{"methodResponses": [["Mailbox/get", {"state": "m",
-                        "list": [{"id": "a", "role": "inbox"}]}, "c0"]]}"""
-                } else {
-                    check("\"bodyProperties\":[\"partId\",\"name\",\"type\"]" in body) { "Asks for each part's type" }
-                    val email = """"receivedAt": "2026-10-04T09:30:00Z", "textBody": [{"partId": "1", "type":"""
-                    """{"methodResponses": [["Email/query", {"ids": ["html", "both", "cut"]}, "c0"],
-                        ["Email/get", {"state": "e", "list": [
-                          {"id": "html", $email "text/html"}], "bodyValues": {"1": {"value":
-                           "<html><head><title>News</title></head><body><p>Hello &amp; welcome</p>Bye</body></html>"}}},
-                          {"id": "both", $email "text/plain"}],
-                           "bodyValues": {"1": {"value": "Plain"}, "2": {"value": "<p>Rich</p>"}}},
-                          {"id": "cut", $email "text/plain"}],
-                           "bodyValues": {"1": {"value": "The st", "isTruncated": true}}}
-                        ]}, "c1"]]}"""
-                }
-            }
-            val store = InMemoryLoginStore().apply { save(login, "secret") }
-            val source = JmapMailSource(JmapConnections(JmapClient(stalwartLike(api = bodyApi)), store), store)
-            val (html, both, cut) = source.messages(MailScope.Inbox).messages
-            assertEquals("Hello & welcome\n\nBye", html.body, "An HTML-only message shows its text, not its markup")
-            assertEquals("Plain", both.body, "The plain alternative is used, not the HTML one")
-            assertEquals(listOf(false, false, true), listOf(html, both, cut).map { it.bodyTruncated })
-        }
-
-    @Test
     fun aFolderLoadsOnlyItsAccountAndKeepsItsName() =
         runTest {
             val queried = mutableListOf<String>()
@@ -116,9 +91,7 @@ class JmapMailSourceTest {
                     """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
                         {"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
                 } else {
-                    """{"methodResponses": [["Email/query", {"ids": ["m1"]}, "c0"],
-                        ["Email/get", {"state": "e", "list": [{"id": "m1", "subject": "Order",
-                         "receivedAt": "2026-10-04T09:30:00Z"}]}, "c1"]]}"""
+                    emailListResponse("\"m1\"", email("\"m1\""))
                 }
             }
             val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")
@@ -149,10 +122,7 @@ class JmapMailSourceTest {
                         {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
                 } else {
                     val ids = if ("\"inMailbox\":\"a\"" in body) "\"m1\", \"m2\"" else "\"m1\""
-                    """{"methodResponses": [["Email/query", {"ids": [$ids]}, "c0"],
-                        ["Email/get", {"state": "e", "list": [${ids.split(
-                        ", ",
-                    ).joinToString { email(it) }}]}, "c1"]]}"""
+                    emailListResponse(ids, ids.split(", ").joinToString { email(it) })
                 }
             }
             val store = InMemoryLoginStore().apply { save(login, "secret") }
@@ -168,7 +138,7 @@ class JmapMailSourceTest {
                 snapshot.messages
                     .first()
                     .location.mailbox,
-                "A message in both is listed under the first",
+                "A message in both is listed once, under the first",
             )
             assertTrue(queried.any { "\"inMailbox\":\"r\"" in it })
             assertTrue(queried.none { "\"inMailbox\":\"s\"" in it }, "Mailboxes that were not chosen are not loaded")
@@ -188,9 +158,7 @@ class JmapMailSourceTest {
                     """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"},
                         {"id": "r", "name": "Receipts"}, {"id": "l", "name": "Read later"}]}, "c0"]]}"""
                 } else {
-                    """{"methodResponses": [["Email/query", {"ids": ["m1"]}, "c0"],
-                        ["Email/get", {"state": "e", "list": [{"id": "m1", "subject": "Order",
-                         "receivedAt": "2026-10-04T09:30:00Z"}]}, "c1"]]}"""
+                    emailListResponse("\"m1\"", email("\"m1\""))
                 }
             }
             val store =
@@ -217,9 +185,7 @@ class JmapMailSourceTest {
                         {"id": "j", "name": "Junk Mail", "role": "junk"}]}, "c0"]]}"""
                 } else {
                     check("\"inMailbox\":\"j\"" in body) { "Queries the folder with the junk role" }
-                    """{"methodResponses": [["Email/query", {"ids": ["m1"]}, "c0"],
-                        ["Email/get", {"state": "e", "list": [{"id": "m1", "subject": "Prize",
-                         "receivedAt": "2026-10-04T09:30:00Z"}]}, "c1"]]}"""
+                    emailListResponse("\"m1\"", email("\"m1\""))
                 }
             }
             val store =

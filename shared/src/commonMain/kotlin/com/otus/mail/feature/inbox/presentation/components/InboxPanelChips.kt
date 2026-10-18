@@ -18,7 +18,7 @@ internal fun ContextPanelScope.InboxPanelChips(
     dateFormatter: DateFormatter,
     selection: FilterSelection,
     actions: InboxPanelActions,
-    filters: ActiveFilters,
+    look: PanelLook,
 ) {
     val shown = context.folderPill
     transition(searching) { mode ->
@@ -33,7 +33,7 @@ internal fun ContextPanelScope.InboxPanelChips(
                     }
                 }
         } else {
-            InboxRowPills(context.pills, filters, shown?.pill, actions.onFolder)
+            InboxRowPills(context.pills, look.filters, shown?.pill, actions.onFolder, look.unreadCount)
         }
     }
 }
