@@ -23,6 +23,9 @@ data class InboxContext(
     val onCompose: (ComposeRequest) -> Unit = {},
     /** Loads an open message's full body; null keeps the preview the list loaded. */
     val loadContent: suspend (MailMessage) -> MessageContent? = { null },
+    /** The page's filters, which outlive the screen; null keeps them with the screen. */
+    val filters: InboxFilterState? = null,
+    val filterOptions: FilterOptions = FilterOptions(),
     /** How rows look: the Mail list settings and the user's own addresses. */
     val rowLook: RowLook = RowLook(),
     /** The folder color nudge above the first row; null shows none. */
@@ -32,17 +35,13 @@ data class InboxContext(
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()
 
     companion object {
-        /**
-         * A folder's page shows only the filter pills of [pills]: folder pills would leave the
-         * folder. A page of [conversationsOnly] starts filtered to conversations the user wrote in.
-         */
+        /** A folder's page shows only the filter pills of [pills]: folder pills would leave the folder. */
         fun folder(
             name: String,
             pills: List<InboxPill>,
-            conversationsOnly: Boolean = false,
         ): InboxContext =
             InboxContext(
-                defaultSearch = InboxSearch(mailboxes = emptySet(), conversationsOnly = conversationsOnly),
+                defaultSearch = InboxSearch(mailboxes = emptySet()),
                 searchPrompt = "Search $name",
                 emptyTitle = "$name is empty",
                 pills = InboxPills(pills.filterIsInstance<InboxPill.Filter>()),

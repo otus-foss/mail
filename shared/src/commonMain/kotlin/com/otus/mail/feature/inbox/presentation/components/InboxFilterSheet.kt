@@ -1,29 +1,20 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.components.DateRangePicker
 import com.otus.designsystem.components.PickerSearch
 import com.otus.designsystem.components.SelectionSheet
-import com.otus.designsystem.elements.SelectionRow
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
-import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.has
-import com.otus.mail.feature.inbox.domain.with
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxSearchSaver
 
@@ -63,19 +54,7 @@ fun InboxFilterSheet(
                 }
             }
 
-            InboxFilter.More -> {
-                Column(
-                    Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
-                ) {
-                    InboxPill.Filter.entries.forEach { pill ->
-                        val on = draft.has(pill)
-                        SelectionRow(pill.sheetTitle, on, { draft = draft.with(pill, !on) })
-                    }
-                }
-            }
-
-            else -> {
+            InboxFilter.People, InboxFilter.Accounts -> {
                 Text(
                     "${draft.selectionCount(filter)} selected",
                     color = OtusColors.text2,
@@ -107,18 +86,7 @@ private fun InboxSearch.clear(filter: InboxFilter): InboxSearch =
         InboxFilter.People -> copy(senders = emptySet())
         InboxFilter.Date -> copy(dateStart = null, dateEnd = null)
         InboxFilter.Accounts -> copy(accounts = emptySet(), mailboxes = emptySet())
-        InboxFilter.More -> InboxPill.Filter.entries.fold(this) { search, pill -> search.with(pill, on = false) }
     }
-
-/** The filter as the Filters sheet names it: a condition the mail meets. */
-private val InboxPill.Filter.sheetTitle: String
-    get() =
-        when (this) {
-            InboxPill.Filter.Unread -> "Unread only"
-            InboxPill.Filter.Attachments -> "Has attachments"
-            InboxPill.Filter.Flagged -> "Flagged only"
-            InboxPill.Filter.Conversations -> "Conversations"
-        }
 
 private fun InboxSearch.selectionCount(filter: InboxFilter): Int =
     when (filter) {

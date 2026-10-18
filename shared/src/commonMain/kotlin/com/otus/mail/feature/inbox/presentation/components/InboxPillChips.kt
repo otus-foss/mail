@@ -7,13 +7,11 @@ import com.otus.designsystem.elements.CountBadge
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
+import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.has
-import com.otus.mail.feature.inbox.domain.with
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import org.jetbrains.compose.resources.DrawableResource
@@ -38,27 +36,35 @@ internal val InboxPill.Filter.icon: DrawableResource
         }
 
 /**
- * The row outside search, in the user's order. A filter pill turns its filter on and off; a folder
- * pill shows its folders' mail, and pressing it again returns to the page's own. The Unread pill
- * shows [unreadCount] in a circle in place of its icon while there is unread mail.
+ * The row outside search: the page's active filters first, each with a ✕ that removes it, then the
+ * user's pills in their order. A filter pill turns its filter on, which moves it to the front; a
+ * folder pill shows its folders' mail, and pressing it again returns to the page's own. The Unread
+ * pill shows [unreadCount] in a circle in place of its icon while there is unread mail.
  */
 @Composable
 internal fun ContextPanelScope.InboxRowPills(
     pills: InboxPills,
-    search: InboxSearch,
+    filters: ActiveFilters,
     folderPill: InboxPill.FolderPill?,
-    onChange: (InboxSearch) -> Unit,
     onFolder: (InboxPill.FolderPill?) -> Unit,
     unreadCount: Int = 0,
 ) {
+    filters.active.forEach { facet ->
+        item(facet.key) {
+            Chip(facet.label, { filters.onChange(facet.remove(filters.applied)) }, selected = true) {
+                Symbol(Res.drawable.symbol_close)
+            }
+        }
+    }
     pills.pills.forEach { pill ->
         when (pill) {
             is InboxPill.Filter -> {
-                item(pill) {
-                    val on = search.has(pill)
-                    val count = unreadCount.takeIf { pill == InboxPill.Filter.Unread && it > 0 }
-                    Chip(pill.label, { onChange(search.with(pill, !on)) }, selected = on) {
-                        if (count != null) CountBadge(count.badgeText()) else Symbol(pill.icon)
+                if (!filters.applied.has(pill)) {
+                    item(pill) {
+                        val count = unreadCount.takeIf { pill == InboxPill.Filter.Unread && it > 0 }
+                        Chip(pill.label, { filters.onChange(filters.applied.with(pill, true)) }) {
+                            if (count != null) CountBadge(count.badgeText()) else Symbol(pill.icon)
+                        }
                     }
                 }
             }

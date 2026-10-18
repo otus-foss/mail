@@ -87,6 +87,8 @@ data class MailAttributes(
     /** The attachment names of the message itself. */
     val attachments: List<String> = emptyList(),
     val flagged: Boolean = false,
+    /** The message carries a calendar invitation, a `text/calendar` part or an `.ics` file. */
+    val invite: Boolean = false,
     /** The message has the `$answered` keyword: someone replied to it from this account. */
     val answered: Boolean = false,
     /** The message has the `$forwarded` keyword. */

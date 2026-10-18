@@ -3,6 +3,7 @@ package com.otus.mail
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.FilterLayout
 import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
@@ -39,6 +40,7 @@ class IosMailBehaviorStore(
             signatureInReplies = bool(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.stringForKey(INBOX)?.let(InboxContents::decode) ?: defaults.inbox,
+            filters = preferences.stringForKey(FILTERS)?.let(FilterLayout::decode) ?: defaults.filters,
             list = preferences.stringForKey(LIST)?.let(MailListLayout::decode) ?: defaults.list,
         )
     }
@@ -60,6 +62,7 @@ class IosMailBehaviorStore(
         preferences.setBool(behavior.signatureInReplies, forKey = SIGNATURE_IN_REPLIES)
         preferences.setInteger(behavior.undoSendSeconds.toLong(), forKey = UNDO_SEND_SECONDS)
         preferences.setObject(InboxContents.encode(behavior.inbox), forKey = INBOX)
+        preferences.setObject(FilterLayout.encode(behavior.filters), forKey = FILTERS)
         preferences.setObject(MailListLayout.encode(behavior.list), forKey = LIST)
     }
 
@@ -88,6 +91,7 @@ class IosMailBehaviorStore(
         const val SIGNATURE_IN_REPLIES = "otus.mail.signature_in_replies"
         const val UNDO_SEND_SECONDS = "otus.mail.undo_send_seconds"
         const val INBOX = "otus.mail.inbox_contents"
+        const val FILTERS = "otus.mail.filter_layout"
         const val LIST = "otus.mail.mail_list"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"

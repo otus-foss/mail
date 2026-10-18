@@ -9,10 +9,6 @@ internal val InboxSearchSaver =
         save = {
             mapOf(
                 "query" to it.query,
-                "unread" to it.unreadOnly,
-                "attachments" to it.attachmentsOnly,
-                "flagged" to it.flaggedOnly,
-                "conversations" to it.conversationsOnly,
                 "senders" to it.senders.toList(),
                 "start" to it.dateStart,
                 "end" to it.dateEnd,
@@ -26,10 +22,6 @@ internal val InboxSearchSaver =
             val accounts = (values["mailboxAccounts"] as List<*>).map { it as String? }
             InboxSearch(
                 query = values["query"] as String,
-                unreadOnly = values["unread"] as Boolean,
-                attachmentsOnly = values["attachments"] as Boolean,
-                flaggedOnly = values["flagged"] as? Boolean ?: false,
-                conversationsOnly = values["conversations"] as? Boolean ?: false,
                 senders = (values["senders"] as List<*>).map { it as String }.toSet(),
                 dateStart = values["start"] as String?,
                 dateEnd = values["end"] as String?,

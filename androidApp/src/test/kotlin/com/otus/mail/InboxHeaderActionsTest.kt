@@ -64,11 +64,12 @@ class InboxHeaderActionsTest {
     @Test
     fun defaultFilterButtonOpensFiltersWithoutStartingSearch() {
         compose.onNodeWithContentDescription("Open filters").assertIsDisplayed().performClick()
-        compose.onNodeWithText("Unread only").performClick()
-        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithContentDescription("Unread").performClick()
+        compose.onNodeWithText("Show conversations").performClick()
         compose.onNodeWithText("Tap to search").assertIsDisplayed()
         compose.onNodeWithContentDescription("Search your mailbox…").assertDoesNotExist()
         compose.onNodeWithText("Unread").assertIsOn()
+        compose.onNodeWithContentDescription("Open filters, 1 active").assertIsDisplayed()
     }
 
     @Test
@@ -95,7 +96,7 @@ class InboxHeaderActionsTest {
         filters().assertIsDisplayed()
     }
 
-    private fun filters() = compose.onNodeWithContentDescription("Open filters")
+    private fun filters() = compose.onNodeWithContentDescription("Open filters", substring = true)
 
     @Test
     fun navigationChevronIsAvailableAndSearchBackReturnsToPrompt() {

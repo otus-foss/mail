@@ -48,6 +48,7 @@ internal fun EmailObject.toMessage(
                 unread = keywords[SEEN_KEYWORD] != true,
                 attachments = if (hasAttachment) attachments.orEmpty().map { it.displayName() } else emptyList(),
                 flagged = keywords[FLAGGED_KEYWORD] == true,
+                invite = attachments.orEmpty().any { it.isInvite() },
                 answered = keywords[ANSWERED_KEYWORD] == true,
                 forwarded = keywords[FORWARDED_KEYWORD] == true,
                 hasAttachment = hasAttachment,
@@ -78,6 +79,10 @@ internal fun EmailAddress?.toSender(accountId: String): MailSender {
     val address = this?.email.orEmpty().displayLine()
     return MailSender(this?.name?.displayLine()?.ifBlank { null } ?: address, address, accountId)
 }
+
+/** A calendar invitation: a `text/calendar` part, or a file named `.ics` (RFC 5545, RFC 6047). */
+private fun EmailBodyPart.isInvite(): Boolean =
+    type?.startsWith("text/calendar", ignoreCase = true) == true || name?.endsWith(".ics", ignoreCase = true) == true
 
 private fun EmailBodyPart.displayName(): String = name.orEmpty().displayLine().ifBlank { "Attachment" }
 

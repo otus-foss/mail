@@ -178,11 +178,11 @@ internal fun FeedPage(
     states: MailStates,
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
-    conversationsOnly: Boolean = false,
 ) {
     val pageScope = rememberCoroutineScope()
     val feed = remember(mailScope) { states.folderFeed(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
+    val filters = rememberPageFilters(states, page, feed)
     val labeled = rememberLabeled(states, feed)
     InboxScreen(
         labeled,
@@ -194,9 +194,11 @@ internal fun FeedPage(
             states.folders.refresh()
         },
         context =
-            InboxContext.folder(name, states.behavior.behavior.pills, conversationsOnly).copy(
+            InboxContext.folder(name, states.behavior.behavior.pills).copy(
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
                 loadContent = states::messageContent,
+                filters = filters,
+                filterOptions = rememberFilterOptions(states, page, filters.applied),
                 rowLook = rememberRowLook(states),
                 nudge = rememberListNudge(states, labeled),
             ),

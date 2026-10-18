@@ -13,6 +13,7 @@ import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
@@ -42,6 +43,15 @@ class InboxFeedState(
             val showingOwn = mailScope == field
             field = scope
             if (showingOwn) show(null)
+        }
+
+    /** The applied filters, which the server runs; a new value loads again from the start. */
+    var query: MailQuery = MailQuery()
+        set(value) {
+            if (value == field) return
+            field = value
+            messages = emptyList()
+            refresh()
         }
 
     /** What the list loads: the page's own messages, or what a search or folder pill shows in their place. */
@@ -124,6 +134,7 @@ class InboxFeedState(
     fun refresh() {
         val current = ++request
         val requestedScope = mailScope
+        val requestedQuery = query
         val options = avatarOptions()
         job?.cancel()
         loading = true
@@ -131,7 +142,7 @@ class InboxFeedState(
         job =
             scope.launch {
                 try {
-                    val snapshot = source.messages(requestedScope)
+                    val snapshot = source.messages(requestedScope, requestedQuery)
                     val incoming = withCachedAvatars(snapshot.messages, options)
                     if (current != request) return@launch
                     messages = pending.publish(incoming, current, requestedScope)
