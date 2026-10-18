@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +32,7 @@ import com.otus.designsystem.components.PositionStrip
 import com.otus.designsystem.components.StripCard
 import com.otus.designsystem.components.ThreadEntry
 import com.otus.designsystem.components.ThreadList
+import com.otus.designsystem.elements.FirstFit
 import com.otus.designsystem.elements.FolderStack
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
@@ -75,31 +76,61 @@ internal fun ReadThreadStrip(
     ) { FolderSlot(folders, flagged && !folders.also) }
 }
 
-/** The short folder hint at the strip's end: "also", one name, or stacked icons and a count. */
+/**
+ * The short folder hint at the strip's end: "also", then one folder by name or stacked icons and a
+ * count. Where that does not fit beside the position it drops "also", then a count's words; one
+ * folder's name shortens instead.
+ */
 @Composable
-private fun RowScope.FolderSlot(
+private fun FolderSlot(
     folders: ShownFolders,
     flag: Boolean,
 ) {
     val shown = folders.folders
     if (shown.isEmpty() && !flag) return
+    // The strip has little room, so a folder shows by its own name; the sheet shows full paths.
+    val names = shown.map { folderName(it, listOf(it.name)) }
+    val also = folders.also && shown.isNotEmpty()
+    val stack = @Composable { if (shown.isNotEmpty()) FolderStack(names.map { if (it.system) null else it.color }) }
+    val label =
+        @Composable {
+            if (shown.size == 1) {
+                FolderHint(names, fontSize = ReadTokens.summarySize)
+            } else {
+                stack()
+                if (shown.size > 1) SlotText("${shown.size} folders", OtusColors.text1)
+            }
+        }
+    val full =
+        @Composable {
+            if (also) SlotText("also")
+            label()
+        }
+    val options: List<@Composable () -> Unit> =
+        if (shown.size > 1) {
+            listOf({ SlotRow(flag, full) }, { SlotRow(flag, label) }, { SlotRow(flag, stack) })
+        } else {
+            listOf({ SlotRow(flag, full) }, { SlotRow(flag, label) })
+        }
+    FirstFit(options)
+}
+
+/** One version of the folder slot, after the flag when the conversation is [flagged]. */
+@Composable
+private fun SlotRow(
+    flagged: Boolean,
+    content: @Composable () -> Unit,
+) {
     Row(
-        Modifier.weight(SLOT_WEIGHT, fill = false),
         horizontalArrangement = Arrangement.spacedBy(ReadTokens.glyphGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (folders.also && shown.isNotEmpty()) SlotText("also")
-        if (flag) {
+        if (flagged) {
             CompositionLocalProvider(LocalContentColor provides OtusColors.text2) {
                 Symbol(Res.drawable.symbol_flag, size = ReadTokens.folderGlyphSize)
             }
         }
-        if (shown.size == 1) {
-            FolderHint(folderNames(shown), fontSize = ReadTokens.summarySize)
-        } else if (shown.size > 1) {
-            FolderStack(folderNames(shown).map { if (it.system) null else it.color })
-            SlotText("${shown.size} folders", OtusColors.text1)
-        }
+        content()
     }
 }
 
@@ -137,9 +168,9 @@ internal fun ReadThreadList(
 }
 
 /**
- * The message list grown from the thread strip over the page at [current], which dims behind it.
- * It sits where the strip does, above the bar's [padding]; choosing a message runs [onSelect] and
- * folds it, as do its header and a tap outside.
+ * The message list grown from the thread strip over the page at [current], which dims behind it
+ * with the action bar. It sits where the strip does, above the bar's [padding]; choosing a message
+ * runs [onSelect] and folds it, as do its header and a tap outside.
  */
 @Composable
 internal fun ReadThreadOverlay(
@@ -190,6 +221,7 @@ internal fun ReadThreadOverlay(
                 onFold = fold,
                 Modifier
                     .align(Alignment.BottomCenter)
+                    .safeDrawingPadding()
                     .padding(padding)
                     .padding(PageTokens.pageInset)
                     .animateEnterExit(enter = expandVertically(motionTween(), expandFrom = Alignment.Bottom)),
@@ -200,6 +232,3 @@ internal fun ReadThreadOverlay(
 
 /** How much of the page the grown message list may cover before it scrolls. */
 private const val LIST_HEIGHT_SHARE = 0.7f
-
-/** Only so much of the strip's width goes to folders, so the position beside them never shortens. */
-private const val SLOT_WEIGHT = 0.6f

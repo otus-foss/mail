@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
@@ -36,11 +37,13 @@ internal fun ReadBottomStack(
     val content = (state.body(page) as? PageBody.Loaded)?.content
     Column(modifier.fillMaxWidth(), Arrangement.spacedBy(PageTokens.rowGap)) {
         content?.attachments?.takeIf { it.isNotEmpty() }?.let { files ->
+            LaunchedEffect(page.id, files) { state.thumbnails.load(page, files) { actions.thumbnail(page, it) } }
             ReadAttachmentStrip(
                 files,
                 state.filesOpen,
                 { state.filesOpen = !state.filesOpen },
                 actions.files(page, files),
+                { state.thumbnails.of(page, it) },
             )
         }
         ContextStrip(state, current, source, content, actions)

@@ -73,7 +73,7 @@ internal fun ReadHeader(
                     horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    item(SENDER) { SenderPill(page, labelMax, actions.onSender) }
+                    item(SENDER) { SenderPill(page, labelMax, actions.senderOpen, actions.onSender) }
                     item(DATE) { DateChip(dateLabel, fullDate) }
                     Spacer(Modifier.weight(1f))
                     actions.readLater?.let { change -> item(BOOKMARK) { Bookmark(change) } }
@@ -94,10 +94,12 @@ internal fun ReadHeader(
 private fun SenderPill(
     page: MailMessage,
     labelMax: Dp,
+    open: Boolean,
     onClick: () -> Unit,
 ) {
     val name = page.sender.name.ifBlank { page.sender.address }
-    AddressPill(name, "From $name. Show details", onClick, labelMaxWidth = labelMax) {
+    val description = if (open) "From $name. Hide details" else "From $name. Show details"
+    AddressPill(name, description, onClick, labelMaxWidth = labelMax, expanded = open) {
         PersonAvatar(page.sender.chipAvatar, ComposeTokens.fromAvatarSize)
     }
 }

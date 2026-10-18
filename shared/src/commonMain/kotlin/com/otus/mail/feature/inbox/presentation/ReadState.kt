@@ -23,9 +23,14 @@ sealed interface PageBody {
 /** The newsletter strip: before unsubscribing, after it, and after archiving the older mail too. */
 enum class NewsletterStep { Subscribed, Unsubscribed, Archived }
 
-/** A sheet over the Read view: the folders of the conversation, or a page's headers. */
+/**
+ * A sheet over the Read view: the folders of the conversation, a new folder started from there, or
+ * a page's headers.
+ */
 sealed interface ReadSheet {
     data object Folders : ReadSheet
+
+    data object NewFolder : ReadSheet
 
     data class Details(
         val message: MailMessage,
@@ -56,6 +61,9 @@ class ReadState(
 
     /** Whether the conversation is muted; null until it is known. */
     var muted by mutableStateOf<Boolean?>(null)
+
+    /** The pictures of the pages' image attachments. */
+    val thumbnails = PageThumbnails()
 
     private val bodies = mutableStateMapOf<String, PageBody>()
     private val imagesShown = mutableStateListOf<String>()

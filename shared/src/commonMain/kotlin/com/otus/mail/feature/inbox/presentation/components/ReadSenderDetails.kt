@@ -14,8 +14,8 @@ import androidx.compose.ui.semantics.Role
 import com.otus.designsystem.components.DetailLine
 import com.otus.designsystem.components.DetailsTable
 import com.otus.designsystem.components.FolderHint
+import com.otus.designsystem.components.PersonChip
 import com.otus.designsystem.components.Recipient
-import com.otus.designsystem.components.RecipientChip
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_event
@@ -64,7 +64,7 @@ private fun People(people: List<MailSender>) {
     ) {
         people.forEach { person ->
             val name = person.name.ifBlank { person.address }
-            RecipientChip(Recipient(name, person.chipAvatar, "$name, ${person.address}"), onClick = {})
+            PersonChip(Recipient(name, person.chipAvatar, "$name, ${person.address}"))
         }
     }
 }

@@ -5,7 +5,10 @@ import androidx.compose.runtime.remember
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
+import com.otus.mail.feature.folders.presentation.FolderDialog
 import com.otus.mail.feature.folders.presentation.FoldersState
+import com.otus.mail.feature.folders.presentation.components.FolderActions
+import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFolder
@@ -19,13 +22,15 @@ import com.otus.mail.feature.inbox.presentation.ReadFiles
 import com.otus.mail.feature.inbox.presentation.ReadFolders
 import com.otus.mail.feature.inbox.presentation.ReadPrivacy
 import com.otus.mail.feature.inbox.presentation.ReadServices
+import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
  * Connects the Read view to the app: the services behind its pages, strips, and menu, the saved
  * privacy setting, and the folders of each account. Folder changes show on the list at once and
- * are undone with a notice if the server refuses them. One per [MailStates].
+ * are undone with a notice if the server refuses them. [folderActions] make the folders that the
+ * folders sheet starts. One per [MailStates].
  */
 internal class ReadWiring(
     private val services: MailServices,
@@ -34,6 +39,7 @@ internal class ReadWiring(
     private val folders: FoldersState,
     private val colors: FolderColorsState,
     private val effects: ReadEffects,
+    private val folderActions: FolderActions,
 ) {
     private val privacy =
         ReadPrivacy(
@@ -54,6 +60,17 @@ internal class ReadWiring(
                     of = { message -> folders.account(message.location.accountId)?.messageFolders().orEmpty() },
                     cameFrom = { message -> cameFrom(feed.mailScope, message) },
                     apply = { message, added, removed -> applyFolders(feed, message, added, removed) },
+                    newFolder =
+                        NewFolderSheet { accountId, onDismiss ->
+                            val dialog = FolderDialog.Create(accountId, parentId = null)
+                            FolderDialogs(dialog, folders.account(accountId), folderActions) {
+                                if (it ==
+                                    null
+                                ) {
+                                    onDismiss()
+                                }
+                            }
+                        },
                 ),
             privacy = privacy,
             files = files,

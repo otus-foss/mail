@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import com.otus.designsystem.components.AttachmentActions
 import com.otus.designsystem.components.AttachmentFile
 import com.otus.designsystem.components.AttachmentKind
@@ -19,17 +20,21 @@ import com.otus.mail.feature.inbox.presentation.read.attachmentSummary
 import com.otus.mail.feature.inbox.presentation.read.detail
 import com.otus.mail.feature.inbox.presentation.read.kind
 
-/** A message's [files] in the attachment strip, closed or [expanded] in place. */
+/**
+ * A message's [files] in the attachment strip, closed or [expanded] in place, each with its
+ * [thumbnail] once it has one.
+ */
 @Composable
 internal fun ReadAttachmentStrip(
     files: List<MailAttachment>,
     expanded: Boolean,
     onToggle: () -> Unit,
     actions: AttachmentActions,
+    thumbnail: (MailAttachment) -> ImageBitmap?,
     modifier: Modifier = Modifier,
 ) {
     AttachmentStrip(
-        files.map { AttachmentFile(it.name, it.detail(), it.kind().shown) },
+        files.map { AttachmentFile(it.name, it.detail(), it.kind().shown, thumbnail(it)) },
         attachmentSummary(files),
         expanded,
         onToggle,

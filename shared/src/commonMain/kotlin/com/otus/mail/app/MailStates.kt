@@ -10,6 +10,7 @@ import com.otus.mail.feature.folders.presentation.FolderNudgeState
 import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
+import com.otus.mail.feature.folders.presentation.components.folderActions
 import com.otus.mail.feature.folders.presentation.forget
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -174,6 +175,7 @@ internal class MailStates(
             folders,
             folderColors,
             ReadEffects(moveToasts.toasts) { scope.launch { it() } },
+            folderActions(folders, folderColors, rules) { knownAddresses(it) },
         )
 
     /** Sends drafts after their page closes, with Undo and the outcome in a toast. */

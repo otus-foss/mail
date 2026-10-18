@@ -31,7 +31,8 @@ import com.otus.mail.feature.inbox.presentation.read.splitPlainQuote
 
 /**
  * One page of the Read view: [top], such as the images banner and the sender details, stays put
- * above the [message]'s text, which scrolls. Its quoted part folds under it. While the [body]
+ * above the [message]'s text, which scrolls. Its quoted part folds under it, and the quoted
+ * person's pill runs what [showPerson] gives for their address, if anything. While the [body]
  * loads, the preview shows; when it failed, the preview stays with a note.
  */
 @Composable
@@ -40,6 +41,7 @@ internal fun ReadPageBody(
     body: PageBody,
     images: PageImages,
     modifier: Modifier = Modifier,
+    showPerson: (address: String) -> (() -> Unit)? = { null },
     top: @Composable ColumnScope.() -> Unit = {},
 ) {
     val content = (body as? PageBody.Loaded)?.content
@@ -56,7 +58,7 @@ internal fun ReadPageBody(
                     content?.truncated == true -> "Only the start of this message was loaded."
                     else -> null
                 }
-            PlainBody(text, note, Modifier.weight(1f))
+            PlainBody(text, note, showPerson, Modifier.weight(1f))
         }
     }
 }
@@ -84,6 +86,7 @@ private fun HtmlBody(
 private fun PlainBody(
     text: String,
     note: String?,
+    showPerson: (address: String) -> (() -> Unit)?,
     modifier: Modifier,
 ) {
     val split = remember(text) { splitPlainQuote(text) }
@@ -101,14 +104,15 @@ private fun PlainBody(
                 quote.quoted,
                 expanded,
                 onToggle = { expanded = !expanded },
-                onPerson = null,
+                onPerson = header?.address?.let(showPerson),
             )
         }
         note?.let { Text(it, color = OtusColors.text2) }
     }
 }
 
-private fun QuoteHeader?.name(): String = this?.name ?: "Earlier message"
+/** Blank without a header, so the fold shows no person. */
+private fun QuoteHeader?.name(): String = this?.name.orEmpty()
 
 private fun QuoteHeader?.initials(): String =
     this?.let { chipAvatar(null, it.name, it.address.orEmpty()).initials }.orEmpty()

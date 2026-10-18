@@ -1,6 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,8 +11,12 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.navigationevent.NavigationEventInfo
@@ -50,6 +53,7 @@ import com.otus.mail.feature.inbox.presentation.components.rememberReadMenu
 import com.otus.mail.feature.inbox.presentation.read.fullLabel
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 
 /**
  * An open message or conversation as a page over the list. Each message of the conversation is a
@@ -84,25 +88,39 @@ fun MessageScreen(
     val look = rememberPageLook(parts)
     val bar = rememberReadBar(message, page, context.rowLook.own, actions, moveChoice, context.onCompose)
     val menu = rememberReadMenu(parts, look, bar, index)
+    val today = remember { read.today() }
+    var barPadding by remember { mutableStateOf(PaddingValues()) }
+    val scope = rememberCoroutineScope()
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar = bar.layout?.let { { ReadActionBar(bar, page, parts::perform) } },
             Modifier.safeDrawingPadding(),
-        ) { padding -> ReadLayout(parts, ReadLayoutState(pager, index, look, menu), notice, cameFrom, padding) }
+        ) { padding ->
+            SideEffect { barPadding = padding }
+            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today), notice, cameFrom, padding)
+        }
+        // Over the bar too, which dims with the page while the grown list sits above it.
+        ReadThreadOverlay(state, index, today, context.rowLook.own, barPadding) {
+            scope.launch { pager.animateScrollToPage(it) }
+        }
     }
     ReadSheets(parts, look, cameFrom)
     actions?.let { moveChoice.Sheet(it) }
 }
 
-/** Where the Read view's layout stands: the [pager] on the page at [index], how pages [look], and the ⋯ [menu]. */
+/**
+ * Where the Read view's layout stands: the [pager] on the page at [index], how pages [look], the ⋯
+ * [menu], and the [today] dates are shown against.
+ */
 private class ReadLayoutState(
     val pager: PagerState,
     val index: Int,
     val look: ReadPageLook,
     val menu: List<OptionsItem>,
+    val today: LocalDate,
 )
 
-/** The header, the pages, and the strips above the bar's [padding], with the message list over them. */
+/** The header, the pages, and the strips above the bar's [padding]. */
 @Composable
 private fun ReadLayout(
     parts: ReadParts,
@@ -115,21 +133,14 @@ private fun ReadLayout(
     val read = parts.read
     val row = parts.row
     val page = state.pages[layout.index]
-    val today = remember { read.today() }
     val uriHandler = LocalUriHandler.current
     val strips = remember(read, state) { ReadStripActions(read, state) { openLink(uriHandler::openUri, it) } }
-    val scope = rememberCoroutineScope()
-    val date = page.received.shortLabel(today)
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().padding(padding).padding(PageTokens.pageInset)) {
-            ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
-            notice?.let { MessageNotice(it) }
-            ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f))
-            ReadBottomStack(state, layout.index, ReadStripSource(row, layout.look.folders, cameFrom, date), strips)
-        }
-        ReadThreadOverlay(state, layout.index, today, parts.context.rowLook.own, padding) {
-            scope.launch { layout.pager.animateScrollToPage(it) }
-        }
+    val date = page.received.shortLabel(layout.today)
+    Column(Modifier.fillMaxSize().padding(padding).padding(PageTokens.pageInset)) {
+        ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
+        notice?.let { MessageNotice(it) }
+        ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f))
+        ReadBottomStack(state, layout.index, ReadStripSource(row, layout.look.folders, cameFrom, date), strips)
     }
 }
 
@@ -140,6 +151,7 @@ private fun headerActions(
     val actions = parts.actions
     return ReadHeaderActions(
         onBack = parts::close,
+        senderOpen = parts.state.details,
         onSender = { parts.state.details = !parts.state.details },
         // A change that takes the message off this list closes the page first, as filing does.
         readLater =
