@@ -158,4 +158,27 @@ class ConversationRepliesTest {
         assertFalse(merged.awaitingReply)
         assertTrue(merged.needsMyReply)
     }
+
+    @Test
+    fun aMergedRowTakesItsLastEmailAndReplyStateFromTheSameRow() {
+        val inboxRow = email("e2", 3, "inbox")
+        val labelRow = email("e1", 2, "label")
+        val mine =
+            email("e4", 5, "sent") {
+                from = ada
+                to = listOf(grace)
+            }
+        val fromInbox =
+            inboxRow
+                .toMessage("ada", "Ada", "inbox", TimeZone.UTC, "ada@example.org", "inbox")
+                .inConversation(inboxRow, listOf(inboxRow), "inbox", view, TimeZone.UTC)
+        val fromLabel =
+            labelRow
+                .toMessage("ada", "Ada", "label", TimeZone.UTC, "ada@example.org", "label")
+                .inConversation(labelRow, listOf(labelRow, mine), "label", view, TimeZone.UTC)
+        val merged = listOf(fromInbox, fromLabel).mergedByThread().single().conversation!!
+        assertEquals(fromLabel.conversation!!.last, merged.last, "The newer last email wins over the newer row")
+        assertTrue(merged.awaitingReply)
+        assertTrue(merged.reply.participated)
+    }
 }
