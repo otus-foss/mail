@@ -11,6 +11,7 @@ import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
+import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.decodeRecentFrom
 import com.otus.mail.feature.inbox.domain.encodeRecentFrom
@@ -47,6 +48,7 @@ class AndroidMailBehaviorStore(
             undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.getString(INBOX, null)?.let(InboxContents::decode) ?: defaults.inbox,
             filters = preferences.getString(FILTERS, null)?.let(FilterLayout::decode) ?: defaults.filters,
+            list = preferences.getString(LIST, null)?.let(MailListLayout::decode) ?: defaults.list,
         )
     }
 
@@ -67,6 +69,7 @@ class AndroidMailBehaviorStore(
             putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
             putString(INBOX, InboxContents.encode(behavior.inbox))
             putString(FILTERS, FilterLayout.encode(behavior.filters))
+            putString(LIST, MailListLayout.encode(behavior.list))
         }
     }
 
@@ -85,6 +88,7 @@ class AndroidMailBehaviorStore(
         const val UNDO_SEND_SECONDS = "undo_send_seconds"
         const val INBOX = "inbox_contents"
         const val FILTERS = "filter_layout"
+        const val LIST = "mail_list"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

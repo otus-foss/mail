@@ -40,8 +40,10 @@ fun InboxPanel(
     context: InboxContext,
     actions: InboxPanelActions,
     selection: FilterSelection = FilterSelection(),
-    filters: ActiveFilters = remember { ActiveFilters() },
+    look: PanelLook = PanelLook(),
 ) {
+    val compact = look.compact
+    val filters = look.filters
     val onChange = actions.onChange
     val onSearchingChange = actions.onSearchingChange
     val onSubmit = actions.onSubmit
@@ -50,7 +52,7 @@ fun InboxPanel(
         // Without pills, the filter button moves into the header and the list gets the row's space.
         placement =
             when {
-                searching -> ChipPlacement.Overlapping
+                searching || compact -> ChipPlacement.Overlapping
                 context.pills.shown.isEmpty() -> ChipPlacement.None
                 else -> ChipPlacement.Below
             },
@@ -63,7 +65,9 @@ fun InboxPanel(
                 Modifier.focusRequester(filters.button),
             ) { BadgedSymbol(Res.drawable.symbol_filter_list, count) }
         },
-        chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, filters) },
+        chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, look) },
+        // Scrolled down, the pills join a shorter header as in search, so the list gets more room.
+        compact = compact && !searching,
     ) {
         val motionScale = LocalMotionScale.current
         AnimatedContent(
@@ -131,3 +135,14 @@ private fun InboxSearchInput(
         }
     }
 }
+
+/**
+ * How the panel looks right now: a [compact] panel is shorter, as while its list scrolls down;
+ * [unreadCount] shows on the Unread pill; [filters] are the page's active filters, which lead the
+ * pill row and count on the filter button.
+ */
+class PanelLook(
+    val compact: Boolean = false,
+    val unreadCount: Int = 0,
+    val filters: ActiveFilters = ActiveFilters(),
+)

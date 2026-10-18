@@ -36,9 +36,10 @@ class SidebarMailboxTest {
     }
 
     @Test
-    fun everyFolderCanBePinnedAfterTheSystemFolders() {
+    fun everyFolderCanBePinnedAfterConversationsAndTheSystemFolders() {
         assertEquals(
             listOf(
+                SidebarPin.Conversations,
                 SidebarPin.Role("sent"),
                 SidebarPin.Folder(listOf("work")),
                 SidebarPin.Folder(listOf("work", "clients")),

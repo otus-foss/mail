@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
@@ -10,16 +11,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
+import com.otus.mail.feature.inbox.presentation.ListFrame
 
 /**
- * The count line, any notice, and the matching messages, which respond to [gestures].
- * [padding] lets the last row scroll above an action bar.
+ * Any notice and the matching messages, which respond to [gestures]. The list runs under the
+ * control panel, so mail shows behind the pills; [frame] places it on the page.
  */
 @Composable
 internal fun InboxResults(
@@ -28,7 +31,7 @@ internal fun InboxResults(
     state: InboxState,
     dateFormatter: DateFormatter,
     gestures: RowGestures,
-    padding: PaddingValues,
+    frame: ListFrame,
     emptyContent: @Composable () -> Unit,
 ) {
     val messages = listed.messages
@@ -39,42 +42,15 @@ internal fun InboxResults(
     val searchScroll = rememberLazyListState()
     val listState = if (state.searching) searchScroll else inboxScroll
     LaunchedEffect(state.search, state.folderPill, filters) { listState.scrollToItem(0) }
-    val noun = if (state.searching) "result" else "message"
-    val countLabel =
-        if (status.loading &&
-            messages.isEmpty()
-        ) {
-            "Loading…"
-        } else {
-            "${results.size} $noun${if (results.size == 1) "" else "s"}"
-        }
-    Column {
-        Text(
-            countLabel,
-            Modifier.padding(
-                horizontal = InboxTokens.pageInset + InboxTokens.rowPadding,
-                vertical = InboxTokens.rowPadding,
-            ),
-            color = OtusColors.text2,
-            fontSize = InboxTokens.metadataSize,
+    Box(Modifier.fillMaxSize().nestedScroll(rememberCompactOnScroll(listState, frame.onCompactChange))) {
+        InboxBody(
+            results,
+            listState,
+            dateFormatter,
+            gestures,
+            frame,
+            status.notice?.takeIf { messages.isNotEmpty() },
+            emptyContent = emptyContent,
         )
-        status.notice?.takeIf { messages.isNotEmpty() }?.let {
-            Text(
-                it,
-                Modifier.padding(horizontal = InboxTokens.pageInset + InboxTokens.rowPadding),
-                color = OtusColors.text2,
-                fontSize = InboxTokens.metadataSize,
-            )
-        }
-        Box(Modifier.weight(1f)) {
-            InboxBody(
-                results,
-                listState,
-                dateFormatter,
-                gestures,
-                padding,
-                emptyContent = emptyContent,
-            )
-        }
     }
 }

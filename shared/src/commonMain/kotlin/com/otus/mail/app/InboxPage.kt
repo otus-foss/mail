@@ -55,20 +55,34 @@ internal fun InboxPage(
                         feed::show,
                     ),
                 onCompose = { navigation.go(MailPage.Compose(it)) },
-                loadHtml = states::messageHtml,
+                loadContent = states::messageContent,
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, MailPage.Inbox, filters.applied),
+                rowLook = rememberRowLook(states),
+                nudge = rememberListNudge(states, labeled),
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
 }
 
-/** What the Inbox page loads: every account's inbox, and Spam and Trash under the app's names when chosen. */
+/**
+ * What the Inbox page loads: every account's inbox, the chosen system folders under the app's
+ * names, and the user's own folders when chosen.
+ */
 internal fun InboxContents.mailScope(): MailScope =
-    if (roles.size == 1) MailScope.Inbox else MailScope.Roles(roles.associateWith(::roleName))
+    if (roles.size == 1 &&
+        !ownFolders
+    ) {
+        MailScope.Inbox
+    } else {
+        MailScope.Roles(roles.associateWith(::roleName), ownFolders)
+    }
 
-/** The names the page's messages are filed under, which its default search shows. */
-private fun InboxContents.mailboxNames(): List<String> = roles.map(::roleName)
+/**
+ * The names the page's messages are filed under, which its default search shows. Own folders have
+ * the user's names, so with them on the search starts from every mailbox the page loaded.
+ */
+private fun InboxContents.mailboxNames(): List<String> = if (ownFolders) emptyList() else roles.map(::roleName)
 
 private fun roleName(role: String): String =
     CombinedFolder.entries.firstOrNull { it.role == role }?.title ?: INBOX_MAILBOX

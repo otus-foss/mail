@@ -11,7 +11,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,21 +25,19 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageHtml
 
 /**
- * The open message's sender, body, and attachments above [barPadding]. The text body shows at
- * once; when [loadHtml] finds an HTML body, it replaces the text. Its remote images stay hidden
- * until the user shows them, and its links open outside the app.
+ * The open message's sender, body, and attachments above [barPadding]. The message's text shows
+ * at once, first its preview and then its full text; an [html] body replaces the text once it
+ * loads. Its remote images stay hidden until the user shows them, and its links open outside the app.
  */
 @Composable
 fun MessageBody(
     message: MailMessage,
-    loadHtml: suspend (MailMessage) -> MessageHtml?,
+    html: MessageHtml?,
     barPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
-    val html by produceState<MessageHtml?>(null, message.id) { value = loadHtml(message) }
     val inset = Modifier.padding(horizontal = PageTokens.textInset, vertical = PageTokens.contentInset)
-    val loaded = html
-    if (loaded == null) {
+    if (html == null) {
         Column(modifier.verticalScroll(rememberScrollState()).padding(barPadding).then(inset), spacing) {
             SenderLine(message)
             Text(message.body)
@@ -49,8 +46,8 @@ fun MessageBody(
     } else {
         Column(modifier.padding(barPadding).then(inset), spacing) {
             SenderLine(message)
-            HtmlBody(loaded, message.id, Modifier.weight(1f))
-            MessageFooter(message, loaded.truncated)
+            HtmlBody(html, message.id, Modifier.weight(1f))
+            MessageFooter(message, html.truncated)
         }
     }
 }

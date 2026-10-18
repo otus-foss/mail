@@ -11,10 +11,12 @@ import com.otus.designsystem.elements.SidebarMailboxTile
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.theme.FolderColor
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.feature.folders.domain.SENT_ROLE
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.combinedFolders
 import com.otus.mail.feature.folders.domain.sharedFolders
@@ -38,14 +40,20 @@ internal data class SidebarMailbox(
 
 /**
  * Inbox, then each of [pinned] that some account has, in the user's order. The Inbox counts the
- * folders [inbox] lists: each account's inbox, and its Spam and Trash when chosen.
+ * folders [inbox] lists: each account's inbox, and the other folders chosen for it.
  */
 internal fun sidebarMailboxes(
     accounts: List<AccountFolders>,
     inbox: InboxContents = InboxContents(),
     pinned: List<SidebarPin> = SidebarPin.defaults,
 ): List<SidebarMailbox> {
-    val inboxFolders = accounts.flatMap { account -> account.folders.filter { it.role in inbox.roles } }
+    val inboxFolders =
+        accounts.flatMap { account ->
+            account.folders.filter {
+                it.role in inbox.roles ||
+                    (inbox.ownFolders && it.isCustom)
+            }
+        }
     val pinnable = pinnableMailboxes(accounts).toMap()
     return listOf(SidebarMailbox("Inbox", roleIcon(INBOX_ROLE), MailPage.Inbox, inboxFolders)) +
         pinned.mapNotNull(pinnable::get)
@@ -53,7 +61,8 @@ internal fun sidebarMailboxes(
 
 /**
  * Every mailbox the accounts can pin, in the order Settings offers them: Read later while it is on,
- * each system folder some account has, then the user's folders, parents before their nested ones.
+ * Conversations once an account has a Sent folder, each system folder some account has, then the
+ * user's folders, parents before their nested ones.
  */
 internal fun pinnableMailboxes(accounts: List<AccountFolders>): List<Pair<SidebarPin, SidebarMailbox>> =
     buildList {
@@ -62,6 +71,13 @@ internal fun pinnableMailboxes(accounts: List<AccountFolders>): List<Pair<Sideba
             add(
                 SidebarPin.ReadLater to
                     SidebarMailbox("Read later", Res.drawable.symbol_bookmark, MailPage.ReadLater, readLater),
+            )
+        }
+        // Conversations has no folder of its own, so it shows no count.
+        if (accounts.any { account -> account.folders.any { it.role == SENT_ROLE } }) {
+            add(
+                SidebarPin.Conversations to
+                    SidebarMailbox("Conversations", Res.drawable.symbol_forum, MailPage.Conversations, emptyList()),
             )
         }
         combinedFolders(accounts).forEach { (folder, folders) ->

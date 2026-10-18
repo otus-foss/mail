@@ -38,8 +38,8 @@ import com.otus.mail.feature.folders.presentation.sheetDraft
 /**
  * Names a new folder in [account], under [parentId] or at the top level. Add rule and Color sit
  * side by side under the name, and the rules added so far follow as chips that open for editing.
- * Add rule shows only while the account's server keeps rules. Create makes the folder, then gives
- * it the color and rules.
+ * Add rule shows only while the account's server keeps rules. The color starts as the next unused
+ * one. Create makes the folder, then gives it the color and rules.
  */
 @Composable
 internal fun NewFolderSheet(
@@ -50,7 +50,7 @@ internal fun NewFolderSheet(
 ) {
     val parent = parentId?.let { account.folder(it) }
     var name by rememberSaveable { mutableStateOf("") }
-    var setup by remember { mutableStateOf(NewFolderSetup()) }
+    var setup by remember { mutableStateOf(NewFolderSetup(color = actions.newFolderColor())) }
     var ruleSheet by remember { mutableStateOf<RuleSheetDraft?>(null) }
     var coloring by remember { mutableStateOf(false) }
     val known = actions.ruleAddresses(account.accountId)

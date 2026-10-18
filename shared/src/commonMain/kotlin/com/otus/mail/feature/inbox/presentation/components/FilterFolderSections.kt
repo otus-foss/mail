@@ -7,6 +7,7 @@ import com.otus.designsystem.elements.FilterChipRole
 import com.otus.designsystem.elements.FolderGlyph
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder_open
+import com.otus.designsystem.theme.FilterTokens
 import com.otus.designsystem.theme.FolderColor
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
@@ -30,7 +31,7 @@ internal fun FolderSection(
             }
         }
         FilterChip("All folders…", selected = false, onClick = onAllFolders, role = FilterChipRole.Button) {
-            FolderGlyph(FolderColor.Default, Res.drawable.symbol_folder_open)
+            FolderGlyph(FolderColor.Default, icon = Res.drawable.symbol_folder_open, size = FilterTokens.chipIconSize)
         }
     }
 }

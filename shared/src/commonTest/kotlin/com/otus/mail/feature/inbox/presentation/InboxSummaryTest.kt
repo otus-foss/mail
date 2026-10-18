@@ -6,10 +6,14 @@ import kotlin.test.assertEquals
 
 class InboxSummaryTest {
     @Test
-    fun theRowNamesEachChoiceAndBothAsAllMail() {
+    fun theRowNamesEachChoiceAndEverythingAsAllMail() {
         assertEquals("Inbox", inboxSummary(InboxContents()))
         assertEquals("Inbox + Spam", inboxSummary(InboxContents(spam = true)))
-        assertEquals("Inbox + Trash", inboxSummary(InboxContents(trash = true)))
-        assertEquals("All mail", inboxSummary(InboxContents(spam = true, trash = true)))
+        assertEquals("Inbox + Spam + Trash", inboxSummary(InboxContents(spam = true, trash = true)))
+        assertEquals("Inbox + Archive + Your folders", inboxSummary(InboxContents(archive = true, ownFolders = true)))
+        assertEquals(
+            "All mail",
+            inboxSummary(InboxContents(spam = true, trash = true, archive = true, ownFolders = true)),
+        )
     }
 }

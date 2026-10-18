@@ -13,8 +13,8 @@ data class MailMessage(
     val attributes: MailAttributes = MailAttributes(),
     /** The server's Email id; [id] adds the account so ids from different accounts never collide. */
     val emailId: String = "",
-    /** Other folders the message is in, named on its row; the app adds them once folders load. */
-    val labels: List<MessageLabel> = emptyList(),
+    /** Other folders the message is in, shown on its row; the app adds them once folders load. */
+    val labels: List<RowFolder> = emptyList(),
     val to: List<MailSender> = emptyList(),
     val cc: List<MailSender> = emptyList(),
     /** RFC 5322 Message-ID and References values, which keep a reply in its thread. */
@@ -25,13 +25,26 @@ data class MailMessage(
      * that more text follows is marked inside [body] instead.
      */
     val bodyTruncated: Boolean = false,
+    /** The server's short plain-text preview of the message. The list loads it in place of the full body. */
+    val preview: String = "",
+    /** The thread this row stands for; null for supplied messages, which list one by one. */
+    val conversation: MailConversation? = null,
 )
 
-/** A folder named on a message's row. [readLater] marks the Read later folder. */
-data class MessageLabel(
+/**
+ * A folder shown on a message's row. [color] is the saved folder color's name, null while it has
+ * none or Folder colors is off. [readLater] marks the Read later folder, which the row shows as a
+ * bookmark instead of a folder.
+ */
+data class RowFolder(
+    val id: String,
     val name: String,
+    val kind: FolderKind = FolderKind.Folder,
+    val color: String? = null,
     val readLater: Boolean = false,
 )
+
+enum class FolderKind { Folder, Inbox }
 
 data class MailSender(
     val name: String,
@@ -71,10 +84,17 @@ data class MailLocation(
 
 data class MailAttributes(
     val unread: Boolean = false,
+    /** The attachment names of the message itself. */
     val attachments: List<String> = emptyList(),
     val flagged: Boolean = false,
     /** The message carries a calendar invitation, a `text/calendar` part or an `.ics` file. */
     val invite: Boolean = false,
+    /** The message has the `$answered` keyword: someone replied to it from this account. */
+    val answered: Boolean = false,
+    /** The message has the `$forwarded` keyword. */
+    val forwarded: Boolean = false,
+    /** Whether any email of the conversation has an attachment, even when this one has none. */
+    val hasAttachment: Boolean = attachments.isNotEmpty(),
 )
 
 /** A mark the user can turn on or off for one message. */

@@ -13,8 +13,9 @@ import com.otus.mail.feature.folders.domain.readLaterStep
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
+import com.otus.mail.feature.inbox.domain.FolderKind
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageLabel
+import com.otus.mail.feature.inbox.domain.RowFolder
 import com.otus.mail.feature.inbox.domain.inFolder
 import com.otus.mail.feature.inbox.domain.suggestedFolder
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
@@ -36,16 +37,25 @@ internal class MessageFiling(
     private val colors: FolderColorsState,
     private val scope: CoroutineScope,
 ) {
-    /** [messages] with the other folders each one is in, named for its row. */
-    fun labeled(messages: List<MailMessage>): List<MailMessage> =
-        messages.map { message ->
+    /** [messages] with the other folders each one is in, for its row. Each account's tree is built once. */
+    fun labeled(messages: List<MailMessage>): List<MailMessage> {
+        val trees = folders.accounts.associate { it.accountId to it.folderTree() }
+        return messages.map { message ->
             val labels =
-                folders
-                    .account(message.location.accountId)
+                trees[message.location.accountId]
                     ?.labelFolders(message.location.mailboxIds, message.location.mailboxId)
-                    ?.map { MessageLabel(it.folder.name, readLater = it.readLater) }
+                    ?.map {
+                        RowFolder(
+                            it.folder.id,
+                            it.folder.name,
+                            if (it.folder.role == INBOX_ROLE) FolderKind.Inbox else FolderKind.Folder,
+                            colors.colorOf(it.folder),
+                            it.readLater,
+                        )
+                    }
             message.copy(labels = labels.orEmpty())
         }
+    }
 
     /**
      * Folders of the message's account that accept mail, except the one it is in. The user's own

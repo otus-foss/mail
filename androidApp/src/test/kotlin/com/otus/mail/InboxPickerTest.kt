@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -34,6 +35,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -72,7 +74,7 @@ class InboxPickerTest {
         compose.onNodeWithContentDescription("From 2 people").assertIsDisplayed().assert(!hasText("Alex"))
         chipScreenshot("From 2 people", "people-chip-multiple")
         compose.onNodeWithText("Meeting").assertIsDisplayed()
-        compose.onNodeWithText("2 results").assertIsDisplayed()
+        assertResults(2)
     }
 
     @Test
@@ -84,17 +86,17 @@ class InboxPickerTest {
         compose.onNodeWithText("0 selected").assertIsDisplayed()
         compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("1 result").assertIsDisplayed()
+        assertResults(1)
         compose.onNodeWithContentDescription("From Alex").assert(hasText("Alex"))
         chipScreenshot("From Alex", "people-chip-single")
         compose.onNodeWithContentDescription("From Alex").performClick()
         compose.onNodeWithText("Clear").performClick()
         compose.onNodeWithContentDescription("Dismiss From").performTouchInput { click(Offset(center.x, 10f)) }
-        compose.onNodeWithText("1 result").assertIsDisplayed()
+        assertResults(1)
         compose.onNodeWithContentDescription("From Alex").performClick()
         compose.onNodeWithText("Clear").performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("2 results").assertIsDisplayed()
+        assertResults(2)
     }
 
     @Test
@@ -105,7 +107,7 @@ class InboxPickerTest {
             swipeDown(startY = centerY, endY = centerY + 900f, durationMillis = 200)
         }
         compose.onNodeWithContentDescription("Dismiss From").assertDoesNotExist()
-        compose.onNodeWithText("2 results").assertIsDisplayed()
+        assertResults(2)
     }
 
     @Test
@@ -124,11 +126,11 @@ class InboxPickerTest {
         compose.onNodeWithText("People").performClick()
         compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("1 result").assertIsDisplayed()
+        assertResults(1)
         compose.onNodeWithContentDescription("From Alex").performClick()
         compose.onNodeWithText("Clear").performTouchInput { doubleClick() }
         compose.onNodeWithText("Clear").assertDoesNotExist()
-        compose.onNodeWithText("2 results").assertIsDisplayed()
+        assertResults(2)
     }
 
     @Test
@@ -163,7 +165,7 @@ class InboxPickerTest {
         compose.onNode(hasText("Personal") and isToggleable()).performClick()
         screenshot("accounts")
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("1 result").assertIsDisplayed()
+        assertResults(1)
         compose.onNodeWithText("Meeting plans").assertIsDisplayed()
         val single = compose.onNodeWithContentDescription("Personal account, Inbox").performScrollTo()
         single.assert(hasText("Inbox") and !hasText("Personal")).assertIsOn()
@@ -172,7 +174,7 @@ class InboxPickerTest {
         compose.onNodeWithContentDescription("Search accounts…").performTextReplacement("Work")
         compose.onNode(hasText("Work") and isToggleable()).performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("2 results").assertIsDisplayed()
+        assertResults(2)
         compose
             .onNodeWithContentDescription("2 accounts, Inbox")
             .performScrollTo()
@@ -218,6 +220,13 @@ class InboxPickerTest {
         screenshot("people-large-text")
         compose.onNodeWithContentDescription("Dismiss From").performTouchInput { click(Offset(center.x, 10f)) }
     }
+
+    /** Each listed conversation's row reads as read or unread. */
+    private fun assertResults(count: Int) =
+        assertEquals(
+            count,
+            compose.onAllNodes(hasStateDescription("Read") or hasStateDescription("Unread")).fetchSemanticsNodes().size,
+        )
 
     private fun chipScreenshot(
         description: String,

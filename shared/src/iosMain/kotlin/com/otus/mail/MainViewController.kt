@@ -29,7 +29,13 @@ fun mainViewController() =
             MailServices(
                 IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
                 avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
-                stores = MailDeviceStores(IosReadLaterStore(), IosFolderColorStore(), IosAddressPinStore()),
+                stores =
+                    MailDeviceStores(
+                        IosReadLaterStore(),
+                        IosFolderColorStore(),
+                        IosAddressPinStore(),
+                        IosFolderNudgeStore(),
+                    ),
             )
         val behaviorState = MailBehaviorState(IosMailBehaviorStore())
         val themeState = ThemeSettingsState(IosThemePreferenceStore())

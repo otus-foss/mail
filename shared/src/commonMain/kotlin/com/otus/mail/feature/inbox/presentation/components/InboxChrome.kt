@@ -30,9 +30,8 @@ internal fun BackHandler(
 internal fun inboxBar(
     listed: ListedMail,
     state: InboxState,
-    selected: List<MailMessage>,
+    rows: InboxRows,
     actions: MessageActions?,
-    clearSelection: () -> Unit,
     onCompose: (ComposeRequest) -> Unit,
     onFilters: () -> Unit,
 ): (@Composable () -> Unit)? =
@@ -41,8 +40,8 @@ internal fun inboxBar(
             null
         }
 
-        selected.isNotEmpty() -> {
-            { SelectionBar(selected, actions, clearSelection) }
+        rows.selected.isNotEmpty() -> {
+            { SelectionBar(rows.selected, actions, rows.clearSelection) }
         }
 
         else -> {

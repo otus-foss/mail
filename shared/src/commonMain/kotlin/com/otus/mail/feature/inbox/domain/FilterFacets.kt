@@ -21,6 +21,9 @@ enum class ShowFacet(
     WaitingForReply("waiting"),
     Newsletters("newsletters"),
     CalendarInvites("invites"),
+
+    /** Threads where the user and someone else both wrote. */
+    Conversations("conversations"),
     ;
 
     val opposite: ShowFacet?
@@ -98,4 +101,5 @@ val InboxPill.Filter.facet: ShowFacet
             InboxPill.Filter.Unread -> ShowFacet.Unread
             InboxPill.Filter.Attachments -> ShowFacet.Attachments
             InboxPill.Filter.Flagged -> ShowFacet.Flagged
+            InboxPill.Filter.Conversations -> ShowFacet.Conversations
         }

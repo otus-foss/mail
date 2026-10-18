@@ -24,7 +24,8 @@ fun searchMessages(
             .trim()
             .split(Regex("\\s+"))
             .filter(String::isNotEmpty)
-    val newestFirst = compareByDescending<MailMessage> { it.received.date }.thenByDescending { it.received.time }
+    val newestFirst =
+        compareByDescending<MailMessage> { it.lastReceived.date }.thenByDescending { it.lastReceived.time }
     return messages
         .filter { message ->
             matchesFilters(message, search) &&
@@ -35,6 +36,10 @@ fun searchMessages(
                 }
         }.sortedWith(if (filters.sort == FilterSort.NewestFirst) newestFirst else newestFirst.reversed())
 }
+
+/** A conversation sorts by its newest email, so a reply moves it to the top. */
+private val MailMessage.lastReceived: ReceivedAt
+    get() = conversation?.last?.received ?: received
 
 private fun matchesFilters(
     message: MailMessage,
@@ -55,6 +60,7 @@ private fun MailMessage.passes(facet: ShowFacet): Boolean =
         ShowFacet.NotFlagged -> !attributes.flagged
         ShowFacet.Attachments -> attributes.attachments.isNotEmpty()
         ShowFacet.CalendarInvites -> attributes.invite
+        ShowFacet.Conversations -> conversation?.exchanged == true
         else -> true
     }
 

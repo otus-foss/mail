@@ -55,10 +55,10 @@ internal fun MailPageContent(
         }
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
-        MailPage.SidebarSettings, MailPage.ThemeSettings, MailPage.ActionBarSettings,
+        MailPage.SidebarSettings, MailPage.ThemeSettings, MailPage.MailListSettings, MailPage.ActionBarSettings,
         MailPage.Folders, is MailPage.FolderDetail,
         -> {
-            SettingsPageContent(page, states, settings, navigation, back)
+            SettingsPageContent(page, states, settings, dateFormatter, navigation, back)
         }
 
         is MailPage.Folder -> {
@@ -74,6 +74,10 @@ internal fun MailPageContent(
             ReadLaterPage(states, dateFormatter, navigation)
         }
 
+        MailPage.Conversations -> {
+            ConversationsPage(states, dateFormatter, navigation)
+        }
+
         is MailPage.Shared -> {
             SharedFolderPage(page, states, dateFormatter, navigation)
         }
@@ -86,6 +90,7 @@ private fun SettingsPageContent(
     page: MailPage,
     states: MailStates,
     settings: SharedSettings,
+    dateFormatter: DateFormatter,
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
@@ -123,6 +128,10 @@ private fun SettingsPageContent(
 
         MailPage.ActionBarSettings -> {
             ActionBarSettingsPage(states, back)
+        }
+
+        MailPage.MailListSettings -> {
+            MailListSettingsPage(states, dateFormatter, back)
         }
 
         MailPage.Folders -> {
@@ -174,8 +183,9 @@ internal fun FeedPage(
     val feed = remember(mailScope) { states.folderFeed(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
     val filters = rememberPageFilters(states, page, feed)
+    val labeled = rememberLabeled(states, feed)
     InboxScreen(
-        rememberLabeled(states, feed),
+        labeled,
         dateFormatter,
         navigation.openSidebar,
         InboxStatus(connected = true, loading = feed.loading, notice = feed.notice),
@@ -186,9 +196,11 @@ internal fun FeedPage(
         context =
             InboxContext.folder(name, states.behavior.behavior.pills).copy(
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
-                loadHtml = states::messageHtml,
+                loadContent = states::messageContent,
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, page, filters.applied),
+                rowLook = rememberRowLook(states),
+                nudge = rememberListNudge(states, labeled),
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
@@ -219,7 +231,8 @@ internal fun rememberLabeled(
     feed: InboxFeedState,
 ): List<MailMessage> {
     val scope = states.mailScope
-    return remember(feed.messages, states.folders.accounts, scope) {
+    val colors = states.folderColors.colors to states.behavior.behavior.sidebar.folderColors
+    return remember(feed.messages, states.folders.accounts, scope, colors) {
         states.filing.labeled(feed.messages.within(scope))
     }
 }

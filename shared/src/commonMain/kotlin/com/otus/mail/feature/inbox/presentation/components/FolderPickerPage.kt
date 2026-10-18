@@ -78,7 +78,7 @@ private fun FolderRows(
             onCheck = { onEdit { it.toggle(folder) } },
             expanded = (folder.key !in collapsed).takeIf { folder.hasChildren && !searching },
             onExpandedChange = { onCollapse(folder.key, !it) },
-        ) { FolderGlyph(folder.color, folder.icon, FilterTokens.chipIconSize) }
+        ) { FolderGlyph(folder.color, icon = folder.icon, size = FilterTokens.chipIconSize) }
         if (check == FolderCheck.On && folder.hasChildren) OnlyThisFolder(folder, draft, onEdit)
     }
 }
