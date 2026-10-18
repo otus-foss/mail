@@ -46,12 +46,18 @@ class FilterPeopleSearch(
         searching = true
         running =
             launcher.launch {
+                var answered = false
                 try {
                     delay(SEARCH_DELAY_MILLIS)
                     found = find(field, text.trim())
+                    answered = true
                 } finally {
-                    // A search that failed or was cancelled still ends, unless a newer one runs.
-                    if (running === coroutineContext.job) searching = false
+                    // A search that failed or was cancelled still ends, unless a newer one runs. A
+                    // failed one also drops the last results, which belong to other text.
+                    if (running === coroutineContext.job) {
+                        searching = false
+                        if (!answered) found = emptyList()
+                    }
                 }
             }
     }

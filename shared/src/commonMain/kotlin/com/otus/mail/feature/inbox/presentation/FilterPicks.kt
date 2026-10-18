@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.SenderKey
 
 /** Whether [person]'s mail is kept: one of their addresses is among the chosen senders. */
@@ -17,7 +18,7 @@ fun InboxFilters.withSender(
 
 /** Whether mail to [person] is kept: their own address in Sent to, or any of their addresses in To. */
 fun InboxFilters.hasRecipient(person: FilterPerson): Boolean =
-    person.own?.let { it in sentTo }
+    person.own?.let { own -> sentTo.any { it.sameAs(own) } }
         ?: person.addresses.any { address -> to.any { it.equals(address, ignoreCase = true) } }
 
 /** These filters with mail to [person] kept or not. */
@@ -26,7 +27,10 @@ fun InboxFilters.withRecipient(
     on: Boolean,
 ): InboxFilters {
     val own = person.own
-    if (own != null) return copy(sentTo = if (on) sentTo + own else sentTo - own)
+    if (own != null) {
+        val others = sentTo.filterNot { it.sameAs(own) }.toSet()
+        return copy(sentTo = if (on) others + own else others)
+    }
     val others = to.filterNot { address -> person.addresses.any { it.equals(address, ignoreCase = true) } }.toSet()
     return copy(to = if (on) others + person.addresses.first() else others)
 }
@@ -36,3 +40,7 @@ fun List<FilterPerson>.personOf(key: SenderKey): FilterPerson? = firstOrNull { i
 
 private fun SenderKey.overlaps(other: SenderKey): Boolean =
     addresses.any { address -> other.addresses.any { it.equals(address, ignoreCase = true) } }
+
+/** The same address of the same login; a saved filter may spell it in another case. */
+private fun OwnAddress.sameAs(other: OwnAddress): Boolean =
+    accountId == other.accountId && address.equals(other.address, ignoreCase = true)
