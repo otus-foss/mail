@@ -16,8 +16,8 @@ import androidx.compose.ui.test.performTextInput
 import com.otus.designsystem.components.CompactSendButton
 import com.otus.designsystem.components.FormatButton
 import com.otus.designsystem.components.FormattingBar
+import com.otus.designsystem.components.RichTextBody
 import com.otus.designsystem.elements.RichText
-import com.otus.designsystem.elements.RichTextBody
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.theme.ActionBarTokens

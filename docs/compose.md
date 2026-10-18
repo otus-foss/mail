@@ -110,10 +110,13 @@ uploading waits for a later save. The body no longer fills the page while files 
 the chips stay in view.
 
 A picked image starts inline: it goes into the body at the cursor as `<img src="cid:…">` and
-shows there as a preview, as wide as the text, and the chip reads "In message". Tapping an
-image's chip offers **Attach as file**, which takes it out of the body, or **Show in message**,
-which puts it back at the cursor. Deleting the image from the text, with Backspace right after
-it or the chip's ✕, removes the file. A save or send puts each inline image beside the HTML in
+shows there as a preview, as wide as the text, without a chip. "Uploading…" or the upload
+failure shows over its corner. Tapping it shows the signature editor's controls: an outline, ✕,
+a corner handle to resize it, a size pill with Small, Medium, and Full width, and ⋯ with
+**Attach as file**, which takes it out of the body and gives it a chip, and Retry after a failed
+upload. A file image's chip offers **Show in message**, which puts it back at the cursor. The
+chosen width goes into the `<img>` tag. Deleting the image, with Backspace right after it or ✕,
+removes the file. A save or send puts each inline image beside the HTML in
 `multipart/related` with its `cid` and `disposition: inline`, so the mail shows it where it
 sits; the plain-text part leaves it out.
 

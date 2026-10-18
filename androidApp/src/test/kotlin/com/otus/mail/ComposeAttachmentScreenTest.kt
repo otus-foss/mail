@@ -93,12 +93,14 @@ class ComposeAttachmentScreenTest {
         compose.onNodeWithContentDescription("Attach").performClick()
         compose.onNodeWithText("1.5 MB").assertExists()
         compose.onNodeWithText("Too large for this server").assertExists()
-        compose.onNodeWithText("In message", substring = true).assertExists()
+        compose.onNodeWithText("Whiteboard.png").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Whiteboard.png").performClick()
+        compose.onNodeWithText("Full width").assertExists()
         compose.screenshot("compose-attachments-inline")
 
-        compose.onNodeWithText("Whiteboard.png").performClick()
+        compose.onNodeWithContentDescription("Image options").performClick()
         compose.onNodeWithText("Attach as file").performClick()
-        compose.onNodeWithText("In message", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Whiteboard.png").assertExists()
         compose.screenshot("compose-attachments")
     }
 
