@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ChipPlacement
 import com.otus.designsystem.components.ContextPanel
-import com.otus.designsystem.elements.BadgedSymbol
 import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.SearchField
 import com.otus.designsystem.elements.SearchPrompt
@@ -63,7 +62,8 @@ fun InboxPanel(
                 if (count == 0) "Open filters" else "Open filters, $count active",
                 actions.onOpenFilters,
                 Modifier.focusRequester(filters.button),
-            ) { BadgedSymbol(Res.drawable.symbol_filter_list, count) }
+                badgeCount = count,
+            ) { Symbol(Res.drawable.symbol_filter_list) }
         },
         chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, look) },
         // Scrolled down, the pills join a shorter header as in search, so the list gets more room.
