@@ -7,15 +7,18 @@ import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
+import com.otus.jmap.JmapResponse
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MUTED_KEYWORD
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NewMailChecker
@@ -30,8 +33,9 @@ import kotlin.time.Instant
 
 /**
  * Reads `Email/changes` since each login's saved state (RFC 8620, section 5.2) and reports created
- * mail that is unread and in an inbox. Logins are checked in parallel and fail alone. When the
- * saved logins cannot be read, the check does nothing and the next one tries again.
+ * mail that is unread, in an inbox, and not in a muted conversation. Logins are checked in
+ * parallel and fail alone. When the saved logins cannot be read, the check does nothing and the
+ * next one tries again.
  */
 class JmapNewMailChecker(
     connections: JmapConnections,
@@ -105,11 +109,24 @@ class JmapNewMailChecker(
         if (ids.isEmpty()) return emptyList()
         lateinit var mailboxes: JmapCall<GetResult<MailboxObject>>
         lateinit var emails: JmapCall<GetResult<EmailObject>>
+        lateinit var members: JmapCall<GetResult<EmailObject>>
         val response =
             account.connection.send {
                 mailboxes = call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
                 emails = call(GetMethod(EmailType, account.id, JmapIds.Of(ids), EMAIL_PROPERTIES))
+                val threads =
+                    call(GetMethod(ThreadType, account.id, JmapIds.Result(emails.resultOf("/list/*/threadId"))))
+                members =
+                    call(
+                        GetMethod(
+                            EmailType,
+                            account.id,
+                            JmapIds.Result(threads.resultOf("/list/*/emailIds")),
+                            MEMBER_PROPERTIES,
+                        ),
+                    )
             }
+        val muted = mutedThreads(response, members)
         val inboxes =
             response[mailboxes]
                 .list
@@ -120,8 +137,27 @@ class JmapNewMailChecker(
             .list
             .filter { email -> email.mailboxIds.any { it.value && it.key in inboxes } }
             .filterNot { it.keywords["\$seen"] == true || it.keywords["\$draft"] == true }
+            .filterNot { it.threadId in muted }
             .map { it.toNewMail(account) }
     }
+
+    /**
+     * The threads with an email the user muted. A server that refuses the thread calls mutes none,
+     * since a missed notification is worse than an unwanted one.
+     */
+    private fun mutedThreads(
+        response: JmapResponse,
+        members: JmapCall<GetResult<EmailObject>>,
+    ): Set<String> =
+        try {
+            response[members]
+                .list
+                .filter { it.keywords[MUTED_KEYWORD] == true }
+                .map { it.threadId }
+                .toSet()
+        } catch (expected: JmapException) {
+            emptySet()
+        }
 
     private class LoginCheck(
         val loginId: String,
@@ -139,7 +175,9 @@ class JmapNewMailChecker(
         /** After a long time offline, only the latest messages are worth a notification. */
         const val MAX_FETCHED = 50
 
-        val EMAIL_PROPERTIES = listOf("id", "mailboxIds", "keywords", "from", "subject", "preview", "receivedAt")
+        val EMAIL_PROPERTIES =
+            listOf("id", "threadId", "mailboxIds", "keywords", "from", "subject", "preview", "receivedAt")
+        val MEMBER_PROPERTIES = listOf("id", "threadId", "keywords", "receivedAt")
     }
 }
 
