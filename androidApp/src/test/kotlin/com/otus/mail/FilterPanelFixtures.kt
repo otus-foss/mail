@@ -50,15 +50,6 @@ internal object FilterPanelFixtures {
                     FilterAddress(OwnAddress("ada", "otus@rubylabs.design"), ChipAvatar("RL", colorIndex = 5)),
                 ),
             accounts = listOf(FilterAccount("ada", "Ada", ChipAvatar("A", colorIndex = 1), folders)),
-            shortcuts =
-                listOf(
-                    "clients",
-                    "acme",
-                    "free-invoices",
-                    "fin-invoices",
-                    "dev",
-                    "travel",
-                ).map { FolderKey("ada", it) },
             folders = true,
             readLater = true,
         )

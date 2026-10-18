@@ -53,13 +53,12 @@ data class FilterAddress(
 
 /**
  * What the filter panel offers on a page: the user's [addresses], each login's folders in
- * [accounts], the folder [shortcuts] in order, whether the page can filter by [folders] at all,
+ * [accounts], whether the page can filter by [folders] at all,
  * whether any account has a Read later folder, and the user's [layout].
  */
 data class FilterOptions(
     val addresses: List<FilterAddress> = emptyList(),
     val accounts: List<FilterAccount> = emptyList(),
-    val shortcuts: List<FolderKey> = emptyList(),
     val folders: Boolean = false,
     val readLater: Boolean = false,
     val layout: FilterLayout = FilterLayout(),

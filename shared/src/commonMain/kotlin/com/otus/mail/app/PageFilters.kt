@@ -14,21 +14,13 @@ import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.folderIds
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import com.otus.mail.feature.inbox.presentation.FolderKey
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxFiltersSaver
-import com.otus.mail.feature.inbox.presentation.key
 
-/**
- * Each page's applied filters, kept while the app runs so a page shows them again after the user
- * comes back, and the folders filtered by most recently, newest first.
- */
+/** Each page's applied filters, kept while the app runs so a page shows them again after the user comes back. */
 internal class PageFilters {
     private val applied = mutableMapOf<MailPage, InboxFilters>()
-
-    var recentFolders: List<FolderKey> = emptyList()
-        private set
 
     /** The filters [page] last applied, or the ones it starts with: Conversations keeps only conversations. */
     fun of(page: MailPage): InboxFilters =
@@ -46,11 +38,6 @@ internal class PageFilters {
         filters: InboxFilters,
     ) {
         applied[page] = filters
-        recentFolders = (filters.folders.map { it.key } + recentFolders).distinct().take(RECENT_FOLDERS)
-    }
-
-    private companion object {
-        const val RECENT_FOLDERS = 12
     }
 }
 
