@@ -216,13 +216,14 @@ class ActionBarTest {
     private fun boundsOf(label: String): Rect =
         compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot
 
-    /** The pixels of the shell's last 36 dp, clear of the collapsed action's rounded start. */
+    /** The pixels at the shell's end, clear of the collapsed action's rounded start. */
     private fun actionEnd(
         bitmap: Bitmap,
         shell: Rect,
     ): IntArray {
         val density = compose.activity.resources.displayMetrics.density
-        val left = (shell.right - END_REGION_DP * density).toInt()
+        val endRegion = ActionBarTokens.collapsedActionWidth - ActionBarTokens.radius
+        val left = (shell.right - endRegion.value * density).toInt()
         val width = shell.right.toInt() - left
         val height = shell.height.toInt()
         return IntArray(width * height).also { bitmap.getPixels(it, 0, width, left, shell.top.toInt(), width, height) }
@@ -257,7 +258,6 @@ class ActionBarTest {
     }
 
     private companion object {
-        const val END_REGION_DP = 36
         const val CHANNEL_TOLERANCE = 2
         const val FIRST_FRAMES = 3
         const val TRANSITION_FRAMES = 16
