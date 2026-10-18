@@ -2,13 +2,20 @@ package com.otus.mail
 
 import android.app.Application
 import androidx.work.Configuration
+import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.AndroidLoginStore
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailPickers
 import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
+import com.otus.mail.core.cache.MailDatabase
+import com.otus.mail.core.cache.SqlMailCache
 import com.otus.push.PushSubscriptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.UUID
 
@@ -33,6 +40,7 @@ class OtusMailApplication :
                     AndroidFolderColorStore(this),
                     AndroidAddressPinStore(this),
                     AndroidFolderNudgeStore(this),
+                    SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
                 ),
             nightly = NightlyUpdates(installer = AndroidUpdateInstaller(this)),
             instantPush = instantPush,
@@ -49,10 +57,14 @@ class OtusMailApplication :
     /** One per process, so its lock covers the push service, the workers, and the settings page. */
     val push: PushSubscriptions by lazy { services.pushSubscriptions(AndroidPushStateStore(this), deviceClientId()) }
 
+    /** Work that outlives any screen, such as cache upkeep. It ends with the process. */
+    private val processScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
         MailNotifications(this).createChannels()
         NewMailWorker.schedule(this)
+        processScope.launch { services.trimCache() }
     }
 
     /**
@@ -67,5 +79,6 @@ class OtusMailApplication :
 
     private companion object {
         const val DEVICE_ID = "deviceClientId"
+        const val CACHE_DATABASE = "otus_mail_cache.db"
     }
 }

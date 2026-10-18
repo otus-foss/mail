@@ -1,0 +1,41 @@
+# Kody code review settings. Kodus reads this file only after "kodus Config File Overrides Web
+# Preferences" is on for this repository; keys left out keep the web settings.
+version: 2.0
+kodusConfigFileOverridesWebPreferences: true
+
+# Agents open drafts while they work; comment "@kody start-review" to review one early.
+runOnDraft: false
+reviewCadence:
+  type: 'auto_pause'
+  timeWindow: 15
+  pushesToTrigger: 3
+
+ignorePaths:
+  - 'gradle/wrapper/**'
+  - 'gradlew'
+  - 'gradlew.bat'
+  - '**/*.xcodeproj/**'
+  - '**/composeResources/drawable/**'
+  - '**/*.svg'
+  - '**/*.png'
+
+suggestionControl:
+  severityLevelFilter: 'medium'
+
+# Pull request bodies are written by hand; the default summary would replace them.
+summary:
+  generatePRSummary: false
+
+# Rules come from .kody/rules. AGENTS.md would import as one broad rule.
+ideRulesSyncEnabled: false
+kodyKnowledgeApproval:
+  enabled: true
+
+customMessages:
+  startReviewMessage:
+    status: 'off'
+  endReviewMessage:
+    status: 'only_when_opened'
+
+deterministicEvidence:
+  ciChecks: true

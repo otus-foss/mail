@@ -62,7 +62,7 @@ class ComposeAttachmentScreenTest {
     @Test
     fun anImageShowsInTheMessageAndCanBecomeAFile() {
         open(files)
-        compose.onNodeWithContentDescription("Attach").performClick()
+        attach("Whiteboard.png")
         compose.onNodeWithText("1.5 MB").assertExists()
         compose.onNodeWithText("Too large for this server").assertExists()
         compose.onNodeWithText("Whiteboard.png").assertDoesNotExist()
@@ -91,11 +91,7 @@ class ComposeAttachmentScreenTest {
     fun aTallImageShowsTheGuideLabelsUnderItWhileItsTopIsScrolledAway() {
         val tall = png(PHOTO_HEIGHT, PHOTO_WIDTH * 3)
         open(listOf(PickedFile("Screenshot.png", "image/png", tall.size.toLong()) { tall }))
-        compose.onNodeWithContentDescription("Attach").performClick()
-        // The image decodes off the first frames.
-        compose.waitUntil(DECODE_MILLIS) {
-            compose.onAllNodesWithContentDescription("Screenshot.png").fetchSemanticsNodes().isNotEmpty()
-        }
+        attach("Screenshot.png")
         compose.onNodeWithContentDescription("Screenshot.png").performClick()
         // Scroll until the handle at the image's bottom shows, which takes its top out of view.
         compose.onNodeWithContentDescription("Resize image").performScrollTo()
@@ -110,6 +106,14 @@ class ComposeAttachmentScreenTest {
         }
         compose.screenshot("compose-attachments-drag-tall")
         handle.performTouchInput { up() }
+    }
+
+    /** Attaches the picked files and waits for the image [name], which decodes off the first frames. */
+    private fun attach(name: String) {
+        compose.onNodeWithContentDescription("Attach").performClick()
+        compose.waitUntil(DECODE_MILLIS) {
+            compose.onAllNodesWithContentDescription(name).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun open(files: List<PickedFile>) {

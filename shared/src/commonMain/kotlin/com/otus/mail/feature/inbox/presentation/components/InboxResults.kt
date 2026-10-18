@@ -22,7 +22,8 @@ import com.otus.mail.feature.inbox.presentation.ListFrame
 
 /**
  * Any notice and the matching messages, which respond to [gestures]. The list runs under the
- * control panel, so mail shows behind the pills; [frame] places it on the page.
+ * control panel, so mail shows behind the pills; [frame] places it on the page. Scrolling near the
+ * end loads the next page while the feed has more.
  */
 @Composable
 internal fun InboxResults(
@@ -42,6 +43,7 @@ internal fun InboxResults(
     val searchScroll = rememberLazyListState()
     val listState = if (state.searching) searchScroll else inboxScroll
     LaunchedEffect(state.search, state.folderPill, filters) { listState.scrollToItem(0) }
+    LoadMoreNearEnd(listState, status.hasMore && !status.loading && !status.loadingMore, frame.onLoadMore)
     Box(Modifier.fillMaxSize().nestedScroll(rememberCompactOnScroll(listState, frame.onCompactChange))) {
         InboxBody(
             results,
@@ -49,7 +51,7 @@ internal fun InboxResults(
             dateFormatter,
             gestures,
             frame,
-            status.notice?.takeIf { messages.isNotEmpty() },
+            status,
             emptyContent = emptyContent,
         )
     }

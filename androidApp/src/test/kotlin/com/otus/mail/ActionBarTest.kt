@@ -216,17 +216,14 @@ class ActionBarTest {
     private fun boundsOf(label: String): Rect =
         compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot
 
-    /**
-     * The pixels of the shell's end that the collapsed action covers past its rounded start: its
-     * width less one corner radius.
-     */
+    /** The pixels at the shell's end, clear of the collapsed action's rounded start. */
     private fun actionEnd(
         bitmap: Bitmap,
         shell: Rect,
     ): IntArray {
         val density = compose.activity.resources.displayMetrics.density
-        val end = ActionBarTokens.collapsedActionWidth - ActionBarTokens.radius
-        val left = (shell.right - end.value * density).toInt()
+        val endRegion = ActionBarTokens.collapsedActionWidth - ActionBarTokens.radius
+        val left = (shell.right - endRegion.value * density).toInt()
         val width = shell.right.toInt() - left
         val height = shell.height.toInt()
         return IntArray(width * height).also { bitmap.getPixels(it, 0, width, left, shell.top.toInt(), width, height) }

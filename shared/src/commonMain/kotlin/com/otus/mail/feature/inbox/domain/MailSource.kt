@@ -11,6 +11,8 @@ data class UnavailableAccount(
 data class InboxSnapshot(
     val messages: List<MailMessage>,
     val unavailable: List<UnavailableAccount> = emptyList(),
+    /** Whether older pages remain on the server, which [MailSource.more] loads. */
+    val hasMore: Boolean = false,
 )
 
 /**
@@ -72,6 +74,21 @@ interface MailSource {
      * call may reuse what they read about each account's folders.
      */
     fun beginCounting() {}
+
+    /**
+     * [scope]'s messages as the device kept them from earlier loads, without asking the server, so
+     * a page shows at once. Empty when nothing was kept.
+     */
+    suspend fun cached(
+        scope: MailScope,
+        query: MailQuery,
+    ): InboxSnapshot = InboxSnapshot(emptyList())
+
+    /** The messages [messages] loaded, and the next page of each mailbox that has more. */
+    suspend fun more(
+        scope: MailScope,
+        query: MailQuery,
+    ): InboxSnapshot = messages(scope, query)
 
     /** How many messages of [scope] [query] keeps; null when the source cannot count them. */
     suspend fun count(
