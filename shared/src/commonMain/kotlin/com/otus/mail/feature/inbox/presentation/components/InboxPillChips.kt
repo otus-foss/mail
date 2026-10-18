@@ -11,7 +11,7 @@ import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import org.jetbrains.compose.resources.DrawableResource
@@ -23,7 +23,7 @@ internal val InboxPill.Filter.label: String
             InboxPill.Filter.Unread -> "Unread"
             InboxPill.Filter.Attachments -> "Attachments"
             InboxPill.Filter.Flagged -> "Flagged"
-            InboxPill.Filter.Conversations -> "Convos"
+            InboxPill.Filter.Conversations -> "Conversations"
         }
 
 internal val InboxPill.Filter.icon: DrawableResource
@@ -54,9 +54,9 @@ internal fun ContextPanelScope.InboxRowPills(
     filters.active.forEach { facet ->
         item(facet.key) {
             val onClick = { filters.onChange(facet.remove(filters.applied)) }
-            val count = unreadBadge.takeIf { facet.key == ShowFacet.Unread }
+            val count = unreadBadge.takeIf { facet.key == ReadStatus.Unread }
             if (count != null) {
-                Chip(ShowFacet.Unread.label, onClick, selected = true) { CountBadge(count) }
+                Chip(ReadStatus.Unread.label, onClick, selected = true) { CountBadge(count) }
             } else {
                 facet.pill(onClick)
             }

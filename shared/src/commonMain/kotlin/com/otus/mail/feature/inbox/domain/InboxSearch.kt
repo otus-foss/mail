@@ -29,7 +29,7 @@ fun searchMessages(
     return messages
         .filter { message ->
             matchesFilters(message, search) &&
-                filters.show.all(message::passes) &&
+                message.passes(filters) &&
                 terms.all { term ->
                     listOf(message.subject, message.body, message.sender.name, message.sender.address)
                         .any { it.contains(term, ignoreCase = true) }
@@ -51,18 +51,17 @@ private fun matchesFilters(
         (search.mailboxes.isEmpty() || search.mailboxes.any { it.matches(message.location) }) &&
         (search.accounts.isEmpty() || message.location.accountId in search.accounts)
 
-/** Whether the message meets [facet] as far as its loaded data tells; the server checks the rest. */
-private fun MailMessage.passes(facet: ShowFacet): Boolean =
-    when (facet) {
-        ShowFacet.Unread -> attributes.unread
-        ShowFacet.Read -> !attributes.unread
-        ShowFacet.Flagged -> attributes.flagged
-        ShowFacet.NotFlagged -> !attributes.flagged
-        ShowFacet.Attachments -> attributes.attachments.isNotEmpty()
-        ShowFacet.CalendarInvites -> attributes.invite
-        ShowFacet.Conversations -> conversation?.exchanged == true
-        else -> true
-    }
+/** Whether the message meets [filters] as far as its loaded marks tell; the server checks the rest. */
+private fun MailMessage.passes(filters: InboxFilters): Boolean =
+    when (filters.status) {
+        ReadStatus.All -> true
+        ReadStatus.Unread -> attributes.unread
+        ReadStatus.Read -> !attributes.unread
+    } &&
+        (!filters.has(QuickFacet.Flagged) || attributes.flagged) &&
+        (!filters.has(QuickFacet.Attachments) || attributes.attachments.isNotEmpty()) &&
+        (!filters.has(QuickFacet.Conversations) || conversation?.exchanged == true) &&
+        (!filters.has(TypeFacet.CalendarInvites) || attributes.invite)
 
 /**
  * The mailbox and account scope to load; null while both match [default]'s scope.

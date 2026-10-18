@@ -14,65 +14,60 @@ class InboxFiltersTest {
         assertEquals(0, InboxFilters(sort = FilterSort.OldestFirst).activeCount)
         val filters =
             InboxFilters(
-                show = setOf(ShowFacet.Unread, ShowFacet.Flagged),
+                status = ReadStatus.Unread,
+                quick = setOf(QuickFacet.Flagged, QuickFacet.AwaitingReply),
+                types = setOf(TypeFacet.Newsletters),
                 sentTo = setOf(OwnAddress("ada", "a@x.org")),
                 folders = setOf(FolderRef("ada", "f")),
                 date = DateFilter.Today,
             )
-        assertEquals(5, filters.activeCount)
+        assertEquals(7, filters.activeCount)
         assertFalse(filters.isDefault)
         assertTrue(InboxFilters().isDefault)
-    }
-
-    @Test
-    fun oppositeChoicesTurnEachOtherOff() {
-        val read = InboxFilters().with(ShowFacet.Unread, true).with(ShowFacet.Read, true)
-        assertEquals(setOf(ShowFacet.Read), read.show)
-        val flagged =
-            InboxFilters()
-                .with(
-                    ShowFacet.NotFlagged,
-                    true,
-                ).with(ShowFacet.Flagged, true)
-                .with(ShowFacet.Replied, true)
-        assertEquals(setOf(ShowFacet.Flagged, ShowFacet.Replied), flagged.show)
     }
 
     @Test
     fun everyKindOfChoiceCountsAsActive() {
         val filters =
             InboxFilters(
-                from = setOf("sam@x.org"),
-                accounts = setOf("ada"),
-                receivedAs = setOf(RecipientField.Cc),
-                skipFolders = setOf(FolderRef("ada", "t")),
+                from = setOf(SenderKey("OpenAI", setOf("noreply@openai.com", "news@openai.com"))),
+                to = setOf("sam@x.org"),
+                account = "ada",
+                receivedIn = setOf(RecipientField.Bcc),
                 size = SizeFilter.Over1Mb,
             )
-        assertEquals(5, filters.activeCount)
-        assertEquals(
-            setOf(FolderRef("ada", "t", false)),
-            filters.withSkipped(FolderRef("ada", "t", false), true).skipFolders,
-        )
+        assertEquals(5, filters.activeCount, "A merged sender counts once, however many addresses it has")
+        assertEquals(0, InboxFilters(receivedIn = RecipientField.Default).activeCount, "To and Cc are the default")
     }
 
     @Test
-    fun filterLayoutsSurviveSavingAndSkipUnknownValues() {
-        val layout =
-            FilterLayout(
-                listOf(FilterSection.Date, FilterSection.Show),
-                listOf(ShowFacet.Newsletters, ShowFacet.Unread),
-            )
-        assertEquals(layout, FilterLayout.decode(FilterLayout.encode(layout)))
-        assertEquals(FilterLayout(listOf(FilterSection.Size), emptyList()), FilterLayout.decode("size,later|"))
-        assertEquals(FilterLayout(), FilterLayout.decode("garbage"))
+    fun quickFiltersHaveNoOpposites() {
+        val flagged = InboxFilters().with(QuickFacet.Flagged, true).with(QuickFacet.Attachments, true)
+        assertEquals(setOf(QuickFacet.Flagged, QuickFacet.Attachments), flagged.quick)
+        assertEquals(setOf(QuickFacet.Attachments), flagged.with(QuickFacet.Flagged, false).quick)
+        assertEquals(setOf(TypeFacet.CalendarInvites), InboxFilters().with(TypeFacet.CalendarInvites, true).types)
     }
 
     @Test
-    fun pillsEditTheSameShowChoices() {
-        val on = InboxFilters().with(InboxPill.Filter.Unread, true)
-        assertTrue(on.has(ShowFacet.Unread))
-        assertTrue(on.has(InboxPill.Filter.Unread))
-        assertFalse(on.with(InboxPill.Filter.Unread, false).has(ShowFacet.Unread))
+    fun onlyThreadChoicesAreClientOnly() {
+        assertFalse(InboxFilters(quick = setOf(QuickFacet.Flagged, QuickFacet.Forwarded)).clientOnly)
+        assertFalse(InboxFilters(types = setOf(TypeFacet.Newsletters)).clientOnly)
+        listOf(QuickFacet.NeedsMyReply, QuickFacet.AwaitingReply, QuickFacet.Conversations).forEach {
+            assertTrue(InboxFilters(quick = setOf(it)).clientOnly, "$it")
+        }
+        assertTrue(InboxFilters(types = setOf(TypeFacet.CalendarInvites)).clientOnly)
+    }
+
+    @Test
+    fun pillsEditTheStatusAndQuickFilters() {
+        val unread = InboxFilters().with(InboxPill.Filter.Unread, true)
+        assertEquals(ReadStatus.Unread, unread.status)
+        assertTrue(unread.has(InboxPill.Filter.Unread))
+        assertEquals(ReadStatus.All, unread.with(InboxPill.Filter.Unread, false).status)
+        val flagged = InboxFilters().with(InboxPill.Filter.Flagged, true)
+        assertTrue(flagged.has(QuickFacet.Flagged))
+        assertTrue(InboxFilters().with(InboxPill.Filter.Conversations, true).has(QuickFacet.Conversations))
+        assertFalse(InboxFilters(status = ReadStatus.Read).has(InboxPill.Filter.Unread))
     }
 
     @Test
@@ -80,6 +75,7 @@ class InboxFiltersTest {
         val filters = InboxFilters().withFolder(FolderRef("ada", "f"), on = true)
         val only = filters.withFolder(FolderRef("ada", "f", includeSubfolders = false), on = true)
         assertEquals(setOf(FolderRef("ada", "f", includeSubfolders = false)), only.folders)
+        assertEquals(emptySet(), only.withFolder(FolderRef("ada", "f"), on = false).folders)
     }
 
     @Test
@@ -103,6 +99,16 @@ class InboxFiltersTest {
     }
 
     @Test
+    fun thisYearStartsAtLocalMidnightOnTheFirstOfJanuary() {
+        val zurich = TimeZone.of("Europe/Zurich")
+        val bounds = DateFilter.ThisYear.bounds(Instant.parse("2026-10-18T10:00:00Z"), zurich)
+        assertEquals(DateBounds(after = Instant.parse("2025-12-31T23:00:00Z")), bounds)
+        // 23:30 UTC on 31 December is already the new year in Zurich.
+        val newYear = DateFilter.ThisYear.bounds(Instant.parse("2026-12-31T23:30:00Z"), zurich)
+        assertEquals(Instant.parse("2026-12-31T23:00:00Z"), newYear.after)
+    }
+
+    @Test
     fun todayStartsAtLocalMidnightAcrossTheDateLine() {
         val auckland = TimeZone.of("Pacific/Auckland")
         // 11:30 UTC on 18 October is already 19 October in Auckland.
@@ -111,14 +117,38 @@ class InboxFiltersTest {
     }
 
     @Test
-    fun waitingForReplyKeepsMailFromTheUser() {
-        val mine = message("1", "Ada@Example.org")
-        val theirs = message("2", "bo@example.org")
-        assertEquals(listOf(mine), listOf(mine, theirs).filter { it.fromAny(setOf("ada@example.org")) })
+    fun loadedThreadsMeetTheReplyChoices() {
+        val awaiting = message("1", ReplyState(lastFromMe = true, participated = true))
+        val needsReply = message("2", ReplyState(participated = true))
+        val toMe = message("3", ReplyState(lastToMe = true))
+        val newsletter = message("4", ReplyState(lastToMe = true, lastIsList = true))
+        val copied = message("5", ReplyState())
+        val all = listOf(awaiting, needsReply, toMe, newsletter, copied)
+        val awaitingFilter = InboxFilters(quick = setOf(QuickFacet.AwaitingReply))
+        assertEquals(listOf(awaiting), all.filter(awaitingFilter::keepsLoaded))
+        val needsFilter = InboxFilters(quick = setOf(QuickFacet.NeedsMyReply))
+        assertEquals(listOf(needsReply, toMe), all.filter(needsFilter::keepsLoaded))
+        assertEquals(all, all.filter(InboxFilters()::keepsLoaded))
     }
 
     private fun message(
         id: String,
-        from: String,
-    ) = MailMessage(id, MailSender("", from), "", "", ReceivedAt("2026-10-18", "10:00"), MailLocation("Inbox", "Ada"))
+        reply: ReplyState,
+    ): MailMessage {
+        val sender = MailSender("", "$id@example.org")
+        val received = ReceivedAt("2026-10-18", "10:00")
+        return MailMessage(id, sender, "", "", received, MailLocation("Inbox", "Ada"))
+            .copy(
+                conversation =
+                    MailConversation(
+                        id,
+                        1,
+                        ThreadEmail(sender, emptyList(), received),
+                        emptyList(),
+                        false,
+                        emptyList(),
+                        reply = reply,
+                    ),
+            )
+    }
 }

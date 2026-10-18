@@ -9,7 +9,6 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder_open
 import com.otus.designsystem.theme.FilterTokens
 import com.otus.designsystem.theme.FolderColor
-import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.folderChips
@@ -32,25 +31,6 @@ internal fun FolderSection(
         }
         FilterChip("All folders…", selected = false, onClick = onAllFolders, role = FilterChipRole.Button) {
             FolderGlyph(FolderColor.Default, icon = Res.drawable.symbol_folder_open, size = FilterTokens.chipIconSize)
-        }
-    }
-}
-
-/** Folders whose mail the list leaves out, such as Sent or Trash, with their subfolders. */
-@Composable
-internal fun SkipSection(
-    draft: InboxFilters,
-    options: FilterOptions,
-    onEdit: FilterEdit,
-) {
-    FilterSection("Skip folders") {
-        val keys = (options.skip + draft.skipFolders.map { it.key }).distinct()
-        keys.mapNotNull(options::folder).forEach { folder ->
-            val skipped = draft.skipFolders.firstOrNull { it.key == folder.key }
-            FolderChip(folder, skipped, options) {
-                val ref = FolderRef(folder.key.loginId, folder.key.mailboxId, includeSubfolders = folder.hasChildren)
-                onEdit { it.withSkipped(ref, on = skipped == null) }
-            }
         }
     }
 }

@@ -34,6 +34,7 @@ import com.otus.mail.feature.inbox.data.JmapMessageBodies
 import com.otus.mail.feature.inbox.data.JmapMessageCleaner
 import com.otus.mail.feature.inbox.data.JmapMessageMarker
 import com.otus.mail.feature.inbox.data.JmapMessageMover
+import com.otus.mail.feature.inbox.data.JmapPeopleSearch
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
@@ -46,6 +47,7 @@ import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageCleaner
 import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
+import com.otus.mail.feature.inbox.domain.PeopleSearch
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.inbox.domain.SignatureRepository
@@ -117,6 +119,7 @@ class MailServices(
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
     internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
+    internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, logins, addressBook) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins) }
 

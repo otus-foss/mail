@@ -11,7 +11,7 @@ import androidx.compose.runtime.setValue
 import com.otus.mail.feature.folders.domain.subtreeIds
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.folderIds
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderKey
@@ -36,7 +36,7 @@ internal class PageFilters {
             ?: if (page ==
                 MailPage.Conversations
             ) {
-                InboxFilters(show = setOf(ShowFacet.Conversations))
+                InboxFilters(quick = setOf(QuickFacet.Conversations))
             } else {
                 InboxFilters()
             }
@@ -69,7 +69,6 @@ internal fun MailStates.mailQuery(filters: InboxFilters): MailQuery {
     return MailQuery(
         filters = filters,
         folderIds = folderIds(filters.folders, descendants),
-        skipIds = folderIds(filters.skipFolders, descendants),
         readLaterIds = accounts.mapNotNull { account -> account.readLaterId?.let { account.accountId to it } }.toMap(),
         addresses = accountAddresses().associate { it.accountId to it.addresses.toSet() },
         logins = mailScope.accountId?.let(::setOf),
@@ -99,6 +98,8 @@ internal fun rememberPageFilters(
                     states.pageFilters.keep(page, it)
                     saved = it
                 },
+                onOpen = states::beginCounting,
+                findPeople = states::findPeople,
             )
         }
     LaunchedEffect(filters.applied, states.folders.accounts, states.mailScope) {

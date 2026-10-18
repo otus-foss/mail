@@ -50,9 +50,9 @@ class InboxSearchTest {
     @Test
     fun allTermsAndAllFiltersMustMatch() {
         assertTrue(results(InboxSearch(query = "Alex lake")).isEmpty())
-        val unreadWithFiles = InboxFilters(show = setOf(ShowFacet.Unread, ShowFacet.Attachments))
+        val unreadWithFiles = InboxFilters(status = ReadStatus.Unread, quick = setOf(QuickFacet.Attachments))
         assertEquals(listOf("older"), results(InboxSearch(), unreadWithFiles))
-        assertTrue(results(InboxSearch(query = "Weekend"), InboxFilters(show = setOf(ShowFacet.Unread))).isEmpty())
+        assertTrue(results(InboxSearch(query = "Weekend"), InboxFilters(status = ReadStatus.Unread)).isEmpty())
     }
 
     @Test
@@ -90,7 +90,7 @@ class InboxSearchTest {
         )
         val replied = messages[0].copy(conversation = thread("2026-10-05", exchanged = true))
         val unanswered = messages[1].copy(conversation = thread("2026-10-04", exchanged = false))
-        val conversations = InboxFilters(show = setOf(ShowFacet.Conversations))
+        val conversations = InboxFilters(quick = setOf(QuickFacet.Conversations))
         val shown = searchMessages(listOf(unanswered, replied), InboxSearch(), conversations)
         assertEquals(listOf("older"), shown.map { it.id })
         assertEquals(listOf("older", "newer"), searchMessages(listOf(unanswered, replied), InboxSearch()).map { it.id })

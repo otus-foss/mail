@@ -4,8 +4,10 @@ import com.otus.jmap.JmapSort
 import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.MailQuery
+import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.bounds
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonArray
@@ -18,8 +20,8 @@ import kotlin.time.Instant
 /**
  * The `Email/query` conditions (RFC 8621, section 4.4.1) [query] puts on the mail of [loginId],
  * all of which must hold; null when the query reads none of that login's mail. Mailboxes are left
- * to the caller. Waiting for reply asks only for mail from the login's own addresses, and calendar
- * invites and conversations have no condition; the caller checks them after loading.
+ * to the caller. Needs my reply, Awaiting reply, Conversations, and Calendar invites have no
+ * condition; the caller checks them on the loaded threads.
  */
 internal fun emailConditions(
     query: MailQuery,
@@ -31,87 +33,65 @@ internal fun emailConditions(
     val filters = query.filters
     val dates = filters.date.bounds(now, zone)
     return buildList {
-        filters.show.sortedBy { it.ordinal }.mapNotNullTo(this) { it.condition(query, loginId) }
-        if (filters.from.isNotEmpty()) add(anyOf(filters.from.map { condition("from", JsonPrimitive(it)) }))
+        filters.status.condition()?.let(::add)
+        filters.quick.sortedBy { it.ordinal }.mapNotNullTo(this) { it.condition(query, loginId) }
+        if (TypeFacet.Newsletters in filters.types) add(anyOf(LIST_HEADERS.map { header(it) }))
+        filters.fromAddresses.takeIf { it.isNotEmpty() }?.let { from ->
+            add(anyOf(from.sorted().map { condition("from", JsonPrimitive(it)) }))
+        }
         recipientCondition(query, loginId)?.let(::add)
-        query.skipIds[loginId]?.takeIf { it.isNotEmpty() }?.let { ids -> add(operator("NOT", ids.map(::inMailbox))) }
         dates.after?.let { add(condition("after", JsonPrimitive(it.utcDate()))) }
         dates.before?.let { add(condition("before", JsonPrimitive(it.utcDate()))) }
         filters.size.minBytes?.let { add(condition("minSize", JsonPrimitive(it))) }
     }
 }
 
-/** This choice's condition for [loginId]; null for calendar invites and conversations, which the caller checks. */
-private fun ShowFacet.condition(
+private fun ReadStatus.condition(): JsonObject? =
+    when (this) {
+        ReadStatus.All -> null
+        ReadStatus.Unread -> keyword("notKeyword", SEEN)
+        ReadStatus.Read -> keyword("hasKeyword", SEEN)
+    }
+
+/** This choice's condition for [loginId]; null for the choices the caller checks on loaded threads. */
+private fun QuickFacet.condition(
     query: MailQuery,
     loginId: String,
 ): JsonObject? =
     when (this) {
-        ShowFacet.Unread -> {
-            keyword("notKeyword", SEEN)
-        }
-
-        ShowFacet.Read -> {
-            keyword("hasKeyword", SEEN)
-        }
-
-        ShowFacet.Flagged -> {
-            keyword("hasKeyword", FLAGGED)
-        }
-
-        ShowFacet.NotFlagged -> {
-            keyword("notKeyword", FLAGGED)
-        }
-
-        ShowFacet.ReadLater -> {
-            inMailbox(query.readLaterIds.getValue(loginId))
-        }
-
-        ShowFacet.Attachments -> {
-            condition("hasAttachment", JsonPrimitive(true))
-        }
-
-        ShowFacet.Replied -> {
-            keyword("hasKeyword", ANSWERED)
-        }
-
-        ShowFacet.NotReplied -> {
-            keyword("notKeyword", ANSWERED)
-        }
-
-        ShowFacet.Forwarded -> {
-            keyword("hasKeyword", FORWARDED)
-        }
-
-        // Mail waiting for a reply is mail the user sent; the caller checks the rest.
-        ShowFacet.WaitingForReply -> {
-            anyOf(
-                query.addresses[loginId].orEmpty().map { condition("from", JsonPrimitive(it)) },
-            )
-        }
-
-        ShowFacet.Newsletters -> {
-            anyOf(LIST_HEADERS.map { condition("header", JsonArray(listOf(JsonPrimitive(it)))) })
-        }
-
-        ShowFacet.CalendarInvites, ShowFacet.Conversations -> {
-            null
-        }
+        QuickFacet.Flagged -> keyword("hasKeyword", FLAGGED)
+        QuickFacet.ReadLater -> inMailbox(query.readLaterIds.getValue(loginId))
+        QuickFacet.Attachments -> condition("hasAttachment", JsonPrimitive(true))
+        QuickFacet.Forwarded -> keyword("hasKeyword", FORWARDED)
+        QuickFacet.NeedsMyReply, QuickFacet.AwaitingReply, QuickFacet.Conversations -> null
     }
 
 /**
- * Mail to the login's chosen addresses, or to all its own when only fields are chosen, in the
- * chosen fields or else To, Cc, and Bcc; null when neither is chosen.
+ * Mail to the chosen recipients in the chosen fields: the login's own chosen addresses and every
+ * other chosen recipient. When only the fields differ from the default, the login's own
+ * addresses stand for the recipients. Null when neither is chosen. No field chosen reads as all.
  */
 private fun recipientCondition(
     query: MailQuery,
     loginId: String,
 ): JsonObject? {
     val filters = query.filters
-    if (filters.sentTo.isEmpty() && filters.receivedAs.isEmpty()) return null
-    val chosen = filters.sentTo.filter { it.accountId == loginId }.map { it.address }
-    val addresses = chosen.ifEmpty { query.addresses[loginId].orEmpty().toList() }
-    val fields = filters.receivedAs.ifEmpty { RecipientField.entries.toSet() }.sortedBy { it.ordinal }
+    val chosen = filters.sentTo.filter { it.accountId == loginId }.map { it.address } + filters.to.sorted()
+    val addresses =
+        when {
+            chosen.isNotEmpty() -> {
+                chosen
+            }
+
+            filters.sentTo.isEmpty() && filters.receivedIn != RecipientField.Default -> {
+                query.addresses[loginId].orEmpty().toList()
+            }
+
+            else -> {
+                return null
+            }
+        }
+    val fields = filters.receivedIn.ifEmpty { RecipientField.entries.toSet() }.sortedBy { it.ordinal }
     return anyOf(addresses.flatMap { address -> fields.map { condition(it.jmapName, JsonPrimitive(address)) } })
 }
 
@@ -127,6 +107,9 @@ internal fun mailFilter(
 /** `Email/query` order by arrival for [sort]. */
 internal fun receivedOrder(sort: FilterSort): List<JmapSort> =
     listOf(JmapSort("receivedAt", isAscending = sort == FilterSort.OldestFirst))
+
+/** Whether the email has [name] at all: `header` with only a name (RFC 8621, section 4.4.1). */
+private fun header(name: String): JsonObject = condition("header", JsonArray(listOf(JsonPrimitive(name))))
 
 /** One condition as itself; several under `OR`. */
 private fun anyOf(conditions: List<JsonObject>): JsonObject = conditions.singleOrNull() ?: operator("OR", conditions)
@@ -155,7 +138,6 @@ private fun Instant.utcDate(): String = Instant.fromEpochSeconds(epochSeconds).t
 
 private const val SEEN = "\$seen"
 private const val FLAGGED = "\$flagged"
-private const val ANSWERED = "\$answered"
 private const val FORWARDED = "\$forwarded"
 
 /** Headers lists and newsletters add (RFC 2919, RFC 2369); `header` with only a name asks whether it is there. */

@@ -6,6 +6,7 @@ import com.otus.mail.feature.inbox.domain.FilterLayout
 import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.OwnAddress
+import com.otus.mail.feature.inbox.domain.QuickFacet
 import org.jetbrains.compose.resources.DrawableResource
 
 /** One login's folder as the filter panel lists it. [ancestors] name its parents, top level first. */
@@ -52,14 +53,13 @@ data class FilterAddress(
 
 /**
  * What the filter panel offers on a page: the user's [addresses], each login's folders in
- * [accounts], the folder [shortcuts] in order, the system folders to [skip], whether the page can
- * filter by [folders] at all, whether any account has a Read later folder, and the user's [layout].
+ * [accounts], the folder [shortcuts] in order, whether the page can filter by [folders] at all,
+ * whether any account has a Read later folder, and the user's [layout].
  */
 data class FilterOptions(
     val addresses: List<FilterAddress> = emptyList(),
     val accounts: List<FilterAccount> = emptyList(),
     val shortcuts: List<FolderKey> = emptyList(),
-    val skip: List<FolderKey> = emptyList(),
     val folders: Boolean = false,
     val readLater: Boolean = false,
     val layout: FilterLayout = FilterLayout(),
@@ -75,14 +75,18 @@ data class FilterOptions(
 
     fun account(id: String): FilterAccount? = accounts.firstOrNull { it.id == id }
 
-    /** Whether [section] has anything to offer here, such as Sent to only with several addresses. */
+    /** Whether the Account row and page are offered: only while the page shows several logins. */
+    val offersAccount: Boolean
+        get() = accounts.size > 1
+
+    /** The Quick filters the layout shows here, without Read later while no account has its folder. */
+    val quick: List<QuickFacet>
+        get() = layout.quick.filter { readLater || it != QuickFacet.ReadLater }
+
+    /** Whether [section] has anything to offer here, such as Quick filters only while one is shown. */
     fun offers(section: FilterSection): Boolean =
         when (section) {
-            FilterSection.Accounts -> accounts.size > 1
-            FilterSection.SentTo -> addresses.size > 1
-            FilterSection.ReceivedAs -> addresses.isNotEmpty()
-            FilterSection.InFolder -> folders
-            FilterSection.SkipFolders -> folders && skip.isNotEmpty()
+            FilterSection.Quick -> quick.isNotEmpty()
             else -> true
         }
 }
