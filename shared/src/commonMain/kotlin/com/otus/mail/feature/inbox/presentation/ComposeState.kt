@@ -130,10 +130,6 @@ class ComposeState(
     val edited: Boolean
         get() = draft.content() != unwritten.content()
 
-    /** Whether the server holds the draft as it is now. */
-    val saved: Boolean
-        get() = draft.emailId != null && draft.content() == stored?.content()
-
     private val saving = Mutex()
     private var pending: Job? = null
     private var stored by mutableStateOf<Draft?>(null)
