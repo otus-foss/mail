@@ -55,9 +55,13 @@ mint run swiftformat --lint iosApp
 mint run swiftlint lint --strict
 ```
 
-**CI is paused.** The `quality` workflow runs only when started by hand from GitHub Actions, so
-pull requests get no CI results. The local hooks remain the gate. The workflow file says how to
-resume.
+**CI runs once per pull request,** on Ubicloud runners. The `quality` workflow starts when a pull
+request that is not a draft opens, or when a draft is marked ready for review. Later pushes do not
+start it again, so open pull requests as drafts and mark them ready once every commit is pushed.
+Start it by hand from GitHub Actions to check again.
+
+Meta publishing is paused, so Mail's `check` job builds against Meta's source: the Meta branch
+with the pull request's branch name when one exists, and `main` otherwise.
 
 The CI `quality` workflow runs on pull requests that change more than Markdown. Its `check` job runs
 `checkAll`, and its `ios` job runs Swift formatting/lint plus a simulator build. The iOS job runs on macOS 15 with Xcode 26.3; Compose
@@ -117,7 +121,8 @@ before every push that sends commits, including pushes to `main` and tags. Both 
 working tree, so stash unrelated changes first. `git push --no-verify` skips the hooks; do not
 use it to get past a failing check.
 
-CI runs `checkAll` only on pull requests that change more than Markdown, to save runner minutes.
+CI runs `checkAll` once per ready pull request that changes more than Markdown, to save runner
+minutes.
 The repositories are private on a GitHub plan that cannot require checks, so CI reports results
 but cannot block a merge. See [suite decision 0013](https://github.com/reazndev/otus-meta/blob/main/docs/decisions/0013-local-quality-gate.md).
 
