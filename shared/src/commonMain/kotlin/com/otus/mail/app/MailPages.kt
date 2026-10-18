@@ -187,10 +187,10 @@ internal fun FeedPage(
             InboxContext.folder(name, states.behavior.behavior.pills).copy(
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
                 loadHtml = states::messageHtml,
+                filters = filters,
+                filterOptions = rememberFilterOptions(states, page, filters.applied),
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
-        filters = filters,
-        filterOptions = rememberFilterOptions(states, page, filters.applied),
     )
 }
 

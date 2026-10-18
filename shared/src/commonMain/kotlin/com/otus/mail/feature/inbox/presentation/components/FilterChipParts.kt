@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.PersonAvatar
+import com.otus.designsystem.elements.ChipLabel
 import com.otus.designsystem.elements.FilterChip
 import com.otus.designsystem.elements.FolderGlyph
 import com.otus.designsystem.resources.Res
@@ -124,11 +125,9 @@ internal fun FolderChip(
     val label = options.labels[folder.key] ?: FolderLabel(folder.name)
     val account = options.account(folder.key.loginId).takeIf { label.showAccount }
     FilterChip(
-        label.withIncluded(chosen, options),
+        ChipLabel(label.withIncluded(chosen, options), label.prefix, label.spoken),
         selected = chosen != null,
         onClick = onClick,
-        prefix = label.prefix,
-        description = label.spoken,
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(FilterTokens.chipIconGap),

@@ -23,6 +23,9 @@ data class InboxContext(
     val onCompose: (ComposeRequest) -> Unit = {},
     /** Loads an open message's HTML body; null shows its text body. */
     val loadHtml: suspend (MailMessage) -> MessageHtml? = { null },
+    /** The page's filters, which outlive the screen; null keeps them with the screen. */
+    val filters: InboxFilterState? = null,
+    val filterOptions: FilterOptions = FilterOptions(),
 ) {
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()

@@ -56,10 +56,10 @@ internal fun InboxPage(
                     ),
                 onCompose = { navigation.go(MailPage.Compose(it)) },
                 loadHtml = states::messageHtml,
+                filters = filters,
+                filterOptions = rememberFilterOptions(states, MailPage.Inbox, filters.applied),
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
-        filters = filters,
-        filterOptions = rememberFilterOptions(states, MailPage.Inbox, filters.applied),
     )
 }
 

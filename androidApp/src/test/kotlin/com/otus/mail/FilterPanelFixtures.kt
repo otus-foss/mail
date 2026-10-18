@@ -46,10 +46,10 @@ internal object FilterPanelFixtures {
         FilterOptions(
             addresses =
                 listOf(
-                    FilterAddress(OwnAddress("ada", "this@companyA.com"), ChipAvatar("CA", 2)),
-                    FilterAddress(OwnAddress("ada", "otus@rubylabs.design"), ChipAvatar("RL", 5)),
+                    FilterAddress(OwnAddress("ada", "this@companyA.com"), ChipAvatar("CA", colorIndex = 2)),
+                    FilterAddress(OwnAddress("ada", "otus@rubylabs.design"), ChipAvatar("RL", colorIndex = 5)),
                 ),
-            accounts = listOf(FilterAccount("ada", "Ada", ChipAvatar("A", 1), folders)),
+            accounts = listOf(FilterAccount("ada", "Ada", ChipAvatar("A", colorIndex = 1), folders)),
             shortcuts =
                 listOf(
                     "clients",

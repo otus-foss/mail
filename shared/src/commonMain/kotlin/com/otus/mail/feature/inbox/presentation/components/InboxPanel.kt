@@ -40,8 +40,7 @@ fun InboxPanel(
     context: InboxContext,
     actions: InboxPanelActions,
     selection: FilterSelection = FilterSelection(),
-    filters: ActiveFilters = ActiveFilters(),
-    filterButton: FocusRequester = remember { FocusRequester() },
+    filters: ActiveFilters = remember { ActiveFilters() },
 ) {
     val onChange = actions.onChange
     val onSearchingChange = actions.onSearchingChange
@@ -61,7 +60,7 @@ fun InboxPanel(
             IconButton(
                 if (count == 0) "Open filters" else "Open filters, $count active",
                 actions.onOpenFilters,
-                Modifier.focusRequester(filterButton),
+                Modifier.focusRequester(filters.button),
             ) { BadgedSymbol(Res.drawable.symbol_filter_list, count) }
         },
         chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, filters) },
