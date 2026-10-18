@@ -1,9 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
@@ -11,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.otus.designsystem.components.BarMorph
 import com.otus.designsystem.components.BarNotice
 import com.otus.designsystem.components.CompactSendButton
 import com.otus.designsystem.components.FormatButton
@@ -21,9 +18,6 @@ import com.otus.designsystem.resources.symbol_schedule
 import com.otus.designsystem.resources.symbol_schedule_send
 import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.theme.ActionBarTokens
-import com.otus.designsystem.theme.MotionCurve
-import com.otus.designsystem.theme.MotionSpeed
-import com.otus.designsystem.theme.motionTween
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.ComposeState
@@ -36,7 +30,7 @@ import kotlin.time.Clock
  * The compose page's bottom: its action bar, or while the [keyboardUp] the formatting row with
  * Attach and a compact Send. While a time is scheduled, a notice above it names the time, and
  * Change runs [onChangeSchedule]. A reply's earlier messages sit above the bar and open the
- * thread's sheet. They fade into each other. Send runs [onSend] and is disabled while it is null;
+ * thread's sheet. Send runs [onSend] and is disabled while it is null;
  * Attach stays disabled until Mail has attachments.
  */
 @Composable
@@ -61,7 +55,7 @@ internal fun ComposeBottom(
     if (showingThread) state.thread?.let { ThreadSheet(it) { showingThread = false } }
 }
 
-/** The action bar, or the formatting row while the keyboard is up; they fade into each other. */
+/** The action bar, or the formatting row while the keyboard is up; one morphs into the other. */
 @Composable
 private fun Bottom(
     state: ComposeState,
@@ -72,14 +66,9 @@ private fun Bottom(
     at: String?,
     onLink: () -> Unit,
 ) {
-    val arrive = motionTween<Float>(MotionSpeed.Fast, MotionCurve.Enter)
-    val leave = motionTween<Float>(MotionSpeed.Fast, MotionCurve.Exit)
-    AnimatedContent(
+    BarMorph(
         keyboardUp,
-        transitionSpec = { fadeIn(arrive) togetherWith fadeOut(leave) },
-        label = "Compose bottom",
-    ) { up ->
-        if (up) {
+        formatting = {
             FormattingBar(
                 state.body,
                 onLink = onLink,
@@ -101,7 +90,8 @@ private fun Bottom(
                     )
                 },
             )
-        } else {
+        },
+        bar = {
             ComposeBar(
                 behavior.barLayout(ActionBarPlace.Compose),
                 state.draft,
@@ -110,8 +100,8 @@ private fun Bottom(
                 minimized = behavior.minimizedBar,
                 scheduled = at != null,
             )
-        }
-    }
+        },
+    )
 }
 
 /** What screen readers hear for the compact Send, such as "Send Sun, 8:00, to Grace". */
