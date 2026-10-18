@@ -4,6 +4,7 @@ import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.feature.inbox.domain.MailConversation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.ReplyState
 import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
 import kotlinx.datetime.TimeZone
@@ -47,6 +48,13 @@ internal fun MailMessage.inConversation(
             answered = counted.any { it.keywords[ANSWERED_KEYWORD] == true },
             members = listed.map { ThreadMember(it.id, it.boxes, mailboxId) },
             exchanged = counted.any(view::isSent) && counted.any { !view.isSent(it) },
+            reply =
+                ReplyState(
+                    lastFromMe = view.isMine(last),
+                    participated = counted.any(view::isMine),
+                    lastToMe = view.isToMe(last),
+                    lastIsList = last.fromList,
+                ),
         )
     return copy(
         conversation = conversation,
@@ -84,6 +92,7 @@ private fun merge(
             conversation.copy(
                 members = members,
                 exchanged = conversation.exchanged || other.conversation?.exchanged == true,
+                reply = newer(conversation, other.conversation),
             ),
         attributes =
             kept.attributes.copy(
@@ -93,6 +102,25 @@ private fun merge(
             ),
         location = kept.location.copy(mailboxIds = kept.location.mailboxIds + other.location.mailboxIds),
     )
+}
+
+/**
+ * The reply facts of whichever row saw the newer last email. Rows of one thread from different
+ * mailboxes count the same emails, unless one mailbox shows mail the other leaves out.
+ */
+private fun newer(
+    kept: MailConversation,
+    other: MailConversation?,
+): ReplyState {
+    val reply =
+        if (other != null &&
+            other.last.received.sortKey > kept.last.received.sortKey
+        ) {
+            other.reply
+        } else {
+            kept.reply
+        }
+    return reply.copy(participated = kept.reply.participated || other?.reply?.participated == true)
 }
 
 private val ReceivedAt.sortKey: String
