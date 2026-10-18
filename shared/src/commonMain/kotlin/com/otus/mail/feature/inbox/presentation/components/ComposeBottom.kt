@@ -55,7 +55,7 @@ internal fun ComposeBottom(
     if (showingThread) state.thread?.let { ThreadSheet(it) { showingThread = false } }
 }
 
-/** The action bar, or the formatting row while the keyboard is up; one morphs into the other. */
+/** The action bar, the formatting row while the keyboard is up, or the image bar; each morphs into the next. */
 @Composable
 private fun Bottom(
     state: ComposeState,
@@ -66,40 +66,66 @@ private fun Bottom(
     at: String?,
     onLink: () -> Unit,
 ) {
-    BarMorph(
-        keyboardUp,
-        formatting = {
-            FormattingBar(
-                state.body,
-                onLink = onLink,
-                leading = {
-                    FormatButton(
-                        "Attach",
-                        Res.drawable.symbol_attach_file,
-                        active = false,
-                        onClick = state.attachments::attach,
-                        enabled = state.attachments.canAttach,
-                    )
-                },
-                trailing = {
-                    CompactSendButton(
-                        sendDescription(state, at),
-                        { onSend?.invoke() },
-                        enabled = onSend != null,
-                        icon = if (at == null) Res.drawable.symbol_send else Res.drawable.symbol_schedule_send,
-                    )
-                },
+    val shown =
+        when {
+            state.body.images.selected != null -> BottomBar.Image
+            keyboardUp -> BottomBar.Formatting
+            else -> BottomBar.Actions
+        }
+    BarMorph(shown) { bar ->
+        when (bar) {
+            BottomBar.Image -> {
+                ComposeImageBar(state)
+            }
+
+            BottomBar.Formatting -> {
+                FormattingRow(state, onSend, at, onLink)
+            }
+
+            BottomBar.Actions -> {
+                ComposeBar(
+                    behavior.barLayout(ActionBarPlace.Compose),
+                    state.draft,
+                    onSend = onSend,
+                    onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
+                    onDiscard = onDiscard,
+                    minimized = behavior.minimizedBar,
+                    scheduled = at != null,
+                )
+            }
+        }
+    }
+}
+
+/** Which bar the compose page shows: the image's while one is selected, the formatting row while typing. */
+private enum class BottomBar { Image, Formatting, Actions }
+
+/** The formatting row with Attach and a compact Send, while the keyboard is up. */
+@Composable
+private fun FormattingRow(
+    state: ComposeState,
+    onSend: (() -> Unit)?,
+    at: String?,
+    onLink: () -> Unit,
+) {
+    FormattingBar(
+        state.body,
+        onLink = onLink,
+        leading = {
+            FormatButton(
+                "Attach",
+                Res.drawable.symbol_attach_file,
+                active = false,
+                onClick = state.attachments::attach,
+                enabled = state.attachments.canAttach,
             )
         },
-        bar = {
-            ComposeBar(
-                behavior.barLayout(ActionBarPlace.Compose),
-                state.draft,
-                onSend = onSend,
-                onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
-                onDiscard = onDiscard,
-                minimized = behavior.minimizedBar,
-                scheduled = at != null,
+        trailing = {
+            CompactSendButton(
+                sendDescription(state, at),
+                { onSend?.invoke() },
+                enabled = onSend != null,
+                icon = if (at == null) Res.drawable.symbol_send else Res.drawable.symbol_schedule_send,
             )
         },
     )

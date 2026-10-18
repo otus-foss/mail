@@ -110,12 +110,16 @@ the chips stay in view.
 
 A picked image starts inline: it goes into the body at the cursor as `<img src="cid:…">` and
 shows there as a preview, as wide as the text, without a chip. "Uploading…" or the upload
-failure shows over its corner. Tapping it shows the signature editor's controls: an outline, ✕,
-a corner handle to resize it, a size pill with Small, Medium, and Full width, and ⋯ with
-**Attach as file**, which takes it out of the body and gives it a chip, and Retry after a failed
-upload. A file image's chip offers **Show in message**, which puts it back at the cursor. The
-chosen width goes into the `<img>` tag. Deleting the image, with Backspace right after it or ✕,
-removes the file. A save or send puts each inline image beside the HTML in
+failure shows over its corner. Tapping it gives it an outline and a corner handle, and the
+bottom bar morphs into the image bar: Small, Medium, Large, and Full, ⋯, and ✓ to finish.
+Dragging the handle shows dashed guides at each size and snaps to them with a haptic tick. ⋯
+holds **Send as attachment**, which takes the image out of the body and gives it a chip,
+**Description**, its `alt` text, **Replace**, which picks another image for the same spot and
+size, **Remove image**, and Retry after a failed upload. A file image's chip offers **Show in
+message**, which puts it back at the cursor. The width and description go into the `<img>`
+tag. Deleting the image with Backspace right after it removes the file too.
+
+The signature editor uses the same image bar, with Small, Medium, and Large and Remove image. A save or send puts each inline image beside the HTML in
 `multipart/related` with its `cid` and `disposition: inline`, so the mail shows it where it
 sits; the plain-text part leaves it out.
 
@@ -205,6 +209,7 @@ submission's `undoStatus` to `canceled`, marks the copy `$draft` again, and open
   refuses such a message when it is sent.
 - A forward does not carry the original's attachments, and received attachments cannot be
   opened yet ([Mail #25](https://github.com/reazndev/otus-mail/issues/25)).
+- Crop and rotate, shown on the image options board, is not built.
 - Some keyboards send no Backspace key at the start of a line, so deleting an image that way may
   not work; its chip's ✕ always does.
 - Photos larger than 4096 px on a side show no preview, though they still send.

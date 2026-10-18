@@ -113,10 +113,13 @@ class ComposeAttachmentsTest {
             runCurrent()
             val image = draft.files.single()
             assertTrue(image.inline)
-            assertEquals(listOf("cid:${image.cid}"), draft.body.imageSources)
+            assertEquals(listOf("cid:${image.cid}"), draft.body.images.sources)
 
             attachments.showInline(image.id, false)
             assertFalse(draft.files.single().inline)
-            assertTrue(draft.body.imageSources.isEmpty())
+            assertTrue(
+                draft.body.images.sources
+                    .isEmpty(),
+            )
         }
 }

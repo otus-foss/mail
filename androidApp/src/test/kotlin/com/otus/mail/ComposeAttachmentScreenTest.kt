@@ -4,10 +4,15 @@ import android.graphics.Bitmap
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.AttachmentBlob
 import com.otus.mail.feature.inbox.domain.ComposeRequest
@@ -95,11 +100,22 @@ class ComposeAttachmentScreenTest {
         compose.onNodeWithText("Too large for this server").assertExists()
         compose.onNodeWithText("Whiteboard.png").assertDoesNotExist()
         compose.onNodeWithContentDescription("Whiteboard.png").performClick()
-        compose.onNodeWithText("Full width").assertExists()
+        compose.onNodeWithText("Full").assertIsSelected()
         compose.screenshot("compose-attachments-inline")
 
+        val handle = compose.onNodeWithContentDescription("Resize image")
+        handle.performTouchInput {
+            down(center)
+            moveBy(Offset(-DRAG_TO_LARGE, 0f))
+        }
+        // The pill under the handle and the bar's segment both name the snapped size.
+        compose.onAllNodesWithText("Large").assertCountEquals(2)
+        compose.screenshot("compose-attachments-drag")
+        handle.performTouchInput { up() }
+
         compose.onNodeWithContentDescription("Image options").performClick()
-        compose.onNodeWithText("Attach as file").performClick()
+        compose.screenshot("compose-attachments-image-options")
+        compose.onNodeWithText("Send as attachment").performClick()
         compose.onNodeWithText("Whiteboard.png").assertExists()
         compose.screenshot("compose-attachments")
     }
@@ -108,6 +124,9 @@ class ComposeAttachmentScreenTest {
         const val PHOTO_WIDTH = 640
         const val PHOTO_HEIGHT = 400
         const val PHOTO_COLOR = 0xFF4F7A9A.toInt()
+
+        /** Pixels left from full width to Large on this screen. */
+        const val DRAG_TO_LARGE = 150f
     }
 
     private object NoExits : ComposeExits {
