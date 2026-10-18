@@ -37,10 +37,13 @@ internal fun MailScope.chosen(
     loginId: String,
     query: MailQuery,
 ): List<MailboxObject> {
-    query.folderIds[loginId]?.let { ids -> return mailboxes.filter { it.id in ids } }
-    val own = scoped(mailboxes, loginId)
-    if (!query.filters.has(QuickFacet.AwaitingReply)) return own
-    return (own + mailboxes.filter { it.role == SENT_ROLE }).distinctBy { it.id }
+    val ids = query.folderIds[loginId]
+    val sent = mailboxes.filter { it.role == SENT_ROLE }
+    return when {
+        ids != null -> mailboxes.filter { it.id in ids }
+        query.filters.has(QuickFacet.AwaitingReply) -> (scoped(mailboxes, loginId) + sent).distinctBy { it.id }
+        else -> scoped(mailboxes, loginId)
+    }
 }
 
 private fun MailScope.scoped(

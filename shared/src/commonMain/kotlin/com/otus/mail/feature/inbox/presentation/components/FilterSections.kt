@@ -152,7 +152,7 @@ private fun PageRows(
     dateFormatter: DateFormatter,
     links: MainPageLinks,
 ) {
-    val date = RowValue(dateValue(draft.date, dateFormatter), draft.date != DateFilter.Any)
+    val date = FilterRowValue(dateValue(draft.date, dateFormatter), draft.date != DateFilter.Any)
     val rows =
         buildList {
             if (options.offersAccount) {
@@ -178,7 +178,7 @@ private fun PageRows(
 private class PageLink(
     val icon: DrawableResource,
     val title: String,
-    val value: RowValue,
+    val value: FilterRowValue,
     val page: FilterPage,
 )
 

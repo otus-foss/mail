@@ -1,7 +1,10 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapSort
+import com.otus.mail.core.mail.anyOf
+import com.otus.mail.core.mail.condition
 import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.core.mail.operator
 import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.QuickFacet
@@ -11,10 +14,8 @@ import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.bounds
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 import kotlin.time.Instant
 
 /**
@@ -111,27 +112,10 @@ internal fun receivedOrder(sort: FilterSort): List<JmapSort> =
 /** Whether the email has [name] at all: `header` with only a name (RFC 8621, section 4.4.1). */
 private fun header(name: String): JsonObject = condition("header", JsonArray(listOf(JsonPrimitive(name))))
 
-/** One condition as itself; several under `OR`. */
-private fun anyOf(conditions: List<JsonObject>): JsonObject = conditions.singleOrNull() ?: operator("OR", conditions)
-
-private fun operator(
-    name: String,
-    conditions: List<JsonObject>,
-): JsonObject =
-    buildJsonObject {
-        put("operator", JsonPrimitive(name))
-        put("conditions", JsonArray(conditions))
-    }
-
 private fun keyword(
     name: String,
     keyword: String,
 ): JsonObject = condition(name, JsonPrimitive(keyword))
-
-private fun condition(
-    name: String,
-    value: JsonElement,
-): JsonObject = buildJsonObject { put(name, value) }
 
 /** A `UTCDate` (RFC 8620, section 1.4): whole seconds and a `Z`. */
 private fun Instant.utcDate(): String = Instant.fromEpochSeconds(epochSeconds).toString()

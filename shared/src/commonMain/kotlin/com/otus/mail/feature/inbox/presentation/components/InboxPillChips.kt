@@ -37,10 +37,10 @@ internal val InboxPill.Filter.icon: DrawableResource
 
 /**
  * The row outside search: the page's active filters first, drawn as the search pills are; pressing
- * an on/off one removes it, and pressing one with choices opens its filter page. Then the user's pills in their order. A filter pill turns its filter on,
- * which moves it to the front; a folder pill shows its folders' mail, and pressing it again returns
- * to the page's own. The Unread pill shows [unreadCount] in a circle in place of its icon while
- * there is unread mail, on or off.
+ * an on/off one removes it, and pressing one with choices opens its filter page. Then the user's
+ * pills in their order. A filter pill turns its filter on, which moves it to the front; a folder
+ * pill shows its folders' mail, and pressing it again returns to the page's own. The Unread pill
+ * shows [unreadCount] in a circle in place of its icon while there is unread mail, on or off.
  */
 @Composable
 internal fun ContextPanelScope.InboxRowPills(

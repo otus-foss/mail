@@ -13,6 +13,8 @@ import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.anyOf
+import com.otus.mail.core.mail.condition
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.FoundPerson
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -21,10 +23,8 @@ import com.otus.mail.feature.inbox.domain.PeopleSearch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Finds people by searching each login's mail on the server (RFC 8621, section 4.4): the newest
@@ -44,13 +44,7 @@ class JmapPeopleSearch(
         logins: Set<String>?,
     ): List<FoundPerson> {
         val wanted = text.trim()
-        if (wanted.isEmpty()) return emptyList()
-        val ids =
-            try {
-                MailAccounts(connections, this.logins).logins().map { it.id }.filter { logins == null || it in logins }
-            } catch (expected: LoginStoreException) {
-                return emptyList()
-            }
+        val ids = if (wanted.isEmpty()) emptyList() else loginIds(logins)
         return coroutineScope {
             ids
                 .map { id -> async { mail(id, field, wanted) + contacts.suggestions(id, wanted).map(::FoundPerson) } }
@@ -58,6 +52,14 @@ class JmapPeopleSearch(
                 .flatten()
         }
     }
+
+    /** The ids of [chosen] logins, or of every login when null; none when the logins cannot be read. */
+    private suspend fun loginIds(chosen: Set<String>?): List<String> =
+        try {
+            MailAccounts(connections, logins).logins().map { it.id }.filter { chosen == null || it in chosen }
+        } catch (expected: LoginStoreException) {
+            emptyList()
+        }
 
     private suspend fun mail(
         loginId: String,
@@ -107,19 +109,8 @@ private fun people(
 
 private fun PeopleField.filter(text: String): JsonObject =
     when (this) {
-        PeopleField.From -> {
-            buildJsonObject { put("from", JsonPrimitive(text)) }
-        }
-
-        PeopleField.To -> {
-            buildJsonObject {
-                put("operator", JsonPrimitive("OR"))
-                put(
-                    "conditions",
-                    JsonArray(listOf("to", "cc").map { name -> buildJsonObject { put(name, JsonPrimitive(text)) } }),
-                )
-            }
-        }
+        PeopleField.From -> condition("from", JsonPrimitive(text))
+        PeopleField.To -> anyOf(listOf("to", "cc").map { name -> condition(name, JsonPrimitive(text)) })
     }
 
 private val PeopleField.properties: List<String>

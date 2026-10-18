@@ -22,26 +22,35 @@ class ConversationRepliesTest {
             own = setOf("ada@example.org"),
         )
 
+    /** What sets one email apart from a read email Grace sent to Ada. */
+    private inner class EmailFixture {
+        var from: EmailAddress = grace
+        var to: List<EmailAddress> = listOf(ada)
+        var cc: List<EmailAddress>? = null
+        var keywords: Set<String> = setOf(SEEN_KEYWORD)
+        var listId: String? = null
+    }
+
+    /** An email of thread t1 in mailbox [box], received on October [day]. */
     private fun email(
         id: String,
         day: Int,
         box: String,
-        from: EmailAddress = grace,
-        to: List<EmailAddress> = listOf(ada),
-        cc: List<EmailAddress>? = null,
-        keywords: Set<String> = setOf(SEEN_KEYWORD),
-        listId: String? = null,
-    ) = EmailObject(
-        id = id,
-        threadId = "t1",
-        mailboxIds = mapOf(box to true),
-        keywords = keywords.associateWith { true },
-        from = listOf(from),
-        to = to,
-        cc = cc,
-        receivedAt = "2026-10-${day.toString().padStart(2, '0')}T09:30:00Z",
-        listId = listId,
-    )
+        build: EmailFixture.() -> Unit = {},
+    ): EmailObject {
+        val fixture = EmailFixture().apply(build)
+        return EmailObject(
+            id = id,
+            threadId = "t1",
+            mailboxIds = mapOf(box to true),
+            keywords = fixture.keywords.associateWith { true },
+            from = listOf(fixture.from),
+            to = fixture.to,
+            cc = fixture.cc,
+            receivedAt = "2026-10-${day.toString().padStart(2, '0')}T09:30:00Z",
+            listId = fixture.listId,
+        )
+    }
 
     private fun conversation(
         row: EmailObject,
@@ -54,7 +63,11 @@ class ConversationRepliesTest {
             .conversation!!
 
     private val question = email("e1", 1, "inbox")
-    private val answer = email("e2", 2, "sent", from = ada, to = listOf(grace))
+    private val answer =
+        email("e2", 2, "sent") {
+            from = ada
+            to = listOf(grace)
+        }
 
     @Test
     fun theNewestEmailComesFromAcrossTheThreadSentIncluded() {
@@ -81,8 +94,12 @@ class ConversationRepliesTest {
 
     @Test
     fun aDraftOrADeletedEmailIsNotTheNewest() {
-        val draft = email("e3", 3, "drafts", from = ada, keywords = setOf(DRAFT_KEYWORD))
-        val deleted = email("e4", 4, "trash", from = ada)
+        val draft =
+            email("e3", 3, "drafts") {
+                from = ada
+                keywords = setOf(DRAFT_KEYWORD)
+            }
+        val deleted = email("e4", 4, "trash") { from = ada }
         val withDraft = conversation(question, listOf(question, draft, deleted))
         assertFalse(withDraft.awaitingReply)
         assertTrue(withDraft.needsMyReply, "The user is in Grace's To field")
@@ -90,18 +107,31 @@ class ConversationRepliesTest {
 
     @Test
     fun needsMyReplyWantsTheUserInvolvedOrDirectlyAddressed() {
-        val copied = email("e1", 1, "inbox", to = listOf(team), cc = listOf(ada))
+        val copied =
+            email("e1", 1, "inbox") {
+                to = listOf(team)
+                cc = listOf(ada)
+            }
         assertFalse(conversation(copied, listOf(copied)).needsMyReply, "Only copied, and never wrote")
-        val direct = email("e1", 1, "inbox", to = listOf(team, ada))
+        val direct = email("e1", 1, "inbox") { to = listOf(team, ada) }
         assertTrue(conversation(direct, listOf(direct)).needsMyReply)
-        val earlier = email("e0", 1, "sent", from = ada, to = listOf(team))
-        val reply = email("e5", 5, "inbox", from = team, to = listOf(team), cc = listOf(ada))
+        val earlier =
+            email("e0", 1, "sent") {
+                from = ada
+                to = listOf(team)
+            }
+        val reply =
+            email("e5", 5, "inbox") {
+                from = team
+                to = listOf(team)
+                cc = listOf(ada)
+            }
         assertTrue(conversation(reply, listOf(earlier, reply)).needsMyReply, "The user wrote earlier in the thread")
     }
 
     @Test
     fun aNewsletterNeverNeedsAReply() {
-        val newsletter = email("e1", 1, "inbox", listId = "<news.example.org>")
+        val newsletter = email("e1", 1, "inbox") { listId = "<news.example.org>" }
         val conversation = conversation(newsletter, listOf(newsletter))
         assertFalse(conversation.needsMyReply)
         assertFalse(conversation.awaitingReply)
