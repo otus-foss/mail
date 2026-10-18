@@ -49,6 +49,7 @@ internal val BarButton.label: String
             MailAction.Send -> "Send"
             MailAction.Attach -> "Attach"
             MailAction.Discard -> "Discard"
+            MailAction.AllActions -> "All actions"
         }
 
 /**

@@ -46,6 +46,7 @@ import com.otus.mail.feature.inbox.presentation.components.MailActionBar
 import com.otus.mail.feature.inbox.presentation.components.MessageBody
 import com.otus.mail.feature.inbox.presentation.components.Minimized
 import com.otus.mail.feature.inbox.presentation.components.OfferedAction
+import com.otus.mail.feature.inbox.presentation.components.everyAction
 import com.otus.mail.feature.inbox.presentation.components.offer
 import com.otus.mail.feature.inbox.presentation.components.overflow
 import com.otus.mail.feature.inbox.presentation.components.rememberConfirmation
@@ -102,6 +103,7 @@ fun MessageScreen(
                             offerFor,
                             perform,
                             Minimized().takeIf { behavior.minimizedBar },
+                            behavior.everyAction(ActionBarPlace.Message, offerFor),
                             context = replyContext(message, layout.primary),
                         )
                     }
