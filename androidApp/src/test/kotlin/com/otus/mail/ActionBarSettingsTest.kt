@@ -158,7 +158,7 @@ class ActionBarSettingsTest {
         compose.onNodeWithText("Every screen").performScrollTo().performClick()
         top("Search").performClick()
         pick("Remove from bar")
-        top("Add button").performClick()
+        top("Add action").performClick()
         pick("Reply")
         done()
         done()
@@ -175,6 +175,30 @@ class ActionBarSettingsTest {
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Open message").performScrollTo().assertIsDisplayed()
         assertEquals(ActionBarMode.Adaptive, AndroidMailBehaviorStore(compose.activity).read().actionBarMode)
+    }
+
+    @Test
+    fun allActionsOnTheOpenMessageBarListsEveryActionAndRunsTheChosenOne() {
+        server.folders += """{"id": "s", "name": "Junk", "role": "junk"}"""
+        start()
+        openActionBarSettings()
+        compose.onNodeWithText("Open message").performScrollTo().performClick()
+        top("Move").performClick()
+        pick("All actions")
+        done()
+        done()
+
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
+        compose.onNodeWithText("Welcome").performClick()
+        button("All actions").performClick()
+        // The menu lists actions the bar leaves out, beside those it holds.
+        compose.onNodeWithText("Reply all").assertIsDisplayed()
+        compose.onNodeWithText("Rule for sender").assertIsDisplayed()
+        compose.onNodeWithText("Spam").performClick()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Welcome")).fetchSemanticsNodes().isEmpty() }
     }
 
     @Test

@@ -143,6 +143,11 @@ Actions follow the same folder rights as before; see
 current messages cannot take stays in its slot, disabled with a `text3` icon, so the buttons never
 move. A swipe can be any action except Spam, Move, Rule for sender, and the folder actions.
 
+**All actions**, under **Anywhere** in the picker, fits every bar. It shows a ⋯ icon, and tapping it
+opens a Meta `ContextMenu` above the button with every action the screen offers, including those
+already on the bar; actions the current messages cannot take are left out. It suits a bar kept to
+a few buttons. A minimized bar hides it like any secondary button and keeps its own ⋯ button.
+
 ### Settings
 
 The Mail behavior page's **Actions** section has an **Action bar** row, which opens
@@ -157,8 +162,9 @@ screen** card instead. Each card is a Meta `PreviewCard`: a title, where the bar
 the page, and the saved bar. Tapping the card or its bar opens the bar's editor.
 
 The editor (`ActionBarEditSheet`) is a `SheetFrame` titled with the place. It shows the bar in a
-`PreviewCard`, with an **Add button** after the last secondary button while the bar has room.
-Tapping a button, or **Add button**, opens the picker for that slot (`ActionPickerSheet`), titled
+`PreviewCard`. While the bar has room, its group ends in an empty slot, Meta's `BarAddButton`: a
+dashed circle with a plus, so it reads as room for another button rather than as an action. Its
+screen reader label is **Add action**. Tapping a button, or the empty slot, opens the picker for that slot (`ActionPickerSheet`), titled
 **Main button** or **Button 1** to **Button 3**.
 
 - A search field narrows the actions by name. The actions sit in groups by what they act on:

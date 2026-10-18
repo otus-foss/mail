@@ -84,12 +84,11 @@ private fun Bottom(
 
             BottomBar.Actions -> {
                 ComposeBar(
-                    behavior.barLayout(ActionBarPlace.Compose),
+                    behavior,
                     state.draft,
                     onSend = onSend,
                     onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
                     onDiscard = onDiscard,
-                    minimized = behavior.minimizedBar,
                     scheduled = at != null,
                 )
             }

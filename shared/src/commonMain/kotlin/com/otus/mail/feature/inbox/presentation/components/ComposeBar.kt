@@ -5,51 +5,55 @@ import com.otus.designsystem.components.BarContext
 import com.otus.designsystem.components.BarToken
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_schedule_send
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
+import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.barLayout
 import com.otus.mail.feature.inbox.presentation.recipients
 
 /**
- * The compose page's bar for [layout]. Send runs [onSend], and stays disabled while that is null;
+ * The compose page's bar as [behavior] lays it out. Send runs [onSend], and stays disabled while that is null;
  * Attach runs [onAttach], disabled while that is null, and actions for messages, which Fixed mode may
  * place here, do not apply. The main button reads Send to, or Sends to with the schedule-send
- * symbol while [scheduled], and names the draft's recipients once it has any. A
- * [minimized] bar shows only the main button.
+ * symbol while [scheduled], and names the draft's recipients once it has any. A minimized bar
+ * shows only the main button.
  */
 @Composable
 internal fun ComposeBar(
-    layout: ActionBarLayout,
+    behavior: MailBehavior,
     draft: Draft,
     onSend: (() -> Unit)?,
     onAttach: (() -> Unit)?,
     onDiscard: () -> Unit,
-    minimized: Boolean,
     scheduled: Boolean = false,
 ) {
+    val offer = { action: BarButton ->
+        val run =
+            when (action) {
+                MailAction.Send -> onSend
+                MailAction.Attach -> onAttach
+                MailAction.Discard -> onDiscard
+                else -> null
+            }
+        val symbol =
+            if (action == MailAction.Send &&
+                scheduled
+            ) {
+                Res.drawable.symbol_schedule_send
+            } else {
+                action.symbol
+            }
+        run?.let { OfferedAction(action.buttonLabel(), symbol, leaves = true, run = it) }
+    }
     MailActionBar(
-        layout,
-        offer = { action ->
-            val run =
-                when (action) {
-                    MailAction.Send -> onSend
-                    MailAction.Attach -> onAttach
-                    MailAction.Discard -> onDiscard
-                    else -> null
-                }
-            val symbol =
-                if (action == MailAction.Send &&
-                    scheduled
-                ) {
-                    Res.drawable.symbol_schedule_send
-                } else {
-                    action.symbol
-                }
-            run?.let { OfferedAction(action.buttonLabel(), symbol, leaves = true, run = it) }
-        },
+        behavior.barLayout(ActionBarPlace.Compose),
+        offer,
         onAction = { it.run() },
-        minimized = Minimized().takeIf { minimized },
+        minimized = Minimized().takeIf { behavior.minimizedBar },
+        everyAction = behavior.everyAction(ActionBarPlace.Compose, offer),
         context = draft.recipients.barContext(if (scheduled) "Sends to" else "Send to"),
     )
 }

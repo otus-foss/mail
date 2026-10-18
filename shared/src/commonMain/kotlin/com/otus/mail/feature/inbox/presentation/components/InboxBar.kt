@@ -30,7 +30,11 @@ internal fun InboxBar(
     val list = ListActions(results, matching.accounts.singleOrNull(), actions, state::startSearch, onFilters, onCompose)
     val behavior = actions.behavior()
     val layout = behavior.barLayout(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke())
-    MailActionBar(layout, list::offer, onAction = {
-        it.run()
-    }, Minimized(hidden = state.searching).takeIf { behavior.minimizedBar })
+    MailActionBar(
+        layout,
+        list::offer,
+        onAction = { it.run() },
+        Minimized(hidden = state.searching).takeIf { behavior.minimizedBar },
+        everyAction = behavior.everyAction(ActionBarPlace.Inbox, list::offer),
+    )
 }
