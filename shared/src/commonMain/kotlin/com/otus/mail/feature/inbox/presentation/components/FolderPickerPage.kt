@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.AccountGroupRow
 import com.otus.designsystem.components.FilterFolderRow
+import com.otus.designsystem.components.FilterNote
 import com.otus.designsystem.components.FolderCheck
 import com.otus.designsystem.components.PickerSearch
 import com.otus.designsystem.components.TreeFolder
@@ -29,7 +30,8 @@ import com.otus.mail.feature.inbox.presentation.toggle
 
 /**
  * Every folder of the page's accounts as a checkable tree, under account headers when there are
- * several. A search narrows it to matching folders with their parents' path.
+ * several. A search narrows it to matching folders with their parents' path. System folders are
+ * listed unticked like the rest, and a note says they stay out until ticked.
  */
 @Composable
 internal fun FolderPickerPage(
@@ -55,6 +57,7 @@ internal fun FolderPickerPage(
                 }
             }
         }
+        FilterNote("Drafts, Sent, Junk and Trash are left out unless you tick them.")
     }
 }
 

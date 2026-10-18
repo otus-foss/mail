@@ -1,38 +1,30 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.FilterPanel
 import com.otus.designsystem.components.FilterPanelFooter
 import com.otus.designsystem.components.FilterPanelHeader
-import com.otus.designsystem.theme.LocalMotionScale
-import com.otus.designsystem.theme.Motion
-import com.otus.designsystem.theme.MotionSpeed
+import com.otus.designsystem.components.SlidingPages
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.FilterCount
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FilterPage
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.fromPeople
 import com.otus.mail.feature.inbox.presentation.showLabel
 
 /**
  * The filter panel of a message list, growing out of its control panel [collapsedHeight] tall.
- * Its main page lists the sections; All folders… slides in the folder tree in place of them.
+ * Its main page lists the sections, and its rows and People lines slide in a page of their own.
+ * Every page edits the same draft above the same footer, and the panel keeps one height.
  */
 @Composable
 fun InboxFilterPanel(
@@ -43,53 +35,92 @@ fun InboxFilterPanel(
     collapsedHeight: Dp,
     modifier: Modifier = Modifier,
 ) {
-    var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
     val close = state::close
-    val folders = state.page == FilterPage.Folders
-    val draft = state.draft
+    val page = state.page
     // The last draft stays on screen while the panel closes.
     var shown by remember { mutableStateOf(InboxFilters()) }
-    if (draft != null) shown = draft
+    state.draft?.let { shown = it }
+    // The page the user last opened, whose row on the main page takes focus when they come back.
+    var opened by remember { mutableStateOf<FilterPage?>(null) }
+    LaunchedEffect(page, state.isOpen) {
+        opened =
+            when {
+                !state.isOpen -> null
+                page != FilterPage.Main -> page
+                else -> opened
+            }
+    }
     FilterPanel(
         open = state.isOpen,
         collapsedHeight = collapsedHeight,
         onDismiss = close,
         header = {
             FilterPanelHeader(
-                "Filters",
+                page.title,
                 close,
                 closeDescription = "Close filters",
-                onBack = if (folders) state::back else null,
+                onBack = if (page == FilterPage.Main) null else state::back,
             )
         },
         footer = { InboxFilterFooter(state, shown) },
         modifier = modifier,
+        fillHeight = true,
     ) {
-        val scale = LocalMotionScale.current
-        AnimatedContent(
-            folders,
-            contentAlignment = Alignment.TopStart,
-            transitionSpec = {
-                val sign = if (targetState) 1 else -1
-                (
-                    slideInHorizontally(Motion.tween(MotionSpeed.Normal, scale = scale)) { it * sign } togetherWith
-                        slideOutHorizontally(Motion.tween(MotionSpeed.Normal, scale = scale)) { -it * sign }
-                ).using(SizeTransform(clip = true) { _, _ -> Motion.tween(MotionSpeed.Normal, scale = scale) })
-            },
-            label = "Filter panel page",
-        ) { allFolders ->
-            if (allFolders) {
-                FolderPickerPage(shown, options, state::edit)
-            } else {
-                val senders = remember(messages) { fromPeople(messages, limit = MAX_SENDER_CHIPS) }
-                val pages = FilterPanelPages({ state.openPage(FilterPage.Folders) }, { sheet = FilterSheet.Date })
-                FilterSections(shown, options, senders, dateFormatter, state::edit, pages)
-            }
+        SlidingPages(page, depth = { if (it == FilterPage.Main) 0 else 1 }) { shownPage ->
+            FilterPageContent(shownPage, shown, state, options, messages, dateFormatter, opened)
         }
     }
-    // Composed after the panel, so its handler comes first: Back on a page returns to the main page.
-    BackHandler(state.isOpen && state.page != FilterPage.Main, state::back)
-    sheet?.takeIf { state.isOpen }?.let { FilterPanelSheet(it, state, shown, dateFormatter) { sheet = null } }
+    // Composed only on a sub-page, so it registers after the panel's own handler and runs first.
+    if (state.isOpen && page != FilterPage.Main) BackHandler(enabled = true, state::back)
+}
+
+@Composable
+private fun FilterPageContent(
+    page: FilterPage,
+    draft: InboxFilters,
+    state: InboxFilterState,
+    options: FilterOptions,
+    messages: List<MailMessage>,
+    dateFormatter: DateFormatter,
+    returnedFrom: FilterPage?,
+) {
+    val people = rememberFilterPeople(state, options, messages)
+    when (page) {
+        FilterPage.Main -> {
+            val links =
+                MainPageLinks(
+                    pickedSenders(draft, people.senders),
+                    pickedRecipients(draft, options, people.recipients),
+                    state::openPage,
+                    returnedFrom,
+                )
+            FilterSections(draft, options, dateFormatter, state::edit, links)
+        }
+
+        FilterPage.From -> {
+            FromPage(draft, state.senders, people.senders, state::edit)
+        }
+
+        FilterPage.To -> {
+            ToPage(draft, state.recipients, people.recipients, state::edit)
+        }
+
+        FilterPage.Account -> {
+            AccountPage(draft, options, state::edit)
+        }
+
+        FilterPage.Folders -> {
+            FolderPickerPage(draft, options, state::edit)
+        }
+
+        FilterPage.Date -> {
+            DatePage(draft.date, state::edit)
+        }
+
+        FilterPage.Metadata -> {
+            MetadataPage(draft, state::edit)
+        }
+    }
 }
 
 @Composable
@@ -108,4 +139,15 @@ private fun InboxFilterFooter(
     )
 }
 
-private const val MAX_SENDER_CHIPS = 6
+/** The page's name in the panel's header. */
+private val FilterPage.title: String
+    get() =
+        when (this) {
+            FilterPage.Main -> "Filters"
+            FilterPage.From -> "From"
+            FilterPage.To -> "To"
+            FilterPage.Account -> "Account"
+            FilterPage.Folders -> "Folders"
+            FilterPage.Date -> "Date"
+            FilterPage.Metadata -> "Metadata"
+        }
