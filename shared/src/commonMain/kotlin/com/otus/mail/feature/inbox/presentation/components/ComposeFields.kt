@@ -41,7 +41,6 @@ internal fun ComposeFields(
             "Subject",
             state.draft.subject,
             { subject -> state.edit { it.copy(subject = subject) } },
-            placeholder = "Subject",
         )
     }
 }
