@@ -4,13 +4,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.avatar.AvatarOptions
-import com.otus.avatar.AvatarRequest
 import com.otus.avatar.AvatarService
-import com.otus.avatar.ResolvedAvatar
-import com.otus.avatar.avatarEmailKey
-import com.otus.avatar.generatedAvatar
 import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
@@ -19,18 +16,18 @@ import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
  * Loaded messages of the unified inbox or one folder, or of the mailboxes a search or a folder
- * pill shows in their place. A refresh replaces any refresh still in flight. Each refresh looks up
- * avatars with the [avatarOptions] of that moment, so a changed setting applies on the next one.
+ * pill shows in their place. A refresh or a next page replaces any load still in flight. Each load
+ * looks up avatars with the [avatarOptions] of that moment, so a changed setting applies on the
+ * next one.
  */
 class InboxFeedState(
     private val source: MailSource,
     private val scope: CoroutineScope,
-    private val avatars: AvatarService? = null,
+    avatars: AvatarService? = null,
     private val avatarOptions: () -> AvatarOptions = { mailAvatarOptions(websiteIcons = true) },
     defaultScope: MailScope = MailScope.Inbox,
 ) {
@@ -63,15 +60,19 @@ class InboxFeedState(
     var loading by mutableStateOf(false)
         private set
 
+    /** Whether older messages remain on the server, which [loadMore] loads. */
+    var hasMore by mutableStateOf(false)
+        private set
+    var loadingMore by mutableStateOf(false)
+        private set
+
     /** Shown when some accounts could not be loaded; messages from the others remain. */
     var notice by mutableStateOf<String?>(null)
         private set
     private var job: Job? = null
     private var request = 0
     private val pending = PendingChanges()
-
-    // The options the shown avatars were found with.
-    private var shownOptions: AvatarOptions? = null
+    private val avatars = FeedAvatars(avatars)
 
     /** Shows [text] in place of the last load's notice, such as a failed change. */
     fun report(text: String) {
@@ -99,7 +100,10 @@ class InboxFeedState(
         val previousScope = mailScope
         messages = messages.filterNot { it.id == id }
         return track(pending.add(id, previousScope) { null }) {
-            if (mailScope == previousScope && before != null) restore(before)
+            // Put it back after the server refused the move, unless a reload already did.
+            if (mailScope == previousScope && before != null && messages.none { it.id == before.id }) {
+                messages = messages + before
+            }
         }
     }
 
@@ -114,11 +118,6 @@ class InboxFeedState(
         },
     )
 
-    /** Puts [message] back after the server refused to move it, unless a reload already did. */
-    private fun restore(message: MailMessage) {
-        if (messages.none { it.id == message.id }) messages = messages + message
-    }
-
     /**
      * Loads [scope] in place of the page's own messages, or returns to them when it is null. The
      * previous scope's messages leave at once, so they never show under the new one.
@@ -131,146 +130,93 @@ class InboxFeedState(
         refresh()
     }
 
+    /**
+     * Loads the scope's messages from the server again, with as many pages as are shown. A list
+     * left empty by a new scope or query first shows what the device kept, while [loading] stays
+     * true, unless the server answers first.
+     */
     fun refresh() {
-        val current = ++request
-        val requestedScope = mailScope
-        val requestedQuery = query
-        val options = avatarOptions()
-        job?.cancel()
+        val cachedFirst = messages.isEmpty()
         loading = true
+        loadingMore = false
         notice = null
-        job =
-            scope.launch {
-                try {
-                    val snapshot = source.messages(requestedScope, requestedQuery)
-                    val incoming = withCachedAvatars(snapshot.messages, options)
-                    if (current != request) return@launch
-                    messages = pending.publish(incoming, current, requestedScope)
-                    shownOptions = options
-                    notice = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
-                } catch (expected: InboxStorageException) {
-                    if (current == request) notice = "Couldn't load saved accounts. Try again in Settings."
-                } finally {
-                    if (current == request) loading = false
-                }
-                if (current != request) return@launch
-                coroutineScope {
-                    launch { resolveAccountAvatars(current, options) }
-                    resolveAvatars(current, options)
-                }
-            }
+        start(onEnd = { loading = false }) { load ->
+            if (cachedFirst) launch { showCached(load) }
+            source.messages(load.scope, load.query)
+        }
+    }
+
+    /** Loads the next page of each mailbox that has more. Does nothing while any load runs. */
+    fun loadMore() {
+        if (!hasMore || loading || loadingMore) return
+        loadingMore = true
+        start(onEnd = { loadingMore = false }) { source.more(it.scope, it.query) }
     }
 
     /**
-     * Restore local images before publishing; new senders still resolve progressively. Avatars
-     * found with other [options], such as website icons since turned off, are not carried over.
+     * Replaces any running load with [fetch], whose snapshot shows only while it is the newest
+     * load. [onEnd] runs when it ends, unless a newer load replaced it.
      */
-    private suspend fun withCachedAvatars(
-        incoming: List<MailMessage>,
-        options: AvatarOptions,
-    ): List<MailMessage> {
-        val service = avatars ?: return incoming
-        val shown = messages.takeIf { options == shownOptions }.orEmpty()
-        val previous =
-            shown.associate {
-                (it.sender.accountKey to avatarEmailKey(it.sender.address)) to
-                    it.sender.avatar
+    private fun start(
+        onEnd: () -> Unit,
+        fetch: suspend CoroutineScope.(FeedLoad) -> InboxSnapshot,
+    ) {
+        val load = FeedLoad(++request, mailScope, query, avatarOptions())
+        job?.cancel()
+        job =
+            scope.launch {
+                try {
+                    publish(load, fetch(this, load))
+                } catch (expected: InboxStorageException) {
+                    if (load.number == request) notice = "Couldn't load saved accounts. Try again in Settings."
+                } finally {
+                    if (load.number == request) onEnd()
+                }
+                if (load.number == request) {
+                    avatars.resolve(messages, load.options, { load.number == request }) { edit ->
+                        messages = messages.map(edit)
+                    }
+                }
             }
-        val accounts = shown.associate { it.location.accountId to it.location.accountAvatar }
-        val restored = mutableMapOf<Pair<String, String>, ResolvedAvatar?>()
-        return incoming.map { message ->
-            val sender = message.sender
-            val key = sender.accountKey to avatarEmailKey(sender.address)
-            if (key !in restored) {
-                val cached = service.cached(AvatarRequest(sender.accountKey, sender.address), options)
-                restored[key] = keepIdenticalImage(cached, previous[key])
-            }
-            val avatar = restored[key]?.copy(fallback = generatedAvatar(sender.name, sender.address))
-            val location = message.location.copy(accountAvatar = accounts[message.location.accountId])
-            message.copy(sender = sender.copy(avatar = avatar), location = location)
+    }
+
+    private suspend fun showCached(load: FeedLoad) {
+        try {
+            publish(load, source.cached(load.scope, load.query), fromServer = false)
+        } catch (expected: InboxStorageException) {
+            // The server load reports it.
         }
     }
 
-    /** Each account's own address resolves like a sender, for the inbox picker. */
-    private suspend fun resolveAccountAvatars(
-        current: Int,
-        options: AvatarOptions,
+    /**
+     * Shows [snapshot] while [load] is the newest load, and only until its server result shows, so
+     * a slow read of the device's copy cannot replace newer mail.
+     */
+    private suspend fun publish(
+        load: FeedLoad,
+        snapshot: InboxSnapshot,
+        fromServer: Boolean = true,
     ) {
-        val service = avatars ?: return
-        val accounts =
-            messages
-                .map {
-                    it.location
-                }.distinctBy { it.accountId }
-                .filter { it.accountAddress.isNotBlank() }
-        coroutineScope {
-            accounts.forEach { account ->
-                launch {
-                    val request = AvatarRequest(account.accountId, account.accountAddress, account.account)
-                    val resolved = service.resolve(request, options)
-                    if (current != this@InboxFeedState.request) return@launch
-                    val avatar = keepIdenticalImage(resolved, account.accountAvatar) ?: resolved
-                    messages =
-                        messages.map { message ->
-                            if (message.location.accountId == account.accountId) {
-                                message.copy(location = message.location.copy(accountAvatar = avatar))
-                            } else {
-                                message
-                            }
-                        }
-                }
-            }
-        }
-    }
-
-    /** Optional network photos update rows without blocking mail or showing errors. */
-    private suspend fun resolveAvatars(
-        current: Int,
-        options: AvatarOptions,
-    ) {
-        val service = avatars ?: return
-        val senders = messages.map { it.sender }.distinctBy { it.accountKey to avatarEmailKey(it.address) }
-        coroutineScope {
-            senders.forEach { sender ->
-                launch {
-                    val resolved =
-                        service.resolve(
-                            AvatarRequest(sender.accountKey, sender.address, sender.name),
-                            options,
-                        )
-                    if (current != request) return@launch
-                    val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved
-                    messages =
-                        messages.map { message ->
-                            if (message.sender.accountKey == sender.accountKey &&
-                                avatarEmailKey(message.sender.address) == avatarEmailKey(sender.address)
-                            ) {
-                                val updated =
-                                    avatar.copy(
-                                        fallback =
-                                            generatedAvatar(
-                                                message.sender.name,
-                                                message.sender.address,
-                                            ),
-                                    )
-                                message.copy(sender = message.sender.copy(avatar = updated))
-                            } else {
-                                message
-                            }
-                        }
-                }
-            }
+        val incoming = avatars.restored(snapshot.messages, messages, load.options)
+        if (load.number != request || load.served) return
+        messages = pending.publish(incoming, load.number, load.scope)
+        hasMore = snapshot.hasMore
+        avatars.shown(load.options)
+        if (fromServer) {
+            load.served = true
+            notice = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
         }
     }
 }
 
-/** Disk restoration may allocate new bytes. Keep a displayed image's identity when its content matches. */
-private fun keepIdenticalImage(
-    current: ResolvedAvatar?,
-    previous: ResolvedAvatar?,
-): ResolvedAvatar? {
-    val image = previous?.image ?: return current
-    return if (current?.image?.bytes?.contentEquals(image.bytes) == true) current.copy(image = image) else current
+/** One load's request number and inputs. [served] once the server's snapshot shows. */
+private class FeedLoad(
+    val number: Int,
+    val scope: MailScope,
+    val query: MailQuery,
+    val options: AvatarOptions,
+) {
+    var served = false
 }
 
 private fun UnavailableAccount.notice(): String =

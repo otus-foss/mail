@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.work.runtime)
     implementation(libs.unifiedpush.connector)
+    implementation(libs.sqldelight.android.driver)
     implementation(libs.compose.foundation)
     testImplementation(libs.robolectric)
     testImplementation(libs.roborazzi)
@@ -36,6 +37,8 @@ android {
         abortOnError = true
         warningsAsErrors = true
         checkDependencies = true
+        // ktlint and detekt cover test code; Android lint on tests took a third of its time.
+        ignoreTestSources = true
     }
     namespace = "com.otus.mail"
     compileSdk =

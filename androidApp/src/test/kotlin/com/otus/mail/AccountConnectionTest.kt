@@ -21,6 +21,11 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -55,19 +60,53 @@ class AccountConnectionTest {
                     respond(SESSION, HttpStatusCode.OK, json)
                 }
 
-                "Email/query" in body -> {
-                    respond(EMAILS, HttpStatusCode.OK, json)
-                }
-
-                "Identity/get" in body -> {
-                    respond(IDENTITIES, HttpStatusCode.OK, json)
-                }
-
                 else -> {
-                    respond(MAILBOXES, HttpStatusCode.OK, json)
+                    respond(jmapReply(body, ::answer), HttpStatusCode.OK, json)
                 }
             }
         }
+
+    /** One inbox holding one email, m1, alone in thread T1; the server keeps no states. */
+    private fun answer(
+        method: String,
+        arguments: JsonObject,
+    ): JsonObject? =
+        when (method) {
+            "Mailbox/get" -> {
+                listResult("m", listOf(parsed(MAILBOX)))
+            }
+
+            "Identity/get" -> {
+                listResult("i", parsed(IDENTITIES).jsonArray)
+            }
+
+            "Email/query" -> {
+                buildJsonObject {
+                    put("ids", listOf("m1").toJsonArray())
+                    put("total", JsonPrimitive(1))
+                }
+            }
+
+            "Email/get" -> {
+                listResult("e", arguments.found("m1", EMAIL))
+            }
+
+            "Thread/get" -> {
+                listResult("t", arguments.found("T1", THREAD))
+            }
+
+            else -> {
+                null
+            }
+        }
+
+    private fun parsed(json: String) = Json.parseToJsonElement(json)
+
+    /** The object [json] when the call asks for [id], which is all this server holds. */
+    private fun JsonObject.found(
+        id: String,
+        json: String,
+    ) = ids().orEmpty().filter { it == id }.map { parsed(json) }
 
     @Test
     fun connectingAnAccountListsItAndFillsTheInbox() {
@@ -122,14 +161,12 @@ class AccountConnectionTest {
             "urn:ietf:params:jmap:submission": {}}}},
             "primaryAccounts": {"urn:ietf:params:jmap:mail": "d1"},
             "username": "ada@example.org", "apiUrl": "/jmap/"}"""
-        const val MAILBOXES = """{"methodResponses": [["Mailbox/get",
-            {"state": "m", "list": [{"id": "a", "name": "Inbox", "role": "inbox"}]},
-            "c0"]]}"""
-        const val IDENTITIES = """{"methodResponses": [["Identity/get", {"state": "i", "list": [
-            {"email": "ada@example.org"}, {"email": "ada@other.example"}, {"email": "ada@example.org"}]}, "c0"]]}"""
-        const val EMAIL = """{"id": "m1", "threadId": "T1", "keywords": {},
+        const val MAILBOX = """{"id": "a", "name": "Inbox", "role": "inbox"}"""
+        const val IDENTITIES = """[{"email": "ada@example.org"}, {"email": "ada@other.example"},
+            {"email": "ada@example.org"}]"""
+        const val EMAIL = """{"id": "m1", "threadId": "T1", "mailboxIds": {"a": true}, "keywords": {},
             "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
             "subject": "Engine notes", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Weaving patterns"}"""
-        val EMAILS = """{"methodResponses": [${oneThreadReply(EMAIL)}]}"""
+        const val THREAD = """{"id": "T1", "emailIds": ["m1"]}"""
     }
 }

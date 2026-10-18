@@ -6,7 +6,6 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -74,7 +73,7 @@ class FolderCleaningTest {
                 reply(body)
             }
         val services = MailServices(logins = store, createClient = { JmapClient(engine) })
-        val folders = FoldersState(services.folders, this, loadAccounts = { listOf(account) })
+        val folders = testFolders(services) { listOf(account) }
         folders.refresh()
         val source =
             object : MailSource {

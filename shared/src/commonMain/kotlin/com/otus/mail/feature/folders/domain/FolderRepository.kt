@@ -28,11 +28,19 @@ sealed interface FolderOutcome {
 }
 
 /**
- * Folders on each connected account's server. Every change goes to the server; nothing is kept
- * locally. Any call can throw [FolderStorageException] when saved accounts cannot be read.
+ * Folders on each connected account's server. Every change goes to the server; the device keeps
+ * only the last loaded folders, to show before the server answers. Any call can throw
+ * [FolderStorageException] when saved accounts cannot be read.
  */
 interface FolderRepository {
     suspend fun accounts(): List<AccountFolders>
+
+    /**
+     * Each account's own folders as the device kept them from the last load, without asking the
+     * server. Shared mailboxes and server limits are not kept, and an account never loaded has no
+     * folders.
+     */
+    suspend fun cachedAccounts(): List<AccountFolders> = emptyList()
 
     suspend fun create(
         accountId: String,

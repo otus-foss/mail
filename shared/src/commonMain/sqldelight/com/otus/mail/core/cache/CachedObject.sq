@@ -1,0 +1,41 @@
+-- Server objects as JSON text, by login, kind, and id. Kinds are CacheKind names.
+CREATE TABLE cached_object (
+    login_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    id TEXT NOT NULL,
+    json TEXT NOT NULL,
+    received_millis INTEGER,
+    PRIMARY KEY (login_id, kind, id)
+);
+
+-- Lets trimming find old objects of a kind without reading the whole table.
+CREATE INDEX cached_object_received ON cached_object(kind, received_millis);
+
+readByIds:
+SELECT id, json FROM cached_object
+WHERE login_id = :loginId AND kind = :kind AND id IN :ids;
+
+readKind:
+SELECT id, json FROM cached_object
+WHERE login_id = :loginId AND kind = :kind;
+
+upsert:
+INSERT OR REPLACE INTO cached_object(login_id, kind, id, json, received_millis)
+VALUES (:loginId, :kind, :id, :json, :receivedMillis);
+
+deleteByIds:
+DELETE FROM cached_object
+WHERE login_id = :loginId AND kind = :kind AND id IN :ids;
+
+deleteKind:
+DELETE FROM cached_object
+WHERE login_id = :loginId AND kind = :kind;
+
+-- Objects without a received time stay.
+trim:
+DELETE FROM cached_object
+WHERE kind = :kind AND received_millis < :epochMillis;
+
+forgetLogin:
+DELETE FROM cached_object
+WHERE login_id = :loginId;

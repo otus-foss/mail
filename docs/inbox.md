@@ -1,9 +1,14 @@
 # Inbox and local search
 
 Inbox is Mail's default start page. Without connected accounts it is empty; no sample messages
-are shipped. Shared account setup verifies JMAP discovery and authentication. Mail loads up to
-50 messages per connected account from the server on launch and refresh. Message persistence
-and incremental synchronization remain separate work.
+are shipped. Shared account setup verifies JMAP discovery and authentication. The device keeps
+each login's mailboxes, listed emails, threads, and opened bodies in its mail cache. A list opened
+with nothing shown yet shows the device's copy at once, keeps its loading state, and then shows
+the server's answer. A copy read after the server answered is dropped. Each mailbox loads 50
+conversations first, and scrolling within 10 rows of the end loads the next 50 of each mailbox that
+has more, with the pull-to-refresh spinner under the last row while it loads. A refresh keeps every
+page already loaded. An opened message's body comes from the device when it has one, so it opens
+again at once and offline.
 
 ## Implemented
 
@@ -23,12 +28,14 @@ and incremental synchronization remain separate work.
 - Empty inbox and no-result states are distinct. Clearing search and filters restores the default
   Inbox scope. Tapping a row opens the message as a read-only page over the list; see
   [open message and selection](#open-message-and-selection).
-- Search mode, query, and filters use saveable screen state. There is no saved message store.
+- Search mode, query, and filters use saveable screen state.
 - Pulling the message area down past a fixed 80 dp threshold reloads the inbox, in both Inbox and
   search modes. The design-system `PullToRefresh` component uses Compose Material's pull gesture
   with the `RefreshIndicator` element: a pill-styled `bgDark` circle with a `strokeBgDark` outline
   that slides down with the pull, with a `text1` arc that grows and turns with the distance and
-  spins while the feed loads. A confirming haptic plays when a pull triggers the reload. Short
+  spins while the feed loads. While rows are shown, a load behind them, such as the sync at launch,
+  shows no spinner unless the user pulled for it; an empty list shows it for every load. A
+  confirming haptic plays when a pull triggers the reload. Short
   pulls spring back without loading. The element draws its own arc because Material's indicator
   is an elevated surface, which the dark theme lightens and shades.
 
@@ -125,8 +132,8 @@ names, and `InboxSettingsTest` drives the sheet.
 
 ## Searching other inboxes
 
-Choosing inboxes or accounts makes `InboxFeedState.show` load the selected scope, up to 50 of the
-newest messages per mailbox, and search then filters those. With no inbox checked, it loads every
+Choosing inboxes or accounts makes `InboxFeedState.show` load the selected scope, the newest 50
+conversations per mailbox and more as the list scrolls, and search then filters those. With no inbox checked, it loads every
 mailbox of the selected accounts. No account selected means every account. Each login queries its
 mailboxes sequentially, while different logins load in parallel. Closing search
 loads the page's own messages again. A message in two chosen mailboxes is listed once, under the
@@ -135,8 +142,8 @@ Folders with the same name in different accounts are one choice, and so are nest
 same name. Account-specific mailbox selections keep their login IDs when the source loads them.
 Scope changes clear the previous list before loading; cancelled requests cannot publish old mail
 or end the new request's loading state. Empty loading and failed loads have separate states, and a
-failed empty load offers Try again. Searching still covers only these snapshots, with no pagination
-or full server search.
+failed empty load offers Try again. Searching covers only the loaded pages, with no full server
+search; scrolling a search near its end loads more pages of the same mailboxes.
 
 ## Folder pages and message actions
 
@@ -287,8 +294,8 @@ header; search still shows its own filters.
   returns to the inbox after the folder list finishes loading.
 - Folder pages show only the filter pills, since a folder pill would leave the folder.
 - App wiring finds the folder pills in the loaded folders (`folderPillOptions`), because the inbox
-  feature does not import folders. The feed loads a pill's folders with `MailScope.Folders`, up to
-  50 of the newest messages per folder. The inbox's mail leaves the list at once, so it never shows
+  feature does not import folders. The feed loads a pill's folders with `MailScope.Folders`, 50
+  conversations per folder at a time. The inbox's mail leaves the list at once, so it never shows
   under the pill. A message in two of the folders is listed once.
 - `MailBehaviorStore` saves the row as one value with a pill per line. Lines this version doesn't
   know are skipped.

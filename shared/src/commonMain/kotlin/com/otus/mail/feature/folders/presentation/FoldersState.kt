@@ -18,12 +18,14 @@ import kotlinx.coroutines.launch
 /**
  * Every account's folders, and the changes the user makes to them. One change runs at a time.
  * [loadAccounts] loads the list; app wiring has it find each account's Read later folder too.
- * [onDeleted] runs once the server has deleted a folder.
+ * While the list is empty, a load first shows [loadCached], the device's copy, so the sidebar and
+ * its counts show before the server answers. [onDeleted] runs once the server has deleted a folder.
  */
 class FoldersState(
     private val repository: FolderRepository,
     private val scope: CoroutineScope,
     private val onDeleted: (MailFolder) -> Unit = {},
+    private val loadCached: suspend () -> List<AccountFolders> = { repository.cachedAccounts() },
     private val loadAccounts: suspend () -> List<AccountFolders>,
 ) {
     var accounts by mutableStateOf(emptyList<AccountFolders>())
@@ -133,6 +135,11 @@ class FoldersState(
     private suspend fun load(isLatest: () -> Boolean) {
         loading = true
         try {
+            // The device's copy shows while nothing does yet; loading stays on for the server's.
+            if (accounts.isEmpty()) {
+                val cached = loadCached()
+                if (isLatest() && accounts.isEmpty() && cached.any { it.folders.isNotEmpty() }) accounts = cached
+            }
             val loaded = loadAccounts()
             if (isLatest()) accounts = loaded
         } catch (expected: FolderStorageException) {
