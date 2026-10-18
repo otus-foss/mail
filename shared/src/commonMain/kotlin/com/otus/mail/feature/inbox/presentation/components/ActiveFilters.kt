@@ -10,13 +10,14 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_calendar_add_on
 import com.otus.designsystem.resources.symbol_folder
-import com.otus.designsystem.resources.symbol_folder_off
 import com.otus.designsystem.resources.symbol_straighten
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.ReadStatus
+import com.otus.mail.feature.inbox.domain.RecipientField
 import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderLabel
@@ -47,39 +48,43 @@ class ActiveFilters(
     val onChange: (InboxFilters) -> Unit = {},
     val button: FocusRequester = FocusRequester(),
 ) {
-    /** Each applied choice, in the panel's order; the sort order is not one. */
+    /** Each applied choice, roughly in the panel's order; the sort order is not one. */
     internal val active: List<ActiveFacet>
         get() =
             buildList {
-                applied.show.sortedBy { it.ordinal }.forEach { facet ->
+                applied.status.takeIf { it != ReadStatus.All }?.let { status ->
+                    val pill = symbolPill(status.label, status.icon)
+                    add(ActiveFacet(status, { it.copy(status = ReadStatus.All) }, pill))
+                }
+                applied.quick.sortedBy { it.ordinal }.forEach { facet ->
                     add(ActiveFacet(facet, { it.with(facet, false) }, symbolPill(facet.label, facet.icon)))
                 }
                 applied.from.takeIf { it.isNotEmpty() }?.let { from ->
-                    val senders = from.map { MailSender(name = "", address = it) }
+                    val senders = from.map { MailSender(name = it.name, address = it.addresses.sorted().first()) }
                     add(ActiveFacet(FROM_KEY, { it.copy(from = emptySet()) }) { PeopleFilterChip(senders, it) })
                 }
-                applied.accounts.takeIf { it.isNotEmpty() }?.let { ids ->
-                    add(ActiveFacet(ACCOUNTS_KEY, { it.copy(accounts = emptySet()) }, accountsPill(ids)))
+                (applied.sentTo.map { it.address } + applied.to).takeIf { it.isNotEmpty() }?.let { addresses ->
+                    val remove = { filters: InboxFilters -> filters.copy(sentTo = emptySet(), to = emptySet()) }
+                    add(ActiveFacet(SENT_TO_KEY, remove, sentToPill(addresses)))
                 }
-                applied.sentTo.takeIf { it.isNotEmpty() }?.let { sentTo ->
-                    val pill = sentToPill(sentTo.map { it.address })
-                    add(ActiveFacet(SENT_TO_KEY, { it.copy(sentTo = emptySet()) }, pill))
+                applied.receivedIn.takeIf { it != RecipientField.Default }?.let { fields ->
+                    val label = "In " + fields.sortedBy { it.ordinal }.joinToString(", ") { it.label }
+                    val pill = symbolPill(label, Res.drawable.symbol_alternate_email)
+                    add(ActiveFacet(FIELDS_KEY, { it.copy(receivedIn = RecipientField.Default) }, pill))
                 }
-                applied.receivedAs.sortedBy { it.ordinal }.forEach { field ->
-                    val pill = symbolPill("As ${field.label}", Res.drawable.symbol_alternate_email)
-                    add(ActiveFacet(field, { it.copy(receivedAs = it.receivedAs - field) }, pill))
+                applied.account?.let { id ->
+                    add(ActiveFacet(ACCOUNTS_KEY, { it.copy(account = null) }, accountsPill(setOf(id))))
                 }
                 applied.folders.forEach { ref ->
                     add(ActiveFacet(ref, { it.withFolder(ref, false) }, folderPill(ref)))
-                }
-                applied.skipFolders.forEach { ref ->
-                    val pill = symbolPill("Not in ${folderName(ref).name}", Res.drawable.symbol_folder_off)
-                    add(ActiveFacet("skip" to ref, { it.withSkipped(ref, false) }, pill))
                 }
                 applied.date.takeIf { it != DateFilter.Any }?.let { date ->
                     val label = (date as? DateFilter.Range)?.let { rangeLabel(it, dateFormatter) } ?: date.label
                     val pill = symbolPill(label, Res.drawable.symbol_calendar_add_on)
                     add(ActiveFacet(DATE_KEY, { it.copy(date = DateFilter.Any) }, pill))
+                }
+                applied.types.sortedBy { it.ordinal }.forEach { facet ->
+                    add(ActiveFacet(facet, { it.with(facet, false) }, symbolPill(facet.label, facet.icon)))
                 }
                 applied.size.takeIf { it != SizeFilter.Any }?.let { size ->
                     val pill = symbolPill(size.label, Res.drawable.symbol_straighten)
@@ -123,6 +128,7 @@ class ActiveFilters(
         const val FROM_KEY = "from"
         const val ACCOUNTS_KEY = "accounts"
         const val SENT_TO_KEY = "sentTo"
+        const val FIELDS_KEY = "fields"
         const val DATE_KEY = "date"
         const val SIZE_KEY = "size"
     }

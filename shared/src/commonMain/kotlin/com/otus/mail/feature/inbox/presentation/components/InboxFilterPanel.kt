@@ -6,7 +6,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,8 +25,9 @@ import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.FilterCount
 import com.otus.mail.feature.inbox.presentation.FilterOptions
+import com.otus.mail.feature.inbox.presentation.FilterPage
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.filterSenders
+import com.otus.mail.feature.inbox.presentation.fromPeople
 import com.otus.mail.feature.inbox.presentation.showLabel
 
 /**
@@ -43,11 +43,9 @@ fun InboxFilterPanel(
     collapsedHeight: Dp,
     modifier: Modifier = Modifier,
 ) {
-    var folders by rememberSaveable { mutableStateOf(false) }
     var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
     val close = state::close
-    // The panel opens on its main page again, however it closed.
-    LaunchedEffect(state.isOpen) { if (state.isOpen) folders = false }
+    val folders = state.page == FilterPage.Folders
     val draft = state.draft
     // The last draft stays on screen while the panel closes.
     var shown by remember { mutableStateOf(InboxFilters()) }
@@ -61,7 +59,7 @@ fun InboxFilterPanel(
                 "Filters",
                 close,
                 closeDescription = "Close filters",
-                onBack = if (folders) ({ folders = false }) else null,
+                onBack = if (folders) state::back else null,
             )
         },
         footer = { InboxFilterFooter(state, shown) },
@@ -83,16 +81,14 @@ fun InboxFilterPanel(
             if (allFolders) {
                 FolderPickerPage(shown, options, state::edit)
             } else {
-                val senders = remember(messages, shown.from) { filterSenders(messages, shown.from) }
-                val pages =
-                    FilterPanelPages({ folders = true }, { sheet = FilterSheet.Date }, {
-                        sheet =
-                            FilterSheet.Sender
-                    })
+                val senders = remember(messages) { fromPeople(messages, limit = MAX_SENDER_CHIPS) }
+                val pages = FilterPanelPages({ state.openPage(FilterPage.Folders) }, { sheet = FilterSheet.Date })
                 FilterSections(shown, options, senders, dateFormatter, state::edit, pages)
             }
         }
     }
+    // Composed after the panel, so its handler comes first: Back on a page returns to the main page.
+    BackHandler(state.isOpen && state.page != FilterPage.Main, state::back)
     sheet?.takeIf { state.isOpen }?.let { FilterPanelSheet(it, state, shown, dateFormatter) { sheet = null } }
 }
 
@@ -105,9 +101,11 @@ private fun InboxFilterFooter(
     FilterPanelFooter(
         count.showLabel,
         onApply = state::show,
-        onReset = { state.edit { InboxFilters() } },
+        onReset = state::reset,
         applyEnabled = count != FilterCount.Known(0),
         resetEnabled = !draft.isDefault,
         counting = count == FilterCount.Counting,
     )
 }
+
+private const val MAX_SENDER_CHIPS = 6

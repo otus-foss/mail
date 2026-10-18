@@ -3,13 +3,8 @@ package com.otus.mail.app
 import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.theme.FolderColor
-import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.DRAFTS_ROLE
-import com.otus.mail.feature.folders.domain.JUNK_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.SENT_ROLE
-import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.ancestors
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.domain.sharedFolder
@@ -43,18 +38,11 @@ internal fun MailStates.filterOptions(page: MailPage): FilterOptions {
         addresses = filterAddresses(choice),
         accounts = accounts,
         shortcuts = shortcuts(shown, accounts),
-        skip =
-            shown
-                .flatMap { account -> account.folderTree().map { it.folder }.filter { it.role in SKIPPABLE_ROLES } }
-                .map { FolderKey(it.accountId, it.id) },
         folders = page == MailPage.Inbox,
         readLater = shown.any { it.readLaterId != null },
         layout = behavior.behavior.filters,
     )
 }
-
-/** The system folders the Skip folders section offers, in the sidebar's order. */
-private val SKIPPABLE_ROLES = setOf(DRAFTS_ROLE, SENT_ROLE, ARCHIVE_ROLE, JUNK_ROLE, TRASH_ROLE)
 
 private fun MailStates.folderColor(folder: MailFolder): FolderColor = FolderColor.named(folderColors.colorOf(folder))
 

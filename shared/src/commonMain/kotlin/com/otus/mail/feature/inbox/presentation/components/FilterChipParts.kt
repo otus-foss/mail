@@ -16,55 +16,72 @@ import com.otus.designsystem.resources.symbol_event
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_forward
+import com.otus.designsystem.resources.symbol_hourglass_empty
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_newspaper
 import com.otus.designsystem.resources.symbol_reply
-import com.otus.designsystem.resources.symbol_speaker_notes_off
 import com.otus.designsystem.theme.FilterTokens
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.ShowFacet
 import com.otus.mail.feature.inbox.domain.SizeFilter
+import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.feature.inbox.presentation.FilterFolder
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderLabel
 import com.otus.mail.feature.inbox.presentation.includedCount
 import org.jetbrains.compose.resources.DrawableResource
 
-internal val ShowFacet.label: String
+internal val ReadStatus.label: String
     get() =
         when (this) {
-            ShowFacet.Unread -> "Unread"
-            ShowFacet.Read -> "Read"
-            ShowFacet.Flagged -> "Flagged"
-            ShowFacet.NotFlagged -> "Not flagged"
-            ShowFacet.ReadLater -> "Read later"
-            ShowFacet.Attachments -> "Attachments"
-            ShowFacet.Replied -> "Replied"
-            ShowFacet.NotReplied -> "Not replied"
-            ShowFacet.Forwarded -> "Forwarded"
-            ShowFacet.WaitingForReply -> "Waiting for reply"
-            ShowFacet.Newsletters -> "Newsletters"
-            ShowFacet.CalendarInvites -> "Calendar invites"
-            ShowFacet.Conversations -> "Convos"
+            ReadStatus.All -> "All"
+            ReadStatus.Unread -> "Unread"
+            ReadStatus.Read -> "Read"
         }
 
-internal val ShowFacet.icon: DrawableResource
+internal val ReadStatus.icon: DrawableResource
+    get() = if (this == ReadStatus.Read) Res.drawable.symbol_mark_email_read else Res.drawable.symbol_mark_email_unread
+
+internal val QuickFacet.label: String
     get() =
         when (this) {
-            ShowFacet.Unread -> Res.drawable.symbol_mark_email_unread
-            ShowFacet.Read -> Res.drawable.symbol_mark_email_read
-            ShowFacet.Flagged, ShowFacet.NotFlagged -> Res.drawable.symbol_flag
-            ShowFacet.ReadLater -> Res.drawable.symbol_bookmark
-            ShowFacet.Attachments -> Res.drawable.symbol_attach_file
-            ShowFacet.Replied, ShowFacet.WaitingForReply -> Res.drawable.symbol_reply
-            ShowFacet.NotReplied -> Res.drawable.symbol_speaker_notes_off
-            ShowFacet.Forwarded -> Res.drawable.symbol_forward
-            ShowFacet.Newsletters -> Res.drawable.symbol_newspaper
-            ShowFacet.CalendarInvites -> Res.drawable.symbol_event
-            ShowFacet.Conversations -> Res.drawable.symbol_forum
+            QuickFacet.Flagged -> "Flagged"
+            QuickFacet.ReadLater -> "Read later"
+            QuickFacet.Attachments -> "Attachments"
+            QuickFacet.NeedsMyReply -> "Needs my reply"
+            QuickFacet.AwaitingReply -> "Awaiting reply"
+            QuickFacet.Conversations -> "Conversations"
+            QuickFacet.Forwarded -> "Forwarded"
+        }
+
+internal val QuickFacet.icon: DrawableResource
+    get() =
+        when (this) {
+            QuickFacet.Flagged -> Res.drawable.symbol_flag
+            QuickFacet.ReadLater -> Res.drawable.symbol_bookmark
+            QuickFacet.Attachments -> Res.drawable.symbol_attach_file
+            QuickFacet.NeedsMyReply -> Res.drawable.symbol_reply
+            QuickFacet.AwaitingReply -> Res.drawable.symbol_hourglass_empty
+            QuickFacet.Conversations -> Res.drawable.symbol_forum
+            QuickFacet.Forwarded -> Res.drawable.symbol_forward
+        }
+
+internal val TypeFacet.label: String
+    get() =
+        when (this) {
+            TypeFacet.Newsletters -> "Newsletters"
+            TypeFacet.CalendarInvites -> "Calendar invites"
+        }
+
+internal val TypeFacet.icon: DrawableResource
+    get() =
+        when (this) {
+            TypeFacet.Newsletters -> Res.drawable.symbol_newspaper
+            TypeFacet.CalendarInvites -> Res.drawable.symbol_event
         }
 
 internal val RecipientField.label: String
@@ -92,6 +109,7 @@ internal val DateFilter.label: String
             DateFilter.Today -> "Today"
             DateFilter.Last7 -> "Last 7 days"
             DateFilter.Last30 -> "Last 30 days"
+            DateFilter.ThisYear -> "This year"
             is DateFilter.Range -> "Custom…"
         }
 

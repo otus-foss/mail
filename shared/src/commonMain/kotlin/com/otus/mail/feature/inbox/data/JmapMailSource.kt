@@ -13,6 +13,7 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.InboxFailure
@@ -22,9 +23,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.ShowFacet
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
-import com.otus.mail.feature.inbox.domain.fromAny
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
@@ -48,6 +47,9 @@ class JmapMailSource(
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     private val clock: Clock = Clock.System,
 ) : MailSource {
+    /** Each login's mailboxes for the counts of one filter panel session. */
+    private var countMailboxes: Map<String, List<MailboxObject>> = emptyMap()
+
     override suspend fun messages(scope: MailScope): InboxSnapshot = messages(scope, MailQuery())
 
     override suspend fun messages(
@@ -73,26 +75,29 @@ class JmapMailSource(
                         }
                     }.awaitAll()
             }
-        val own = query.ownAddresses
         return InboxSnapshot(
             messages =
                 results
                     .filterIsInstance<AccountLoad.Loaded>()
                     .flatMap { it.messages }
-                    .filter { !query.filters.has(ShowFacet.WaitingForReply) || it.fromAny(own) }
-                    .filter { !query.filters.has(ShowFacet.CalendarInvites) || it.attributes.invite }
-                    .filter { !query.filters.has(ShowFacet.Conversations) || it.conversation?.exchanged == true },
+                    .filter(query.filters::keepsLoaded),
             unavailable = results.filterIsInstance<AccountLoad.Failed>().map { it.account },
         )
     }
 
-    /** Sums each login's total; null when no login could be counted. */
+    override fun beginCounting() {
+        countMailboxes = emptyMap()
+    }
+
+    /**
+     * Sums each login's total; null when no login could be counted, or when a choice only the
+     * loaded threads can tell is on. Each login's mailboxes load once until [beginCounting].
+     */
     override suspend fun count(
         scope: MailScope,
         query: MailQuery,
     ): Long? {
-        // No query finds invites or two-sided threads, so only the loaded mail can be counted.
-        if (query.filters.has(ShowFacet.CalendarInvites) || query.filters.has(ShowFacet.Conversations)) return null
+        if (query.filters.clientOnly) return null
         val saved = withContext(Dispatchers.IO) { savedLogins() }
         val now = clock.now()
         val totals =
@@ -115,7 +120,13 @@ class JmapMailSource(
         try {
             val connection = connections.connection(login)
             connection.session().accountFor(JmapCapability.MAIL)?.let { accountId ->
-                val ids = scope.chosen(mailboxesOf(connection, accountId), login.id, query).map { it.id }
+                val mailboxes =
+                    countMailboxes[login.id]
+                        ?: mailboxesOf(
+                            connection,
+                            accountId,
+                        ).also { countMailboxes = countMailboxes + (login.id to it) }
+                val ids = scope.chosen(mailboxes, login.id, query).map { it.id }
                 if (ids.isEmpty()) {
                     0L
                 } else {
@@ -174,6 +185,7 @@ class JmapMailSource(
                 shown = chosen.map { it.id }.toSet(),
                 trashAndJunk = mailboxes.filter { it.role in HIDDEN_ROLES }.map { it.id }.toSet(),
                 sent = mailboxes.filter { it.role == SENT_ROLE }.map { it.id }.toSet(),
+                own = query.addresses[login.id].orEmpty() + login.username,
             )
         // Each login loads its mailboxes sequentially instead of starting one request per folder.
         val loaded =

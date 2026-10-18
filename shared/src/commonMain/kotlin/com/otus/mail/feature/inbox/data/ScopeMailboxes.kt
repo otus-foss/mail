@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.mailboxName
 
 /** Whether this scope reads mail of the login with [loginId]. */
@@ -28,7 +29,8 @@ internal fun MailScope.reads(loginId: String): Boolean =
 
 /**
  * The mailboxes of the login [loginId] that this scope loads, among its [mailboxes]. Folders
- * chosen in [query] replace the scope's own.
+ * chosen in [query] replace the scope's own. Awaiting reply adds the Sent mailbox to the scope's
+ * own, because a thread the user started may have no email anywhere else.
  */
 internal fun MailScope.chosen(
     mailboxes: List<MailboxObject>,
@@ -36,7 +38,16 @@ internal fun MailScope.chosen(
     query: MailQuery,
 ): List<MailboxObject> {
     query.folderIds[loginId]?.let { ids -> return mailboxes.filter { it.id in ids } }
-    return when (this) {
+    val own = scoped(mailboxes, loginId)
+    if (!query.filters.has(QuickFacet.AwaitingReply)) return own
+    return (own + mailboxes.filter { it.role == SENT_ROLE }).distinctBy { it.id }
+}
+
+private fun MailScope.scoped(
+    mailboxes: List<MailboxObject>,
+    loginId: String,
+): List<MailboxObject> =
+    when (this) {
         is MailScope.Role -> {
             mailboxes.filter { it.role == role }
         }
@@ -67,12 +78,13 @@ internal fun MailScope.chosen(
             mailboxes.filter { MailScope.Folder(loginId, it.id) in folders }
         }
     }
-}
 
 /** The name [mailbox]'s messages are filed under in this scope. */
 internal fun MailScope.nameOf(mailbox: MailboxObject): String =
     when (this) {
-        is MailScope.Role -> name
+        is MailScope.Role -> if (mailbox.role == role) name else mailboxName(mailbox.name, mailbox.role)
         is MailScope.Roles -> names[mailbox.role] ?: mailboxName(mailbox.name, mailbox.role)
         else -> mailboxName(mailbox.name, mailbox.role)
     }
+
+private const val SENT_ROLE = "sent"

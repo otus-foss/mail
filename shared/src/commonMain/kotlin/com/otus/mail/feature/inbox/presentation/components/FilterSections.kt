@@ -18,19 +18,19 @@ import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.SizeFilter
+import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.feature.inbox.presentation.FilterOptions
+import com.otus.mail.feature.inbox.presentation.FilterPerson
 
 /** Changes the filter panel's draft. */
 internal typealias FilterEdit = ((InboxFilters) -> InboxFilters) -> Unit
 
-/** What the filter panel's sections can open: the folder page, the date range, and a typed sender. */
+/** What the filter panel's sections can open: the folder page and the date range. */
 internal class FilterPanelPages(
     val onAllFolders: () -> Unit,
     val onCustomDate: () -> Unit,
-    val onAddSender: () -> Unit,
 )
 
 /**
@@ -41,7 +41,7 @@ internal class FilterPanelPages(
 internal fun FilterSections(
     draft: InboxFilters,
     options: FilterOptions,
-    senders: List<MailSender>,
+    senders: List<FilterPerson>,
     dateFormatter: DateFormatter,
     onEdit: FilterEdit,
     pages: FilterPanelPages,
@@ -61,35 +61,76 @@ private fun Section(
     section: FilterSection,
     draft: InboxFilters,
     options: FilterOptions,
-    senders: List<MailSender>,
+    senders: List<FilterPerson>,
     dateFormatter: DateFormatter,
     onEdit: FilterEdit,
     pages: FilterPanelPages,
 ) {
     when (section) {
-        FilterSection.Show -> ShowSection(draft, options, onEdit)
-        FilterSection.From -> FromSection(draft, senders, onEdit, pages.onAddSender)
-        FilterSection.Accounts -> AccountsSection(draft, options, onEdit)
-        FilterSection.SentTo -> SentToSection(draft, options, onEdit)
-        FilterSection.ReceivedAs -> ReceivedAsSection(draft, onEdit)
-        FilterSection.InFolder -> FolderSection(draft, options, onEdit, pages.onAllFolders)
-        FilterSection.SkipFolders -> SkipSection(draft, options, onEdit)
-        FilterSection.Date -> DateSection(draft.date, dateFormatter, onEdit, pages.onCustomDate)
-        FilterSection.Size -> SizeSection(draft.size, onEdit)
-        FilterSection.Sort -> SortToggle(draft.sort, onEdit)
+        FilterSection.Status -> {
+            StatusToggle(draft.status, onEdit)
+        }
+
+        FilterSection.Quick -> {
+            QuickSection(draft, options, onEdit)
+        }
+
+        FilterSection.People -> {
+            FromSection(draft, senders, onEdit)
+            SentToSection(draft, options, onEdit)
+            ReceivedInSection(draft, onEdit)
+        }
+
+        FilterSection.Rows -> {
+            if (options.offersAccount) AccountsSection(draft, options, onEdit)
+            if (options.folders) FolderSection(draft, options, onEdit, pages.onAllFolders)
+            DateSection(draft.date, dateFormatter, onEdit, pages.onCustomDate)
+            TypeSection(draft, onEdit)
+            SizeSection(draft.size, onEdit)
+        }
+
+        FilterSection.Sort -> {
+            SortToggle(draft.sort, onEdit)
+        }
     }
 }
 
 @Composable
-private fun ShowSection(
+private fun StatusToggle(
+    status: ReadStatus,
+    onEdit: FilterEdit,
+) {
+    SegmentedToggle(
+        ReadStatus.entries.map { it.label },
+        ReadStatus.entries.indexOf(status),
+        { index -> onEdit { it.copy(status = ReadStatus.entries[index]) } },
+        height = FilterTokens.segmentHeight,
+    )
+}
+
+@Composable
+private fun QuickSection(
     draft: InboxFilters,
     options: FilterOptions,
     onEdit: FilterEdit,
 ) {
-    val facets = options.layout.show.filter { options.readLater || it != ShowFacet.ReadLater }
-    if (facets.isEmpty()) return
-    FilterSection("Show") {
-        facets.forEach { facet ->
+    FilterSection("Quick filters") {
+        options.quick.forEach { facet ->
+            val on = draft.has(facet)
+            FilterChip(facet.label, on, { onEdit { it.with(facet, !on) } }) {
+                Symbol(facet.icon, size = FilterTokens.chipIconSize)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TypeSection(
+    draft: InboxFilters,
+    onEdit: FilterEdit,
+) {
+    FilterSection("Type") {
+        TypeFacet.entries.forEach { facet ->
             val on = draft.has(facet)
             FilterChip(facet.label, on, { onEdit { it.with(facet, !on) } }) {
                 Symbol(facet.icon, size = FilterTokens.chipIconSize)
@@ -106,7 +147,7 @@ private fun DateSection(
     onCustomDate: () -> Unit,
 ) {
     FilterSection("Date") {
-        listOf(DateFilter.Any, DateFilter.Today, DateFilter.Last7, DateFilter.Last30).forEach { preset ->
+        DATE_PRESETS.forEach { preset ->
             FilterChip(preset.label, date == preset, { onEdit { it.copy(date = preset) } }, role = FilterChipRole.Radio)
         }
         val custom = date as? DateFilter.Range
@@ -143,3 +184,6 @@ private fun SortToggle(
         height = FilterTokens.segmentHeight,
     )
 }
+
+private val DATE_PRESETS =
+    listOf(DateFilter.Any, DateFilter.Today, DateFilter.Last7, DateFilter.Last30, DateFilter.ThisYear)

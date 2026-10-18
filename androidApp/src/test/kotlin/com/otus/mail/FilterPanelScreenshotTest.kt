@@ -17,7 +17,8 @@ import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
@@ -37,7 +38,7 @@ class FilterPanelScreenshotTest {
 
     private val selections =
         InboxFilters(
-            show = setOf(ShowFacet.Unread),
+            status = ReadStatus.Unread,
             sentTo = setOf(OwnAddress("ada", "otus@rubylabs.design")),
             folders = setOf(FolderRef("ada", "acme", includeSubfolders = false)),
             date = DateFilter.Last7,
@@ -99,7 +100,7 @@ class FilterPanelScreenshotTest {
 
     @Test
     fun noConversations() {
-        show(InboxFilters(show = setOf(ShowFacet.Flagged)), total = 0)
+        show(InboxFilters(quick = setOf(QuickFacet.Flagged)), total = 0)
         compose.onNodeWithText("No conversations").assertIsNotEnabled()
         shot("filter_panel_no_conversations")
     }

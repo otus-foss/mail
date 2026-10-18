@@ -2,17 +2,20 @@ package com.otus.mail.feature.inbox.domain
 
 /**
  * What a page's list is narrowed to. The quick pills and the filter panel edit the same value.
- * [show] conditions must all hold. [from] senders, [accounts], [sentTo] addresses, [receivedAs]
- * fields, and [folders] each match any of their choices. Mail in [skipFolders] is left out.
+ * [status], each of [quick] and [types], and each other choice must all hold. [from] senders,
+ * [sentTo] and [to] recipients, and [folders] each match any of their choices. Recipients match
+ * in the [receivedIn] fields. A null [account] reads every login.
  */
 data class InboxFilters(
-    val show: Set<ShowFacet> = emptySet(),
-    val from: Set<String> = emptySet(),
-    val accounts: Set<String> = emptySet(),
+    val status: ReadStatus = ReadStatus.All,
+    val quick: Set<QuickFacet> = emptySet(),
+    val types: Set<TypeFacet> = emptySet(),
+    val from: Set<SenderKey> = emptySet(),
     val sentTo: Set<OwnAddress> = emptySet(),
-    val receivedAs: Set<RecipientField> = emptySet(),
+    val to: Set<String> = emptySet(),
+    val receivedIn: Set<RecipientField> = RecipientField.Default,
+    val account: String? = null,
     val folders: Set<FolderRef> = emptySet(),
-    val skipFolders: Set<FolderRef> = emptySet(),
     val date: DateFilter = DateFilter.Any,
     val size: SizeFilter = SizeFilter.Any,
     val sort: FilterSort = FilterSort.NewestFirst,
@@ -20,50 +23,82 @@ data class InboxFilters(
     /** How many choices differ from the defaults, one per pill the row shows; the order is not one. */
     val activeCount: Int
         get() =
-            listOf(show, from, accounts, sentTo, receivedAs, folders, skipFolders).sumOf { it.size } +
-                (if (date == DateFilter.Any) 0 else 1) +
-                (if (size == SizeFilter.Any) 0 else 1)
+            listOf(quick, types, from, sentTo, to, folders).sumOf { it.size } +
+                listOf(
+                    status != ReadStatus.All,
+                    account != null,
+                    receivedIn != RecipientField.Default,
+                    date != DateFilter.Any,
+                    size != SizeFilter.Any,
+                ).count { it }
 
     /** Nothing narrows the list, and it is newest first. */
     val isDefault: Boolean
         get() = this == InboxFilters()
 
-    fun has(facet: ShowFacet): Boolean = facet in show
+    /** Whether a choice is on that only the loaded threads can tell, so the server cannot count it. */
+    val clientOnly: Boolean
+        get() = quick.any { it.clientOnly } || types.any { it.clientOnly }
 
-    /** These filters with [facet] turned [on] or off; turning it on turns its opposite off. */
+    /** Every address of the chosen senders. */
+    val fromAddresses: Set<String>
+        get() = from.flatMap { it.addresses }.toSet()
+
+    fun has(facet: QuickFacet): Boolean = facet in quick
+
     fun with(
-        facet: ShowFacet,
+        facet: QuickFacet,
         on: Boolean,
-    ): InboxFilters = copy(show = if (on) show - setOfNotNull(facet.opposite) + facet else show - facet)
+    ): InboxFilters = copy(quick = if (on) quick + facet else quick - facet)
 
-    fun has(pill: InboxPill.Filter): Boolean = has(pill.facet)
+    fun has(facet: TypeFacet): Boolean = facet in types
+
+    fun with(
+        facet: TypeFacet,
+        on: Boolean,
+    ): InboxFilters = copy(types = if (on) types + facet else types - facet)
+
+    /** Whether the row pill's filter is on: Unread is the status, the others quick filters. */
+    fun has(pill: InboxPill.Filter): Boolean = pill.quick?.let(::has) ?: (status == ReadStatus.Unread)
 
     fun with(
         pill: InboxPill.Filter,
         on: Boolean,
-    ): InboxFilters = with(pill.facet, on)
+    ): InboxFilters = pill.quick?.let { with(it, on) } ?: copy(status = if (on) ReadStatus.Unread else ReadStatus.All)
 
     /** Only [ref]'s folder, a different subfolder choice of the same folder replacing it. */
     fun withFolder(
         ref: FolderRef,
         on: Boolean,
-    ): InboxFilters = copy(folders = folders.toggled(ref, on))
+    ): InboxFilters {
+        val others = folders.filterNot { it.loginId == ref.loginId && it.mailboxId == ref.mailboxId }.toSet()
+        return copy(folders = if (on) others + ref else others)
+    }
 
-    /** [ref]'s folder left out, or no longer left out. */
-    fun withSkipped(
-        ref: FolderRef,
-        on: Boolean,
-    ): InboxFilters = copy(skipFolders = skipFolders.toggled(ref, on))
+    /**
+     * Whether [message] meets the choices the server cannot check: the reply state and two-sided
+     * threads, read from its conversation, and calendar invites. Messages without a conversation
+     * meet none of the thread choices.
+     */
+    fun keepsLoaded(message: MailMessage): Boolean {
+        val conversation = message.conversation
+        return quick.filter { it.clientOnly }.all { facet ->
+            when (facet) {
+                QuickFacet.NeedsMyReply -> conversation?.needsMyReply == true
+                QuickFacet.AwaitingReply -> conversation?.awaitingReply == true
+                QuickFacet.Conversations -> conversation?.exchanged == true
+                else -> true
+            }
+        } && (TypeFacet.CalendarInvites !in types || message.attributes.invite)
+    }
 }
 
-private fun Set<FolderRef>.toggled(
-    ref: FolderRef,
-    on: Boolean,
-): Set<FolderRef> {
-    val others = filterNot { it.loginId == ref.loginId && it.mailboxId == ref.mailboxId }.toSet()
-    return if (on) others + ref else others
-}
-
-/** Mail the user sent, which waits for a reply while it is the latest of its conversation. */
-fun MailMessage.fromAny(addresses: Set<String>): Boolean =
-    addresses.any { it.equals(sender.address, ignoreCase = true) }
+/** The quick filter a row pill turns on; null for Unread, which sets the status. */
+private val InboxPill.Filter.quick: QuickFacet?
+    get() =
+        when (this) {
+            InboxPill.Filter.Unread -> null
+            InboxPill.Filter.Attachments -> QuickFacet.Attachments
+            InboxPill.Filter.Flagged -> QuickFacet.Flagged
+            InboxPill.Filter.Conversations -> QuickFacet.Conversations
+        }
