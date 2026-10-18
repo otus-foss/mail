@@ -30,6 +30,8 @@ data class InboxContext(
     val rowLook: RowLook = RowLook(),
     /** The folder color nudge above the first row; null shows none. */
     val nudge: ListNudge? = null,
+    /** Loads the feed's next page, which the list asks for as it scrolls near its end. */
+    val onLoadMore: () -> Unit = {},
 ) {
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()

@@ -7,37 +7,67 @@ import com.otus.jmap.JmapIds
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.cache.CacheKind
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.objects
+import com.otus.mail.core.mail.putObject
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageContent
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.time.Instant
 
 /**
  * Loads one message's `textBody` and `htmlBody` parts and their values with `Email/get` (RFC 8621,
  * sections 4.1.4 and 4.2), up to [MAX_BODY_BYTES] per part. The list loads only previews, so the
- * body comes when a message opens.
+ * body comes when a message opens. An email's body never changes, so [cache] keeps the fetched
+ * Email object, with only these properties, under its id per login; the message opens again at
+ * once and offline. It is saved with its received time, so trimming old bodies can drop it.
  */
 class JmapMessageBodies(
     private val connections: JmapConnections,
     private val logins: LoginStore,
+    private val cache: MailCache = InMemoryMailCache(),
 ) : MessageBodies {
     override suspend fun content(message: MailMessage): MessageContent? =
         try {
-            val account = mailAccount(connections, logins, message.location.accountId)
-            val email =
-                account
-                    ?.connection
-                    ?.call(GetMethod(EmailType, account.id, JmapIds.Of(listOf(message.emailId)), PROPERTIES, ARGUMENTS))
-                    ?.list
-                    ?.firstOrNull()
+            val loginId = message.location.accountId
+            val email = cached(loginId, message.emailId) ?: fetched(loginId, message)
             email?.let { jmapDecoding { it.toMessageContent() } }
         } catch (expected: JmapException) {
             null
         } catch (expected: LoginStoreException) {
             null
         }
+
+    private suspend fun cached(
+        loginId: String,
+        emailId: String,
+    ): EmailObject? = cache.objects(loginId, CacheKind.Body, EmailObject.serializer(), listOf(emailId))[emailId]
+
+    /** The email from the server, saved in [cache] for the next open. */
+    private suspend fun fetched(
+        loginId: String,
+        message: MailMessage,
+    ): EmailObject? {
+        val account = mailAccount(connections, logins, loginId) ?: return null
+        val ids = JmapIds.Of(listOf(message.emailId))
+        val email =
+            account.connection
+                .call(
+                    GetMethod(EmailType, account.id, ids, PROPERTIES, ARGUMENTS),
+                ).list
+                .firstOrNull()
+        if (email != null) {
+            val received = runCatching { Instant.parse(email.receivedAt).toEpochMilliseconds() }.getOrNull()
+            cache.write(loginId) { putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, received) }
+        }
+        return email
+    }
 
     private companion object {
         const val MAX_BODY_BYTES = 1_000_000

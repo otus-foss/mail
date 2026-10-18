@@ -28,24 +28,19 @@ class JmapMailboxScopeTest {
     @Test
     fun accountChoicesDoNotConnectToExcludedLogins() =
         runTest {
-            val bodies = mutableListOf<String>()
+            val server = FakeMailServer(MAILBOXES)
             val store =
                 InMemoryLoginStore().apply {
                     save(ada, "secret")
                     save(ada.copy(id = "empty", name = "Empty", username = "empty@example.org"), "wrong")
                 }
-            val engine =
-                stalwartLike { body ->
-                    bodies += body
-                    if ("Mailbox/get" in body) MAILBOXES else EMAILS
-                }
-            val source = source(engine, store)
+            val source = source(stalwartLike(api = server::answer), store)
             val chosen = MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox")), setOf("ada"))
             assertTrue(source.messages(chosen).unavailable.isEmpty())
-            assertEquals(1, bodies.count { "Email/query" in it })
-            assertTrue(bodies.any { "\"inMailbox\":\"a\"" in it })
+            assertEquals(1, server.calls("Email/query").size)
+            assertTrue(server.bodies.any { "\"inMailbox\":\"a\"" in it })
             assertTrue(source.messages(MailScope.Mailboxes(emptySet(), setOf("ada"))).unavailable.isEmpty())
-            assertEquals(4, bodies.count { "Email/query" in it }, "All mailboxes still stay in the selected login")
+            assertEquals(4, server.calls("Email/query").size, "All mailboxes still stay in the selected login")
         }
 
     @Test
@@ -56,7 +51,7 @@ class JmapMailboxScopeTest {
                     save(ada, "secret")
                     save(ada.copy(id = "other", username = "other@example.org"), "wrong")
                 }
-            val engine = stalwartLike { body -> if ("Mailbox/get" in body) MAILBOXES else EMAILS }
+            val engine = stalwartLike(api = FakeMailServer(MAILBOXES)::answer)
             val scope = MailScope.Mailboxes(setOf(MailboxScope("ada", "Receipts")))
             assertTrue(source(engine, store).messages(scope).unavailable.isEmpty())
         }
@@ -67,16 +62,13 @@ class JmapMailboxScopeTest {
             val mutex = Mutex()
             var active = 0
             var peak = 0
+            val server = FakeMailServer(MAILBOXES)
             val engine =
                 MockEngine { request ->
                     val text =
                         when {
                             request.method == HttpMethod.Get -> {
                                 SESSION
-                            }
-
-                            "Mailbox/get" in (request.body as TextContent).text -> {
-                                MAILBOXES
                             }
 
                             else -> {
@@ -86,7 +78,7 @@ class JmapMailboxScopeTest {
                                 }
                                 delay(20)
                                 mutex.withLock { active -= 1 }
-                                EMAILS
+                                server.answer((request.body as TextContent).text)
                             }
                         }
                     respond(text, headers = headersOf(HttpHeaders.ContentType, "application/json"))
@@ -107,9 +99,7 @@ class JmapMailboxScopeTest {
             "accountCapabilities": {"urn:ietf:params:jmap:mail": {}}}},
             "primaryAccounts": {"urn:ietf:params:jmap:mail": "mail"},
             "username": "ada@example.org", "apiUrl": "/jmap/", "state": "s"}"""
-        const val MAILBOXES = """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
-            {"id": "a", "name": "Posteingang", "role": "inbox"},
-            {"id": "r", "name": "Receipts"}, {"id": "s", "name": "Sent", "role": "sent"}]}, "c0"]]}"""
-        val EMAILS = emailListResponse(ids = "", list = "")
+        const val MAILBOXES = """{"id": "a", "name": "Posteingang", "role": "inbox"},
+            {"id": "r", "name": "Receipts"}, {"id": "s", "name": "Sent", "role": "sent"}"""
     }
 }

@@ -1,0 +1,23 @@
+-- Named text values by login, such as JMAP state strings.
+CREATE TABLE cached_value (
+    login_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (login_id, name)
+);
+
+read:
+SELECT value FROM cached_value
+WHERE login_id = :loginId AND name = :name;
+
+upsert:
+INSERT OR REPLACE INTO cached_value(login_id, name, value)
+VALUES (:loginId, :name, :value);
+
+delete:
+DELETE FROM cached_value
+WHERE login_id = :loginId AND name = :name;
+
+forgetLogin:
+DELETE FROM cached_value
+WHERE login_id = :loginId;

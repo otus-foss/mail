@@ -16,7 +16,6 @@ import com.otus.mail.feature.inbox.domain.within
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
@@ -24,6 +23,7 @@ import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.screens.SignatureEditorScreen
 import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
+import com.otus.mail.feature.inbox.presentation.status
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
@@ -188,7 +188,7 @@ internal fun FeedPage(
         labeled,
         dateFormatter,
         navigation.openSidebar,
-        InboxStatus(connected = true, loading = feed.loading, notice = feed.notice),
+        feed.status(connected = true),
         onRefresh = {
             feed.refresh()
             states.folders.refresh()
@@ -201,6 +201,7 @@ internal fun FeedPage(
                 filterOptions = rememberFilterOptions(states, page, filters.applied),
                 rowLook = rememberRowLook(states),
                 nudge = rememberListNudge(states, labeled),
+                onLoadMore = feed::loadMore,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
