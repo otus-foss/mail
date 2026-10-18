@@ -8,7 +8,8 @@ import com.otus.mail.feature.inbox.domain.displayText
 /**
  * The open message's text and HTML bodies. The text loses hidden characters, and an HTML-only body
  * becomes plain text. A part cut off before another part's text ends with [GAP_NOTE], so the gap
- * shows where it is; a cut at the end sets [MessageContent.truncated] instead.
+ * shows where it is; a cut at the end sets [MessageContent.truncated] instead. The files leave out
+ * the images the HTML shows, and the list fields come from the message's list headers.
  */
 internal fun EmailObject.toMessageContent(): MessageContent {
     val values = textBodyValues()
@@ -17,10 +18,14 @@ internal fun EmailObject.toMessageContent(): MessageContent {
         values.withIndex().joinToString("\n") { (index, part) ->
             if (part.isTruncated && index < lastText) "${part.value}\n$GAP_NOTE" else part.value
         }
+    val html = toMessageHtml()
     return MessageContent(
         text = text.displayText(),
         truncated = values.drop(maxOf(lastText, 0)).any { it.isTruncated },
-        html = toMessageHtml(),
+        html = html,
+        attachments = files(html?.html),
+        unsubscribe = unsubscribe(),
+        listName = listName(listId),
     )
 }
 

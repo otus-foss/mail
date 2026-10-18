@@ -2,6 +2,7 @@ package com.otus.mail.core.mail
 
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapType
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -104,6 +105,27 @@ data class EmailObject(
     /** The parts to show as HTML, which may include plain parts (RFC 8621, section 4.1.4). */
     val htmlBody: List<EmailBodyPart>? = null,
     val bodyValues: Map<String, EmailBodyValue> = emptyMap(),
+    val bcc: List<EmailAddress>? = null,
+    /** The raw message's size in octets. */
+    val size: Long = 0,
+    /** Every header field, raw and in message order, for View details. */
+    val headers: List<EmailHeader>? = null,
+    /** The `List-Unsubscribe` addresses (RFC 2369), parsed by the server (RFC 8621, section 4.1.2.6). */
+    @SerialName("header:List-Unsubscribe:asURLs")
+    val listUnsubscribe: List<String>? = null,
+    /** `List-Unsubscribe=One-Click` when the list takes the RFC 8058 one-click POST. */
+    @SerialName("header:List-Unsubscribe-Post:asText")
+    val listUnsubscribePost: String? = null,
+    /** The list's name and id, such as `Weekly digest <weekly.example.org>` (RFC 2919). */
+    @SerialName("header:List-Id:asText")
+    val listId: String? = null,
+)
+
+/** One header field as the message has it (RFC 8621, section 4.1.3). */
+@Serializable
+data class EmailHeader(
+    val name: String = "",
+    val value: String = "",
 )
 
 /** The mailboxes an Email is in, without its other properties. */
@@ -125,6 +147,13 @@ data class EmailBodyPart(
     val name: String? = null,
     /** The media type, such as `text/html`, which a body may be when it has no plain alternative. */
     val type: String? = null,
+    val blobId: String? = null,
+    /** The decoded size in octets. */
+    val size: Long = 0,
+    /** The Content-Id without angle brackets, which HTML refers to as `cid:` (RFC 2392). */
+    val cid: String? = null,
+    /** `inline` or `attachment`, from the Content-Disposition header. */
+    val disposition: String? = null,
 )
 
 /** A part's decoded text; [isTruncated] when it is longer than the request's `maxBodyValueBytes`. */
@@ -164,6 +193,12 @@ data class ContactName(
 data class ContactEmailObject(
     val address: String = "",
 )
+
+/**
+ * Marks an email of a muted conversation. A conversation is muted while any of its emails has it,
+ * so new mail in it does not notify. Not a registered keyword, so other apps ignore it.
+ */
+const val MUTED_KEYWORD = "\$muted"
 
 /** Only the thread of each Email, to find the rest of a conversation (RFC 8621, section 3). */
 val EmailThreadType: JmapType<EmailThread> = JmapType("Email", JmapCapability.MAIL, EmailThread.serializer())

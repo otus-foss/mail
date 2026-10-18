@@ -13,8 +13,10 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.decodeRecentFrom
-import com.otus.mail.feature.inbox.domain.encodeRecentFrom
+import com.otus.mail.feature.inbox.domain.decodeAddresses
+import com.otus.mail.feature.inbox.domain.decodeRemoteImages
+import com.otus.mail.feature.inbox.domain.encodeAddresses
+import com.otus.mail.feature.inbox.domain.storageValue
 
 class AndroidMailBehaviorStore(
     context: Context,
@@ -43,12 +45,14 @@ class AndroidMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.getString(ACTION_BAR_MODE, null)) ?: defaults.actionBarMode,
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
-            recentFrom = decodeRecentFrom(preferences.getString(RECENT_FROM, null)),
+            recentFrom = decodeAddresses(preferences.getString(RECENT_FROM, null)),
             signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.getString(INBOX, null)?.let(InboxContents::decode) ?: defaults.inbox,
             filters = preferences.getString(FILTERS, null)?.let(FilterLayout::decode) ?: defaults.filters,
             list = preferences.getString(LIST, null)?.let(MailListLayout::decode) ?: defaults.list,
+            remoteImages = decodeRemoteImages(preferences.getString(REMOTE_IMAGES, null)) ?: defaults.remoteImages,
+            allowedSenders = decodeAddresses(preferences.getString(ALLOWED_SENDERS, null)),
         )
     }
 
@@ -64,12 +68,14 @@ class AndroidMailBehaviorStore(
             putString(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
-            putString(RECENT_FROM, encodeRecentFrom(behavior.recentFrom))
+            putString(RECENT_FROM, encodeAddresses(behavior.recentFrom))
             putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
             putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
             putString(INBOX, InboxContents.encode(behavior.inbox))
             putString(FILTERS, FilterLayout.encode(behavior.filters))
             putString(LIST, MailListLayout.encode(behavior.list))
+            putString(REMOTE_IMAGES, behavior.remoteImages.storageValue)
+            putString(ALLOWED_SENDERS, encodeAddresses(behavior.allowedSenders))
         }
     }
 
@@ -89,6 +95,8 @@ class AndroidMailBehaviorStore(
         const val INBOX = "inbox_contents"
         const val FILTERS = "filter_layout"
         const val LIST = "mail_list"
+        const val REMOTE_IMAGES = "remote_images"
+        const val ALLOWED_SENDERS = "allowed_senders"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

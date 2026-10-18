@@ -12,7 +12,8 @@ package com.otus.mail.feature.inbox.domain
  * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
  * forwards too; new messages always get it. [undoSendSeconds] holds each sent message on the device
  * that long so Undo can stop it; 0 sends at once. [filters] arranges the filter panel. [list] sets
- * how the mail list's rows read.
+ * how the mail list's rows read. [remoteImages] decides when a message loads images from other
+ * servers, and [allowedSenders] are the lowercase addresses whose images always load.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -31,6 +32,8 @@ data class MailBehavior(
     val inbox: InboxContents = InboxContents(),
     val filters: FilterLayout = FilterLayout(),
     val list: MailListLayout = MailListLayout(),
+    val remoteImages: RemoteImages = RemoteImages.Known,
+    val allowedSenders: List<String> = emptyList(),
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =
@@ -125,10 +128,20 @@ private const val LONG_UNDO_SEND_SECONDS = 30
 /** How many addresses [MailBehavior.recentFrom] keeps: the Send-from list's Recent section. */
 const val RECENT_FROM_LIMIT = 2
 
-/** [MailBehavior.recentFrom] as one stored line, and back. Addresses cannot hold a newline. */
-fun encodeRecentFrom(addresses: List<String>): String = addresses.joinToString("\n")
+/**
+ * A list of addresses, such as [MailBehavior.recentFrom], as one stored line, and back. Addresses
+ * cannot hold a newline.
+ */
+fun encodeAddresses(addresses: List<String>): String = addresses.joinToString("\n")
 
-fun decodeRecentFrom(stored: String?): List<String> = stored?.lines()?.filter(String::isNotBlank).orEmpty()
+fun decodeAddresses(stored: String?): List<String> = stored?.lines()?.filter(String::isNotBlank).orEmpty()
+
+/** How [MailBehavior.remoteImages] is stored. */
+val RemoteImages.storageValue: String
+    get() = name.lowercase()
+
+/** Null for a value [storageValue] cannot have made. */
+fun decodeRemoteImages(stored: String?): RemoteImages? = RemoteImages.entries.firstOrNull { it.storageValue == stored }
 
 /** App-private storage for [MailBehavior]. Unknown or missing values read as the defaults. */
 interface MailBehaviorStore {
