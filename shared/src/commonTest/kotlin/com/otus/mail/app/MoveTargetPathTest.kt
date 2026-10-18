@@ -44,7 +44,8 @@ class MoveTargetPathTest {
 
     /** The message's move targets after every folder that can have a color is given [color]. */
     private fun TestScope.targets(color: String? = null): List<MoveTarget> {
-        val folders = FoldersState(services.folders, this, loadAccounts = { listOf(account) })
+        val folders =
+            FoldersState(services.folders, this, loadCached = { emptyList() }, loadAccounts = { listOf(account) })
         folders.refresh()
         runCurrent()
         val colors = FolderColorsState(accounts = { folders.accounts }).apply { setColor(account.folders, color) }
