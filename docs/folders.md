@@ -48,7 +48,9 @@ script, so they keep working while the app is closed.
   It shows the message, or a selection's count and senders with a small avatar each, a folder search, pills for Inbox, Read
   later, Archive, Spam, and Trash where every message can go, a suggested folder, and the user's
   own folders as a tree. A folder with nested folders has a chevron that collapses them for as
-  long as the sheet is open; a search shows every match. Tapping any folder or pill moves the
+  long as the sheet is open; a search shows every match. The folder the messages are in shows
+  dimmed with "here now" and does not move them. The pills are 40 dp `DestinationPill`s, so the
+  sort button at the row's end always fits. Tapping any other folder or pill moves the
   messages at once and closes the sheet. The suggestion
   comes from one `Email/query` filtered by `from` (newest 50 of the sender's messages) and one
   `Email/get` of their `mailboxIds`: the own folder holding most of them, never the current one.

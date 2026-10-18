@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
@@ -107,6 +108,20 @@ class MoveSheetTest {
         compose.onNodeWithText(suggestion).performClick()
         val move = moveUpdate()
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/z\":true}}" in move)
+    }
+
+    @Test
+    fun theFolderTheMessageIsInShowsDimmedAndDoesNotMoveIt() {
+        showInbox()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNode(hasText("Receipts") and isSelectable() and !hasText("Welcome")).performClick()
+        waitFor("Order shipped")
+        compose.onNodeWithText("Order shipped").performClick()
+        compose.onNodeWithContentDescription("Move").performClick()
+        waitFor("here now")
+        screenshot("move-sheet-here-now")
+        compose.onNodeWithText("here now").assertIsDisplayed()
+        compose.onNodeWithText("Amazon").assertIsDisplayed()
     }
 
     @Test

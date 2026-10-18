@@ -61,6 +61,10 @@ internal fun MailPageContent(
             SettingsPageContent(page, states, settings, dateFormatter, navigation, back)
         }
 
+        MailPage.Privacy, MailPage.AllowedSenders -> {
+            PrivacyPage(page, states, navigation, back)
+        }
+
         is MailPage.Folder -> {
             FolderPage(page, states, dateFormatter, navigation)
         }
@@ -197,6 +201,7 @@ internal fun FeedPage(
             InboxContext.folder(name, states.behavior.behavior.pills).copy(
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
                 loadContent = states::messageContent,
+                read = rememberReadContext(states, feed),
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, page, filters.applied),
                 rowLook = rememberRowLook(states),

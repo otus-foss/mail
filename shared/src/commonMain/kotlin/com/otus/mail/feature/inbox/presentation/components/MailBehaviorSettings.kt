@@ -22,7 +22,6 @@ import com.otus.designsystem.resources.symbol_format_list_bulleted
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_menu
-import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_swipe_left
 import com.otus.designsystem.resources.symbol_swipe_right
 import com.otus.designsystem.resources.symbol_view_agenda
@@ -105,7 +104,7 @@ fun InboxBehaviorSettings(
 }
 
 /**
- * Swipe, action bar, reading, sending, and privacy choices for the Mail behavior page.
+ * Swipe, action bar, reading, and sending choices for the Mail behavior page.
  * [onOpenActionBar] opens the action bar's page. Each swipe opens a choice of actions; the rows
  * name the physical direction for the current layout direction.
  */
@@ -134,22 +133,7 @@ fun MailBehaviorSettings(
         )
     }
     SendingSettings(state)
-    PrivacySettings(state)
     choosing?.let { side -> SwipeChoice(state, side, side.title(rtl)) { choosing = null } }
-}
-
-/** Whether avatars may load images from servers other than the user's own. */
-@Composable
-private fun PrivacySettings(state: MailBehaviorState) {
-    SettingsSection("Privacy") {
-        SettingToggleRow(
-            "Website icons",
-            checked = state.behavior.websiteIcons,
-            onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
-            description = "Logos from sender websites and DuckDuckGo, which see your IP address",
-            icon = Res.drawable.symbol_person,
-        )
-    }
 }
 
 @Composable
