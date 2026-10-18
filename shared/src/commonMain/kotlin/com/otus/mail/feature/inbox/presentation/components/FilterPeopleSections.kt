@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.components.FilterSection
 import com.otus.designsystem.components.PersonAvatar
+import com.otus.designsystem.elements.ChipLabel
 import com.otus.designsystem.elements.FilterChip
 import com.otus.designsystem.elements.FilterChipRole
 import com.otus.designsystem.elements.Symbol
@@ -25,11 +26,11 @@ internal fun FromSection(
     FilterSection("From") {
         senders.forEach { sender ->
             val on = sender.address in draft.from
+            val spoken = listOf(sender.name, sender.address).filter(String::isNotBlank).joinToString(", ")
             FilterChip(
-                sender.name.ifBlank { sender.address },
+                ChipLabel(sender.name.ifBlank { sender.address }, spoken = spoken),
                 on,
                 { onEdit { it.copy(from = if (on) it.from - sender.address else it.from + sender.address) } },
-                description = listOf(sender.name, sender.address).filter(String::isNotBlank).joinToString(", "),
             ) { PersonAvatar(sender.chipAvatar, FilterTokens.chipAvatarSize) }
         }
         FilterChip("Add sender…", selected = false, onClick = onAddSender, role = FilterChipRole.Button) {

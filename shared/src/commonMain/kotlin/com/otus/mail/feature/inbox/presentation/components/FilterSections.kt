@@ -50,53 +50,33 @@ internal fun FilterSections(
         Modifier.padding(horizontal = FilterTokens.bodyInset),
         verticalArrangement = Arrangement.spacedBy(FilterTokens.sectionGap),
     ) {
-        options.layout.sections.forEach { section ->
-            when (section) {
-                FilterSection.Show -> {
-                    ShowSection(draft, options, onEdit)
-                }
-
-                FilterSection.From -> {
-                    FromSection(draft, senders, onEdit, pages.onAddSender)
-                }
-
-                FilterSection.Accounts -> {
-                    if (options.accounts.size > 1) AccountsSection(draft, options, onEdit)
-                }
-
-                FilterSection.SentTo -> {
-                    if (options.addresses.size > 1) SentToSection(draft, options, onEdit)
-                }
-
-                FilterSection.ReceivedAs -> {
-                    if (options.addresses.isNotEmpty()) ReceivedAsSection(draft, onEdit)
-                }
-
-                FilterSection.InFolder -> {
-                    if (options.folders) FolderSection(draft, options, onEdit, pages.onAllFolders)
-                }
-
-                FilterSection.SkipFolders -> {
-                    if (options.folders &&
-                        options.skip.isNotEmpty()
-                    ) {
-                        SkipSection(draft, options, onEdit)
-                    }
-                }
-
-                FilterSection.Date -> {
-                    DateSection(draft.date, dateFormatter, onEdit, pages.onCustomDate)
-                }
-
-                FilterSection.Size -> {
-                    SizeSection(draft.size, onEdit)
-                }
-
-                FilterSection.Sort -> {
-                    SortToggle(draft.sort, onEdit)
-                }
-            }
+        options.layout.sections.filter(options::offers).forEach { section ->
+            Section(section, draft, options, senders, dateFormatter, onEdit, pages)
         }
+    }
+}
+
+@Composable
+private fun Section(
+    section: FilterSection,
+    draft: InboxFilters,
+    options: FilterOptions,
+    senders: List<MailSender>,
+    dateFormatter: DateFormatter,
+    onEdit: FilterEdit,
+    pages: FilterPanelPages,
+) {
+    when (section) {
+        FilterSection.Show -> ShowSection(draft, options, onEdit)
+        FilterSection.From -> FromSection(draft, senders, onEdit, pages.onAddSender)
+        FilterSection.Accounts -> AccountsSection(draft, options, onEdit)
+        FilterSection.SentTo -> SentToSection(draft, options, onEdit)
+        FilterSection.ReceivedAs -> ReceivedAsSection(draft, onEdit)
+        FilterSection.InFolder -> FolderSection(draft, options, onEdit, pages.onAllFolders)
+        FilterSection.SkipFolders -> SkipSection(draft, options, onEdit)
+        FilterSection.Date -> DateSection(draft.date, dateFormatter, onEdit, pages.onCustomDate)
+        FilterSection.Size -> SizeSection(draft.size, onEdit)
+        FilterSection.Sort -> SortToggle(draft.sort, onEdit)
     }
 }
 

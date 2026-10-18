@@ -12,6 +12,7 @@ import com.otus.designsystem.components.AccountGroupRow
 import com.otus.designsystem.components.FilterFolderRow
 import com.otus.designsystem.components.FolderCheck
 import com.otus.designsystem.components.PickerSearch
+import com.otus.designsystem.components.TreeFolder
 import com.otus.designsystem.elements.FilterChip
 import com.otus.designsystem.elements.FolderGlyph
 import com.otus.designsystem.theme.FilterTokens
@@ -22,6 +23,7 @@ import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderKey
 import com.otus.mail.feature.inbox.presentation.check
 import com.otus.mail.feature.inbox.presentation.includeSubfolders
+import com.otus.mail.feature.inbox.presentation.key
 import com.otus.mail.feature.inbox.presentation.shownFolders
 import com.otus.mail.feature.inbox.presentation.toggle
 
@@ -69,12 +71,11 @@ private fun FolderRows(
     val searching = query.isNotBlank()
     account.shownFolders(query, collapsed).forEach { folder ->
         val check = draft.check(folder, options)
+        val path = folder.ancestors.takeIf { searching && it.isNotEmpty() }?.joinToString(" / ")
         FilterFolderRow(
-            folder.name,
+            TreeFolder(folder.name, if (searching) 0 else folder.depth, path),
             check,
             onCheck = { onEdit { it.toggle(folder) } },
-            depth = if (searching) 0 else folder.depth,
-            path = folder.ancestors.takeIf { searching && it.isNotEmpty() }?.joinToString(" / "),
             expanded = (folder.key !in collapsed).takeIf { folder.hasChildren && !searching },
             onExpandedChange = { onCollapse(folder.key, !it) },
         ) { FolderGlyph(folder.color, folder.icon, FilterTokens.chipIconSize) }
@@ -89,12 +90,7 @@ private fun OnlyThisFolder(
     draft: InboxFilters,
     onEdit: ((InboxFilters) -> InboxFilters) -> Unit,
 ) {
-    val only =
-        draft.folders
-            .firstOrNull {
-                it.loginId == folder.key.loginId && it.mailboxId == folder.key.mailboxId
-            }?.includeSubfolders ==
-            false
+    val only = draft.folders.firstOrNull { it.key == folder.key }?.includeSubfolders == false
     FilterChip(
         "Only this folder",
         only,

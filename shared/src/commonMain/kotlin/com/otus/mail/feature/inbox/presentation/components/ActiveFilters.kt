@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import androidx.compose.ui.focus.FocusRequester
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.FolderRef
@@ -16,12 +17,16 @@ internal class ActiveFacet(
     val remove: (InboxFilters) -> InboxFilters,
 )
 
-/** A page's [applied] filters for the pill row, which [onChange] replaces. */
+/**
+ * A page's [applied] filters for the pill row, which [onChange] replaces. [button] focuses the
+ * filter button, which the panel gives focus back to when it closes.
+ */
 class ActiveFilters(
     val applied: InboxFilters = InboxFilters(),
     val options: FilterOptions = FilterOptions(),
     val dateFormatter: DateFormatter = DateFormatter(),
     val onChange: (InboxFilters) -> Unit = {},
+    val button: FocusRequester = FocusRequester(),
 ) {
     /** Each applied choice, in the panel's order; the sort order is not one. */
     internal val active: List<ActiveFacet>

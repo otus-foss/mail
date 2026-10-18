@@ -57,10 +57,10 @@ class InboxActionBarTest {
     }
 
     @Test
-    fun filtersOpensTheFilterSheet() {
+    fun filtersOpensTheFilterPanel() {
         start()
         button("Filters").performClick()
-        compose.onNodeWithText("Done").assertExists()
+        compose.onNodeWithContentDescription("Close filters").assertExists()
     }
 
     @Test

@@ -68,7 +68,7 @@ private fun line(vararg values: String): String = values.joinToString(SEPARATOR)
 private fun FolderRef.saved(kind: String): String = line(kind, loginId, mailboxId, includeSubfolders.toString())
 
 private fun folderOf(values: List<String>): FolderRef? =
-    values.takeIf { it.size == 3 }?.let { (login, id, include) -> FolderRef(login, id, include.toBoolean()) }
+    values.takeIf { it.size == FOLDER_PARTS }?.let { (login, id, include) -> FolderRef(login, id, include.toBoolean()) }
 
 private fun DateFilter.saved(): String =
     when (this) {
@@ -102,6 +102,7 @@ private fun dateOf(line: String?): DateFilter =
 // Server ids and addresses never contain a NUL.
 private const val SEPARATOR = "\u0000"
 private const val HEAD_LINES = 3
+private const val FOLDER_PARTS = 3
 private const val SHOW = "show"
 private const val FROM = "from"
 private const val ACCOUNT = "account"

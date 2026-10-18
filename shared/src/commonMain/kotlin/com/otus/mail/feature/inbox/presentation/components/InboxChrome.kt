@@ -5,7 +5,6 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.MessageActions
@@ -29,13 +28,12 @@ internal fun BackHandler(
  * instead of vanishing. Without [actions] there is no bar.
  */
 internal fun inboxBar(
-    messages: List<MailMessage>,
+    listed: ListedMail,
     state: InboxState,
     selected: List<MailMessage>,
     actions: MessageActions?,
     clearSelection: () -> Unit,
     onCompose: (ComposeRequest) -> Unit,
-    filters: InboxFilters,
     onFilters: () -> Unit,
 ): (@Composable () -> Unit)? =
     when {
@@ -48,7 +46,7 @@ internal fun inboxBar(
         }
 
         else -> {
-            { InboxBar(messages, state, filters, actions, onFilters, onCompose) }
+            { InboxBar(listed.messages, state, listed.filters, actions, onFilters, onCompose) }
         }
     }
 

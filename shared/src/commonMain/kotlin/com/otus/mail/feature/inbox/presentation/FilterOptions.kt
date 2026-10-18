@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.theme.FolderColor
 import com.otus.mail.feature.inbox.domain.FilterLayout
+import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import org.jetbrains.compose.resources.DrawableResource
@@ -73,4 +74,15 @@ data class FilterOptions(
     val labels: Map<FolderKey, FolderLabel> by lazy { folderLabels(accounts) }
 
     fun account(id: String): FilterAccount? = accounts.firstOrNull { it.id == id }
+
+    /** Whether [section] has anything to offer here, such as Sent to only with several addresses. */
+    fun offers(section: FilterSection): Boolean =
+        when (section) {
+            FilterSection.Accounts -> accounts.size > 1
+            FilterSection.SentTo -> addresses.size > 1
+            FilterSection.ReceivedAs -> addresses.isNotEmpty()
+            FilterSection.InFolder -> folders
+            FilterSection.SkipFolders -> folders && skip.isNotEmpty()
+            else -> true
+        }
 }

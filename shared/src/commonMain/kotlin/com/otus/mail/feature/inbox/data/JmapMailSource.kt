@@ -123,7 +123,8 @@ class JmapMailSource(
                         .total
                 }
             }
-        } catch (error: JmapException) {
+        } catch (expected: JmapException) {
+            // A login that cannot be counted leaves the others' sum.
             null
         }
 

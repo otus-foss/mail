@@ -18,6 +18,7 @@ import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Rule
@@ -55,8 +56,7 @@ class FilterPanelScreenshotTest {
                 OtusTheme {
                     InboxScreen(
                         FilterPanelFixtures.messages,
-                        filters = filters,
-                        filterOptions = FilterPanelFixtures.options,
+                        context = InboxContext(filters = filters, filterOptions = FilterPanelFixtures.options),
                     )
                 }
             }

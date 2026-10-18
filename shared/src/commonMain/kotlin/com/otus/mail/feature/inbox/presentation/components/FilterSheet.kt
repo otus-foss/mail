@@ -7,14 +7,46 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.DateRangePicker
+import com.otus.designsystem.components.InputSheet
 import com.otus.designsystem.components.SelectionSheet
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import kotlinx.datetime.LocalDate
+
+/** A sheet the filter panel opens over itself. */
+internal enum class FilterSheet { Date, Sender }
+
+/** [sheet] over the filter panel, editing [state]'s [draft]. */
+@Composable
+internal fun FilterPanelSheet(
+    sheet: FilterSheet,
+    state: InboxFilterState,
+    draft: InboxFilters,
+    dateFormatter: DateFormatter,
+    onDismiss: () -> Unit,
+) {
+    when (sheet) {
+        FilterSheet.Date -> {
+            FilterDateSheet(draft, dateFormatter, { range -> state.edit { it.copy(date = range) } }, onDismiss)
+        }
+
+        FilterSheet.Sender -> {
+            InputSheet(
+                "Add sender",
+                "Address",
+                "Add",
+                onConfirm = { address -> state.edit { it.copy(from = it.from + address.trim()) } },
+                onDismiss = onDismiss,
+                problem = { if ('@' in it.trim()) null else "Enter an email address" },
+            )
+        }
+    }
+}
 
 /** Picks the filter panel's custom date range; one day picked is a range of that day. */
 @Composable
-internal fun FilterDateSheet(
+private fun FilterDateSheet(
     draft: InboxFilters,
     dateFormatter: DateFormatter,
     onPick: (DateFilter) -> Unit,

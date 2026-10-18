@@ -50,12 +50,14 @@ enum class SizeFilter(
     val minBytes: Long?,
 ) {
     Any(null),
-    Over1Mb(MEGABYTE),
-    Over5Mb(5 * MEGABYTE),
-    Over10Mb(10 * MEGABYTE),
+    Over1Mb(ONE_MEGABYTE),
+    Over5Mb(FIVE_MEGABYTES),
+    Over10Mb(TEN_MEGABYTES),
 }
 
-private const val MEGABYTE = 1_000_000L
+private const val ONE_MEGABYTE = 1_000_000L
+private const val FIVE_MEGABYTES = 5_000_000L
+private const val TEN_MEGABYTES = 10_000_000L
 
 /** One of the user's own addresses: [accountId] is the login that receives mail at it. */
 data class OwnAddress(

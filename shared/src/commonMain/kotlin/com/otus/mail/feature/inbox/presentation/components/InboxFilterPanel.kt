@@ -19,7 +19,6 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.FilterPanel
 import com.otus.designsystem.components.FilterPanelFooter
 import com.otus.designsystem.components.FilterPanelHeader
-import com.otus.designsystem.components.InputSheet
 import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.Motion
 import com.otus.designsystem.theme.MotionSpeed
@@ -45,8 +44,7 @@ fun InboxFilterPanel(
     modifier: Modifier = Modifier,
 ) {
     var folders by rememberSaveable { mutableStateOf(false) }
-    var customDate by rememberSaveable { mutableStateOf(false) }
-    var addingSender by rememberSaveable { mutableStateOf(false) }
+    var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
     val close = state::close
     // The panel opens on its main page again, however it closed.
     LaunchedEffect(state.isOpen) { if (state.isOpen) folders = false }
@@ -56,7 +54,6 @@ fun InboxFilterPanel(
     if (draft != null) shown = draft
     FilterPanel(
         open = state.isOpen,
-        title = "Filters",
         collapsedHeight = collapsedHeight,
         onDismiss = close,
         header = {
@@ -87,24 +84,16 @@ fun InboxFilterPanel(
                 FolderPickerPage(shown, options, state::edit)
             } else {
                 val senders = remember(messages, shown.from) { filterSenders(messages, shown.from) }
-                val pages = FilterPanelPages({ folders = true }, { customDate = true }, { addingSender = true })
+                val pages =
+                    FilterPanelPages({ folders = true }, { sheet = FilterSheet.Date }, {
+                        sheet =
+                            FilterSheet.Sender
+                    })
                 FilterSections(shown, options, senders, dateFormatter, state::edit, pages)
             }
         }
     }
-    if (addingSender && state.isOpen) {
-        InputSheet(
-            "Add sender",
-            "Address",
-            "Add",
-            onConfirm = { address -> state.edit { it.copy(from = it.from + address.trim()) } },
-            onDismiss = { addingSender = false },
-            problem = { if ('@' in it.trim()) null else "Enter an email address" },
-        )
-    }
-    if (customDate && state.isOpen) {
-        FilterDateSheet(shown, dateFormatter, { range -> state.edit { it.copy(date = range) } }) { customDate = false }
-    }
+    sheet?.takeIf { state.isOpen }?.let { FilterPanelSheet(it, state, shown, dateFormatter) { sheet = null } }
 }
 
 @Composable

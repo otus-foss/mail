@@ -13,8 +13,6 @@ import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
-import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
@@ -25,15 +23,16 @@ import com.otus.mail.feature.inbox.presentation.InboxStatus
  */
 @Composable
 internal fun InboxResults(
-    messages: List<MailMessage>,
+    listed: ListedMail,
     status: InboxStatus,
     state: InboxState,
-    filters: InboxFilters,
     dateFormatter: DateFormatter,
     gestures: RowGestures,
     padding: PaddingValues,
     emptyContent: @Composable () -> Unit,
 ) {
+    val messages = listed.messages
+    val filters = listed.filters
     val matching = state.matching
     val results = remember(messages, matching, filters) { searchMessages(messages, matching, filters) }
     val inboxScroll = rememberLazyListState()
