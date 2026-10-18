@@ -1,7 +1,7 @@
 ---
 title: "Check JMAP capabilities and keep providers out of common code"
 scope: "file"
-path: ["**/jmap/**", "**/data/**", "**/push/**", "**/accounts/**"]
+path: ["**/jmap/**", "**/data/**", "**/core/mail/**", "**/push/**", "**/accounts/**", "**/avatar/**"]
 severity_min: "high"
 ---
 
