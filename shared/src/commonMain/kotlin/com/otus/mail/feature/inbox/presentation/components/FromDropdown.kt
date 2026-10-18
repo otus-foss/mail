@@ -72,11 +72,12 @@ private fun IdentitySection(
     ListCaption(title)
     identities.forEach { identity ->
         val sender = identity.sender
+        val named = sender.name.isNotBlank() && sender.name != sender.address
         DropdownRow(
-            sender.address,
+            if (named) sender.name else sender.address,
             selected = sender.address.equals(selected?.address, ignoreCase = true),
             onClick = { onSelect(identity) },
-            subtitle = sender.name.takeIf { it.isNotBlank() && it != sender.address },
+            detail = sender.address.takeIf { named },
         ) { PersonAvatar(chipAvatar(sender.avatar, sender.name, sender.address), ComposeTokens.dropdownAvatarSize) }
     }
 }
