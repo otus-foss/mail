@@ -1,9 +1,6 @@
 package com.otus.mail
 
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -11,10 +8,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.mail.app.App
 import com.otus.mail.app.MailServices
+import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.NightlyBuild
 import com.otus.mail.feature.updates.domain.NightlyFeed
 import com.otus.mail.feature.updates.domain.ReleaseChannel
+import com.otus.mail.feature.updates.domain.UpdateInstaller
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -29,30 +28,39 @@ import org.robolectric.annotation.GraphicsMode
 class NightlyUpdateTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
-    private val opened = mutableListOf<String>()
-    private val uriHandler =
-        object : UriHandler {
-            override fun openUri(uri: String) {
-                opened += uri
-            }
-        }
+    private val installed = mutableListOf<String>()
 
-    private fun show(installed: InstalledBuild) {
-        val services = MailServices(createNightlyFeed = { NightlyFeed { NightlyBuild(142, "https://x/142.apk") } })
-        compose.activity.setContent {
-            CompositionLocalProvider(LocalUriHandler provides uriHandler) {
-                App(services = services, build = installed)
-            }
-        }
+    private fun show(build: InstalledBuild) {
+        val services =
+            MailServices(
+                nightly =
+                    NightlyUpdates(
+                        createFeed = {
+                            NightlyFeed {
+                                listOf(
+                                    NightlyBuild(142, APK, listOf("- feat(sidebar): show the owl"), "2026-10-18"),
+                                )
+                            }
+                        },
+                        installer = UpdateInstaller { download, _ -> installed += download },
+                    ),
+            )
+        compose.activity.setContent { App(services = services, build = build) }
         compose.onNodeWithContentDescription("Open navigation").performClick()
     }
 
     @Test
-    fun aNightlyBuildOffersTheNewerNightlyAndOpensItsApk() {
-        show(InstalledBuild(ReleaseChannel.Nightly, "nightly-141", 141, "abc1234"))
+    fun aNightlyBuildShowsTheChangesAndInstallsTheNewerNightly() {
+        show(InstalledBuild(ReleaseChannel.Nightly, "17.10.26", 141, "abc1234"))
         compose.onNodeWithText("Nightly").assertIsDisplayed()
         compose.onNodeWithContentDescription(UPDATE_141).assertIsDisplayed().performClick()
-        assertEquals(listOf("https://x/142.apk"), opened)
+        compose.onNodeWithText("Show the owl").assertIsDisplayed()
+        compose.onNodeWithText("Changelog").performClick()
+        compose.onNodeWithText("18.10.26").assertIsDisplayed()
+        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithText("Install update").performClick()
+        compose.waitUntil(TIMEOUT) { installed.isNotEmpty() }
+        assertEquals(listOf(APK), installed)
     }
 
     @Test
@@ -64,6 +72,8 @@ class NightlyUpdateTest {
     }
 
     private companion object {
-        const val UPDATE_141 = "Update available, Build 141 installed"
+        const val UPDATE_141 = "Update available, 17.10.26 installed"
+        const val TIMEOUT = 5_000L
+        const val APK = "https://x/142.apk"
     }
 }

@@ -55,8 +55,6 @@ import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMailChecker
-import com.otus.mail.feature.updates.data.GitHubNightlyFeed
-import com.otus.mail.feature.updates.domain.NightlyFeed
 import com.otus.push.PushStateStore
 import com.otus.push.PushSubscriptions
 import io.ktor.client.HttpClient
@@ -70,7 +68,7 @@ class MailServices(
     private val logins: LoginStore = InMemoryLoginStore(),
     avatarStore: AvatarStore = EmptyAvatarStore,
     internal val stores: MailDeviceStores = MailDeviceStores(),
-    createNightlyFeed: () -> NightlyFeed = { GitHubNightlyFeed(HttpClient()) },
+    internal val nightly: NightlyUpdates = NightlyUpdates(),
     /** Instant pushes through the user's UnifiedPush app; null where the platform has none. */
     internal val instantPush: InstantPush? = null,
     internal val pickers: MailPickers = MailPickers(),
@@ -125,7 +123,6 @@ class MailServices(
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }
     internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, logins) }
-    internal val nightly by lazy(createNightlyFeed)
 
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */
     fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, logins, states)
