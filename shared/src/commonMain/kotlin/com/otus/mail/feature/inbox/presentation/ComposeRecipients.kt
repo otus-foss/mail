@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.mail.feature.inbox.domain.AddressBook
+import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.parseRecipients
 import com.otus.mail.feature.inbox.domain.recipientText
@@ -120,3 +121,20 @@ class ComposeRecipients(
         val SEPARATORS = setOf(',', ';')
     }
 }
+
+internal fun Draft.recipients(field: RecipientField): List<MailSender> =
+    when (field) {
+        RecipientField.To -> to
+        RecipientField.Cc -> cc
+        RecipientField.Bcc -> bcc
+    }
+
+internal fun Draft.withRecipients(
+    field: RecipientField,
+    people: List<MailSender>,
+): Draft =
+    when (field) {
+        RecipientField.To -> copy(to = people)
+        RecipientField.Cc -> copy(cc = people)
+        RecipientField.Bcc -> copy(bcc = people)
+    }

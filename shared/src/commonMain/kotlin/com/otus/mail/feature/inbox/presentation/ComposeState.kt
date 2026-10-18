@@ -74,6 +74,16 @@ class ComposeState(
             change = { field, people -> edit { it.withRecipients(field, people) } },
         )
 
+    val attachments =
+        ComposeAttachments(
+            services.files,
+            services.uploads,
+            scope,
+            accountId = { draft.accountId },
+            attachments = { draft.attachments },
+            change = { files -> edit { it.copy(attachments = files(it.attachments)) } },
+        )
+
     /** The thread a reply or follow-up answers; null for a new message or a forward. */
     val thread: ReplyThread? =
         request.answeredOriginal?.let {
@@ -108,9 +118,12 @@ class ComposeState(
     val signature: Signature
         get() = if (signatureOn) identities.signatureOf(draft.from) else Signature()
 
-    /** Whether Send can run: the draft has an address to send from and someone to go to. */
+    /** Whether Send can run: the draft has an address to send from, someone to go to, and its files uploaded. */
     val canSend: Boolean
-        get() = draft.from != null && draft.recipients.isNotEmpty()
+        get() =
+            draft.from != null &&
+                draft.recipients.isNotEmpty() &&
+                draft.attachments.all { it.uploadedTo(draft.accountId) }
 
     /** Whether the user has written anything the draft did not start with. */
     val edited: Boolean
@@ -244,23 +257,6 @@ private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =
 /** Every recipient once, in line order, for the bar's context. */
 val Draft.recipients: List<MailSender>
     get() = (to + cc + bcc).distinctBy { it.address.lowercase() }
-
-internal fun Draft.recipients(field: RecipientField): List<MailSender> =
-    when (field) {
-        RecipientField.To -> to
-        RecipientField.Cc -> cc
-        RecipientField.Bcc -> bcc
-    }
-
-private fun Draft.withRecipients(
-    field: RecipientField,
-    people: List<MailSender>,
-): Draft =
-    when (field) {
-        RecipientField.To -> copy(to = people)
-        RecipientField.Cc -> copy(cc = people)
-        RecipientField.Bcc -> copy(bcc = people)
-    }
 
 /**
  * What the user wrote, without the sending identity, the account, the stored copy's id, or the
