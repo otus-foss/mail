@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.PeopleField
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
 /**
@@ -45,9 +46,13 @@ class FilterPeopleSearch(
         searching = true
         running =
             launcher.launch {
-                delay(SEARCH_DELAY_MILLIS)
-                found = find(field, text.trim())
-                searching = false
+                try {
+                    delay(SEARCH_DELAY_MILLIS)
+                    found = find(field, text.trim())
+                } finally {
+                    // A search that failed or was cancelled still ends, unless a newer one runs.
+                    if (running === coroutineContext.job) searching = false
+                }
             }
     }
 

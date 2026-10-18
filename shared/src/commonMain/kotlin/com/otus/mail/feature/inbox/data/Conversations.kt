@@ -87,12 +87,18 @@ private fun merge(
     val (kept, other) = if (second.received.sortKey > first.received.sortKey) second to first else first to second
     val conversation = kept.conversation ?: return kept
     val members = (conversation.members + other.conversation?.members.orEmpty()).distinctBy { it.emailId }
+    val latest = latest(conversation, other.conversation)
     return kept.copy(
         conversation =
             conversation.copy(
                 members = members,
                 exchanged = conversation.exchanged || other.conversation?.exchanged == true,
-                reply = newer(conversation, other.conversation),
+                last = latest.last,
+                reply =
+                    latest.reply.copy(
+                        participated =
+                            conversation.reply.participated || other.conversation?.reply?.participated == true,
+                    ),
             ),
         attributes =
             kept.attributes.copy(
@@ -105,23 +111,14 @@ private fun merge(
 }
 
 /**
- * The reply facts of whichever row saw the newer last email. Rows of one thread from different
- * mailboxes count the same emails, unless one mailbox shows mail the other leaves out.
+ * Whichever row saw the newer last email, which gives the merged row its last email and reply
+ * facts together. Rows of one thread from different mailboxes count the same emails, unless one
+ * mailbox shows mail the other leaves out.
  */
-private fun newer(
+private fun latest(
     kept: MailConversation,
     other: MailConversation?,
-): ReplyState {
-    val reply =
-        if (other != null &&
-            other.last.received.sortKey > kept.last.received.sortKey
-        ) {
-            other.reply
-        } else {
-            kept.reply
-        }
-    return reply.copy(participated = kept.reply.participated || other?.reply?.participated == true)
-}
+): MailConversation = other?.takeIf { it.last.received.sortKey > kept.last.received.sortKey } ?: kept
 
 private val ReceivedAt.sortKey: String
     get() = "${date}T$time"
