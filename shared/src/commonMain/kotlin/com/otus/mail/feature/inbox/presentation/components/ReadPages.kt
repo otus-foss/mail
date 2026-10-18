@@ -96,7 +96,8 @@ internal class ReadPageLook(
 /**
  * The conversation's pages side by side, newest first and leftmost; swiping left goes back in
  * time. Each page loads its body with [loadContent] as it or its neighbor shows, so swiping is
- * instant. The sender details show on the page on screen while [ReadState.details] is on.
+ * instant. The sender details show on the page on screen while [ReadState.details] is on; the pill
+ * of a quoted person they list opens them.
  */
 @Composable
 internal fun ReadPages(
@@ -115,7 +116,8 @@ internal fun ReadPages(
         val page = state.pages.getOrNull(index) ?: return@HorizontalPager
         LaunchedEffect(page.id) { state.load(page, loadContent) }
         val body = state.body(page)
-        ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize()) {
+        val showPerson = { address: String -> { state.details = true }.takeIf { page.shows(address) } }
+        ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize(), showPerson) {
             look.Banner(page, body)
             if (state.details && index == pager.currentPage) look.Details(page)
         }
@@ -123,6 +125,10 @@ internal fun ReadPages(
 }
 
 private const val JUNK_ROLE = "junk"
+
+/** Whether the sender details of this message show [address], as its sender or a recipient. */
+private fun MailMessage.shows(address: String): Boolean =
+    (listOf(sender) + to + cc).any { it.address.equals(address, ignoreCase = true) }
 
 /**
  * Whether a page's remote images [load]; [onShow] loads them on a placeholder tap, null while

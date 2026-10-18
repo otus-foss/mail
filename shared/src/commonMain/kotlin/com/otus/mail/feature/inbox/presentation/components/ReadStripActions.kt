@@ -1,8 +1,10 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import androidx.compose.ui.graphics.ImageBitmap
 import com.otus.designsystem.components.AttachmentActions
 import com.otus.designsystem.components.ToastMessage
 import com.otus.designsystem.elements.ToastAction
+import com.otus.designsystem.elements.decodeImage
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailingList
@@ -11,6 +13,10 @@ import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import com.otus.mail.feature.inbox.presentation.NewsletterStep
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadState
+import com.otus.mail.feature.inbox.presentation.read.AttachmentKindName
+import com.otus.mail.feature.inbox.presentation.read.kind
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * What the strips below a page do with its files and its mailing list. Downloads and requests run
@@ -34,6 +40,20 @@ internal class ReadStripActions(
             onSave = { index -> save(message, listOf(files[index])) },
             onSaveAll = { save(message, files) },
         )
+
+    /**
+     * A small picture of [file] for the strip, when it is an image small enough to download just
+     * for that; null for other files or when it cannot be had.
+     */
+    suspend fun thumbnail(
+        message: MailMessage,
+        file: MailAttachment,
+    ): ImageBitmap? {
+        val downloads = read.files.downloads
+        val small = file.kind() == AttachmentKindName.Image && file.size <= THUMBNAIL_MAX_BYTES
+        val bytes = if (small && downloads != null) downloads.download(message, file) else null
+        return bytes?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
+    }
 
     private fun open(
         message: MailMessage,
@@ -124,3 +144,9 @@ internal class ReadStripActions(
         }
     }
 }
+
+/** The largest image the strip downloads only to show its picture. */
+private const val THUMBNAIL_MAX_BYTES = 2L * 1024 * 1024
+
+/** Enough pixels for a 40 dp tile on a dense screen. */
+private const val THUMBNAIL_PIXELS = 160

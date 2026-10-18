@@ -33,9 +33,14 @@ class JmapConversationMessages(
         val loginId = message.location.accountId
         // A supplied message has no server id, so it stands alone.
         val emails = if (message.emailId.isEmpty()) emptyList() else emails(message) ?: return null
-        val names = cache.mailboxes(loginId).associate { it.id to mailboxName(it.name, it.role) }
+        val mailboxes = cache.mailboxes(loginId)
+        val names = mailboxes.associate { it.id to mailboxName(it.name, it.role) }
+        // Deleted and spam mail stay out of the pages, as in the list, unless the row itself is there.
+        val binned = mailboxes.filter { it.role in BINS }.map { it.id }.toSet()
+        val hidden = binned.takeUnless { message.location.mailboxId in it }.orEmpty()
         return emails
             .filter { it.keywords[DRAFT_KEYWORD] != true }
+            .filterNot { it.boxes.isNotEmpty() && hidden.containsAll(it.boxes) }
             .sortedByDescending { Instant.parseOrNull(it.receivedAt) }
             .map { it.page(message, names) }
             .ifEmpty { listOf(message.copy(conversation = null)) }
@@ -85,6 +90,10 @@ class JmapConversationMessages(
                 row.location.accountAddress,
                 listed,
             )
-        return page.copy(location = page.location.copy(accountAvatar = row.location.accountAvatar))
+        // The list already found the row sender's photo; pages from the same address reuse it.
+        val sender = if (page.sender.address.equals(row.sender.address, ignoreCase = true)) row.sender else page.sender
+        return page.copy(sender = sender, location = page.location.copy(accountAvatar = row.location.accountAvatar))
     }
 }
+
+private val BINS = setOf("trash", "junk")

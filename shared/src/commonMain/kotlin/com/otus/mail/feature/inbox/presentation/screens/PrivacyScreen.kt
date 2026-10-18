@@ -2,24 +2,19 @@ package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import com.otus.designsystem.components.PageNote
+import com.otus.designsystem.components.PickMark
+import com.otus.designsystem.components.PickRow
 import com.otus.designsystem.components.SettingPageRow
-import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.components.Subpage
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_check
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
@@ -65,22 +60,24 @@ fun PrivacyScreen(
     }
 }
 
-/** One of the three image choices; the chosen one ends in a check, as in a choice sheet. */
+/** One of the three image choices: a radio first, then its name and what it means. */
 @Composable
 private fun ImagesChoiceRow(
     choice: RemoteImages,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    SettingRow(
+    PickRow(
         choice.title,
+        choice.description,
+        PickMark(selected, atStart = true),
         onClick,
-        Modifier.semantics { this.selected = selected },
-        description = choice.description,
-    ) {
-        Box(Modifier.size(PanelTokens.iconSize)) { if (selected) Symbol(Res.drawable.symbol_check) }
-    }
+        subtitleLines = DESCRIPTION_LINES,
+    )
 }
+
+/** Enough lines for the longest description on a narrow phone. */
+private const val DESCRIPTION_LINES = 4
 
 private val RemoteImages.title: String
     get() =

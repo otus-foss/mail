@@ -13,6 +13,7 @@ import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.domain.SavedFiles
 import com.otus.mail.feature.inbox.domain.SenderBlocks
+import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -43,13 +44,14 @@ class ReadContext(
  * The folders of a message's account as the Read view names them. [cameFrom] is the folder the
  * list shows when it shows one folder, which the strips leave out; null without a folder context.
  * [apply] adds the message, with every email of its conversation, to the added folders and takes
- * it out of the removed ones. [newFolder] starts a new folder; null where it cannot.
+ * it out of the removed ones. [newFolder] shows the New folder sheet for an account until it runs
+ * its `onDismiss`; null where folders cannot be made.
  */
 class ReadFolders(
     val of: (MailMessage) -> List<MessageFolder> = { emptyList() },
     val cameFrom: (MailMessage) -> String? = { null },
     val apply: (message: MailMessage, added: Set<String>, removed: Set<String>) -> Unit = { _, _, _ -> },
-    val newFolder: ((MailMessage) -> Unit)? = null,
+    val newFolder: NewFolderSheet? = null,
 )
 
 /**

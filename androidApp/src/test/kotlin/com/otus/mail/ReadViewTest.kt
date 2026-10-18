@@ -1,7 +1,10 @@
 package com.otus.mail
 
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.material.ProvideTextStyle
+import androidx.compose.material.Text
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
@@ -14,6 +17,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import com.otus.designsystem.theme.OtusTheme
@@ -22,6 +26,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.RowLook
+import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
 import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -46,8 +51,16 @@ class ReadViewTest {
         row: MailMessage,
         pages: List<MailMessage> = listOf(row),
         cameFrom: String? = null,
+        newFolder: NewFolderSheet? = null,
     ) {
-        val read = fixtures.read(pages, cameFrom, { added, removed -> applied = added to removed }) { unsubscribed++ }
+        val read =
+            fixtures.read(
+                pages,
+                cameFrom,
+                { added, removed -> applied = added to removed },
+                { unsubscribed++ },
+                newFolder,
+            )
         val context =
             InboxContext(
                 loadContent = { fixtures.content(it) },
@@ -134,6 +147,22 @@ class ReadViewTest {
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { applied != null }
         assertEquals(setOf("fr") to emptySet<String>(), applied)
+    }
+
+    @Test
+    fun theFoldersSheetStartsANewFolderAndComesBackAfterIt() {
+        show(
+            fixtures.invoice,
+            cameFrom = "cl",
+            newFolder =
+                NewFolderSheet { accountId, onDismiss ->
+                    Text("Naming a folder in $accountId", Modifier.clickable(onClick = onDismiss))
+                },
+        )
+        compose.onNodeWithText("Also in").performClick()
+        compose.onNodeWithText("New folder").performScrollTo().performClick()
+        compose.onNodeWithText("Naming a folder in acc").performClick()
+        compose.onNodeWithText("you're here").assertIsDisplayed()
     }
 
     @Test

@@ -61,9 +61,17 @@ class JmapConversationMessagesTest {
     @Test
     fun everyMessageOfTheThreadIsAPageNewestFirstWithoutDrafts() =
         runTest {
-            cache.write("ada") { replaceMailboxes(listOf(MailboxObject("s", "Sent", role = "sent"))) }
+            cache.write("ada") {
+                replaceMailboxes(
+                    listOf(MailboxObject("s", "Sent", role = "sent"), MailboxObject("x", "Trash", role = "trash")),
+                )
+            }
             val messages = pages.messages(row)!!
-            assertEquals(listOf("ada/s1", "ada/r2", "ada/r1"), messages.map { it.id })
+            assertEquals(
+                listOf("ada/s1", "ada/r2", "ada/r1"),
+                messages.map { it.id },
+                "Drafts and deleted mail stay out",
+            )
             assertTrue(messages.all { it.conversation == null }, "An action on a page changes only its email")
             assertEquals("Re: Plans", messages.first().subject)
             assertEquals("s" to "Sent", messages.first().location.mailboxId to messages.first().location.mailbox)
@@ -90,7 +98,8 @@ class JmapConversationMessagesTest {
 
     private companion object {
         const val MAILBOXES = """{"id": "a", "name": "Inbox", "role": "inbox"},
-            {"id": "s", "name": "Sent", "role": "sent"}, {"id": "d", "name": "Drafts", "role": "drafts"}"""
+            {"id": "s", "name": "Sent", "role": "sent"}, {"id": "d", "name": "Drafts", "role": "drafts"},
+            {"id": "x", "name": "Trash", "role": "trash"}"""
 
         val THREAD = """
             {"id": "r1", "threadId": "t1", "mailboxIds": {"a": true}, "keywords": {},
@@ -102,6 +111,8 @@ class JmapConversationMessagesTest {
              "from": [{"name": "Ada", "email": "ada@example.org"}], "subject": "Re: Plans",
              "receivedAt": "2026-10-04T09:00:00Z"},
             {"id": "d1", "threadId": "t1", "mailboxIds": {"d": true}, "keywords": {"${'$'}draft": true},
-             "from": [{"name": "Ada", "email": "ada@example.org"}], "receivedAt": "2026-10-05T09:00:00Z"}"""
+             "from": [{"name": "Ada", "email": "ada@example.org"}], "receivedAt": "2026-10-05T09:00:00Z"},
+            {"id": "x1", "threadId": "t1", "mailboxIds": {"x": true}, "keywords": {},
+             "from": [{"name": "Grace", "email": "grace@example.org"}], "receivedAt": "2026-10-02T09:00:00Z"}"""
     }
 }

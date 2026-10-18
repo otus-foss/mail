@@ -18,10 +18,18 @@ import com.otus.mail.feature.inbox.presentation.FilterAddress
 import com.otus.mail.feature.inbox.presentation.FilterFolder
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderKey
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.DrawableResource
+import kotlin.time.Clock
 
 /** Demo mail and folders for filter panel tests: names repeat, and Work nests five levels deep. */
 internal object FilterPanelFixtures {
+    /** Mail dates count back from the day the test runs, so rows read the same any day. */
+    private val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
     private val folders =
         listOf(
             system("inbox", "Inbox", Res.drawable.symbol_inbox),
@@ -66,9 +74,9 @@ internal object FilterPanelFixtures {
 
     val messages =
         listOf(
-            message("1", "Sam Rivera", "Invoice for October", "2026-10-18", unread = true),
-            message("2", "Acme Corp", "Kickoff notes", "2026-10-17"),
-            message("3", "Lena Park", "Trip itinerary", "2026-10-15"),
+            message("1", "Sam Rivera", "Invoice for October", daysAgo = 0, unread = true),
+            message("2", "Acme Corp", "Kickoff notes", daysAgo = 1),
+            message("3", "Lena Park", "Trip itinerary", daysAgo = 3),
         )
 
     private fun system(
@@ -99,14 +107,14 @@ internal object FilterPanelFixtures {
         id: String,
         from: String,
         subject: String,
-        date: String,
+        daysAgo: Int,
         unread: Boolean = false,
     ) = MailMessage(
         id,
         MailSender(from, "${from.lowercase().replace(' ', '.')}@example.org"),
         subject,
         "A short preview of the message.",
-        ReceivedAt(date, "09:30"),
+        ReceivedAt(today.minus(DatePeriod(days = daysAgo)).toString(), "09:30"),
         MailLocation("Inbox", "Ada"),
         MailAttributes(unread = unread),
     )

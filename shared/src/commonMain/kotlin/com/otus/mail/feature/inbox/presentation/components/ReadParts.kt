@@ -52,6 +52,15 @@ internal class ReadParts(
     fun content(page: MailMessage): MessageContent? = (state.body(page) as? PageBody.Loaded)?.content
 }
 
+/** The New folder sheet for an account, which the app supplies; it shows until it runs `onDismiss`. */
+fun interface NewFolderSheet {
+    @Composable
+    fun Show(
+        accountId: String,
+        onDismiss: () -> Unit,
+    )
+}
+
 /** How the pages look, once the account's known people have loaded for the image rule. */
 @Composable
 internal fun rememberPageLook(parts: ReadParts): ReadPageLook {
@@ -116,7 +125,7 @@ internal fun rememberReadMenu(
     return readMenuItems(entries, { menu.run(it, page, content) }, bar.more, parts::perform, page.attributes.unread)
 }
 
-/** The sheets over the Read view: the conversation's folders and a page's headers. */
+/** The sheets over the Read view: the conversation's folders, a new folder, and a page's headers. */
 @Composable
 internal fun ReadSheets(
     parts: ReadParts,
@@ -134,9 +143,14 @@ internal fun ReadSheets(
                 look.folders.values.toList(),
                 cameFrom,
                 onApply = { added, removed -> read.folders.apply(row, added, removed) },
-                onNewFolder = read.folders.newFolder?.let { start -> { start(row) } },
+                onNewFolder = read.folders.newFolder?.let { { state.sheet = ReadSheet.NewFolder } },
                 onDismiss = dismiss,
             )
+        }
+
+        // Closing it goes back to the folders, where the new one can be ticked.
+        ReadSheet.NewFolder -> {
+            read.folders.newFolder?.Show(row.location.accountId) { state.sheet = ReadSheet.Folders }
         }
 
         is ReadSheet.Details -> {
@@ -146,11 +160,13 @@ internal fun ReadSheets(
 }
 
 /**
- * What the Read view's header does: Back, the sender pill that shows or hides the details,
- * [readLater] for the bookmark, which is null while Read later is off, and the ⋯ [menu].
+ * What the Read view's header does: Back, the sender pill that shows or hides the details, which
+ * are [senderOpen], [readLater] for the bookmark, which is null while Read later is off, and the
+ * ⋯ [menu].
  */
 internal class ReadHeaderActions(
     val onBack: () -> Unit,
+    val senderOpen: Boolean,
     val onSender: () -> Unit,
     val readLater: ReadLaterChange?,
     val menu: List<OptionsItem>,

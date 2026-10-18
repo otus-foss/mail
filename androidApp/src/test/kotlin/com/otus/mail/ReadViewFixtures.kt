@@ -1,5 +1,10 @@
 package com.otus.mail
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.KnownPeople
@@ -29,7 +34,9 @@ import com.otus.mail.feature.inbox.presentation.ReadFiles
 import com.otus.mail.feature.inbox.presentation.ReadFolders
 import com.otus.mail.feature.inbox.presentation.ReadPrivacy
 import com.otus.mail.feature.inbox.presentation.ReadServices
+import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
 import kotlinx.datetime.LocalDate
+import java.io.ByteArrayOutputStream
 
 /** Demo mail for the Read view: the Q4 launch thread, an invoice, and a Sentry digest. Alex reads it. */
 internal object ReadViewFixtures {
@@ -119,7 +126,7 @@ internal object ReadViewFixtures {
     val attachments =
         listOf(
             MailAttachment("Q4-plan-v3.pdf", "application/pdf", 245_760, "b1"),
-            MailAttachment("whiteboard.jpg", "image/jpeg", 2_202_009, "b2"),
+            MailAttachment("whiteboard.jpg", "image/jpeg", 1_902_009, "b2"),
             MailAttachment("numbers.xlsx", SHEET_TYPE, 1_992_294, "b3"),
         )
 
@@ -150,18 +157,22 @@ internal object ReadViewFixtures {
         cameFrom: String? = null,
         applied: (Set<String>, Set<String>) -> Unit = { _, _ -> },
         unsubscribed: () -> Unit = {},
+        newFolder: NewFolderSheet? = null,
     ) = ReadContext(
         pages = ConversationMessages { pages },
         folders =
-            ReadFolders(of = { folders }, cameFrom = { cameFrom }, apply = {
-                _,
-                added,
-                removed,
-                ->
-                applied(added, removed)
-            }),
+            ReadFolders(
+                of = { folders },
+                cameFrom = { cameFrom },
+                apply = { _, added, removed -> applied(added, removed) },
+                newFolder = newFolder,
+            ),
         privacy = ReadPrivacy(known = KnownPeople { team.map { it.address }.toSet() }),
-        files = ReadFiles(printer = MessagePrinter { _, _ -> }),
+        files =
+            ReadFiles(
+                downloads = AttachmentDownloads { _, file -> photo().takeIf { file.type.startsWith("image/") } },
+                printer = MessagePrinter { _, _ -> },
+            ),
         services =
             ReadServices(
                 newsletters = FakeNewsletters(unsubscribed),
@@ -171,6 +182,24 @@ internal object ReadViewFixtures {
             ),
         today = { LocalDate(2026, 10, 19) },
     )
+
+    /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
+    private fun photo(): ByteArray {
+        val bitmap = Bitmap.createBitmap(PHOTO_SIZE, PHOTO_SIZE, Bitmap.Config.ARGB_8888)
+        Canvas(bitmap).apply {
+            drawColor(Color.rgb(0x3b, 0x5a, 0x6e))
+            drawCircle(
+                PHOTO_SIZE * 0.6f,
+                PHOTO_SIZE * 0.4f,
+                PHOTO_SIZE * 0.25f,
+                Paint().apply {
+                    color =
+                        Color.rgb(0xe8, 0xc4, 0x6a)
+                },
+            )
+        }
+        return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+    }
 
     fun actions(behavior: MailBehavior = MailBehavior()) =
         MessageActions(
@@ -212,6 +241,7 @@ internal object ReadViewFixtures {
     }
 
     private const val OLDER = 23
+    private const val PHOTO_SIZE = 96
     private const val SHEET_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     private const val DIGEST_HTML =
         "<p>Your weekly digest is here.</p><p>12 new issues in otus-mail, 3 regressions.</p>" +
