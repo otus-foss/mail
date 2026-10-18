@@ -1,0 +1,131 @@
+package com.otus.mail.feature.inbox.presentation
+
+import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.feature.inbox.domain.InboxSnapshot
+import com.otus.mail.feature.inbox.domain.MailQuery
+import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.MailSource
+import com.otus.mail.feature.inbox.domain.ShowFacet
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class InboxFilterStateTest {
+    private val unread = InboxFilters(show = setOf(ShowFacet.Unread))
+
+    @Test
+    fun openingCopiesTheAppliedFiltersIntoTheDraft() {
+        val state = InboxFilterState(unread)
+        state.open()
+        assertEquals(unread, state.draft)
+        state.edit { it.copy(date = DateFilter.Today) }
+        assertEquals(unread, state.applied, "Draft changes wait for Show")
+    }
+
+    @Test
+    fun closingDropsTheDraft() {
+        val applied = mutableListOf<InboxFilters>()
+        val state = InboxFilterState(onApplied = { applied += it })
+        state.open()
+        state.edit { unread }
+        state.close()
+        assertNull(state.draft)
+        assertFalse(state.isOpen)
+        assertEquals(InboxFilters(), state.applied)
+        assertTrue(applied.isEmpty())
+        state.open()
+        assertEquals(InboxFilters(), state.draft, "Reopening starts from the applied filters")
+    }
+
+    @Test
+    fun showAppliesTheDraftAndCloses() {
+        val applied = mutableListOf<InboxFilters>()
+        val state = InboxFilterState(onApplied = { applied += it })
+        state.open()
+        state.edit { unread }
+        state.show()
+        assertEquals(unread, state.applied)
+        assertEquals(listOf(unread), applied)
+        assertFalse(state.isOpen)
+    }
+
+    @Test
+    fun pillsAndPanelShareTheAppliedFilters() {
+        val state = InboxFilterState()
+        state.update(state.applied.with(InboxPill.Filter.Unread, true))
+        state.open()
+        assertTrue(state.draft!!.has(ShowFacet.Unread), "The panel opens with the pill's filter on")
+        state.edit { it.with(ShowFacet.Unread, false) }
+        state.show()
+        assertFalse(state.applied.has(InboxPill.Filter.Unread), "The pill turns off with the panel's change")
+    }
+
+    @Test
+    fun countingWaitsForTheLastChangeAndCancelsTheOneBefore() =
+        runTest {
+            val counted = mutableListOf<InboxFilters>()
+            var blocking = true
+            val state =
+                InboxFilterState(scope = this, counter = { filters ->
+                    counted += filters
+                    if (blocking) awaitCancellation()
+                    7
+                })
+            state.open()
+            advanceTimeBy(InboxFilterState.COUNT_DELAY_MILLIS + 1)
+            assertEquals(FilterCount.Counting, state.count)
+            blocking = false
+            state.edit { unread }
+            advanceTimeBy(InboxFilterState.COUNT_DELAY_MILLIS / 2)
+            state.edit { it.copy(date = DateFilter.Today) }
+            advanceTimeBy(InboxFilterState.COUNT_DELAY_MILLIS + 1)
+            runCurrent()
+            assertEquals(FilterCount.Known(7), state.count)
+            assertEquals(listOf(InboxFilters(), unread.copy(date = DateFilter.Today)), counted)
+        }
+
+    @Test
+    fun showLabelsFollowTheCount() {
+        assertEquals("Show conversations", FilterCount.Counting.showLabel)
+        assertEquals("Show conversations", FilterCount.Unknown.showLabel)
+        assertEquals("No conversations", FilterCount.Known(0).showLabel)
+        assertEquals("Show 1 conversation", FilterCount.Known(1).showLabel)
+        assertEquals("Show 12 conversations", FilterCount.Known(12).showLabel)
+    }
+
+    @Test
+    fun aNewQueryLoadsTheFeedAgain() =
+        runTest {
+            val queries = mutableListOf<MailQuery>()
+            val source =
+                object : MailSource {
+                    override suspend fun messages(scope: MailScope) = InboxSnapshot(emptyList())
+
+                    override suspend fun messages(
+                        scope: MailScope,
+                        query: MailQuery,
+                    ): InboxSnapshot {
+                        queries += query
+                        return InboxSnapshot(emptyList())
+                    }
+                }
+            val feed = InboxFeedState(source, this)
+            feed.refresh()
+            runCurrent()
+            feed.query = MailQuery(unread)
+            runCurrent()
+            feed.query = MailQuery(unread)
+            runCurrent()
+            assertEquals(listOf(MailQuery(), MailQuery(unread)), queries)
+        }
+}

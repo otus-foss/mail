@@ -173,6 +173,7 @@ internal fun FeedPage(
     val pageScope = rememberCoroutineScope()
     val feed = remember(mailScope) { states.folderFeed(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
+    val filters = rememberPageFilters(states, page, feed)
     InboxScreen(
         rememberLabeled(states, feed),
         dateFormatter,
@@ -188,6 +189,8 @@ internal fun FeedPage(
                 loadHtml = states::messageHtml,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
+        filters = filters,
+        filterOptions = rememberFilterOptions(states, page, filters.applied),
     )
 }
 

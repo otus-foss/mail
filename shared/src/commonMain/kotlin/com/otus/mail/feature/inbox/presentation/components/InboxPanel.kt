@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ChipPlacement
 import com.otus.designsystem.components.ContextPanel
+import com.otus.designsystem.elements.BadgedSymbol
 import com.otus.designsystem.elements.IconButton
 import com.otus.designsystem.elements.SearchField
 import com.otus.designsystem.elements.SearchPrompt
@@ -39,10 +40,11 @@ fun InboxPanel(
     context: InboxContext,
     actions: InboxPanelActions,
     selection: FilterSelection = FilterSelection(),
+    filters: ActiveFilters = ActiveFilters(),
+    filterButton: FocusRequester = remember { FocusRequester() },
 ) {
     val onChange = actions.onChange
     val onSearchingChange = actions.onSearchingChange
-    val onFilter = actions.onFilter
     val onSubmit = actions.onSubmit
     val onOpenNavigation = actions.onOpenNavigation
     ContextPanel(
@@ -55,11 +57,14 @@ fun InboxPanel(
             },
         navigation = { InboxNavigation(searching, onOpenNavigation) { onSearchingChange(false) } },
         trailingAction = {
-            IconButton("Open filters", { onFilter(InboxFilter.More) }) {
-                Symbol(Res.drawable.symbol_filter_list)
-            }
+            val count = filters.applied.activeCount
+            IconButton(
+                if (count == 0) "Open filters" else "Open filters, $count active",
+                actions.onOpenFilters,
+                Modifier.focusRequester(filterButton),
+            ) { BadgedSymbol(Res.drawable.symbol_filter_list, count) }
         },
-        chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions) },
+        chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, filters) },
     ) {
         val motionScale = LocalMotionScale.current
         AnimatedContent(

@@ -37,6 +37,7 @@ internal fun InboxPage(
             foldersLoaded = !states.accounts.loading && !states.folders.loading,
         )
     val labeled = rememberLabeled(states, feed)
+    val filters = rememberPageFilters(states, MailPage.Inbox, feed)
     InboxScreen(
         labeled,
         dateFormatter,
@@ -57,6 +58,8 @@ internal fun InboxPage(
                 loadHtml = states::messageHtml,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
+        filters = filters,
+        filterOptions = rememberFilterOptions(states, MailPage.Inbox, filters.applied),
     )
 }
 
