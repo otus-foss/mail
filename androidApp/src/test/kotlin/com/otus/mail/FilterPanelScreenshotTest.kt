@@ -1,27 +1,21 @@
 package com.otus.mail
 
-import androidx.activity.compose.setContent
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
-import com.github.takahirom.roborazzi.captureRoboImage
-import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.ThemeBase
+import com.otus.designsystem.theme.ThemeChoice
 import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
+import com.otus.mail.feature.inbox.domain.SizeFilter
+import com.otus.mail.feature.inbox.domain.TypeFacet
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,7 +23,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** The inbox filter panel and the pill row it fills, compared with src/test/screenshots. */
+/** The filter panel's main page in each theme, and the pill row it fills, compared with src/test/screenshots. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -39,69 +33,79 @@ class FilterPanelScreenshotTest {
     private val selections =
         InboxFilters(
             status = ReadStatus.Unread,
-            sentTo = setOf(OwnAddress("ada", "otus@rubylabs.design")),
-            folders = setOf(FolderRef("ada", "acme", includeSubfolders = false)),
+            quick = setOf(QuickFacet.Flagged, QuickFacet.Attachments),
+            from = setOf(FilterPanelFixtures.grace, FilterPanelFixtures.chatGpt),
+            folders = setOf(FolderRef("ada", "acme", includeSubfolders = false), FolderRef("ada", "dev")),
             date = DateFilter.Last7,
         )
 
-    /** The inbox with [applied] filters, the panel open while [open], counting [total] messages. */
-    private fun show(
-        applied: InboxFilters = InboxFilters(),
-        open: Boolean = true,
-        total: Long? = 12,
-    ) {
-        compose.runOnUiThread {
-            compose.activity.setContent {
-                val scope = rememberCoroutineScope()
-                val filters = remember { InboxFilterState(applied, scope, counter = { total }) }
-                OtusTheme {
-                    InboxScreen(
-                        FilterPanelFixtures.messages,
-                        context = InboxContext(filters = filters, filterOptions = FilterPanelFixtures.options),
-                    )
-                }
-            }
-        }
-        if (open) compose.onNodeWithContentDescription("Open filters", substring = true).performClick()
-        compose.waitForIdle()
-    }
-
-    private fun shot(name: String) = compose.onRoot().captureRoboImage("src/test/screenshots/$name.png")
+    private val light = ThemeChoice(ThemeBase.Light).palette
+    private val black = ThemeChoice(ThemeBase.Black).palette
 
     @Test
     fun panelDefault() {
-        show()
+        compose.showFilterPanel()
         compose.onNodeWithText("Reset").assertIsNotEnabled()
-        shot("filter_panel_default")
+        compose.filterShot("filter_panel_default")
+    }
+
+    @Test
+    fun panelDefaultLight() {
+        compose.showFilterPanel(palette = light)
+        compose.filterShot("filter_panel_default_light")
+    }
+
+    @Test
+    fun panelDefaultBlack() {
+        compose.showFilterPanel(palette = black)
+        compose.filterShot("filter_panel_default_black")
     }
 
     @Test
     fun panelWithSelections() {
-        show(selections)
-        shot("filter_panel_selections")
+        compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts)
+        compose.filterShot("filter_panel_selections")
     }
 
     @Test
-    fun allFoldersNestedAndSearching() {
-        show()
-        compose.onNodeWithContentDescription("All folders…").performScrollTo().performClick()
-        compose.waitForIdle()
-        shot("filter_panel_all_folders")
-        compose.onNodeWithContentDescription("Search folders").performTextInput("inv")
-        compose.waitForIdle()
-        shot("filter_panel_all_folders_search")
+    fun panelWithSelectionsLight() {
+        compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts, palette = light)
+        compose.filterShot("filter_panel_selections_light")
+    }
+
+    @Test
+    fun panelWithSelectionsBlack() {
+        compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts, palette = black)
+        compose.filterShot("filter_panel_selections_black")
+    }
+
+    @Test
+    fun shortPageKeepsTheFullHeight() {
+        compose.showFilterPanel()
+        val mainFooter = compose.onNodeWithText("Reset").getBoundsInRoot()
+        compose.openFilterPage("Metadata, ")
+        assertEquals("The footer stays where it was", mainFooter, compose.onNodeWithText("Reset").getBoundsInRoot())
+        compose.filterShot("filter_panel_same_height")
     }
 
     @Test
     fun pillRowWithActiveFilters() {
-        show(selections, open = false)
-        shot("filter_pills_active")
+        val applied =
+            selections.copy(
+                sentTo = setOf(OwnAddress("ada", "otus@rubylabs.design")),
+                account = "ada",
+                types = setOf(TypeFacet.Newsletters),
+                size = SizeFilter.Over5Mb,
+                sort = FilterSort.OldestFirst,
+            )
+        compose.showFilterPanel(applied, open = false, options = FilterPanelFixtures.twoAccounts)
+        compose.filterShot("filter_pills_active")
     }
 
     @Test
     fun noConversations() {
-        show(InboxFilters(quick = setOf(QuickFacet.Flagged)), total = 0)
+        compose.showFilterPanel(InboxFilters(quick = setOf(QuickFacet.Flagged)), total = 0)
         compose.onNodeWithText("No conversations").assertIsNotEnabled()
-        shot("filter_panel_no_conversations")
+        compose.filterShot("filter_panel_no_conversations")
     }
 }
