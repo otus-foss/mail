@@ -64,7 +64,7 @@ internal fun ConversationsPage(
     FeedPage(
         MailPage.Conversations,
         scope,
-        "Conversations",
+        "Convos",
         states,
         dateFormatter,
         navigation,
