@@ -7,7 +7,6 @@ import com.otus.designsystem.elements.CountBadge
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
-import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_mark_email_unread
@@ -37,11 +36,11 @@ internal val InboxPill.Filter.icon: DrawableResource
         }
 
 /**
- * The row outside search: the page's active filters first, each with a ✕ that removes it, then the
- * user's pills in their order. A filter pill turns its filter on, which moves it to the front; a
- * folder pill shows its folders' mail, and pressing it again returns to the page's own. The Unread
- * pill shows [unreadCount] in a circle in place of its icon while there is unread mail, and keeps
- * it in place of the ✕ while the filter is on.
+ * The row outside search: the page's active filters first, drawn as the search pills are, and
+ * pressing one removes it; then the user's pills in their order. A filter pill turns its filter on,
+ * which moves it to the front; a folder pill shows its folders' mail, and pressing it again returns
+ * to the page's own. The Unread pill shows [unreadCount] in a circle in place of its icon while
+ * there is unread mail, on or off.
  */
 @Composable
 internal fun ContextPanelScope.InboxRowPills(
@@ -54,9 +53,12 @@ internal fun ContextPanelScope.InboxRowPills(
     val unreadBadge = unreadCount.takeIf { it > 0 }?.badgeText()
     filters.active.forEach { facet ->
         item(facet.key) {
+            val onClick = { filters.onChange(facet.remove(filters.applied)) }
             val count = unreadBadge.takeIf { facet.key == ShowFacet.Unread }
-            Chip(facet.label, { filters.onChange(facet.remove(filters.applied)) }, selected = true) {
-                if (count != null) CountBadge(count) else Symbol(Res.drawable.symbol_close)
+            if (count != null) {
+                Chip(ShowFacet.Unread.label, onClick, selected = true) { CountBadge(count) }
+            } else {
+                facet.pill(onClick)
             }
         }
     }
