@@ -54,7 +54,7 @@ private fun DraftAttachment.options(
             add(OptionsItem.Action("Retry upload", Res.drawable.symbol_arrow_upward, { attachments.retry(id) }))
         }
         add(
-            OptionsItem.Toggle("Send as attachment", Res.drawable.symbol_attach_file, checked = false) {
+            OptionsItem.Toggle("Send as file", Res.drawable.symbol_attach_file, checked = false) {
                 state.body.images.deselect()
                 attachments.showInline(id, false)
             },
