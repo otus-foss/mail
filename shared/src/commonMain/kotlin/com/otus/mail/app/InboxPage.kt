@@ -56,6 +56,7 @@ internal fun InboxPage(
                     ),
                 onCompose = { navigation.go(MailPage.Compose(it)) },
                 loadContent = states::messageContent,
+                read = rememberReadContext(states, feed),
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, MailPage.Inbox, filters.applied),
                 rowLook = rememberRowLook(states),

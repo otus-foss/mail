@@ -29,9 +29,11 @@ import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MessageMoves
+import com.otus.mail.feature.inbox.presentation.ReadEffects
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /** State holders that outlive a single page. One per composition of [App]. */
 internal class MailStates(
@@ -163,6 +165,17 @@ internal class MailStates(
     /** The toasts that offer to undo moves; they outlive the page a move closed, such as the open message. */
     val moveToasts = MoveToasts()
 
+    /** The Read view's services, folders, and privacy setting; its toasts join the move toasts. */
+    val reading =
+        ReadWiring(
+            services,
+            scope,
+            behavior,
+            folders,
+            folderColors,
+            ReadEffects(moveToasts.toasts) { scope.launch { it() } },
+        )
+
     /** Sends drafts after their page closes, with Undo and the outcome in a toast. */
     val outgoing =
         OutgoingMail(scope, moveToasts.toasts, services.scheduled) {
@@ -184,6 +197,7 @@ internal class MailStates(
             moves =
                 MessageMoves(
                     targets = filing::moveTargets,
+                    listed = filing::listedTargets,
                     onMove = { message, target ->
                         val move = filing.move(feed, message, target)
                         moveToasts.moved(target) { filing.moveBack(feed, message, target, after = move) }

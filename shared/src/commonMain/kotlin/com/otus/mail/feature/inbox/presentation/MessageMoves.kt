@@ -7,6 +7,8 @@ import com.otus.mail.feature.inbox.domain.MailSender
 class MessageMoves(
     /** Folders the message may move to: they accept mail, and its own folder lets it leave. */
     val targets: (MailMessage) -> List<MoveTarget>,
+    /** [targets] with the folder the message is in, in the same order; the move sheet dims that one. */
+    val listed: (MailMessage) -> List<MoveTarget> = targets,
     /** Moves the message; the list shows the change at once. */
     val onMove: (MailMessage, MoveTarget) -> Unit,
     /** The user's own folder this sender's mail usually goes to; null when none stands out. */

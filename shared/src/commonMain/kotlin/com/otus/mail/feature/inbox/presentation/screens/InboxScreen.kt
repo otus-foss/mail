@@ -111,13 +111,24 @@ fun InboxScreen(
                     }
                 }
             },
-        ) { MessageScreen(it, messageActions, status.notice, context.loadContent, context.onCompose, rows.close) }
+        ) { MessageScreen(it, messageActions, status.notice, page, page.cameFrom(it, state.searching), rows.close) }
         InboxFilterLayer(filters, messages, dateFormatter, anchor)
         filter?.let { selected ->
             InboxFilterSheet(selected, messages, state.search, page, dateFormatter, state::update) { filter = null }
         }
     }
 }
+
+/** The folder this page shows [message] from; search and folder pills mix folders, so they give none. */
+private fun InboxContext.cameFrom(
+    message: MailMessage,
+    searching: Boolean,
+): String? =
+    read
+        ?.folders
+        ?.cameFrom
+        ?.invoke(message)
+        ?.takeIf { !searching && folderPill == null }
 
 /** Closes [state]'s search and the keyboard, also on system back while searching. */
 @Composable

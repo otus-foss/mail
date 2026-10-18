@@ -24,9 +24,9 @@ import com.otus.designsystem.components.PickerSearch
 import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SheetFrame
+import com.otus.designsystem.elements.DestinationPill
 import com.otus.designsystem.elements.IconPill
 import com.otus.designsystem.elements.LocalIconTint
-import com.otus.designsystem.elements.SidebarPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_auto_filter
@@ -36,6 +36,7 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.MoveTokens
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.SheetTokens
@@ -79,6 +80,9 @@ internal fun MoveSheet(
         }
     }
     val saving = messages.mapNotNull(actions.readLater).filter { it.saves }
+    // The folder every message is in now shows dimmed in the list, so the user sees where it is.
+    val here = first.location.mailboxId.takeIf { id -> id.isNotEmpty() && messages.all { it.location.mailboxId == id } }
+    val listed = if (here == null) targets else actions.moves.listed(first)
     SheetFrame("Move to", onDismiss) {
         Column(
             Modifier
@@ -92,7 +96,7 @@ internal fun MoveSheet(
             val readLater = saving.takeIf { it.isNotEmpty() && READ_LATER.containsSearch(query) }
             val shortcuts = targets.shortcuts().filter { it.matchesSearch(query) }
             val suggestion = suggested?.takeIf { it.matchesSearch(query) }
-            val folders = targets.ownFolders().filter { it.matchesSearch(query) }
+            val folders = listed.ownFolders().filter { it.matchesSearch(query) }
             MovePills(
                 onReadLater = readLater?.let { changes -> { onLeave { changes.forEach { it.apply() } } } },
                 shortcuts,
@@ -100,8 +104,8 @@ internal fun MoveSheet(
                 onMove = move,
             )
             suggestion?.let { MoveSuggestion(it, first.sender, move) }
-            MoveFolderList(folders, searching = query.isNotBlank(), onMove = move)
-            if (readLater == null && suggestion == null && (shortcuts + folders).isEmpty()) {
+            MoveFolderList(folders, here, searching = query.isNotBlank(), onMove = move)
+            if (readLater == null && suggestion == null && (shortcuts + folders).none { it.folderId != here }) {
                 SheetCaption(
                     if (query.isBlank()) "No folders to move to." else "No folders match.",
                     RowTextInset,
@@ -131,11 +135,17 @@ private fun MovePills(
             // Inbox leads whenever the message can go back there, so the pills keep one order.
             val (inbox, others) = shortcuts.partition { it.shortcut == FolderShortcut.Inbox }
             inbox.forEach { ShortcutPill(it, onMove) }
-            onReadLater?.let { SidebarPill(READ_LATER, Res.drawable.symbol_bookmark, selected = false, it) }
+            onReadLater?.let { DestinationPill(READ_LATER, Res.drawable.symbol_bookmark, it) }
             others.forEach { ShortcutPill(it, onMove) }
         }
         sorting.future?.let {
-            IconPill(SORT_FUTURE_MAIL, Res.drawable.symbol_auto_filter, sorting.on, { sorting.onToggle(!sorting.on) })
+            IconPill(
+                SORT_FUTURE_MAIL,
+                Res.drawable.symbol_auto_filter,
+                sorting.on,
+                { sorting.onToggle(!sorting.on) },
+                size = MoveTokens.pillHeight,
+            )
         }
     }
 }
@@ -145,7 +155,7 @@ private fun ShortcutPill(
     target: MoveTarget,
     onMove: (MoveTarget) -> Unit,
 ) {
-    target.shortcut?.let { SidebarPill(it.label, it.icon, selected = false, { onMove(target) }) }
+    target.shortcut?.let { DestinationPill(it.label, it.icon, { onMove(target) }) }
 }
 
 /** The user's own folder [sender]'s mail usually goes to, under its own caption. */
