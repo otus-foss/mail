@@ -17,8 +17,9 @@ import kotlinx.serialization.json.putJsonObject
  * section 4.6). It is marked `$draft`, and `$seen` so the Drafts folder does not count it as unread.
  * Empty recipient and thread headers are left out rather than written empty. The body is plain
  * text, or text and [html] as alternatives; HTML with inline images puts them beside it in a
- * `multipart/related` part, which the HTML names by `cid:`. Attachments uploaded to the draft's
- * account follow the body in `multipart/mixed`; one still uploading waits for a later save.
+ * `multipart/related` part, which the HTML names by `cid:`; inline attachments join them there.
+ * Other attachments uploaded to the draft's account follow the body in `multipart/mixed`. One
+ * still uploading waits for a later save.
  */
 internal fun Draft.toEmail(
     draftsId: String,
@@ -42,23 +43,28 @@ internal fun Draft.toEmail(
             putJsonObject(TEXT_PART) { put("value", textContent()) }
             html?.let { putJsonObject(HTML_PART) { put("value", it.html) } }
         }
-        val files = attachments.filter { it.uploadedTo(accountId) }
+        val uploaded = attachments.filter { it.uploadedTo(accountId) }
+        val (shownInline, files) = uploaded.partition { it.inline }
+        val shown =
+            html?.let { body ->
+                EmailHtml(body.html, body.images + shownInline.mapNotNull { it.inlineImage() })
+            }
         when {
             files.isNotEmpty() -> {
-                put("bodyStructure", multipart("multipart/mixed", listOf(body(html)) + files.map { it.part() }))
+                put("bodyStructure", multipart("multipart/mixed", listOf(body(shown)) + files.map { it.part() }))
             }
 
-            html == null -> {
+            shown == null -> {
                 put("textBody", JsonArray(listOf(bodyPart(TEXT_PART, "text/plain"))))
             }
 
-            html.images.isEmpty() -> {
+            shown.images.isEmpty() -> {
                 put("textBody", JsonArray(listOf(bodyPart(TEXT_PART, "text/plain"))))
                 put("htmlBody", JsonArray(listOf(bodyPart(HTML_PART, "text/html"))))
             }
 
             else -> {
-                put("bodyStructure", body(html))
+                put("bodyStructure", body(shown))
             }
         }
     }
@@ -89,6 +95,8 @@ private fun EmailHtml.htmlPart(): JsonObject =
                 },
         )
     }
+
+private fun DraftAttachment.inlineImage(): InlineImage? = blob?.let { InlineImage(cid, it.blobId, type) }
 
 /** An uploaded attachment as a part of its own, offered as a file by its name. */
 private fun DraftAttachment.part(): JsonObject =

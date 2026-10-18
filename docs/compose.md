@@ -100,14 +100,22 @@ draft again as it was. The saved copy is deleted once the toast leaves without U
 Attach opens the system document picker for any number of files of any type. Each file uploads
 at once to the draft's account (RFC 8620, section 6.1) and shows as a chip under the body with
 its name and "Uploading…", then its size. A file larger than the session's `maxSizeUpload`
-says "Too large for this server"; any other failure says "Couldn't upload. Tap to retry". ✕
-removes a file. Choosing an identity of another account uploads every file again there,
+says "Too large for this server"; any other failure says "Couldn't upload", and tapping the chip
+offers Retry. ✕ removes a file. Choosing an identity of another account uploads every file again there,
 because a blob belongs to one account.
 
 A save or send puts each file uploaded to the draft's account after the body in
 `multipart/mixed`, by its `blobId`, with its name and `disposition: attachment`. A file still
 uploading waits for a later save. The body no longer fills the page while files follow it, so
 the chips stay in view.
+
+A picked image starts inline: it goes into the body at the cursor as `<img src="cid:…">` and
+shows there as a preview, as wide as the text, and the chip reads "In message". Tapping an
+image's chip offers **Attach as file**, which takes it out of the body, or **Show in message**,
+which puts it back at the cursor. Deleting the image from the text, with Backspace right after
+it or the chip's ✕, removes the file. A save or send puts each inline image beside the HTML in
+`multipart/related` with its `cid` and `disposition: inline`, so the mail shows it where it
+sits; the plain-text part leaves it out.
 
 ### Signatures
 
@@ -195,6 +203,9 @@ submission's `undoStatus` to `canceled`, marks the copy `$draft` again, and open
   refuses such a message when it is sent.
 - A forward does not carry the original's attachments, and received attachments cannot be
   opened yet ([Mail #25](https://github.com/reazndev/otus-mail/issues/25)).
+- Some keyboards send no Backspace key at the start of a line, so deleting an image that way may
+  not work; its chip's ✕ always does.
+- Photos larger than 4096 px on a side show no preview, though they still send.
 - Picked files are read again for each upload while the app runs; a draft reopened after the app
   closed cannot upload its files to another account.
 - There is no outbox that survives the app closing: a message in its Undo window or waiting to

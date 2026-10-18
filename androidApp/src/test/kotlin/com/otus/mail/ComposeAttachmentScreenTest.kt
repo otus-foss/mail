@@ -1,5 +1,6 @@
 package com.otus.mail
 
+import android.graphics.Bitmap
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,23 +29,37 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.io.ByteArrayOutputStream
 import kotlin.time.Instant
 
-/** The Write page with files attached: one uploaded, one too large for the server. */
+/**
+ * The Write page with files attached: a photo shown in the message, a file uploaded, and one too
+ * large for the server.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w360dp-h780dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ComposeAttachmentScreenTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
+    private val photo =
+        ByteArrayOutputStream()
+            .also { out ->
+                Bitmap
+                    .createBitmap(PHOTO_WIDTH, PHOTO_HEIGHT, Bitmap.Config.ARGB_8888)
+                    .apply { eraseColor(PHOTO_COLOR) }
+                    .compress(Bitmap.CompressFormat.PNG, 100, out)
+            }.toByteArray()
+
     private val files =
         listOf(
+            PickedFile("Whiteboard.png", "image/png", photo.size.toLong()) { photo },
             PickedFile("Quarterly plan.pdf", "application/pdf", 1_572_864) { ByteArray(0) },
             PickedFile("Site walkthrough.mov", "video/quicktime", 734_003_200) { ByteArray(0) },
         )
 
     @Test
-    fun attachedFilesShowAsChipsUnderTheBody() {
+    fun anImageShowsInTheMessageAndCanBecomeAFile() {
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
@@ -78,7 +93,19 @@ class ComposeAttachmentScreenTest {
         compose.onNodeWithContentDescription("Attach").performClick()
         compose.onNodeWithText("1.5 MB").assertExists()
         compose.onNodeWithText("Too large for this server").assertExists()
+        compose.onNodeWithText("In message", substring = true).assertExists()
+        compose.screenshot("compose-attachments-inline")
+
+        compose.onNodeWithText("Whiteboard.png").performClick()
+        compose.onNodeWithText("Attach as file").performClick()
+        compose.onNodeWithText("In message", substring = true).assertDoesNotExist()
         compose.screenshot("compose-attachments")
+    }
+
+    private companion object {
+        const val PHOTO_WIDTH = 640
+        const val PHOTO_HEIGHT = 400
+        const val PHOTO_COLOR = 0xFF4F7A9A.toInt()
     }
 
     private object NoExits : ComposeExits {

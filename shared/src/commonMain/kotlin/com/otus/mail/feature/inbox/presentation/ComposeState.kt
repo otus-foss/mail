@@ -79,6 +79,7 @@ class ComposeState(
             services.files,
             services.uploads,
             scope,
+            body,
             accountId = { draft.accountId },
             attachments = { draft.attachments },
             change = { files -> edit { it.copy(attachments = files(it.attachments)) } },

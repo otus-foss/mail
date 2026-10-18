@@ -60,6 +60,7 @@ internal fun ComposeContent(
                 state.body,
                 placeholder = "Write your message",
                 Modifier.heightIn(min = if (alone) bodyHeight.coerceAtLeast(0.dp) else 0.dp),
+                images = { state.attachments.image(it) },
             )
             ComposeAttachmentList(state.draft.attachments, state.attachments)
             if (quote.isNotEmpty()) QuotedOriginal(quote, FORWARD_LABEL)
