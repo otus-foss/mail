@@ -23,7 +23,7 @@ internal val InboxPill.Filter.label: String
             InboxPill.Filter.Unread -> "Unread"
             InboxPill.Filter.Attachments -> "Attachments"
             InboxPill.Filter.Flagged -> "Flagged"
-            InboxPill.Filter.Conversations -> "Conversations"
+            InboxPill.Filter.Conversations -> "Convos"
         }
 
 internal val InboxPill.Filter.icon: DrawableResource

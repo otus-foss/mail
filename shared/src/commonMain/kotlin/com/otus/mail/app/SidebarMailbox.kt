@@ -77,7 +77,7 @@ internal fun pinnableMailboxes(accounts: List<AccountFolders>): List<Pair<Sideba
         if (accounts.any { account -> account.folders.any { it.role == SENT_ROLE } }) {
             add(
                 SidebarPin.Conversations to
-                    SidebarMailbox("Conversations", Res.drawable.symbol_forum, MailPage.Conversations, emptyList()),
+                    SidebarMailbox("Convos", Res.drawable.symbol_forum, MailPage.Conversations, emptyList()),
             )
         }
         combinedFolders(accounts).forEach { (folder, folders) ->

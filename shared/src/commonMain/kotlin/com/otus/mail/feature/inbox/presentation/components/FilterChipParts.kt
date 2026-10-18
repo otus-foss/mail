@@ -48,7 +48,7 @@ internal val ShowFacet.label: String
             ShowFacet.WaitingForReply -> "Waiting for reply"
             ShowFacet.Newsletters -> "Newsletters"
             ShowFacet.CalendarInvites -> "Calendar invites"
-            ShowFacet.Conversations -> "Conversations"
+            ShowFacet.Conversations -> "Convos"
         }
 
 internal val ShowFacet.icon: DrawableResource
