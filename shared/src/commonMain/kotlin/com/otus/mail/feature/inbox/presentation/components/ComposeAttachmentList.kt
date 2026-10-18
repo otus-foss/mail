@@ -16,7 +16,6 @@ import com.otus.designsystem.components.MenuAction
 import com.otus.designsystem.elements.rememberImage
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add_photo_alternate
-import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.core.text.sizeText
@@ -62,11 +61,8 @@ private fun DraftAttachment.actions(
 ): List<MenuAction> =
     buildList {
         if (failure == UploadFailure.Failed) add(MenuAction("Retry") { attachments.retry(id) })
-        if (image) add(if (inline) asFile(attachments) else inMessage(attachments))
+        if (image) add(inMessage(attachments))
     }
-
-private fun DraftAttachment.asFile(attachments: ComposeAttachments) =
-    MenuAction("Attach as file", Res.drawable.symbol_attach_file) { attachments.showInline(id, false) }
 
 private fun DraftAttachment.inMessage(attachments: ComposeAttachments) =
     MenuAction("Show in message", Res.drawable.symbol_add_photo_alternate) { attachments.showInline(id, true) }
@@ -84,8 +80,8 @@ private fun DraftAttachment.status(
     }
 
 /**
- * The picked image the body shows at [source], with its upload state and menu; null until the
- * image is read, or once the app lost it.
+ * The picked image the body shows at [source], with its upload state; null until the image is
+ * read, or once the app lost it.
  */
 @Composable
 internal fun ComposeAttachments.image(
@@ -97,6 +93,5 @@ internal fun ComposeAttachments.image(
     val painter = remember(bitmap) { bitmap?.let(::BitmapPainter) }
     val file = files.firstOrNull { it.source == source }
     if (painter == null || file == null) return null
-    val failure = failures[file.id]
-    return EditableImage(painter, file.name, file.status(failure, this), file.actions(failure, this))
+    return EditableImage(painter, file.name, file.status(failures[file.id], this))
 }

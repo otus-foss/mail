@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.otus.designsystem.elements.RichText
-import com.otus.mail.feature.inbox.domain.AttachmentBlob
 import com.otus.mail.feature.inbox.domain.AttachmentFiles
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.DraftAttachment
@@ -54,7 +53,7 @@ class ComposeAttachments(
     }
 
     fun remove(id: String) {
-        attachments().firstOrNull { it.id == id }?.takeIf { it.inline }?.let { body.removeImage(it.source) }
+        attachments().firstOrNull { it.id == id }?.takeIf { it.inline }?.let { body.images.remove(it.source) }
         picked -= id
         failures -= id
         change { list -> list.filterNot { it.id == id } }
@@ -69,7 +68,23 @@ class ComposeAttachments(
     ) {
         val attachment = attachments().firstOrNull { it.id == id } ?: return
         change { list -> list.map { if (it.id == id) it.copy(inline = inline) else it } }
-        if (inline) body.insertImage(attachment.source) else body.removeImage(attachment.source)
+        if (inline) body.images.insert(attachment.source) else body.images.remove(attachment.source)
+    }
+
+    /** Lets the user pick another image to show where the image of [id] is, at its size. */
+    fun replace(id: String) {
+        val from = files ?: return
+        scope.launch {
+            val file = from.pick().firstOrNull { it.type.startsWith("image/") } ?: return@launch
+            val old = attachments().firstOrNull { it.id == id } ?: return@launch
+            val new = newAttachment(file).copy(inline = true)
+            picked -= id
+            failures -= id
+            picked[new.id] = file
+            change { list -> list.map { if (it.id == id) new else it } }
+            body.images.replace(old.source, new.source)
+            upload(new.id)
+        }
     }
 
     /** The bytes of the file whose image the body shows at [source], while the app still has them. */
@@ -90,18 +105,17 @@ class ComposeAttachments(
                     attachments().filterNot { it.uploadedTo(account) }.forEach { upload(it.id) }
                 }
             }
-            snapshotFlow { body.imageSources }.drop(1).collect { sources ->
+            snapshotFlow { body.images.sources }.drop(1).collect { sources ->
                 attachments().filter { it.inline && it.source !in sources }.forEach { remove(it.id) }
             }
         }
 
-    @OptIn(ExperimentalUuidApi::class)
     private fun add(file: PickedFile) {
-        val attachment = DraftAttachment(Uuid.random().toString(), file.name, file.type, file.size)
+        val attachment = newAttachment(file)
         val shown = attachment.copy(inline = attachment.image)
         picked[shown.id] = file
         change { it + shown }
-        if (shown.inline) body.insertImage(shown.source)
+        if (shown.inline) body.images.insert(shown.source)
         upload(shown.id)
     }
 
@@ -117,17 +131,21 @@ class ComposeAttachments(
                     onFailure = { Result.failure(UploadException(UploadFailure.Failed, it)) },
                 ).fold(
                     // A draft moved on during the upload needs the file in its new account instead.
-                    onSuccess = { blob -> if (accountId() == account) uploaded(id, blob) },
+                    onSuccess = { blob ->
+                        if (accountId() ==
+                            account
+                        ) {
+                            change { list -> list.map { if (it.id == id) it.copy(blob = blob) else it } }
+                        }
+                    },
                     onFailure = { failures += id to ((it as? UploadException)?.failure ?: UploadFailure.Failed) },
                 )
         }
     }
-
-    private fun uploaded(
-        id: String,
-        blob: AttachmentBlob,
-    ) = change { list -> list.map { if (it.id == id) it.copy(blob = blob) else it } }
 }
+
+@OptIn(ExperimentalUuidApi::class)
+private fun newAttachment(file: PickedFile) = DraftAttachment(Uuid.random().toString(), file.name, file.type, file.size)
 
 /** Where the body's HTML points at an inline image (RFC 2392). */
 internal val DraftAttachment.source: String get() = "cid:$cid"

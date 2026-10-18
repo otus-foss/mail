@@ -4,11 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
@@ -24,30 +21,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
+import com.otus.designsystem.components.BarMorph
 import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.EditableImage
 import com.otus.designsystem.components.FormattingBar
-import com.otus.designsystem.components.ImagePreset
-import com.otus.designsystem.components.ImageSizing
 import com.otus.designsystem.components.ResizableImage
 import com.otus.designsystem.components.RichTextBody
+import com.otus.designsystem.elements.isKeyboardUp
 import com.otus.designsystem.elements.rememberAvatarImage
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.SignatureTokens
 import com.otus.mail.feature.inbox.domain.SignatureImage
-import com.otus.mail.feature.inbox.domain.SignatureImageSize
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.inbox.presentation.components.CopySignatureSheet
 import com.otus.mail.feature.inbox.presentation.components.LinkDialog
+import com.otus.mail.feature.inbox.presentation.components.SignatureImageBar
 import com.otus.mail.feature.inbox.presentation.components.SignaturePanel
+import com.otus.mail.feature.inbox.presentation.components.imageSizing
 import kotlin.io.encoding.Base64
 
 /**
@@ -55,7 +53,6 @@ import kotlin.io.encoding.Base64
  * signatures, or removes this one after asking. The text and its images sit in a box below; the
  * formatting row shows with the keyboard. Edits save as they happen. [onCopied] runs after a copy.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SignatureEditorScreen(
     signatures: SignaturesState,
@@ -69,10 +66,16 @@ fun SignatureEditorScreen(
     var copying by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf(false) }
     var linking by remember { mutableStateOf(false) }
-    val formattingBar: @Composable () -> Unit = { FormattingBar(editor.text, onLink = { linking = true }) }
+    val keyboardUp = isKeyboardUp()
+    val shown =
+        when {
+            editor.selected != null -> SignatureBar.Image
+            keyboardUp -> SignatureBar.Formatting
+            else -> null
+        }
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
-            bar = formattingBar.takeIf { WindowInsets.isImeVisible },
+            bar = shown?.let { { SignatureBottom(editor, it) { linking = true } } },
             Modifier.safeDrawingPadding(),
         ) { padding ->
             Column(
@@ -139,14 +142,33 @@ private fun SignatureImageView(
     image: SignatureImage,
 ) {
     val bitmap = rememberAvatarImage(remember(image.base64) { Base64.decode(image.base64) }) ?: return
+    val focus = LocalFocusManager.current
     ResizableImage(
         EditableImage(remember(bitmap) { BitmapPainter(bitmap) }, "Signature image"),
-        ImageSizing(image.width.dp, presets) { editor.resize(index, it.value.toInt()) },
+        editor.imageSizing(index, image),
         selected = editor.selected == index,
-        onSelect = { editor.selected = index },
-        onRemove = { editor.removeImage(index) },
+        onSelect = {
+            focus.clearFocus()
+            editor.selected = index
+        },
         Modifier.padding(horizontal = PageTokens.textInset),
     )
 }
 
-private val presets = SignatureImageSize.entries.map { ImagePreset(it.label, it.width.dp) }
+/** The image bar or the formatting row, each morphing into the other. */
+@Composable
+private fun SignatureBottom(
+    editor: SignatureEditorState,
+    shown: SignatureBar,
+    onLink: () -> Unit,
+) {
+    BarMorph(shown) { bar ->
+        when (bar) {
+            SignatureBar.Image -> SignatureImageBar(editor)
+            SignatureBar.Formatting -> FormattingBar(editor.text, onLink = onLink)
+        }
+    }
+}
+
+/** Which bar the signature editor shows: the image's while one is selected, the formatting row while typing. */
+private enum class SignatureBar { Image, Formatting }
