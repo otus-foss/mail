@@ -10,13 +10,8 @@ guide covers what Mail builds on top of it.
 
 `core/mail` defines `MailboxType` and `EmailType` (RFC 8621). Connecting fetches the session, checks
 the mail account with a `Mailbox/get`, and saves the login; reconnecting the same user replaces it.
-The inbox finds the mailbox with role `inbox`, then lists one row per conversation in one request:
-`Email/query` with `collapseThreads` (newest 50 threads), `Email/get` of those rows with their
-`preview`, `Thread/get` by back-reference to their `threadId`, and a second `Email/get` of every
-thread email with only its people, date, keywords, and mailboxes (RFC 8621, sections 3 and 4.4). A
-refused thread call leaves each row standing for its own email. Each login loads in parallel and
-fails alone, with a reason. `OtusMailApplication` owns one `MailServices` per process. Mail and the first release
-use the same storage names, so earlier accounts keep working.
+`OtusMailApplication` owns one `MailServices` per process. Mail and the first release use the same
+storage names, so earlier accounts keep working.
 
 `core/mail` also holds what the features' data layers share. `MailAccounts` resolves a saved login
 to the JMAP account that holds its mail. `NEWEST_FIRST` and `inMailbox` are the `Email/query` sort
@@ -39,8 +34,8 @@ and checks it again after loading, because no condition says whether the user's 
 latest of its conversation. No condition finds calendar invites, so the device keeps loaded mail
 with a `text/calendar` part or an `.ics` file, and the panel shows no count for them. Oldest first
 sorts `receivedAt` ascending. The panel's count is the same query with `limit: 0` and
-`calculateTotal: true`, one per login, summed. The list does not collapse threads yet, so neither
-does the count.
+`calculateTotal: true` and `collapseThreads: true`, one per login, summed, so it counts
+conversations like the list.
 
 Folders use `Mailbox/get` and `Mailbox/set`; rules manage one Sieve script with `SieveScript/get`
 and `SieveScript/set` (RFC 9661, `JmapCapability.SIEVE`) after uploading it as a blob. Messages move
@@ -93,8 +88,54 @@ Mail passes its own storage names to the library's login stores: `otus_accounts`
 `otus.account.credentials` on Android, `otus.accounts` and `otus.mail.account` on iOS. Changing them
 would lose saved accounts.
 
+### Mail lists and the device cache
+
+`JmapMailSource` keeps each login's lists in a `MailCache` (`core/cache`) and builds every list from
+it. The cache holds, per login, the mailboxes, the row emails with every list property, the other
+thread emails with only their people, date, keywords, and mailboxes, the thread objects, the
+`Email` and `Thread` states, and the listings. A listing is one mailbox's query (the mailbox with
+the page's filter and sort): the row email ids loaded so far, in order, and whether the server has
+more. Each login keeps its 40 most recently loaded listings.
+
+A refresh (`messages`) takes these requests per login:
+
+1. `Mailbox/get` with every folder property, empty `Email/get` and `Thread/get` calls for the
+   current states, and `Email/changes` and `Thread/changes` since the saved states (RFC 8620,
+   section 5.2). Further pages of changes take one request each, up to four. When there is no saved
+   state, the server refuses a `/changes` call (such as with `cannotCalculateChanges`), or the
+   changes run past four pages, the login's cached emails or threads are dropped and the state from
+   the empty `/get` is saved.
+2. One `Email/query` per mailbox of the page, with `collapseThreads` and `calculateTotal`, for as
+   many rows as the listing had loaded and at least 50. The listing has more when `position` plus
+   the returned ids is below `total`, or, without a total, when the page came back full.
+3. Only when something is missing or changed: `Email/get` of the rows the cache lacks plus every
+   cached email that changed, each with `Thread/get` of their threads and an `Email/get` of those
+   threads' emails by back-reference (RFC 8621, sections 3 and 4.4); `Thread/get` of cached rows'
+   threads that are missing or changed, with their emails; and `Email/get` of changed or missing
+   thread emails. A refused thread call leaves each row standing for its own email.
+
+An unchanged refresh therefore takes two requests and reads no email. Calls share requests up to the
+session's `maxCallsInRequest` (16 when the server does not say), and `/get` ids are split at
+`maxObjectsInGet` (500 when it does not say). Everything from one refresh, including the new
+states, is saved in one cache write. Destroyed and changed objects leave the cache in that write,
+and the changed ones that were read again replace them.
+
+`more` asks each listing that has more for the next 50 rows from `position` equal to the rows
+loaded, adds the ids it does not have yet, reads the objects the cache lacks, and saves them in one
+write. A login whose listings are not cached yet refreshes instead. `cached` builds the same list
+from the cache alone, without a request, so the inbox shows the device's copy at once.
+
+Rows are mapped the same way from the cache in all three: a row whose email has left the mailbox,
+such as after a move, is left out. When several listings are loaded, the list hides rows past the
+earliest point where a listing with more stops, in the chosen sort order, so a later page never
+adds rows above ones already shown. `hasMore` is true while any listing has more. Logins load in
+parallel and fail alone, with a reason; a login that fails still shows its cached rows. Marks and
+moves (`JmapMessageMarker`, `JmapMessageMover`) apply the `Email/set` patch the server accepted to
+the cached emails, so lists match before the next refresh reads the change back.
+
 ## Checks
 
 Mail's tests use Ktor's mock engine for the inbox, draft, folder, rule, and account flows, including
-storage-error recovery and same-named accounts. The library's server integration test lives in
+storage-error recovery and same-named accounts. List tests answer through `FakeMailServer`, an
+in-memory mail account that resolves result references and reports changes. The library's server integration test lives in
 otus-meta.

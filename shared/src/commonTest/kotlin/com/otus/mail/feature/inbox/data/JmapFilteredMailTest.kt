@@ -30,10 +30,10 @@ class JmapFilteredMailTest {
     @Test
     fun loadsRunTheFiltersInEachMailboxQuery() =
         runTest {
-            val bodies = mutableListOf<String>()
-            val source = source { body -> if ("Mailbox/get" in body) MAILBOXES else EMAILS.also { bodies += body } }
+            val server = FakeMailServer(MAILBOXES)
             val query = MailQuery(InboxFilters(show = setOf(ShowFacet.Unread), sort = FilterSort.OldestFirst))
-            source.messages(MailScope.Inbox, query)
+            server.source(store).messages(MailScope.Inbox, query)
+            val bodies = server.bodies.filter { "Email/query" in it }
             assertEquals(2, bodies.size, "One inbox query per login")
             assertTrue(bodies.all { "\"notKeyword\":\"\$seen\"" in it && "\"inMailbox\":\"a\"" in it })
             assertTrue(bodies.all { "\"isAscending\":true" in it })
@@ -42,15 +42,15 @@ class JmapFilteredMailTest {
     @Test
     fun chosenFoldersReplaceThePageMailboxesAndSkipOtherLogins() =
         runTest {
-            val bodies = mutableListOf<String>()
-            val source = source { body -> if ("Mailbox/get" in body) MAILBOXES else EMAILS.also { bodies += body } }
+            val server = FakeMailServer(MAILBOXES)
             val query =
                 MailQuery(
                     InboxFilters(folders = setOf(FolderRef("ada", "r"))),
                     folderIds =
                         mapOf("ada" to setOf("r")),
                 )
-            source.messages(MailScope.Inbox, query)
+            server.source(store).messages(MailScope.Inbox, query)
+            val bodies = server.bodies.filter { "Email/query" in it }
             assertEquals(1, bodies.size)
             assertTrue("\"inMailbox\":\"r\"" in bodies.single())
         }
@@ -58,7 +58,7 @@ class JmapFilteredMailTest {
     @Test
     fun waitingForReplyKeepsOnlyMailFromTheUser() =
         runTest {
-            val source = source { body -> if ("Mailbox/get" in body) MAILBOXES else MIXED }
+            val source = FakeMailServer(MAILBOXES, MIXED).source(store)
             val query =
                 MailQuery(
                     InboxFilters(show = setOf(ShowFacet.WaitingForReply)),
@@ -72,7 +72,7 @@ class JmapFilteredMailTest {
     @Test
     fun calendarInvitesAreCheckedOnTheLoadedMailAndNotCounted() =
         runTest {
-            val source = source { body -> if ("Mailbox/get" in body) MAILBOXES else INVITES }
+            val source = FakeMailServer(MAILBOXES, INVITES).source(store)
             val query = MailQuery(InboxFilters(show = setOf(ShowFacet.CalendarInvites)), logins = setOf("ada"))
             assertEquals(listOf("invite"), source.messages(MailScope.Inbox, query).messages.map { it.emailId })
             assertEquals(null, source.count(MailScope.Inbox, query))
@@ -82,7 +82,7 @@ class JmapFilteredMailTest {
     fun countsSumEachLoginsTotal() =
         runTest {
             val bodies = mutableListOf<String>()
-            val source = source { body -> if ("Mailbox/get" in body) MAILBOXES else COUNT.also { bodies += body } }
+            val source = source { body -> if ("Mailbox/get" in body) MAILBOX_REPLY else COUNT.also { bodies += body } }
             assertEquals(14L, source.count(MailScope.Inbox, MailQuery(InboxFilters(show = setOf(ShowFacet.Flagged)))))
             assertTrue(bodies.all { "\"limit\":0" in it && "\"calculateTotal\":true" in it })
             assertEquals(7L, source.count(MailScope.Inbox, MailQuery(logins = setOf("bo"))))
@@ -94,22 +94,18 @@ class JmapFilteredMailTest {
         }
 
     private companion object {
-        const val MAILBOXES = """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
-            {"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
-        val EMAILS = emailListResponse("", "")
-        val MIXED =
-            emailListResponse(
-                "\"mine\", \"theirs\"",
-                """{"id": "mine", "receivedAt": "2026-10-18T09:00:00Z", "from": [{"email": "Ada@example.org"}]},
-                {"id": "theirs", "receivedAt": "2026-10-18T08:00:00Z", "from": [{"email": "bo@example.org"}]}""",
-            )
-        val INVITES =
-            emailListResponse(
-                "\"invite\", \"plain\"",
-                """{"id": "invite", "receivedAt": "2026-10-18T09:00:00Z", "hasAttachment": true,
-                 "attachments": [{"partId": "2", "type": "text/calendar", "name": "invite.ics"}]},
-                {"id": "plain", "receivedAt": "2026-10-18T08:00:00Z"}""",
-            )
+        const val MAILBOXES = """{"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}"""
+        const val MAILBOX_REPLY = """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
+            $MAILBOXES]}, "c0"]]}"""
+        const val MIXED = """
+            {"id": "mine", "receivedAt": "2026-10-18T09:00:00Z", "mailboxIds": {"a": true},
+             "from": [{"email": "Ada@example.org"}]},
+            {"id": "theirs", "receivedAt": "2026-10-18T08:00:00Z", "mailboxIds": {"a": true},
+             "from": [{"email": "bo@example.org"}]}"""
+        const val INVITES = """
+            {"id": "invite", "receivedAt": "2026-10-18T09:00:00Z", "mailboxIds": {"a": true}, "hasAttachment": true,
+             "attachments": [{"partId": "2", "type": "text/calendar", "name": "invite.ics"}]},
+            {"id": "plain", "receivedAt": "2026-10-18T08:00:00Z", "mailboxIds": {"a": true}}"""
         const val COUNT = """{"methodResponses": [["Email/query", {"ids": [], "total": 7}, "c0"]]}"""
     }
 }

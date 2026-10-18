@@ -8,6 +8,10 @@ script, so they keep working while the app is closed.
 
 - Loaded per account with `Mailbox/get` (RFC 8621, section 2): hierarchy, role, sort order,
   counts, and `myRights`. Accounts load in parallel and fail alone.
+- Each load saves the login's own mailboxes in the device's mail cache, which the inbox shares.
+  While no folders show, as at launch, a load first shows the cached ones with their counts, so the
+  sidebar fills before the server answers. Loading stays on until the server's folders replace
+  them. The cache keeps no shared mailboxes or server limits, so those arrive with the server load.
 - A new load, such as the refresh after a move or a read mark, replaces the one running. The
   replaced load shows nothing and leaves the loading state to the newer one, so a slow load
   cannot bring back older folders or counts. A change finishes with the newest load, so a page
