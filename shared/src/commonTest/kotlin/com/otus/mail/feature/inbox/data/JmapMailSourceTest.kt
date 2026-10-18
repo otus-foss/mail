@@ -12,51 +12,41 @@ import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JmapMailSourceTest {
     private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")
 
-    private fun api(body: String): String =
-        if ("Mailbox/get" in body) {
-            """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
-                {"id": "s", "name": "Sent Items", "role": "sent"},
-                {"id": "a", "name": "Posteingang", "role": "inbox"}]}, "c0"]]}"""
-        } else {
-            check(
-                "\"inMailbox\":\"a\"" in body && "\"#ids\"" in body,
-            ) { "Queries the inbox by role, chained by back-reference" }
-            check("\"messageId\"" in body && "\"cc\"" in body) { "Requests what a reply needs" }
-            check("\"collapseThreads\":true" in body && "\"Thread/get\"" in body) { "Lists one row per thread" }
-            check("\"textBody\"" !in body) { "The list shows previews and loads no bodies" }
-            emailListResponse(
-                "\"m1\", \"m2\"",
-                """
-                  {"id": "m1", "keywords": {}, "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
-                   "to": [{"name": "Ada", "email": "ada@example.org"}], "cc": [{"email": "team@example.org"}],
-                   "messageId": ["m1@example.org"], "references": ["m0@example.org"],
-                   "subject": "Compiler draft", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Attached…",
-                   "hasAttachment": true, "attachments": [{"partId": "2", "name": "draft.pdf"}]},
-                  {"id": "m2", "keywords": {"${'$'}seen": true, "${'$'}flagged": true},
-                   "from": [{"email": "ada@example.org"}],
-                   "subject": null, "receivedAt": "2026-10-03T23:05:00Z", "preview": "Notes",
-                   "hasAttachment": false}""",
-            )
+    private val inbox =
+        FakeMailServer(
+            """{"id": "s", "name": "Sent Items", "role": "sent"},
+            {"id": "a", "name": "Posteingang", "role": "inbox"}""",
+            """
+            {"id": "m1", "mailboxIds": {"a": true}, "keywords": {},
+             "from": [{"name": "Grace Hopper", "email": "grace@example.org"}],
+             "to": [{"name": "Ada", "email": "ada@example.org"}], "cc": [{"email": "team@example.org"}],
+             "messageId": ["m1@example.org"], "references": ["m0@example.org"],
+             "subject": "Compiler draft", "receivedAt": "2026-10-04T09:30:00Z", "preview": "Attached…",
+             "hasAttachment": true, "attachments": [{"partId": "2", "name": "draft.pdf"}]},
+            {"id": "m2", "mailboxIds": {"a": true}, "keywords": {"${'$'}seen": true, "${'$'}flagged": true},
+             "from": [{"email": "ada@example.org"}],
+             "subject": null, "receivedAt": "2026-10-03T23:05:00Z", "preview": "Notes",
+             "hasAttachment": false}""",
+        )
+
+    private fun store(vararg wrong: JmapLogin) =
+        InMemoryLoginStore().apply {
+            save(login, "secret")
+            wrong.forEach { save(it, "wrong") }
         }
-
-    private fun source(store: InMemoryLoginStore): JmapMailSource {
-        val client = JmapClient(stalwartLike(api = ::api))
-        return JmapMailSource(JmapConnections(client, store), store, zone = { TimeZone.UTC })
-    }
 
     @Test
     fun inboxMessagesAreMappedForTheExistingInbox() =
         runTest {
-            val store = InMemoryLoginStore().apply { save(login, "secret") }
-            val snapshot = source(store).messages(MailScope.Inbox)
+            val snapshot = inbox.source(store()).messages(MailScope.Inbox)
             assertTrue(snapshot.unavailable.isEmpty())
             val (first, second) = snapshot.messages
             assertEquals("ada/m1", first.id)
@@ -79,55 +69,32 @@ class JmapMailSourceTest {
             assertTrue(!second.attributes.unread)
             assertTrue(!first.attributes.flagged)
             assertTrue(second.attributes.flagged)
+            val query = inbox.bodies.single { "Email/query" in it }
+            assertTrue("\"inMailbox\":\"a\"" in query && "\"collapseThreads\":true" in query, "One row per thread")
+            val rows = inbox.bodies.single { "\"preview\"" in it }
+            assertTrue("\"messageId\"" in rows && "\"cc\"" in rows, "Requests what a reply needs")
+            assertTrue("\"Thread/get\"" in rows && "\"#ids\"" in rows, "Threads chain by back-reference")
+            assertTrue(inbox.bodies.none { "\"textBody\"" in it }, "The list shows previews and loads no bodies")
         }
 
     @Test
     fun aFolderLoadsOnlyItsAccountAndKeepsItsName() =
         runTest {
-            val queried = mutableListOf<String>()
-            val folderApi = { body: String ->
-                queried += body
-                if ("Mailbox/get" in body) {
-                    """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
-                        {"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
-                } else {
-                    emailListResponse("\"m1\"", email("\"m1\""))
-                }
-            }
-            val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")
-            val store =
-                InMemoryLoginStore().apply {
-                    save(login, "secret")
-                    save(other, "wrong")
-                }
-            val client = JmapClient(stalwartLike(api = folderApi))
-            val source = JmapMailSource(JmapConnections(client, store), store, zone = { TimeZone.UTC })
-            val snapshot = source.messages(MailScope.Folder("ada", "r"))
+            val server = FakeMailServer(MAILBOXES, email("m1", "r"))
+            val snapshot = server.source(store(other)).messages(MailScope.Folder("ada", "r"))
             assertTrue(snapshot.unavailable.isEmpty(), "Other accounts are not loaded for a folder")
             val message = snapshot.messages.single()
             assertEquals("Receipts", message.location.mailbox)
             assertEquals("r", message.location.mailboxId)
-            assertTrue(queried.any { "\"inMailbox\":\"r\"" in it })
+            assertTrue(server.bodies.any { "\"inMailbox\":\"r\"" in it })
         }
 
     @Test
     fun chosenMailboxesLoadOnceEachAndAllMailboxesLoadEveryOne() =
         runTest {
-            val queried = mutableListOf<String>()
-            val mailboxApi = { body: String ->
-                queried += body
-                if ("Mailbox/get" in body) {
-                    """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
-                        {"id": "a", "name": "Posteingang", "role": "inbox"}, {"id": "s", "name": "Sent"},
-                        {"id": "r", "name": "Receipts"}]}, "c0"]]}"""
-                } else {
-                    val ids = if ("\"inMailbox\":\"a\"" in body) "\"m1\", \"m2\"" else "\"m1\""
-                    emailListResponse(ids, ids.split(", ").joinToString { email(it) })
-                }
-            }
-            val store = InMemoryLoginStore().apply { save(login, "secret") }
-            val client = JmapClient(stalwartLike(api = mailboxApi))
-            val source = JmapMailSource(JmapConnections(client, store), store, zone = { TimeZone.UTC })
+            val emails = email("m1", "a", "r", "s") + ", " + email("m2", "a", receivedAt = "2026-10-04T08:30:00Z")
+            val server = FakeMailServer(MAILBOXES, emails)
+            val source = server.source(store())
             val snapshot =
                 source.messages(
                     MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox"), MailboxScope(null, "Receipts"))),
@@ -140,37 +107,22 @@ class JmapMailSourceTest {
                     .location.mailbox,
                 "A message in both is listed once, under the first",
             )
+            val queried = server.bodies.filter { "Email/query" in it }
             assertTrue(queried.any { "\"inMailbox\":\"r\"" in it })
             assertTrue(queried.none { "\"inMailbox\":\"s\"" in it }, "Mailboxes that were not chosen are not loaded")
             source.messages(MailScope.AllMailboxes)
-            assertTrue(queried.any { "\"inMailbox\":\"s\"" in it })
+            assertTrue(server.bodies.any { "\"inMailbox\":\"s\"" in it })
         }
-
-    private fun email(id: String) = """{"id": $id, "subject": "Order", "receivedAt": "2026-10-04T09:30:00Z"}"""
 
     @Test
     fun aFolderPillLoadsEachChosenFolderOfItsAccountsOnly() =
         runTest {
-            val queried = mutableListOf<String>()
-            val folderApi = { body: String ->
-                queried += body
-                if ("Mailbox/get" in body) {
-                    """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"},
-                        {"id": "r", "name": "Receipts"}, {"id": "l", "name": "Read later"}]}, "c0"]]}"""
-                } else {
-                    emailListResponse("\"m1\"", email("\"m1\""))
-                }
-            }
-            val store =
-                InMemoryLoginStore().apply {
-                    save(login, "secret")
-                    save(login.copy(id = "grace", name = "Grace", username = "grace@example.org"), "wrong")
-                }
-            val source = JmapMailSource(JmapConnections(JmapClient(stalwartLike(api = folderApi)), store), store)
+            val server = FakeMailServer(MAILBOXES, email("m1", "r", "l"))
             val chosen = setOf(MailScope.Folder("ada", "r"), MailScope.Folder("ada", "l"))
-            val snapshot = source.messages(MailScope.Folders(chosen))
+            val snapshot = server.source(store(other)).messages(MailScope.Folders(chosen))
             assertTrue(snapshot.unavailable.isEmpty(), "Accounts without a chosen folder are not loaded")
             assertEquals(listOf("ada/m1"), snapshot.messages.map { it.id }, "A message in both folders is listed once")
+            val queried = server.bodies.filter { "Email/query" in it }
             assertTrue(queried.any { "\"inMailbox\":\"r\"" in it } && queried.any { "\"inMailbox\":\"l\"" in it })
             assertTrue(queried.none { "\"inMailbox\":\"a\"" in it })
         }
@@ -178,24 +130,14 @@ class JmapMailSourceTest {
     @Test
     fun aRoleLoadsThatFolderOfEveryAccountUnderOneName() =
         runTest {
-            val roleApi = { body: String ->
-                if ("Mailbox/get" in body) {
-                    """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
-                        {"id": "a", "name": "Inbox", "role": "inbox"},
-                        {"id": "j", "name": "Junk Mail", "role": "junk"}]}, "c0"]]}"""
-                } else {
-                    check("\"inMailbox\":\"j\"" in body) { "Queries the folder with the junk role" }
-                    emailListResponse("\"m1\"", email("\"m1\""))
-                }
-            }
+            val junk = """, {"id": "j", "name": "Junk Mail", "role": "junk"}"""
+            val server = FakeMailServer(MAILBOXES + junk, email("m1", "j"))
             val store =
                 InMemoryLoginStore().apply {
                     save(login, "secret")
                     save(login.copy(id = "work", name = "Work"), "secret")
                 }
-            val client = JmapClient(stalwartLike(api = roleApi))
-            val source = JmapMailSource(JmapConnections(client, store), store, zone = { TimeZone.UTC })
-            val snapshot = source.messages(MailScope.Role("junk", "Spam"))
+            val snapshot = server.source(store).messages(MailScope.Role("junk", "Spam"))
             assertTrue(snapshot.unavailable.isEmpty())
             assertEquals(setOf("ada", "work"), snapshot.messages.map { it.location.accountId }.toSet())
             assertTrue(snapshot.messages.all { it.location.mailbox == "Spam" && it.location.mailboxId == "j" })
@@ -204,13 +146,7 @@ class JmapMailSourceTest {
     @Test
     fun aLoginThatFailsIsReportedWithoutHidingOthers() =
         runTest {
-            val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")
-            val store =
-                InMemoryLoginStore().apply {
-                    save(login, "secret")
-                    save(other, "wrong")
-                }
-            val snapshot = source(store).messages(MailScope.Inbox)
+            val snapshot = inbox.source(store(other)).messages(MailScope.Inbox)
             assertEquals(listOf(UnavailableAccount("Grace", InboxFailure.SignInRejected)), snapshot.unavailable)
             assertEquals(2, snapshot.messages.size)
         }
@@ -226,6 +162,18 @@ class JmapMailSourceTest {
                 ).messages(MailScope.Inbox)
             assertEquals(listOf(UnavailableAccount("Ada", InboxFailure.CredentialsUnavailable)), snapshot.unavailable)
         }
+
+    private companion object {
+        const val MAILBOXES = """{"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "s", "name": "Sent"},
+            {"id": "r", "name": "Receipts"}, {"id": "l", "name": "Read later"}"""
+
+        fun email(
+            id: String,
+            vararg mailboxes: String,
+            receivedAt: String = "2026-10-04T09:30:00Z",
+        ) = """{"id": "$id", "subject": "Order", "receivedAt": "$receivedAt",
+            "mailboxIds": {${mailboxes.joinToString { "\"$it\": true" }}}}"""
+    }
 }
 
 /** A login whose secret is gone, as after a platform key was invalidated. */

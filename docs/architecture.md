@@ -55,6 +55,12 @@ The Android host currently uses the system placeholder icon. Production launcher
 separate design task. Application backup is disabled until account-data backup requirements are
 defined.
 
+## Device storage
+
+Mail keeps each login's mailboxes, emails, threads, bodies, and sync states in an SQLite database
+behind `core/cache/MailCache`. See [storage](storage.md) for what it holds, where the file lives,
+and how long it keeps bodies.
+
 ## Avatar service
 
 The portable account-scoped avatar resolver comes from the `com.otus:avatar` library. App wiring

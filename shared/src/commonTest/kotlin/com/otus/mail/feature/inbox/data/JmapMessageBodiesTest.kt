@@ -4,6 +4,9 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.core.cache.CacheKind
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.cache.MailCache
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -16,18 +19,22 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class JmapMessageBodiesTest {
     private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
     private val requests = mutableListOf<String>()
 
-    private fun bodies(email: String): JmapMessageBodies {
+    private fun bodies(
+        email: String,
+        cache: MailCache = InMemoryMailCache(),
+    ): JmapMessageBodies {
         val api = { body: String ->
             requests += body
             """{"methodResponses": [["Email/get", {"state": "e", "list": [$email]}, "c0"]]}"""
         }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageBodies(JmapConnections(JmapClient(stalwartLike(api = api)), store), store)
+        return JmapMessageBodies(JmapConnections(JmapClient(stalwartLike(api = api)), store), store, cache)
     }
 
     private val opened =
@@ -84,5 +91,24 @@ class JmapMessageBodiesTest {
             val stranger = opened.copy(location = opened.location.copy(accountId = "gone"))
             assertNull(bodies("").content(stranger))
             assertTrue(requests.isEmpty())
+        }
+
+    @Test
+    fun aSecondOpenReadsTheBodyFromTheDeviceWithReceivedTimeForTrimming() =
+        runTest {
+            val cache = InMemoryMailCache()
+            val bodies =
+                bodies(
+                    """{"id": "e1", "receivedAt": "2026-10-04T09:30:00Z",
+                        "textBody": [{"partId": "1", "type": "text/plain"}],
+                        "bodyValues": {"1": {"value": "Kept text"}}}""",
+                    cache,
+                )
+            bodies.content(opened)
+            val again = bodies.content(opened)
+            assertEquals("Kept text", again?.text)
+            assertEquals(1, requests.size, "The second open sends nothing")
+            cache.trim(CacheKind.Body, Instant.parse("2026-10-05T00:00:00Z").toEpochMilliseconds())
+            assertTrue(cache.readAll("ada", CacheKind.Body).isEmpty(), "Older bodies can be trimmed")
         }
 }

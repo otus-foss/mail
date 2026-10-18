@@ -6,8 +6,8 @@ import androidx.compose.ui.unit.Dp
 /**
  * How a message list sits on its page: [look] draws its rows, [nudge] sits above the first one,
  * [topInset] keeps that row below the control panel drawn over the list, [bottomInset] lets the
- * last row scroll above the action bar, and [onCompactChange] shrinks the panel while the list
- * scrolls down.
+ * last row scroll above the action bar, [onCompactChange] shrinks the panel while the list
+ * scrolls down, and [onLoadMore] loads the next page near the end.
  */
 internal class ListFrame(
     val look: RowLook,
@@ -15,6 +15,7 @@ internal class ListFrame(
     val topInset: Dp,
     val bottomInset: Dp,
     val onCompactChange: (Boolean) -> Unit,
+    val onLoadMore: () -> Unit,
 )
 
 /** This page's list frame; a search hides the nudge, which is about the page's own mail. */
@@ -32,4 +33,5 @@ internal fun InboxContext.listFrame(
         topInset,
         barPadding.calculateBottomPadding(),
         onCompactChange,
+        onLoadMore,
     )

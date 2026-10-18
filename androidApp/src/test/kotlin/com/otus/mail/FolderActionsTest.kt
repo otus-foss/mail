@@ -80,7 +80,8 @@ class FolderActionsTest {
         button("Not spam").performClick()
         val update = lastUpdate()
         val patch =
-            "\"m1\":{\"mailboxIds/j\":null,\"mailboxIds/a\":true,\"keywords/\$junk\":null,\"keywords/\$notjunk\":true}"
+            "\"m1-j\":{\"mailboxIds/j\":null,\"mailboxIds/a\":true," +
+                "\"keywords/\$junk\":null,\"keywords/\$notjunk\":true}"
         assertTrue(update, patch in update)
         compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
     }
@@ -103,7 +104,7 @@ class FolderActionsTest {
         dialogScreenshot("delete-forever-confirm")
         compose.onNodeWithText("Delete").performClick()
         val destroy = lastUpdate()
-        assertTrue(destroy, "\"destroy\":[\"m1\"]" in destroy)
+        assertTrue(destroy, "\"destroy\":[\"m1-t\"]" in destroy)
         compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
     }
 

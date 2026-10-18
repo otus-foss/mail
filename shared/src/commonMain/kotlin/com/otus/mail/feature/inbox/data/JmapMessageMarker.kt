@@ -2,6 +2,8 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.cache.MailCache
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MessageMarker
@@ -12,11 +14,13 @@ import kotlinx.serialization.json.buildJsonObject
 /**
  * Sets or clears one keyword with an `Email/set` patch (RFC 8621, sections 4.1.1 and 4.6). Other
  * keywords stay as they are. A cleared keyword is removed, because keyword values must be true.
- * Each account gets one call per batch of at most its session's `maxObjectsInSet` messages.
+ * Each account gets one call per batch of at most its session's `maxObjectsInSet` messages. The
+ * emails the server changed change in [cache] too.
  */
 class JmapMessageMarker(
     private val connections: JmapConnections,
     private val logins: LoginStore,
+    private val cache: MailCache = InMemoryMailCache(),
 ) : MessageMarker {
     override suspend fun mark(
         messages: List<MailMessage>,
@@ -24,7 +28,7 @@ class JmapMessageMarker(
         on: Boolean,
     ): Set<String> {
         val patch = buildJsonObject { put("keywords/${flag.keyword}", if (on) JsonPrimitive(true) else JsonNull) }
-        return updateEmails(connections, logins, messages, patch)
+        return updateEmails(connections, logins, messages, patch, cache)
     }
 }
 

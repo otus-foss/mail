@@ -12,9 +12,9 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxPills
-import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
+import com.otus.mail.feature.inbox.presentation.status
 
 /**
  * The unified inbox, holding what the user chose in the Inbox settings, whose folder pills load
@@ -42,7 +42,7 @@ internal fun InboxPage(
         labeled,
         dateFormatter,
         navigation.openSidebar,
-        InboxStatus(states.accounts.accounts.isNotEmpty(), feed.loading, feed.notice),
+        feed.status(connected = states.accounts.accounts.isNotEmpty()),
         onRefresh = states::refreshInbox,
         context =
             InboxContext(
@@ -60,6 +60,7 @@ internal fun InboxPage(
                 filterOptions = rememberFilterOptions(states, MailPage.Inbox, filters.applied),
                 rowLook = rememberRowLook(states),
                 nudge = rememberListNudge(states, labeled),
+                onLoadMore = feed::loadMore,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )

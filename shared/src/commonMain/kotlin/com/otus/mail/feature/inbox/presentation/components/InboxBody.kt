@@ -3,9 +3,11 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.Text
@@ -13,12 +15,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.components.EmptyState
 import com.otus.designsystem.components.RowSelection
 import com.otus.designsystem.components.SwipeActions
+import com.otus.designsystem.elements.RefreshIndicator
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_search
@@ -38,7 +42,7 @@ internal fun InboxBody(
     dateFormatter: DateFormatter,
     gestures: RowGestures,
     frame: ListFrame,
-    notice: String?,
+    status: InboxStatus,
     emptyContent: @Composable () -> Unit,
 ) {
     if (messages.isEmpty()) {
@@ -70,7 +74,7 @@ internal fun InboxBody(
                     bottom = InboxTokens.pageInset + frame.bottomInset,
                 ),
         ) {
-            notice?.let {
+            status.notice?.let {
                 item(key = NOTICE_KEY) {
                     Text(
                         it,
@@ -89,6 +93,16 @@ internal fun InboxBody(
                 val model = rows[message.id] ?: return@itemsIndexed
                 ConversationItem(message, model, messages, index, gestures)
             }
+            if (status.loadingMore) loadingMoreFooter()
+        }
+    }
+}
+
+/** The pull-to-refresh spinner under the last row while the next page loads. */
+private fun LazyListScope.loadingMoreFooter() {
+    item(key = LOADING_MORE_KEY) {
+        Box(Modifier.fillMaxWidth().padding(InboxTokens.pageInset), contentAlignment = Alignment.Center) {
+            RefreshIndicator(progress = { 1f }, refreshing = true)
         }
     }
 }
@@ -132,6 +146,7 @@ private fun LazyItemScope.ConversationItem(
 
 private const val NUDGE_KEY = "folder-color-nudge"
 private const val NOTICE_KEY = "load-notice"
+private const val LOADING_MORE_KEY = "loading-more"
 
 @Composable
 internal fun InboxEmptyState(

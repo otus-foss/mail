@@ -51,6 +51,7 @@ internal class MailStates(
         FoldersState(
             services.folders,
             scope,
+            loadCached = { services.readLater.cachedAccounts { behavior.behavior.readLater } },
             loadAccounts = { services.readLater.accounts { behavior.behavior.readLater } },
             onDeleted = {
                 folderColors.forget(it)
