@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.BarContext
 import com.otus.designsystem.components.BarToken
 import com.otus.designsystem.resources.Res
@@ -14,7 +13,7 @@ import com.otus.mail.feature.inbox.presentation.recipients
 
 /**
  * The compose page's bar for [layout]. Send runs [onSend], and stays disabled while that is null;
- * Attach stays disabled until Mail has attachments, and actions for messages, which Fixed mode may
+ * Attach runs [onAttach], disabled while that is null, and actions for messages, which Fixed mode may
  * place here, do not apply. The main button reads Send to, or Sends to with the schedule-send
  * symbol while [scheduled], and names the draft's recipients once it has any. A
  * [minimized] bar shows only the main button.
@@ -24,9 +23,9 @@ internal fun ComposeBar(
     layout: ActionBarLayout,
     draft: Draft,
     onSend: (() -> Unit)?,
+    onAttach: (() -> Unit)?,
     onDiscard: () -> Unit,
     minimized: Boolean,
-    modifier: Modifier = Modifier,
     scheduled: Boolean = false,
 ) {
     MailActionBar(
@@ -35,6 +34,7 @@ internal fun ComposeBar(
             val run =
                 when (action) {
                     MailAction.Send -> onSend
+                    MailAction.Attach -> onAttach
                     MailAction.Discard -> onDiscard
                     else -> null
                 }
@@ -50,7 +50,6 @@ internal fun ComposeBar(
         },
         onAction = { it.run() },
         minimized = Minimized().takeIf { minimized },
-        modifier = modifier,
         context = draft.recipients.barContext(if (scheduled) "Sends to" else "Send to"),
     )
 }

@@ -30,8 +30,8 @@ import kotlin.time.Clock
  * The compose page's bottom: its action bar, or while the [keyboardUp] the formatting row with
  * Attach and a compact Send. While a time is scheduled, a notice above it names the time, and
  * Change runs [onChangeSchedule]. A reply's earlier messages sit above the bar and open the
- * thread's sheet. Send runs [onSend] and is disabled while it is null;
- * Attach stays disabled until Mail has attachments.
+ * thread's sheet. Send runs [onSend] and is disabled while it is null; Attach picks files, and is
+ * disabled where the platform cannot pick them.
  */
 @Composable
 internal fun ComposeBottom(
@@ -77,8 +77,8 @@ private fun Bottom(
                         "Attach",
                         Res.drawable.symbol_attach_file,
                         active = false,
-                        onClick = {},
-                        enabled = false,
+                        onClick = state.attachments::attach,
+                        enabled = state.attachments.canAttach,
                     )
                 },
                 trailing = {
@@ -96,6 +96,7 @@ private fun Bottom(
                 behavior.barLayout(ActionBarPlace.Compose),
                 state.draft,
                 onSend = onSend,
+                onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
                 onDiscard = onDiscard,
                 minimized = behavior.minimizedBar,
                 scheduled = at != null,

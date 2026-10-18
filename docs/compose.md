@@ -79,19 +79,35 @@ nothing focused.
 
 With the keyboard down, the bar uses the **Compose** layout: Attach and Discard, with Send as the
 main button. In Fixed mode it shows the shared layout, and every action except Send and Discard
-is disabled there. Attach stays disabled until Mail can attach files. Send is enabled once the
-draft has a From address and at least one recipient. The main button then reads "Send to" above
+is disabled there. Attach picks files; it is disabled where the platform has no picker, which
+is iOS for now. Send is enabled once the draft has a From address, at least one recipient, and
+every attached file uploaded to its account. The main button then reads "Send to" above
 the first recipient's first name with their avatar, or a count for several. Accessibility
 services read it as "Send, to Grace Hopper".
 
 With the keyboard up, the formatting row replaces the bar: Attach, then Bold, Italic, Bulleted
 list, Numbered list, Link, and Clear formatting, with a compact Send pinned at the end. Link asks
-for a web address. The two fade into each other.
+for a web address. `BarMorph` turns one into the other as the keyboard starts to move: the parts
+take the other bar's height, then its width, with the content blurred while the width changes.
 
 Send without a subject asks first: **Send** or **Add subject**.
 
 **Discard** stops saving and closes the page with a "Draft discarded" toast. Undo opens the
 draft again as it was. The saved copy is deleted once the toast leaves without Undo.
+
+### Attachments
+
+Attach opens the system document picker for any number of files of any type. Each file uploads
+at once to the draft's account (RFC 8620, section 6.1) and shows as a chip under the body with
+its name and "Uploading…", then its size. A file larger than the session's `maxSizeUpload`
+says "Too large for this server"; any other failure says "Couldn't upload. Tap to retry". ✕
+removes a file. Choosing an identity of another account uploads every file again there,
+because a blob belongs to one account.
+
+A save or send puts each file uploaded to the draft's account after the body in
+`multipart/mixed`, by its `blobId`, with its name and `disposition: attachment`. A file still
+uploading waits for a later save. The body no longer fills the page while files follow it, so
+the chips stay in view.
 
 ### Signatures
 
@@ -173,7 +189,14 @@ submission's `undoStatus` to `canceled`, marks the copy `$draft` again, and open
 
 ## Limits
 
-- Attachments are not built.
+- Attaching files works on Android only; iOS has no file picker yet.
+- A file that cannot upload, such as one too large, keeps Send disabled until it is removed.
+- The total size is not checked against the server's `maxSizeAttachmentsPerEmail`; the server
+  refuses such a message when it is sent.
+- A forward does not carry the original's attachments, and received attachments cannot be
+  opened yet ([Mail #25](https://github.com/reazndev/otus-mail/issues/25)).
+- Picked files are read again for each upload while the app runs; a draft reopened after the app
+  closed cannot upload its files to another account.
 - There is no outbox that survives the app closing: a message in its Undo window or waiting to
   retry is lost with the process, though its saved copy stays in Drafts
   ([Mail #26](https://github.com/reazndev/otus-mail/issues/26)).
@@ -203,7 +226,10 @@ progress, committing a typed address on Send, and failure notices. `ComposeState
 delayed saves, saving on close, discard and its later delete, failure notices, keeping the stored
 copy after a failed save, a change or discard during a save, the sending identity, resumed
 drafts, and moving a draft to another account.
-`DraftEmailTest` checks the text and HTML parts with the quote. `ComposeRecipientsTest` covers
+`DraftEmailTest` checks the text and HTML parts with the quote, and uploaded files in `multipart/mixed`.
+`ComposeAttachmentsTest` covers uploading a picked file, retrying a failed upload, uploading again
+after a move to another account, and removing a file. `ComposeAttachmentScreenTest` renders the
+chips under the body. `ComposeRecipientsTest` covers
 chips, editing a chip, and suggestions. `ComposeScreenTest` types a draft into chips, checks that
 Send names its recipients, sends a draft, asks about a missing subject, saves on Back, chooses an
 identity of another account from the dropdown, adds Bcc and discards from the ⋯ menu, and opens

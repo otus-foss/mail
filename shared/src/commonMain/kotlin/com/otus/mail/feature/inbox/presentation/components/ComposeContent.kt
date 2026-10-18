@@ -31,8 +31,8 @@ import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.RecipientField
 
 /**
- * The header lines, then the body filling the rest of the page, then a forward's original
- * collapsed behind a chip; all scroll together. A new message or forward starts in To.
+ * The header lines, then the body filling the rest of the page, the attached files, and a
+ * forward's original collapsed behind a chip; all scroll together. A new message or forward starts in To.
  */
 @Composable
 internal fun ComposeContent(
@@ -54,11 +54,14 @@ internal fun ComposeContent(
                 state.draft.quote
                     .takeIf { state.thread == null }
                     .orEmpty()
+            // The body fills the page only while nothing follows it, so files and a quote stay in view.
+            val alone = quote.isEmpty() && state.draft.attachments.isEmpty()
             RichTextBody(
                 state.body,
                 placeholder = "Write your message",
-                Modifier.heightIn(min = if (quote.isEmpty()) bodyHeight.coerceAtLeast(0.dp) else 0.dp),
+                Modifier.heightIn(min = if (alone) bodyHeight.coerceAtLeast(0.dp) else 0.dp),
             )
+            ComposeAttachmentList(state.draft.attachments, state.attachments)
             if (quote.isNotEmpty()) QuotedOriginal(quote, FORWARD_LABEL)
         }
     }

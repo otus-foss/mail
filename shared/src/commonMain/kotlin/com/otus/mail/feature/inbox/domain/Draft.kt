@@ -5,7 +5,7 @@ package com.otus.mail.feature.inbox.domain
  * its formatting, empty while it has none. [quote] is the original a reply quotes or a forward
  * carries, which follows the body and the [signature]. [emailId] is the server's copy in the Drafts folder once saved;
  * JMAP Email content cannot change, so each save replaces that copy. [inReplyTo] and [references]
- * keep a reply in its thread.
+ * keep a reply in its thread. [attachments] go after the body as files.
  */
 data class Draft(
     val accountId: String,
@@ -21,6 +21,7 @@ data class Draft(
     val inReplyTo: List<String> = emptyList(),
     val references: List<String> = emptyList(),
     val emailId: String? = null,
+    val attachments: List<DraftAttachment> = emptyList(),
 )
 
 /** Why a draft could not be saved or discarded. */

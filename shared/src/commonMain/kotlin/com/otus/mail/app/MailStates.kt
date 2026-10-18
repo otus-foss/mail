@@ -120,6 +120,8 @@ internal class MailStates(
                 services.addressBook,
                 services.scheduled,
                 services.threads,
+                services.uploads,
+                services.pickers.attachmentFiles,
             ),
             scope,
             request,
@@ -136,7 +138,7 @@ internal class MailStates(
 
     /** Every address's signature, for Settings › Signatures. */
     val signatures =
-        SignaturesState(services.drafts, services.signatures, services.signatureImages, scope) {
+        SignaturesState(services.drafts, services.signatures, services.pickers.signatureImages, scope) {
             accounts.accounts.map { ComposeAccount(it.id, it.name) }
         }
 

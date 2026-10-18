@@ -5,6 +5,7 @@ import androidx.work.Configuration
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.AndroidLoginStore
 import com.otus.mail.app.MailDeviceStores
+import com.otus.mail.app.MailPickers
 import com.otus.mail.app.MailServices
 import com.otus.push.PushSubscriptions
 import java.io.File
@@ -32,11 +33,13 @@ class OtusMailApplication :
                     AndroidAddressPinStore(this),
                 ),
             instantPush = instantPush,
-            signatureImages = signatureImages,
+            pickers = MailPickers(signatureImages, attachmentFiles),
         )
     }
 
     val signatureImages: AndroidSignatureImages by lazy { AndroidSignatureImages(this) }
+
+    val attachmentFiles: AndroidAttachmentFiles by lazy { AndroidAttachmentFiles(this) }
 
     val instantPush: AndroidInstantPush by lazy { AndroidInstantPush(this) }
 
