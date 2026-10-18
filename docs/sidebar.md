@@ -51,7 +51,7 @@ fills the sidebar for the chosen scope.
   published. See [nightly builds](nightly.md).
 - **Mailboxes** starts with Inbox as a 52 dp row with a SemiBold label and the count at the end.
   The other built-in mailboxes follow in fixed order: [Read later](folders.md#read-later) while it
-  is on, then Drafts, Sent, Archive, Spam, and Trash. A mailbox appears once any account has it;
+  is on, then Drafts, Sent, Archive, Spam, and Trash. With all mail shown, a mailbox appears once any account has it;
   Inbox always does. Each one opens every account's folder of that kind: Inbox the unified Inbox,
   Read later `MailPage.ReadLater`, and the rest `MailPage.Combined`. In the Grid style they are
   `SidebarMailboxTile`s in three columns, an icon over a 12 sp label, with the count in a small
