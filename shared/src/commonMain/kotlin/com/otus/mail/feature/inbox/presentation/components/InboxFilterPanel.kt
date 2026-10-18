@@ -64,7 +64,6 @@ fun InboxFilterPanel(
         },
         footer = { InboxFilterFooter(state, shown) },
         modifier = modifier,
-        fillHeight = true,
     ) {
         SlidingPages(page, depth = { if (it == FilterPage.Main) 0 else 1 }) { shownPage ->
             FilterPageContent(shownPage, shown, state, options, messages, dateFormatter, opened)
