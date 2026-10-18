@@ -24,23 +24,33 @@ and mailbox filter, and `pointer` escapes ids in `Email/set` patch paths (RFC 69
 
 The inbox's filters run on the server. `emailConditions` turns a page's `InboxFilters` into one
 list of `Email/query` conditions per login, joined with `AND` and with the page's mailboxes.
-Unread and Read are `notKeyword` and `hasKeyword` with `$seen`; Flagged and Not flagged use
-`$flagged`, Replied and Not replied `$answered`, and Forwarded `$forwarded`. Attachments is
-`hasAttachment`, Read later `inMailbox` with that login's Read later folder, and Newsletters an
-`OR` of `header` conditions for `List-Id` and `List-Unsubscribe` (RFC 2919, RFC 2369), which a
-server may not support. From is an `OR` of `from` conditions. Sent to and Received as become an
-`OR` of `to`, `cc`, and `bcc` conditions: the chosen addresses, or all of the login's own when only
-fields are chosen, in the chosen fields or else all three. Skip folders is a `NOT` of `inMailbox`
-conditions, with subfolders. Size is `minSize`, and dates are `after` and `before`, counted from
-local midnight and sent as UTC. Chosen folders, with their subfolders unless "Only this folder" is
-on, replace the page's mailboxes. A login none of whose accounts, addresses, folders, or Read later
-folder is chosen is not asked at all. Waiting for reply asks for mail `from` the login's addresses
-and checks it again after loading, because no condition says whether the user's message is the
-latest of its conversation. No condition finds calendar invites, so the device keeps loaded mail
-with a `text/calendar` part or an `.ics` file, and the panel shows no count for them. Oldest first
-sorts `receivedAt` ascending. The panel's count is the same query with `limit: 0` and
-`calculateTotal: true`, one per login, summed. The list does not collapse threads yet, so neither
-does the count.
+The Unread and Read status is `notKeyword` and `hasKeyword` with `$seen`; Flagged uses
+`$flagged` and Forwarded `$forwarded`. Attachments is `hasAttachment`, Read later `inMailbox` with
+that login's Read later folder, and Newsletters an `OR` of `header` conditions for `List-Id` and
+`List-Unsubscribe` (RFC 2919, RFC 2369), which a server may not support. From is an `OR` of `from`
+conditions over every address of the chosen people. The user's own addresses (Sent to) and other
+recipients (To) become an `OR` of `to`, `cc`, and `bcc` conditions in the chosen Received in
+fields, To and Cc by default; when only the fields differ from the default, the login's own
+addresses stand in. Size is `minSize`, and dates are `after` and `before`, counted from local
+midnight (This year from 1 January) and sent as UTC. Chosen folders, with their subfolders unless
+"Only this folder" is on, replace the page's mailboxes; no filter leaves a folder out with `NOT`.
+A login whose account, own addresses, folders, or Read later folder are not chosen is not asked at
+all. Oldest first sorts `receivedAt` ascending.
+
+Some choices depend on the whole thread, which no condition can express, so the device checks them
+on the loaded conversations. Each row reads its thread's emails (`Thread/get` and `Email/get` with
+the `List-Id` and `List-Unsubscribe` headers) and keeps who wrote the newest one, Sent included and
+drafts, Trash, and Junk left out unless shown. Awaiting reply keeps threads whose newest email is
+from one of the login's own addresses, and it also queries the Sent mailbox, because a thread the
+user started may have no email elsewhere. Needs my reply keeps threads whose newest email is
+someone else's, sent to the user directly or in a thread the user wrote in, and not from a list.
+Conversations keeps threads with emails both in and outside Sent, and Calendar invites keeps mail
+with a `text/calendar` part or an `.ics` file. With any of these on, the panel shows no count.
+Otherwise its count is the same query with `limit: 0`, `calculateTotal: true`, and
+`collapseThreads`, one per login, summed; each panel session reads each login's mailboxes once.
+The From and To pages also search beyond the loaded rows: `Email/query` with a `from`, or `to` and
+`cc`, text condition and `collapseThreads`, the newest 20, then each distinct address, plus the
+address book's contacts.
 
 Folders use `Mailbox/get` and `Mailbox/set`; rules manage one Sieve script with `SieveScript/get`
 and `SieveScript/set` (RFC 9661, `JmapCapability.SIEVE`) after uploading it as a blob. Messages move
