@@ -82,7 +82,7 @@ class ComposeAttachmentScreenTest {
 
         compose.onNodeWithContentDescription("Image options").performClick()
         compose.screenshot("compose-attachments-image-options")
-        compose.onNodeWithText("Send as attachment").performClick()
+        compose.onNodeWithText("Send as file").performClick()
         compose.onNodeWithText("Whiteboard.png").assertExists()
         compose.screenshot("compose-attachments")
     }
