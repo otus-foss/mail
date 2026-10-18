@@ -16,14 +16,23 @@ The `nightly` build type is the release build with these changes:
 
 - The app id is `com.otus.mail.nightly` and the name is "Otus Mail Nightly", so it installs beside
   a debug build.
-- The version code is the nightly number and the version name is `nightly-<number>`.
+- The version code is the nightly number. The version name is the build's date as d.m.yy, such as
+  `18.10.26`, and the sidebar footer shows it.
 - It is signed with the nightly key. Android installs an update only when its key matches the
   installed app's key, so keep the same key for every nightly.
 
-At each launch the nightly app reads the latest release of the nightly repository. When that
-build is newer than the installed one, the sidebar shows "Get nightly <number>" above the
-mailboxes. Tapping it opens the APK link in the browser, and Android's installer takes over once
-the download finishes. A failed check shows nothing. Other builds never check.
+At each launch the nightly app reads the recent releases of the nightly repository. When one is
+newer than the installed build, a circled arrow leads the version in the sidebar footer. Tapping
+the version opens a sheet with the changes of every newer build, grouped by commit scope. Only
+`feat`, `fix`, and `perf` commits appear there. Changelog, beside Install update, lists every
+published nightly by date, with the installed ones on a lighter panel under an "Installed"
+divider. A failed check shows nothing. Other builds never check.
+
+The sheet's Install update button downloads the APK inside the app, with a ring around the
+arrow for progress, and hands it to Android's `PackageInstaller`. Android asks once to let Otus
+install apps and to confirm the first update. After Otus has installed itself, later updates need no confirmation on
+Android 12 and newer. Android closes the app when the update lands. Only the nightly manifest
+declares `REQUEST_INSTALL_PACKAGES`.
 
 ## One-time setup
 
@@ -66,7 +75,7 @@ The repository name appears in the workflow and in `GitHubNightlyFeed`. Change b
 
 ```sh
 OTUS_NIGHTLY_KEYSTORE=otus-nightly.p12 OTUS_NIGHTLY_KEYSTORE_PASSWORD=... \
-  ./gradlew :androidApp:assembleNightly -Potus.versionCode=1 -Potus.versionName=nightly-1
+  ./gradlew :androidApp:assembleNightly -Potus.versionCode=1 -Potus.versionName=18.10.26
 ```
 
 Without `OTUS_NIGHTLY_KEYSTORE`, the build is unsigned and Android will not install it.

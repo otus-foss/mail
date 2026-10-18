@@ -86,8 +86,9 @@ jobs:
         run: |
           export OTUS_NIGHTLY_KEYSTORE="$RUNNER_TEMP/nightly.p12"
           echo "$KEYSTORE_BASE64" | base64 -d > "$OTUS_NIGHTLY_KEYSTORE"
+          # The app shows the version name, the build's date as d.m.yy, such as 18.10.26.
           ./gradlew :androidApp:assembleNightly --console=plain \
-            -Potus.meta.path=otus-meta -Potus.versionCode="$NUMBER" -Potus.versionName="nightly-$NUMBER"
+            -Potus.meta.path=otus-meta -Potus.versionCode="$NUMBER" -Potus.versionName="$(date -u +%-d.%-m.%y)"
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.OTUS_NIGHTLY_TOKEN }}
@@ -98,4 +99,4 @@ jobs:
           count=$(( ${PREVIOUS:-0} > 0 ? NUMBER - PREVIOUS : 20 ))
           git log -n "$count" --format='- %s' > notes.md
           gh release create "nightly-$NUMBER" "$apk" -R "$NIGHTLY_REPO" \
-            --title "Otus Mail nightly $NUMBER" --notes-file notes.md
+            --title "Otus Mail nightly $(date -u +%-d.%-m.%y)" --notes-file notes.md
