@@ -47,8 +47,12 @@ class ComposeRecipients(
         if (text.lastOrNull() in SEPARATORS) commit(field) else suggest(field, text)
     }
 
-    /** Makes chips of the addresses typed in the line; text that is not an address stays to fix. */
+    /**
+     * Makes chips of the addresses typed in the line, as when the user leaves it, and closes its
+     * suggestions; text that is not an address stays to fix.
+     */
     fun commit(field: RecipientField) {
+        if (suggestions.field == field) dismissSuggestions()
         val (valid, invalid) = parseRecipients(typed.getValue(field)).partition { '@' in it.address }
         if (valid.isEmpty()) return
         add(field, valid)
