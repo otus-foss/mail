@@ -7,13 +7,13 @@ severity_min: "high"
 
 ## Instructions
 
-Flag any animation that bypasses the Meta design system's motion API. Mail and Meta use
-`Motion`: `motionTween(speed, curve)` in composables, `Motion.tween(speed, curve, scale)` outside
-composition, and `Motion.millis(speed, scale)` for specs that are not tweens. Calendar uses
-`MotionTokens` from its pinned Meta release until it adopts `Motion`.
+Flag any animation that bypasses the Meta design system's motion API, `Motion`:
+`motionTween(speed, curve)` in composables, `Motion.tween(speed, curve, scale)` outside
+composition, and `Motion.millis(speed, scale)` for specs that are not tweens.
 
 Flag these:
 
+- Any reference to `MotionTokens`. Meta removed it in favor of `Motion`.
 - A raw duration constant or a `tween` with a literal duration.
 - A new `CubicBezierEasing` or other custom easing.
 - An `animate*AsState`, `AnimatedVisibility`, `animateContentSize`, or similar call that falls back
