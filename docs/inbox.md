@@ -33,7 +33,9 @@ again at once and offline.
   search modes. The design-system `PullToRefresh` component uses Compose Material's pull gesture
   with the `RefreshIndicator` element: a pill-styled `bgDark` circle with a `strokeBgDark` outline
   that slides down with the pull, with a `text1` arc that grows and turns with the distance and
-  spins while the feed loads. A confirming haptic plays when a pull triggers the reload. Short
+  spins while the feed loads. While rows are shown, a load behind them, such as the sync at launch,
+  shows no spinner unless the user pulled for it; an empty list shows it for every load. A
+  confirming haptic plays when a pull triggers the reload. Short
   pulls spring back without loading. The element draws its own arc because Material's indicator
   is an elevated surface, which the dark theme lightens and shades.
 
