@@ -8,11 +8,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.AttachmentBlob
 import com.otus.mail.feature.inbox.domain.ComposeRequest
@@ -47,14 +50,7 @@ import kotlin.time.Instant
 class ComposeAttachmentScreenTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
-    private val photo =
-        ByteArrayOutputStream()
-            .also { out ->
-                Bitmap
-                    .createBitmap(PHOTO_WIDTH, PHOTO_HEIGHT, Bitmap.Config.ARGB_8888)
-                    .apply { eraseColor(PHOTO_COLOR) }
-                    .compress(Bitmap.CompressFormat.PNG, 100, out)
-            }.toByteArray()
+    private val photo = png(PHOTO_WIDTH, PHOTO_HEIGHT)
 
     private val files =
         listOf(
@@ -65,6 +61,58 @@ class ComposeAttachmentScreenTest {
 
     @Test
     fun anImageShowsInTheMessageAndCanBecomeAFile() {
+        open(files)
+        compose.onNodeWithContentDescription("Attach").performClick()
+        compose.onNodeWithText("1.5 MB").assertExists()
+        compose.onNodeWithText("Too large for this server").assertExists()
+        compose.onNodeWithText("Whiteboard.png").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Whiteboard.png").performClick()
+        compose.onNodeWithText("Full").assertIsSelected()
+        compose.screenshot("compose-attachments-inline")
+
+        val handle = compose.onNodeWithContentDescription("Resize image")
+        handle.performTouchInput {
+            down(center)
+            moveBy(Offset(-DRAG_TO_LARGE, 0f))
+        }
+        // The pill under the handle and the bar's segment both name the snapped size.
+        compose.onAllNodesWithText("Large").assertCountEquals(2)
+        compose.screenshot("compose-attachments-drag")
+        handle.performTouchInput { up() }
+
+        compose.onNodeWithContentDescription("Image options").performClick()
+        compose.screenshot("compose-attachments-image-options")
+        compose.onNodeWithText("Send as attachment").performClick()
+        compose.onNodeWithText("Whiteboard.png").assertExists()
+        compose.screenshot("compose-attachments")
+    }
+
+    @Test
+    fun aTallImageShowsTheGuideLabelsUnderItWhileItsTopIsScrolledAway() {
+        val tall = png(PHOTO_HEIGHT, PHOTO_WIDTH * 3)
+        open(listOf(PickedFile("Screenshot.png", "image/png", tall.size.toLong()) { tall }))
+        compose.onNodeWithContentDescription("Attach").performClick()
+        // The image decodes off the first frames.
+        compose.waitUntil(DECODE_MILLIS) {
+            compose.onAllNodesWithContentDescription("Screenshot.png").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Screenshot.png").performClick()
+        // Scroll until the handle at the image's bottom shows, which takes its top out of view.
+        compose.onNodeWithContentDescription("Resize image").performScrollTo()
+        // The handle now sits at the screen's edge, under the bar; lift it above the bar.
+        compose.onNodeWithContentDescription("Screenshot.png").performTouchInput {
+            swipeUp(startY = centerY, endY = centerY - ABOVE_THE_BAR)
+        }
+        val handle = compose.onNodeWithContentDescription("Resize image")
+        handle.performTouchInput {
+            down(center)
+            moveBy(Offset(-DRAG_TO_LARGE, 0f))
+        }
+        compose.screenshot("compose-attachments-drag-tall")
+        handle.performTouchInput { up() }
+    }
+
+    private fun open(files: List<PickedFile>) {
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
@@ -95,35 +143,29 @@ class ComposeAttachmentScreenTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Attach").performClick()
-        compose.onNodeWithText("1.5 MB").assertExists()
-        compose.onNodeWithText("Too large for this server").assertExists()
-        compose.onNodeWithText("Whiteboard.png").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Whiteboard.png").performClick()
-        compose.onNodeWithText("Full").assertIsSelected()
-        compose.screenshot("compose-attachments-inline")
-
-        val handle = compose.onNodeWithContentDescription("Resize image")
-        handle.performTouchInput {
-            down(center)
-            moveBy(Offset(-DRAG_TO_LARGE, 0f))
-        }
-        // The pill under the handle and the bar's segment both name the snapped size.
-        compose.onAllNodesWithText("Large").assertCountEquals(2)
-        compose.screenshot("compose-attachments-drag")
-        handle.performTouchInput { up() }
-
-        compose.onNodeWithContentDescription("Image options").performClick()
-        compose.screenshot("compose-attachments-image-options")
-        compose.onNodeWithText("Send as attachment").performClick()
-        compose.onNodeWithText("Whiteboard.png").assertExists()
-        compose.screenshot("compose-attachments")
     }
+
+    private fun png(
+        width: Int,
+        height: Int,
+    ): ByteArray =
+        ByteArrayOutputStream()
+            .also { out ->
+                Bitmap
+                    .createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    .apply { eraseColor(PHOTO_COLOR) }
+                    .compress(Bitmap.CompressFormat.PNG, 100, out)
+            }.toByteArray()
 
     private companion object {
         const val PHOTO_WIDTH = 640
         const val PHOTO_HEIGHT = 400
         const val PHOTO_COLOR = 0xFF4F7A9A.toInt()
+
+        const val DECODE_MILLIS = 5_000L
+
+        /** Pixels the page moves up so content at the screen's bottom clears the bar. */
+        const val ABOVE_THE_BAR = 500f
 
         /** Pixels left from full width to Large on this screen. */
         const val DRAG_TO_LARGE = 150f
