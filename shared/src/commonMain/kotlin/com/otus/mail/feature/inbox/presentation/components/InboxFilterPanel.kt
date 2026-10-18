@@ -19,13 +19,16 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.FilterPanel
 import com.otus.designsystem.components.FilterPanelFooter
 import com.otus.designsystem.components.FilterPanelHeader
+import com.otus.designsystem.components.InputSheet
 import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.Motion
 import com.otus.designsystem.theme.MotionSpeed
 import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.FilterCount
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
+import com.otus.mail.feature.inbox.presentation.filterSenders
 import com.otus.mail.feature.inbox.presentation.showLabel
 
 /**
@@ -36,12 +39,14 @@ import com.otus.mail.feature.inbox.presentation.showLabel
 fun InboxFilterPanel(
     state: InboxFilterState,
     options: FilterOptions,
+    messages: List<MailMessage>,
     dateFormatter: DateFormatter,
     collapsedHeight: Dp,
     modifier: Modifier = Modifier,
 ) {
     var folders by rememberSaveable { mutableStateOf(false) }
     var customDate by rememberSaveable { mutableStateOf(false) }
+    var addingSender by rememberSaveable { mutableStateOf(false) }
     val close = state::close
     // The panel opens on its main page again, however it closed.
     LaunchedEffect(state.isOpen) { if (state.isOpen) folders = false }
@@ -81,9 +86,21 @@ fun InboxFilterPanel(
             if (allFolders) {
                 FolderPickerPage(shown, options, state::edit)
             } else {
-                FilterSections(shown, options, dateFormatter, state::edit, { folders = true }) { customDate = true }
+                val senders = remember(messages, shown.from) { filterSenders(messages, shown.from) }
+                val pages = FilterPanelPages({ folders = true }, { customDate = true }, { addingSender = true })
+                FilterSections(shown, options, senders, dateFormatter, state::edit, pages)
             }
         }
+    }
+    if (addingSender && state.isOpen) {
+        InputSheet(
+            "Add sender",
+            "Address",
+            "Add",
+            onConfirm = { address -> state.edit { it.copy(from = it.from + address.trim()) } },
+            onDismiss = { addingSender = false },
+            problem = { if ('@' in it.trim()) null else "Enter an email address" },
+        )
     }
     if (customDate && state.isOpen) {
         FilterDateSheet(shown, dateFormatter, { range -> state.edit { it.copy(date = range) } }) { customDate = false }

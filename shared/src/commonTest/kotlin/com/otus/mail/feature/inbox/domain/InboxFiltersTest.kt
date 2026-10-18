@@ -25,6 +25,49 @@ class InboxFiltersTest {
     }
 
     @Test
+    fun oppositeChoicesTurnEachOtherOff() {
+        val read = InboxFilters().with(ShowFacet.Unread, true).with(ShowFacet.Read, true)
+        assertEquals(setOf(ShowFacet.Read), read.show)
+        val flagged =
+            InboxFilters()
+                .with(
+                    ShowFacet.NotFlagged,
+                    true,
+                ).with(ShowFacet.Flagged, true)
+                .with(ShowFacet.Replied, true)
+        assertEquals(setOf(ShowFacet.Flagged, ShowFacet.Replied), flagged.show)
+    }
+
+    @Test
+    fun everyKindOfChoiceCountsAsActive() {
+        val filters =
+            InboxFilters(
+                from = setOf("sam@x.org"),
+                accounts = setOf("ada"),
+                receivedAs = setOf(RecipientField.Cc),
+                skipFolders = setOf(FolderRef("ada", "t")),
+                size = SizeFilter.Over1Mb,
+            )
+        assertEquals(5, filters.activeCount)
+        assertEquals(
+            setOf(FolderRef("ada", "t", false)),
+            filters.withSkipped(FolderRef("ada", "t", false), true).skipFolders,
+        )
+    }
+
+    @Test
+    fun filterLayoutsSurviveSavingAndSkipUnknownValues() {
+        val layout =
+            FilterLayout(
+                listOf(FilterSection.Date, FilterSection.Show),
+                listOf(ShowFacet.Newsletters, ShowFacet.Unread),
+            )
+        assertEquals(layout, FilterLayout.decode(FilterLayout.encode(layout)))
+        assertEquals(FilterLayout(listOf(FilterSection.Size), emptyList()), FilterLayout.decode("size,later|"))
+        assertEquals(FilterLayout(), FilterLayout.decode("garbage"))
+    }
+
+    @Test
     fun pillsEditTheSameShowChoices() {
         val on = InboxFilters().with(InboxPill.Filter.Unread, true)
         assertTrue(on.has(ShowFacet.Unread))

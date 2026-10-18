@@ -145,6 +145,7 @@ fun InboxScreen(
         InboxFilterPanel(
             filters,
             filterOptions,
+            messages,
             dateFormatter,
             headerHeight,
             Modifier

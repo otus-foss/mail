@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.theme.FolderColor
+import com.otus.mail.feature.inbox.domain.FilterLayout
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import org.jetbrains.compose.resources.DrawableResource
@@ -50,15 +51,17 @@ data class FilterAddress(
 
 /**
  * What the filter panel offers on a page: the user's [addresses], each login's folders in
- * [accounts], the folder [shortcuts] in order, whether the page can filter by [folders] at all,
- * and whether any account has a Read later folder.
+ * [accounts], the folder [shortcuts] in order, the system folders to [skip], whether the page can
+ * filter by [folders] at all, whether any account has a Read later folder, and the user's [layout].
  */
 data class FilterOptions(
     val addresses: List<FilterAddress> = emptyList(),
     val accounts: List<FilterAccount> = emptyList(),
     val shortcuts: List<FolderKey> = emptyList(),
+    val skip: List<FolderKey> = emptyList(),
     val folders: Boolean = false,
     val readLater: Boolean = false,
+    val layout: FilterLayout = FilterLayout(),
 ) {
     private val byKey: Map<FolderKey, FilterFolder> by lazy {
         accounts.flatMap { it.folders }.associateBy { it.key }

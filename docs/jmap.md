@@ -20,17 +20,24 @@ to the JMAP account that holds its mail. `NEWEST_FIRST` and `inMailbox` are the 
 and mailbox filter, and `pointer` escapes ids in `Email/set` patch paths (RFC 6901).
 
 The inbox's filters run on the server. `emailConditions` turns a page's `InboxFilters` into one
-list of `Email/query` conditions per login, joined with `AND` and with the page's mailboxes:
-Unread is `notKeyword: $seen`, Flagged `hasKeyword: $flagged`, Attachments `hasAttachment`, and
-Read later `inMailbox` with that login's Read later folder. Sent to is an `OR` of `to`, `cc`, and
-`bcc` for each chosen address, and dates are `after` and `before`, counted from local midnight and
-sent as UTC. Chosen folders, with their subfolders unless "Only this folder" is on, replace the
-page's mailboxes. A login none of whose addresses, folders, or Read later folder is chosen is not
-asked at all. Waiting for reply asks for mail `from` the user's addresses and checks it again after
-loading, because no condition says whether the user's message is the latest of its conversation.
-Oldest first sorts `receivedAt` ascending. The filter panel's count is the same query with
-`limit: 0` and `calculateTotal: true`, one per login, summed. The list does not collapse threads
-yet, so neither does the count.
+list of `Email/query` conditions per login, joined with `AND` and with the page's mailboxes.
+Unread and Read are `notKeyword` and `hasKeyword` with `$seen`; Flagged and Not flagged use
+`$flagged`, Replied and Not replied `$answered`, and Forwarded `$forwarded`. Attachments is
+`hasAttachment`, Read later `inMailbox` with that login's Read later folder, and Newsletters an
+`OR` of `header` conditions for `List-Id` and `List-Unsubscribe` (RFC 2919, RFC 2369), which a
+server may not support. From is an `OR` of `from` conditions. Sent to and Received as become an
+`OR` of `to`, `cc`, and `bcc` conditions: the chosen addresses, or all of the login's own when only
+fields are chosen, in the chosen fields or else all three. Skip folders is a `NOT` of `inMailbox`
+conditions, with subfolders. Size is `minSize`, and dates are `after` and `before`, counted from
+local midnight and sent as UTC. Chosen folders, with their subfolders unless "Only this folder" is
+on, replace the page's mailboxes. A login none of whose accounts, addresses, folders, or Read later
+folder is chosen is not asked at all. Waiting for reply asks for mail `from` the login's addresses
+and checks it again after loading, because no condition says whether the user's message is the
+latest of its conversation. No condition finds calendar invites, so the device keeps loaded mail
+with a `text/calendar` part or an `.ics` file, and the panel shows no count for them. Oldest first
+sorts `receivedAt` ascending. The panel's count is the same query with `limit: 0` and
+`calculateTotal: true`, one per login, summed. The list does not collapse threads yet, so neither
+does the count.
 
 Folders use `Mailbox/get` and `Mailbox/set`; rules manage one Sieve script with `SieveScript/get`
 and `SieveScript/set` (RFC 9661, `JmapCapability.SIEVE`) after uploading it as a blob. Messages move

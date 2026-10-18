@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
+import com.otus.mail.feature.inbox.domain.FilterLayout
 import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailAction
@@ -45,6 +46,7 @@ class AndroidMailBehaviorStore(
             signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.getString(INBOX, null)?.let(InboxContents::decode) ?: defaults.inbox,
+            filters = preferences.getString(FILTERS, null)?.let(FilterLayout::decode) ?: defaults.filters,
         )
     }
 
@@ -64,6 +66,7 @@ class AndroidMailBehaviorStore(
             putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
             putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
             putString(INBOX, InboxContents.encode(behavior.inbox))
+            putString(FILTERS, FilterLayout.encode(behavior.filters))
         }
     }
 
@@ -81,6 +84,7 @@ class AndroidMailBehaviorStore(
         const val SIGNATURE_IN_REPLIES = "signature_in_replies"
         const val UNDO_SEND_SECONDS = "undo_send_seconds"
         const val INBOX = "inbox_contents"
+        const val FILTERS = "filter_layout"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

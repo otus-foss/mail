@@ -73,6 +73,8 @@ data class MailAttributes(
     val unread: Boolean = false,
     val attachments: List<String> = emptyList(),
     val flagged: Boolean = false,
+    /** The message carries a calendar invitation, a `text/calendar` part or an `.ics` file. */
+    val invite: Boolean = false,
 )
 
 /** A mark the user can turn on or off for one message. */

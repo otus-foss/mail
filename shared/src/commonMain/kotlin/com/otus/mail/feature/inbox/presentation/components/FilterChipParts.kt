@@ -11,13 +11,20 @@ import com.otus.designsystem.elements.FolderGlyph
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_bookmark
+import com.otus.designsystem.resources.symbol_event
 import com.otus.designsystem.resources.symbol_flag
+import com.otus.designsystem.resources.symbol_forward
+import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
+import com.otus.designsystem.resources.symbol_newspaper
 import com.otus.designsystem.resources.symbol_reply
+import com.otus.designsystem.resources.symbol_speaker_notes_off
 import com.otus.designsystem.theme.FilterTokens
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.feature.inbox.domain.RecipientField
 import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.presentation.FilterFolder
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderLabel
@@ -28,20 +35,49 @@ internal val ShowFacet.label: String
     get() =
         when (this) {
             ShowFacet.Unread -> "Unread"
+            ShowFacet.Read -> "Read"
             ShowFacet.Flagged -> "Flagged"
+            ShowFacet.NotFlagged -> "Not flagged"
             ShowFacet.ReadLater -> "Read later"
             ShowFacet.Attachments -> "Attachments"
+            ShowFacet.Replied -> "Replied"
+            ShowFacet.NotReplied -> "Not replied"
+            ShowFacet.Forwarded -> "Forwarded"
             ShowFacet.WaitingForReply -> "Waiting for reply"
+            ShowFacet.Newsletters -> "Newsletters"
+            ShowFacet.CalendarInvites -> "Calendar invites"
         }
 
 internal val ShowFacet.icon: DrawableResource
     get() =
         when (this) {
             ShowFacet.Unread -> Res.drawable.symbol_mark_email_unread
-            ShowFacet.Flagged -> Res.drawable.symbol_flag
+            ShowFacet.Read -> Res.drawable.symbol_mark_email_read
+            ShowFacet.Flagged, ShowFacet.NotFlagged -> Res.drawable.symbol_flag
             ShowFacet.ReadLater -> Res.drawable.symbol_bookmark
             ShowFacet.Attachments -> Res.drawable.symbol_attach_file
-            ShowFacet.WaitingForReply -> Res.drawable.symbol_reply
+            ShowFacet.Replied, ShowFacet.WaitingForReply -> Res.drawable.symbol_reply
+            ShowFacet.NotReplied -> Res.drawable.symbol_speaker_notes_off
+            ShowFacet.Forwarded -> Res.drawable.symbol_forward
+            ShowFacet.Newsletters -> Res.drawable.symbol_newspaper
+            ShowFacet.CalendarInvites -> Res.drawable.symbol_event
+        }
+
+internal val RecipientField.label: String
+    get() =
+        when (this) {
+            RecipientField.To -> "To"
+            RecipientField.Cc -> "Cc"
+            RecipientField.Bcc -> "Bcc"
+        }
+
+internal val SizeFilter.label: String
+    get() =
+        when (this) {
+            SizeFilter.Any -> "Any size"
+            SizeFilter.Over1Mb -> "Over 1 MB"
+            SizeFilter.Over5Mb -> "Over 5 MB"
+            SizeFilter.Over10Mb -> "Over 10 MB"
         }
 
 /** A preset's name; a range has its own label, from [rangeLabel]. */
