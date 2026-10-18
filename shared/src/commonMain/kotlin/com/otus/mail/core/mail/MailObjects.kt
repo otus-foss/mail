@@ -2,6 +2,7 @@ package com.otus.mail.core.mail
 
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapType
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -25,6 +26,7 @@ val EmailSubmissionType: JmapType<JsonObject> =
 /**
  * Email properties the inbox requests for each row (RFC 8621, section 4.1). Recipients and ids let
  * a reply quote and thread. The list shows `preview`; an open message loads its body separately.
+ * The list headers tell newsletters apart.
  */
 val EMAIL_PROPERTIES =
     listOf(
@@ -42,6 +44,8 @@ val EMAIL_PROPERTIES =
         "preview",
         "hasAttachment",
         "attachments",
+        LIST_ID_PROPERTY,
+        LIST_UNSUBSCRIBE_PROPERTY,
     )
 
 /** The Email properties [EmailFolders] reads. */
@@ -104,7 +108,19 @@ data class EmailObject(
     /** The parts to show as HTML, which may include plain parts (RFC 8621, section 4.1.4). */
     val htmlBody: List<EmailBodyPart>? = null,
     val bodyValues: Map<String, EmailBodyValue> = emptyMap(),
-)
+    /** The raw `List-Id` header, null when the email has none (RFC 8621, section 4.1.3; RFC 2919). */
+    @SerialName(LIST_ID_PROPERTY) val listId: String? = null,
+    /** The raw `List-Unsubscribe` header, null when the email has none (RFC 2369). */
+    @SerialName(LIST_UNSUBSCRIBE_PROPERTY) val listUnsubscribe: String? = null,
+) {
+    /** Whether a mailing list or newsletter sent it. */
+    val fromList: Boolean
+        get() = listId != null || listUnsubscribe != null
+}
+
+/** The `Email/get` properties that read a mailing list's headers, which mark newsletters. */
+const val LIST_ID_PROPERTY = "header:List-Id"
+const val LIST_UNSUBSCRIBE_PROPERTY = "header:List-Unsubscribe"
 
 /** The mailboxes an Email is in, without its other properties. */
 @Serializable
