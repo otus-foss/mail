@@ -97,7 +97,7 @@ internal class ReadPageLook(
      * Whether the page at [index] leaves its quoted text out: unless the user shows quotes, a page
      * with older pages in its conversation does, since a swipe shows them.
      */
-    fun hidesQuote(index: Int): Boolean = !read.showQuotes() && index < state.pages.lastIndex
+    fun hidesQuote(index: Int): Boolean = !read.display.showQuotes() && index < state.pages.lastIndex
 
     /** The full record under the sender pill: every folder [page] is in, the one shown included. */
     @Composable

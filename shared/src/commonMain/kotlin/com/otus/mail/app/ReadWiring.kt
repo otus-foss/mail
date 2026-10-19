@@ -17,6 +17,7 @@ import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.ReadContext
+import com.otus.mail.feature.inbox.presentation.ReadDisplay
 import com.otus.mail.feature.inbox.presentation.ReadEffects
 import com.otus.mail.feature.inbox.presentation.ReadFiles
 import com.otus.mail.feature.inbox.presentation.ReadFolders
@@ -75,7 +76,7 @@ internal class ReadWiring(
             files = files,
             services = ReadServices(services.newsletters, services.headers, services.mute, services.blocks, changes),
             effects = effects,
-            showQuotes = { behavior.behavior.showQuotes },
+            display = ReadDisplay(showQuotes = { behavior.behavior.showQuotes }),
         )
     }
 
