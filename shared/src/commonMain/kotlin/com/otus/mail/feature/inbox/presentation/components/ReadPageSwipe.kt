@@ -32,14 +32,32 @@ import kotlin.math.abs
 import kotlin.math.sign
 
 /**
+ * How hard a drag must be to turn the pages: it counts once it moves [sideways] times as far
+ * across as down, and letting go past [turnAt] of the width, or after a flick of [flickDp] per
+ * second, turns the page.
+ */
+internal enum class SwipeFeel(
+    val sideways: Float,
+    val turnAt: Float,
+    val flickDp: Int,
+) {
+    /** The message itself, which also scrolls down, so a scroll that drifts sideways stays a scroll. */
+    Pages(sideways = 2f, turnAt = 0.5f, flickDp = 800),
+
+    /** The thread strip, which never scrolls, so a short swipe on it is enough. */
+    Strip(sideways = 1f, turnAt = 0.2f, flickDp = 300),
+}
+
+/**
  * Turns [pager]'s pages from a sideways drag anywhere it is applied, such as the pages and the
- * thread strip. A drag only counts once it moves [SIDEWAYS_RATIO] times as far across as down, so
- * a scroll that drifts sideways stays a scroll. Letting go past half the width, or after a flick
- * of [FLICK_DP_PER_SECOND], eases on to the next page; anything less eases back. Screen readers page with
- * the page left and page right actions.
+ * thread strip, as hard as [feel] asks. Letting go short of it eases back. Screen readers page
+ * with the page left and page right actions.
  */
 @Composable
-internal fun rememberPageSwipe(pager: PagerState): Modifier {
+internal fun rememberPageSwipe(
+    pager: PagerState,
+    feel: SwipeFeel = SwipeFeel.Pages,
+): Modifier {
     val scope = rememberCoroutineScope()
     // Letting go slows the page to a stop on the design system's easing, not a spring.
     val settle = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
@@ -50,7 +68,7 @@ internal fun rememberPageSwipe(pager: PagerState): Modifier {
     // The page to the right is the next one, or the previous one when mirrored.
     val right = if (across < 0) 1 else -1
     return Modifier
-        .pointerInput(turn, across) { swipePages(turn, across) }
+        .pointerInput(turn, across, feel) { swipePages(turn, across, feel) }
         .semantics {
             pageLeft { turn.to(pager.currentPage - right) }
             pageRight { turn.to(pager.currentPage + right) }
@@ -60,29 +78,34 @@ internal fun rememberPageSwipe(pager: PagerState): Modifier {
 private suspend fun PointerInputScope.swipePages(
     turn: PageTurn,
     across: Float,
+    feel: SwipeFeel,
 ) = awaitEachGesture {
     val pager = turn.pager
     val down = awaitFirstDown(requireUnconsumed = false)
     val start = pager.currentPage
-    awaitSideways(down.id)?.let { past ->
+    awaitSideways(down.id, feel.sideways)?.let { past ->
         val drag = followDrag(down.id, past) { dx -> pager.dispatchRawDelta(dx * across) }
-        turn.to(start + drag.step(across, size.width / 2f, FLICK_DP_PER_SECOND.dp.toPx()))
+        turn.to(start + drag.step(across, size.width * feel.turnAt, feel.flickDp.dp.toPx()))
     }
 }
 
 /**
- * How far across pointer [id] moved past the touch slop, once it passes it clearly sideways; null
+ * How far across pointer [id] moved past the touch slop, once it passes it [ratio] times as far
+ * across as down; null
  * once it lifts, heads down, or a child, such as the page's scroll, takes it. Children see each
  * move first until then.
  */
-private suspend fun AwaitPointerEventScope.awaitSideways(id: PointerId): Float? {
+private suspend fun AwaitPointerEventScope.awaitSideways(
+    id: PointerId,
+    ratio: Float,
+): Float? {
     var travel = Offset.Zero
     var change: PointerInputChange?
     do {
         change = awaitPointerEvent().changes.firstOrNull { it.id == id }?.takeIf { it.pressed && !it.isConsumed }
         change?.let { travel += it.positionChange() }
     } while (change != null && travel.getDistance() < viewConfiguration.touchSlop)
-    val sideways = change != null && abs(travel.x) >= abs(travel.y) * SIDEWAYS_RATIO
+    val sideways = change != null && abs(travel.x) >= abs(travel.y) * ratio
     return if (sideways) travel.x - sign(travel.x) * viewConfiguration.touchSlop else null
 }
 
@@ -119,14 +142,14 @@ private class PageDrag(
     /** One page on, one back, or none; a move against [across] heads to the next page. */
     fun step(
         across: Float,
-        halfWidth: Float,
+        turnDistance: Float,
         flick: Float,
     ): Int {
         val forward = distance * across
         val speed = velocity * across
         return when {
-            forward > halfWidth || (forward > 0 && speed > flick) -> 1
-            forward < -halfWidth || (forward < 0 && speed < -flick) -> -1
+            forward > turnDistance || (forward > 0 && speed > flick) -> 1
+            forward < -turnDistance || (forward < 0 && speed < -flick) -> -1
             else -> 0
         }
     }
@@ -145,12 +168,6 @@ private class PageTurn(
         return true
     }
 }
-
-/** How many times further across than down a drag must move to turn the page. */
-private const val SIDEWAYS_RATIO = 2f
-
-/** How fast a short drag must be let go to still turn the page. */
-private const val FLICK_DP_PER_SECOND = 800
 
 /** How the thread strip follows the pages: the [swipe] that turns them, and their [position]. */
 internal class StripSlide(
