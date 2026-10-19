@@ -25,6 +25,7 @@ import com.otus.mail.feature.inbox.presentation.read.subtitle
  * A conversation shows its thread strip; a single message its newsletter strip when it can be left
  * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
  * message count tells a conversation from a single message, so the strip does not change kind.
+ * [swipe] lets a drag on the thread strip turn the pages.
  */
 @Composable
 internal fun ReadBottomStack(
@@ -33,6 +34,7 @@ internal fun ReadBottomStack(
     source: ReadStripSource,
     actions: ReadStripActions,
     modifier: Modifier = Modifier,
+    swipe: Modifier = Modifier,
 ) {
     val page = state.pages.getOrNull(current) ?: return
     val content = (state.bodies.body(page) as? PageBody.Loaded)?.content
@@ -47,7 +49,7 @@ internal fun ReadBottomStack(
                 { state.thumbnails.of(page, it) },
             )
         }
-        ContextStrip(state, current, source, content, actions)
+        ContextStrip(state, current, source, content, actions, swipe)
     }
 }
 
@@ -58,6 +60,7 @@ private fun ContextStrip(
     source: ReadStripSource,
     content: MessageContent?,
     actions: ReadStripActions,
+    swipe: Modifier,
 ) {
     val row = source.row
     val page = state.pages[current]
@@ -73,7 +76,13 @@ private fun ContextStrip(
                     .toSet()
             val folders = folderHint(everyFolder, source.folders, source.cameFrom)
             val open = { state.threadOpen = true }
-            ReadThreadStrip(ThreadPosition(page, current, count, source.date), folders, row.attributes.flagged, open)
+            ReadThreadStrip(
+                ThreadPosition(page, current, count, source.date),
+                folders,
+                row.attributes.flagged,
+                open,
+                swipe,
+            )
         }
 
         unsubscribe != null -> {
