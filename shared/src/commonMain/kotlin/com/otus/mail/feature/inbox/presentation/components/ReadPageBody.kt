@@ -122,6 +122,7 @@ private fun QuoteLevelText.shown(showPerson: (address: String) -> (() -> Unit)?)
         header?.date.orEmpty(),
         text,
         header?.address?.let(showPerson),
+        header?.fullDate.orEmpty(),
     )
 
 /**
@@ -133,12 +134,19 @@ private fun htmlQuote(split: HtmlQuoteSplit): HtmlQuote {
     return if (levels.size > 1) {
         HtmlQuote.ofText(levels.first().htmlLevel(), levels.drop(1).map { it.htmlLevel() })
     } else {
-        HtmlQuote(split.header.name(), split.header.initials(), split.header?.date.orEmpty(), split.quote)
+        val header = split.header
+        HtmlQuote(
+            header.name(),
+            header.initials(),
+            header?.date.orEmpty(),
+            split.quote,
+            fullDate = header?.fullDate.orEmpty(),
+        )
     }
 }
 
 private fun QuoteLevelText.htmlLevel(): HtmlQuoteLevel =
-    HtmlQuoteLevel(header.name(), header.initials(), header?.date.orEmpty(), text)
+    HtmlQuoteLevel(header.name(), header.initials(), header?.date.orEmpty(), text, header?.fullDate.orEmpty())
 
 /** Blank without a header, so the fold shows no person. */
 private fun QuoteHeader?.name(): String = this?.name.orEmpty()
