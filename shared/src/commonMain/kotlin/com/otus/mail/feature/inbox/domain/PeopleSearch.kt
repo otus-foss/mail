@@ -14,7 +14,7 @@ data class FoundPerson(
     val lastReceived: String = "",
 )
 
-/** People of mail beyond the loaded rows, which the filter panel's From and To pages offer. */
+/** People of mail beyond the loaded rows, which the filter panel's From and To lines offer. */
 fun interface PeopleSearch {
     /**
      * Senders or recipients, by [field], of the mail of [logins] (null for every login) that

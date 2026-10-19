@@ -28,7 +28,7 @@ enum class QuickFacet(
     Forwarded("forwarded"),
 }
 
-/** A kind of mail the Metadata page keeps. Calendar invites have no query condition, like [QuickFacet.clientOnly]. */
+/** A kind of mail the Mail filters keep. Calendar invites have no query condition, like [QuickFacet.clientOnly]. */
 enum class TypeFacet(
     val clientOnly: Boolean = false,
 ) {
@@ -46,7 +46,7 @@ enum class RecipientField(
     ;
 
     companion object {
-        /** The fields the To page starts with: mail sent to or copied to the address. */
+        /** The fields "Received in" starts with: mail sent to or copied to the address. */
         val Default: Set<RecipientField> = setOf(To, Cc)
     }
 }
@@ -72,7 +72,7 @@ data class OwnAddress(
 )
 
 /**
- * A person the From page picks: one display [name] and every address they write from, such as
+ * A person the From line picks: one display [name] and every address they write from, such as
  * two `noreply@` addresses of one company. Picking it keeps mail from any of [addresses].
  */
 data class SenderKey(

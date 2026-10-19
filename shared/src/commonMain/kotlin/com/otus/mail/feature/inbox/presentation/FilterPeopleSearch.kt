@@ -12,8 +12,8 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
 /**
- * The search field of the From or To page and the people the server [find]s for its [text], in
- * [scope], [SEARCH_DELAY_MILLIS] after the last keystroke. A new text cancels the search still
+ * The text typed in the filter panel's From or To line and the people the server [find]s for it,
+ * in [scope], [SEARCH_DELAY_MILLIS] after the last keystroke. A new text cancels the search still
  * running, and blank text finds nobody. Without a scope only the loaded mail is searched.
  */
 class FilterPeopleSearch(
@@ -31,9 +31,14 @@ class FilterPeopleSearch(
     var searching by mutableStateOf(false)
         private set
 
+    /** Whether the line shows the people its text matches: from a keystroke until [dismiss]. */
+    var suggesting by mutableStateOf(false)
+        private set
+
     private var running: Job? = null
 
     fun search(text: String) {
+        suggesting = text.isNotBlank()
         if (text == this.text) return
         this.text = text
         running?.cancel()
@@ -62,7 +67,12 @@ class FilterPeopleSearch(
             }
     }
 
-    /** Empties the field, as when the panel closes. */
+    /** Hides the matches and keeps the text, as when the user leaves the line. */
+    fun dismiss() {
+        suggesting = false
+    }
+
+    /** Empties the field, as when the panel closes or a person is picked. */
     fun clear() = search("")
 
     companion object {

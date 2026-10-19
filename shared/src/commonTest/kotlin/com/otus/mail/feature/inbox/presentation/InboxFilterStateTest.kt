@@ -10,7 +10,6 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.PeopleField
-import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.ReadStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -75,48 +74,14 @@ class InboxFilterStateTest {
     }
 
     @Test
-    fun pagesOpenOnTopOfTheMainPageAndBackReturnsToIt() {
-        val state = InboxFilterState()
-        state.openPage(FilterPage.Folders)
-        assertEquals(FilterPage.Main, state.page, "A closed panel opens no page")
-        state.open()
-        assertEquals(FilterPage.Main, state.page)
-        state.openPage(FilterPage.From)
-        assertEquals(FilterPage.From, state.page)
-        state.back()
-        assertEquals(FilterPage.Main, state.page)
-        assertTrue(state.isOpen, "Back on a page keeps the panel open")
-        state.edit { unread }
-        state.back()
-        assertFalse(state.isOpen, "Back on the main page closes the panel")
-        assertEquals(InboxFilters(), state.applied, "and drops the draft")
-    }
-
-    @Test
-    fun everyPageEditsTheSameDraft() {
-        val state = InboxFilterState()
-        state.open()
-        state.openPage(FilterPage.Date)
-        state.edit { it.copy(date = DateFilter.ThisYear) }
-        state.back()
-        state.openPage(FilterPage.Metadata)
-        state.edit { it.with(QuickFacet.Flagged, true) }
-        assertEquals(InboxFilters(date = DateFilter.ThisYear, quick = setOf(QuickFacet.Flagged)), state.draft)
-        state.show()
-        assertEquals(DateFilter.ThisYear, state.applied.date)
-    }
-
-    @Test
-    fun resetOnAPageClearsTheDraftAndStaysThere() {
+    fun resetClearsTheDraftAndKeepsThePanelOpen() {
         val state = InboxFilterState(unread.copy(date = DateFilter.Today))
         state.open()
-        state.openPage(FilterPage.To)
         state.reset()
         assertEquals(InboxFilters(), state.draft)
-        assertEquals(FilterPage.To, state.page)
+        assertTrue(state.isOpen)
         state.close()
-        state.open()
-        assertEquals(FilterPage.Main, state.page, "Reopening starts on the main page")
+        assertEquals(DateFilter.Today, state.applied.date, "Closing drops the reset draft")
     }
 
     @Test

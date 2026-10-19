@@ -25,7 +25,7 @@ import com.otus.mail.feature.inbox.presentation.InboxFilterState
 /**
  * Ties the filter panel to the control panel it grows from: [measure] the control panel to give
  * the panel its starting height, and [filters] for the pill row, whose button gets focus back
- * when the panel closes. A pill with choices opens the panel on its page.
+ * when the panel closes.
  */
 internal class FilterAnchor(
     val filters: ActiveFilters,
@@ -56,10 +56,6 @@ internal fun rememberFilterAnchor(
             dateFormatter,
             state::update,
             button,
-            onOpen = { page ->
-                state.open()
-                state.openPage(page)
-            },
             people = rememberFilterPeople(state, options, messages),
         ),
         { height },

@@ -3,20 +3,16 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTouchInput
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.otus.designsystem.theme.OtusPalette
 import com.otus.designsystem.theme.OtusTheme
@@ -50,18 +46,6 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showFilterPanel(
         }
     }
     if (open) onNodeWithContentDescription("Open filters", substring = true).performClick()
-    waitForIdle()
-}
-
-/**
- * Opens a page of the panel from its row or line, named as screen readers hear it, such as
- * "Folders, ". It taps the far end, because a tap on a People line's center can land on a chip,
- * which removes that person instead.
- */
-internal fun AndroidComposeTestRule<*, MainActivity>.openFilterPage(spokenStart: String) {
-    onNodeWithContentDescription(spokenStart, substring = true)
-        .performScrollTo()
-        .performTouchInput { click(Offset(right - 1f, centerY)) }
     waitForIdle()
 }
 

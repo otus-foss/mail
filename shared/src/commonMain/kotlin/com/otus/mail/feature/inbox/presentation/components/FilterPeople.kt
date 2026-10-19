@@ -2,12 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import com.otus.designsystem.components.ChipAvatar
-import com.otus.designsystem.components.FilterPickRow
-import com.otus.designsystem.components.PersonAvatar
-import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.Recipient
-import com.otus.designsystem.theme.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.FilterOptions
@@ -17,7 +12,7 @@ import com.otus.mail.feature.inbox.presentation.fromPeople
 import com.otus.mail.feature.inbox.presentation.personOf
 import com.otus.mail.feature.inbox.presentation.toPeople
 
-/** The people the From and To pages list, and the chips and pills find avatars in. */
+/** The people the From and To lines match, and the chips and pills find avatars in. */
 class FilterPeople(
     val senders: List<FilterPerson> = emptyList(),
     val recipients: List<FilterPerson> = emptyList(),
@@ -86,26 +81,10 @@ internal fun pickedRecipients(
 }
 
 /**
- * One person on the From or To page: their avatar, name, and a subline with their address, or the
- * first address and how many they use, and in how many conversations they appear.
+ * A person's line under their name in the From and To matches: their address, or the first
+ * address and how many they use, and in how many conversations they appear.
  */
-@Composable
-internal fun PersonPickRow(
-    person: FilterPerson,
-    selected: Boolean,
-    onClick: () -> Unit,
-    avatar: ChipAvatar = chipAvatar(person.avatar, person.name, person.addresses.first()),
-) {
-    FilterPickRow(
-        person.own?.address ?: person.label,
-        person.subline,
-        PickMark(selected, multiple = true),
-        onClick,
-        leading = { PersonAvatar(avatar, FilterTokens.pickAvatarSize) },
-    )
-}
-
-private val FilterPerson.subline: String?
+internal val FilterPerson.subline: String?
     get() {
         val first = addresses.first()
         val where =

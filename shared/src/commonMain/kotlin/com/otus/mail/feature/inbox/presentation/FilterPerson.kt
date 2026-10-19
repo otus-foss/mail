@@ -8,9 +8,9 @@ import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.SenderKey
 
 /**
- * One row of the filter panel's From or To page: a person with every address they use, the most
+ * One person the filter panel's From or To line matches: a person with every address they use, the most
  * used first, their resolved [avatar] when loaded mail has one, and in how many [conversations]
- * of the view or of search they appear. [own] marks one of the user's addresses on the To page,
+ * of the view or of search they appear. [own] marks one of the user's addresses in the To line,
  * which the login named [accountName] receives; its [avatar] is that account's.
  */
 data class FilterPerson(
@@ -31,7 +31,7 @@ data class FilterPerson(
 }
 
 /**
- * The From page's list: the senders of the loaded [messages] and the [found] people, filtered by
+ * The From line's matches: the senders of the loaded [messages] and the [found] people, filtered by
  * [query]. Senders sharing a display name and a domain merge into one person. People who appear
  * in more conversations come first, and of those the one seen more recently.
  */
@@ -46,7 +46,7 @@ fun fromPeople(
 }
 
 /**
- * The To page's list: the user's [own] addresses first, with their account's avatar and name from
+ * The To line's matches: the user's [own] addresses first, with their account's avatar and name from
  * [accountNames] and how many loaded conversations reached them, then the other recipients of
  * [messages] and the [found] people, ranked as [fromPeople] ranks senders.
  */

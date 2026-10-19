@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.otus.designsystem.theme.ThemeBase
@@ -15,7 +14,6 @@ import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.domain.TypeFacet
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,15 +75,6 @@ class FilterPanelScreenshotTest {
     fun panelWithSelectionsBlack() {
         compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts, palette = black)
         compose.filterShot("filter_panel_selections_black")
-    }
-
-    @Test
-    fun shortPageKeepsTheFullHeight() {
-        compose.showFilterPanel()
-        val mainFooter = compose.onNodeWithText("Reset").getBoundsInRoot()
-        compose.openFilterPage("Metadata, ")
-        assertEquals("The footer stays where it was", mainFooter, compose.onNodeWithText("Reset").getBoundsInRoot())
-        compose.filterShot("filter_panel_same_height")
     }
 
     @Test

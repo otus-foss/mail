@@ -8,7 +8,7 @@ enum class FilterSection(
     Quick("quick"),
     People("people"),
 
-    /** The Account, Folders, Date, and Metadata rows, which open their pages. */
+    /** The Account, Folders, and Date rows, which open popups, and the Size toggle. */
     Rows("rows"),
     Sort("sort"),
 }
@@ -72,7 +72,7 @@ data class FilterLayout(
 
         /**
          * The earlier Show choices: renamed ones point at their new value; those that moved to the
-         * Status toggle or the Metadata page, or were removed, point at nothing.
+         * Status toggle or the mail type chips, or were removed, point at nothing.
          */
         private val LEGACY_QUICK =
             mapOf(
