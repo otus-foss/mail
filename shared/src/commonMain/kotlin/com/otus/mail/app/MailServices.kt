@@ -11,6 +11,7 @@ import com.otus.avatar.EmptyAvatarStore
 import com.otus.avatar.HttpAvatarImageLoader
 import com.otus.avatar.JmapContactPhotoSource
 import com.otus.avatar.PublicSuffixDomainResolver
+import com.otus.designsystem.components.ToastState
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
@@ -66,6 +67,7 @@ import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 import com.otus.mail.feature.inbox.domain.forgetAccount
+import com.otus.mail.feature.inbox.presentation.NewsletterSteps
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -73,6 +75,9 @@ import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.push.PushStateStore
 import com.otus.push.PushSubscriptions
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -151,6 +156,17 @@ class MailServices(
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections, logins) }
     internal val mute: ConversationMute by lazy { JmapConversationMute(connections, logins, cache) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
+
+    /**
+     * Toasts and the work their closing starts, such as an unsubscribe sent once its Undo window
+     * ends. They belong to the process, so a toast shown before the activity was recreated, as on
+     * rotation, still shows and still finishes its work.
+     */
+    internal val toasts = ToastState()
+    internal val work: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
+
+    /** Each newsletter strip's step while the process runs, so a reopened message shows it. */
+    internal val newsletterSteps = NewsletterSteps()
 
     /** Sends one-click unsubscribe requests to list servers, which the JMAP client may not reach. */
     private val unsubscribeHttp by lazy { HttpClient() }

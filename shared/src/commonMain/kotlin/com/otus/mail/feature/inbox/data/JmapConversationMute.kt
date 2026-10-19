@@ -1,14 +1,18 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
+import com.otus.jmap.JmapIds
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MUTED_KEYWORD
+import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.objects
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -18,8 +22,10 @@ import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Mutes a conversation by setting [MUTED_KEYWORD] on every email of its thread with `Email/set`
- * (RFC 8621, sections 4.1.1 and 4.6), so another device sees it too. It reads the whole thread
- * first, since the row lists only the emails in its folder. The emails it changed change in [cache].
+ * (RFC 8621, sections 4.1.1 and 4.6), so another device sees it too. It reads the thread's ids
+ * first, since the row lists only the emails in its folder. Muting marks every email, so reading
+ * the keywords of the oldest ones that fit one `Email/get` tells whether it is muted. The emails it
+ * changed change in [cache].
  */
 class JmapConversationMute(
     private val connections: JmapConnections,
@@ -27,27 +33,35 @@ class JmapConversationMute(
     private val cache: MailCache = InMemoryMailCache(),
 ) : ConversationMute {
     override suspend fun isMuted(message: MailMessage): Boolean =
-        thread(message)?.let { emails -> emails.any { it.keywords[MUTED_KEYWORD] == true } }
-            ?: cachedMuted(message)
+        fromServer(message) { account, ids ->
+            val oldest = ids.take(account.session.coreLimit("maxObjectsInGet", GET_BATCH))
+            account.connection
+                .call(GetMethod(EmailType, account.id, JmapIds.Of(oldest), PROPERTIES))
+                .list
+                .any { it.keywords[MUTED_KEYWORD] == true }
+        } ?: cachedMuted(message)
 
     override suspend fun setMuted(
         message: MailMessage,
         muted: Boolean,
     ): Boolean {
-        val ids = thread(message)?.map { it.id } ?: return false
+        val ids = fromServer(message) { _, ids -> ids } ?: return false
         val patch = buildJsonObject { put("keywords/$MUTED_KEYWORD", if (muted) JsonPrimitive(true) else JsonNull) }
         val updated =
             updateAccountEmails(connections, logins, message.location.accountId, ids.associateWith { patch }, cache)
         return updated.containsAll(ids)
     }
 
-    /** The thread's emails with their keywords; null when the server could not be read. */
-    private suspend fun thread(message: MailMessage): List<EmailObject>? {
+    /** [read] with the thread's Email ids; null when the server could not be read or knows none. */
+    private suspend fun <T> fromServer(
+        message: MailMessage,
+        read: suspend (MailAccount, List<String>) -> T,
+    ): T? {
         if (message.emailId.isEmpty()) return null
         return try {
-            mailAccount(connections, logins, message.location.accountId)
-                ?.threadEmails(message.emailId, PROPERTIES)
-                ?.ifEmpty { null }
+            mailAccount(connections, logins, message.location.accountId)?.let { account ->
+                account.threadEmailIds(message.emailId).ifEmpty { null }?.let { read(account, it) }
+            }
         } catch (expected: JmapException) {
             null
         } catch (expected: LoginStoreException) {
@@ -68,5 +82,8 @@ class JmapConversationMute(
 
     private companion object {
         val PROPERTIES = listOf("id", "receivedAt", "keywords")
+
+        /** Read when the server names no `maxObjectsInGet`; small enough for any server. */
+        const val GET_BATCH = 200
     }
 }

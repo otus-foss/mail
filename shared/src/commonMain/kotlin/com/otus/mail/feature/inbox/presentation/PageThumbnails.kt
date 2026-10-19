@@ -10,7 +10,6 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 @Stable
 class PageThumbnails {
     private val images = mutableStateMapOf<String, ImageBitmap>()
-    private val tried = mutableSetOf<String>()
 
     /** The picture of [file] in [message] once [load] has it; null for files without one. */
     fun of(
@@ -19,8 +18,9 @@ class PageThumbnails {
     ): ImageBitmap? = images[key(message, file)]
 
     /**
-     * Loads each of [message]'s [files] not tried yet with [fetch], once per page. A load cut short,
-     * such as by swiping away, is tried again when the page shows again.
+     * Loads each of [message]'s [files] that has no picture yet with [fetch]. A load cut short, such
+     * as by swiping away, or one that failed is tried again when the page shows again; files that
+     * get no picture, such as PDFs, cost nothing to ask again.
      */
     suspend fun load(
         message: MailMessage,
@@ -28,13 +28,8 @@ class PageThumbnails {
         fetch: suspend (MailAttachment) -> ImageBitmap?,
     ) {
         files
-            .filterNot { key(message, it) in tried }
-            .forEach { file ->
-                val image = fetch(file)
-                val key = key(message, file)
-                tried += key
-                if (image != null) images[key] = image
-            }
+            .filterNot { key(message, it) in images }
+            .forEach { file -> fetch(file)?.let { images[key(message, file)] = it } }
     }
 
     private fun key(

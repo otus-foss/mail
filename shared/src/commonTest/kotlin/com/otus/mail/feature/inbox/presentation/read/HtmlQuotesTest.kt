@@ -65,6 +65,19 @@ class HtmlQuotesTest {
     }
 
     @Test
+    fun anOutlookQuoteLeavesTheReplysWrapperEndsBehind() {
+        val header =
+            "<div id=\"divRplyFwdMsg\"><b>From:</b> Margaret Knuth &lt;m@x.org&gt;<br>" +
+                "<b>Sent:</b> Thursday, October 10, 2026 9:14 AM</div>"
+        val html = "<html><head><style>p{color:red}</style></head><body><div>$reply$header$earlier</div></body></html>"
+        assertEquals(earlier, splitHtmlQuote(html)?.quote)
+    }
+
+    @Test
+    fun stylesAndTitlesAreNotText() =
+        assertEquals("Hi", markupText("<head><title>Mail</title><style>p{}</style></head><style>b{}</style><p>Hi</p>"))
+
+    @Test
     fun splitsAPlainBlockquoteAtTheEnd() =
         assertEquals(HtmlQuoteSplit(reply, earlier, null), splitHtmlQuote("$reply<blockquote>$earlier</blockquote>"))
 

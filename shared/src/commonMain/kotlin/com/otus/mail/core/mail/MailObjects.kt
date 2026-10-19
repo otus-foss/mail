@@ -119,6 +119,12 @@ data class EmailObject(
     /** The list's name and id, such as `Weekly digest <weekly.example.org>` (RFC 2919). */
     @SerialName("header:List-Id:asText")
     val listId: String? = null,
+    /** Every `Delivered-To` header's addresses, which name the mailbox a Bcc'd list reached. */
+    @SerialName("header:Delivered-To:asAddresses:all")
+    val deliveredTo: List<List<EmailAddress>?>? = null,
+    /** Every `X-Original-To` header's addresses, which some servers write in place of `Delivered-To`. */
+    @SerialName("header:X-Original-To:asAddresses:all")
+    val originalTo: List<List<EmailAddress>?>? = null,
 )
 
 /** One header field as the message has it (RFC 8621, section 4.1.3). */

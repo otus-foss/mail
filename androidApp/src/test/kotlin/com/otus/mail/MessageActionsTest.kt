@@ -198,7 +198,8 @@ class MessageActionsTest {
         compose.onNode(hasText("Amazon", substring = true) and isToggleable()).performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
         val add = lastUpdate()
-        assertTrue(add, "\"update\":{\"m1\":{\"mailboxIds/z\":true}}" in add)
+        // The whole conversation goes in one call, each email with its whole set of folders.
+        assertTrue(add, "\"update\":{\"m1\":{\"mailboxIds\":{\"a\":true,\"r\":true,\"z\":true}}}" in add)
     }
 
     @Test

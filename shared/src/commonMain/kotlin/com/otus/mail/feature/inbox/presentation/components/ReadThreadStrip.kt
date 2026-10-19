@@ -52,29 +52,47 @@ import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import kotlinx.datetime.LocalDate
 
 /**
- * The thread strip for the page at [current] of [pages], newest first: "Latest" on the newest
- * page, else the sender, with the position and [date]. Its end names the conversation's other
- * [folders], and a flag when it is [flagged] and the list gave no folder context.
+ * The thread strip for the page at [position], newest first: "Latest" on the newest page, else the
+ * sender, with the position and date. Its end names the conversation's other [folders], and a flag
+ * when it is [flagged] and the list gave no folder context. Screen readers hear the sender, the
+ * position, the date, and the folders, such as "Grace Hopper, message 1 of 6, 12 Oct, also in
+ * Invoices".
  */
 @Composable
 internal fun ReadThreadStrip(
-    pages: List<MailMessage>,
-    current: Int,
-    date: String,
+    position: ThreadPosition,
     folders: ShownFolders,
     flagged: Boolean,
     onClick: () -> Unit,
 ) {
-    val page = pages[current]
-    val title = if (current == 0) "Latest" else page.sender.name.ifBlank { page.sender.address }
+    val page = position.page
+    val sender = page.sender.name.ifBlank { page.sender.address }
+    val title = if (position.current == 0) "Latest" else sender
+    val flag = flagged && !folders.also
     PositionStrip(
         NamedAvatar(title, page.sender.chipAvatar),
-        pages.size,
-        current,
-        "${current + 1}/${pages.size} · $date",
+        position.count,
+        position.current,
+        "${position.current + 1}/${position.count} · ${position.date}",
         onClick,
-    ) { FolderSlot(folders, flagged && !folders.also) }
+        description = spokenPosition(sender, position, folders, flag),
+    ) { FolderSlot(folders, flag) }
 }
+
+private fun spokenPosition(
+    sender: String,
+    position: ThreadPosition,
+    folders: ShownFolders,
+    flagged: Boolean,
+): String =
+    buildList {
+        add("$sender, message ${position.current + 1} of ${position.count}, ${position.date}")
+        if (folders.folders.isNotEmpty()) {
+            val names = folders.folders.joinToString { it.name }
+            add(if (folders.also) "also in $names" else "in $names")
+        }
+        if (flagged) add("flagged")
+    }.joinToString()
 
 /**
  * The short folder hint at the strip's end: "also", then one folder by name or stacked icons and a

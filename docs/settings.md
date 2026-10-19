@@ -53,7 +53,7 @@ own page.
   **Load remote images**, three rows choose **Always**, **From people you know** (the default:
   contacts, people the user wrote to, and allowed senders), or **Never**; the chosen one ends in a
   check. A note says that images inside the mail itself always show and that mail in Spam never
-  loads remote images. **Allowed senders** names how many there are and opens their page
+  loads remote images. Mail in a folder the app has not loaded yet waits as if it were in Spam. **Allowed senders** names how many there are and opens their page
   (`AllowedSendersScreen`), which lists each address with a **Remove** button, or says how to add
   one. The Read view adds a sender with "Always for" on its image banner. Under **Avatars**, the
   **Website icons** switch lets avatars load logos from sender websites and DuckDuckGo, and photos

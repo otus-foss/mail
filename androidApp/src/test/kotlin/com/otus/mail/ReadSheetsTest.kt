@@ -78,6 +78,7 @@ class ReadSheetsTest {
         show {
             FoldersSheet(
                 message,
+                mapOf(message.emailId to message.location.mailboxIds),
                 folders,
                 cameFrom = "cl",
                 onApply = { added, removed -> applied = added to removed },
@@ -112,6 +113,7 @@ class ReadSheetsTest {
         folder("Clients").performClick()
         folder("Finance", "Invoices").performClick()
         compose.onNode(hasText("Done") and hasClickAction()).assertIsNotEnabled()
+        compose.onNodeWithText("Each mail needs a folder").assertIsDisplayed()
         folder("Finance", "Invoices").performClick()
         folder("Clients").performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()

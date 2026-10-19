@@ -11,8 +11,8 @@ import com.otus.mail.feature.inbox.domain.MailingList
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import com.otus.mail.feature.inbox.presentation.NewsletterStep
+import com.otus.mail.feature.inbox.presentation.PageDownloads
 import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadState
 import com.otus.mail.feature.inbox.presentation.read.AttachmentKindName
 import com.otus.mail.feature.inbox.presentation.read.kind
 import kotlinx.coroutines.Dispatchers
@@ -20,15 +20,17 @@ import kotlinx.coroutines.withContext
 
 /**
  * What the strips below a page do with its files and its mailing list. Downloads and requests run
- * in the app's scope, so they finish after the page closes, and say how they went in a toast.
+ * in the process's scope, so they finish after the page closes, and say how they went in a toast.
+ * A file is downloaded once while the view is open, for its thumbnail, Open, and Save alike.
  * [openLink] opens a web page outside the app.
  */
 internal class ReadStripActions(
     private val read: ReadContext,
-    private val state: ReadState,
     private val openLink: (String) -> Unit,
 ) {
     private val toasts get() = read.effects.toasts
+    private val newsletters get() = read.effects.newsletters
+    private val downloads = PageDownloads(read.files.downloads)
 
     /** Opening, saving, and saving every one of [files] of [message]. */
     fun files(
@@ -49,9 +51,8 @@ internal class ReadStripActions(
         message: MailMessage,
         file: MailAttachment,
     ): ImageBitmap? {
-        val downloads = read.files.downloads
         val small = file.kind() == AttachmentKindName.Image && file.size <= THUMBNAIL_MAX_BYTES
-        val bytes = if (small && downloads != null) downloads.download(message, file) else null
+        val bytes = if (small) downloads.bytes(message, file) else null
         return bytes?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
     }
 
@@ -61,7 +62,7 @@ internal class ReadStripActions(
     ) {
         val saved = read.files.saved ?: return
         read.effects.launch {
-            val bytes = read.files.downloads?.download(message, file)
+            val bytes = downloads.bytes(message, file)
             if (bytes == null || !saved.open(file.name, file.type, bytes)) {
                 toasts.show(ToastMessage("Couldn't open ${file.name}"))
             }
@@ -76,7 +77,7 @@ internal class ReadStripActions(
         read.effects.launch {
             val failed =
                 files.filterNot { file ->
-                    val bytes = read.files.downloads?.download(message, file)
+                    val bytes = downloads.bytes(message, file)
                     bytes != null && saved.save(file.name, file.type, bytes)
                 }
             val text =
@@ -88,6 +89,9 @@ internal class ReadStripActions(
             toasts.show(ToastMessage(text))
         }
     }
+
+    /** Where [message]'s newsletter strip stands. */
+    fun step(message: MailMessage): NewsletterStep = newsletters.of(message)
 
     /** The mailing list [message] came from; null when it is from none or the server failed. */
     suspend fun list(message: MailMessage): MailingList? = read.services.newsletters?.list(message)
@@ -102,14 +106,14 @@ internal class ReadStripActions(
         how: Unsubscribe,
         title: String,
     ) {
-        val newsletters = read.services.newsletters ?: return
+        val lists = read.services.newsletters ?: return
         val web = how.web
         if (how.oneClick == null && how.mail == null && web != null) return openLink(web)
-        state.setNewsletter(message, NewsletterStep.Unsubscribed)
-        val undo = ToastAction("Undo") { state.setNewsletter(message, NewsletterStep.Subscribed) }
+        newsletters.set(message, NewsletterStep.Unsubscribed)
+        val undo = ToastAction("Undo") { newsletters.set(message, NewsletterStep.Subscribed) }
         val send = {
             read.effects.launch {
-                when (val result = newsletters.unsubscribe(message, how)) {
+                when (val result = lists.unsubscribe(message, how)) {
                     UnsubscribeResult.Done -> Unit
                     is UnsubscribeResult.OpenLink -> openLink(result.url)
                     UnsubscribeResult.Failed -> failed(message, title)
@@ -123,7 +127,7 @@ internal class ReadStripActions(
         message: MailMessage,
         title: String,
     ) {
-        state.setNewsletter(message, NewsletterStep.Subscribed)
+        newsletters.set(message, NewsletterStep.Subscribed)
         toasts.show(ToastMessage("Couldn't unsubscribe from $title. Try again."))
     }
 
@@ -132,11 +136,11 @@ internal class ReadStripActions(
         message: MailMessage,
         list: MailingList,
     ) {
-        val newsletters = read.services.newsletters ?: return
-        state.setNewsletter(message, NewsletterStep.Archived)
+        val lists = read.services.newsletters ?: return
+        newsletters.set(message, NewsletterStep.Archived)
         read.effects.launch {
-            val done = newsletters.archive(message.location.accountId, list.olderIds)
-            if (!done) state.setNewsletter(message, NewsletterStep.Unsubscribed)
+            val done = lists.archive(message.location.accountId, list.olderIds)
+            if (!done) newsletters.set(message, NewsletterStep.Unsubscribed)
             val count = list.olderIds.size
             toasts.show(
                 ToastMessage(if (done) "$count older digests archived" else "Couldn't archive them. Try again."),

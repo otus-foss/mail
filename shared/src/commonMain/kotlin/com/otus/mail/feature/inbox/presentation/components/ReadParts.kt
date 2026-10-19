@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import com.otus.designsystem.components.OptionsItem
+import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder
@@ -39,17 +40,21 @@ internal class ReadParts(
     fun close() = onClose()
 
     /**
-     * [page] with the row's marks when it is the row's own email, since the list shows a mark at
-     * once and puts it back when the server refuses it.
+     * Files the conversation as [change] says. A change that takes the row off the list closes the
+     * page first, as filing does; otherwise the pages show it at once and go back if it is refused.
      */
-    fun live(page: MailMessage): MailMessage {
-        if (page.emailId.isEmpty() || page.emailId != row.emailId) return page
-        val marks = row.attributes
-        return page.copy(attributes = page.attributes.copy(unread = marks.unread, flagged = marks.flagged))
+    fun refile(change: FolderChange) {
+        if (!change.changes) return
+        if (change.leavesList) {
+            onClose()
+        } else {
+            state.refile(change.after)
+        }
+        read.folders.apply(change) { state.refile(change.before) }
     }
 
     /** The loaded body of [page]; null while it loads or after it failed. */
-    fun content(page: MailMessage): MessageContent? = (state.body(page) as? PageBody.Loaded)?.content
+    fun content(page: MailMessage): MessageContent? = (state.bodies.body(page) as? PageBody.Loaded)?.content
 }
 
 /** The New folder sheet for an account, which the app supplies; it shows until it runs `onDismiss`. */
@@ -73,6 +78,7 @@ internal fun rememberPageLook(parts: ReadParts): ReadPageLook {
     return ReadPageLook(
         parts.read,
         parts.state,
+        parts.row,
         known,
         parts.read.folders
             .of(parts.row)
@@ -97,7 +103,7 @@ internal fun rememberReadMenu(
                 ?.label
     }
     val state = parts.state
-    val page = parts.live(state.pages[index])
+    val page = state.pages[index]
     val content = parts.content(page)
     val readPage =
         ReadPage(
@@ -106,7 +112,7 @@ internal fun rememberReadMenu(
             index,
             state.pages.size,
             newsletter = content?.unsubscribe != null,
-            imagesBlocked = look.blocked(page, state.body(page)),
+            imagesBlocked = look.blocked(page, state.bodies.body(page)),
             muted = state.muted == true,
             suggestedPath = suggested?.let(::listOf),
         )
@@ -140,9 +146,10 @@ internal fun ReadSheets(
         ReadSheet.Folders -> {
             FoldersSheet(
                 row,
+                state.mailboxes(row),
                 look.folders.values.toList(),
                 cameFrom,
-                onApply = { added, removed -> read.folders.apply(row, added, removed) },
+                onApply = { added, removed -> parts.refile(FolderChange(row, state.mailboxes(row), added, removed)) },
                 onNewFolder = read.folders.newFolder?.let { { state.sheet = ReadSheet.NewFolder } },
                 onDismiss = dismiss,
             )
@@ -180,5 +187,13 @@ internal class ReadStripSource(
     val row: MailMessage,
     val folders: Map<String, MessageFolder>,
     val cameFrom: String?,
+    val date: String,
+)
+
+/** Where the thread strip stands: [page], at [current] of [count] messages, received on [date]. */
+internal class ThreadPosition(
+    val page: MailMessage,
+    val current: Int,
+    val count: Int,
     val date: String,
 )

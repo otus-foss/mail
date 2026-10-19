@@ -39,6 +39,12 @@ internal fun EmailObject.unsubscribe(): Unsubscribe? {
             oneClick = oneClick,
             web = https ?: urls.firstOrNull { it.startsWith("http://", ignoreCase = true) },
             mail = urls.firstOrNull { it.startsWith("mailto:", ignoreCase = true) },
+            deliveredTo =
+                (deliveredTo.orEmpty() + originalTo.orEmpty())
+                    .flatMap { it.orEmpty() }
+                    .map { it.email.trim() }
+                    .filter { it.isNotEmpty() }
+                    .distinct(),
         )
     return found.takeIf { it.oneClick != null || it.web != null || it.mail != null }
 }

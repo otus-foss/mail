@@ -4,8 +4,10 @@ import com.otus.designsystem.components.ToastState
 import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
+import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.MessageHeaders
 import com.otus.mail.feature.inbox.domain.MessagePrinter
@@ -21,9 +23,9 @@ import kotlin.time.Clock
 
 /**
  * What the Read view needs beyond the list's actions: the conversation's [pages], the folders of a
- * message, the privacy setting for remote images, files, the services behind its strips and menu,
- * and [effects] for toasts and work that outlives the page. Null in [InboxContext] keeps the
- * screen to the message alone, as for supplied messages.
+ * message, the privacy setting for remote images, files, the
+ * services behind its strips and menu, and [effects] for toasts and work that outlives the page.
+ * Null in [InboxContext] keeps the screen to the message alone, as for supplied messages.
  */
 class ReadContext(
     val pages: ConversationMessages = ConversationMessages { null },
@@ -43,14 +45,14 @@ class ReadContext(
 /**
  * The folders of a message's account as the Read view names them. [cameFrom] is the folder the
  * list shows when it shows one folder, which the strips leave out; null without a folder context.
- * [apply] adds the message, with every email of its conversation, to the added folders and takes
- * it out of the removed ones. [newFolder] shows the New folder sheet for an account until it runs
- * its `onDismiss`; null where folders cannot be made.
+ * [apply] files every email of a conversation as a [FolderChange] says, and runs `onRefused` when
+ * the server refuses it. [newFolder] shows the New folder sheet for an account until it runs its
+ * `onDismiss`; null where folders cannot be made.
  */
 class ReadFolders(
     val of: (MailMessage) -> List<MessageFolder> = { emptyList() },
     val cameFrom: (MailMessage) -> String? = { null },
-    val apply: (message: MailMessage, added: Set<String>, removed: Set<String>) -> Unit = { _, _, _ -> },
+    val apply: (change: FolderChange, onRefused: () -> Unit) -> Unit = { _, _ -> },
     val newFolder: NewFolderSheet? = null,
 )
 
@@ -72,19 +74,52 @@ class ReadFiles(
     val printer: MessagePrinter? = null,
 )
 
-/** The services behind the newsletter strip and the ⋯ menu; each is null where none is wired. */
+/**
+ * The services behind the newsletter strip and the ⋯ menu, including [changes] to one page's email;
+ * each is null where none is wired.
+ */
 class ReadServices(
     val newsletters: Newsletters? = null,
     val headers: MessageHeaders? = null,
     val mute: ConversationMute? = null,
     val blocks: SenderBlocks? = null,
+    val changes: PageChanges? = null,
 )
 
 /**
- * The Read view's [toasts], and [launch], which runs work in the app's scope, so an unsubscribe
- * sent once its Undo toast closes still runs after the page has closed.
+ * The Read view's [toasts], and [launch], which runs work in the process's scope, so an
+ * unsubscribe sent once its Undo toast closes still runs after the page, or the activity, has
+ * closed. [newsletters] remembers each newsletter strip's step, so a reopened message shows it.
  */
 class ReadEffects(
     val toasts: ToastState = ToastState(),
     val launch: (suspend () -> Unit) -> Unit = {},
+    val newsletters: NewsletterSteps = NewsletterSteps(),
 )
+
+/**
+ * Changes to one email of the open conversation, apart from the rest. The Read view shows each on
+ * its page at once and puts it back when a callback says the server refused it; the app keeps the
+ * list's row in step.
+ */
+interface PageChanges {
+    /** Sets [flag] to [on] on [page]'s email alone; [onRefused] runs when the server refuses it. */
+    fun mark(
+        row: MailMessage,
+        page: MailMessage,
+        flag: MessageFlag,
+        on: Boolean,
+        onRefused: () -> Unit,
+    )
+
+    /**
+     * Moves [page]'s email alone to [target], the Trash, with an Undo toast; the conversation's row
+     * stays. [onBack] runs when the email comes back, because the server refused or Undo ran.
+     */
+    fun trash(
+        row: MailMessage,
+        page: MailMessage,
+        target: MoveTarget,
+        onBack: () -> Unit,
+    )
+}

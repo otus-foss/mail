@@ -38,7 +38,8 @@ class JmapKnownPeopleTest {
                 when {
                     "ContactCard/query" in body -> CARDS
                     "Mailbox/query" in body -> SENT_FOLDER
-                    else -> SENT_MAIL
+                    "Email/query" in body -> SENT_QUERY
+                    else -> sentMail(body)
                 }
             }
         return JmapKnownPeople(JmapConnections(JmapClient(engine), store), store)
@@ -48,8 +49,18 @@ class JmapKnownPeopleTest {
     fun contactsAndEveryoneTheUserWroteToAreKnownInLowercase() =
         runTest {
             val known = people().addresses("ada")
-            assertEquals(setOf("grace@example.org", "radia@example.org", "bo@example.org", "kay@example.org"), known)
+            val expected = setOf("grace@example.org", "radia@example.org", "bo@example.org", "kay@example.org")
+            assertEquals(expected + "ken@example.org", known)
             assertTrue(requests.any { "\"inMailbox\":\"s\"" in it && "\"limit\":500" in it }, requests.toString())
+        }
+
+    @Test
+    fun sentMailIsReadInBatchesTheServerAllows() =
+        runTest {
+            val small = STALWART_SESSION.replace("$CORE: {}", "$CORE: {\"maxObjectsInGet\": 1}")
+            val known = setOf("radia@example.org", "bo@example.org", "kay@example.org", "ken@example.org")
+            assertEquals(known, people(small).addresses("ada"))
+            assertEquals(2, requests.count { "Email/get" in it }, requests.toString())
         }
 
     @Test
@@ -58,20 +69,29 @@ class JmapKnownPeopleTest {
             val people = people(STALWART_SESSION)
             people.addresses("ada")
             val asked = requests.size
-            assertEquals(setOf("radia@example.org", "bo@example.org", "kay@example.org"), people.addresses("ada"))
+            val known = setOf("radia@example.org", "bo@example.org", "kay@example.org", "ken@example.org")
+            assertEquals(known, people.addresses("ada"))
             assertEquals(asked, requests.size, "The second open asks nothing")
         }
 
+    /** The sent emails an `Email/get` [body] names, in one response. */
+    private fun sentMail(body: String): String {
+        val list = listOfNotNull(M1.takeIf { "\"m1\"" in body }, M2.takeIf { "\"m2\"" in body })
+        return """{"methodResponses": [["Email/get", {"state": "e", "list": [${list.joinToString()}]}, "c0"]]}"""
+    }
+
     private companion object {
+        const val CORE = "\"urn:ietf:params:jmap:core\""
         const val CARDS = """{"methodResponses": [
             ["ContactCard/query", {"queryState": "q", "ids": ["c1"]}, "c0"],
             ["ContactCard/get", {"state": "c", "list": [
               {"id": "c1", "name": {"full": "Grace"}, "emails": {"e": {"address": "Grace@Example.org"}}}]}, "c1"]]}"""
         const val SENT_FOLDER = """{"methodResponses": [["Mailbox/query", {"queryState": "q", "ids": ["s"]}, "c0"]]}"""
-        const val SENT_MAIL = """{"methodResponses": [
-            ["Email/query", {"queryState": "q", "ids": ["m1"]}, "c0"],
-            ["Email/get", {"state": "e", "list": [{"id": "m1", "receivedAt": "2026-10-04T09:00:00Z",
+        const val SENT_QUERY =
+            """{"methodResponses": [["Email/query", {"queryState": "q", "ids": ["m1", "m2"]}, "c0"]]}"""
+        const val M1 = """{"id": "m1", "receivedAt": "2026-10-04T09:00:00Z",
               "to": [{"email": "Radia@example.org"}], "cc": [{"email": "bo@example.org"}],
-              "bcc": [{"email": "kay@example.org"}]}]}, "c1"]]}"""
+              "bcc": [{"email": "kay@example.org"}]}"""
+        const val M2 = """{"id": "m2", "receivedAt": "2026-10-03T09:00:00Z", "to": [{"email": "ken@example.org"}]}"""
     }
 }

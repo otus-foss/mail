@@ -10,11 +10,11 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.AlsoInStrip
 import com.otus.designsystem.theme.PageTokens
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailingList
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.folderHint
+import com.otus.mail.feature.inbox.domain.inJunk
 import com.otus.mail.feature.inbox.presentation.PageBody
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
@@ -22,8 +22,9 @@ import com.otus.mail.feature.inbox.presentation.read.subtitle
 
 /**
  * The strips above the action bar, from the bottom up: one context strip, then the page's files.
- * A conversation shows its thread strip; a single message its newsletter strip when it can be left,
- * else the folders it is also in, else nothing.
+ * A conversation shows its thread strip; a single message its newsletter strip when it can be left
+ * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
+ * message count tells a conversation from a single message, so the strip does not change kind.
  */
 @Composable
 internal fun ReadBottomStack(
@@ -34,14 +35,14 @@ internal fun ReadBottomStack(
     modifier: Modifier = Modifier,
 ) {
     val page = state.pages.getOrNull(current) ?: return
-    val content = (state.body(page) as? PageBody.Loaded)?.content
+    val content = (state.bodies.body(page) as? PageBody.Loaded)?.content
     Column(modifier.fillMaxWidth(), Arrangement.spacedBy(PageTokens.rowGap)) {
         content?.attachments?.takeIf { it.isNotEmpty() }?.let { files ->
             LaunchedEffect(page.id, files) { state.thumbnails.load(page, files) { actions.thumbnail(page, it) } }
             ReadAttachmentStrip(
                 files,
-                state.filesOpen,
-                { state.filesOpen = !state.filesOpen },
+                state.filesOpen(page),
+                { state.toggleFiles(page) },
                 actions.files(page, files),
                 { state.thumbnails.of(page, it) },
             )
@@ -60,12 +61,19 @@ private fun ContextStrip(
 ) {
     val row = source.row
     val page = state.pages[current]
-    val unsubscribe = content?.unsubscribe
+    val unsubscribe = content?.unsubscribe?.takeUnless { inJunk(page.location.mailboxIds, source.folders) }
+    val count = if (state.loaded) state.pages.size else row.conversation?.messageCount ?: 1
     when {
-        state.pages.size > 1 -> {
-            val folders = folderHint(row.conversationMailboxes(), source.folders, source.cameFrom)
+        count > 1 -> {
+            val everyFolder =
+                state
+                    .mailboxes(row)
+                    .values
+                    .flatten()
+                    .toSet()
+            val folders = folderHint(everyFolder, source.folders, source.cameFrom)
             val open = { state.threadOpen = true }
-            ReadThreadStrip(state.pages, current, source.date, folders, row.attributes.flagged, open)
+            ReadThreadStrip(ThreadPosition(page, current, count, source.date), folders, row.attributes.flagged, open)
         }
 
         unsubscribe != null -> {
@@ -74,7 +82,7 @@ private fun ContextStrip(
             ReadNewsletterStrip(
                 title,
                 list?.subtitle() ?: "Mailing list",
-                state.newsletter(page),
+                actions.step(page),
                 list?.olderIds?.size ?: 0,
                 onUnsubscribe = { actions.unsubscribe(page, unsubscribe, title) },
                 onArchive = { list?.let { actions.archiveOlder(page, it) } },
@@ -87,7 +95,3 @@ private fun ContextStrip(
         }
     }
 }
-
-/** Every folder an email of the row's conversation is in. */
-internal fun MailMessage.conversationMailboxes(): Set<String> =
-    location.mailboxIds + conversation?.members?.flatMap { it.mailboxIds }.orEmpty()

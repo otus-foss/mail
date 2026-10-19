@@ -111,7 +111,10 @@ fun InboxScreen(
                     }
                 }
             },
-        ) { MessageScreen(it, messageActions, status.notice, page, page.cameFrom(it, state.searching), rows.close) }
+        ) {
+            val cameFrom = page.cameFrom(it, state.searching || filters.applied.activeCount > 0)
+            MessageScreen(it, messageActions, status.notice, page, cameFrom, rows.close)
+        }
         InboxFilterLayer(filters, messages, dateFormatter, anchor)
         filter?.let { selected ->
             InboxFilterSheet(selected, messages, state.search, page, dateFormatter, state::update) { filter = null }
@@ -119,16 +122,19 @@ fun InboxScreen(
     }
 }
 
-/** The folder this page shows [message] from; search and folder pills mix folders, so they give none. */
+/**
+ * The folder this page shows [message] from. Search, folder pills, and the filter panel's
+ * [filtered] choices mix folders, so they give none.
+ */
 private fun InboxContext.cameFrom(
     message: MailMessage,
-    searching: Boolean,
+    filtered: Boolean,
 ): String? =
     read
         ?.folders
         ?.cameFrom
         ?.invoke(message)
-        ?.takeIf { !searching && folderPill == null }
+        ?.takeIf { !filtered && folderPill == null }
 
 /** Closes [state]'s search and the keyboard, also on system back while searching. */
 @Composable

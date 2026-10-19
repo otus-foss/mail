@@ -10,10 +10,9 @@ data class ShownFolders(
 )
 
 /**
- * The folders of [mailboxIds] worth naming on the Read view: never the one the user [cameFrom],
- * Drafts, or Read later, which the bookmark shows. Ids missing from [folders] are left out. The
- * inbox comes first, then the rest by path. [cameFrom] is null without a folder context, such as
- * All Mail, search, or a notification.
+ * The folders of [mailboxIds] worth naming on a Read view strip: never the one the user [cameFrom],
+ * Drafts, Sent, Trash, Spam, or Read later, which the bookmark shows. The [cameFrom] folder is null
+ * without a folder context, such as All Mail, search, or a notification.
  */
 fun folderHint(
     mailboxIds: Set<String>,
@@ -23,12 +22,24 @@ fun folderHint(
     ShownFolders(
         also = cameFrom != null,
         folders =
-            mailboxIds
-                .filter { it != cameFrom }
-                .mapNotNull(folders::get)
-                .filterNot { it.role == DRAFTS_ROLE || it.readLater }
-                .sortedWith(compareBy<MessageFolder> { it.role != INBOX_ROLE }.thenBy { it.sortKey }),
+            orderedFolders(mailboxIds - setOfNotNull(cameFrom), folders)
+                .filterNot { it.role in UNHINTED || it.readLater },
     )
+
+/** Every folder of [mailboxIds] that [folders] knows, the inbox first and then the rest by path. */
+fun orderedFolders(
+    mailboxIds: Set<String>,
+    folders: Map<String, MessageFolder>,
+): List<MessageFolder> =
+    mailboxIds
+        .mapNotNull(folders::get)
+        .sortedWith(compareBy<MessageFolder> { it.role != INBOX_ROLE }.thenBy { it.sortKey })
+
+/** Whether one of [mailboxIds] is the Spam folder, where remote images and unsubscribing stay off. */
+fun inJunk(
+    mailboxIds: Set<String>,
+    folders: Map<String, MessageFolder>,
+): Boolean = mailboxIds.any { folders[it]?.role == JUNK_ROLE }
 
 /**
  * How a strip names these folders. One folder, or [full], shows every full path. Otherwise each
@@ -48,5 +59,8 @@ fun List<MessageFolder>.displayPaths(full: Boolean): List<List<String>> {
 private val MessageFolder.sortKey: String
     get() = path.joinToString("/") { it.lowercase() }
 
-private const val DRAFTS_ROLE = "drafts"
+private const val JUNK_ROLE = "junk"
+
+/** Folders the strips never name: where drafts, sent, and deleted mail and spam live. */
+private val UNHINTED = setOf("drafts", "sent", "trash", JUNK_ROLE)
 private const val INBOX_ROLE = "inbox"

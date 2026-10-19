@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.feature.inbox.domain.MailAttachment
@@ -52,6 +53,17 @@ class MessageExtrasTest {
                 ).unsubscribe()
         assertEquals(Unsubscribe(web = "http://lists.example.org/u/1"), insecure, "Plain http is only opened")
         assertNull(email.unsubscribe(), "Mail without the header cannot be left")
+    }
+
+    @Test
+    fun theAddressesTheMailWasDeliveredToComeAlong() {
+        val delivered =
+            email.copy(
+                listUnsubscribe = listOf("mailto:leave@lists.example.org"),
+                deliveredTo = listOf(listOf(EmailAddress(email = "ada@alias.example.org")), null),
+                originalTo = listOf(listOf(EmailAddress(email = "ada@alias.example.org"), EmailAddress(email = " "))),
+            )
+        assertEquals(listOf("ada@alias.example.org"), delivered.unsubscribe()?.deliveredTo)
     }
 
     @Test
