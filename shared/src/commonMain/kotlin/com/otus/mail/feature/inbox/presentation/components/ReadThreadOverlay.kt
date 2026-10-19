@@ -34,8 +34,8 @@ import kotlinx.datetime.LocalDate
 
 /**
  * The thread strip grown into the conversation's messages, newest first, with the page at
- * [current] marked, as far as [unfold] has opened it. Choosing one runs [onSelect]; the header runs
- * [onFold].
+ * [current] marked, as far as [unfold] has opened it, out of the [strip] it blurs in over. Choosing
+ * one runs [onSelect]; the header runs [onFold].
  */
 @Composable
 internal fun ReadThreadList(
@@ -43,12 +43,13 @@ internal fun ReadThreadList(
     current: Int,
     maxHeight: Dp,
     unfold: Unfold,
+    strip: @Composable () -> Unit,
     onSelect: (Int) -> Unit,
     onFold: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // It grows from the thread strip's own height, so its top edge starts at the strip's and follows the finger.
-    UnfoldingStripCard(unfold, modifier, folded = ReadTokens.positionHeight) {
+    UnfoldingStripCard(unfold, ReadTokens.positionHeight, strip, modifier) {
         ThreadList("${entries.size} messages", entries, current, onSelect, onFold, maxHeight = maxHeight)
     }
 }
@@ -56,7 +57,7 @@ internal fun ReadThreadList(
 /**
  * The message list grown from the thread strip over the page at [current], which dims behind it
  * with the action bar. It sits where the strip does, above the bar's [padding], and grows as
- * [unfold] opens, with the finger while it drags. Choosing a message runs [onSelect] and folds it,
+ * [unfold] opens, with the finger while it drags, out of the thread [strip]. Choosing a message runs [onSelect] and folds it,
  * as do its header, a tap outside, and dragging it down.
  */
 @Composable
@@ -67,6 +68,7 @@ internal fun ReadThreadOverlay(
     own: OwnAddresses,
     padding: PaddingValues,
     unfold: Unfold,
+    strip: @Composable () -> Unit,
     onSelect: (Int) -> Unit,
 ) {
     val fold = { state.threadOpen = false }
@@ -87,6 +89,7 @@ internal fun ReadThreadOverlay(
             current,
             maxHeight * LIST_HEIGHT_SHARE,
             unfold,
+            strip,
             onSelect = {
                 onSelect(it)
                 fold()

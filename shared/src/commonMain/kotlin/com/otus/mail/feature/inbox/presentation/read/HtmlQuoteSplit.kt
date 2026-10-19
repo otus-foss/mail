@@ -19,7 +19,24 @@ data class HtmlQuoteSplit(
  */
 fun splitHtmlQuote(html: String): HtmlQuoteSplit? =
     (gmailQuote(html) ?: citeQuote(html) ?: outlookQuote(html) ?: lastBlockquote(html))
+        ?.let { it.copy(main = withoutTrailingSeparator(it.main)) }
         ?.takeIf { markupText(it.main).isNotBlank() && markupText(it.quote).isNotBlank() }
+
+/**
+ * [main] without an "Original Message" line at its end, which Proton Mail writes above the quote;
+ * the fold's header names the quote instead.
+ */
+private fun withoutTrailingSeparator(main: String): String {
+    val separator = SEPARATOR.findAll(main).lastOrNull() ?: return main
+    return if (markupText(
+            main.substring(separator.range.last + 1),
+        ).isBlank()
+    ) {
+        main.removeRange(separator.range)
+    } else {
+        main
+    }
+}
 
 /** Gmail: the attribution line and the blockquote sit together in one `gmail_quote` div. */
 private fun gmailQuote(html: String): HtmlQuoteSplit? {
@@ -134,3 +151,5 @@ private val ATTRIBUTION =
         """\b(?:On|Am)\s(?:(?!</?(?:div|p|blockquote|br)\b)[\s\S]){1,500}?""" +
             """(?:wrote|schrieb[^<:]{0,200})(?:<[^>]*>)*:""",
     )
+private val SEPARATOR =
+    Regex("""-{2,}\s*(?:Original Message|Ursprüngliche Nachricht)\s*-{2,}""", RegexOption.IGNORE_CASE)
