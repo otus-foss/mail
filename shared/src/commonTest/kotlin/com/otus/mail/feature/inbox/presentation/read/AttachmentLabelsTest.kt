@@ -28,7 +28,17 @@ class AttachmentLabelsTest {
     fun kindFallsBackToTheExtension() {
         assertEquals(AttachmentKindName.Pdf, MailAttachment("a.PDF", "application/octet-stream", 1, "b").kind())
         assertEquals(AttachmentKindName.Sheet, MailAttachment("a.csv", "application/octet-stream", 1, "b").kind())
-        assertEquals(AttachmentKindName.Other, MailAttachment("a.zip", "application/zip", 1, "b").kind())
+        assertEquals(AttachmentKindName.Slides, MailAttachment("deck.pptx", "application/octet-stream", 1, "b").kind())
+        assertEquals(AttachmentKindName.Other, MailAttachment("README", "application/octet-stream", 1, "b").kind())
+    }
+
+    @Test
+    fun officeTypesWinOverTheXmlTheyName() {
+        val deck = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        assertEquals(AttachmentKindName.Slides, MailAttachment("deck", deck, 1, "b").kind())
+        assertEquals(AttachmentKindName.Code, MailAttachment("feed", "application/xml", 1, "b").kind())
+        assertEquals(AttachmentKindName.Archive, MailAttachment("a.zip", "application/zip", 1, "b").kind())
+        assertEquals(AttachmentKindName.Calendar, MailAttachment("invite.ics", "text/calendar", 1, "b").kind())
     }
 
     @Test
