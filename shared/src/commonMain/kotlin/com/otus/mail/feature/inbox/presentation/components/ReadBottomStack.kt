@@ -6,10 +6,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.AlsoInStrip
+import com.otus.designsystem.components.rememberUnfold
 import com.otus.designsystem.theme.PageTokens
+import com.otus.mail.feature.inbox.domain.MailAttachment
+import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailingList
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder
@@ -36,7 +40,7 @@ internal fun ReadBottomStack(
     current: Int,
     source: ReadStripSource,
     actions: ReadStripActions,
-    slide: StripSlide,
+    slide: StripGestures,
     modifier: Modifier = Modifier,
 ) {
     val page = state.pages.getOrNull(current) ?: return
@@ -44,16 +48,7 @@ internal fun ReadBottomStack(
     Column(modifier.fillMaxWidth(), Arrangement.spacedBy(PageTokens.rowGap)) {
         content?.attachments?.takeIf { it.isNotEmpty() }?.let { files ->
             LaunchedEffect(page.id, files) { state.thumbnails.load(page, files) { actions.thumbnail(page, it) } }
-            val open = state.filesOpen(page)
-            val toggle = { state.toggleFiles(page) }
-            ReadAttachmentStrip(
-                files,
-                open,
-                toggle,
-                actions.files(page, files),
-                { state.thumbnails.of(page, it) },
-                rememberFoldSwipe(onUp = toggle.takeUnless { open }, onDown = toggle.takeIf { open }),
-            )
+            key(page.id) { FilesStrip(state, page, files, actions) }
         }
         ContextStrip(state, current, source, content, actions, slide)
     }
@@ -66,7 +61,7 @@ private fun ContextStrip(
     source: ReadStripSource,
     content: MessageContent?,
     actions: ReadStripActions,
-    slide: StripSlide,
+    slide: StripGestures,
 ) {
     val row = source.row
     val page = state.pages[current]
@@ -87,9 +82,7 @@ private fun ContextStrip(
                 val shown = state.pages.getOrNull(index) ?: page
                 ThreadPosition(shown, index, count, shown.received.shortLabel(source.today))
             }
-            // Swiping the strip up grows it into the message list, as a tap does.
-            val swipes = StripSlide(slide.swipe.then(rememberFoldSwipe(onUp = open)), slide.position)
-            ReadThreadStrip(pageAt, current, count, folders, row.attributes.flagged, open, swipes)
+            ReadThreadStrip(pageAt, current, count, folders, row.attributes.flagged, open, slide)
         }
 
         unsubscribe != null -> {
@@ -108,9 +101,30 @@ private fun ContextStrip(
         else -> {
             val folders = folderHint(page.location.mailboxIds, source.folders, source.cameFrom).folders
             if (folders.isNotEmpty()) {
-                val open = { state.sheet = ReadSheet.Folders }
-                AlsoInStrip(folderNames(folders), open, rememberFoldSwipe(onUp = open))
+                AlsoInStrip(folderNames(folders), { state.sheet = ReadSheet.Folders }, slide.folders)
             }
         }
     }
+}
+
+/** The page's files, which a tap or a drag unfolds; the drag moves them with the finger. */
+@Composable
+private fun FilesStrip(
+    state: ReadState,
+    page: MailMessage,
+    files: List<MailAttachment>,
+    actions: ReadStripActions,
+) {
+    val open = state.filesOpen(page)
+    val unfold = rememberUnfold(open)
+    LaunchedEffect(open) { unfold.animateTo(open) }
+    val drag = rememberUnfoldDrag(unfold) { if (it != state.filesOpen(page)) state.toggleFiles(page) }
+    ReadAttachmentStrip(
+        files,
+        unfold,
+        { state.toggleFiles(page) },
+        actions.files(page, files),
+        { state.thumbnails.of(page, it) },
+        rememberFoldSwipe(drag),
+    )
 }

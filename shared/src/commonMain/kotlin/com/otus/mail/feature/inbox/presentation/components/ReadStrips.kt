@@ -9,6 +9,7 @@ import com.otus.designsystem.components.AttachmentKind
 import com.otus.designsystem.components.AttachmentStrip
 import com.otus.designsystem.components.InfoStrip
 import com.otus.designsystem.components.StripAction
+import com.otus.designsystem.components.Unfold
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_newspaper
@@ -21,13 +22,13 @@ import com.otus.mail.feature.inbox.presentation.read.detail
 import com.otus.mail.feature.inbox.presentation.read.kind
 
 /**
- * A message's [files] in the attachment strip, closed or [expanded] in place, each with its
- * [thumbnail] once it has one.
+ * A message's [files] in the attachment strip, unfolded in place as far as [unfold] is, each with
+ * its [thumbnail] once it has one.
  */
 @Composable
 internal fun ReadAttachmentStrip(
     files: List<MailAttachment>,
-    expanded: Boolean,
+    unfold: Unfold,
     onToggle: () -> Unit,
     actions: AttachmentActions,
     thumbnail: (MailAttachment) -> ImageBitmap?,
@@ -36,7 +37,7 @@ internal fun ReadAttachmentStrip(
     AttachmentStrip(
         files.map { AttachmentFile(it.name, it.detail(), it.kind().shown, thumbnail(it)) },
         attachmentSummary(files),
-        expanded,
+        unfold,
         onToggle,
         actions,
         modifier,

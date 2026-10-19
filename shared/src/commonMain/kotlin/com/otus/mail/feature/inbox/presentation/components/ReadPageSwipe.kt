@@ -169,8 +169,13 @@ private class PageTurn(
     }
 }
 
-/** How the thread strip follows the pages: the [swipe] that turns them, and their [position]. */
-internal class StripSlide(
+/**
+ * The bottom strips' gestures: the thread strip's [swipe], which turns the pages and drags its
+ * message list open, the pages' [position] its content follows, and the folders strip's [folders]
+ * drag, which pulls the folders sheet up.
+ */
+internal class StripGestures(
     val swipe: Modifier,
     val position: () -> Float,
+    val folders: Modifier,
 )
