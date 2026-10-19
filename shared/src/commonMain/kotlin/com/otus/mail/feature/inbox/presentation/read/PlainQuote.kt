@@ -36,6 +36,15 @@ fun PlainQuote.levels(): List<QuoteLevelText> {
     }
 }
 
+/**
+ * A quote's [text] under its [header], as the levels it holds, outermost first, such as the text
+ * of an HTML quote that quotes earlier mail as plain `>` lines or "On … wrote:" lines.
+ */
+fun quoteLevels(
+    header: QuoteHeader?,
+    text: String,
+): List<QuoteLevelText> = PlainQuote("", header, text).levels()
+
 /** [text] split at its quote; a [nested] quote may start at its first line, with nothing before it. */
 private fun splitQuote(
     text: String,
