@@ -26,7 +26,9 @@ import com.otus.mail.feature.inbox.presentation.read.subtitle
  * A conversation shows its thread strip; a single message its newsletter strip when it can be left
  * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
  * message count tells a conversation from a single message, so the strip does not change kind.
- * The thread strip follows the pages as [slide] turns them, and a drag on it turns them too.
+ * The thread strip follows the pages as [slide] turns them, and a drag on it turns them too. A
+ * swipe up opens the thread strip's list, the files, or the folders sheet, and a swipe down folds
+ * the files.
  */
 @Composable
 internal fun ReadBottomStack(
@@ -42,12 +44,15 @@ internal fun ReadBottomStack(
     Column(modifier.fillMaxWidth(), Arrangement.spacedBy(PageTokens.rowGap)) {
         content?.attachments?.takeIf { it.isNotEmpty() }?.let { files ->
             LaunchedEffect(page.id, files) { state.thumbnails.load(page, files) { actions.thumbnail(page, it) } }
+            val open = state.filesOpen(page)
+            val toggle = { state.toggleFiles(page) }
             ReadAttachmentStrip(
                 files,
-                state.filesOpen(page),
-                { state.toggleFiles(page) },
+                open,
+                toggle,
                 actions.files(page, files),
                 { state.thumbnails.of(page, it) },
+                rememberFoldSwipe(onUp = toggle.takeUnless { open }, onDown = toggle.takeIf { open }),
             )
         }
         ContextStrip(state, current, source, content, actions, slide)
@@ -82,7 +87,9 @@ private fun ContextStrip(
                 val shown = state.pages.getOrNull(index) ?: page
                 ThreadPosition(shown, index, count, shown.received.shortLabel(source.today))
             }
-            ReadThreadStrip(pageAt, current, count, folders, row.attributes.flagged, open, slide)
+            // Swiping the strip up grows it into the message list, as a tap does.
+            val swipes = StripSlide(slide.swipe.then(rememberFoldSwipe(onUp = open)), slide.position)
+            ReadThreadStrip(pageAt, current, count, folders, row.attributes.flagged, open, swipes)
         }
 
         unsubscribe != null -> {
@@ -100,7 +107,10 @@ private fun ContextStrip(
 
         else -> {
             val folders = folderHint(page.location.mailboxIds, source.folders, source.cameFrom).folders
-            if (folders.isNotEmpty()) AlsoInStrip(folderNames(folders), { state.sheet = ReadSheet.Folders })
+            if (folders.isNotEmpty()) {
+                val open = { state.sheet = ReadSheet.Folders }
+                AlsoInStrip(folderNames(folders), open, rememberFoldSwipe(onUp = open))
+            }
         }
     }
 }
