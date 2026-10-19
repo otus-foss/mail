@@ -74,6 +74,10 @@ internal class ReadStripActions(
         files: List<MailAttachment>,
     ) {
         val saved = read.files.saved ?: return
+        // A download can take a while, so the tap answers at once and the outcome replaces it.
+        val group = Any()
+        val saving = if (files.size == 1) "Saving ${files.single().name}…" else "Saving ${files.size} files…"
+        toasts.show(ToastMessage(saving, group = group, sticky = true))
         read.effects.launch {
             val failed =
                 files.filterNot { file ->
@@ -86,7 +90,7 @@ internal class ReadStripActions(
                     failed.size == 1 -> "Couldn't save ${failed.single().name}"
                     else -> "Couldn't save ${failed.size} files"
                 }
-            toasts.show(ToastMessage(text))
+            toasts.show(ToastMessage(text, group = group))
         }
     }
 
