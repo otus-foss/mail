@@ -41,6 +41,17 @@ class InboxFiltersTest {
     }
 
     @Test
+    fun theLastRecipientFieldStaysOn() {
+        val toOnly = InboxFilters().withField(RecipientField.Cc, on = false)
+        assertEquals(setOf(RecipientField.To), toOnly.receivedIn)
+        assertEquals(toOnly, toOnly.withField(RecipientField.To, on = false))
+        assertEquals(
+            setOf(RecipientField.To, RecipientField.Bcc),
+            toOnly.withField(RecipientField.Bcc, on = true).receivedIn,
+        )
+    }
+
+    @Test
     fun quickFiltersHaveNoOpposites() {
         val flagged = InboxFilters().with(QuickFacet.Flagged, true).with(QuickFacet.Attachments, true)
         assertEquals(setOf(QuickFacet.Flagged, QuickFacet.Attachments), flagged.quick)

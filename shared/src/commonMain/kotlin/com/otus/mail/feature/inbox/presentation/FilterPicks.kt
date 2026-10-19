@@ -21,7 +21,7 @@ fun InboxFilters.hasRecipient(person: FilterPerson): Boolean =
     person.own?.let { own -> sentTo.any { it.sameAs(own) } }
         ?: person.addresses.any { address -> to.any { it.equals(address, ignoreCase = true) } }
 
-/** These filters with mail to [person] kept or not. */
+/** These filters with mail to [person] kept or not, at every address they use. */
 fun InboxFilters.withRecipient(
     person: FilterPerson,
     on: Boolean,
@@ -32,7 +32,7 @@ fun InboxFilters.withRecipient(
         return copy(sentTo = if (on) others + own else others)
     }
     val others = to.filterNot { address -> person.addresses.any { it.equals(address, ignoreCase = true) } }.toSet()
-    return copy(to = if (on) others + person.addresses.first() else others)
+    return copy(to = if (on) others + person.addresses else others)
 }
 
 /** The listed person a chosen sender stands for, to show their avatar; null when none is listed. */
