@@ -136,17 +136,17 @@ class ReadViewTest {
     }
 
     @Test
-    fun theThreadStripFollowsTheFingerAndEasesOn() {
+    fun theThreadStripCardStaysWhileItsContentSlides() {
         showThread()
         val strip = strip("Grace Hopper, message 1 of 6")
-        val right = strip.getBoundsInRoot().right
+        val bounds = strip.getBoundsInRoot()
         strip.performTouchInput {
             down(center)
             repeat(DRAG_STEPS) { moveBy(Offset(-width / 3f / DRAG_STEPS, 0f)) }
         }
         compose.waitForIdle()
         compose.screenshot("read-thread-strip-dragging")
-        assertTrue("The strip moves with the finger before it is let go", strip.getBoundsInRoot().right < right)
+        assertEquals("The card stays put while its content slides", bounds, strip.getBoundsInRoot())
         strip.performTouchInput { up() }
         strip("Alex Doe, message 2 of 6").assertIsDisplayed()
     }

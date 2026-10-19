@@ -77,11 +77,12 @@ private fun ContextStrip(
                     .toSet()
             val folders = folderHint(everyFolder, source.folders, source.cameFrom)
             val open = { state.threadOpen = true }
-            ReadThreadCarousel(state.pages.size, current, slide.position, slide.swipe) { index ->
-                val shown = state.pages[index]
-                val position = ThreadPosition(shown, index, count, shown.received.shortLabel(source.today))
-                ReadThreadStrip(position, folders, row.attributes.flagged, open)
+            // Until the pages load, the row's count may name pages not here yet; the strip never shows them.
+            val pageAt = { index: Int ->
+                val shown = state.pages.getOrNull(index) ?: page
+                ThreadPosition(shown, index, count, shown.received.shortLabel(source.today))
             }
+            ReadThreadStrip(pageAt, current, count, folders, row.attributes.flagged, open, slide)
         }
 
         unsubscribe != null -> {

@@ -151,3 +151,9 @@ private const val SIDEWAYS_RATIO = 2f
 
 /** How fast a short drag must be let go to still turn the page. */
 private const val FLICK_DP_PER_SECOND = 800
+
+/** How the thread strip follows the pages: the [swipe] that turns them, and their [position]. */
+internal class StripSlide(
+    val swipe: Modifier,
+    val position: () -> Float,
+)
