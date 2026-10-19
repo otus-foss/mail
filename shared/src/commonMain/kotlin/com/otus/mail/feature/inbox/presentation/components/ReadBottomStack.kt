@@ -66,23 +66,10 @@ private fun ContextStrip(
     val row = source.row
     val page = state.pages[current]
     val unsubscribe = content?.unsubscribe?.takeUnless { inJunk(page.location.mailboxIds, source.folders) }
-    val count = if (state.loaded) state.pages.size else row.conversation?.messageCount ?: 1
+    val count = state.messageCount(row)
     when {
         count > 1 -> {
-            val everyFolder =
-                state
-                    .mailboxes(row)
-                    .values
-                    .flatten()
-                    .toSet()
-            val folders = folderHint(everyFolder, source.folders, source.cameFrom)
-            val open = { state.threadOpen = true }
-            // Until the pages load, the row's count may name pages not here yet; the strip never shows them.
-            val pageAt = { index: Int ->
-                val shown = state.pages.getOrNull(index) ?: page
-                ThreadPosition(shown, index, count, shown.received.shortLabel(source.today))
-            }
-            ReadThreadStrip(pageAt, current, count, folders, row.attributes.flagged, open, slide)
+            ConversationStrip(state, current, source, slide)
         }
 
         unsubscribe != null -> {
@@ -127,4 +114,43 @@ private fun FilesStrip(
         { state.thumbnails.of(page, it) },
         rememberFoldSwipe(drag),
     )
+}
+
+/** How many messages [row]'s Read view pages through; until the pages load, the row's count says. */
+private fun ReadState.messageCount(row: MailMessage): Int =
+    if (loaded) {
+        pages.size
+    } else {
+        row.conversation?.messageCount
+            ?: 1
+    }
+
+/**
+ * The thread strip for the conversation at [current] of [source]'s row, its end naming the
+ * conversation's other folders. A tap opens its message list.
+ */
+@Composable
+internal fun ConversationStrip(
+    state: ReadState,
+    current: Int,
+    source: ReadStripSource,
+    slide: StripGestures,
+) {
+    val row = source.row
+    val page = state.pages[current]
+    val count = state.messageCount(row)
+    val everyFolder =
+        state
+            .mailboxes(row)
+            .values
+            .flatten()
+            .toSet()
+    val folders = folderHint(everyFolder, source.folders, source.cameFrom)
+    val open = { state.threadOpen = true }
+    // Until the pages load, the row's count may name pages not here yet; the strip never shows them.
+    val pageAt = { index: Int ->
+        val shown = state.pages.getOrNull(index) ?: page
+        ThreadPosition(shown, index, count, shown.received.shortLabel(source.today))
+    }
+    ReadThreadStrip(pageAt, current, count, folders, row.attributes.flagged, open, slide)
 }

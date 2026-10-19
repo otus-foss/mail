@@ -27,7 +27,6 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.LocalSheetPull
 import com.otus.designsystem.components.OptionsItem
-import com.otus.designsystem.components.foldedForm
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
@@ -38,6 +37,7 @@ import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.ReadState
+import com.otus.mail.feature.inbox.presentation.components.ConversationStrip
 import com.otus.mail.feature.inbox.presentation.components.ReadActionBar
 import com.otus.mail.feature.inbox.presentation.components.ReadBottomStack
 import com.otus.mail.feature.inbox.presentation.components.ReadHeader
@@ -117,7 +117,11 @@ fun MessageScreen(
             ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds), notice, cameFrom, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
-        ReadThreadOverlay(state, index, today, context.rowLook.own, barPadding, folds.thread) {
+        // The list blurs in over a still copy of the thread strip, which takes no gestures of its own.
+        val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
+        val still = StripGestures(Modifier, { index.toFloat() }, Modifier)
+        val strip = @Composable { ConversationStrip(state, index, source, still) }
+        ReadThreadOverlay(state, index, today, context.rowLook.own, barPadding, folds.thread, strip) {
             scope.launch { pager.animateScrollToPage(it) }
         }
     }
@@ -162,12 +166,8 @@ private fun ReadLayout(
         ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f).then(swipe))
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
-        val thread = layout.folds.thread
-        // The strip blurs away under the message list growing out of it, and back as the list folds.
         val threadSwipe =
-            stripSwipe
-                .then(rememberFoldSwipe(rememberUnfoldDrag(thread) { state.threadOpen = it }))
-                .foldedForm(thread)
+            stripSwipe.then(rememberFoldSwipe(rememberUnfoldDrag(layout.folds.thread) { state.threadOpen = it }))
         val slide =
             StripGestures(threadSwipe, {
                 pager.currentPage + pager.currentPageOffsetFraction
