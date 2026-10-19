@@ -68,7 +68,7 @@ internal fun ReadThreadStrip(
     folders: ShownFolders,
     flagged: Boolean,
     onClick: () -> Unit,
-    slide: StripSlide,
+    slide: StripGestures,
 ) {
     val flag = flagged && !folders.also
     SlidingPositionStrip(
@@ -177,88 +177,3 @@ private fun SlotText(
         softWrap = false,
     )
 }
-
-/**
- * The thread strip grown into the conversation's messages, newest first, with the page at
- * [current] marked. Choosing one runs [onSelect]; the header runs [onFold].
- */
-@Composable
-internal fun ReadThreadList(
-    entries: List<ThreadEntry>,
-    current: Int,
-    maxHeight: Dp,
-    onSelect: (Int) -> Unit,
-    onFold: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    StripCard(modifier) {
-        ThreadList("${entries.size} messages", entries, current, onSelect, onFold, maxHeight = maxHeight)
-    }
-}
-
-/**
- * The message list grown from the thread strip over the page at [current], which dims behind it
- * with the action bar. It sits where the strip does, above the bar's [padding]; choosing a message
- * runs [onSelect] and folds it, as do its header, a tap outside, and a swipe down.
- */
-@Composable
-internal fun ReadThreadOverlay(
-    state: ReadState,
-    current: Int,
-    today: LocalDate,
-    own: OwnAddresses,
-    padding: PaddingValues,
-    onSelect: (Int) -> Unit,
-) {
-    val fold = { state.threadOpen = false }
-    AnimatedVisibility(state.threadOpen, enter = fadeIn(motionTween()), exit = fadeOut(motionTween())) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(OtusColors.scrim.copy(alpha = SheetTokens.SCRIM_ALPHA))
-                    .semantics { contentDescription = "Fold messages" }
-                    .clickable(remember { MutableInteractionSource() }, indication = null, onClick = fold),
-            )
-            val entries =
-                state.pages.map { page ->
-                    val name =
-                        if (page.isOwn(
-                                own,
-                                page.sender,
-                            )
-                        ) {
-                            "You"
-                        } else {
-                            page.sender.name.ifBlank { page.sender.address }
-                        }
-                    ThreadEntry(
-                        name,
-                        page.sender.chipAvatar,
-                        page.received.shortLabel(today),
-                        page.preview.ifBlank { page.body },
-                    )
-                }
-            ReadThreadList(
-                entries,
-                current,
-                maxHeight * LIST_HEIGHT_SHARE,
-                onSelect = {
-                    onSelect(it)
-                    fold()
-                },
-                onFold = fold,
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .safeDrawingPadding()
-                    .padding(padding)
-                    .padding(PageTokens.pageInset)
-                    .animateEnterExit(enter = expandVertically(motionTween(), expandFrom = Alignment.Bottom))
-                    .then(rememberFoldSwipe(onDown = fold)),
-            )
-        }
-    }
-}
-
-/** How much of the page the grown message list may cover before it scrolls. */
-private const val LIST_HEIGHT_SHARE = 0.7f

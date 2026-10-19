@@ -10,6 +10,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -24,6 +25,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
+import com.otus.designsystem.components.LocalSheetPull
 import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
@@ -46,14 +48,18 @@ import com.otus.mail.feature.inbox.presentation.components.ReadSheets
 import com.otus.mail.feature.inbox.presentation.components.ReadStripActions
 import com.otus.mail.feature.inbox.presentation.components.ReadStripSource
 import com.otus.mail.feature.inbox.presentation.components.ReadThreadOverlay
-import com.otus.mail.feature.inbox.presentation.components.StripSlide
+import com.otus.mail.feature.inbox.presentation.components.StripFolds
+import com.otus.mail.feature.inbox.presentation.components.StripGestures
 import com.otus.mail.feature.inbox.presentation.components.SwipeFeel
 import com.otus.mail.feature.inbox.presentation.components.openLink
+import com.otus.mail.feature.inbox.presentation.components.rememberFoldSwipe
 import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
 import com.otus.mail.feature.inbox.presentation.components.rememberPageLook
 import com.otus.mail.feature.inbox.presentation.components.rememberPageSwipe
 import com.otus.mail.feature.inbox.presentation.components.rememberReadBar
 import com.otus.mail.feature.inbox.presentation.components.rememberReadMenu
+import com.otus.mail.feature.inbox.presentation.components.rememberStripFolds
+import com.otus.mail.feature.inbox.presentation.components.rememberUnfoldDrag
 import com.otus.mail.feature.inbox.presentation.read.fullLabel
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import kotlinx.coroutines.launch
@@ -100,26 +106,28 @@ fun MessageScreen(
     val today = remember { read.today() }
     var barPadding by remember { mutableStateOf(PaddingValues()) }
     val scope = rememberCoroutineScope()
+    val folds = rememberStripFolds(state)
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar = bar.layout?.let { { ReadActionBar(bar, page, parts::perform) } },
             Modifier.safeDrawingPadding(),
         ) { padding ->
             SideEffect { barPadding = padding }
-            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today), notice, cameFrom, padding)
+            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds), notice, cameFrom, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
-        ReadThreadOverlay(state, index, today, context.rowLook.own, barPadding) {
+        ReadThreadOverlay(state, index, today, context.rowLook.own, barPadding, folds.thread) {
             scope.launch { pager.animateScrollToPage(it) }
         }
     }
-    ReadSheets(parts, look, cameFrom)
+    // A drag on the folders strip pulls the folders sheet up with the finger.
+    CompositionLocalProvider(LocalSheetPull provides folds.folderPull) { ReadSheets(parts, look, cameFrom) }
     actions?.let { moveChoice.Sheet(it) }
 }
 
 /**
  * Where the Read view's layout stands: the [pager] on the page at [index], how pages [look], the ⋯
- * [menu], and the [today] dates are shown against.
+ * [menu], the [today] dates are shown against, and how the bottom strips [folds] open.
  */
 private class ReadLayoutState(
     val pager: PagerState,
@@ -127,6 +135,7 @@ private class ReadLayoutState(
     val look: ReadPageLook,
     val menu: List<OptionsItem>,
     val today: LocalDate,
+    val folds: StripFolds,
 )
 
 /** The header, the pages, and the strips above the bar's [padding]. */
@@ -152,7 +161,19 @@ private fun ReadLayout(
         ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f).then(swipe))
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
-        val slide = StripSlide(stripSwipe) { pager.currentPage + pager.currentPageOffsetFraction }
+        val threadSwipe =
+            stripSwipe.then(
+                rememberFoldSwipe(
+                    rememberUnfoldDrag(layout.folds.thread) {
+                        state.threadOpen =
+                            it
+                    },
+                ),
+            )
+        val slide =
+            StripGestures(threadSwipe, {
+                pager.currentPage + pager.currentPageOffsetFraction
+            }, rememberFoldSwipe(layout.folds.folders))
         ReadBottomStack(
             state,
             layout.index,
