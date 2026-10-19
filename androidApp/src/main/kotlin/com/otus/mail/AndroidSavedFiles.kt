@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
@@ -53,17 +54,7 @@ class AndroidSavedFiles(
         type: String,
         bytes: ByteArray,
     ): Boolean {
-        val file =
-            withContext(Dispatchers.IO) {
-                val opened = File(context.cacheDir, OPENED_DIRECTORY)
-                pruneOpened(opened)
-                // A folder per file keeps its own name, so two files with one name never clash.
-                File(opened, System.nanoTime().toString())
-                    .apply { mkdirs() }
-                    .resolve(safeName(name))
-                    .apply { writeBytes(bytes) }
-            }
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+        val uri = sharedCopy(name, bytes) ?: return false
         val view =
             Intent(Intent.ACTION_VIEW)
                 .setDataAndType(uri, type)
@@ -75,6 +66,32 @@ class AndroidSavedFiles(
             false
         }
     }
+
+    /**
+     * [bytes] written to the app's cache under [name], as a content address other apps may read;
+     * null when the disk is full or the share is refused, which must not crash the app.
+     */
+    private suspend fun sharedCopy(
+        name: String,
+        bytes: ByteArray,
+    ): Uri? =
+        try {
+            val file =
+                withContext(Dispatchers.IO) {
+                    val opened = File(context.cacheDir, OPENED_DIRECTORY)
+                    pruneOpened(opened)
+                    // A folder per file keeps its own name, so two files with one name never clash.
+                    File(opened, System.nanoTime().toString())
+                        .apply { mkdirs() }
+                        .resolve(safeName(name))
+                        .apply { writeBytes(bytes) }
+                }
+            FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+        } catch (expected: IOException) {
+            null
+        } catch (expected: IllegalArgumentException) {
+            null
+        }
 
     /**
      * Deletes files opened more than a day ago. The app that shows a file reads it soon after, so
