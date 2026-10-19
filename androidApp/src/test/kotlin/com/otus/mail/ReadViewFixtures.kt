@@ -33,6 +33,7 @@ import com.otus.mail.feature.inbox.presentation.MessageMoves
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.PageChanges
 import com.otus.mail.feature.inbox.presentation.ReadContext
+import com.otus.mail.feature.inbox.presentation.ReadDisplay
 import com.otus.mail.feature.inbox.presentation.ReadEffects
 import com.otus.mail.feature.inbox.presentation.ReadFiles
 import com.otus.mail.feature.inbox.presentation.ReadFolders
@@ -187,8 +188,12 @@ internal object ReadViewFixtures {
                 changes = changes,
             ),
         effects = effects,
-        today = { LocalDate(2026, 10, 19) },
+        display = ReadDisplay(today = { LocalDate(2026, 10, 19) }),
     )
+
+    /** This context with replies showing their quotes, as the "Show quotes" setting does. */
+    fun ReadContext.showingQuotes(): ReadContext =
+        ReadContext(pages, folders, privacy, files, services, effects, ReadDisplay({ true }, display.today))
 
     /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
     private fun photo(): ByteArray {

@@ -5,7 +5,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class PlainQuotesTest {
-    private val margaret = QuoteHeader("Margaret Knuth", "m@x.org", "10 Oct")
+    /** Margaret's header, whose pill shows [fullDate], as the quote's own line writes it. */
+    private fun margaret(fullDate: String = "10 Oct") = QuoteHeader("Margaret Knuth", "m@x.org", "10 Oct", fullDate)
+
     private val reply = "Sounds good, Thursday 10 it is.\n\nKatherine"
     private val quoted = "> I went through the plan with legal.\n>\n> > Earlier text"
 
@@ -13,7 +15,7 @@ class PlainQuotesTest {
     fun splitsAtAppleMailHeader() {
         val text = "$reply\n\nOn 10 Oct 2026, at 09:14, Margaret Knuth <m@x.org> wrote:\n\n$quoted"
         assertEquals(
-            PlainQuote(reply, margaret, "I went through the plan with legal.\n\n> Earlier text"),
+            PlainQuote(reply, margaret("10 Oct 2026, 09:14"), "I went through the plan with legal.\n\n> Earlier text"),
             splitPlainQuote(text),
         )
     }
@@ -21,26 +23,26 @@ class PlainQuotesTest {
     @Test
     fun splitsAtGmailHeader() {
         val text = "$reply\n\nOn Thu, Oct 10, 2026 at 9:14 AM Margaret Knuth <m@x.org> wrote:\n$quoted"
-        assertEquals(margaret, splitPlainQuote(text)?.header)
+        assertEquals(margaret("10 Oct 2026, 9:14 AM"), splitPlainQuote(text)?.header)
         assertEquals(reply, splitPlainQuote(text)?.body)
     }
 
     @Test
     fun readsAHeaderWrappedOverTwoLines() {
         val text = "$reply\n\nOn Thu, Oct 10, 2026 at 9:14 AM Margaret Knuth\n<m@x.org> wrote:\n$quoted"
-        assertEquals(margaret, splitPlainQuote(text)?.header)
+        assertEquals(margaret("10 Oct 2026, 9:14 AM"), splitPlainQuote(text)?.header)
     }
 
     @Test
     fun readsAHeaderWithoutAddress() {
         val text = "$reply\n\nOn 10 Oct 2026, Margaret Knuth wrote:\n$quoted"
-        assertEquals(QuoteHeader("Margaret Knuth", null, "10 Oct"), splitPlainQuote(text)?.header)
+        assertEquals(QuoteHeader("Margaret Knuth", null, "10 Oct", "10 Oct 2026"), splitPlainQuote(text)?.header)
     }
 
     @Test
     fun readsAGermanHeader() {
         val text = "$reply\n\nAm 10.10.2026 um 09:14 schrieb Margaret Knuth <m@x.org>:\n$quoted"
-        assertEquals(margaret, splitPlainQuote(text)?.header)
+        assertEquals(margaret("10 Oct 2026"), splitPlainQuote(text)?.header)
     }
 
     @Test
@@ -63,7 +65,10 @@ class PlainQuotesTest {
         val text =
             "$reply\n\n-----Original Message-----\nFrom: Margaret Knuth <m@x.org>\n" +
                 "Sent: Thursday, October 10, 2026 9:14 AM\nTo: Katherine\nSubject: Q4\n\nI went through the plan."
-        assertEquals(PlainQuote(reply, margaret, "I went through the plan."), splitPlainQuote(text))
+        assertEquals(
+            PlainQuote(reply, margaret("10 Oct 2026, 9:14 AM"), "I went through the plan."),
+            splitPlainQuote(text),
+        )
     }
 
     @Test

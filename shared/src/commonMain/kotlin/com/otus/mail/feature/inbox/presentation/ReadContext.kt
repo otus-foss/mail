@@ -24,9 +24,9 @@ import kotlin.time.Clock
 /**
  * What the Read view needs beyond the list's actions: the conversation's [pages], the folders of a
  * message, the privacy setting for remote images, files, the
- * services behind its strips and menu, and [effects] for toasts and work that outlives the page.
- * [showQuotes] tells whether replies show text quoted from earlier messages of the conversation.
- * Null in [InboxContext] keeps the screen to the message alone, as for supplied messages.
+ * services behind its strips and menu, [effects] for toasts and work that outlives the page, and
+ * how its pages [display]. Null in [InboxContext] keeps the screen to the message alone, as for
+ * supplied messages.
  */
 class ReadContext(
     val pages: ConversationMessages = ConversationMessages { null },
@@ -35,6 +35,14 @@ class ReadContext(
     val files: ReadFiles = ReadFiles(),
     val services: ReadServices = ReadServices(),
     val effects: ReadEffects = ReadEffects(),
+    val display: ReadDisplay = ReadDisplay(),
+)
+
+/**
+ * How the Read view shows its pages: [showQuotes] tells whether replies show text quoted from
+ * earlier messages of the conversation, and [today] is the day dates are shown against.
+ */
+class ReadDisplay(
     val showQuotes: () -> Boolean = { false },
     val today: () -> LocalDate = {
         Clock.System

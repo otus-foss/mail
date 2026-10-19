@@ -56,15 +56,17 @@ class ReadViewTest {
         pages: List<MailMessage> = listOf(row),
         cameFrom: String? = null,
         newFolder: NewFolderSheet? = null,
+        showQuotes: Boolean = false,
     ) {
         val read =
-            fixtures.read(
-                pages,
-                cameFrom,
-                { applied = it.added to it.removed },
-                { unsubscribed++ },
-                newFolder,
-            )
+            fixtures
+                .read(
+                    pages,
+                    cameFrom,
+                    { applied = it.added to it.removed },
+                    { unsubscribed++ },
+                    newFolder,
+                ).let { if (showQuotes) with(fixtures) { it.showingQuotes() } else it }
         val context =
             InboxContext(
                 loadContent = { fixtures.content(it) },
@@ -264,8 +266,17 @@ class ReadViewTest {
     }
 
     @Test
-    fun aQuotedReplyFoldsItsQuote() {
+    fun aReplyInAThreadLeavesOutWhatItQuotes() {
         showThread()
+        strip("Grace Hopper, message 1 of 6").performClick()
+        compose.onNode(hasText("Katherine Johnson", substring = true) and isSelectable()).performClick()
+        strip("Katherine Johnson, message").assertIsDisplayed()
+        compose.onNodeWithText("Show quoted text").assertDoesNotExist()
+    }
+
+    @Test
+    fun aQuotedReplyFoldsItsQuoteWhenQuotesAreShown() {
+        show(fixtures.threadRow, fixtures.thread, cameFrom = "in", showQuotes = true)
         strip("Grace Hopper, message 1 of 6").performClick()
         compose.onNode(hasText("Katherine Johnson", substring = true) and isSelectable()).performClick()
         compose.onNodeWithText("Show quoted text").assertIsDisplayed()

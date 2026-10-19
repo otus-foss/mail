@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Dp
 import com.otus.designsystem.components.ThreadEntry
 import com.otus.designsystem.components.ThreadList
 import com.otus.designsystem.components.Unfold
@@ -33,42 +32,20 @@ import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import kotlinx.datetime.LocalDate
 
 /**
- * The thread strip grown into the conversation's messages, newest first, with the page at
- * [current] marked, as far as [unfold] has opened it, out of the [strip] it blurs in over. Choosing
- * one runs [onSelect]; the header runs [onFold].
- */
-@Composable
-internal fun ReadThreadList(
-    entries: List<ThreadEntry>,
-    current: Int,
-    maxHeight: Dp,
-    unfold: Unfold,
-    strip: @Composable () -> Unit,
-    onSelect: (Int) -> Unit,
-    onFold: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    // It grows from the thread strip's own height, so its top edge starts at the strip's and follows the finger.
-    UnfoldingStripCard(unfold, ReadTokens.positionHeight, strip, modifier) {
-        ThreadList("${entries.size} messages", entries, current, onSelect, onFold, maxHeight = maxHeight)
-    }
-}
-
-/**
  * The message list grown from the thread strip over the page at [current], which dims behind it
  * with the action bar. It sits where the strip does, above the bar's [padding], and grows as
- * [unfold] opens, with the finger while it drags, out of the thread [strip]. Choosing a message runs [onSelect] and folds it,
- * as do its header, a tap outside, and dragging it down.
+ * [unfold] opens, with the finger while it drags. The list blurs in over a still copy of the
+ * [source]'s thread strip, which takes no gestures of its own. Choosing a message runs [onSelect]
+ * and folds it, as do its header, a tap outside, and dragging it down.
  */
 @Composable
 internal fun ReadThreadOverlay(
     state: ReadState,
     current: Int,
-    today: LocalDate,
+    source: ReadStripSource,
     own: OwnAddresses,
     padding: PaddingValues,
     unfold: Unfold,
-    strip: @Composable () -> Unit,
     onSelect: (Int) -> Unit,
 ) {
     val fold = { state.threadOpen = false }
@@ -84,24 +61,27 @@ internal fun ReadThreadOverlay(
                     .clickable(remember { MutableInteractionSource() }, indication = null, onClick = fold),
             )
         }
-        ReadThreadList(
-            state.pages.map { page -> threadEntry(page, own, today) },
-            current,
-            maxHeight * LIST_HEIGHT_SHARE,
+        val entries = state.pages.map { page -> threadEntry(page, own, source.today) }
+        val still = StripGestures(Modifier, { current.toFloat() }, Modifier)
+        // It grows from the thread strip's own height, so its top edge starts at the strip's.
+        UnfoldingStripCard(
             unfold,
-            strip,
-            onSelect = {
-                onSelect(it)
-                fold()
-            },
-            onFold = fold,
+            ReadTokens.positionHeight,
+            { ConversationStrip(state, current, source, still) },
             Modifier
                 .align(Alignment.BottomCenter)
                 .safeDrawingPadding()
                 .padding(padding)
                 .padding(PageTokens.pageInset)
                 .then(rememberFoldSwipe(drag)),
-        )
+        ) {
+            val select = { index: Int ->
+                onSelect(index)
+                fold()
+            }
+            val height = maxHeight * LIST_HEIGHT_SHARE
+            ThreadList("${entries.size} messages", entries, current, select, fold, maxHeight = height)
+        }
     }
 }
 

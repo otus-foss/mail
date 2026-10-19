@@ -37,7 +37,6 @@ import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.ReadState
-import com.otus.mail.feature.inbox.presentation.components.ConversationStrip
 import com.otus.mail.feature.inbox.presentation.components.ReadActionBar
 import com.otus.mail.feature.inbox.presentation.components.ReadBottomStack
 import com.otus.mail.feature.inbox.presentation.components.ReadHeader
@@ -104,7 +103,7 @@ fun MessageScreen(
     val look = rememberPageLook(parts)
     val bar = rememberReadBar(message, page, context.rowLook.own, actions, moveChoice, context.onCompose)
     val menu = rememberReadMenu(parts, look, bar, index)
-    val today = remember { read.today() }
+    val today = remember { read.display.today() }
     var barPadding by remember { mutableStateOf(PaddingValues()) }
     val scope = rememberCoroutineScope()
     val folds = rememberStripFolds(state)
@@ -117,11 +116,8 @@ fun MessageScreen(
             ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds), notice, cameFrom, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
-        // The list blurs in over a still copy of the thread strip, which takes no gestures of its own.
         val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
-        val still = StripGestures(Modifier, { index.toFloat() }, Modifier)
-        val strip = @Composable { ConversationStrip(state, index, source, still) }
-        ReadThreadOverlay(state, index, today, context.rowLook.own, barPadding, folds.thread, strip) {
+        ReadThreadOverlay(state, index, source, context.rowLook.own, barPadding, folds.thread) {
             scope.launch { pager.animateScrollToPage(it) }
         }
     }
