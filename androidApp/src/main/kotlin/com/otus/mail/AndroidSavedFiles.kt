@@ -64,6 +64,9 @@ class AndroidSavedFiles(
             true
         } catch (expected: ActivityNotFoundException) {
             false
+        } catch (expected: SecurityException) {
+            // Work profiles and restricted users can forbid handing the file to another app.
+            false
         }
     }
 
