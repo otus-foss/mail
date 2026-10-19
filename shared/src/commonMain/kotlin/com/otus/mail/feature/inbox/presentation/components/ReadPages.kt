@@ -115,10 +115,12 @@ internal fun ReadPages(
     loadContent: suspend (MailMessage) -> MessageContent?,
     modifier: Modifier = Modifier,
 ) {
+    // The pager's own drag is off: [rememberPageSwipe] in [modifier] turns the pages, more strictly.
     HorizontalPager(
         pager,
         modifier,
         beyondViewportPageCount = 1,
+        userScrollEnabled = false,
         key = { state.pages.getOrNull(it)?.id ?: it },
     ) { index ->
         val page = state.pages.getOrNull(index) ?: return@HorizontalPager

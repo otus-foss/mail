@@ -56,7 +56,7 @@ import kotlinx.datetime.LocalDate
  * sender, with the position and date. Its end names the conversation's other [folders], and a flag
  * when it is [flagged] and the list gave no folder context. Screen readers hear the sender, the
  * position, the date, and the folders, such as "Grace Hopper, message 1 of 6, 12 Oct, also in
- * Invoices".
+ * Invoices". A sideways drag on it turns the pages through [modifier], as on the pages themselves.
  */
 @Composable
 internal fun ReadThreadStrip(
@@ -64,19 +64,22 @@ internal fun ReadThreadStrip(
     folders: ShownFolders,
     flagged: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val page = position.page
     val sender = page.sender.name.ifBlank { page.sender.address }
     val title = if (position.current == 0) "Latest" else sender
     val flag = flagged && !folders.also
-    PositionStrip(
-        NamedAvatar(title, page.sender.chipAvatar),
-        position.count,
-        position.current,
-        "${position.current + 1}/${position.count} · ${position.date}",
-        onClick,
-        description = spokenPosition(sender, position, folders, flag),
-    ) { FolderSlot(folders, flag) }
+    Box(modifier) {
+        PositionStrip(
+            NamedAvatar(title, page.sender.chipAvatar),
+            position.count,
+            position.current,
+            "${position.current + 1}/${position.count} · ${position.date}",
+            onClick,
+            description = spokenPosition(sender, position, folders, flag),
+        ) { FolderSlot(folders, flag) }
+    }
 }
 
 private fun spokenPosition(

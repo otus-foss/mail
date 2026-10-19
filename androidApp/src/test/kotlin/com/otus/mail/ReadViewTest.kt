@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.Text
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
@@ -19,7 +20,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -120,6 +123,27 @@ class ReadViewTest {
         strip("Grace Hopper, message 1 of 6")
         compose.onNodeWithText("Let's lock it in", substring = true).performTouchInput { swipeLeft() }
         strip("Alex Doe, message 2 of 6").assertIsDisplayed()
+    }
+
+    @Test
+    fun swipingTheThreadStripTurnsThePagesToo() {
+        showThread()
+        strip("Grace Hopper, message 1 of 6").performTouchInput { swipeLeft() }
+        strip("Alex Doe, message 2 of 6").assertIsDisplayed()
+        strip("Alex Doe, message 2 of 6").performTouchInput { swipeRight() }
+        strip("Grace Hopper, message 1 of 6").assertIsDisplayed()
+    }
+
+    @Test
+    fun aScrollThatDriftsSidewaysStaysOnThePage() {
+        showThread()
+        // A thumb that starts slightly sideways, then scrolls down: the old pager took it as a flick.
+        compose.onNodeWithText("Let's lock it in", substring = true).performTouchInput {
+            val turn = Offset(-60f, -10f)
+            val end = Offset(-250f, -500f)
+            swipe({ t -> center + if (t < 30) turn * (t / 30f) else turn + (end - turn) * ((t - 30) / 120f) }, 150)
+        }
+        strip("Grace Hopper, message 1 of 6").assertIsDisplayed()
     }
 
     @Test

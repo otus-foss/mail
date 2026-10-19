@@ -49,6 +49,7 @@ import com.otus.mail.feature.inbox.presentation.components.ReadThreadOverlay
 import com.otus.mail.feature.inbox.presentation.components.openLink
 import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
 import com.otus.mail.feature.inbox.presentation.components.rememberPageLook
+import com.otus.mail.feature.inbox.presentation.components.rememberPageSwipe
 import com.otus.mail.feature.inbox.presentation.components.rememberReadBar
 import com.otus.mail.feature.inbox.presentation.components.rememberReadMenu
 import com.otus.mail.feature.inbox.presentation.read.fullLabel
@@ -145,8 +146,15 @@ private fun ReadLayout(
     Column(Modifier.fillMaxSize().padding(padding).padding(PageTokens.pageInset)) {
         ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
         notice?.let { MessageNotice(it) }
-        ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f))
-        ReadBottomStack(state, layout.index, ReadStripSource(row, layout.look.folders, cameFrom, date), strips)
+        val swipe = rememberPageSwipe(layout.pager)
+        ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f).then(swipe))
+        ReadBottomStack(
+            state,
+            layout.index,
+            ReadStripSource(row, layout.look.folders, cameFrom, date),
+            strips,
+            swipe = swipe,
+        )
     }
 }
 
