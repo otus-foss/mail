@@ -17,6 +17,7 @@ import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
 import com.otus.mail.feature.inbox.presentation.read.ReadPage
 import com.otus.mail.feature.inbox.presentation.read.readMenu
+import kotlinx.datetime.LocalDate
 
 /**
  * What every part of an open message's screen works from: the [row] the list shows, its
@@ -181,13 +182,13 @@ internal class ReadHeaderActions(
 
 /**
  * Where the Read view's strips come from: the [row] the list shows, every folder of its account by
- * id, the folder the user [cameFrom], and the page's short [date].
+ * id, the folder the user [cameFrom], and [today], which each page's short date is shown against.
  */
 internal class ReadStripSource(
     val row: MailMessage,
     val folders: Map<String, MessageFolder>,
     val cameFrom: String?,
-    val date: String,
+    val today: LocalDate,
 )
 
 /** Where the thread strip stands: [page], at [current] of [count] messages, received on [date]. */

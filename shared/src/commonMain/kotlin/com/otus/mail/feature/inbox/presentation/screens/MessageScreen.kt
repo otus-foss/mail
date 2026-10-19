@@ -46,6 +46,7 @@ import com.otus.mail.feature.inbox.presentation.components.ReadSheets
 import com.otus.mail.feature.inbox.presentation.components.ReadStripActions
 import com.otus.mail.feature.inbox.presentation.components.ReadStripSource
 import com.otus.mail.feature.inbox.presentation.components.ReadThreadOverlay
+import com.otus.mail.feature.inbox.presentation.components.StripSlide
 import com.otus.mail.feature.inbox.presentation.components.openLink
 import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
 import com.otus.mail.feature.inbox.presentation.components.rememberPageLook
@@ -148,12 +149,14 @@ private fun ReadLayout(
         notice?.let { MessageNotice(it) }
         val swipe = rememberPageSwipe(layout.pager)
         ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f).then(swipe))
+        val pager = layout.pager
+        val slide = StripSlide(swipe) { pager.currentPage + pager.currentPageOffsetFraction }
         ReadBottomStack(
             state,
             layout.index,
-            ReadStripSource(row, layout.look.folders, cameFrom, date),
+            ReadStripSource(row, layout.look.folders, cameFrom, layout.today),
             strips,
-            swipe = swipe,
+            slide,
         )
     }
 }

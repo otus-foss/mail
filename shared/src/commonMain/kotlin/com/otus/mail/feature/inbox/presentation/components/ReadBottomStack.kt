@@ -18,6 +18,7 @@ import com.otus.mail.feature.inbox.domain.inJunk
 import com.otus.mail.feature.inbox.presentation.PageBody
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
+import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import com.otus.mail.feature.inbox.presentation.read.subtitle
 
 /**
@@ -25,7 +26,7 @@ import com.otus.mail.feature.inbox.presentation.read.subtitle
  * A conversation shows its thread strip; a single message its newsletter strip when it can be left
  * and is not spam, else the folders it is also in, else nothing. Until the pages load, the row's
  * message count tells a conversation from a single message, so the strip does not change kind.
- * [swipe] lets a drag on the thread strip turn the pages.
+ * The thread strip follows the pages as [slide] turns them, and a drag on it turns them too.
  */
 @Composable
 internal fun ReadBottomStack(
@@ -33,8 +34,8 @@ internal fun ReadBottomStack(
     current: Int,
     source: ReadStripSource,
     actions: ReadStripActions,
+    slide: StripSlide,
     modifier: Modifier = Modifier,
-    swipe: Modifier = Modifier,
 ) {
     val page = state.pages.getOrNull(current) ?: return
     val content = (state.bodies.body(page) as? PageBody.Loaded)?.content
@@ -49,7 +50,7 @@ internal fun ReadBottomStack(
                 { state.thumbnails.of(page, it) },
             )
         }
-        ContextStrip(state, current, source, content, actions, swipe)
+        ContextStrip(state, current, source, content, actions, slide)
     }
 }
 
@@ -60,7 +61,7 @@ private fun ContextStrip(
     source: ReadStripSource,
     content: MessageContent?,
     actions: ReadStripActions,
-    swipe: Modifier,
+    slide: StripSlide,
 ) {
     val row = source.row
     val page = state.pages[current]
@@ -76,13 +77,11 @@ private fun ContextStrip(
                     .toSet()
             val folders = folderHint(everyFolder, source.folders, source.cameFrom)
             val open = { state.threadOpen = true }
-            ReadThreadStrip(
-                ThreadPosition(page, current, count, source.date),
-                folders,
-                row.attributes.flagged,
-                open,
-                swipe,
-            )
+            ReadThreadCarousel(state.pages.size, current, slide.position, slide.swipe) { index ->
+                val shown = state.pages[index]
+                val position = ThreadPosition(shown, index, count, shown.received.shortLabel(source.today))
+                ReadThreadStrip(position, folders, row.attributes.flagged, open)
+            }
         }
 
         unsubscribe != null -> {
