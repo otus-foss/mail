@@ -5,13 +5,14 @@ import kotlinx.datetime.LocalDate
 
 /**
  * Who wrote a quoted message and when, read from the line above the quote. [date] is as written,
- * or the day and month, such as "10 Oct", when it reads as a date. [address] is null when the line
- * names none.
+ * or the day and month, such as "10 Oct", when it reads as a date; [fullDate] adds the year and the
+ * time, such as "10 Oct 2026, 17:50". [address] is null when the line names none.
  */
 data class QuoteHeader(
     val name: String,
     val address: String?,
     val date: String?,
+    val fullDate: String? = date,
 )
 
 /**
@@ -72,17 +73,24 @@ private fun person(
             .replace(MAILTO, "")
             .trim(' ', ',', '"', '\'')
     val bare = name.takeIf { '@' in it }
+    val written =
+        date
+            ?.trim(' ', ',')
+            ?.removeSuffix(" at")
+            ?.ifBlank { null }
     return QuoteHeader(
         name = name.ifBlank { address.orEmpty() },
         address = address ?: bare,
-        date =
-            date
-                ?.trim(' ', ',')
-                ?.removeSuffix(" at")
-                ?.ifBlank { null }
-                ?.let(::dateLabel),
+        date = written?.let(::dateLabel),
+        fullDate = written?.let(::fullDateLabel),
     )
 }
+
+/** [written] as "10 Oct 2026, 17:50" when it names a day, month, and year; otherwise as written. */
+private fun fullDateLabel(written: String): String =
+    parseDate(written)?.let { day ->
+        "${day.dayAndMonth} ${day.year}" + TIME.find(written)?.let { ", ${it.value}" }.orEmpty()
+    } ?: written
 
 /** [written] as "10 Oct" when it names a day, month, and year; otherwise as written. */
 internal fun dateLabel(written: String): String = parseDate(written)?.dayAndMonth ?: written
