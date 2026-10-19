@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -135,6 +136,22 @@ class ReadViewTest {
     }
 
     @Test
+    fun theThreadStripFollowsTheFingerAndEasesOn() {
+        showThread()
+        val strip = strip("Grace Hopper, message 1 of 6")
+        val right = strip.getBoundsInRoot().right
+        strip.performTouchInput {
+            down(center)
+            repeat(DRAG_STEPS) { moveBy(Offset(-width / 3f / DRAG_STEPS, 0f)) }
+        }
+        compose.waitForIdle()
+        compose.screenshot("read-thread-strip-dragging")
+        assertTrue("The strip moves with the finger before it is let go", strip.getBoundsInRoot().right < right)
+        strip.performTouchInput { up() }
+        strip("Alex Doe, message 2 of 6").assertIsDisplayed()
+    }
+
+    @Test
     fun aScrollThatDriftsSidewaysStaysOnThePage() {
         showThread()
         // A thumb that starts slightly sideways, then scrolls down: the old pager took it as a flick.
@@ -259,5 +276,6 @@ class ReadViewTest {
 
     private companion object {
         const val TIMEOUT = 5_000L
+        const val DRAG_STEPS = 8
     }
 }
