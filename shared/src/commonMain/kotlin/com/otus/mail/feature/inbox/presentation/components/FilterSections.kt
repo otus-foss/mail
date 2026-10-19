@@ -100,11 +100,17 @@ private fun QuickSection(
     options: FilterOptions,
     onEdit: FilterEdit,
 ) {
-    FilterSection("Quick filters") {
-        options.quick.forEach { facet ->
-            val on = draft.has(facet)
-            FilterChip(facet.label, on, { onEdit { it.with(facet, !on) } }) {
-                Symbol(facet.icon, size = FilterTokens.chipIconSize)
+    // Each group keeps the user's order; a group whose chips are all hidden leaves no caption.
+    QuickGroup.entries.forEach { group ->
+        val facets = options.quick.filter { it.group == group }
+        if (facets.isNotEmpty()) {
+            FilterSection(group.label) {
+                facets.forEach { facet ->
+                    val on = draft.has(facet)
+                    FilterChip(facet.label, on, { onEdit { it.with(facet, !on) } }) {
+                        Symbol(facet.icon, size = FilterTokens.chipIconSize)
+                    }
+                }
             }
         }
     }
