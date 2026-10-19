@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -60,8 +61,8 @@ import kotlinx.datetime.LocalDate
  * page, newest first. Filing acts on the whole conversation and closes the page first, while
  * replies and the ⋯ menu's message entries follow the page on screen. A [notice], such as a
  * refused mark, shows under the header. [cameFrom] is the folder the list shows, which the strips
- * leave out; null without a folder context. Back folds the message list, then the details, then
- * runs [onClose].
+ * leave out; null without a folder context. Back folds the message list, then the files, then the
+ * details, then runs [onClose]. The details and the page on screen survive a recreated screen.
  */
 @Composable
 fun MessageScreen(
@@ -73,18 +74,23 @@ fun MessageScreen(
     onClose: () -> Unit,
 ) {
     val read = context.read ?: remember { ReadContext() }
-    val state = remember(message.id) { ReadState(message) }
-    LaunchedEffect(message.id) { state.showPages(read.pages.messages(message)) }
+    val state = rememberSaveable(message.id, saver = ReadState.saver(message)) { ReadState(message) }
+    val pager = rememberPagerState { state.pages.size }
+    LaunchedEffect(message.id) {
+        state.showPages(read.pages.messages(message))?.let { pager.scrollToPage(it) }
+    }
     LaunchedEffect(message.id) { state.muted = read.services.mute?.isMuted(message) }
+    // The list's marks on the row settle the pages', such as Mark read from the list's bar.
+    LaunchedEffect(message.attributes, state.loaded) { state.follow(message) }
     NavigationBackHandler(
         state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
         onBackCompleted = { if (!state.back()) onClose() },
     )
     val moveChoice = rememberMoveChoice { onClose() }
     val parts = ReadParts(message, actions, context, read, state, moveChoice, onClose)
-    val pager = rememberPagerState { state.pages.size }
     val index = pager.currentPage.coerceIn(0, state.pages.lastIndex)
-    val page = parts.live(state.pages[index]).withContent(parts.content(state.pages[index]))
+    val page = state.pages[index].withContent(parts.content(state.pages[index]))
+    SideEffect { state.shownId = page.id }
     val look = rememberPageLook(parts)
     val bar = rememberReadBar(message, page, context.rowLook.own, actions, moveChoice, context.onCompose)
     val menu = rememberReadMenu(parts, look, bar, index)
@@ -134,7 +140,7 @@ private fun ReadLayout(
     val row = parts.row
     val page = state.pages[layout.index]
     val uriHandler = LocalUriHandler.current
-    val strips = remember(read, state) { ReadStripActions(read, state) { openLink(uriHandler::openUri, it) } }
+    val strips = remember(read) { ReadStripActions(read) { openLink(uriHandler::openUri, it) } }
     val date = page.received.shortLabel(layout.today)
     Column(Modifier.fillMaxSize().padding(padding).padding(PageTokens.pageInset)) {
         ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))

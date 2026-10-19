@@ -28,9 +28,10 @@ import kotlinx.coroutines.launch
 
 /**
  * Connects the Read view to the app: the services behind its pages, strips, and menu, the saved
- * privacy setting, and the folders of each account. Folder changes show on the list at once and
- * are undone with a notice if the server refuses them. [folderActions] make the folders that the
- * folders sheet starts. One per [MailStates].
+ * privacy setting, and the folders of each account. Folder and page changes show on the list at
+ * once and are undone with a notice if the server refuses them; deleting one page offers Undo in
+ * [moveToasts]. Its toasts and their work belong to the process, see [MailServices.toasts].
+ * [folderActions] make the folders that the folders sheet starts. One per [MailStates].
  */
 internal class ReadWiring(
     private val services: MailServices,
@@ -38,9 +39,11 @@ internal class ReadWiring(
     private val behavior: MailBehaviorState,
     private val folders: FoldersState,
     private val colors: FolderColorsState,
-    private val effects: ReadEffects,
+    private val moveToasts: MoveToasts,
     private val folderActions: FolderActions,
 ) {
+    private val effects =
+        ReadEffects(moveToasts.toasts, launch = { task -> services.work.launch { task() } }, services.newsletterSteps)
     private val privacy =
         ReadPrivacy(
             setting = { behavior.behavior.remoteImages },
@@ -49,34 +52,31 @@ internal class ReadWiring(
             allowSender = { address -> behavior.update { it.allowingSender(address) } },
         )
     private val files = ReadFiles(services.downloads, services.pickers.savedFiles, services.pickers.printer)
-    private val readServices = ReadServices(services.newsletters, services.headers, services.mute, services.blocks)
 
     /** The Read view of messages that [feed] lists, whose folder, when it shows one, is left out of strips. */
-    fun context(feed: InboxFeedState): ReadContext =
-        ReadContext(
+    fun context(feed: InboxFeedState): ReadContext {
+        val changes = ReadPageChanges(services, folders, moveToasts, scope, feed)
+        return ReadContext(
             pages = services.conversationMessages,
             folders =
                 ReadFolders(
                     of = { message -> folders.account(message.location.accountId)?.messageFolders().orEmpty() },
                     cameFrom = { message -> cameFrom(feed.mailScope, message) },
-                    apply = { message, added, removed -> applyFolders(feed, message, added, removed) },
+                    apply = changes::refile,
                     newFolder =
                         NewFolderSheet { accountId, onDismiss ->
                             val dialog = FolderDialog.Create(accountId, parentId = null)
                             FolderDialogs(dialog, folders.account(accountId), folderActions) {
-                                if (it ==
-                                    null
-                                ) {
-                                    onDismiss()
-                                }
+                                if (it == null) onDismiss()
                             }
                         },
                 ),
             privacy = privacy,
             files = files,
-            services = readServices,
+            services = ReadServices(services.newsletters, services.headers, services.mute, services.blocks, changes),
             effects = effects,
         )
+    }
 
     /**
      * The folder [scope] shows when it is one folder of [message]'s account: a folder page, or an
@@ -113,34 +113,6 @@ internal class ReadWiring(
         }
     }
 
-    /** Adds every email of [message]'s conversation to [added] and takes it out of [removed]. */
-    private fun applyFolders(
-        feed: InboxFeedState,
-        message: MailMessage,
-        added: Set<String>,
-        removed: Set<String>,
-    ) {
-        if (added.isEmpty() && removed.isEmpty()) return
-        val leaves = message.location.mailboxId in removed
-        val change =
-            if (leaves) {
-                feed.remove(message.id)
-            } else {
-                feed.change(message.id, { it.inFolders(added, removed) }, undo = { it.inFolders(removed, added) })
-            }
-        scope.launch {
-            val changes = added.map { it to true } + removed.map { it to false }
-            val done = changes.map { (id, on) -> services.mover.setInFolder(message, id, on) }.all { it }
-            if (done) {
-                change.confirm()
-                folders.refresh()
-            } else {
-                change.rollBack()
-                feed.report("Couldn't change the folders of this conversation. Try again.")
-            }
-        }
-    }
-
     /** The account's folders in tree order, each with its full path and saved color. */
     private fun AccountFolders.messageFolders(): List<MessageFolder> {
         val byId = folders.associateBy { it.id }
@@ -154,18 +126,6 @@ internal class ReadWiring(
             MessageFolder(node.folder.id, path, node.folder.role, colors.colorOf(node.folder), node.readLater)
         }
     }
-}
-
-/** This message, every email of its conversation included, in [added] and out of [removed]. */
-private fun MailMessage.inFolders(
-    added: Set<String>,
-    removed: Set<String>,
-): MailMessage {
-    val members =
-        conversation?.let { thread ->
-            thread.copy(members = thread.members.map { it.copy(mailboxIds = it.mailboxIds + added - removed) })
-        }
-    return copy(location = location.copy(mailboxIds = location.mailboxIds + added - removed), conversation = members)
 }
 
 /** The Read view for [feed]'s list, again when the feed changes. */

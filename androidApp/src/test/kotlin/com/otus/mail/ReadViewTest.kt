@@ -57,7 +57,7 @@ class ReadViewTest {
             fixtures.read(
                 pages,
                 cameFrom,
-                { added, removed -> applied = added to removed },
+                { applied = it.added to it.removed },
                 { unsubscribed++ },
                 newFolder,
             )
@@ -82,8 +82,14 @@ class ReadViewTest {
     private fun strip(description: String): SemanticsNodeInteraction {
         compose.waitUntil(
             TIMEOUT,
-        ) { compose.onAllNodes(hasContentDescription(description)).fetchSemanticsNodes().isNotEmpty() }
-        return compose.onNode(hasContentDescription(description))
+        ) {
+            compose
+                .onAllNodes(
+                    hasContentDescription(description, substring = true),
+                ).fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        return compose.onNode(hasContentDescription(description, substring = true))
     }
 
     private fun exists(text: String) =
@@ -96,9 +102,9 @@ class ReadViewTest {
     @Test
     fun aThreadOpensOnItsNewestPageAndTheListJumpsToAnOlderOne() {
         showThread()
-        strip("Latest, message 1 of 6").assertIsDisplayed()
+        strip("Grace Hopper, message 1 of 6").assertIsDisplayed()
         compose.screenshot("read-thread-newest")
-        strip("Latest, message 1 of 6").performClick()
+        strip("Grace Hopper, message 1 of 6").performClick()
         compose.onNodeWithText("6 messages").assertIsDisplayed()
         assertTrue(exists("You"))
         compose.screenshot("read-thread-list")
@@ -111,7 +117,7 @@ class ReadViewTest {
     @Test
     fun swipingLeftGoesBackInTime() {
         showThread()
-        strip("Latest, message 1 of 6")
+        strip("Grace Hopper, message 1 of 6")
         compose.onNodeWithText("Let's lock it in", substring = true).performTouchInput { swipeLeft() }
         strip("Alex Doe, message 2 of 6").assertIsDisplayed()
     }
@@ -120,7 +126,7 @@ class ReadViewTest {
     fun manyMessagesKeepTheDotsShortAndThePositionExact() {
         val pages = List(24) { i -> fixtures.thread[i % fixtures.thread.size].copy(id = "p$i", emailId = "p$i") }
         show(fixtures.threadRow, pages)
-        strip("Latest, message 1 of 24").assertIsDisplayed()
+        strip("Grace Hopper, message 1 of 24").assertIsDisplayed()
         compose.screenshot("read-thread-many")
     }
 
@@ -168,7 +174,7 @@ class ReadViewTest {
     @Test
     fun theMenuActsOnThePageThenTheSenderThenTheConversation() {
         showThread()
-        strip("Latest, message 1 of 6")
+        strip("Grace Hopper, message 1 of 6")
         openMenu()
         listOf(
             "Reply to Grace",
@@ -219,7 +225,7 @@ class ReadViewTest {
     @Test
     fun aQuotedReplyFoldsItsQuote() {
         showThread()
-        strip("Latest, message 1 of 6").performClick()
+        strip("Grace Hopper, message 1 of 6").performClick()
         compose.onNode(hasText("Katherine Johnson", substring = true) and isSelectable()).performClick()
         compose.onNodeWithText("Show quoted text").assertIsDisplayed()
         compose.screenshot("read-quoted")

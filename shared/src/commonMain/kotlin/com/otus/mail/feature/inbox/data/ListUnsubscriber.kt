@@ -34,7 +34,7 @@ internal class ListUnsubscriber(
     ): UnsubscribeResult =
         when {
             how.oneClick?.let { oneClick(it) } == true -> UnsubscribeResult.Done
-            how.mail?.let { mail(message, it) } == true -> UnsubscribeResult.Done
+            how.mail?.let { mail(message, it, how.deliveredTo) } == true -> UnsubscribeResult.Done
             how.web != null -> UnsubscribeResult.OpenLink(how.web)
             else -> UnsubscribeResult.Failed
         }
@@ -58,9 +58,10 @@ internal class ListUnsubscriber(
     private suspend fun mail(
         message: MailMessage,
         address: String,
+        deliveredTo: List<String>,
     ): Boolean {
         val mailto = parseMailto(address)
-        val from = mailto?.let { sendingAs(message) }
+        val from = mailto?.let { sendingAs(message, deliveredTo) }
         if (mailto == null || from == null) return false
         val accountId = message.location.accountId
         val draft =
@@ -75,16 +76,19 @@ internal class ListUnsubscriber(
     }
 
     /**
-     * The address the list wrote to, else the account's own address, else any. Wildcard
-     * identities, such as `*@example.org`, cannot be a sender address.
+     * The identity the list reached: the address the mail was [deliveredTo], else one in its To or
+     * Cc, else the account's sign-in address. Never another alias, since the list would learn it.
+     * Wildcard identities, such as `*@example.org`, cannot be a sender address.
      */
-    private suspend fun sendingAs(message: MailMessage): MailSender? {
+    private suspend fun sendingAs(
+        message: MailMessage,
+        deliveredTo: List<String>,
+    ): MailSender? {
         val identities =
             drafts.identities(message.location.accountId).map { it.sender }.filterNot { '*' in it.address }
-        val received = (message.to + message.cc).map { it.address.lowercase() }.toSet()
-        return identities.firstOrNull { it.address.lowercase() in received }
-            ?: identities.firstOrNull { it.address.equals(message.location.accountAddress, ignoreCase = true) }
-            ?: identities.firstOrNull()
+        val byAddress = identities.associateBy { it.address.lowercase() }
+        return (deliveredTo + (message.to + message.cc).map { it.address } + message.location.accountAddress)
+            .firstNotNullOfOrNull { byAddress[it.trim().lowercase()] }
     }
 }
 

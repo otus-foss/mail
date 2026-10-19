@@ -109,6 +109,8 @@ class JmapMessageBodies(
                 "header:List-Unsubscribe:asURLs",
                 "header:List-Unsubscribe-Post:asText",
                 "header:List-Id:asText",
+                "header:Delivered-To:asAddresses:all",
+                "header:X-Original-To:asAddresses:all",
             )
 
         /** Each part's `type` tells an HTML part from a plain one; the rest name and fetch files. */

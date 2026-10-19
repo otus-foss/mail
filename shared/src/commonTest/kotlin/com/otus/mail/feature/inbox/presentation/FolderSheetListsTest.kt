@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
+import com.otus.mail.feature.inbox.domain.memberMailboxes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -39,21 +40,21 @@ class FolderSheetListsTest {
 
     @Test
     fun theFoldersTheMailIsInComeFirstAndTheRestFollowByPath() {
-        val lists = folderSheetLists(message(setOf("cl", "fi")), all)
+        val lists = folderSheetLists(setOf("cl", "fi"), all)
         assertEquals(listOf(clients, invoices), lists.current)
         assertEquals(listOf(inbox, taxes), lists.others)
     }
 
     @Test
     fun spamAndTrashAreNeverOfferedButShowWhileTheMailIsInThem() {
-        val lists = folderSheetLists(message(setOf("tr")), all)
+        val lists = folderSheetLists(setOf("tr"), all)
         assertEquals(listOf(trash), lists.current)
         assertFalse(spam in lists.others)
     }
 
     @Test
     fun readLaterStaysWithTheBookmark() {
-        val lists = folderSheetLists(message(setOf("cl", "rl")), all)
+        val lists = folderSheetLists(setOf("cl", "rl"), all)
         assertFalse(readLater in lists.current + lists.others)
     }
 
@@ -68,9 +69,12 @@ class FolderSheetListsTest {
                 answered = false,
                 members = listOf(ThreadMember("e1", setOf("cl")), ThreadMember("e2", setOf("in", "fi"))),
             )
-        val message = message(setOf("cl"), conversation)
-        assertEquals(setOf("cl", "in", "fi"), message.everyMailboxId)
-        assertEquals(listOf(inbox, clients, invoices), folderSheetLists(message, all).current)
+        val mailboxes = message(setOf("cl"), conversation).memberMailboxes
+        assertEquals(mapOf("e1" to setOf("cl"), "e2" to setOf("in", "fi")), mailboxes)
+        assertEquals(
+            listOf(inbox, clients, invoices),
+            folderSheetLists(mailboxes.values.flatten().toSet(), all).current,
+        )
     }
 
     @Test

@@ -17,9 +17,9 @@ import com.otus.mail.feature.inbox.presentation.read.ReadMenuEntry
 import com.otus.mail.feature.inbox.presentation.read.ReadMenuSection
 
 /**
- * What the ⋯ menu's entries do. Entries about this message act on the page's message alone; the
- * conversation's act on the [row], the whole conversation the list shows. An action that takes the
- * row away runs through [perform], which closes the page first.
+ * What the ⋯ menu's entries do. Entries about this message act on the page's email alone, through
+ * the read context's page changes; the conversation's act on the [row], the whole conversation the
+ * list shows. An action that takes the row away runs through [perform], which closes the page first.
  */
 internal class ReadMenuActions(
     private val row: MailMessage,
@@ -51,10 +51,10 @@ internal class ReadMenuActions(
             ReadMenuEntry.DeleteThisMessage -> deletePage(page)
             is ReadMenuEntry.AlwaysShowImages -> read.privacy.allowSender(page.sender.address)
             ReadMenuEntry.BlockSender -> block(page)
-            ReadMenuEntry.ReportSpam -> rowAction(MailAction.Spam)
-            is ReadMenuEntry.MoveTo -> rowAction(MailAction.Move)
+            ReadMenuEntry.ReportSpam -> offer(MailAction.Spam)?.let(perform)
+            is ReadMenuEntry.MoveTo -> offer(MailAction.Move)?.let(perform)
             is ReadMenuEntry.Mute -> mute(!entry.on)
-            ReadMenuEntry.DeleteConversation -> rowAction(MailAction.Trash)
+            ReadMenuEntry.DeleteConversation -> offer(MailAction.Trash)?.let(perform)
         }
     }
 
@@ -64,20 +64,20 @@ internal class ReadMenuActions(
             ReadMenuEntry.ViewDetails -> read.services.headers != null
             ReadMenuEntry.BlockSender -> read.services.blocks != null
             is ReadMenuEntry.Mute -> read.services.mute != null && state.muted != null
-            ReadMenuEntry.MarkUnread -> actions?.canMark(row, MessageFlag.Read) == true
-            is ReadMenuEntry.Flag -> actions?.canMark(row, MessageFlag.Flagged) == true
-            ReadMenuEntry.DeleteThisMessage -> actions != null
+            ReadMenuEntry.MarkUnread -> canMarkPage(MessageFlag.Read)
+            is ReadMenuEntry.Flag -> canMarkPage(MessageFlag.Flagged)
+            ReadMenuEntry.DeleteThisMessage -> canChangePages
             ReadMenuEntry.ReportSpam -> offer(MailAction.Spam) != null
             is ReadMenuEntry.MoveTo -> offer(MailAction.Move) != null
             ReadMenuEntry.DeleteConversation -> offer(MailAction.Trash) != null
             else -> true
         }
 
-    private fun offer(action: MailAction): OfferedAction? = actions?.offer(listOf(row), action, chooseFolder)
+    private val canChangePages: Boolean get() = read.services.changes != null && actions != null
 
-    private fun rowAction(action: MailAction) {
-        offer(action)?.let(perform)
-    }
+    private fun canMarkPage(flag: MessageFlag): Boolean = canChangePages && actions?.canMark(row, flag) == true
+
+    private fun offer(action: MailAction): OfferedAction? = actions?.offer(listOf(row), action, chooseFolder)
 
     private fun reply(
         page: MailMessage,
@@ -86,37 +86,35 @@ internal class ReadMenuActions(
         replyOffer(page, action, role = null, compose)?.run?.invoke()
     }
 
+    /** Marks the page's email alone, with its own marks; a refused change goes back. */
     private fun mark(
         page: MailMessage,
         flag: MessageFlag,
         on: Boolean,
     ) {
-        actions?.onMark?.invoke(listOf(page), flag, on)
-        // The row's own email shows the list's marks, which a refused change puts back.
-        if (page.emailId != row.emailId) state.edit(page.id) { it.withFlag(flag, on) }
+        val changes = read.services.changes ?: return
+        state.edit(page.id) { it.withFlag(flag, on) }
+        changes.mark(row, page, flag, on) { state.edit(page.id) { it.withFlag(flag, !on) } }
     }
 
-    /** Moves the page's message alone to Trash, with the usual Undo toast. */
+    /**
+     * Moves the page's email alone to Trash, with the usual Undo toast. The conversation stays on
+     * the list, and the page comes back where it was when the server refuses or Undo runs.
+     */
     private fun deletePage(page: MailMessage) {
-        val moves = actions ?: return
-        val target = moves.shortcutTarget(page, FolderShortcut.Trash) ?: return
+        val changes = read.services.changes ?: return
+        val target = actions?.shortcutTarget(page, FolderShortcut.Trash) ?: return
+        val index = state.pages.indexOfFirst { it.id == page.id }
         state.drop(page.id)
-        moves.moves.onMove(page, target)
+        changes.trash(row, page, target) { state.restore(page, index) }
     }
 
     private fun block(page: MailMessage) {
         val blocks = read.services.blocks ?: return
         val name = page.sender.name.ifBlank { page.sender.address }
         read.effects.launch {
-            val text =
-                if (blocks.block(
-                        page,
-                    )
-                ) {
-                    "Mail from $name now goes to Spam"
-                } else {
-                    "Couldn't block $name. Try again."
-                }
+            val blocked = blocks.block(page)
+            val text = if (blocked) "Mail from $name now goes to Spam" else "Couldn't block $name. Try again."
             read.effects.toasts.show(ToastMessage(text))
         }
     }

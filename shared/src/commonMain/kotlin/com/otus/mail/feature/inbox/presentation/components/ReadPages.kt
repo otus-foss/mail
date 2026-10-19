@@ -13,7 +13,9 @@ import com.otus.designsystem.resources.symbol_image
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.domain.folderHint
+import com.otus.mail.feature.inbox.domain.RemoteImages
+import com.otus.mail.feature.inbox.domain.inJunk
+import com.otus.mail.feature.inbox.domain.orderedFolders
 import com.otus.mail.feature.inbox.domain.showsRemoteImages
 import com.otus.mail.feature.inbox.presentation.PageBody
 import com.otus.mail.feature.inbox.presentation.ReadContext
@@ -23,21 +25,27 @@ import com.otus.mail.feature.inbox.presentation.read.fullLabel
 
 /**
  * How the Read view's pages look: whether each one's remote images load, by the privacy setting,
- * the account's [known] people, still loading while null, and whether the page is in Spam; and
- * every folder of the account by id, [folders], for the sender details.
+ * the account's [known] people, still loading while null, and whether the page or the [row] is in
+ * Spam; and every folder of the account by id, [folders], for the sender details.
  */
 internal class ReadPageLook(
     private val read: ReadContext,
     private val state: ReadState,
+    private val row: MailMessage,
     private val known: Set<String>?,
     val folders: Map<String, MessageFolder>,
 ) {
-    /** Whether [page]'s remote images may load without asking; null while that is not yet known. */
+    /**
+     * Whether [page]'s remote images may load without asking; null while the known people that
+     * decide it are loading. A folder the account does not list yet counts as Spam, so images wait
+     * until it is known.
+     */
     private fun allowed(page: MailMessage): Boolean? {
-        val people = known ?: return null
-        val inSpam = page.location.mailboxIds.any { folders[it]?.role == JUNK_ROLE }
-        val privacy = read.privacy
-        return showsRemoteImages(privacy.setting(), page.sender.address, people, privacy.allowed(), inSpam)
+        val setting = read.privacy.setting()
+        val people = known ?: if (setting == RemoteImages.Known) return null else emptySet()
+        val boxes = page.location.mailboxIds + page.location.mailboxId + row.location.mailboxId - ""
+        val inSpam = inJunk(boxes, folders) || boxes.any { it !in folders }
+        return showsRemoteImages(setting, page.sender.address, people, read.privacy.allowed(), inSpam)
     }
 
     private fun hasRemote(body: PageBody): Boolean = (body as? PageBody.Loaded)?.content?.html?.remoteContent == true
@@ -46,8 +54,8 @@ internal class ReadPageLook(
         page: MailMessage,
         body: PageBody,
     ): PageImages {
-        val load = allowed(page) == true || state.imagesShown(page)
-        val onShow = { state.showImages(page) }.takeIf { !load && hasRemote(body) && allowed(page) != null }
+        val load = allowed(page) == true || state.bodies.imagesShown(page)
+        val onShow = { state.bodies.showImages(page) }.takeIf { !load && hasRemote(body) && allowed(page) != null }
         return PageImages(load, onShow)
     }
 
@@ -55,7 +63,7 @@ internal class ReadPageLook(
     fun blocked(
         page: MailMessage,
         body: PageBody,
-    ): Boolean = hasRemote(body) && allowed(page) == false && !state.imagesShown(page)
+    ): Boolean = hasRemote(body) && allowed(page) == false && !state.bodies.imagesShown(page)
 
     /** The banner above [page]'s text: images blocked, or shown this time; nothing once they are allowed. */
     @Composable
@@ -68,12 +76,12 @@ internal class ReadPageLook(
             page.sender.name
                 .ifBlank { page.sender.address }
                 .substringBefore(' ')
-        if (!state.imagesShown(page)) {
+        if (!state.bodies.imagesShown(page)) {
             ImageBanner(
                 Res.drawable.symbol_hide_image,
                 "Images blocked for privacy",
                 "Show",
-                { state.showImages(page) },
+                { state.bodies.showImages(page) },
             )
         } else {
             ImageBanner(
@@ -88,7 +96,7 @@ internal class ReadPageLook(
     /** The full record under the sender pill: every folder [page] is in, the one shown included. */
     @Composable
     fun Details(page: MailMessage) {
-        val shown = folderHint(page.location.mailboxIds, folders, cameFrom = null).folders
+        val shown = orderedFolders(page.location.mailboxIds, folders)
         ReadSenderDetails(page, page.received.fullLabel(), shown, onFolders = { state.sheet = ReadSheet.Folders })
     }
 }
@@ -114,8 +122,8 @@ internal fun ReadPages(
         key = { state.pages.getOrNull(it)?.id ?: it },
     ) { index ->
         val page = state.pages.getOrNull(index) ?: return@HorizontalPager
-        LaunchedEffect(page.id) { state.load(page, loadContent) }
-        val body = state.body(page)
+        LaunchedEffect(page.id) { state.bodies.load(page, loadContent) }
+        val body = state.bodies.body(page)
         val showPerson = { address: String -> { state.details = true }.takeIf { page.shows(address) } }
         ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize(), showPerson) {
             look.Banner(page, body)
@@ -123,8 +131,6 @@ internal fun ReadPages(
         }
     }
 }
-
-private const val JUNK_ROLE = "junk"
 
 /** Whether the sender details of this message show [address], as its sender or a recipient. */
 private fun MailMessage.shows(address: String): Boolean =

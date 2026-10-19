@@ -7,6 +7,7 @@ import android.graphics.Paint
 import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
+import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailBehavior
@@ -29,7 +30,10 @@ import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MessageMoves
+import com.otus.mail.feature.inbox.presentation.MoveTarget
+import com.otus.mail.feature.inbox.presentation.PageChanges
 import com.otus.mail.feature.inbox.presentation.ReadContext
+import com.otus.mail.feature.inbox.presentation.ReadEffects
 import com.otus.mail.feature.inbox.presentation.ReadFiles
 import com.otus.mail.feature.inbox.presentation.ReadFolders
 import com.otus.mail.feature.inbox.presentation.ReadPrivacy
@@ -92,7 +96,7 @@ internal object ReadViewFixtures {
 
     val thread =
         listOf(
-            message("g", grace, Q4, GRACE, ReceivedAt("2026-10-12", "09:14")),
+            message("g", grace, Q4, GRACE, ReceivedAt("2026-10-12", "09:14"), setOf("in", "fi")),
             message("y", alex, Q4, "Can we meet Thursday to settle it?", ReceivedAt("2026-10-11", "18:02")),
             message("r", radia, Q4, "Infra is fine with either plan.", ReceivedAt("2026-10-11", "11:40")),
             message("k", katherine, Q4, KATHERINE, ReceivedAt("2026-10-10", "16:20")),
@@ -100,10 +104,9 @@ internal object ReadViewFixtures {
             message("a", ada, Q4, "Kicking this off. Draft plan attached.", ReceivedAt("2026-10-09", "10:00")),
         )
 
-    /** The thread's row, in Inbox and also in Finance / Invoices. */
+    /** The thread's row; its newest email is in Inbox and also in Finance / Invoices. */
     val threadRow =
         thread.first().copy(
-            location = thread.first().location.copy(mailboxIds = setOf("in", "fi")),
             conversation =
                 MailConversation(
                     "t1",
@@ -111,7 +114,7 @@ internal object ReadViewFixtures {
                     ThreadEmail(grace, emptyList(), thread.first().received),
                     thread.map { it.sender },
                     answered = false,
-                    members = thread.map { ThreadMember(it.emailId, setOf("in")) },
+                    members = thread.map { ThreadMember(it.emailId, it.location.mailboxIds, "in") },
                 ),
         )
 
@@ -155,16 +158,18 @@ internal object ReadViewFixtures {
     fun read(
         pages: List<MailMessage>,
         cameFrom: String? = null,
-        applied: (Set<String>, Set<String>) -> Unit = { _, _ -> },
+        applied: (FolderChange) -> Unit = {},
         unsubscribed: () -> Unit = {},
         newFolder: NewFolderSheet? = null,
+        changes: PageChanges = RecordedPageChanges(),
+        effects: ReadEffects = ReadEffects(),
     ) = ReadContext(
         pages = ConversationMessages { pages },
         folders =
             ReadFolders(
                 of = { folders },
                 cameFrom = { cameFrom },
-                apply = { _, added, removed -> applied(added, removed) },
+                apply = { change, _ -> applied(change) },
                 newFolder = newFolder,
             ),
         privacy = ReadPrivacy(known = KnownPeople { team.map { it.address }.toSet() }),
@@ -179,7 +184,9 @@ internal object ReadViewFixtures {
                 headers = MessageHeaders { emptyList() },
                 mute = FakeMute(),
                 blocks = SenderBlocks { true },
+                changes = changes,
             ),
+        effects = effects,
         today = { LocalDate(2026, 10, 19) },
     )
 
@@ -201,15 +208,17 @@ internal object ReadViewFixtures {
         return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
     }
 
-    fun actions(behavior: MailBehavior = MailBehavior()) =
-        MessageActions(
-            moves = MessageMoves(targets = { emptyList() }, onMove = { _, _ -> }, suggested = { null }) { null },
-            canMark = { _, _ -> true },
-            onMark = { _, _, _ -> },
-            ruleForSender = { null },
-            readLater = { null },
-            behavior = { behavior },
-        )
+    fun actions(
+        behavior: MailBehavior = MailBehavior(),
+        targets: List<MoveTarget> = emptyList(),
+    ) = MessageActions(
+        moves = MessageMoves(targets = { targets }, onMove = { _, _ -> }, suggested = { null }) { null },
+        canMark = { _, _ -> true },
+        onMark = { _, _, _ -> },
+        ruleForSender = { null },
+        readLater = { null },
+        behavior = { behavior },
+    )
 
     private class FakeNewsletters(
         private val unsubscribed: () -> Unit,

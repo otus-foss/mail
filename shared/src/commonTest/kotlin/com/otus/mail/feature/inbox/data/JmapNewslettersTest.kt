@@ -55,7 +55,14 @@ class JmapNewslettersTest {
                     respond("", postStatus)
                 },
             )
-        val drafts = FakeDrafts(listOf(MailSender("Ada", "ada@example.org"), MailSender("Ada", "ada@work.example.org")))
+        val drafts =
+            FakeDrafts(
+                listOf(
+                    MailSender("Ada", "ada@alias.example.org"),
+                    MailSender("Ada", "ada@example.org"),
+                    MailSender("Ada", "ada@work.example.org"),
+                ),
+            )
         val sender =
             DraftSender { draft, _, _ ->
                 sent += draft
@@ -119,6 +126,24 @@ class JmapNewslettersTest {
             assertEquals(listOf("leave@sentry.io"), draft.to.map { it.address })
             assertEquals("stop", draft.subject)
             assertEquals("ada@work.example.org", draft.from?.address, "Sent from the address the list writes to")
+        }
+
+    @Test
+    fun aListThatWroteToABccAddressHearsFromTheAddressItReached() =
+        runTest {
+            val bcc = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.io")))
+            val how = Unsubscribe(mail = "mailto:leave@sentry.io", deliveredTo = listOf("Ada@Alias.example.org"))
+            assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(bcc, how))
+            assertEquals("ada@alias.example.org", sent.single().from?.address)
+        }
+
+    @Test
+    fun withoutAKnownRecipientTheSignInAddressSendsNeverAnotherAlias() =
+        runTest {
+            val bcc = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.io")))
+            val how = Unsubscribe(mail = "mailto:leave@sentry.io")
+            assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(bcc, how))
+            assertEquals("ada@example.org", sent.single().from?.address)
         }
 
     @Test

@@ -55,8 +55,10 @@ class AndroidSavedFiles(
     ): Boolean {
         val file =
             withContext(Dispatchers.IO) {
+                val opened = File(context.cacheDir, OPENED_DIRECTORY)
+                pruneOpened(opened)
                 // A folder per file keeps its own name, so two files with one name never clash.
-                File(File(context.cacheDir, OPENED_DIRECTORY), System.nanoTime().toString())
+                File(opened, System.nanoTime().toString())
                     .apply { mkdirs() }
                     .resolve(safeName(name))
                     .apply { writeBytes(bytes) }
@@ -74,9 +76,23 @@ class AndroidSavedFiles(
         }
     }
 
+    /**
+     * Deletes files opened more than a day ago. The app that shows a file reads it soon after, so
+     * older copies only take space.
+     */
+    private fun pruneOpened(opened: File) {
+        val cutoff = System.currentTimeMillis() - OPENED_KEEP_MILLIS
+        opened
+            .listFiles()
+            .orEmpty()
+            .filter { it.lastModified() < cutoff }
+            .forEach { it.deleteRecursively() }
+    }
+
     private companion object {
         /** Matches the `cache-path` in `res/xml/shared_files.xml`. */
         const val OPENED_DIRECTORY = "opened"
+        const val OPENED_KEEP_MILLIS = 24L * 60 * 60 * 1000
 
         /** The sender picks the name, so path separators and dot names cannot leave the folder. */
         fun safeName(name: String): String =

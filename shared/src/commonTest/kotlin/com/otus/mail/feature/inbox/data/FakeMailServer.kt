@@ -246,10 +246,12 @@ private fun mailboxesIn(filter: JsonObject): Set<String> {
     }
 }
 
+/** [path] is a property, which [value] replaces, or `property/key`, which it sets or clears. */
 private fun JsonObject.at(
     path: String,
     value: JsonElement,
 ): JsonObject {
+    if ('/' !in path) return JsonObject(this + (path to value))
     val property = path.substringBefore('/')
     val key = path.substringAfter('/')
     val inner = (get(property) as? JsonObject).orEmpty()

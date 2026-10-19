@@ -45,6 +45,19 @@ class ReadFoldersTest {
     }
 
     @Test
+    fun stripsLeaveOutSentTrashAndSpamButTheDetailsListEveryFolder() {
+        val sent = MessageFolder("se", listOf("Sent"), role = "sent")
+        val trash = MessageFolder("tr", listOf("Trash"), role = "trash")
+        val junk = MessageFolder("sp", listOf("Junk"), role = "junk")
+        val folders = all + listOf(sent, trash, junk).associateBy { it.id }
+        val ids = setOf("se", "tr", "sp", "rl", "cl")
+        assertEquals(listOf(clients), folderHint(ids, folders, cameFrom = null).folders)
+        assertEquals(listOf(clients, junk, readLater, sent, trash), orderedFolders(ids, folders))
+        assertTrue(inJunk(ids, folders))
+        assertFalse(inJunk(setOf("cl"), folders))
+    }
+
+    @Test
     fun putsTheInboxFirstThenSortsByPath() {
         val hint = folderHint(setOf("fri", "ar", "in", "fi"), all, cameFrom = null)
         assertEquals(listOf(inbox, archive, financeInvoices, freelancingInvoices), hint.folders)

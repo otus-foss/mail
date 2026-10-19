@@ -21,43 +21,44 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_create_new_folder
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.SheetTokens
+import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.presentation.everyMailboxId
 import com.otus.mail.feature.inbox.presentation.folderSheetLists
 import com.otus.mail.feature.inbox.presentation.matchesSearch
 
 /**
- * Adds [message], or every email of its conversation, to folders and takes it out of others, with
- * a checkbox per folder because a JMAP email can be in several. The folders it is in come first,
- * the one the user [cameFrom] marked "you're here", then the rest. Ticks stay a draft until Done,
- * which runs [onApply] with the folder ids that changed. Done is off while nothing is ticked,
- * since an email must stay in at least one folder. [onNewFolder] adds a New folder row.
+ * Adds every email of [message]'s conversation to folders and takes it out of others, with a
+ * checkbox per folder because a JMAP email can be in several. [mailboxes] holds each email's
+ * mailboxes by Email id; a folder is ticked when any email is in it. The folders come first, the
+ * one the user [cameFrom] marked "you're here", then the rest. Ticks stay a draft until Done,
+ * which runs [onApply] with the folder ids that changed. Done is off, with the reason, while an
+ * email would be left in no folder, which JMAP does not allow. [onNewFolder] adds a New folder row.
  */
 @Composable
 fun FoldersSheet(
     message: MailMessage,
+    mailboxes: Map<String, Set<String>>,
     folders: List<MessageFolder>,
     cameFrom: String?,
     onApply: (added: Set<String>, removed: Set<String>) -> Unit,
     onNewFolder: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
-    val start = message.everyMailboxId
+    val start = mailboxes.values.flatten().toSet()
     var checked by remember(message.id) { mutableStateOf(start) }
     var query by rememberSaveable { mutableStateOf("") }
-    val lists = remember(message, folders) { folderSheetLists(message, folders) }
+    val lists = remember(start, folders) { folderSheetLists(start, folders) }
     val toggle = { id: String -> checked = if (id in checked) checked - id else checked + id }
+    val change = FolderChange(message, mailboxes, added = checked - start, removed = start - checked)
     SheetFrame(
         "Folders",
         onDismiss,
         onDone = {
-            val added = checked - start
-            val removed = start - checked
-            if (added.isNotEmpty() || removed.isNotEmpty()) onApply(added, removed)
+            if (change.changes) onApply(change.added, change.removed)
             onDismiss()
         },
-        doneEnabled = checked.isNotEmpty(),
+        doneEnabled = change.keepsEveryEmail,
     ) {
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -69,6 +70,7 @@ fun FoldersSheet(
             ) {
                 MoveSummary(listOf(message), oneSender = true)
                 PickerSearch(query, { query = it }, "Search folders…")
+                if (!change.keepsEveryEmail) SheetCaption("Each mail needs a folder", heading = false)
             }
             val current = lists.current.filter { it.matchesSearch(query) }
             val others = lists.others.filter { it.matchesSearch(query) }

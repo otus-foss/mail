@@ -126,7 +126,7 @@ class JmapNewMailChecker(
                         ),
                     )
             }
-        val muted = mutedThreads(response, members)
+        val muted = mutedThreads(response, members) ?: mutedThreads(response, emails).orEmpty()
         val inboxes =
             response[mailboxes]
                 .list
@@ -142,21 +142,23 @@ class JmapNewMailChecker(
     }
 
     /**
-     * The threads with an email the user muted. A server that refuses the thread calls mutes none,
-     * since a missed notification is worse than an unwanted one.
+     * The threads with an email of [found] the user muted; null when the server refused the call.
+     * A thread too long for one `Email/get` gets its members refused, so the new emails' own
+     * keywords answer instead, and a refused thread mutes none, since a missed notification is
+     * worse than an unwanted one.
      */
     private fun mutedThreads(
         response: JmapResponse,
-        members: JmapCall<GetResult<EmailObject>>,
-    ): Set<String> =
+        found: JmapCall<GetResult<EmailObject>>,
+    ): Set<String>? =
         try {
-            response[members]
+            response[found]
                 .list
                 .filter { it.keywords[MUTED_KEYWORD] == true }
                 .map { it.threadId }
                 .toSet()
         } catch (expected: JmapException) {
-            emptySet()
+            null
         }
 
     private class LoginCheck(
