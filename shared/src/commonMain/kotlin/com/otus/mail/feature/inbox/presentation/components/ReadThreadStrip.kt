@@ -28,7 +28,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.otus.designsystem.components.FolderHint
 import com.otus.designsystem.components.NamedAvatar
-import com.otus.designsystem.components.PositionStrip
+import com.otus.designsystem.components.PositionPage
+import com.otus.designsystem.components.SlidingPositionStrip
 import com.otus.designsystem.components.StripCard
 import com.otus.designsystem.components.ThreadEntry
 import com.otus.designsystem.components.ThreadList
@@ -52,30 +53,40 @@ import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import kotlinx.datetime.LocalDate
 
 /**
- * The thread strip for the page at [position], newest first: "Latest" on the newest page, else the
- * sender, with the position and date. Its end names the conversation's other [folders], and a flag
- * when it is [flagged] and the list gave no folder context. Screen readers hear the sender, the
- * position, the date, and the folders, such as "Grace Hopper, message 1 of 6, 12 Oct, also in
- * Invoices".
+ * The thread strip, newest first: "Latest" on the newest page, else the sender, with the position
+ * and date of each page that [pageAt] gives, [current] on screen of [count]. Its card stays while
+ * each page's content slides inside it as [slide] turns the pages, and a drag on it turns them too.
+ * Its end names the conversation's other [folders], and a flag when it is [flagged] and the list
+ * gave no folder context. Screen readers hear the sender, the position, the date, and the folders,
+ * such as "Grace Hopper, message 1 of 6, 12 Oct, also in Invoices".
  */
 @Composable
 internal fun ReadThreadStrip(
-    position: ThreadPosition,
+    pageAt: (Int) -> ThreadPosition,
+    current: Int,
+    count: Int,
     folders: ShownFolders,
     flagged: Boolean,
     onClick: () -> Unit,
+    slide: StripSlide,
 ) {
-    val page = position.page
-    val sender = page.sender.name.ifBlank { page.sender.address }
-    val title = if (position.current == 0) "Latest" else sender
     val flag = flagged && !folders.also
-    PositionStrip(
-        NamedAvatar(title, page.sender.chipAvatar),
-        position.count,
-        position.current,
-        "${position.current + 1}/${position.count} · ${position.date}",
+    SlidingPositionStrip(
+        count,
+        current,
+        slide.position,
+        { index ->
+            val position = pageAt(index)
+            val page = position.page
+            val sender = page.sender.name.ifBlank { page.sender.address }
+            PositionPage(
+                NamedAvatar(if (position.current == 0) "Latest" else sender, page.sender.chipAvatar),
+                "${position.current + 1}/${position.count} · ${position.date}",
+                spokenPosition(sender, position, folders, flag),
+            )
+        },
         onClick,
-        description = spokenPosition(sender, position, folders, flag),
+        slide.swipe,
     ) { FolderSlot(folders, flag) }
 }
 
