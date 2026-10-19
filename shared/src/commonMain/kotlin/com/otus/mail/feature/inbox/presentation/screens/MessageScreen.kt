@@ -27,6 +27,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.LocalSheetPull
 import com.otus.designsystem.components.OptionsItem
+import com.otus.designsystem.components.foldedForm
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
@@ -161,15 +162,12 @@ private fun ReadLayout(
         ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f).then(swipe))
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
+        val thread = layout.folds.thread
+        // The strip blurs away under the message list growing out of it, and back as the list folds.
         val threadSwipe =
-            stripSwipe.then(
-                rememberFoldSwipe(
-                    rememberUnfoldDrag(layout.folds.thread) {
-                        state.threadOpen =
-                            it
-                    },
-                ),
-            )
+            stripSwipe
+                .then(rememberFoldSwipe(rememberUnfoldDrag(thread) { state.threadOpen = it }))
+                .foldedForm(thread)
         val slide =
             StripGestures(threadSwipe, {
                 pager.currentPage + pager.currentPageOffsetFraction

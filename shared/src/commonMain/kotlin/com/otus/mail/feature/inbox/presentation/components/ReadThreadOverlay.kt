@@ -23,6 +23,7 @@ import com.otus.designsystem.components.Unfold
 import com.otus.designsystem.components.UnfoldingStripCard
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.ReadTokens
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
@@ -46,7 +47,8 @@ internal fun ReadThreadList(
     onFold: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    UnfoldingStripCard(unfold, modifier) {
+    // It grows from the thread strip's own height, so its top edge starts at the strip's and follows the finger.
+    UnfoldingStripCard(unfold, modifier, folded = ReadTokens.positionHeight) {
         ThreadList("${entries.size} messages", entries, current, onSelect, onFold, maxHeight = maxHeight)
     }
 }

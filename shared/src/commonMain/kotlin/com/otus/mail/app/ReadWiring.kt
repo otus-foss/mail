@@ -75,6 +75,7 @@ internal class ReadWiring(
             files = files,
             services = ReadServices(services.newsletters, services.headers, services.mute, services.blocks, changes),
             effects = effects,
+            showQuotes = { behavior.behavior.showQuotes },
         )
     }
 

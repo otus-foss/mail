@@ -16,7 +16,31 @@ data class PlainQuote(
  * Null when it quotes nothing, when `>` lines are mixed with replies, or when nothing comes before
  * the quote, so the message is never hidden.
  */
-fun splitPlainQuote(text: String): PlainQuote? {
+fun splitPlainQuote(text: String): PlainQuote? = splitQuote(text, nested = false)
+
+/** One level of a quote: its [header], when it names who wrote it, and only its own [text]. */
+data class QuoteLevelText(
+    val header: QuoteHeader?,
+    val text: String,
+)
+
+/**
+ * This quote and the quotes nested in it, outermost first, up to [MAX_LEVELS], each with only its
+ * own text and without its `>` marks. A level quoted in a way the split cannot read stays part of
+ * the text of the level around it.
+ */
+fun PlainQuote.levels(): List<QuoteLevelText> {
+    val quotes = generateSequence(this) { splitQuote(it.quoted, nested = true) }.take(MAX_LEVELS).toList()
+    return quotes.mapIndexed { index, quote ->
+        QuoteLevelText(quote.header, quotes.getOrNull(index + 1)?.body ?: quote.quoted)
+    }
+}
+
+/** [text] split at its quote; a [nested] quote may start at its first line, with nothing before it. */
+private fun splitQuote(
+    text: String,
+    nested: Boolean,
+): PlainQuote? {
     val lines = text.lines()
     val start = lines.indices.firstNotNullOfOrNull { lines.quoteAt(it) } ?: return null
     val body = lines.take(start.index).joinToString("\n").trimEnd()
@@ -27,7 +51,7 @@ fun splitPlainQuote(text: String): PlainQuote? {
             .dropWhile(String::isBlank)
             .joinToString("\n")
             .trimEnd()
-    return PlainQuote(body, start.header, quoted).takeIf { body.isNotBlank() && quoted.isNotBlank() }
+    return PlainQuote(body, start.header, quoted).takeIf { (nested || body.isNotBlank()) && quoted.isNotBlank() }
 }
 
 /** Where a quote starts: its first line, its [header], and the line its text starts on. */
@@ -51,10 +75,16 @@ private fun List<String>.quoteAt(index: Int): QuoteStart? {
     }
 }
 
-/** An Outlook quote: the separator, then header fields up to the first other line. */
+/**
+ * An Outlook quote: the separator, then header fields up to the first other line. Without fields,
+ * an "On … wrote:" line right after it names the quote instead, as Proton Mail writes it.
+ */
 private fun List<String>.originalAt(index: Int): QuoteStart {
     val fields = drop(index + 1).takeWhile(::isHeaderField)
-    return QuoteStart(index, fieldsHeader(fields), index + 1 + fields.size)
+    val next = (index + 1 until size).firstOrNull { this[it].isNotBlank() }
+    val attribution = next?.takeIf { fields.isEmpty() }?.let(::quoteAt)?.takeIf { it.header != null }
+    return attribution?.let { QuoteStart(index, it.header, it.contentFrom) }
+        ?: QuoteStart(index, fieldsHeader(fields), index + 1 + fields.size)
 }
 
 private fun isMarkedOrBlank(line: String): Boolean = line.isBlank() || line.trimStart().startsWith('>')
@@ -62,3 +92,6 @@ private fun isMarkedOrBlank(line: String): Boolean = line.isBlank() || line.trim
 private val MARK = Regex("""^\s?>\s?""")
 private val ORIGINAL =
     Regex("""^-{2,}\s*(?:Original Message|Ursprüngliche Nachricht)\s*-{2,}$""", RegexOption.IGNORE_CASE)
+
+/** How many quote levels a reply shows apart; deeper ones stay in the text of the last. */
+private const val MAX_LEVELS = 8

@@ -93,6 +93,12 @@ internal class ReadPageLook(
         }
     }
 
+    /**
+     * Whether the page at [index] leaves its quoted text out: unless the user shows quotes, a page
+     * with older pages in its conversation does, since a swipe shows them.
+     */
+    fun hidesQuote(index: Int): Boolean = !read.showQuotes() && index < state.pages.lastIndex
+
     /** The full record under the sender pill: every folder [page] is in, the one shown included. */
     @Composable
     fun Details(page: MailMessage) {
@@ -127,7 +133,7 @@ internal fun ReadPages(
         LaunchedEffect(page.id) { state.bodies.load(page, loadContent) }
         val body = state.bodies.body(page)
         val showPerson = { address: String -> { state.details = true }.takeIf { page.shows(address) } }
-        ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize(), showPerson) {
+        ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize(), look.hidesQuote(index), showPerson) {
             look.Banner(page, body)
             if (state.details && index == pager.currentPage) look.Details(page)
         }

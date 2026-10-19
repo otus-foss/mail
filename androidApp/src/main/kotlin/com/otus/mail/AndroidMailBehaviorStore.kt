@@ -45,6 +45,7 @@ class AndroidMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.getString(ACTION_BAR_MODE, null)) ?: defaults.actionBarMode,
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
+            showQuotes = preferences.getBoolean(SHOW_QUOTES, defaults.showQuotes),
             recentFrom = decodeAddresses(preferences.getString(RECENT_FROM, null)),
             signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
@@ -68,6 +69,7 @@ class AndroidMailBehaviorStore(
             putString(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
+            putBoolean(SHOW_QUOTES, behavior.showQuotes)
             putString(RECENT_FROM, encodeAddresses(behavior.recentFrom))
             putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
             putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
@@ -89,6 +91,7 @@ class AndroidMailBehaviorStore(
         const val ACTION_BAR_MODE = "action_bar_mode"
         const val MINIMIZED_BAR = "action_bar_minimized"
         const val WEBSITE_ICONS = "website_icons"
+        const val SHOW_QUOTES = "show_quotes"
         const val RECENT_FROM = "recent_from"
         const val SIGNATURE_IN_REPLIES = "signature_in_replies"
         const val UNDO_SEND_SECONDS = "undo_send_seconds"
