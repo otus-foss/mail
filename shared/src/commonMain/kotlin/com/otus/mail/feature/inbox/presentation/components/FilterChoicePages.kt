@@ -86,7 +86,7 @@ internal fun DatePage(
     var end by rememberSaveable { mutableStateOf(range?.to?.toString()) }
     // Reset, or a preset after a range, also forgets the range the calendar shows.
     LaunchedEffect(date) {
-        if (date == DateFilter.Any && start != null) {
+        if (date !is DateFilter.Range && start != null) {
             custom = false
             start = null
             end = null
@@ -100,7 +100,13 @@ internal fun DatePage(
                     onEdit { it.copy(date = preset) }
                 }, role = FilterChipRole.Radio)
             }
-            FilterChip("Custom", custom, { custom = true }, role = FilterChipRole.Radio)
+            // Custom drops the preset at once, so the count and Show match the empty calendar.
+            FilterChip("Custom", custom, {
+                if (!custom) {
+                    custom = true
+                    onEdit { it.copy(date = DateFilter.Any) }
+                }
+            }, role = FilterChipRole.Radio)
         }
         if (custom) {
             DateRangeCalendar(start, end, { first, last ->

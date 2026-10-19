@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.ui.focus.FocusRequester
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_account_circle
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_calendar_today
 import com.otus.designsystem.resources.symbol_straighten
@@ -61,7 +62,12 @@ class ActiveFilters(
                         add(opening(FilterPage.To, symbolPill(label, Res.drawable.symbol_alternate_email)))
                     }
                 }
-                applied.account?.let(options::account)?.let { add(opening(FilterPage.Account, accountPill(it))) }
+                applied.account?.let { id ->
+                    // An account this page no longer offers still filters, so its pill stays to show it.
+                    val pill =
+                        options.account(id)?.let(::accountPill) ?: symbolPill(id, Res.drawable.symbol_account_circle)
+                    add(opening(FilterPage.Account, pill))
+                }
                 if (applied.folders.isNotEmpty()) {
                     add(opening(FilterPage.Folders, foldersPill(applied.folders.toList(), options)))
                 }

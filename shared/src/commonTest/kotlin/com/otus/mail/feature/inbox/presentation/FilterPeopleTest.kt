@@ -121,6 +121,15 @@ class FilterPeopleTest {
     }
 
     @Test
+    fun pickingARecipientPicksAllTheirAddresses() {
+        val openAi =
+            toPeople(listOf(message(1, sam, to = listOf(noreply)), message(2, sam, to = listOf(news))), emptyList())
+        val picked = InboxFilters().withRecipient(openAi.single(), on = true)
+        assertEquals(setOf(noreply.address, news.address), picked.to)
+        assertEquals(emptySet(), picked.withRecipient(openAi.single(), on = false).to)
+    }
+
+    @Test
     fun anOwnAddressSavedInAnotherCaseStillCountsAsPicked() {
         val own = OwnAddress("ada", "ada@example.org")
         val person = FilterPerson("Work", listOf(own.address), own = own)

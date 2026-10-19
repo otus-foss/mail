@@ -80,6 +80,8 @@ class JmapPeopleSearch(
                 }.orEmpty()
         } catch (expected: JmapException) {
             emptyList()
+        } catch (expected: LoginStoreException) {
+            emptyList()
         }
 
     private companion object {

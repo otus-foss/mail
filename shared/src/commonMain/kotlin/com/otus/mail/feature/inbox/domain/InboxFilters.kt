@@ -58,6 +58,12 @@ data class InboxFilters(
         on: Boolean,
     ): InboxFilters = copy(types = if (on) types + facet else types - facet)
 
+    /** These filters with recipients looked up in [field] or not; the last field stays on. */
+    fun withField(
+        field: RecipientField,
+        on: Boolean,
+    ): InboxFilters = copy(receivedIn = (if (on) receivedIn + field else receivedIn - field).ifEmpty { receivedIn })
+
     /** Whether the row pill's filter is on: Unread is the status, the others quick filters. */
     fun has(pill: InboxPill.Filter): Boolean = pill.quick?.let(::has) ?: (status == ReadStatus.Unread)
 

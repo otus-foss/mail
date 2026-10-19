@@ -60,9 +60,7 @@ internal fun ToPage(
         FilterSection("Received in") {
             RecipientField.entries.forEach { field ->
                 val on = field in draft.receivedIn
-                FilterChip(field.label, on, {
-                    onEdit { it.copy(receivedIn = if (on) it.receivedIn - field else it.receivedIn + field) }
-                })
+                FilterChip(field.label, on, { onEdit { it.withField(field, !on) } })
             }
         }
         PeopleList(null, typedAddress(search.text, people) + people, search.searching) { person ->
