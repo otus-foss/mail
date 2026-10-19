@@ -24,17 +24,14 @@ sealed interface FilterCount {
     ) : FilterCount
 }
 
-/** A page of the filter panel: the main page, or a page one of its rows or lines opens. */
-enum class FilterPage { Main, From, To, Account, Folders, Date, Metadata }
-
 /**
  * A page's [applied] filters, which the quick pills change at once, and the filter panel's
- * [draft] while it is open, which every [page] of the panel edits. Opening copies the applied
- * filters into the draft on the main page; Show applies the draft, and closing drops it. Every
+ * [draft] while it is open, which the panel and its popups edit. Opening copies the applied
+ * filters into the draft; Show applies the draft, and closing drops it. Every
  * draft change counts its messages again with [counter] in [scope], [COUNT_DELAY_MILLIS] after
  * the last change, cancelling a count still running; [onOpen] starts each panel session's counts.
  * [onApplied] hears every new applied value, so the page can load it and keep it. [senders] and
- * [recipients] search people for the From and To pages with [findPeople].
+ * [recipients] search people for the panel's From and To lines with [findPeople].
  */
 class InboxFilterState(
     applied: InboxFilters = InboxFilters(),
@@ -53,10 +50,6 @@ class InboxFilterState(
     var count by mutableStateOf<FilterCount>(FilterCount.Unknown)
         private set
 
-    /** The panel page on screen; it stays while the panel closes, and opening starts on the main page. */
-    var page by mutableStateOf(FilterPage.Main)
-        private set
-
     val senders = FilterPeopleSearch(PeopleField.From, scope, findPeople)
 
     val recipients = FilterPeopleSearch(PeopleField.To, scope, findPeople)
@@ -67,7 +60,6 @@ class InboxFilterState(
     private var counting: Job? = null
 
     fun open() {
-        page = FilterPage.Main
         onOpen()
         draft = applied
         recount()
@@ -81,17 +73,7 @@ class InboxFilterState(
         recipients.clear()
     }
 
-    /** Shows [page] of the open panel, which edits the same draft. */
-    fun openPage(page: FilterPage) {
-        if (isOpen) this.page = page
-    }
-
-    /** Back: a sub-page returns to the main page, and the main page closes the panel, dropping the draft. */
-    fun back() {
-        if (page == FilterPage.Main) close() else page = FilterPage.Main
-    }
-
-    /** Resets the draft to no filters, on whichever page is open. */
+    /** Resets the draft to no filters. */
     fun reset() = edit { InboxFilters() }
 
     fun edit(transform: (InboxFilters) -> InboxFilters) {

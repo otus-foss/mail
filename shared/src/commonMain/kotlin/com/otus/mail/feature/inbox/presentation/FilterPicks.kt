@@ -35,6 +35,18 @@ fun InboxFilters.withRecipient(
     return copy(to = if (on) others + person.addresses else others)
 }
 
+/**
+ * The person [text] names when it is one address: the listed person who uses it, so a merged
+ * sender or one of the user's own addresses is picked as the list would pick it, or else a person
+ * with only that address. Null when [text] is not an address.
+ */
+fun List<FilterPerson>.typed(text: String): FilterPerson? {
+    val address = text.trim()
+    if ('@' !in address || address.any { it.isWhitespace() || it in ",;" }) return null
+    return firstOrNull { person -> person.addresses.any { it.equals(address, ignoreCase = true) } }
+        ?: FilterPerson("", listOf(address))
+}
+
 /** The listed person a chosen sender stands for, to show their avatar; null when none is listed. */
 fun List<FilterPerson>.personOf(key: SenderKey): FilterPerson? = firstOrNull { it.key.overlaps(key) }
 

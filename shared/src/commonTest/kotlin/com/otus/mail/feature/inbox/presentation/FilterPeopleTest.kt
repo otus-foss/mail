@@ -99,7 +99,7 @@ class FilterPeopleTest {
     }
 
     @Test
-    fun theToPageListsOwnAddressesFirst() {
+    fun theToLineListsOwnAddressesFirst() {
         val own = listOf(OwnAddress("ada", "ada@example.org"), OwnAddress("ada", "hi@example.org"))
         val me = MailSender("Ada", "Ada@example.org")
         val messages =
@@ -136,5 +136,17 @@ class FilterPeopleTest {
         val saved = InboxFilters(sentTo = setOf(OwnAddress("ada", "Ada@Example.org")))
         assertTrue(saved.hasRecipient(person))
         assertEquals(emptySet(), saved.withRecipient(person, on = false).sentTo)
+    }
+
+    @Test
+    fun aTypedAddressPicksTheListedPersonWhoUsesIt() {
+        val own = OwnAddress("ada", "ada@example.org")
+        val openAi = fromPeople(listOf(message(1, noreply), message(2, news)))
+        assertEquals(openAi.single(), openAi.typed(" news@openai.com "), "A merged sender keeps all their addresses")
+        val mine = toPeople(emptyList(), listOf(own)).typed("Ada@Example.org")
+        assertEquals(own, mine?.own, "An own address picks as Sent to")
+        assertEquals(FilterPerson("", listOf("new@x.org")), openAi.typed("new@x.org"))
+        assertEquals(null, openAi.typed("grace"), "A name is not an address")
+        assertEquals(null, openAi.typed("a@x.org, b@x.org"))
     }
 }

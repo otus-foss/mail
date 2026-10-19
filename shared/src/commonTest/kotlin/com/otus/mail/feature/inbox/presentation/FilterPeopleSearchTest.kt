@@ -78,4 +78,18 @@ class FilterPeopleSearchTest {
             runCurrent()
             assertEquals(emptyList(), search.found, "Results for other text do not stay on screen")
         }
+
+    @Test
+    fun typingSuggestsUntilTheLineIsLeftOrCleared() {
+        val search = FilterPeopleSearch(PeopleField.From)
+        search.search("gr")
+        assertTrue(search.suggesting)
+        search.dismiss()
+        assertFalse(search.suggesting, "Leaving the line hides the matches")
+        assertEquals("gr", search.text, "and keeps the text to fix")
+        search.search("gr")
+        assertTrue(search.suggesting, "Typing again shows them")
+        search.clear()
+        assertFalse(search.suggesting)
+    }
 }

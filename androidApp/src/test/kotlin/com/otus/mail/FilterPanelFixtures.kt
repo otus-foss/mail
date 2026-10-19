@@ -67,7 +67,7 @@ internal object FilterPanelFixtures {
 
     val grace = SenderKey("Grace Hopper", setOf("grace@navy.example"))
 
-    /** Both of ChatGPT's addresses, which the From page merges into one person. */
+    /** Both of ChatGPT's addresses, which the From line merges into one person. */
     val chatGpt = SenderKey("ChatGPT", setOf("noreply@openai.com", "updates@openai.com"))
 
     val messages =

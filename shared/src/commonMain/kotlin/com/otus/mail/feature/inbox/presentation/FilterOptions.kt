@@ -3,7 +3,6 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.theme.FolderColor
 import com.otus.mail.feature.inbox.domain.FilterLayout
-import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.QuickFacet
@@ -81,11 +80,4 @@ data class FilterOptions(
     /** The Quick filters the layout shows here, without Read later while no account has its folder. */
     val quick: List<QuickFacet>
         get() = layout.quick.filter { readLater || it != QuickFacet.ReadLater }
-
-    /** Whether [section] has anything to offer here, such as Quick filters only while one is shown. */
-    fun offers(section: FilterSection): Boolean =
-        when (section) {
-            FilterSection.Quick -> quick.isNotEmpty()
-            else -> true
-        }
 }

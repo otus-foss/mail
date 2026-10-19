@@ -43,7 +43,7 @@ Conversations keeps threads with emails both in and outside Sent, and Calendar i
 with a `text/calendar` part or an `.ics` file. With any of these on, the panel shows no count.
 Otherwise its count is the same query with `limit: 0`, `calculateTotal: true`, and
 `collapseThreads`, one per login, summed; each panel session reads each login's mailboxes once.
-The From and To pages also search beyond the loaded rows: `Email/query` with a `from`, or `to` and
+The From and To lines also search beyond the loaded rows as the user types: `Email/query` with a `from`, or `to` and
 `cc`, text condition and `collapseThreads`, the newest 20, then each distinct address, plus the
 address book's contacts.
 

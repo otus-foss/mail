@@ -4,7 +4,6 @@ import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderLabel
 import com.otus.mail.feature.inbox.presentation.key
@@ -43,17 +42,6 @@ internal fun dateValue(
     date: DateFilter,
     dateFormatter: DateFormatter,
 ): String = (date as? DateFilter.Range)?.let { rangeLabel(it, dateFormatter) } ?: date.label
-
-/** The chosen types and size threshold, such as "Newsletters · 5 MB+". */
-internal fun metadataValue(draft: InboxFilters): FilterRowValue {
-    val types =
-        draft.types
-            .sortedBy { it.ordinal }
-            .joinToString(", ") { it.label }
-            .ifEmpty { "Any type" }
-    val size = if (draft.size == SizeFilter.Any) "any size" else draft.size.label
-    return FilterRowValue("$types · $size", draft.types.isNotEmpty() || draft.size != SizeFilter.Any, "$types, $size")
-}
 
 /** A chosen folder's label, telling it apart from folders of the same name. */
 internal fun FilterOptions.folderLabel(ref: FolderRef): FolderLabel =
