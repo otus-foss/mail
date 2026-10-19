@@ -19,6 +19,7 @@ import com.otus.designsystem.components.NamedAvatar
 import com.otus.designsystem.components.QuoteFold
 import com.otus.designsystem.components.QuotedLevel
 import com.otus.designsystem.elements.HtmlQuote
+import com.otus.designsystem.elements.HtmlQuoteLevel
 import com.otus.designsystem.elements.HtmlView
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
@@ -26,9 +27,12 @@ import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.presentation.PageBody
+import com.otus.mail.feature.inbox.presentation.read.HtmlQuoteSplit
 import com.otus.mail.feature.inbox.presentation.read.QuoteHeader
 import com.otus.mail.feature.inbox.presentation.read.QuoteLevelText
 import com.otus.mail.feature.inbox.presentation.read.levels
+import com.otus.mail.feature.inbox.presentation.read.markupText
+import com.otus.mail.feature.inbox.presentation.read.quoteLevels
 import com.otus.mail.feature.inbox.presentation.read.splitHtmlQuote
 import com.otus.mail.feature.inbox.presentation.read.splitPlainQuote
 
@@ -77,10 +81,7 @@ private fun HtmlBody(
 ) {
     val uriHandler = LocalUriHandler.current
     val split = remember(html.html) { splitHtmlQuote(html.html) }
-    val quote =
-        split
-            ?.takeUnless { hideQuote }
-            ?.let { HtmlQuote(it.header.name(), it.header.initials(), it.header?.date.orEmpty(), it.quote) }
+    val quote = remember(split, hideQuote) { split?.takeUnless { hideQuote }?.let(::htmlQuote) }
     HtmlView(
         split?.main ?: html.html,
         images.load,
@@ -122,6 +123,22 @@ private fun QuoteLevelText.shown(showPerson: (address: String) -> (() -> Unit)?)
         text,
         header?.address?.let(showPerson),
     )
+
+/**
+ * The fold for [split]'s quote. When its text quotes earlier mail in turn, as `>` lines or "On …
+ * wrote:" lines, it shows as text with each level folded to a row; else as the sender's markup.
+ */
+private fun htmlQuote(split: HtmlQuoteSplit): HtmlQuote {
+    val levels = quoteLevels(split.header, markupText(split.quote))
+    return if (levels.size > 1) {
+        HtmlQuote.ofText(levels.first().htmlLevel(), levels.drop(1).map { it.htmlLevel() })
+    } else {
+        HtmlQuote(split.header.name(), split.header.initials(), split.header?.date.orEmpty(), split.quote)
+    }
+}
+
+private fun QuoteLevelText.htmlLevel(): HtmlQuoteLevel =
+    HtmlQuoteLevel(header.name(), header.initials(), header?.date.orEmpty(), text)
 
 /** Blank without a header, so the fold shows no person. */
 private fun QuoteHeader?.name(): String = this?.name.orEmpty()
