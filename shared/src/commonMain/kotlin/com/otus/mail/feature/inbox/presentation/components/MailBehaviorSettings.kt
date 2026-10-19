@@ -19,6 +19,7 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_format_list_bulleted
+import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_menu
@@ -130,6 +131,13 @@ fun MailBehaviorSettings(
             checked = behavior.markReadOnOpen,
             onCheckedChange = { on -> state.update { it.copy(markReadOnOpen = on) } },
             icon = Res.drawable.symbol_mark_email_read,
+        )
+        SettingToggleRow(
+            "Show quoted text",
+            checked = behavior.showQuotes,
+            onCheckedChange = { on -> state.update { it.copy(showQuotes = on) } },
+            description = "Off, replies in a conversation show only what is new; swipe for the earlier messages",
+            icon = Res.drawable.symbol_forum,
         )
     }
     SendingSettings(state)

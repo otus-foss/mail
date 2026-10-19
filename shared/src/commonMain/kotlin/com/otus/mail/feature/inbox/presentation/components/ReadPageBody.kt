@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import com.otus.designsystem.components.NamedAvatar
 import com.otus.designsystem.components.QuoteFold
+import com.otus.designsystem.components.QuotedLevel
 import com.otus.designsystem.elements.HtmlQuote
 import com.otus.designsystem.elements.HtmlView
 import com.otus.designsystem.theme.InboxTokens
@@ -26,13 +27,16 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.presentation.PageBody
 import com.otus.mail.feature.inbox.presentation.read.QuoteHeader
+import com.otus.mail.feature.inbox.presentation.read.QuoteLevelText
+import com.otus.mail.feature.inbox.presentation.read.levels
 import com.otus.mail.feature.inbox.presentation.read.splitHtmlQuote
 import com.otus.mail.feature.inbox.presentation.read.splitPlainQuote
 
 /**
  * One page of the Read view: [top], such as the images banner and the sender details, stays put
- * above the [message]'s text, which scrolls. Its quoted part folds under it, and the quoted
- * person's pill runs what [showPerson] gives for their address, if anything. While the [body]
+ * above the [message]'s text, which scrolls. Its quoted part folds under it, levels quoted inside
+ * it fold to a row each, and a quoted person's pill runs what [showPerson] gives for their address,
+ * if anything. With [hideQuote], the quoted part is left out. While the [body]
  * loads, the preview shows; when it failed, the preview stays with a note.
  */
 @Composable
@@ -41,6 +45,7 @@ internal fun ReadPageBody(
     body: PageBody,
     images: PageImages,
     modifier: Modifier = Modifier,
+    hideQuote: Boolean = false,
     showPerson: (address: String) -> (() -> Unit)? = { null },
     top: @Composable ColumnScope.() -> Unit = {},
 ) {
@@ -49,7 +54,7 @@ internal fun ReadPageBody(
         Column(Modifier.padding(top = PageTokens.contentInset), spacing, content = top)
         val html = content?.html
         if (html != null) {
-            HtmlBody(html, images, Modifier.weight(1f))
+            HtmlBody(html, images, hideQuote, Modifier.weight(1f))
         } else {
             val text = content?.text?.ifBlank { null } ?: message.preview.ifBlank { message.body }
             val note =
@@ -58,7 +63,7 @@ internal fun ReadPageBody(
                     content?.truncated == true -> "Only the start of this message was loaded."
                     else -> null
                 }
-            PlainBody(text, note, showPerson, Modifier.weight(1f))
+            PlainBody(text, note, hideQuote, showPerson, Modifier.weight(1f))
         }
     }
 }
@@ -67,11 +72,15 @@ internal fun ReadPageBody(
 private fun HtmlBody(
     html: MessageHtml,
     images: PageImages,
+    hideQuote: Boolean,
     modifier: Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
     val split = remember(html.html) { splitHtmlQuote(html.html) }
-    val quote = split?.let { HtmlQuote(it.header.name(), it.header.initials(), it.header?.date.orEmpty(), it.quote) }
+    val quote =
+        split
+            ?.takeUnless { hideQuote }
+            ?.let { HtmlQuote(it.header.name(), it.header.initials(), it.header?.date.orEmpty(), it.quote) }
     HtmlView(
         split?.main ?: html.html,
         images.load,
@@ -86,6 +95,7 @@ private fun HtmlBody(
 private fun PlainBody(
     text: String,
     note: String?,
+    hideQuote: Boolean,
     showPerson: (address: String) -> (() -> Unit)?,
     modifier: Modifier,
 ) {
@@ -96,20 +106,22 @@ private fun PlainBody(
         spacing,
     ) {
         Text(split?.body ?: text)
-        split?.let { quote ->
-            val header = quote.header
-            QuoteFold(
-                header?.let { NamedAvatar(it.name, chipAvatar(null, it.name, it.address.orEmpty())) },
-                header?.date.orEmpty(),
-                quote.quoted,
-                expanded,
-                onToggle = { expanded = !expanded },
-                onPerson = header?.address?.let(showPerson),
-            )
+        split?.takeUnless { hideQuote }?.let { quote ->
+            val levels = remember(quote) { quote.levels() }.map { it.shown(showPerson) }
+            QuoteFold(levels.first(), expanded, onToggle = { expanded = !expanded }, deeper = levels.drop(1))
         }
         note?.let { Text(it, color = OtusColors.text2) }
     }
 }
+
+/** This level as the fold shows it: the person's pill, when the quote names them, runs [showPerson]. */
+private fun QuoteLevelText.shown(showPerson: (address: String) -> (() -> Unit)?): QuotedLevel =
+    QuotedLevel(
+        header?.let { NamedAvatar(it.name, chipAvatar(null, it.name, it.address.orEmpty())) },
+        header?.date.orEmpty(),
+        text,
+        header?.address?.let(showPerson),
+    )
 
 /** Blank without a header, so the fold shows no person. */
 private fun QuoteHeader?.name(): String = this?.name.orEmpty()

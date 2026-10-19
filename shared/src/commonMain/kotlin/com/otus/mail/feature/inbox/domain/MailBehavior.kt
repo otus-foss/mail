@@ -14,6 +14,8 @@ package com.otus.mail.feature.inbox.domain
  * that long so Undo can stop it; 0 sends at once. [filters] arranges the filter panel. [list] sets
  * how the mail list's rows read. [remoteImages] decides when a message loads images from other
  * servers, and [allowedSenders] are the lowercase addresses whose images always load.
+ * [showQuotes] shows a reply's quoted text even when earlier messages of its conversation are a
+ * swipe away; off, the Read view leaves that text out.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -34,6 +36,7 @@ data class MailBehavior(
     val list: MailListLayout = MailListLayout(),
     val remoteImages: RemoteImages = RemoteImages.Known,
     val allowedSenders: List<String> = emptyList(),
+    val showQuotes: Boolean = false,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =
