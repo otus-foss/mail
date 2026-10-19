@@ -199,7 +199,7 @@ internal fun ReadThreadList(
 /**
  * The message list grown from the thread strip over the page at [current], which dims behind it
  * with the action bar. It sits where the strip does, above the bar's [padding]; choosing a message
- * runs [onSelect] and folds it, as do its header and a tap outside.
+ * runs [onSelect] and folds it, as do its header, a tap outside, and a swipe down.
  */
 @Composable
 internal fun ReadThreadOverlay(
@@ -253,7 +253,8 @@ internal fun ReadThreadOverlay(
                     .safeDrawingPadding()
                     .padding(padding)
                     .padding(PageTokens.pageInset)
-                    .animateEnterExit(enter = expandVertically(motionTween(), expandFrom = Alignment.Bottom)),
+                    .animateEnterExit(enter = expandVertically(motionTween(), expandFrom = Alignment.Bottom))
+                    .then(rememberFoldSwipe(onDown = fold)),
             )
         }
     }
