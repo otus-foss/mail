@@ -110,6 +110,8 @@ internal class ReadPageChanges(
                 // Emails the server did change go back too, so the conversation stays as it was.
                 services.mover.setMailboxes(row.location.accountId, change.before.filterKeys { it in updated })
                 onRefused()
+                // A removed row comes back only in the list it left, and at its end; a reload puts it in place.
+                feed.refresh()
                 feed.report("Couldn't change the folders of this conversation. Try again.")
             }
         }
