@@ -26,7 +26,7 @@ import com.otus.designsystem.components.Recipient
 import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SheetFrame
-import com.otus.designsystem.components.SuggestedFolderCard
+import com.otus.designsystem.components.SuggestedFolderRow
 import com.otus.designsystem.elements.DestinationPill
 import com.otus.designsystem.elements.IconPill
 import com.otus.designsystem.elements.LocalIconTint
@@ -162,8 +162,8 @@ private fun ShortcutPill(
 }
 
 /**
- * The user's own folder [sender]'s mail usually goes to, under its own caption, as a card with the
- * sender's pill and the folder's pill.
+ * The user's own folder [sender]'s mail usually goes to, under its own caption, as the sender's
+ * pill and the folder's pill, lined up with the caption.
  */
 @Composable
 private fun MoveSuggestion(
@@ -173,11 +173,12 @@ private fun MoveSuggestion(
 ) {
     SheetCaption("Suggested", RowTextInset)
     val name = sender.name.ifBlank { sender.address }
-    SuggestedFolderCard(
+    SuggestedFolderRow(
         Recipient(name, sender.chipAvatar, sender.address),
         FolderName(target.path ?: target.label.split(" / "), target.color?.let(FolderColor::named), system = false),
         "Move to ${target.label}, where $name's mail usually goes",
         { onMove(target) },
+        RowTextInset,
     )
 }
 
