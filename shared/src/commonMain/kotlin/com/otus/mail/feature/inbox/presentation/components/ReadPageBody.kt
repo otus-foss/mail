@@ -54,10 +54,12 @@ internal fun ReadPageBody(
     top: @Composable ColumnScope.() -> Unit = {},
 ) {
     val content = (body as? PageBody.Loaded)?.content
-    Column(modifier.padding(horizontal = PageTokens.textInset), spacing) {
-        Column(Modifier.padding(top = PageTokens.contentInset), spacing, content = top)
+    val textInset = Modifier.padding(horizontal = PageTokens.textInset)
+    Column(modifier, spacing) {
+        Column(textInset.padding(top = PageTokens.contentInset), spacing, content = top)
         val html = content?.html
         if (html != null) {
+            // A mail's HTML lays out its own margins, so it gets the page's full width.
             HtmlBody(html, images, hideQuote, Modifier.weight(1f))
         } else {
             val text = content?.text?.ifBlank { null } ?: message.preview.ifBlank { message.body }
@@ -67,7 +69,7 @@ internal fun ReadPageBody(
                     content?.truncated == true -> "Only the start of this message was loaded."
                     else -> null
                 }
-            PlainBody(text, note, hideQuote, showPerson, Modifier.weight(1f))
+            PlainBody(text, note, hideQuote, showPerson, Modifier.weight(1f).then(textInset))
         }
     }
 }
