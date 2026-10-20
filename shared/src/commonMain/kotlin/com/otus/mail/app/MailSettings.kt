@@ -7,6 +7,7 @@ import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_tune
+import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.settings.presentation.SettingsEntry
 
@@ -43,6 +44,11 @@ internal fun mailSettingsEntries(
             "Inbox, swipes, action bar, and reading",
             Res.drawable.symbol_tune,
         ) { navigation.go(MailPage.Behavior) },
+        SettingsEntry(
+            "Privacy",
+            "Remote images and website icons",
+            Res.drawable.symbol_visibility_off,
+        ) { navigation.go(MailPage.Privacy) },
         SettingsEntry(
             "Folders & rules",
             "Nest folders and file arriving mail",

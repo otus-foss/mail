@@ -45,5 +45,6 @@ fun DateFormatter.listDateLabel(
 private const val WEEK = 7
 private const val SHORT_DAY = 3
 
-private val DayOfWeek.shortName: String
+/** The weekday's three-letter name, such as "Mon". */
+internal val DayOfWeek.shortName: String
     get() = name.take(SHORT_DAY).lowercase().replaceFirstChar { it.uppercase() }

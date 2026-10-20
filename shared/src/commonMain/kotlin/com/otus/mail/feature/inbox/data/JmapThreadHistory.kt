@@ -1,17 +1,11 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.JmapIds
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.core.mail.EmailThreadType
-import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 import com.otus.mail.feature.inbox.domain.ThreadMessage
@@ -36,21 +30,13 @@ class JmapThreadHistory(
         try {
             mailAccount(connections, logins, accountId)
                 ?.let { account ->
-                    val emails = account.thread(emailId)
-                    jmapDecoding { emails.list.upTo(emailId).map { it.threadMessage() } }
+                    val emails = account.threadEmails(emailId, PROPERTIES)
+                    jmapDecoding { emails.upTo(emailId).map { it.threadMessage() } }
                 }.orEmpty()
         } catch (expected: JmapException) {
             emptyList()
         } catch (expected: LoginStoreException) {
             emptyList()
-        }
-
-    /** Every Email in the thread of [emailId], in one request of three chained calls. */
-    private suspend fun MailAccount.thread(emailId: String) =
-        connection.request {
-            val original = call(GetMethod(EmailThreadType, id, JmapIds.Of(listOf(emailId)), THREAD_PROPERTIES))
-            val thread = call(GetMethod(ThreadType, id, JmapIds.Result(original.resultOf("/list/*/threadId"))))
-            call(GetMethod(EmailType, id, JmapIds.Result(thread.resultOf("/list/*/emailIds")), PROPERTIES))
         }
 
     /** The messages received no later than [emailId], newest first, without drafts. */
@@ -73,6 +59,5 @@ class JmapThreadHistory(
 
     private companion object {
         val PROPERTIES = listOf("id", "from", "receivedAt", "preview", "keywords")
-        val THREAD_PROPERTIES = listOf("id", "threadId")
     }
 }

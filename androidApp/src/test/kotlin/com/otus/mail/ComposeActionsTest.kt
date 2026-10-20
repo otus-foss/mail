@@ -50,7 +50,10 @@ class ComposeActionsTest {
             cc = listOf(MailSender("Grace", "grace@example.org"), MailSender("Alan", "alan@example.org")),
         )
 
-    private fun start(behavior: MailBehavior = MailBehavior()) {
+    private fun start(
+        behavior: MailBehavior = MailBehavior(),
+        shown: MailMessage = message,
+    ) {
         val actions =
             MessageActions(
                 moves = MessageMoves(targets = { emptyList() }, onMove = { _, _ -> }, suggested = { null }) { null },
@@ -64,7 +67,7 @@ class ComposeActionsTest {
             compose.activity.setContent {
                 OtusTheme {
                     InboxScreen(
-                        listOf(message),
+                        listOf(shown),
                         context = InboxContext(onCompose = { requests += it }),
                         messageActions = actions,
                     )
@@ -84,10 +87,12 @@ class ComposeActionsTest {
 
     @Test
     fun replyNamesTheSenderAndAnswersThem() {
-        start()
+        // Sent to the user alone, so the big button replies to the sender rather than to all.
+        val toMe = message.copy(to = listOf(MailSender("Me", "me@example.org")), cc = emptyList())
+        start(shown = toMe)
         compose.onNodeWithText("Compilers").performClick()
         button("Reply, to Grace Hopper").performClick()
-        assertEquals(listOf(ComposeRequest.Reply(message.original(), all = false)), requests)
+        assertEquals(listOf(ComposeRequest.Reply(toMe.original(), all = false)), requests)
     }
 
     @Test

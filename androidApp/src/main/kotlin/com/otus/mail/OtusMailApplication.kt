@@ -44,13 +44,16 @@ class OtusMailApplication :
                 ),
             nightly = NightlyUpdates(installer = AndroidUpdateInstaller(this)),
             instantPush = instantPush,
-            pickers = MailPickers(signatureImages, attachmentFiles),
+            pickers = MailPickers(signatureImages, attachmentFiles, AndroidSavedFiles(this), printer),
         )
     }
 
     val signatureImages: AndroidSignatureImages by lazy { AndroidSignatureImages(this) }
 
     val attachmentFiles: AndroidAttachmentFiles by lazy { AndroidAttachmentFiles(this) }
+
+    /** The print dialog needs the activity in front, which attaches itself here. */
+    val printer: AndroidMessagePrinter by lazy { AndroidMessagePrinter() }
 
     val instantPush: AndroidInstantPush by lazy { AndroidInstantPush(this) }
 

@@ -34,7 +34,7 @@ data class RowLook(
 
 /**
  * One conversation row, worked out before composition so scrolling only draws. [read] rows dim
- * while the list is not selecting. [badge] is the address the conversation came to, shown only
+ * unless they are selected. [badge] is the address the conversation came to, shown only
  * when the list mixes addresses.
  */
 data class ConversationRowModel(

@@ -13,9 +13,9 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
 Each page has one subject, and no page is more than two levels below Settings except a folder's
 own page.
 
-- **Settings** lists five subpages as `SettingPageRow`s, each with an icon, a summary, and a
+- **Settings** lists its subpages as `SettingPageRow`s, each with an icon, a summary, and a
   chevron, separated by hairlines: **Email accounts**, **Notifications**, **Appearance**, **Mail
-  behavior**, and **Folders & rules**. Settings pages follow Notion's layout: title and
+  behavior**, **Privacy**, **Folders & rules**, and **Signatures**. Settings pages follow Notion's layout: title and
   description on the left, the control on the right, and large section titles.
 - **Email accounts** (`com.otus.accounts`) lists connected accounts as flat rows with a Remove
   button, under large section titles, and connects new ones with a JMAP
@@ -47,10 +47,18 @@ own page.
   [Read later](folders.md#read-later). Under **Actions**, **Swipe right** and **Swipe left** open
   a `ChoiceSheet` of message actions, shown in a `ValueButton`, and **Action bar**, also a
   `SettingPageRow`, opens its page; it names no mode, since the page shows it first. Under **Reading**, **Mark as read
-  when opened** is a switch. Under **Privacy**, the **Website icons** switch lets avatars load
-  logos from sender websites and DuckDuckGo, and photos that contact cards link to; see
-  [website icons](avatars.md#website-icons). Each change is saved before it is shown. See
+  when opened** is a switch. Each change is saved before it is shown. See
   [inbox pills](inbox.md#inbox-pills) and [swipe actions](inbox.md#swipe-actions).
+- **Privacy** (`PrivacyScreen`) decides what mail and avatars load from other servers. Under
+  **Load remote images**, three rows choose **Always**, **From people you know** (the default:
+  contacts, people the user wrote to, and allowed senders), or **Never**; the chosen one ends in a
+  check. A note says that images inside the mail itself always show and that mail in Spam never
+  loads remote images. Mail in a folder the app has not loaded yet waits as if it were in Spam. **Allowed senders** names how many there are and opens their page
+  (`AllowedSendersScreen`), which lists each address with a **Remove** button, or says how to add
+  one. The Read view adds a sender with "Always for" on its image banner. Under **Avatars**, the
+  **Website icons** switch lets avatars load logos from sender websites and DuckDuckGo, and photos
+  that contact cards link to; see [website icons](avatars.md#website-icons). The choice and the
+  list are saved in `MailBehavior.remoteImages` and `allowedSenders` before they are shown.
 - **Theme** (`ThemeSettingsScreen` from `com.otus.settings`), a subpage of Appearance, previews
   the inbox in the current colors with `ThemeInboxPreview`, then offers the
   **Otus**, **Light**, **Graphite** (warm grey, after Notion), and **Black** (true black, after
