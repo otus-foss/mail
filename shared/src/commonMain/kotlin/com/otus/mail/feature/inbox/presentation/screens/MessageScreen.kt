@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,8 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -139,7 +142,11 @@ private class ReadLayoutState(
     val folds: StripFolds,
 )
 
-/** The header, the pages, and the strips above the bar's [padding]. */
+/**
+ * The header, then the pages down to the bottom of the screen, with the strips floating over them
+ * above the bar's [padding]. A page leaves room for the strips and the bar after its text, so it
+ * scrolls clear of them while using the space around them.
+ */
 @Composable
 private fun ReadLayout(
     parts: ReadParts,
@@ -155,11 +162,24 @@ private fun ReadLayout(
     val uriHandler = LocalUriHandler.current
     val strips = remember(read) { ReadStripActions(read) { openLink(uriHandler::openUri, it) } }
     val date = page.received.shortLabel(layout.today)
-    Column(Modifier.fillMaxSize().padding(padding).padding(PageTokens.pageInset)) {
-        ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
-        notice?.let { MessageNotice(it) }
-        val swipe = rememberPageSwipe(layout.pager)
-        ReadPages(state, layout.pager, layout.look, parts.context.loadContent, Modifier.weight(1f).then(swipe))
+    var stripsHeight by remember { mutableStateOf(0.dp) }
+    val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            Column(Modifier.padding(PageTokens.pageInset)) {
+                ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
+                notice?.let { MessageNotice(it) }
+            }
+            val swipe = rememberPageSwipe(layout.pager)
+            ReadPages(
+                state,
+                layout.pager,
+                layout.look,
+                parts.context.loadContent,
+                Modifier.weight(1f).then(swipe),
+                bottomInset,
+            )
+        }
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
         val threadSwipe =
@@ -174,6 +194,11 @@ private fun ReadLayout(
             ReadStripSource(row, layout.look.folders, cameFrom, layout.today),
             strips,
             slide,
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(padding)
+                .padding(PageTokens.pageInset),
+            onFoldedHeight = { stripsHeight = it },
         )
     }
 }
