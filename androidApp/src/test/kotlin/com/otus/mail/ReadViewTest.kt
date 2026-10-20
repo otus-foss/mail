@@ -242,8 +242,10 @@ class ReadViewTest {
         assertTrue(exists("23 older digests"))
         compose.screenshot("read-newsletter-unsubscribed")
         compose.onNode(hasText("Show") and hasClickAction()).performClick()
-        compose.onNodeWithText("Always for Sentry").assertIsDisplayed()
+        compose.onNodeWithText("Images shown").assertIsDisplayed()
         compose.screenshot("read-images-shown")
+        compose.onNode(hasText("Hide") and hasClickAction()).performClick()
+        compose.onNodeWithText("Images blocked for privacy").assertIsDisplayed()
     }
 
     @Test

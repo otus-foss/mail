@@ -6,6 +6,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.components.BannerAction
 import com.otus.designsystem.components.ImageBanner
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_hide_image
@@ -59,36 +60,41 @@ internal class ReadPageLook(
         return PageImages(load, onShow)
     }
 
-    /** Whether [page]'s images wait for the user, which the banner and the ⋯ menu offer to change. */
+    /**
+     * Whether [page]'s sender is not allowed to show remote images, so the ⋯ menu offers to always
+     * show them, also after the user showed them this time.
+     */
     fun blocked(
         page: MailMessage,
         body: PageBody,
-    ): Boolean = hasRemote(body) && allowed(page) == false && !state.bodies.imagesShown(page)
+    ): Boolean = hasRemote(body) && allowed(page) == false
 
-    /** The banner above [page]'s text: images blocked, or shown this time; nothing once they are allowed. */
+    /**
+     * The banner above [page]'s text: images blocked with Show, or shown this time with Hide and
+     * Always for its sender; nothing once they are allowed.
+     */
     @Composable
     fun Banner(
         page: MailMessage,
         body: PageBody,
     ) {
         if (!hasRemote(body) || allowed(page) != false) return
-        val sender =
-            page.sender.name
-                .ifBlank { page.sender.address }
-                .substringBefore(' ')
-        if (!state.bodies.imagesShown(page)) {
+        val bodies = state.bodies
+        if (!bodies.imagesShown(page)) {
             ImageBanner(
                 Res.drawable.symbol_hide_image,
                 "Images blocked for privacy",
-                "Show",
-                { state.bodies.showImages(page) },
+                listOf(BannerAction("Show") { bodies.showImages(page) }),
             )
         } else {
+            // Always shows this sender's images from now on, which the ⋯ menu names in full.
             ImageBanner(
                 Res.drawable.symbol_image,
-                "Images shown this time",
-                "Always for $sender",
-                { read.privacy.allowSender(page.sender.address) },
+                "Images shown",
+                listOf(
+                    BannerAction("Hide") { bodies.hideImages(page) },
+                    BannerAction("Always") { read.privacy.allowSender(page.sender.address) },
+                ),
             )
         }
     }
