@@ -6,13 +6,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsOff
-import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -80,25 +81,39 @@ class ReadSheetsTest {
                 message,
                 mapOf(message.emailId to message.location.mailboxIds),
                 folders,
-                cameFrom = "cl",
                 onApply = { added, removed -> applied = added to removed },
                 onNewFolder = {},
                 onDismiss = { dismissed = true },
             )
         }
 
-    /** The checkbox row whose path has every one of [names]. */
-    private fun folder(vararg names: String) =
-        compose.onNode(names.map { hasText(it, substring = true) }.reduce { a, b -> a and b } and isToggleable())
+    /**
+     * The folder row named [name], as the Folders sheet's tree shows it, with [parent] under the
+     * name when its parent folder is not listed.
+     */
+    private fun folder(
+        name: String,
+        parent: String? = null,
+    ) = compose.onNode(
+        listOfNotNull(hasText(name), parent?.let { hasText(it, substring = true) }, hasClickAction())
+            .reduce { a, b -> a and b },
+    )
+
+    /** Checks that the row says whether the mail is in its folder. */
+    private fun SemanticsNodeInteraction.assertTicked(ticked: Boolean) =
+        assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.StateDescription,
+                if (ticked) "In this folder" else "Not in this folder",
+            ),
+        )
 
     @Test
-    fun theFoldersTheMailIsInAreTickedFirstAndDoneSendsOnlyTheChanges() {
+    fun theFoldersTheMailIsInAreTickedAndDoneSendsOnlyTheChanges() {
         showFolders()
-        compose.onNodeWithText("In 2 folders").assertIsDisplayed()
-        compose.onNodeWithText("you're here").assertIsDisplayed()
-        folder("Clients").assertIsOn()
-        folder("Taxes").assertIsOff()
-        compose.onNodeWithText("Junk").assertDoesNotExist()
+        folder("Clients").assertTicked(true)
+        folder("Taxes").assertTicked(false)
+        compose.onNodeWithText("Drafts").assertDoesNotExist()
         compose.screenshot("2026-10-19-feat-read-view-folders-sheet")
         folder("Taxes").performClick()
         folder("Clients").performClick()
@@ -111,10 +126,10 @@ class ReadSheetsTest {
     fun doneWithoutChangesSendsNothingAndAnEmptyChoiceCannotBeSaved() {
         showFolders()
         folder("Clients").performClick()
-        folder("Finance", "Invoices").performClick()
+        folder("Invoices", "Finance").performClick()
         compose.onNode(hasText("Done") and hasClickAction()).assertIsNotEnabled()
         compose.onNodeWithText("Each mail needs a folder").assertIsDisplayed()
-        folder("Finance", "Invoices").performClick()
+        folder("Invoices", "Finance").performClick()
         folder("Clients").performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { dismissed }

@@ -6,7 +6,6 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -195,7 +194,7 @@ class MessageActionsTest {
         // The inbox is the folder the message was opened from, so the strip names only Receipts.
         waitFor("Also in")
         compose.onNodeWithText("Also in").performClick()
-        compose.onNode(hasText("Amazon", substring = true) and isToggleable()).performClick()
+        compose.onNode(hasText("Amazon") and hasClickAction()).performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
         val add = lastUpdate()
         // The whole conversation goes in one call, each email with its whole set of folders.

@@ -13,7 +13,6 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
-import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -191,8 +190,7 @@ class ReadViewTest {
         assertTrue(exists("Invoices"))
         compose.screenshot("read-also-in")
         compose.onNodeWithText("Also in").performClick()
-        compose.onNodeWithText("you're here").assertIsDisplayed()
-        compose.onNode(hasText("Freelancing", substring = true) and isToggleable()).performClick()
+        compose.onNode(hasText("Freelancing") and hasClickAction()).performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { applied != null }
         assertEquals(setOf("fr") to emptySet<String>(), applied)
@@ -209,9 +207,9 @@ class ReadViewTest {
                 },
         )
         compose.onNodeWithText("Also in").performClick()
-        compose.onNodeWithText("New folder").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("New folder").performClick()
         compose.onNodeWithText("Naming a folder in acc").performClick()
-        compose.onNodeWithText("you're here").assertIsDisplayed()
+        assertTrue(exists("Folders"))
     }
 
     @Test
