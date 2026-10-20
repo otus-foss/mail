@@ -90,40 +90,44 @@ internal class ReadPageLook(
     ) {
         if (!hasRemote(body) || allowed(page) != false) return
         val bodies = state.bodies
-        if (!bodies.imagesShown(page)) {
-            ImageBanner(
-                Res.drawable.symbol_hide_image,
-                "Images blocked for privacy",
-                listOf(BannerAction("Show") { bodies.showImages(page) }),
-            )
-        } else {
-            ShownBanner(page)
+        Dismissible(page) {
+            if (!bodies.imagesShown(page)) {
+                ImageBanner(
+                    Res.drawable.symbol_hide_image,
+                    "Images blocked for privacy",
+                    listOf(BannerAction("Show") { bodies.showImages(page) }),
+                )
+            } else {
+                // Always shows this sender's images from now on, which the ⋯ menu names in full.
+                ImageBanner(
+                    Res.drawable.symbol_image,
+                    "Images shown",
+                    listOf(
+                        BannerAction("Hide") { bodies.hideImages(page) },
+                        BannerAction("Always") { read.privacy.allowSender(page.sender.address) },
+                    ),
+                )
+            }
         }
     }
 
     /**
-     * "Images shown" with Hide and Always, which swipes away like a toast. Once gone, its space
-     * stays, so the text above which the page leaves room does not move and reload.
+     * [banner], which swipes away like a toast, in either state; the images stay as they are, and
+     * their placeholders still show them. Once gone, its space stays, so the text the page leaves
+     * room for does not move and reload.
      */
     @Composable
-    private fun ShownBanner(page: MailMessage) {
+    private fun Dismissible(
+        page: MailMessage,
+        banner: @Composable () -> Unit,
+    ) {
         val bodies = state.bodies
         var height by remember(page.id) { mutableIntStateOf(0) }
         if (bodies.bannerDismissed(page)) {
             Spacer(Modifier.height(with(LocalDensity.current) { height.toDp() }))
             return
         }
-        SwipeToDismiss({ bodies.dismissBanner(page) }, Modifier.onSizeChanged { height = it.height }) {
-            // Always shows this sender's images from now on, which the ⋯ menu names in full.
-            ImageBanner(
-                Res.drawable.symbol_image,
-                "Images shown",
-                listOf(
-                    BannerAction("Hide") { bodies.hideImages(page) },
-                    BannerAction("Always") { read.privacy.allowSender(page.sender.address) },
-                ),
-            )
-        }
+        SwipeToDismiss({ bodies.dismissBanner(page) }, Modifier.onSizeChanged { height = it.height }) { banner() }
     }
 
     /**

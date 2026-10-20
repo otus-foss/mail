@@ -50,7 +50,7 @@ class PageBodies {
         imagesShown -= message.id
     }
 
-    /** Whether the user swiped away [message]'s images banner after showing its images. */
+    /** Whether the user swiped away [message]'s images banner. */
     fun bannerDismissed(message: MailMessage): Boolean = message.id in bannersDismissed
 
     fun dismissBanner(message: MailMessage) {
