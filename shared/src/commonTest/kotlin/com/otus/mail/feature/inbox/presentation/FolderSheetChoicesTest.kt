@@ -40,22 +40,16 @@ class FolderSheetChoicesTest {
 
     @Test
     fun systemFoldersBecomePillsAndOwnFoldersKeepTheirTreeOrder() {
-        val choices = folderSheetChoices(setOf("cl", "fi"), listOf(inbox, clients, invoices, taxes))
+        val choices = folderSheetChoices(listOf(inbox, clients, invoices, taxes))
         assertEquals(listOf(inbox), choices.system)
         assertEquals(listOf(clients, invoices, taxes), choices.own)
     }
 
     @Test
-    fun spamAndTrashShowOnlyWhileTheMailIsInThem() {
-        val choices = folderSheetChoices(setOf("tr"), all)
-        assertTrue(trash in choices.system)
-        assertFalse(spam in choices.system)
-    }
-
-    @Test
-    fun readLaterStaysWithTheBookmark() {
-        val choices = folderSheetChoices(setOf("cl", "rl"), all)
-        assertFalse(readLater in choices.system + choices.own)
+    fun readLaterFollowsInboxAmongThePills() {
+        val choices = folderSheetChoices(all)
+        assertEquals(listOf(inbox, readLater, trash, spam), choices.system)
+        assertEquals(listOf(taxes, invoices, clients), choices.own)
     }
 
     @Test

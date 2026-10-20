@@ -12,18 +12,16 @@ data class FolderSheetChoices(
 )
 
 /**
- * [folders], in their tree order, split into system folders and the user's own. Drafts and Read
- * later stay out, since the bookmark shows Read later. Spam and Trash are places mail moves to,
- * not folders it is added to, so they show only when an email of the conversation, [inIds], is in
- * them.
+ * [folders], in their tree order, split into the system folders and Read later, which show as
+ * pills as the Move to sheet's do, Inbox first and Read later next, and the user's own folders.
+ * Drafts stay out, since mail is not added to them.
  */
-fun folderSheetChoices(
-    inIds: Set<String>,
-    folders: List<MessageFolder>,
-): FolderSheetChoices {
-    val listed = folders.filter { it.role != DRAFTS && !it.readLater && (it.role !in DESTINATIONS || it.id in inIds) }
-    val (system, own) = listed.partition { it.role != null }
-    return FolderSheetChoices(system, own)
+fun folderSheetChoices(folders: List<MessageFolder>): FolderSheetChoices {
+    val listed = folders.filter { it.role != DRAFTS }
+    val (system, own) = listed.partition { it.role != null || it.readLater }
+    val (inbox, rest) = system.partition { it.role == INBOX }
+    val (readLater, others) = rest.partition { it.readLater }
+    return FolderSheetChoices(inbox + readLater + others, own)
 }
 
 /** A folder in the Folders sheet's tree: how deep it nests, and the [parents] shown before its name. */
@@ -58,4 +56,4 @@ fun sheetTree(folders: List<MessageFolder>): List<SheetTreeFolder> {
 fun MessageFolder.matchesSearch(query: String): Boolean = path.joinToString(" / ").containsSearch(query)
 
 private const val DRAFTS = "drafts"
-private val DESTINATIONS = setOf("junk", "trash")
+private const val INBOX = "inbox"

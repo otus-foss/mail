@@ -19,6 +19,7 @@ import com.otus.designsystem.elements.DestinationPill
 import com.otus.designsystem.elements.IconPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
+import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.theme.MoveTokens
 import com.otus.designsystem.theme.PanelTokens
@@ -31,7 +32,7 @@ import com.otus.mail.feature.inbox.presentation.matchesSearch
 
 /**
  * Adds every email of [message]'s conversation to folders and takes it out of others, laid out
- * as the Move to sheet is: the system folders as pills, then the user's own folders as a tree,
+ * as the Move to sheet is: the system folders and Read later as pills, then the user's own folders as a tree,
  * each ticked when any email is in it, since a JMAP email can be in several. [mailboxes] holds
  * each email's mailboxes by Email id. Ticks stay a draft until Done, which runs [onApply] with the
  * folder ids that changed. Done is off, with the reason, while an email would be left in no
@@ -49,7 +50,7 @@ fun FoldersSheet(
     val start = mailboxes.values.flatten().toSet()
     var checked by remember(message.id) { mutableStateOf(start) }
     var query by rememberSaveable { mutableStateOf("") }
-    val choices = remember(start, folders) { folderSheetChoices(start, folders) }
+    val choices = remember(folders) { folderSheetChoices(folders) }
     val toggle = { id: String -> checked = if (id in checked) checked - id else checked + id }
     val change = FolderChange(message, mailboxes, added = checked - start, removed = start - checked)
     SheetFrame(
@@ -105,7 +106,12 @@ private fun SystemFolderPills(
         folders.forEach { folder ->
             DestinationPill(
                 folder.pillLabel,
-                folderName(folder).icon ?: Res.drawable.symbol_folder,
+                if (folder.readLater) {
+                    Res.drawable.symbol_bookmark
+                } else {
+                    folderName(folder).icon
+                        ?: Res.drawable.symbol_folder
+                },
                 { onToggle(folder.id) },
                 selected = folder.id in checked,
             )
@@ -116,7 +122,7 @@ private fun SystemFolderPills(
 
 /** The name the app gives a system folder, as the Move to sheet's pills do, else the server's. */
 private val MessageFolder.pillLabel: String
-    get() = ROLE_LABELS[role] ?: path.last()
+    get() = if (readLater) "Read later" else ROLE_LABELS[role] ?: path.last()
 
 private val ROLE_LABELS =
     mapOf("inbox" to "Inbox", "archive" to "Archive", "sent" to "Sent", "junk" to "Spam", "trash" to "Trash")

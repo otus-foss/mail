@@ -19,11 +19,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
+import com.otus.designsystem.components.FolderName
 import com.otus.designsystem.components.NamedAvatar
 import com.otus.designsystem.components.PickerSearch
+import com.otus.designsystem.components.Recipient
 import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SheetFrame
+import com.otus.designsystem.components.SuggestedFolderCard
 import com.otus.designsystem.elements.DestinationPill
 import com.otus.designsystem.elements.IconPill
 import com.otus.designsystem.elements.LocalIconTint
@@ -158,7 +161,10 @@ private fun ShortcutPill(
     target.shortcut?.let { DestinationPill(it.label, it.icon, { onMove(target) }) }
 }
 
-/** The user's own folder [sender]'s mail usually goes to, under its own caption. */
+/**
+ * The user's own folder [sender]'s mail usually goes to, under its own caption, as a card with the
+ * sender's pill and the folder's pill.
+ */
 @Composable
 private fun MoveSuggestion(
     target: MoveTarget,
@@ -166,20 +172,13 @@ private fun MoveSuggestion(
     onMove: (MoveTarget) -> Unit,
 ) {
     SheetCaption("Suggested", RowTextInset)
-    CompositionLocalProvider(LocalIconTint provides FolderColor.named(target.color).tint) {
-        SettingRow(
-            target.name,
-            { onMove(target) },
-            // A nested folder's path tells it apart; a top-level one would only repeat its name.
-            description =
-                listOfNotNull(target.label.takeIf { it != target.name }, "where ${sender.name} usually goes")
-                    .joinToString(" · ")
-                    .replaceFirstChar { it.uppercase() },
-            person = NamedAvatar(sender.name, sender.chipAvatar),
-            icon = Res.drawable.symbol_folder,
-            density = RowDensity.Compact,
-        )
-    }
+    val name = sender.name.ifBlank { sender.address }
+    SuggestedFolderCard(
+        Recipient(name, sender.chipAvatar, sender.address),
+        FolderName(target.path ?: target.label.split(" / "), target.color?.let(FolderColor::named), system = false),
+        "Move to ${target.label}, where $name's mail usually goes",
+        { onMove(target) },
+    )
 }
 
 /** Lines captions up with the text inside the settings rows below them. */
