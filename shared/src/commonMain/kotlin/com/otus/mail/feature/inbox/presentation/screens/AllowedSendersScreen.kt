@@ -11,7 +11,7 @@ import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
  * Settings › Privacy › Allowed senders: everyone whose remote images always load, added with
- * "Always for" on a mail with blocked images. Remove makes a sender ask first again.
+ * Always after showing a mail's images. Remove makes a sender ask first again.
  */
 @Composable
 fun AllowedSendersScreen(
@@ -21,7 +21,7 @@ fun AllowedSendersScreen(
     val senders = state.behavior.allowedSenders
     Subpage("Allowed senders", onBack) {
         if (senders.isEmpty()) {
-            PageNote("No allowed senders yet. Tap Always for a sender on a mail with blocked images.")
+            PageNote("No allowed senders yet. Show a mail's images, then tap Always.")
         } else {
             SettingsSection("Images always load from") {
                 senders.forEach { address ->

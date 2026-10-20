@@ -8,7 +8,7 @@ import com.otus.mail.feature.inbox.domain.otherReply
 
 /**
  * The Read view page the ⋯ menu acts on: its [message], at [index] of [count] in its conversation,
- * newest first. [imagesBlocked] while its remote images wait for the user. [suggestedPath] is the
+ * newest first. [imagesBlocked] while its sender may not show remote images. [suggestedPath] is the
  * folder this sender's mail usually goes to, when one is known.
  */
 data class ReadPage(

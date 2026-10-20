@@ -67,7 +67,7 @@ class PrivacySettingsTest {
         assertEquals(listOf("grace@example.org"), behavior.behavior.allowedSenders)
         compose.onNodeWithContentDescription("Remove grace@example.org").performClick()
         compose
-            .onNodeWithText("No allowed senders yet. Tap Always for a sender on a mail with blocked images.")
+            .onNodeWithText("No allowed senders yet. Show a mail's images, then tap Always.")
             .assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("0 senders").assertIsDisplayed()

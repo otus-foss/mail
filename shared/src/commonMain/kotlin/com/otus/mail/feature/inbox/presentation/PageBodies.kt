@@ -40,4 +40,9 @@ class PageBodies {
     fun showImages(message: MailMessage) {
         if (message.id !in imagesShown) imagesShown += message.id
     }
+
+    /** Blocks [message]'s remote images again after the user showed them. */
+    fun hideImages(message: MailMessage) {
+        imagesShown -= message.id
+    }
 }

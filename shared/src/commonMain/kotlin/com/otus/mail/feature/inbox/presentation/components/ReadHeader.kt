@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -40,6 +42,7 @@ import com.otus.designsystem.resources.symbol_bookmark_fill
 import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.theme.ComposeTokens
 import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.theme.motionTween
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
@@ -80,14 +83,30 @@ internal fun ReadHeader(
                 }
             }
         },
-    ) {
-        Text(
-            subject.ifBlank { "(No subject)" },
-            Modifier.semantics { heading() },
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+    ) { ExpandableSubject(subject.ifBlank { "(No subject)" }) }
+}
+
+/**
+ * The subject on one line; when it does not fit, a tap shows all of it, growing the panel down on
+ * the layout-change motion, and another tap folds it back.
+ */
+@Composable
+private fun ExpandableSubject(subject: String) {
+    var expanded by remember(subject) { mutableStateOf(false) }
+    var cut by remember(subject) { mutableStateOf(false) }
+    Text(
+        subject,
+        Modifier
+            .animateContentSize(motionTween())
+            .clickable(
+                enabled = cut || expanded,
+                onClickLabel = if (expanded) "Show less" else "Show the whole subject",
+            ) { expanded = !expanded }
+            .semantics { heading() },
+        maxLines = if (expanded) Int.MAX_VALUE else 1,
+        overflow = TextOverflow.Ellipsis,
+        onTextLayout = { if (!expanded) cut = it.hasVisualOverflow },
+    )
 }
 
 @Composable
