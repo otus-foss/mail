@@ -40,15 +40,6 @@ import com.otus.mail.feature.inbox.presentation.read.splitHtmlQuote
 import com.otus.mail.feature.inbox.presentation.read.splitPlainQuote
 
 /**
- * How a page shows the text it quotes: left out with [hide], else folded, with a quoted person's
- * pill running what [showPerson] gives for their address, if anything.
- */
-internal class PageQuotes(
-    val hide: Boolean = false,
-    val showPerson: (address: String) -> (() -> Unit)? = { null },
-)
-
-/**
  * One page of the Read view: [top], such as the images banner and the sender details, floats
  * above the [message]'s text, which scrolls up behind it and behind whatever floats over the
  * page's edges, leaving [insets] of room at its top and bottom so it can scroll clear of them. Its
