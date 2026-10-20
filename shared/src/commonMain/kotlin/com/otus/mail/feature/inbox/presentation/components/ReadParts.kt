@@ -137,7 +137,6 @@ internal fun rememberReadMenu(
 internal fun ReadSheets(
     parts: ReadParts,
     look: ReadPageLook,
-    cameFrom: String?,
 ) {
     val state = parts.state
     val read = parts.read
@@ -149,7 +148,6 @@ internal fun ReadSheets(
                 row,
                 state.mailboxes(row),
                 look.folders.values.toList(),
-                cameFrom,
                 onApply = { added, removed -> parts.refile(FolderChange(row, state.mailboxes(row), added, removed)) },
                 onNewFolder = read.folders.newFolder?.let { { state.sheet = ReadSheet.NewFolder } },
                 onDismiss = dismiss,

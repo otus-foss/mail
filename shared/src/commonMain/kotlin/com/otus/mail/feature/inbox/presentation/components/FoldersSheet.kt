@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,36 +13,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.FolderPickRow
 import com.otus.designsystem.components.PickerSearch
-import com.otus.designsystem.components.RowDensity
-import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SheetFrame
+import com.otus.designsystem.elements.DestinationPill
+import com.otus.designsystem.elements.IconPill
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_create_new_folder
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.resources.symbol_add
+import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.theme.MoveTokens
+import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.presentation.folderSheetLists
+import com.otus.mail.feature.inbox.presentation.folderSheetChoices
 import com.otus.mail.feature.inbox.presentation.matchesSearch
 
 /**
- * Adds every email of [message]'s conversation to folders and takes it out of others, with a
- * checkbox per folder because a JMAP email can be in several. [mailboxes] holds each email's
- * mailboxes by Email id; a folder is ticked when any email is in it. The folders come first, the
- * one the user [cameFrom] marked "you're here", then the rest as a collapsible tree. Ticks stay a
- * draft until Done, which runs [onApply] with the folder ids that changed. Done is off, with the
- * reason, while an email would be left in no folder, which JMAP does not allow. [onNewFolder]
- * adds a New folder row.
+ * Adds every email of [message]'s conversation to folders and takes it out of others, laid out
+ * as the Move to sheet is: the system folders as pills, then the user's own folders as a tree,
+ * each ticked when any email is in it, since a JMAP email can be in several. [mailboxes] holds
+ * each email's mailboxes by Email id. Ticks stay a draft until Done, which runs [onApply] with the
+ * folder ids that changed. Done is off, with the reason, while an email would be left in no
+ * folder, which JMAP does not allow. [onNewFolder] adds a + pill after the system folders.
  */
 @Composable
 fun FoldersSheet(
     message: MailMessage,
     mailboxes: Map<String, Set<String>>,
     folders: List<MessageFolder>,
-    cameFrom: String?,
     onApply: (added: Set<String>, removed: Set<String>) -> Unit,
     onNewFolder: (() -> Unit)?,
     onDismiss: () -> Unit,
@@ -49,7 +49,7 @@ fun FoldersSheet(
     val start = mailboxes.values.flatten().toSet()
     var checked by remember(message.id) { mutableStateOf(start) }
     var query by rememberSaveable { mutableStateOf("") }
-    val lists = remember(start, folders) { folderSheetLists(start, folders) }
+    val choices = remember(start, folders) { folderSheetChoices(start, folders) }
     val toggle = { id: String -> checked = if (id in checked) checked - id else checked + id }
     val change = FolderChange(message, mailboxes, added = checked - start, removed = start - checked)
     SheetFrame(
@@ -62,63 +62,63 @@ fun FoldersSheet(
         doneEnabled = change.keepsEveryEmail,
     ) {
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
-            Column(
-                Modifier.padding(horizontal = SheetTokens.inset),
-                verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
-            ) {
-                MoveSummary(listOf(message), oneSender = true)
-                PickerSearch(query, { query = it }, "Search folders…")
-                if (!change.keepsEveryEmail) SheetCaption("Each mail needs a folder", heading = false)
-            }
-            val current = lists.current.filter { it.matchesSearch(query) }
-            val others = lists.others.filter { it.matchesSearch(query) }
-            FolderGroup(currentCaption(lists.current.size), current, checked, toggle) { folder ->
-                "you're here".takeIf { folder.id == cameFrom }
-            }
-            OtherFolderTree(others, query.isNotBlank(), checked, toggle)
-            if (current.isEmpty() && others.isEmpty()) {
+            MoveSummary(listOf(message), oneSender = true)
+            PickerSearch(query, { query = it }, "Search folders…")
+            if (!change.keepsEveryEmail) SheetCaption("Each mail needs a folder", heading = false)
+            val system = choices.system.filter { it.matchesSearch(query) }
+            val own = choices.own.filter { it.matchesSearch(query) }
+            SystemFolderPills(system, checked, toggle, onNewFolder)
+            FolderCheckTree(own, query.isNotBlank(), checked, toggle)
+            if (system.isEmpty() && own.isEmpty()) {
                 SheetCaption(
                     if (query.isBlank()) "No folders yet." else "No folders match.",
-                    Modifier.padding(horizontal = SheetTokens.inset),
+                    RowTextInset,
                     heading = false,
                 )
             }
-            onNewFolder?.let { NewFolderRow(it) }
         }
     }
 }
 
-/** A captioned list of folders with their checkboxes; nothing when [folders] is empty. */
+/**
+ * The system folders as pills that add the mail to them or take it out, filled while it is in
+ * them, then a + pill that runs [onNewFolder]; nothing when there is neither.
+ */
 @Composable
-private fun FolderGroup(
-    caption: String,
+private fun SystemFolderPills(
     folders: List<MessageFolder>,
     checked: Set<String>,
     onToggle: (String) -> Unit,
-    detail: (MessageFolder) -> String?,
+    onNewFolder: (() -> Unit)?,
 ) {
-    if (folders.isEmpty()) return
-    Column {
-        SheetCaption(caption, Modifier.padding(horizontal = SheetTokens.inset))
+    if (folders.isEmpty() && onNewFolder == null) return
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
+        verticalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
+    ) {
         folders.forEach { folder ->
-            FolderPickRow(folderName(folder), folder.id in checked, { onToggle(folder.id) }, detail = detail(folder))
+            DestinationPill(
+                folder.pillLabel,
+                folderName(folder).icon ?: Res.drawable.symbol_folder,
+                { onToggle(folder.id) },
+                selected = folder.id in checked,
+            )
         }
+        onNewFolder?.let { IconPill(NEW_FOLDER, Res.drawable.symbol_add, false, it, size = MoveTokens.pillHeight) }
     }
 }
 
-/** Opens the New folder flow; its icon lines up with the folder icons above it. */
-@Composable
-private fun NewFolderRow(onClick: () -> Unit) {
-    SettingRow(
-        "New folder",
-        onClick,
-        Modifier.padding(horizontal = SheetTokens.inset - PageTokens.textInset),
-        icon = Res.drawable.symbol_create_new_folder,
-        density = RowDensity.Compact,
-    )
-}
+/** The name the app gives a system folder, as the Move to sheet's pills do, else the server's. */
+private val MessageFolder.pillLabel: String
+    get() = ROLE_LABELS[role] ?: path.last()
 
-private fun currentCaption(count: Int): String = "In $count ${if (count == 1) "folder" else "folders"}"
+private val ROLE_LABELS =
+    mapOf("inbox" to "Inbox", "archive" to "Archive", "sent" to "Sent", "junk" to "Spam", "trash" to "Trash")
+
+private const val NEW_FOLDER = "New folder"
