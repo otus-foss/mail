@@ -129,7 +129,7 @@ class ReadPageActionsTest {
         compose.onNodeWithText("Each mail needs a folder").assertIsDisplayed()
         compose.onNode(hasText("Done") and hasClickAction()).assertIsNotEnabled()
         compose.onNode(hasText("Inbox") and isToggleable()).performClick()
-        compose.onNode(hasText("Clients", substring = true) and isToggleable()).performScrollTo().performClick()
+        compose.onNode(hasText("Clients") and hasClickAction()).performScrollTo().performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { applied != null }
         val change = checkNotNull(applied)
