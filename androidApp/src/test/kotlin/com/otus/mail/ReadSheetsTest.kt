@@ -94,7 +94,7 @@ class ReadSheetsTest {
     @Test
     fun theFoldersTheMailIsInAreTickedFirstAndDoneSendsOnlyTheChanges() {
         showFolders()
-        compose.onNodeWithText("In 2 folders · tick to add, untick to remove").assertIsDisplayed()
+        compose.onNodeWithText("In 2 folders").assertIsDisplayed()
         compose.onNodeWithText("you're here").assertIsDisplayed()
         folder("Clients").assertIsOn()
         folder("Taxes").assertIsOff()
