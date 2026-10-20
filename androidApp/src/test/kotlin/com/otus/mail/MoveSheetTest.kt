@@ -3,6 +3,8 @@ package com.otus.mail
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.compose.setContent
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -111,16 +113,17 @@ class MoveSheetTest {
     }
 
     @Test
-    fun theFolderTheMessageIsInShowsDimmedAndDoesNotMoveIt() {
+    fun theFolderTheMessageIsInIsMarkedAndDoesNotMoveIt() {
         showInbox()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNode(hasText("Receipts") and isSelectable() and !hasText("Welcome")).performClick()
         waitFor("Order shipped")
         compose.onNodeWithText("Order shipped").performClick()
         compose.onNodeWithContentDescription("Move").performClick()
-        waitFor("here now")
-        screenshot("move-sheet-here-now")
-        compose.onNodeWithText("here now").assertIsDisplayed()
+        val current = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Current folder")
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(current).fetchSemanticsNodes().isNotEmpty() }
+        screenshot("move-sheet-current-folder")
+        compose.onNode(current).assertIsDisplayed()
         compose.onNodeWithText("Amazon").assertIsDisplayed()
     }
 
