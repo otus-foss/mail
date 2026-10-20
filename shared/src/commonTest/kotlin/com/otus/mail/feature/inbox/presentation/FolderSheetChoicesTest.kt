@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class FolderSheetListsTest {
+class FolderSheetChoicesTest {
     private val inbox = MessageFolder("in", listOf("Inbox"), role = "inbox")
     private val spam = MessageFolder("sp", listOf("Junk"), role = "junk")
     private val trash = MessageFolder("tr", listOf("Trash"), role = "trash")
@@ -39,23 +39,23 @@ class FolderSheetListsTest {
     )
 
     @Test
-    fun theFoldersTheMailIsInComeFirstAndTheRestFollowByPath() {
-        val lists = folderSheetLists(setOf("cl", "fi"), all)
-        assertEquals(listOf(clients, invoices), lists.current)
-        assertEquals(listOf(inbox, taxes), lists.others)
+    fun systemFoldersBecomePillsAndOwnFoldersKeepTheirTreeOrder() {
+        val choices = folderSheetChoices(setOf("cl", "fi"), listOf(inbox, clients, invoices, taxes))
+        assertEquals(listOf(inbox), choices.system)
+        assertEquals(listOf(clients, invoices, taxes), choices.own)
     }
 
     @Test
-    fun spamAndTrashAreNeverOfferedButShowWhileTheMailIsInThem() {
-        val lists = folderSheetLists(setOf("tr"), all)
-        assertEquals(listOf(trash), lists.current)
-        assertFalse(spam in lists.others)
+    fun spamAndTrashShowOnlyWhileTheMailIsInThem() {
+        val choices = folderSheetChoices(setOf("tr"), all)
+        assertTrue(trash in choices.system)
+        assertFalse(spam in choices.system)
     }
 
     @Test
     fun readLaterStaysWithTheBookmark() {
-        val lists = folderSheetLists(setOf("cl", "rl"), all)
-        assertFalse(readLater in lists.current + lists.others)
+        val choices = folderSheetChoices(setOf("cl", "rl"), all)
+        assertFalse(readLater in choices.system + choices.own)
     }
 
     @Test
@@ -71,10 +71,13 @@ class FolderSheetListsTest {
             )
         val mailboxes = message(setOf("cl"), conversation).memberMailboxes
         assertEquals(mapOf("e1" to setOf("cl"), "e2" to setOf("in", "fi")), mailboxes)
-        assertEquals(
-            listOf(inbox, clients, invoices),
-            folderSheetLists(mailboxes.values.flatten().toSet(), all).current,
-        )
+    }
+
+    @Test
+    fun aFolderWhoseParentIsNotListedKeepsItsParentsName() {
+        val tree = sheetTree(listOf(clients, invoices, taxes))
+        assertEquals(listOf(0, 0, 0), tree.map { it.depth })
+        assertEquals(listOf("Finance"), tree[1].parents)
     }
 
     @Test

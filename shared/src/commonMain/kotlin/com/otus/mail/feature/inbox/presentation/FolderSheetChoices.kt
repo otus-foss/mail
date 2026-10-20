@@ -1,29 +1,29 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.domain.orderedFolders
 
-/** The Folders sheet's two lists: the folders a message is [current]ly in, then [others] it can join. */
-data class FolderSheetLists(
-    val current: List<MessageFolder>,
-    val others: List<MessageFolder>,
+/**
+ * What the Folders sheet offers, as the Move to sheet does: the [system] folders as pills, then the
+ * user's [own] folders as a tree.
+ */
+data class FolderSheetChoices(
+    val system: List<MessageFolder>,
+    val own: List<MessageFolder>,
 )
 
 /**
- * The folders of [folders] that any email of a conversation is in, [inIds], inbox first and then
- * by path, and the rest in the tree order of [folders], so they can show as a tree. Drafts and
- * Read later stay out, since the bookmark shows Read later. Spam and Trash are places mail moves
- * to, not folders it is added to, so they are listed only when the mail is in them.
+ * [folders], in their tree order, split into system folders and the user's own. Drafts and Read
+ * later stay out, since the bookmark shows Read later. Spam and Trash are places mail moves to,
+ * not folders it is added to, so they show only when an email of the conversation, [inIds], is in
+ * them.
  */
-fun folderSheetLists(
+fun folderSheetChoices(
     inIds: Set<String>,
     folders: List<MessageFolder>,
-): FolderSheetLists {
-    val listed = { folder: MessageFolder -> folder.role != DRAFTS && !folder.readLater }
-    return FolderSheetLists(
-        current = orderedFolders(inIds, folders.associateBy { it.id }).filter(listed),
-        others = folders.filter { it.id !in inIds && listed(it) && it.role !in DESTINATIONS },
-    )
+): FolderSheetChoices {
+    val listed = folders.filter { it.role != DRAFTS && !it.readLater && (it.role !in DESTINATIONS || it.id in inIds) }
+    val (system, own) = listed.partition { it.role != null }
+    return FolderSheetChoices(system, own)
 }
 
 /** A folder in the Folders sheet's tree: how deep it nests, and the [parents] shown before its name. */

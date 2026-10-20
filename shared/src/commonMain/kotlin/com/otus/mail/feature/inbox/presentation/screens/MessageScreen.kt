@@ -122,7 +122,7 @@ fun MessageScreen(
         }
     }
     // A drag on the folders strip pulls the folders sheet up with the finger.
-    CompositionLocalProvider(LocalSheetPull provides folds.folderPull) { ReadSheets(parts, look, cameFrom) }
+    CompositionLocalProvider(LocalSheetPull provides folds.folderPull) { ReadSheets(parts, look) }
     actions?.let { moveChoice.Sheet(it) }
 }
 
