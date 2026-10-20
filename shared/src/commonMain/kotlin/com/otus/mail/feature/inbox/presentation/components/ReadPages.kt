@@ -1,14 +1,23 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import com.otus.designsystem.components.BannerAction
 import com.otus.designsystem.components.ImageBanner
+import com.otus.designsystem.components.SwipeToDismiss
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_hide_image
 import com.otus.designsystem.resources.symbol_image
@@ -88,6 +97,23 @@ internal class ReadPageLook(
                 listOf(BannerAction("Show") { bodies.showImages(page) }),
             )
         } else {
+            ShownBanner(page)
+        }
+    }
+
+    /**
+     * "Images shown" with Hide and Always, which swipes away like a toast. Once gone, its space
+     * stays, so the text above which the page leaves room does not move and reload.
+     */
+    @Composable
+    private fun ShownBanner(page: MailMessage) {
+        val bodies = state.bodies
+        var height by remember(page.id) { mutableIntStateOf(0) }
+        if (bodies.bannerDismissed(page)) {
+            Spacer(Modifier.height(with(LocalDensity.current) { height.toDp() }))
+            return
+        }
+        SwipeToDismiss({ bodies.dismissBanner(page) }, Modifier.onSizeChanged { height = it.height }) {
             // Always shows this sender's images from now on, which the ⋯ menu names in full.
             ImageBanner(
                 Res.drawable.symbol_image,

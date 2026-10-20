@@ -17,11 +17,15 @@ sealed interface PageBody {
     data object Failed : PageBody
 }
 
-/** The Read view's page bodies by message id, and the pages whose remote images the user showed. */
+/**
+ * The Read view's page bodies by message id, the pages whose remote images the user showed, and
+ * those whose images banner the user swiped away.
+ */
 @Stable
 class PageBodies {
     private val bodies = mutableStateMapOf<String, PageBody>()
     private val imagesShown = mutableStateListOf<String>()
+    private val bannersDismissed = mutableStateListOf<String>()
 
     fun body(message: MailMessage): PageBody = bodies[message.id] ?: PageBody.Loading
 
@@ -44,5 +48,12 @@ class PageBodies {
     /** Blocks [message]'s remote images again after the user showed them. */
     fun hideImages(message: MailMessage) {
         imagesShown -= message.id
+    }
+
+    /** Whether the user swiped away [message]'s images banner after showing its images. */
+    fun bannerDismissed(message: MailMessage): Boolean = message.id in bannersDismissed
+
+    fun dismissBanner(message: MailMessage) {
+        if (message.id !in bannersDismissed) bannersDismissed += message.id
     }
 }
