@@ -16,18 +16,6 @@ import com.otus.designsystem.theme.FolderColor
 import com.otus.designsystem.theme.PageTokens
 
 /**
- * One of the user's own folders in a sheet's folder tree: its [name], its [color], [depth] levels
- * in, and an optional grey [description] under it, such as the parents of a folder whose parent is
- * not listed.
- */
-internal data class FolderTreeEntry(
-    val name: String,
-    val color: String?,
-    val depth: Int,
-    val description: String? = null,
-)
-
-/**
  * A row of a sheet's folder tree, as the Move to and Folders sheets show it: indented by depth,
  * with the folder's colored icon, then the chevron that collapses its nested folders when it has
  * any ([expanded] not null), then [end], such as a checkbox. The whole row runs [onClick].
