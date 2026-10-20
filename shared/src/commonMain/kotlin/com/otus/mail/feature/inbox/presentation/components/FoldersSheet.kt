@@ -31,9 +31,10 @@ import com.otus.mail.feature.inbox.presentation.matchesSearch
  * Adds every email of [message]'s conversation to folders and takes it out of others, with a
  * checkbox per folder because a JMAP email can be in several. [mailboxes] holds each email's
  * mailboxes by Email id; a folder is ticked when any email is in it. The folders come first, the
- * one the user [cameFrom] marked "you're here", then the rest. Ticks stay a draft until Done,
- * which runs [onApply] with the folder ids that changed. Done is off, with the reason, while an
- * email would be left in no folder, which JMAP does not allow. [onNewFolder] adds a New folder row.
+ * one the user [cameFrom] marked "you're here", then the rest as a collapsible tree. Ticks stay a
+ * draft until Done, which runs [onApply] with the folder ids that changed. Done is off, with the
+ * reason, while an email would be left in no folder, which JMAP does not allow. [onNewFolder]
+ * adds a New folder row.
  */
 @Composable
 fun FoldersSheet(
@@ -77,7 +78,7 @@ fun FoldersSheet(
             FolderGroup(currentCaption(lists.current.size), current, checked, toggle) { folder ->
                 "you're here".takeIf { folder.id == cameFrom }
             }
-            FolderGroup("Other folders", others, checked, toggle)
+            OtherFolderTree(others, query.isNotBlank(), checked, toggle)
             if (current.isEmpty() && others.isEmpty()) {
                 SheetCaption(
                     if (query.isBlank()) "No folders yet." else "No folders match.",
@@ -97,7 +98,7 @@ private fun FolderGroup(
     folders: List<MessageFolder>,
     checked: Set<String>,
     onToggle: (String) -> Unit,
-    detail: (MessageFolder) -> String? = { null },
+    detail: (MessageFolder) -> String?,
 ) {
     if (folders.isEmpty()) return
     Column {
@@ -120,5 +121,4 @@ private fun NewFolderRow(onClick: () -> Unit) {
     )
 }
 
-private fun currentCaption(count: Int): String =
-    "In $count ${if (count == 1) "folder" else "folders"} · tick to add, untick to remove"
+private fun currentCaption(count: Int): String = "In $count ${if (count == 1) "folder" else "folders"}"
