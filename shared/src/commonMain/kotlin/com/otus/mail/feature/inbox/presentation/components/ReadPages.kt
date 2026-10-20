@@ -6,6 +6,8 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.otus.designsystem.components.BannerAction
 import com.otus.designsystem.components.ImageBanner
 import com.otus.designsystem.resources.Res
@@ -126,6 +128,7 @@ internal fun ReadPages(
     look: ReadPageLook,
     loadContent: suspend (MailMessage) -> MessageContent?,
     modifier: Modifier = Modifier,
+    bottomInset: Dp = 0.dp,
 ) {
     // The pager's own drag is off: [rememberPageSwipe] in [modifier] turns the pages, more strictly.
     HorizontalPager(
@@ -139,7 +142,8 @@ internal fun ReadPages(
         LaunchedEffect(page.id) { state.bodies.load(page, loadContent) }
         val body = state.bodies.body(page)
         val showPerson = { address: String -> { state.details = true }.takeIf { page.shows(address) } }
-        ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize(), look.hidesQuote(index), showPerson) {
+        val quotes = PageQuotes(look.hidesQuote(index), showPerson)
+        ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize(), quotes, bottomInset) {
             look.Banner(page, body)
             if (state.details && index == pager.currentPage) look.Details(page)
         }

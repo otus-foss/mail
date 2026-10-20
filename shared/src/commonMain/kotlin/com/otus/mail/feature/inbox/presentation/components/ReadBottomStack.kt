@@ -1,17 +1,27 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.otus.designsystem.components.AlsoInStrip
 import com.otus.designsystem.components.rememberUnfold
 import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.ReadTokens
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailingList
@@ -32,7 +42,8 @@ import com.otus.mail.feature.inbox.presentation.read.subtitle
  * message count tells a conversation from a single message, so the strip does not change kind.
  * The thread strip follows the pages as [slide] turns them, and a drag on it turns them too. A
  * swipe up opens the thread strip's list, the files, or the folders sheet, and a swipe down folds
- * the files.
+ * the files. [onFoldedHeight] gets the stack's height with the files folded, which the page leaves
+ * room for under its text.
  */
 @Composable
 internal fun ReadBottomStack(
@@ -42,13 +53,23 @@ internal fun ReadBottomStack(
     actions: ReadStripActions,
     slide: StripGestures,
     modifier: Modifier = Modifier,
+    onFoldedHeight: (Dp) -> Unit = {},
 ) {
     val page = state.pages.getOrNull(current) ?: return
     val content = (state.bodies.body(page) as? PageBody.Loaded)?.content
-    Column(modifier.fillMaxWidth(), Arrangement.spacedBy(PageTokens.rowGap)) {
-        content?.attachments?.takeIf { it.isNotEmpty() }?.let { files ->
-            LaunchedEffect(page.id, files) { state.thumbnails.load(page, files) { actions.thumbnail(page, it) } }
-            key(page.id) { FilesStrip(state, page, files, actions) }
+    val density = LocalDensity.current
+    var height by remember { mutableIntStateOf(0) }
+    var filesHeight by remember { mutableIntStateOf(0) }
+    val files = content?.attachments?.takeIf { it.isNotEmpty() }
+    // The files count as folded, so the page's room under its text stays put while they unfold over it.
+    val folded = with(density) { (height - if (files != null) filesHeight else 0).toDp() }
+    SideEffect { onFoldedHeight(folded + if (files != null) ReadTokens.attachmentHeight else 0.dp) }
+    Column(modifier.fillMaxWidth().onSizeChanged { height = it.height }, Arrangement.spacedBy(PageTokens.rowGap)) {
+        files?.let {
+            LaunchedEffect(page.id, it) { state.thumbnails.load(page, it) { file -> actions.thumbnail(page, file) } }
+            Box(Modifier.onSizeChanged { size -> filesHeight = size.height }) {
+                key(page.id) { FilesStrip(state, page, it, actions) }
+            }
         }
         ContextStrip(state, current, source, content, actions, slide)
     }

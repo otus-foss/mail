@@ -15,6 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.otus.designsystem.components.NamedAvatar
 import com.otus.designsystem.components.QuoteFold
 import com.otus.designsystem.components.QuotedLevel
@@ -37,11 +39,20 @@ import com.otus.mail.feature.inbox.presentation.read.splitHtmlQuote
 import com.otus.mail.feature.inbox.presentation.read.splitPlainQuote
 
 /**
+ * How a page shows the text it quotes: left out with [hide], else folded, with a quoted person's
+ * pill running what [showPerson] gives for their address, if anything.
+ */
+internal class PageQuotes(
+    val hide: Boolean = false,
+    val showPerson: (address: String) -> (() -> Unit)? = { null },
+)
+
+/**
  * One page of the Read view: [top], such as the images banner and the sender details, stays put
- * above the [message]'s text, which scrolls. Its quoted part folds under it, levels quoted inside
- * it fold to a row each, and a quoted person's pill runs what [showPerson] gives for their address,
- * if anything. With [hideQuote], the quoted part is left out. While the [body]
- * loads, the preview shows; when it failed, the preview stays with a note.
+ * above the [message]'s text, which scrolls. Its quoted part folds under it as [quotes] says, and
+ * levels quoted inside it fold to a row each. The text runs on under parts floating over the
+ * page's bottom and leaves [bottomInset] of room after its end, so it can scroll clear of them.
+ * While the [body] loads, the preview shows; when it failed, the preview stays with a note.
  */
 @Composable
 internal fun ReadPageBody(
@@ -49,18 +60,18 @@ internal fun ReadPageBody(
     body: PageBody,
     images: PageImages,
     modifier: Modifier = Modifier,
-    hideQuote: Boolean = false,
-    showPerson: (address: String) -> (() -> Unit)? = { null },
+    quotes: PageQuotes = PageQuotes(),
+    bottomInset: Dp = 0.dp,
     top: @Composable ColumnScope.() -> Unit = {},
 ) {
     val content = (body as? PageBody.Loaded)?.content
-    val textInset = Modifier.padding(horizontal = PageTokens.textInset)
+    val textInset = Modifier.padding(horizontal = PageTokens.pageInset + PageTokens.textInset)
     Column(modifier, spacing) {
         Column(textInset.padding(top = PageTokens.contentInset), spacing, content = top)
         val html = content?.html
         if (html != null) {
-            // A mail's HTML lays out its own margins, so it gets the page's full width.
-            HtmlBody(html, images, hideQuote, Modifier.weight(1f))
+            // A mail's HTML lays out its own margins, so it runs edge to edge.
+            HtmlBody(html, images, quotes.hide, bottomInset, Modifier.weight(1f))
         } else {
             val text = content?.text?.ifBlank { null } ?: message.preview.ifBlank { message.body }
             val note =
@@ -69,7 +80,7 @@ internal fun ReadPageBody(
                     content?.truncated == true -> "Only the start of this message was loaded."
                     else -> null
                 }
-            PlainBody(text, note, hideQuote, showPerson, Modifier.weight(1f).then(textInset))
+            PlainBody(text, note, quotes, bottomInset, Modifier.weight(1f).then(textInset))
         }
     }
 }
@@ -79,6 +90,7 @@ private fun HtmlBody(
     html: MessageHtml,
     images: PageImages,
     hideQuote: Boolean,
+    bottomInset: Dp,
     modifier: Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -91,6 +103,7 @@ private fun HtmlBody(
         modifier.fillMaxWidth(),
         onShowRemote = images.onShow,
         quote = quote,
+        bottomInset = bottomInset,
     )
 }
 
@@ -98,19 +111,22 @@ private fun HtmlBody(
 private fun PlainBody(
     text: String,
     note: String?,
-    hideQuote: Boolean,
-    showPerson: (address: String) -> (() -> Unit)?,
+    quotes: PageQuotes,
+    bottomInset: Dp,
     modifier: Modifier,
 ) {
     val split = remember(text) { splitPlainQuote(text) }
     var expanded by remember(text) { mutableStateOf(false) }
     Column(
-        modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = PageTokens.contentInset),
+        modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = PageTokens.contentInset + bottomInset),
         spacing,
     ) {
         Text(split?.body ?: text)
-        split?.takeUnless { hideQuote }?.let { quote ->
-            val levels = remember(quote) { quote.levels() }.map { it.shown(showPerson) }
+        split?.takeUnless { quotes.hide }?.let { quote ->
+            val levels = remember(quote) { quote.levels() }.map { it.shown(quotes.showPerson) }
             QuoteFold(levels.first(), expanded, onToggle = { expanded = !expanded }, deeper = levels.drop(1))
         }
         note?.let { Text(it, color = OtusColors.text2) }
