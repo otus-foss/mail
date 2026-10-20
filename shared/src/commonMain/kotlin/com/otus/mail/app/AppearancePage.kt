@@ -8,8 +8,10 @@ import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.inbox.presentation.components.MailListPreview
 import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
+import com.otus.mail.feature.inbox.presentation.screens.AllowedSendersScreen
 import com.otus.mail.feature.inbox.presentation.screens.MailBehaviorScreen
 import com.otus.mail.feature.inbox.presentation.screens.MailListSettingsScreen
+import com.otus.mail.feature.inbox.presentation.screens.PrivacyScreen
 import com.otus.settings.presentation.components.AppIconSetting
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
@@ -61,6 +63,21 @@ internal fun MailBehaviorPage(
         onOpenActionBar = { navigation.go(MailPage.ActionBarSettings) },
         onBack = back,
     )
+}
+
+/** Settings › Privacy, or its Allowed senders page. */
+@Composable
+internal fun PrivacyPage(
+    page: MailPage,
+    states: MailStates,
+    navigation: MailNavigation,
+    back: () -> Unit,
+) {
+    if (page == MailPage.AllowedSenders) {
+        AllowedSendersScreen(states.behavior, onBack = back)
+    } else {
+        PrivacyScreen(states.behavior, onOpenAllowed = { navigation.go(MailPage.AllowedSenders) }, onBack = back)
+    }
 }
 
 /** The action bar's page, whose Move to buttons show each shared folder's color. */

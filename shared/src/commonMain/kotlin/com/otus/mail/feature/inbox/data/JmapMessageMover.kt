@@ -8,6 +8,7 @@ import com.otus.mail.core.mail.pointer
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageMover
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
@@ -57,5 +58,17 @@ class JmapMessageMover(
         val patch =
             buildJsonObject { put("mailboxIds/${pointer(folderId)}", if (inFolder) JsonPrimitive(true) else JsonNull) }
         return updateEmail(connections, logins, message, patch, cache)
+    }
+
+    /** Sends each email's whole `mailboxIds`, so one call files a conversation whose emails differ. */
+    override suspend fun setMailboxes(
+        accountId: String,
+        mailboxes: Map<String, Set<String>>,
+    ): Set<String> {
+        val patches =
+            mailboxes.mapValues { (_, boxes) ->
+                buildJsonObject { put("mailboxIds", JsonObject(boxes.associateWith { JsonPrimitive(true) })) }
+            }
+        return updateAccountEmails(connections, logins, accountId, patches, cache)
     }
 }

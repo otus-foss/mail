@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
-import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
@@ -9,7 +8,6 @@ import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
-import com.otus.mail.core.mail.ContactCardType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
@@ -56,7 +54,7 @@ class JmapAddressBook(
     private suspend fun load(accountId: String): List<MailSender>? =
         try {
             mailAccount(connections, logins, accountId)?.let { account ->
-                (contacts(account) + correspondents(account))
+                (account.contactCards(CONTACT_SCAN) + correspondents(account))
                     .distinctBy { it.address.lowercase() }
                     .map { it.copy(accountKey = accountId) }
             }
@@ -65,25 +63,6 @@ class JmapAddressBook(
         } catch (expected: LoginStoreException) {
             null
         }
-
-    /** Empty when the server has no contacts or cannot list them, so mail still suggests people. */
-    private suspend fun contacts(account: MailAccount): List<MailSender> {
-        val books = account.session.accountFor(JmapCapability.CONTACTS) ?: return emptyList()
-        return try {
-            val cards =
-                account.connection.request {
-                    val query = call(QueryMethod(ContactCardType, books, limit = CONTACT_SCAN))
-                    call(GetMethod(ContactCardType, books, JmapIds.Result(query.resultOf("/ids")), CARD_PROPERTIES))
-                }
-            jmapDecoding {
-                cards.list.flatMap { card ->
-                    card.emails.values.map { MailSender(card.name?.full.orEmpty(), it.address) }
-                }
-            }
-        } catch (expected: JmapException) {
-            emptyList()
-        }
-    }
 
     private suspend fun correspondents(account: MailAccount): List<MailSender> {
         val emails =
@@ -113,7 +92,6 @@ class JmapAddressBook(
         const val DEFAULT_LIMIT = 20
         const val CONTACT_SCAN = 500
         const val MAIL_SCAN = 200
-        val CARD_PROPERTIES = listOf("id", "name", "emails")
         val EMAIL_PROPERTIES = listOf("id", "receivedAt", "from", "to", "cc")
     }
 }

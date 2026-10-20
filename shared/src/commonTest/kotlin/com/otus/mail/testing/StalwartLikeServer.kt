@@ -25,6 +25,13 @@ val SUBMISSION_SESSION =
         "\"urn:ietf:params:jmap:mail\": {}, \"urn:ietf:params:jmap:submission\": {}}",
     )
 
+/** [STALWART_SESSION] with a blob download endpoint, which [stalwartLike] serves from its files. */
+val DOWNLOAD_SESSION =
+    STALWART_SESSION.replace(
+        "\"state\": \"s1\"}",
+        "\"state\": \"s1\", \"downloadUrl\": \"/download/{accountId}/{blobId}/{name}?type={type}\"}",
+    )
+
 /** A session whose only account holds contacts, so the login has no mail account. */
 const val CONTACTS_ONLY_SESSION = """
 {"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:contacts": {}},
@@ -41,6 +48,13 @@ const val CONTACTS_ONLY_SESSION = """
 fun stalwartLike(
     session: String = STALWART_SESSION,
     api: (String) -> String = { error("unexpected API call: $it") },
+): MockEngine = stalwartLike(session, emptyMap(), api)
+
+/** [stalwartLike] that also serves [files], by blob id, at [DOWNLOAD_SESSION]'s download URL. */
+fun stalwartLike(
+    session: String,
+    files: Map<String, ByteArray>,
+    api: (String) -> String,
 ): MockEngine =
     MockEngine { request ->
         val json = headersOf(HttpHeaders.ContentType, "application/json")
@@ -59,6 +73,11 @@ fun stalwartLike(
 
             request.url.encodedPath == "/jmap/" -> {
                 respond(api((request.body as TextContent).text), HttpStatusCode.OK, json)
+            }
+
+            request.url.encodedPath.startsWith("/download/") -> {
+                val blob = files[request.url.encodedPath.split('/')[3]]
+                if (blob == null) respond("", HttpStatusCode.NotFound) else respond(blob, HttpStatusCode.OK)
             }
 
             else -> {

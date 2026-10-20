@@ -11,6 +11,7 @@ import com.otus.avatar.EmptyAvatarStore
 import com.otus.avatar.HttpAvatarImageLoader
 import com.otus.avatar.JmapContactPhotoSource
 import com.otus.avatar.PublicSuffixDomainResolver
+import com.otus.designsystem.components.ToastState
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
@@ -28,31 +29,45 @@ import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.folders.domain.forgetAccount
 import com.otus.mail.feature.inbox.data.JmapAddressBook
+import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
 import com.otus.mail.feature.inbox.data.JmapAttachmentUploads
+import com.otus.mail.feature.inbox.data.JmapConversationMessages
+import com.otus.mail.feature.inbox.data.JmapConversationMute
 import com.otus.mail.feature.inbox.data.JmapDraftRepository
 import com.otus.mail.feature.inbox.data.JmapDraftSender
+import com.otus.mail.feature.inbox.data.JmapKnownPeople
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import com.otus.mail.feature.inbox.data.JmapMessageBodies
 import com.otus.mail.feature.inbox.data.JmapMessageCleaner
+import com.otus.mail.feature.inbox.data.JmapMessageHeaders
 import com.otus.mail.feature.inbox.data.JmapMessageMarker
 import com.otus.mail.feature.inbox.data.JmapMessageMover
+import com.otus.mail.feature.inbox.data.JmapNewsletters
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
 import com.otus.mail.feature.inbox.domain.AddressBook
+import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
+import com.otus.mail.feature.inbox.domain.ConversationMessages
+import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
+import com.otus.mail.feature.inbox.domain.KnownPeople
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageCleaner
+import com.otus.mail.feature.inbox.domain.MessageHeaders
 import com.otus.mail.feature.inbox.domain.MessageMarker
 import com.otus.mail.feature.inbox.domain.MessageMover
+import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.ScheduledSends
+import com.otus.mail.feature.inbox.domain.SenderBlocks
 import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 import com.otus.mail.feature.inbox.domain.forgetAccount
+import com.otus.mail.feature.inbox.presentation.NewsletterSteps
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -60,6 +75,9 @@ import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.push.PushStateStore
 import com.otus.push.PushSubscriptions
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -127,6 +145,31 @@ class MailServices(
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins, cache) }
+    internal val conversationMessages: ConversationMessages by lazy {
+        JmapConversationMessages(connections, logins, cache)
+    }
+    internal val downloads: AttachmentDownloads by lazy { JmapAttachmentDownloads(connections, logins) }
+    internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, logins) }
+    internal val newsletters: Newsletters by lazy {
+        JmapNewsletters(connections, logins, unsubscribeHttp, drafts, sender, cache)
+    }
+    internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections, logins) }
+    internal val mute: ConversationMute by lazy { JmapConversationMute(connections, logins, cache) }
+    internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
+
+    /**
+     * Toasts and the work their closing starts, such as an unsubscribe sent once its Undo window
+     * ends. They belong to the process, so a toast shown before the activity was recreated, as on
+     * rotation, still shows and still finishes its work.
+     */
+    internal val toasts = ToastState()
+    internal val work: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
+
+    /** Each newsletter strip's step while the process runs, so a reopened message shows it. */
+    internal val newsletterSteps = NewsletterSteps()
+
+    /** Sends one-click unsubscribe requests to list servers, which the JMAP client may not reach. */
+    private val unsubscribeHttp by lazy { HttpClient() }
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }

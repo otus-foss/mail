@@ -44,11 +44,23 @@ script, so they keep working while the app is closed.
   with the `archive` or `trash` role. Archive also leaves the inbox, and Trash leaves every folder,
   so trashed mail does not stay in Read later. Other folders the message is in stay as they are.
   All three need `mayRemoveItems` on the current folder and `mayAddItems` on the target.
+- The Read view's **Folders** sheet, opened from its strips or the sender details, ticks every
+  folder any email of the conversation is in. **Done** sends one `Email/set` that gives each email
+  its whole new `mailboxIds`: its own folders without the unticked ones, plus the ticked ones. It
+  stays off, with "Each mail needs a folder", while an email would be left in none. A change that
+  takes the conversation out of the folder the list shows closes the Read view first. If the
+  server refuses any email, the emails it changed go back and the list shows a notice.
+- **Delete this message**, on an older page of a conversation, moves that one email to Trash
+  with the usual Undo toast. The conversation stays on the list without it, and the page comes
+  back if the server refuses or Undo runs. Mark as unread and Flag in the Read view's menu also
+  change only that page's email; a conversation row then reloads to show the combined marks.
 - **Move**, in the open message's bar or menu and in the selection bar, opens the Move to sheet.
   It shows the message, or a selection's count and senders with a small avatar each, a folder search, pills for Inbox, Read
   later, Archive, Spam, and Trash where every message can go, a suggested folder, and the user's
   own folders as a tree. A folder with nested folders has a chevron that collapses them for as
-  long as the sheet is open; a search shows every match. Tapping any folder or pill moves the
+  long as the sheet is open; a search shows every match. The folder the messages are in shows
+  dimmed with "here now" and does not move them. The pills are 40 dp `DestinationPill`s, so the
+  sort button at the row's end always fits. Tapping any other folder or pill moves the
   messages at once and closes the sheet. The suggestion
   comes from one `Email/query` filtered by `from` (newest 50 of the sender's messages) and one
   `Email/get` of their `mailboxIds`: the own folder holding most of them, never the current one.

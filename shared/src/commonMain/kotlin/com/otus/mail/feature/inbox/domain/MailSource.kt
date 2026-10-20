@@ -137,4 +137,13 @@ interface MessageMover {
         folderId: String,
         inFolder: Boolean,
     ): Boolean
+
+    /**
+     * Puts each email of [mailboxes], by Email id, in exactly those mailboxes of the login
+     * [accountId]. Returns the Email ids the server updated.
+     */
+    suspend fun setMailboxes(
+        accountId: String,
+        mailboxes: Map<String, Set<String>>,
+    ): Set<String>
 }
