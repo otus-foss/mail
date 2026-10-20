@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -14,9 +16,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.otus.designsystem.components.NamedAvatar
 import com.otus.designsystem.components.QuoteFold
 import com.otus.designsystem.components.QuotedLevel
@@ -48,10 +49,10 @@ internal class PageQuotes(
 )
 
 /**
- * One page of the Read view: [top], such as the images banner and the sender details, stays put
- * above the [message]'s text, which scrolls. Its quoted part folds under it as [quotes] says, and
- * levels quoted inside it fold to a row each. The text runs on under parts floating over the
- * page's bottom and leaves [bottomInset] of room after its end, so it can scroll clear of them.
+ * One page of the Read view: [top], such as the images banner and the sender details, floats
+ * above the [message]'s text, which scrolls up behind it and behind whatever floats over the
+ * page's edges, leaving [insets] of room at its top and bottom so it can scroll clear of them. Its
+ * quoted part folds under it as [quotes] says, and levels quoted inside it fold to a row each.
  * While the [body] loads, the preview shows; when it failed, the preview stays with a note.
  */
 @Composable
@@ -61,27 +62,60 @@ internal fun ReadPageBody(
     images: PageImages,
     modifier: Modifier = Modifier,
     quotes: PageQuotes = PageQuotes(),
-    bottomInset: Dp = 0.dp,
+    insets: PaddingValues = PaddingValues(),
     top: @Composable ColumnScope.() -> Unit = {},
 ) {
-    val content = (body as? PageBody.Loaded)?.content
     val textInset = Modifier.padding(horizontal = PageTokens.pageInset + PageTokens.textInset)
-    Column(modifier, spacing) {
-        Column(textInset.padding(top = PageTokens.contentInset), spacing, content = top)
-        val html = content?.html
-        if (html != null) {
-            // A mail's HTML lays out its own margins, so it runs edge to edge.
-            HtmlBody(html, images, quotes.hide, bottomInset, Modifier.weight(1f))
-        } else {
-            val text = content?.text?.ifBlank { null } ?: message.preview.ifBlank { message.body }
-            val note =
-                when {
-                    body is PageBody.Failed -> "Couldn't load the full message."
-                    content?.truncated == true -> "Only the start of this message was loaded."
-                    else -> null
-                }
-            PlainBody(text, note, quotes, bottomInset, Modifier.weight(1f).then(textInset))
+    // The parts on top are measured first, so the text gets its room before it first draws:
+    // a new room would load an HTML page again.
+    SubcomposeLayout(modifier) { constraints ->
+        val insetTop = insets.calculateTopPadding().roundToPx()
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val tops =
+            subcompose(TOP) {
+                Column(textInset.padding(top = PageTokens.contentInset), spacing, content = top)
+            }.map { it.measure(loose) }
+        val topHeight = tops.maxOfOrNull { it.height } ?: 0
+        val room =
+            PaddingValues(
+                top = (insetTop + topHeight).toDp() + InboxTokens.itemGap,
+                bottom = insets.calculateBottomPadding(),
+            )
+        val bodies =
+            subcompose(BODY) {
+                MessageText(message, body, images, quotes, room, textInset)
+            }.map { it.measure(constraints) }
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            bodies.forEach { it.place(0, 0) }
+            tops.forEach { it.place(0, insetTop) }
         }
+    }
+}
+
+/** The message's HTML edge to edge, or else its text, with [room] around it to scroll clear of what floats over it. */
+@Composable
+private fun MessageText(
+    message: MailMessage,
+    body: PageBody,
+    images: PageImages,
+    quotes: PageQuotes,
+    room: PaddingValues,
+    textInset: Modifier,
+) {
+    val content = (body as? PageBody.Loaded)?.content
+    val html = content?.html
+    if (html != null) {
+        // A mail's HTML lays out its own margins, so it runs edge to edge.
+        HtmlBody(html, images, quotes.hide, room, Modifier.fillMaxSize())
+    } else {
+        val text = content?.text?.ifBlank { null } ?: message.preview.ifBlank { message.body }
+        val note =
+            when {
+                body is PageBody.Failed -> "Couldn't load the full message."
+                content?.truncated == true -> "Only the start of this message was loaded."
+                else -> null
+            }
+        PlainBody(text, note, quotes, room, Modifier.fillMaxSize().then(textInset))
     }
 }
 
@@ -90,7 +124,7 @@ private fun HtmlBody(
     html: MessageHtml,
     images: PageImages,
     hideQuote: Boolean,
-    bottomInset: Dp,
+    room: PaddingValues,
     modifier: Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -103,7 +137,7 @@ private fun HtmlBody(
         modifier.fillMaxWidth(),
         onShowRemote = images.onShow,
         quote = quote,
-        bottomInset = bottomInset,
+        insets = room,
     )
 }
 
@@ -112,7 +146,7 @@ private fun PlainBody(
     text: String,
     note: String?,
     quotes: PageQuotes,
-    bottomInset: Dp,
+    room: PaddingValues,
     modifier: Modifier,
 ) {
     val split = remember(text) { splitPlainQuote(text) }
@@ -121,7 +155,10 @@ private fun PlainBody(
         modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(bottom = PageTokens.contentInset + bottomInset),
+            .padding(
+                top = room.calculateTopPadding(),
+                bottom = PageTokens.contentInset + room.calculateBottomPadding(),
+            ),
         spacing,
     ) {
         Text(split?.body ?: text)
@@ -185,3 +222,6 @@ internal fun openLink(
 }
 
 private val spacing = Arrangement.spacedBy(InboxTokens.itemGap)
+
+private const val TOP = "top"
+private const val BODY = "body"

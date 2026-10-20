@@ -22,6 +22,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -143,8 +145,8 @@ private class ReadLayoutState(
 )
 
 /**
- * The header, then the pages down to the bottom of the screen, with the strips floating over them
- * above the bar's [padding]. A page leaves room for the strips and the bar after its text, so it
+ * The pages over the whole screen, with the header floating over their top and the strips over
+ * their bottom, above the bar's [padding]. A page leaves room for them around its text, so it
  * scrolls clear of them while using the space around them.
  */
 @Composable
@@ -164,21 +166,27 @@ private fun ReadLayout(
     val date = page.received.shortLabel(layout.today)
     var stripsHeight by remember { mutableStateOf(0.dp) }
     val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
+    val density = LocalDensity.current
+    var headerHeight by remember { mutableStateOf(0.dp) }
     Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            Column(Modifier.padding(PageTokens.pageInset)) {
-                ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
-                notice?.let { MessageNotice(it) }
-            }
-            val swipe = rememberPageSwipe(layout.pager)
-            ReadPages(
-                state,
-                layout.pager,
-                layout.look,
-                parts.context.loadContent,
-                Modifier.weight(1f).then(swipe),
-                bottomInset,
-            )
+        val swipe = rememberPageSwipe(layout.pager)
+        ReadPages(
+            state,
+            layout.pager,
+            layout.look,
+            parts.context.loadContent,
+            Modifier.fillMaxSize().then(swipe),
+            PaddingValues(top = headerHeight, bottom = bottomInset),
+        )
+        Column(
+            Modifier.padding(PageTokens.pageInset).onSizeChanged { size ->
+                val height = with(density) { size.height.toDp() }
+                // A subject unfolds over the text, so the room stays the folded header's height.
+                if (headerHeight == 0.dp || height < headerHeight) headerHeight = height
+            },
+        ) {
+            ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
+            notice?.let { MessageNotice(it) }
         }
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
