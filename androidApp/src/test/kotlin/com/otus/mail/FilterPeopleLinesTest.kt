@@ -49,6 +49,17 @@ class FilterPeopleLinesTest {
     }
 
     @Test
+    fun tappingAChipPutsTheirAddressBackInTheLine() {
+        compose.showFilterPanel()
+        compose.onNodeWithContentDescription("From").performTextInput("new@x.org")
+        compose.onNodeWithContentDescription("From").performImeAction()
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("new@x.org").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("From").assertTextEquals("new@x.org")
+    }
+
+    @Test
     fun enterPicksATypedAddress() {
         compose.showFilterPanel()
         compose.onNodeWithContentDescription("From").performTextInput("new@x.org")
