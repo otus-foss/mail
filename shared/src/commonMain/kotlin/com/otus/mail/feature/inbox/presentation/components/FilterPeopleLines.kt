@@ -148,8 +148,8 @@ internal class PeopleCardArea {
 
     /** Whether [offset], from the page's corner, lands on the card. */
     fun holds(offset: Offset): Boolean {
-        val page = page?.takeIf { it.isAttached } ?: return false
-        val card = card?.takeIf { it.isAttached } ?: return false
-        return page.localBoundingBoxOf(card).contains(offset)
+        val page = page?.takeIf { it.isAttached }
+        val card = card?.takeIf { it.isAttached }
+        return page != null && card != null && page.localBoundingBoxOf(card).contains(offset)
     }
 }
