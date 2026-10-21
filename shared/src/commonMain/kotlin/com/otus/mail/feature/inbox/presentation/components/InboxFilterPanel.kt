@@ -44,8 +44,9 @@ fun InboxFilterPanel(
         open = state.isOpen,
         collapsedHeight = collapsedHeight,
         onDismiss = state::close,
-        // No visible title: a gap above the first section that still names the pane to screen readers.
-        header = { Spacer(Modifier.height(FilterTokens.bodyInset).semantics { paneTitle = "Filters" }) },
+        // No visible title: a header-tall gap that holds the panel's ✕ above the first section and
+        // still names the pane to screen readers.
+        header = { Spacer(Modifier.height(FilterTokens.headerHeight).semantics { paneTitle = "Filters" }) },
         footer = { InboxFilterFooter(state, shown) },
         modifier = modifier,
     ) {
