@@ -6,8 +6,7 @@ name: nightly
 # See docs/nightly.md for the secrets this needs.
 on:
   schedule:
-    # 03:00 UTC is 04:00 in Berlin in winter and 05:00 in summer; cron has no time zones.
-    - cron: "0 3 * * *"
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 permissions:
