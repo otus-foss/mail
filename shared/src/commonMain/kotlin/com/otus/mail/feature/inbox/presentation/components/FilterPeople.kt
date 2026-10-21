@@ -40,6 +40,7 @@ internal fun rememberFilterPeople(
 /** A chosen person as a chip, and the filters without them for the chip's ✕. */
 internal class PickedPerson(
     val recipient: Recipient,
+    val address: String,
     val remove: (InboxFilters) -> InboxFilters,
 )
 
@@ -51,7 +52,7 @@ internal fun pickedSenders(
     draft.from.map { key ->
         val address = key.addresses.sorted().first()
         val avatar = chipAvatar(listed.personOf(key)?.avatar, key.name, address)
-        PickedPerson(Recipient(key.label, avatar, key.addresses.sorted().joinToString())) {
+        PickedPerson(Recipient(key.label, avatar, key.addresses.sorted().joinToString()), address) {
             it.copy(from = it.from - key)
         }
     }
@@ -69,13 +70,15 @@ internal fun pickedRecipients(
                 person?.avatar?.let { chipAvatar(it, person.name, address.address) }
                     ?: options.addresses.firstOrNull { it.address == address }?.avatar
                     ?: chipAvatar(null, address.address, address.address)
-            PickedPerson(Recipient(address.address, avatar, address.address)) { it.copy(sentTo = it.sentTo - address) }
+            PickedPerson(Recipient(address.address, avatar, address.address), address.address) {
+                it.copy(sentTo = it.sentTo - address)
+            }
         }
     val others =
         draft.to.map { address ->
             val person = listed.firstOrNull { person -> person.addresses.any { it.equals(address, ignoreCase = true) } }
             val avatar = chipAvatar(person?.avatar, person?.name.orEmpty().ifBlank { address }, address)
-            PickedPerson(Recipient(address, avatar, address)) { it.copy(to = it.to - address) }
+            PickedPerson(Recipient(address, avatar, address), address) { it.copy(to = it.to - address) }
         }
     return own + others
 }

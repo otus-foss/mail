@@ -116,7 +116,8 @@ private fun FilterPeopleLine(
             onChipClick = { index ->
                 val chip = picked[index]
                 onEdit(chip.remove)
-                search.search(chip.recipient.name)
+                // The address, not the name, so leaving the line picks the person again.
+                search.search(chip.address)
             },
         )
         val matches = if (search.suggesting) people.filterNot(isPicked) else emptyList()
