@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
         val app = application as OtusMailApplication
         app.signatureImages.attach(this)
         app.attachmentFiles.attach(this)
+        app.printer.attach(this)
         val services = app.services
         if (savedInstanceState == null) askForNotifications(services)
         val behaviorState = MailBehaviorState(AndroidMailBehaviorStore(this))

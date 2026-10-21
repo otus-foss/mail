@@ -61,7 +61,11 @@ internal class MessageFiling(
      * Folders of the message's account that accept mail, except the one it is in. The user's own
      * folders are nested as if system folders and Read later were not there.
      */
-    fun moveTargets(message: MailMessage): List<MoveTarget> {
+    fun moveTargets(message: MailMessage): List<MoveTarget> =
+        listedTargets(message).filter { it.folderId != message.location.mailboxId }
+
+    /** [moveTargets] with the folder the message is in, in tree order, for the move sheet's list. */
+    fun listedTargets(message: MailMessage): List<MoveTarget> {
         val account = folders.account(message.location.accountId)
         if (account == null || !folders.rightsOf(message).mayRemoveItems) return emptyList()
         val own = account.folderTree { !it.isCustom || it.id == account.readLaterId }.associateBy { it.folder.id }
@@ -72,7 +76,7 @@ internal class MessageFiling(
                 .toMap()
         return account
             .folderTree()
-            .filter { it.folder.id != message.location.mailboxId && it.folder.rights.mayAddItems }
+            .filter { it.folder.id == message.location.mailboxId || it.folder.rights.mayAddItems }
             .map { node ->
                 val ownNode = own[node.folder.id]
                 MoveTarget(

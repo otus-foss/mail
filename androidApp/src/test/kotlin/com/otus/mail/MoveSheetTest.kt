@@ -3,13 +3,17 @@ package com.otus.mail
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.compose.setContent
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -76,7 +80,7 @@ class MoveSheetTest {
     fun aSystemFolderPillMovesTheMessageAndClosesIt() {
         server.folders += """{"id": "j", "name": "Junk Mail", "role": "junk"}"""
         openMoveSheet()
-        compose.onNodeWithText("Grace Hopper · grace@example.org").assertIsDisplayed()
+        compose.onNode(hasText("Grace Hopper · ", substring = true)).assertIsDisplayed()
         compose.onNodeWithText("Spam").performClick()
         val move = moveUpdate()
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/j\":true}}" in move)
@@ -101,20 +105,39 @@ class MoveSheetTest {
     fun theFolderTheSendersMailUsuallyGoesToIsSuggested() {
         server.senderFolders += listOf("z", "a", "z", "r")
         openMoveSheet()
-        val suggestion = "Receipts / Amazon · where Grace Hopper usually goes"
-        waitFor(suggestion)
+        val suggestion = "Move to Receipts / Amazon, where Grace Hopper's mail usually goes"
+        compose.waitUntil(
+            TIMEOUT,
+        ) { compose.onAllNodesWithContentDescription(suggestion).fetchSemanticsNodes().isNotEmpty() }
         screenshot("move-sheet")
-        compose.onNodeWithText(suggestion).performClick()
+        compose.onNodeWithContentDescription(suggestion).performClick()
         val move = moveUpdate()
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/z\":true}}" in move)
+    }
+
+    @Test
+    fun theFolderTheMessageIsInIsMarkedAndDoesNotMoveIt() {
+        showInbox()
+        compose.onNodeWithContentDescription("Open navigation").performClick()
+        compose.onNode(hasText("Receipts") and isSelectable() and !hasText("Welcome")).performClick()
+        waitFor("Order shipped")
+        compose.onNodeWithText("Order shipped").performClick()
+        compose.onNodeWithContentDescription("Move").performClick()
+        val current = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Current folder")
+        compose.waitUntil(TIMEOUT) { compose.onAllNodes(current).fetchSemanticsNodes().isNotEmpty() }
+        screenshot("move-sheet-current-folder")
+        compose.onNode(current).assertIsDisplayed()
+        compose.onNodeWithText("Amazon").assertIsDisplayed()
     }
 
     @Test
     fun aTopLevelSuggestionDoesNotRepeatItsName() {
         server.senderFolders += listOf("r", "r")
         openMoveSheet()
-        waitFor("Where Grace Hopper usually goes")
-        compose.onNodeWithText("Receipts · where Grace Hopper usually goes").assertDoesNotExist()
+        val suggestion = "Move to Receipts, where Grace Hopper's mail usually goes"
+        compose.waitUntil(
+            TIMEOUT,
+        ) { compose.onAllNodesWithContentDescription(suggestion).fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test

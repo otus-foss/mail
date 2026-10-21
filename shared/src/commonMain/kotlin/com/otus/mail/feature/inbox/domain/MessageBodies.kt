@@ -13,11 +13,16 @@ data class MessageHtml(
 /**
  * An open message's full body. [text] is the plain body, HTML read as text when the message has
  * no plain part; [truncated] when the server sent only its start. [html] is null for plain mail.
+ * [attachments] are its files, without the images its HTML shows inline. [unsubscribe] is set for
+ * mail from a list that can be left, and [listName] names that list when its header does.
  */
 data class MessageContent(
     val text: String,
     val truncated: Boolean,
     val html: MessageHtml?,
+    val attachments: List<MailAttachment> = emptyList(),
+    val unsubscribe: Unsubscribe? = null,
+    val listName: String? = null,
 )
 
 /** Loads the full body of an open message, since the list loads only previews. */

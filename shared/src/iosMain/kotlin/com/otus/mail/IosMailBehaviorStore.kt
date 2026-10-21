@@ -11,8 +11,10 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.decodeRecentFrom
-import com.otus.mail.feature.inbox.domain.encodeRecentFrom
+import com.otus.mail.feature.inbox.domain.decodeAddresses
+import com.otus.mail.feature.inbox.domain.decodeRemoteImages
+import com.otus.mail.feature.inbox.domain.encodeAddresses
+import com.otus.mail.feature.inbox.domain.storageValue
 import platform.Foundation.NSUserDefaults
 
 class IosMailBehaviorStore(
@@ -36,12 +38,14 @@ class IosMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.stringForKey(ACTION_BAR_MODE)) ?: defaults.actionBarMode,
             minimizedBar = bool(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = bool(WEBSITE_ICONS, defaults.websiteIcons),
-            recentFrom = decodeRecentFrom(preferences.stringForKey(RECENT_FROM)),
+            recentFrom = decodeAddresses(preferences.stringForKey(RECENT_FROM)),
             signatureInReplies = bool(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.stringForKey(INBOX)?.let(InboxContents::decode) ?: defaults.inbox,
             filters = preferences.stringForKey(FILTERS)?.let(FilterLayout::decode) ?: defaults.filters,
             list = preferences.stringForKey(LIST)?.let(MailListLayout::decode) ?: defaults.list,
+            remoteImages = decodeRemoteImages(preferences.stringForKey(REMOTE_IMAGES)) ?: defaults.remoteImages,
+            allowedSenders = decodeAddresses(preferences.stringForKey(ALLOWED_SENDERS)),
         )
     }
 
@@ -58,12 +62,14 @@ class IosMailBehaviorStore(
         preferences.setObject(behavior.actionBarMode.storageValue, forKey = ACTION_BAR_MODE)
         preferences.setBool(behavior.minimizedBar, forKey = MINIMIZED_BAR)
         preferences.setBool(behavior.websiteIcons, forKey = WEBSITE_ICONS)
-        preferences.setObject(encodeRecentFrom(behavior.recentFrom), forKey = RECENT_FROM)
+        preferences.setObject(encodeAddresses(behavior.recentFrom), forKey = RECENT_FROM)
         preferences.setBool(behavior.signatureInReplies, forKey = SIGNATURE_IN_REPLIES)
         preferences.setInteger(behavior.undoSendSeconds.toLong(), forKey = UNDO_SEND_SECONDS)
         preferences.setObject(InboxContents.encode(behavior.inbox), forKey = INBOX)
         preferences.setObject(FilterLayout.encode(behavior.filters), forKey = FILTERS)
         preferences.setObject(MailListLayout.encode(behavior.list), forKey = LIST)
+        preferences.setObject(behavior.remoteImages.storageValue, forKey = REMOTE_IMAGES)
+        preferences.setObject(encodeAddresses(behavior.allowedSenders), forKey = ALLOWED_SENDERS)
     }
 
     // boolForKey cannot tell a saved false from a missing value.
@@ -93,6 +99,8 @@ class IosMailBehaviorStore(
         const val INBOX = "otus.mail.inbox_contents"
         const val FILTERS = "otus.mail.filter_layout"
         const val LIST = "otus.mail.mail_list"
+        const val REMOTE_IMAGES = "otus.mail.remote_images"
+        const val ALLOWED_SENDERS = "otus.mail.allowed_senders"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"
     }

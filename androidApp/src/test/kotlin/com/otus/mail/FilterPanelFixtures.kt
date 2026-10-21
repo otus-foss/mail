@@ -19,10 +19,18 @@ import com.otus.mail.feature.inbox.presentation.FilterAddress
 import com.otus.mail.feature.inbox.presentation.FilterFolder
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderKey
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.DrawableResource
+import kotlin.time.Clock
 
 /** Demo mail and folders for filter panel tests: names repeat, and Work nests five levels deep. */
 internal object FilterPanelFixtures {
+    /** Mail dates count back from the day the test runs, so rows read the same any day. */
+    private val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
     private val folders =
         listOf(
             system("inbox", "Inbox", Res.drawable.symbol_inbox),
@@ -72,13 +80,13 @@ internal object FilterPanelFixtures {
 
     val messages =
         listOf(
-            message("1", "Sam Rivera", "Invoice for October", "2026-10-18", unread = true),
-            message("2", "Acme Corp", "Kickoff notes", "2026-10-17"),
-            message("3", "Lena Park", "Trip itinerary", "2026-10-15"),
-            message("4", "Grace Hopper", "Compiler notes", "2026-10-14", address = "grace@navy.example"),
-            message("5", "Grace Hopper", "Re: Compiler notes", "2026-10-13", address = "grace@navy.example"),
-            message("6", "ChatGPT", "Your weekly summary", "2026-10-12", address = "noreply@openai.com"),
-            message("7", "ChatGPT", "New features", "2026-10-11", address = "updates@openai.com"),
+            message("1", "Sam Rivera", "Invoice for October", daysAgo = 0, unread = true),
+            message("2", "Acme Corp", "Kickoff notes", daysAgo = 1),
+            message("3", "Lena Park", "Trip itinerary", daysAgo = 3),
+            message("4", "Grace Hopper", "Compiler notes", daysAgo = 4, address = "grace@navy.example"),
+            message("5", "Grace Hopper", "Re: Compiler notes", daysAgo = 5, address = "grace@navy.example"),
+            message("6", "ChatGPT", "Your weekly summary", daysAgo = 6, address = "noreply@openai.com"),
+            message("7", "ChatGPT", "New features", daysAgo = 7, address = "updates@openai.com"),
         )
 
     private fun system(
@@ -109,7 +117,7 @@ internal object FilterPanelFixtures {
         id: String,
         from: String,
         subject: String,
-        date: String,
+        daysAgo: Int,
         unread: Boolean = false,
         address: String = "${from.lowercase().replace(' ', '.')}@example.org",
     ) = MailMessage(
@@ -117,7 +125,7 @@ internal object FilterPanelFixtures {
         MailSender(from, address),
         subject,
         "A short preview of the message.",
-        ReceivedAt(date, "09:30"),
+        ReceivedAt(today.minus(DatePeriod(days = daysAgo)).toString(), "09:30"),
         MailLocation("Inbox", "Ada", accountId = "ada"),
         MailAttributes(unread = unread),
         to = listOf(MailSender("", "otus@rubylabs.design")),

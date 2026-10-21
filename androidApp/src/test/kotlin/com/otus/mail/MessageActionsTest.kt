@@ -1,10 +1,8 @@
 package com.otus.mail
 
 import androidx.activity.compose.setContent
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -13,7 +11,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
+import androidx.test.espresso.Espresso
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -54,8 +52,8 @@ class MessageActionsTest {
     private fun menuOffers(label: String): Boolean {
         compose.onNodeWithContentDescription("More actions").performClick()
         val offered = compose.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty()
-        // The scrim's center is under the menu, so tap its corner.
-        compose.onNodeWithContentDescription("Dismiss More actions").performTouchInput { click(Offset(1f, 1f)) }
+        Espresso.pressBack()
+        compose.waitForIdle()
         return offered
     }
 
@@ -81,8 +79,8 @@ class MessageActionsTest {
         val read = lastUpdate()
         assertTrue(read, "\"update\":{\"m1\":{\"keywords/\$seen\":true}}" in read)
 
-        chooseFromMenu("Mark unread")
-        assertTrue(menuOffers("Mark read"))
+        chooseFromMenu("Mark as unread")
+        assertTrue(menuOffers("Mark as read"))
         compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 2 }
         val unread = lastUpdate()
         assertTrue(unread, "\"update\":{\"m1\":{\"keywords/\$seen\":null}}" in unread)
@@ -97,7 +95,7 @@ class MessageActionsTest {
     @Test
     fun aMessageStaysUnreadWhenOpeningIsSetNotToMarkIt() {
         openMessage(MailBehavior(markReadOnOpen = false))
-        assertTrue(menuOffers("Mark read"))
+        assertTrue(menuOffers("Mark as read"))
         assertEquals(0, server.calls.count { "Email/set" in it })
     }
 
@@ -131,12 +129,12 @@ class MessageActionsTest {
     fun readLaterSavesTheMessageInPlaceAndCanRemoveIt() {
         server.folders += """{"id": "l", "name": "Read later"}"""
         openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
-        chooseFromMenu("Read later")
+        button("Read later").performClick()
         val save = lastUpdate()
         assertTrue(save, "\"update\":{\"m1\":{\"mailboxIds/l\":true}}" in save)
 
         // The message stays open and in the inbox, now offering to leave Read later.
-        chooseFromMenu("Remove from Read later")
+        button("Remove from Read later").performClick()
         compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 2 }
         val remove = lastUpdate()
         assertTrue(remove, "\"update\":{\"m1\":{\"mailboxIds/l\":null}}" in remove)
@@ -164,8 +162,8 @@ class MessageActionsTest {
         // Unavailable actions keep their slots, disabled, so the bar never shifts.
         listOf("Archive", "Delete").forEach { button(it).assertIsNotEnabled() }
         assertFalse(menuOffers("Flag"))
-        assertTrue(menuOffers("Mark read"))
-        assertFalse(menuOffers("Read later"))
+        assertTrue(menuOffers("Mark as read"))
+        button("Read later").assertDoesNotExist()
     }
 
     @Test
@@ -187,6 +185,20 @@ class MessageActionsTest {
         val move = lastUpdate()
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/p\":true}}" in move)
         compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
+    }
+
+    @Test
+    fun theAlsoInStripsFoldersSheetAddsTheConversationToATickedFolder() {
+        server.alsoIn += "r"
+        openMessage(MailBehavior(markReadOnOpen = false))
+        // The inbox is the folder the message was opened from, so the strip names only Receipts.
+        waitFor("Also in")
+        compose.onNodeWithText("Also in").performClick()
+        compose.onNode(hasText("Amazon") and hasClickAction()).performClick()
+        compose.onNode(hasText("Done") and hasClickAction()).performClick()
+        val add = lastUpdate()
+        // The whole conversation goes in one call, each email with its whole set of folders.
+        assertTrue(add, "\"update\":{\"m1\":{\"mailboxIds\":{\"a\":true,\"r\":true,\"z\":true}}}" in add)
     }
 
     @Test

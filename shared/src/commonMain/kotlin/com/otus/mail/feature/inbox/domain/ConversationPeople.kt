@@ -36,7 +36,7 @@ fun MailMessage.receivedOn(own: OwnAddresses): String? =
 fun threadSubject(subject: String): String = subject.replace(REPLY_PREFIXES, "").trim()
 
 /** The sign-in address counts as the user's own even before the identities load. */
-private fun MailMessage.isOwn(
+internal fun MailMessage.isOwn(
     own: OwnAddresses,
     person: MailSender,
 ): Boolean =

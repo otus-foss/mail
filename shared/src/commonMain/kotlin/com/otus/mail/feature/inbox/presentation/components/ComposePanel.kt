@@ -85,11 +85,15 @@ private fun FromPill(
     }
 }
 
+/** The ⋯ button of a page's panel, named [description], which opens [options] under it. */
 @Composable
-private fun OptionsButton(options: List<OptionsItem>) {
+internal fun OptionsButton(
+    options: List<OptionsItem>,
+    description: String = "More options",
+) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton("More options", { open = true }) { Symbol(Res.drawable.symbol_more_horiz) }
+        IconButton(description, { open = true }) { Symbol(Res.drawable.symbol_more_horiz) }
         if (open) OptionsMenu(options) { open = false }
     }
 }

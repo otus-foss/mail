@@ -161,6 +161,33 @@ class JmapNewMailCheckerTest {
             assertEquals(mapOf("ada" to "e1"), states.saved)
         }
 
+    @Test
+    fun mailInAMutedConversationIsNotShown() =
+        runTest {
+            val states = States(mapOf("ada" to "e1"))
+            val shown =
+                check(states) { body ->
+                    if ("Email/changes" in body) {
+                        """{"methodResponses": [["Email/changes", {"oldState": "e1", "newState": "e2",
+                           "hasMoreChanges": false, "created": ["m1", "m2"]}, "c0"]]}"""
+                    } else {
+                        assertTrue("\"Thread/get\"" in body, body)
+                        """{"methodResponses": [
+                           ["Mailbox/get", {"state": "b1", "list": [{"id": "i", "role": "inbox"}]}, "c0"],
+                           ["Email/get", {"state": "e2", "list": [
+                             ${email("m1", "i", "{}").replace("{\"id\"", "{\"threadId\": \"loud\", \"id\"")},
+                             ${email("m2", "i", "{}").replace("{\"id\"", "{\"threadId\": \"quiet\", \"id\"")}]}, "c1"],
+                           ["Thread/get", {"state": "t", "list": [{"id": "loud", "emailIds": ["m1"]},
+                             {"id": "quiet", "emailIds": ["old", "m2"]}]}, "c2"],
+                           ["Email/get", {"state": "e2", "list": [
+                             {"id": "m1", "threadId": "loud", "keywords": {}, "receivedAt": "2026-10-14T08:00:00Z"},
+                             {"id": "old", "threadId": "quiet", "keywords": {"${'$'}muted": true}, "receivedAt": "2026-10-01T08:00:00Z"},
+                             {"id": "m2", "threadId": "quiet", "keywords": {}, "receivedAt": "2026-10-14T08:00:00Z"}]}, "c3"]]}"""
+                    }
+                }
+            assertEquals(listOf("m1"), shown.map { it.emailId })
+        }
+
     private fun email(
         id: String,
         mailbox: String,

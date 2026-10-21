@@ -8,7 +8,7 @@ import com.otus.mail.feature.inbox.presentation.components.InboxBehaviorSettings
 import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
 
 /**
- * Settings › Mail behavior: what the Inbox lists, swipes and the action bar, reading, and privacy.
+ * Settings › Mail behavior: what the Inbox lists, swipes and the action bar, reading, and sending.
  * [onOpenActionBar] opens the action bar's page; [folderPills] are the folder pills the
  * accounts' folders can fill. Each change is saved at once.
  */
