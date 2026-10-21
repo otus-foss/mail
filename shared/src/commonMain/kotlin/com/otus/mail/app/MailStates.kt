@@ -10,6 +10,7 @@ import com.otus.mail.feature.folders.presentation.FolderNudgeState
 import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
+import com.otus.mail.feature.folders.presentation.components.folderActions
 import com.otus.mail.feature.folders.presentation.forget
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -159,8 +160,23 @@ internal class MailStates(
     /** Moves messages between folders and in and out of Read later. */
     val filing = MessageFiling(services, folders, folderColors, scope)
 
-    /** The toasts that offer to undo moves; they outlive the page a move closed, such as the open message. */
-    val moveToasts = MoveToasts()
+    /**
+     * The toasts that offer to undo moves; they outlive the page a move closed, such as the open
+     * message, and the activity, since the process holds them.
+     */
+    val moveToasts = MoveToasts(services.toasts)
+
+    /** The Read view's services, folders, and privacy setting; its toasts join the move toasts. */
+    val reading =
+        ReadWiring(
+            services,
+            scope,
+            behavior,
+            folders,
+            folderColors,
+            moveToasts,
+            folderActions(folders, folderColors, rules) { knownAddresses(it) },
+        )
 
     /** Sends drafts after their page closes, with Undo and the outcome in a toast. */
     val outgoing =
@@ -183,6 +199,7 @@ internal class MailStates(
             moves =
                 MessageMoves(
                     targets = filing::moveTargets,
+                    listed = filing::listedTargets,
                     onMove = { message, target ->
                         val move = filing.move(feed, message, target)
                         moveToasts.moved(target) { filing.moveBack(feed, message, target, after = move) }

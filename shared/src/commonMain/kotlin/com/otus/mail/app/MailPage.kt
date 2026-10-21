@@ -54,6 +54,14 @@ internal sealed interface MailPage {
         override val parent = Behavior
     }
 
+    data object Privacy : MailPage {
+        override val parent = Settings
+    }
+
+    data object AllowedSenders : MailPage {
+        override val parent = Privacy
+    }
+
     /** A draft started from [request]; it closes back to [parent], the page that opened it. */
     data class Compose(
         val request: ComposeRequest,
@@ -126,6 +134,8 @@ internal sealed interface MailPage {
                 SidebarSettings,
                 ThemeSettings,
                 MailListSettings,
+                Privacy,
+                AllowedSenders,
             )
 
         val Saver: Saver<MailPage, List<String>> =

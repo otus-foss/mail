@@ -12,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.withContent
+import com.otus.mail.testing.DOWNLOAD_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -28,13 +29,15 @@ class JmapMessageBodiesTest {
     private fun bodies(
         email: String,
         cache: MailCache = InMemoryMailCache(),
+        files: Map<String, ByteArray> = emptyMap(),
     ): JmapMessageBodies {
         val api = { body: String ->
             requests += body
             """{"methodResponses": [["Email/get", {"state": "e", "list": [$email]}, "c0"]]}"""
         }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageBodies(JmapConnections(JmapClient(stalwartLike(api = api)), store), store, cache)
+        val engine = stalwartLike(DOWNLOAD_SESSION, files, api)
+        return JmapMessageBodies(JmapConnections(JmapClient(engine), store), store, cache)
     }
 
     private val opened =
@@ -99,7 +102,7 @@ class JmapMessageBodiesTest {
             val cache = InMemoryMailCache()
             val bodies =
                 bodies(
-                    """{"id": "e1", "receivedAt": "2026-10-04T09:30:00Z",
+                    """{"id": "e1", "receivedAt": "2026-10-04T09:30:00Z", "attachments": [],
                         "textBody": [{"partId": "1", "type": "text/plain"}],
                         "bodyValues": {"1": {"value": "Kept text"}}}""",
                     cache,
@@ -110,5 +113,58 @@ class JmapMessageBodiesTest {
             assertEquals(1, requests.size, "The second open sends nothing")
             cache.trim(CacheKind.Body, Instant.parse("2026-10-05T00:00:00Z").toEpochMilliseconds())
             assertTrue(cache.readAll("ada", CacheKind.Body).isEmpty(), "Older bodies can be trimmed")
+        }
+
+    @Test
+    fun aBodySavedBeforeFilesWereFetchedLoadsAgain() =
+        runTest {
+            val bodies =
+                bodies(
+                    """{"id": "e1", "receivedAt": "2026-10-04T09:30:00Z",
+                        "textBody": [{"partId": "1", "type": "text/plain"}],
+                        "bodyValues": {"1": {"value": "Old copy"}}}""",
+                )
+            bodies.content(opened)
+            bodies.content(opened)
+            assertEquals(2, requests.size, "A copy without an attachments list is not trusted")
+            assertTrue("\"attachments\"" in requests.first() && "\"cid\"" in requests.first(), requests.first())
+            assertTrue("header:List-Unsubscribe:asURLs" in requests.first(), requests.first())
+        }
+
+    @Test
+    fun cidImagesAreInlinedAndOnlyRealFilesAreListed() =
+        runTest {
+            val content =
+                bodies(
+                    """{"id": "e1", "receivedAt": "2026-10-04T09:30:00Z",
+                        "textBody": [{"partId": "1", "type": "text/html"}],
+                        "htmlBody": [{"partId": "1", "type": "text/html"}],
+                        "bodyValues": {"1": {"value": "<p>Hi</p><img src=\"cid:logo@x\">"}},
+                        "attachments": [
+                          {"partId": "2", "blobId": "b-logo", "type": "image/png", "size": 3, "cid": "logo@x"},
+                          {"partId": "3", "blobId": "b-pdf", "name": "plan.pdf", "type": "application/pdf", "size": 9}],
+                        "header:List-Unsubscribe:asURLs": ["https://lists.example.org/u/1"],
+                        "header:List-Unsubscribe-Post:asText": "List-Unsubscribe=One-Click",
+                        "header:List-Id:asText": "Plans <plans.example.org>"}""",
+                    files = mapOf("b-logo" to byteArrayOf(1, 2, 3)),
+                ).content(opened)
+            assertNotNull(content)
+            assertEquals("""<p>Hi</p><img src="data:image/png;base64,AQID">""", content.html?.html)
+            assertEquals(listOf("plan.pdf"), content.attachments.map { it.name })
+            assertEquals("https://lists.example.org/u/1", content.unsubscribe?.oneClick)
+            assertEquals("Plans", content.listName)
+        }
+
+    @Test
+    fun aCidImageThatFailsToDownloadKeepsItsAddress() =
+        runTest {
+            val content =
+                bodies(
+                    """{"id": "e1", "receivedAt": "2026-10-04T09:30:00Z", "attachments": [],
+                        "htmlBody": [{"partId": "1", "type": "text/html"},
+                          {"partId": "2", "blobId": "gone", "type": "image/gif", "cid": "pic"}],
+                        "bodyValues": {"1": {"value": "<img src='cid:pic'>"}}}""",
+                ).content(opened)
+            assertEquals("<img src='cid:pic'>", content?.html?.html)
         }
 }

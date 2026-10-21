@@ -108,19 +108,42 @@ data class EmailObject(
     /** The parts to show as HTML, which may include plain parts (RFC 8621, section 4.1.4). */
     val htmlBody: List<EmailBodyPart>? = null,
     val bodyValues: Map<String, EmailBodyValue> = emptyMap(),
-    /** The raw `List-Id` header, null when the email has none (RFC 8621, section 4.1.3; RFC 2919). */
-    @SerialName(LIST_ID_PROPERTY) val listId: String? = null,
-    /** The raw `List-Unsubscribe` header, null when the email has none (RFC 2369). */
-    @SerialName(LIST_UNSUBSCRIBE_PROPERTY) val listUnsubscribe: String? = null,
+    val bcc: List<EmailAddress>? = null,
+    /** The raw message's size in octets. */
+    val size: Long = 0,
+    /** Every header field, raw and in message order, for View details. */
+    val headers: List<EmailHeader>? = null,
+    /** The `List-Unsubscribe` addresses (RFC 2369), parsed by the server (RFC 8621, section 4.1.2.6). */
+    @SerialName(LIST_UNSUBSCRIBE_PROPERTY)
+    val listUnsubscribe: List<String>? = null,
+    /** `List-Unsubscribe=One-Click` when the list takes the RFC 8058 one-click POST. */
+    @SerialName("header:List-Unsubscribe-Post:asText")
+    val listUnsubscribePost: String? = null,
+    /** The list's name and id, such as `Weekly digest <weekly.example.org>` (RFC 2919). */
+    @SerialName(LIST_ID_PROPERTY)
+    val listId: String? = null,
+    /** Every `Delivered-To` header's addresses, which name the mailbox a Bcc'd list reached. */
+    @SerialName("header:Delivered-To:asAddresses:all")
+    val deliveredTo: List<List<EmailAddress>?>? = null,
+    /** Every `X-Original-To` header's addresses, which some servers write in place of `Delivered-To`. */
+    @SerialName("header:X-Original-To:asAddresses:all")
+    val originalTo: List<List<EmailAddress>?>? = null,
 ) {
     /** Whether a mailing list or newsletter sent it. */
     val fromList: Boolean
-        get() = listId != null || listUnsubscribe != null
+        get() = listId != null || !listUnsubscribe.isNullOrEmpty()
 }
 
 /** The `Email/get` properties that read a mailing list's headers, which mark newsletters. */
-const val LIST_ID_PROPERTY = "header:List-Id"
-const val LIST_UNSUBSCRIBE_PROPERTY = "header:List-Unsubscribe"
+const val LIST_ID_PROPERTY = "header:List-Id:asText"
+const val LIST_UNSUBSCRIBE_PROPERTY = "header:List-Unsubscribe:asURLs"
+
+/** One header field as the message has it (RFC 8621, section 4.1.3). */
+@Serializable
+data class EmailHeader(
+    val name: String = "",
+    val value: String = "",
+)
 
 /** The mailboxes an Email is in, without its other properties. */
 @Serializable
@@ -141,6 +164,13 @@ data class EmailBodyPart(
     val name: String? = null,
     /** The media type, such as `text/html`, which a body may be when it has no plain alternative. */
     val type: String? = null,
+    val blobId: String? = null,
+    /** The decoded size in octets. */
+    val size: Long = 0,
+    /** The Content-Id without angle brackets, which HTML refers to as `cid:` (RFC 2392). */
+    val cid: String? = null,
+    /** `inline` or `attachment`, from the Content-Disposition header. */
+    val disposition: String? = null,
 )
 
 /** A part's decoded text; [isTruncated] when it is longer than the request's `maxBodyValueBytes`. */
@@ -180,6 +210,12 @@ data class ContactName(
 data class ContactEmailObject(
     val address: String = "",
 )
+
+/**
+ * Marks an email of a muted conversation. A conversation is muted while any of its emails has it,
+ * so new mail in it does not notify. Not a registered keyword, so other apps ignore it.
+ */
+const val MUTED_KEYWORD = "\$muted"
 
 /** Only the thread of each Email, to find the rest of a conversation (RFC 8621, section 3). */
 val EmailThreadType: JmapType<EmailThread> = JmapType("Email", JmapCapability.MAIL, EmailThread.serializer())

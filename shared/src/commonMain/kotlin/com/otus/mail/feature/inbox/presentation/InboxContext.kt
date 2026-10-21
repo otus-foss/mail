@@ -32,6 +32,8 @@ data class InboxContext(
     val nudge: ListNudge? = null,
     /** Loads the feed's next page, which the list asks for as it scrolls near its end. */
     val onLoadMore: () -> Unit = {},
+    /** What an open message's Read view needs beyond [loadContent]; null shows the message alone. */
+    val read: ReadContext? = null,
 ) {
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()

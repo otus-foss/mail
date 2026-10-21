@@ -11,9 +11,10 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.ConversationRowModel
 
 /**
- * One conversation in a list, drawn from its prepared [model]. Read rows dim, except while the list
- * is selecting, so every row's check reads the same. A selected row shows a check in place of the
- * sender's avatar and its badge; a null [selection] means the list is not selecting.
+ * One conversation in a list, drawn from its prepared [model]. Read rows dim, also while the list is
+ * selecting, so read and unread mail still look apart; only a selected row shows at full strength.
+ * A selected row shows a check in place of the sender's avatar and its badge; a null [selection]
+ * means the list is not selecting.
  */
 @Composable
 fun ConversationRow(
@@ -26,7 +27,7 @@ fun ConversationRow(
 ) {
     CompactContentRow(
         text = model.text,
-        dimmed = model.read && selection == null,
+        dimmed = model.read && selection?.selected != true,
         onClick = onClick,
         modifier = modifier,
         selection = selection,

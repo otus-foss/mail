@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.ComposeRequest
@@ -253,10 +254,10 @@ class ComposeScreenTest {
         compose.onNode(hasText("Go") and hasClickAction()).performClick()
         compose.onNodeWithText("Choose time").assertExists()
         compose.screenshot("compose-pick-time")
-        // The date chooser starts on the first day with a time left, so no hour comes before the
-        // earliest's. The wheel starts at 8:00 and composes only the hours near it, so the earliest
-        // hour itself may not be composed at night.
+        // The date chooser starts on the first day with a time left, so its first hour is the earliest's.
+        // The wheel opens on 08:00 when that is still ahead, so scroll it to its first hour first.
         val earliest = earliestPick(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()))
+        compose.onNodeWithContentDescription("Hour choices").performScrollToIndex(0)
         val hours =
             compose
                 .onAllNodes(hasParent(hasContentDescription("Hour choices")))

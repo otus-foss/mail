@@ -1,29 +1,23 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import com.otus.designsystem.components.CollapsibleTree
-import com.otus.designsystem.components.RowDensity
-import com.otus.designsystem.components.SettingRow
-import com.otus.designsystem.elements.LocalIconTint
-import com.otus.designsystem.elements.SidebarExpandButton
-import com.otus.designsystem.elements.nestIndent
-import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_folder
-import com.otus.designsystem.theme.FolderColor
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.elements.currentPlace
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 
 /**
  * The user's own folders under a caption, indented by nesting; nothing when none match. A folder
  * with nested folders collapses them with the chevron at the end of its row, while the row itself
- * still moves the message. Everything starts expanded, and a search shows every match.
+ * still moves the message. Everything starts expanded, and a search shows every match. The folder
+ * the message is in, [here], has the sidebar's current-folder fill and does not move it.
  */
 @Composable
 internal fun MoveFolderList(
     folders: List<MoveTarget>,
+    here: String?,
     searching: Boolean,
     onMove: (MoveTarget) -> Unit,
 ) {
@@ -35,15 +29,13 @@ internal fun MoveFolderList(
         { it.depth },
         expandAll = searching,
     ) { folder, expanded, onExpandedChange ->
-        CompositionLocalProvider(LocalIconTint provides FolderColor.named(folder.color).tint) {
-            SettingRow(
-                folder.name,
-                { onMove(folder) },
-                Modifier.nestIndent(PageTokens.nestIndent, folder.depth),
-                icon = Res.drawable.symbol_folder,
-                density = RowDensity.Compact,
-                trailing = { expanded?.let { SidebarExpandButton(folder.name, it, onExpandedChange) } },
-            )
-        }
+        val isHere = folder.folderId == here
+        FolderTreeRow(
+            FolderTreeEntry(folder.name, folder.color, folder.depth),
+            { onMove(folder) }.takeUnless { isHere },
+            expanded,
+            onExpandedChange,
+            if (isHere) Modifier.currentPlace().semantics { stateDescription = "Current folder" } else Modifier,
+        )
     }
 }
