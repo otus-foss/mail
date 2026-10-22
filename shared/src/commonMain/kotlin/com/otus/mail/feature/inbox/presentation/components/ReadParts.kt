@@ -182,7 +182,8 @@ internal class ReadHeaderActions(
 
 /**
  * Where the Read view's strips come from: the [row] the list shows, every folder of its account by
- * id, the folders the list the user [cameFrom] shows it from, and [today], which each page's short date is shown against.
+ * id, the folders the list the user [cameFrom] shows it from, and [today], which each page's short
+ * date is shown against.
  */
 internal class ReadStripSource(
     val row: MailMessage,

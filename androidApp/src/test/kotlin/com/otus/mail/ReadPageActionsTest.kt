@@ -63,7 +63,14 @@ class ReadPageActionsTest {
         // Work that waits for a toast runs at once, so the test sees when it was sent.
         val effects = ReadEffects(toasts, launch = { work -> runBlocking { work() } })
         val read: ReadContext =
-            fixtures.read(pages, "in", { applied = it }, { unsubscribed++ }, changes = changes, effects = effects)
+            fixtures.read(
+                pages,
+                setOf("in"),
+                { applied = it },
+                { unsubscribed++ },
+                changes = changes,
+                effects = effects,
+            )
         val context = InboxContext(loadContent = { fixtures.content(it) }, read = read, rowLook = RowLook(own = OWN))
         val actions = fixtures.actions(targets = listOf(MoveTarget("tr", "Trash", FolderShortcut.Trash)))
         compose.runOnUiThread {

@@ -232,7 +232,11 @@ private fun headerActions(
         zen = read.display.zen(),
         onZen = {
             val on = !read.display.zen()
-            if (on) parts.state.foldStrips()
+            // Zen hides the strips, so their message list and files fold first.
+            if (on) {
+                parts.state.threadOpen = false
+                parts.state.filesOpenOn = null
+            }
             read.display.setZen(on)
         },
         readLater =
