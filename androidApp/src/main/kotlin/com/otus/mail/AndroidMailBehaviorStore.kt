@@ -46,13 +46,19 @@ class AndroidMailBehaviorStore(
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
             showQuotes = preferences.getBoolean(SHOW_QUOTES, defaults.showQuotes),
+            zenRead = preferences.getBoolean(ZEN_READ, defaults.zenRead),
             recentFrom = decodeAddresses(preferences.getString(RECENT_FROM, null)),
             signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
             inbox = preferences.getString(INBOX, null)?.let(InboxContents::decode) ?: defaults.inbox,
             filters = preferences.getString(FILTERS, null)?.let(FilterLayout::decode) ?: defaults.filters,
             list = preferences.getString(LIST, null)?.let(MailListLayout::decode) ?: defaults.list,
-            remoteImages = decodeRemoteImages(preferences.getString(REMOTE_IMAGES, null)) ?: defaults.remoteImages,
+            remoteImages =
+                decodeRemoteImages(
+                    preferences.getString(REMOTE_IMAGES, null),
+                    preferences.getString(EARLIER_REMOTE_IMAGES, null),
+                )
+                    ?: defaults.remoteImages,
             allowedSenders = decodeAddresses(preferences.getString(ALLOWED_SENDERS, null)),
         )
     }
@@ -70,6 +76,7 @@ class AndroidMailBehaviorStore(
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
             putBoolean(SHOW_QUOTES, behavior.showQuotes)
+            putBoolean(ZEN_READ, behavior.zenRead)
             putString(RECENT_FROM, encodeAddresses(behavior.recentFrom))
             putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
             putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
@@ -92,13 +99,15 @@ class AndroidMailBehaviorStore(
         const val MINIMIZED_BAR = "action_bar_minimized"
         const val WEBSITE_ICONS = "website_icons"
         const val SHOW_QUOTES = "show_quotes"
+        const val ZEN_READ = "read_zen"
         const val RECENT_FROM = "recent_from"
         const val SIGNATURE_IN_REPLIES = "signature_in_replies"
         const val UNDO_SEND_SECONDS = "undo_send_seconds"
         const val INBOX = "inbox_contents"
         const val FILTERS = "filter_layout"
         const val LIST = "mail_list"
-        const val REMOTE_IMAGES = "remote_images"
+        const val REMOTE_IMAGES = "load_remote_images"
+        const val EARLIER_REMOTE_IMAGES = "remote_images"
         const val ALLOWED_SENDERS = "allowed_senders"
 
         fun actionBarKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"

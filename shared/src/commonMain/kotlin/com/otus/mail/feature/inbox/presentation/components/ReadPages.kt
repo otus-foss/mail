@@ -81,14 +81,15 @@ internal class ReadPageLook(
 
     /**
      * The banner above [page]'s text: images blocked with Show, or shown this time with Hide and
-     * Always for its sender; nothing once they are allowed.
+     * Always for its sender; nothing once they are allowed, or in zen mode, where a tap on an
+     * image's placeholder still shows them.
      */
     @Composable
     fun Banner(
         page: MailMessage,
         body: PageBody,
     ) {
-        if (!hasRemote(body) || allowed(page) != false) return
+        if (read.display.zen() || !hasRemote(body) || allowed(page) != false) return
         val bodies = state.bodies
         Dismissible(page) {
             if (!bodies.imagesShown(page)) {

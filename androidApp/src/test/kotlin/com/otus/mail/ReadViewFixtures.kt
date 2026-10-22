@@ -23,6 +23,7 @@ import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.domain.MessagePrinter
 import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.domain.SenderBlocks
 import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
@@ -173,7 +174,7 @@ internal object ReadViewFixtures {
                 apply = { change, _ -> applied(change) },
                 newFolder = newFolder,
             ),
-        privacy = ReadPrivacy(known = KnownPeople { team.map { it.address }.toSet() }),
+        privacy = ReadPrivacy({ RemoteImages.Known }, known = KnownPeople { team.map { it.address }.toSet() }),
         files =
             ReadFiles(
                 downloads = AttachmentDownloads { _, file -> photo().takeIf { file.type.startsWith("image/") } },
@@ -193,7 +194,7 @@ internal object ReadViewFixtures {
 
     /** This context with replies showing their quotes, as the "Show quotes" setting does. */
     fun ReadContext.showingQuotes(): ReadContext =
-        ReadContext(pages, folders, privacy, files, services, effects, ReadDisplay({ true }, display.today))
+        ReadContext(pages, folders, privacy, files, services, effects, ReadDisplay({ true }, today = display.today))
 
     /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
     private fun photo(): ByteArray {
