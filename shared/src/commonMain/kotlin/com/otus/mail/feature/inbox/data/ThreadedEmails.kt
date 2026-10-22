@@ -11,6 +11,8 @@ import com.otus.mail.core.cache.CacheWrite
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.LIST_ID_PROPERTY
+import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.core.mail.putObject
@@ -118,7 +120,19 @@ private val EmailObject.receivedMillis: Long?
 
 /** What a conversation row reads from each email of its thread. */
 internal val MEMBER_PROPERTIES =
-    listOf("id", "threadId", "from", "to", "cc", "receivedAt", "keywords", "mailboxIds", "hasAttachment")
+    listOf(
+        "id",
+        "threadId",
+        "from",
+        "to",
+        "cc",
+        "receivedAt",
+        "keywords",
+        "mailboxIds",
+        "hasAttachment",
+        LIST_ID_PROPERTY,
+        LIST_UNSUBSCRIBE_PROPERTY,
+    )
 
 private const val ROW_CALLS = 3
 private const val THREAD_CALLS = 2

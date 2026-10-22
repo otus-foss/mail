@@ -71,7 +71,7 @@ fun InboxScreen(
     val rows = rememberInboxRows(messages, messageActions)
     val filters = context.filters ?: remember { InboxFilterState() }
     val listed = ListedMail(messages, filters.applied)
-    val anchor = rememberFilterAnchor(filters, context.filterOptions, dateFormatter)
+    val anchor = rememberFilterAnchor(filters, context.filterOptions, messages, dateFormatter)
     val page = shownPage(state, context)
     val headerActions = InboxHeaderActions(searchCloser(state), onOpenNavigation, { filter = it }, filters::open)
     // An open message or the filter panel covers the list, so accessibility services skip it too.

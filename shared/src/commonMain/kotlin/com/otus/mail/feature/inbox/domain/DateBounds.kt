@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
@@ -15,10 +16,10 @@ data class DateBounds(
 )
 
 /**
- * The times this filter keeps at [now] in [zone]. Today starts at local midnight, the last 7 and 30
- * days count back from [now], and a range runs from the start of its first day to the start of the
- * day after its last, each day's start taken in [zone], so daylight saving changes move it with
- * the clock.
+ * The times this filter keeps at [now] in [zone]. Today starts at local midnight, This year at
+ * local midnight on 1 January, the last 7 and 30 days count back from [now], and a range runs from
+ * the start of its first day to the start of the day after its last, each day's start taken in
+ * [zone], so daylight saving changes move it with the clock.
  */
 fun DateFilter.bounds(
     now: Instant,
@@ -29,6 +30,7 @@ fun DateFilter.bounds(
         DateFilter.Today -> DateBounds(after = now.toLocalDateTime(zone).date.atStartOfDayIn(zone))
         DateFilter.Last7 -> DateBounds(after = now - LAST_WEEK.days)
         DateFilter.Last30 -> DateBounds(after = now - LAST_MONTH.days)
+        DateFilter.ThisYear -> DateBounds(after = LocalDate(now.toLocalDateTime(zone).year, 1, 1).atStartOfDayIn(zone))
         is DateFilter.Range -> DateBounds(from.atStartOfDayIn(zone), to.plus(DatePeriod(days = 1)).atStartOfDayIn(zone))
     }
 

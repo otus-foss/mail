@@ -1,38 +1,31 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.FilterPanel
 import com.otus.designsystem.components.FilterPanelFooter
-import com.otus.designsystem.components.FilterPanelHeader
-import com.otus.designsystem.theme.LocalMotionScale
-import com.otus.designsystem.theme.Motion
-import com.otus.designsystem.theme.MotionSpeed
+import com.otus.designsystem.theme.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.FilterCount
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.filterSenders
 import com.otus.mail.feature.inbox.presentation.showLabel
 
 /**
  * The filter panel of a message list, growing out of its control panel [collapsedHeight] tall.
- * Its main page lists the sections; All folders… slides in the folder tree in place of them.
+ * It has no header: every section sits on one scrolling page, and Account, Folders, and Date open
+ * popups over it. Back, a tap on the scrim, a swipe up, and Show close it, and it keeps one height.
  */
 @Composable
 fun InboxFilterPanel(
@@ -43,57 +36,23 @@ fun InboxFilterPanel(
     collapsedHeight: Dp,
     modifier: Modifier = Modifier,
 ) {
-    var folders by rememberSaveable { mutableStateOf(false) }
-    var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
-    val close = state::close
-    // The panel opens on its main page again, however it closed.
-    LaunchedEffect(state.isOpen) { if (state.isOpen) folders = false }
-    val draft = state.draft
     // The last draft stays on screen while the panel closes.
     var shown by remember { mutableStateOf(InboxFilters()) }
-    if (draft != null) shown = draft
+    state.draft?.let { shown = it }
+    val people = rememberFilterPeople(state, options, messages)
     FilterPanel(
         open = state.isOpen,
         collapsedHeight = collapsedHeight,
-        onDismiss = close,
-        header = {
-            FilterPanelHeader(
-                "Filters",
-                close,
-                closeDescription = "Close filters",
-                onBack = if (folders) ({ folders = false }) else null,
-            )
-        },
+        onDismiss = state::close,
+        // No visible title: a header-tall gap that holds the panel's ✕ above the first section and
+        // still names the pane to screen readers.
+        header = { Spacer(Modifier.height(FilterTokens.headerHeight).semantics { paneTitle = "Filters" }) },
         footer = { InboxFilterFooter(state, shown) },
         modifier = modifier,
     ) {
-        val scale = LocalMotionScale.current
-        AnimatedContent(
-            folders,
-            contentAlignment = Alignment.TopStart,
-            transitionSpec = {
-                val sign = if (targetState) 1 else -1
-                (
-                    slideInHorizontally(Motion.tween(MotionSpeed.Normal, scale = scale)) { it * sign } togetherWith
-                        slideOutHorizontally(Motion.tween(MotionSpeed.Normal, scale = scale)) { -it * sign }
-                ).using(SizeTransform(clip = true) { _, _ -> Motion.tween(MotionSpeed.Normal, scale = scale) })
-            },
-            label = "Filter panel page",
-        ) { allFolders ->
-            if (allFolders) {
-                FolderPickerPage(shown, options, state::edit)
-            } else {
-                val senders = remember(messages, shown.from) { filterSenders(messages, shown.from) }
-                val pages =
-                    FilterPanelPages({ folders = true }, { sheet = FilterSheet.Date }, {
-                        sheet =
-                            FilterSheet.Sender
-                    })
-                FilterSections(shown, options, senders, dateFormatter, state::edit, pages)
-            }
-        }
+        val searches = PeopleSearches(state.senders, state.recipients, people)
+        FilterSections(shown, options, dateFormatter, state::edit, searches)
     }
-    sheet?.takeIf { state.isOpen }?.let { FilterPanelSheet(it, state, shown, dateFormatter) { sheet = null } }
 }
 
 @Composable
@@ -105,7 +64,7 @@ private fun InboxFilterFooter(
     FilterPanelFooter(
         count.showLabel,
         onApply = state::show,
-        onReset = { state.edit { InboxFilters() } },
+        onReset = state::reset,
         applyEnabled = count != FilterCount.Known(0),
         resetEnabled = !draft.isDefault,
         counting = count == FilterCount.Counting,

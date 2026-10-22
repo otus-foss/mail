@@ -37,6 +37,7 @@ internal class FilterAnchor(
 internal fun rememberFilterAnchor(
     state: InboxFilterState,
     options: FilterOptions,
+    messages: List<MailMessage>,
     dateFormatter: DateFormatter,
 ): FilterAnchor {
     var height by remember { mutableStateOf(0.dp) }
@@ -49,7 +50,14 @@ internal fun rememberFilterAnchor(
         wasOpen = state.isOpen
     }
     return FilterAnchor(
-        ActiveFilters(state.applied, options, dateFormatter, state::update, button),
+        ActiveFilters(
+            state.applied,
+            options,
+            dateFormatter,
+            state::update,
+            button,
+            people = rememberFilterPeople(state, options, messages),
+        ),
         { height },
         Modifier.onSizeChanged { height = with(density) { it.height.toDp() } },
     )

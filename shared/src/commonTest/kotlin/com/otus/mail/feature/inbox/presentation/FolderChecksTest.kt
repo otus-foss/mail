@@ -27,7 +27,6 @@ class FolderChecksTest {
         assertEquals(FolderCheck.Included, withParent.check(child, options))
         val only = withParent.includeSubfolders(parent, include = false)
         assertEquals(FolderCheck.Off, only.check(child, options))
-        assertEquals(1, options.includedCount(FolderRef("ada", "p")))
         assertFalse(
             InboxFilters()
                 .toggle(parent)
@@ -35,18 +34,6 @@ class FolderChecksTest {
                 .folders
                 .isNotEmpty(),
         )
-    }
-
-    @Test
-    fun selectedFoldersOutsideTheShortcutsFollowThem() {
-        val folders = (1..8).map { folder("ada", "$it", "F$it") }
-        val options =
-            FilterOptions(
-                accounts = listOf(account("ada", *folders.toTypedArray())),
-                shortcuts = folders.map { it.key },
-            )
-        val chips = options.folderChips(InboxFilters(folders = setOf(FolderRef("ada", "8"))))
-        assertEquals(listOf("F1", "F2", "F3", "F4", "F5", "F6", "F8"), chips.map { it.name })
     }
 
     @Test

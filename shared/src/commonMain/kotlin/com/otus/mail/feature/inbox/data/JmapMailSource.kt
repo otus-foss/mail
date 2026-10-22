@@ -14,9 +14,7 @@ import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.ShowFacet
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
-import com.otus.mail.feature.inbox.domain.fromAny
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.async
@@ -58,7 +56,8 @@ class JmapMailSource(
         query: MailQuery,
     ): InboxSnapshot = load(scope, query) { more(it) }
 
-    /** Sums each login's total; null when no login could be counted. */
+    override fun beginCounting() = counts.begin()
+
     override suspend fun count(
         scope: MailScope,
         query: MailQuery,
@@ -69,15 +68,14 @@ class JmapMailSource(
         query: MailQuery,
     ): InboxSnapshot = snapshot(selected(scope), scope, query, clock.now(), unavailable = emptyList())
 
-    private fun savedLogins(): List<JmapLogin> =
-        try {
-            logins.logins()
-        } catch (error: LoginStoreException) {
-            throw InboxStorageException(error)
-        }
-
     private suspend fun selected(scope: MailScope): List<JmapLogin> =
-        withContext(Dispatchers.IO) { savedLogins() }.filter { scope.reads(it.id) }
+        withContext(Dispatchers.IO) {
+            try {
+                logins.logins()
+            } catch (error: LoginStoreException) {
+                throw InboxStorageException(error)
+            }
+        }.filter { scope.reads(it.id) }
 
     /** Runs [sync] for each login [scope] reads, then reads the lists from the cache. */
     private suspend fun load(
@@ -143,16 +141,13 @@ class JmapMailSource(
                     .orEmpty()
             }
         val merged = pages.merged(query.filters.sort) { it.receivedAt }
-        val own = query.ownAddresses
         val messages =
             merged.rows
                 .map { it.message }
                 .groupBy { it.location.accountId }
                 .values
                 .flatMap { it.mergedByThread() }
-                .filter { !query.filters.has(ShowFacet.WaitingForReply) || it.fromAny(own) }
-                .filter { !query.filters.has(ShowFacet.CalendarInvites) || it.attributes.invite }
-                .filter { !query.filters.has(ShowFacet.Conversations) || it.conversation?.exchanged == true }
+                .filter(query.filters::keepsLoaded)
         return InboxSnapshot(messages, unavailable, merged.hasMore)
     }
 

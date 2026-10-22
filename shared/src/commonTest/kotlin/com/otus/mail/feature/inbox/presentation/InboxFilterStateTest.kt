@@ -1,13 +1,16 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.feature.inbox.domain.FoundPerson
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.PeopleField
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.advanceTimeBy
@@ -21,7 +24,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class InboxFilterStateTest {
-    private val unread = InboxFilters(show = setOf(ShowFacet.Unread))
+    private val unread = InboxFilters(status = ReadStatus.Unread)
 
     @Test
     fun openingCopiesTheAppliedFiltersIntoTheDraft() {
@@ -64,11 +67,56 @@ class InboxFilterStateTest {
         val state = InboxFilterState()
         state.update(state.applied.with(InboxPill.Filter.Unread, true))
         state.open()
-        assertTrue(state.draft!!.has(ShowFacet.Unread), "The panel opens with the pill's filter on")
-        state.edit { it.with(ShowFacet.Unread, false) }
+        assertEquals(ReadStatus.Unread, state.draft!!.status, "The panel opens with the pill's filter on")
+        state.edit { it.copy(status = ReadStatus.All) }
         state.show()
         assertFalse(state.applied.has(InboxPill.Filter.Unread), "The pill turns off with the panel's change")
     }
+
+    @Test
+    fun resetClearsTheDraftAndKeepsThePanelOpen() {
+        val state = InboxFilterState(unread.copy(date = DateFilter.Today))
+        state.open()
+        state.reset()
+        assertEquals(InboxFilters(), state.draft)
+        assertTrue(state.isOpen)
+        state.close()
+        assertEquals(DateFilter.Today, state.applied.date, "Closing drops the reset draft")
+    }
+
+    @Test
+    fun openingStartsACountingSession() {
+        var sessions = 0
+        val state = InboxFilterState(onOpen = { sessions++ })
+        state.open()
+        state.edit { unread }
+        assertEquals(1, sessions, "Draft changes count within the same session")
+        state.close()
+        state.open()
+        assertEquals(2, sessions)
+    }
+
+    @Test
+    fun peopleSearchWaitsForTheTextAndClearsWithThePanel() =
+        runTest {
+            val asked = mutableListOf<Pair<PeopleField, String>>()
+            val grace = FoundPerson(MailSender("Grace", "grace@x.org"), 3)
+            val state =
+                InboxFilterState(scope = this, findPeople = { field, text ->
+                    asked += field to text
+                    listOf(grace)
+                })
+            state.open()
+            state.senders.search("gr")
+            state.senders.search("grace ")
+            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            runCurrent()
+            assertEquals(listOf(PeopleField.From to "grace"), asked)
+            assertEquals(listOf(grace), state.senders.found)
+            state.close()
+            assertEquals("", state.senders.text)
+            assertTrue(state.senders.found.isEmpty())
+        }
 
     @Test
     fun countingWaitsForTheLastChangeAndCancelsTheOneBefore() =

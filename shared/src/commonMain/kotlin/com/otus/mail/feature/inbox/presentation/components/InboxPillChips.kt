@@ -7,12 +7,11 @@ import com.otus.designsystem.elements.CountBadge
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
-import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import org.jetbrains.compose.resources.DrawableResource
@@ -24,7 +23,7 @@ internal val InboxPill.Filter.label: String
             InboxPill.Filter.Unread -> "Unread"
             InboxPill.Filter.Attachments -> "Attachments"
             InboxPill.Filter.Flagged -> "Flagged"
-            InboxPill.Filter.Conversations -> "Convos"
+            InboxPill.Filter.Conversations -> "Conversations"
         }
 
 internal val InboxPill.Filter.icon: DrawableResource
@@ -37,11 +36,11 @@ internal val InboxPill.Filter.icon: DrawableResource
         }
 
 /**
- * The row outside search: the page's active filters first, each with a ✕ that removes it, then the
- * user's pills in their order. A filter pill turns its filter on, which moves it to the front; a
- * folder pill shows its folders' mail, and pressing it again returns to the page's own. The Unread
- * pill shows [unreadCount] in a circle in place of its icon while there is unread mail, and keeps
- * it in place of the ✕ while the filter is on.
+ * The row outside search: the page's active filters first, drawn as the search pills are; pressing
+ * an on/off one removes it, and pressing one with choices opens its filter page. Then the user's
+ * pills in their order. A filter pill turns its filter on, which moves it to the front; a folder
+ * pill shows its folders' mail, and pressing it again returns to the page's own. The Unread pill
+ * shows [unreadCount] in a circle in place of its icon while there is unread mail, on or off.
  */
 @Composable
 internal fun ContextPanelScope.InboxRowPills(
@@ -54,9 +53,12 @@ internal fun ContextPanelScope.InboxRowPills(
     val unreadBadge = unreadCount.takeIf { it > 0 }?.badgeText()
     filters.active.forEach { facet ->
         item(facet.key) {
-            val count = unreadBadge.takeIf { facet.key == ShowFacet.Unread }
-            Chip(facet.label, { filters.onChange(facet.remove(filters.applied)) }, selected = true) {
-                if (count != null) CountBadge(count) else Symbol(Res.drawable.symbol_close)
+            val onClick = facet.tap
+            val count = unreadBadge.takeIf { facet.key == ReadStatus.Unread }
+            if (count != null) {
+                Chip(ReadStatus.Unread.label, onClick, selected = true) { CountBadge(count) }
+            } else {
+                facet.pill(onClick)
             }
         }
     }

@@ -9,7 +9,9 @@ import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.feature.inbox.domain.ReadStatus
+import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -31,7 +33,7 @@ class JmapFilteredMailTest {
     fun loadsRunTheFiltersInEachMailboxQuery() =
         runTest {
             val server = FakeMailServer(MAILBOXES)
-            val query = MailQuery(InboxFilters(show = setOf(ShowFacet.Unread), sort = FilterSort.OldestFirst))
+            val query = MailQuery(InboxFilters(status = ReadStatus.Unread, sort = FilterSort.OldestFirst))
             server.source(store).messages(MailScope.Inbox, query)
             val bodies = server.bodies.filter { "Email/query" in it }
             assertEquals(2, bodies.size, "One inbox query per login")
@@ -56,24 +58,46 @@ class JmapFilteredMailTest {
         }
 
     @Test
-    fun waitingForReplyKeepsOnlyMailFromTheUser() =
+    fun awaitingReplyAlsoSearchesSentAndKeepsThreadsTheUserWroteLast() =
         runTest {
-            val source = FakeMailServer(MAILBOXES, MIXED).source(store)
+            val server = FakeMailServer(MAILBOXES, MIXED)
+            val source = server.source(store)
             val query =
                 MailQuery(
-                    InboxFilters(show = setOf(ShowFacet.WaitingForReply)),
+                    InboxFilters(quick = setOf(QuickFacet.AwaitingReply)),
                     addresses = mapOf("ada" to setOf("ada@example.org")),
                     logins = setOf("ada"),
                 )
             val messages = source.messages(MailScope.Inbox, query).messages
             assertEquals(listOf("mine"), messages.map { it.emailId })
+            val bodies = server.bodies.filter { "Email/query" in it }
+            assertTrue(bodies.any { "\"inMailbox\":\"s\"" in it }, "Sent is queried too")
+            assertTrue(bodies.none { "\"from\":\"ada@example.org\"" in it }, "No server condition on the sender")
+            assertEquals(null, source.count(MailScope.Inbox, query), "Only the loaded threads can tell")
+        }
+
+    @Test
+    fun countsReadEachLoginsMailboxesOncePerSession() =
+        runTest {
+            var mailboxLoads = 0
+            val source =
+                source { body ->
+                    if ("Mailbox/get" in body) MAILBOX_REPLY.also { mailboxLoads++ } else COUNT
+                }
+            source.beginCounting()
+            source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Unread)))
+            source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Read)))
+            assertEquals(2, mailboxLoads, "One per login, not one per count")
+            source.beginCounting()
+            source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Read)))
+            assertEquals(4, mailboxLoads, "A new session reads them again")
         }
 
     @Test
     fun calendarInvitesAreCheckedOnTheLoadedMailAndNotCounted() =
         runTest {
             val source = FakeMailServer(MAILBOXES, INVITES).source(store)
-            val query = MailQuery(InboxFilters(show = setOf(ShowFacet.CalendarInvites)), logins = setOf("ada"))
+            val query = MailQuery(InboxFilters(types = setOf(TypeFacet.CalendarInvites)), logins = setOf("ada"))
             assertEquals(listOf("invite"), source.messages(MailScope.Inbox, query).messages.map { it.emailId })
             assertEquals(null, source.count(MailScope.Inbox, query))
         }
@@ -83,7 +107,7 @@ class JmapFilteredMailTest {
         runTest {
             val bodies = mutableListOf<String>()
             val source = source { body -> if ("Mailbox/get" in body) MAILBOX_REPLY else COUNT.also { bodies += body } }
-            assertEquals(14L, source.count(MailScope.Inbox, MailQuery(InboxFilters(show = setOf(ShowFacet.Flagged)))))
+            assertEquals(14L, source.count(MailScope.Inbox, MailQuery(InboxFilters(quick = setOf(QuickFacet.Flagged)))))
             assertTrue(bodies.all { "\"limit\":0" in it && "\"calculateTotal\":true" in it })
             assertEquals(7L, source.count(MailScope.Inbox, MailQuery(logins = setOf("bo"))))
         }
@@ -94,11 +118,14 @@ class JmapFilteredMailTest {
         }
 
     private companion object {
-        const val MAILBOXES = """{"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}"""
+        const val MAILBOXES = """{"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"},
+            {"id": "s", "name": "Sent", "role": "sent"}"""
         const val MAILBOX_REPLY = """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
             $MAILBOXES]}, "c0"]]}"""
+
+        // The user's thread has no email in the Inbox, so only the Sent query finds it.
         const val MIXED = """
-            {"id": "mine", "receivedAt": "2026-10-18T09:00:00Z", "mailboxIds": {"a": true},
+            {"id": "mine", "receivedAt": "2026-10-18T09:00:00Z", "mailboxIds": {"s": true},
              "from": [{"email": "Ada@example.org"}]},
             {"id": "theirs", "receivedAt": "2026-10-18T08:00:00Z", "mailboxIds": {"a": true},
              "from": [{"email": "bo@example.org"}]}"""

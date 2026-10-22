@@ -33,7 +33,9 @@ class JmapAddressBook(
     private val maxAge: Duration = 5.minutes,
     private val timeSource: TimeSource = TimeSource.Monotonic,
 ) : AddressBook {
-    private val lock = Mutex()
+    // Each account loads under its own lock, so a slow server holds up only its own suggestions.
+    private val loading = LoginLocks()
+    private val storing = Mutex()
     private var known: Map<String, Known> = emptyMap()
 
     override suspend fun suggestions(
@@ -45,9 +47,11 @@ class JmapAddressBook(
             .take(limit)
 
     private suspend fun people(accountId: String): List<MailSender> =
-        lock.withLock {
+        loading.of(accountId).withLock {
             known[accountId]?.takeIf { it.loadedAt.elapsedNow() < maxAge }?.people
-                ?: load(accountId)?.also { known += accountId to Known(it, timeSource.markNow()) }
+                ?: load(accountId)?.also { people ->
+                    storing.withLock { known += accountId to Known(people, timeSource.markNow()) }
+                }
                 ?: emptyList()
         }
 

@@ -26,6 +26,7 @@ val EmailSubmissionType: JmapType<JsonObject> =
 /**
  * Email properties the inbox requests for each row (RFC 8621, section 4.1). Recipients and ids let
  * a reply quote and thread. The list shows `preview`; an open message loads its body separately.
+ * The list headers tell newsletters apart.
  */
 val EMAIL_PROPERTIES =
     listOf(
@@ -43,6 +44,8 @@ val EMAIL_PROPERTIES =
         "preview",
         "hasAttachment",
         "attachments",
+        LIST_ID_PROPERTY,
+        LIST_UNSUBSCRIBE_PROPERTY,
     )
 
 /** The Email properties [EmailFolders] reads. */
@@ -111,13 +114,13 @@ data class EmailObject(
     /** Every header field, raw and in message order, for View details. */
     val headers: List<EmailHeader>? = null,
     /** The `List-Unsubscribe` addresses (RFC 2369), parsed by the server (RFC 8621, section 4.1.2.6). */
-    @SerialName("header:List-Unsubscribe:asURLs")
+    @SerialName(LIST_UNSUBSCRIBE_PROPERTY)
     val listUnsubscribe: List<String>? = null,
     /** `List-Unsubscribe=One-Click` when the list takes the RFC 8058 one-click POST. */
     @SerialName("header:List-Unsubscribe-Post:asText")
     val listUnsubscribePost: String? = null,
     /** The list's name and id, such as `Weekly digest <weekly.example.org>` (RFC 2919). */
-    @SerialName("header:List-Id:asText")
+    @SerialName(LIST_ID_PROPERTY)
     val listId: String? = null,
     /** Every `Delivered-To` header's addresses, which name the mailbox a Bcc'd list reached. */
     @SerialName("header:Delivered-To:asAddresses:all")
@@ -125,7 +128,15 @@ data class EmailObject(
     /** Every `X-Original-To` header's addresses, which some servers write in place of `Delivered-To`. */
     @SerialName("header:X-Original-To:asAddresses:all")
     val originalTo: List<List<EmailAddress>?>? = null,
-)
+) {
+    /** Whether a mailing list or newsletter sent it. */
+    val fromList: Boolean
+        get() = listId != null || !listUnsubscribe.isNullOrEmpty()
+}
+
+/** The `Email/get` properties that read a mailing list's headers, which mark newsletters. */
+const val LIST_ID_PROPERTY = "header:List-Id:asText"
+const val LIST_UNSUBSCRIBE_PROPERTY = "header:List-Unsubscribe:asURLs"
 
 /** One header field as the message has it (RFC 8621, section 4.1.3). */
 @Serializable

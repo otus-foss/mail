@@ -4,6 +4,7 @@ import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.feature.inbox.domain.MailConversation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.ReplyState
 import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
 import kotlinx.datetime.TimeZone
@@ -47,6 +48,13 @@ internal fun MailMessage.inConversation(
             answered = counted.any { it.keywords[ANSWERED_KEYWORD] == true },
             members = listed.map { ThreadMember(it.id, it.boxes, mailboxId) },
             exchanged = counted.any(view::isSent) && counted.any { !view.isSent(it) },
+            reply =
+                ReplyState(
+                    lastFromMe = view.isMine(last),
+                    participated = counted.any(view::isMine),
+                    lastToMe = view.isToMe(last),
+                    lastIsList = last.fromList,
+                ),
         )
     return copy(
         conversation = conversation,
@@ -79,11 +87,18 @@ private fun merge(
     val (kept, other) = if (second.received.sortKey > first.received.sortKey) second to first else first to second
     val conversation = kept.conversation ?: return kept
     val members = (conversation.members + other.conversation?.members.orEmpty()).distinctBy { it.emailId }
+    val latest = latest(conversation, other.conversation)
     return kept.copy(
         conversation =
             conversation.copy(
                 members = members,
                 exchanged = conversation.exchanged || other.conversation?.exchanged == true,
+                last = latest.last,
+                reply =
+                    latest.reply.copy(
+                        participated =
+                            conversation.reply.participated || other.conversation?.reply?.participated == true,
+                    ),
             ),
         attributes =
             kept.attributes.copy(
@@ -94,6 +109,16 @@ private fun merge(
         location = kept.location.copy(mailboxIds = kept.location.mailboxIds + other.location.mailboxIds),
     )
 }
+
+/**
+ * Whichever row saw the newer last email, which gives the merged row its last email and reply
+ * facts together. Rows of one thread from different mailboxes count the same emails, unless one
+ * mailbox shows mail the other leaves out.
+ */
+private fun latest(
+    kept: MailConversation,
+    other: MailConversation?,
+): MailConversation = other?.takeIf { it.last.received.sortKey > kept.last.received.sortKey } ?: kept
 
 private val ReceivedAt.sortKey: String
     get() = "${date}T$time"

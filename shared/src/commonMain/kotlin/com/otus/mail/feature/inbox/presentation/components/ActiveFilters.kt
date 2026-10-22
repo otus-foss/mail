@@ -2,24 +2,31 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.ui.focus.FocusRequester
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_account_circle
+import com.otus.designsystem.resources.symbol_alternate_email
+import com.otus.designsystem.resources.symbol_calendar_today
+import com.otus.designsystem.resources.symbol_straighten
+import com.otus.designsystem.resources.symbol_swap_vert
 import com.otus.mail.feature.inbox.domain.DateFilter
-import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.domain.ReadStatus
+import com.otus.mail.feature.inbox.domain.RecipientField
 import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import com.otus.mail.feature.inbox.presentation.FolderLabel
-import com.otus.mail.feature.inbox.presentation.key
 
-/** One applied choice as a pill: its [label], and the filters without it. */
+/** One applied choice as its [pill], and what a tap on it does: [tap] removes it. */
 internal class ActiveFacet(
     val key: Any,
-    val label: String,
-    val remove: (InboxFilters) -> InboxFilters,
+    val tap: () -> Unit,
+    val pill: ActivePill,
 )
 
 /**
- * A page's [applied] filters for the pill row, which [onChange] replaces. [button] focuses the
- * filter button, which the panel gives focus back to when it closes.
+ * A page's [applied] filters for the pill row, which [onChange] replaces. [people] give the
+ * chosen people their avatars. [button] focuses the filter button, which the panel gives focus
+ * back to when it closes.
  */
 class ActiveFilters(
     val applied: InboxFilters = InboxFilters(),
@@ -27,47 +34,69 @@ class ActiveFilters(
     val dateFormatter: DateFormatter = DateFormatter(),
     val onChange: (InboxFilters) -> Unit = {},
     val button: FocusRequester = FocusRequester(),
+    private val people: FilterPeople = FilterPeople(),
 ) {
-    /** Each applied choice, in the panel's order; the sort order is not one. */
+    /**
+     * Each applied choice in the panel's order, ending with the sort order while it is not the
+     * default. Tapping a pill removes its choice.
+     */
     internal val active: List<ActiveFacet>
         get() =
             buildList {
-                applied.show.sortedBy { it.ordinal }.forEach { facet ->
-                    add(ActiveFacet(facet, facet.label) { it.with(facet, false) })
+                applied.status.takeIf { it != ReadStatus.All }?.let { status ->
+                    add(removing(status, symbolPill(status.label, status.icon)) { it.copy(status = ReadStatus.All) })
                 }
-                applied.from.forEach { address ->
-                    add(ActiveFacet("from" to address, "From $address") { it.copy(from = it.from - address) })
+                applied.quick.sortedBy { it.ordinal }.forEach { facet ->
+                    add(removing(facet, symbolPill(facet.label, facet.icon)) { it.with(facet, false) })
                 }
-                applied.accounts.forEach { id ->
-                    val name = options.account(id)?.name ?: id
-                    add(ActiveFacet("account" to id, name) { it.copy(accounts = it.accounts - id) })
+                if (applied.from.isNotEmpty()) {
+                    add(removing(InboxFilters::from, fromPill(applied, people)) { it.copy(from = emptySet()) })
                 }
-                applied.sentTo.forEach { address ->
-                    add(ActiveFacet(address, address.address) { it.copy(sentTo = it.sentTo - address) })
+                // The To pill stands for the whole recipient filter, so removing it also resets Received in.
+                val noRecipients = { filters: InboxFilters ->
+                    filters.copy(sentTo = emptySet(), to = emptySet(), receivedIn = RecipientField.Default)
                 }
-                applied.receivedAs.sortedBy { it.ordinal }.forEach { field ->
-                    add(ActiveFacet(field, "As ${field.label}") { it.copy(receivedAs = it.receivedAs - field) })
+                when {
+                    applied.sentTo.isNotEmpty() || applied.to.isNotEmpty() -> {
+                        add(removing(InboxFilters::to, toPill(applied, options, people), noRecipients))
+                    }
+
+                    applied.receivedIn != RecipientField.Default -> {
+                        val label = "In " + applied.receivedIn.sortedBy { it.ordinal }.joinToString(", ") { it.label }
+                        val pill = symbolPill(label, Res.drawable.symbol_alternate_email)
+                        add(removing(InboxFilters::to, pill, noRecipients))
+                    }
                 }
-                applied.folders.forEach { ref ->
-                    add(ActiveFacet(ref, folderName(ref).withIncluded(ref, options)) { it.withFolder(ref, false) })
+                applied.account?.let { id ->
+                    // An account this page no longer offers still filters, so its pill stays to show it.
+                    val pill =
+                        options.account(id)?.let(::accountPill) ?: symbolPill(id, Res.drawable.symbol_account_circle)
+                    add(removing(InboxFilters::account, pill) { it.copy(account = null) })
                 }
-                applied.skipFolders.forEach { ref ->
-                    add(ActiveFacet("skip" to ref, "Not in ${folderName(ref).name}") { it.withSkipped(ref, false) })
+                if (applied.folders.isNotEmpty()) {
+                    val pill = foldersPill(applied.folders.toList(), options)
+                    add(removing(InboxFilters::folders, pill) { it.copy(folders = emptySet()) })
                 }
-                applied.date.takeIf { it != DateFilter.Any }?.let { date ->
-                    val label = (date as? DateFilter.Range)?.let { rangeLabel(it, dateFormatter) } ?: date.label
-                    add(ActiveFacet(DATE_KEY, label) { it.copy(date = DateFilter.Any) })
+                if (applied.date != DateFilter.Any) {
+                    val pill = symbolPill(dateValue(applied.date, dateFormatter), Res.drawable.symbol_calendar_today)
+                    add(removing(InboxFilters::date, pill) { it.copy(date = DateFilter.Any) })
                 }
-                applied.size.takeIf { it != SizeFilter.Any }?.let { size ->
-                    add(ActiveFacet(SIZE_KEY, size.label) { it.copy(size = SizeFilter.Any) })
+                applied.types.sortedBy { it.ordinal }.forEach { facet ->
+                    add(removing(facet, symbolPill(facet.label, facet.icon)) { it.with(facet, false) })
+                }
+                if (applied.size != SizeFilter.Any) {
+                    val pill = symbolPill(applied.size.label, Res.drawable.symbol_straighten)
+                    add(removing(InboxFilters::size, pill) { it.copy(size = SizeFilter.Any) })
+                }
+                if (applied.sort != FilterSort.NewestFirst) {
+                    val pill = symbolPill("Oldest first", Res.drawable.symbol_swap_vert)
+                    add(removing(FilterSort.OldestFirst, pill) { it.copy(sort = FilterSort.NewestFirst) })
                 }
             }
 
-    private fun folderName(ref: FolderRef): FolderLabel =
-        options.labels[ref.key] ?: FolderLabel(options.folder(ref.key)?.name ?: "Folder")
-
-    private companion object {
-        const val DATE_KEY = "date"
-        const val SIZE_KEY = "size"
-    }
+    private fun removing(
+        key: Any,
+        pill: ActivePill,
+        remove: (InboxFilters) -> InboxFilters,
+    ) = ActiveFacet(key, { onChange(remove(applied)) }, pill)
 }

@@ -11,24 +11,16 @@ import androidx.compose.runtime.setValue
 import com.otus.mail.feature.folders.domain.subtreeIds
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.folderIds
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import com.otus.mail.feature.inbox.presentation.FolderKey
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxFiltersSaver
-import com.otus.mail.feature.inbox.presentation.key
 
-/**
- * Each page's applied filters, kept while the app runs so a page shows them again after the user
- * comes back, and the folders filtered by most recently, newest first.
- */
+/** Each page's applied filters, kept while the app runs so a page shows them again after the user comes back. */
 internal class PageFilters {
     private val applied = mutableMapOf<MailPage, InboxFilters>()
-
-    var recentFolders: List<FolderKey> = emptyList()
-        private set
 
     /** The filters [page] last applied, or the ones it starts with: Conversations keeps only conversations. */
     fun of(page: MailPage): InboxFilters =
@@ -36,7 +28,7 @@ internal class PageFilters {
             ?: if (page ==
                 MailPage.Conversations
             ) {
-                InboxFilters(show = setOf(ShowFacet.Conversations))
+                InboxFilters(quick = setOf(QuickFacet.Conversations))
             } else {
                 InboxFilters()
             }
@@ -46,11 +38,6 @@ internal class PageFilters {
         filters: InboxFilters,
     ) {
         applied[page] = filters
-        recentFolders = (filters.folders.map { it.key } + recentFolders).distinct().take(RECENT_FOLDERS)
-    }
-
-    private companion object {
-        const val RECENT_FOLDERS = 12
     }
 }
 
@@ -69,7 +56,6 @@ internal fun MailStates.mailQuery(filters: InboxFilters): MailQuery {
     return MailQuery(
         filters = filters,
         folderIds = folderIds(filters.folders, descendants),
-        skipIds = folderIds(filters.skipFolders, descendants),
         readLaterIds = accounts.mapNotNull { account -> account.readLaterId?.let { account.accountId to it } }.toMap(),
         addresses = accountAddresses().associate { it.accountId to it.addresses.toSet() },
         logins = mailScope.accountId?.let(::setOf),
@@ -94,11 +80,13 @@ internal fun rememberPageFilters(
             InboxFilterState(
                 saved,
                 scope,
-                counter = { states.countMail(feed.mailScope, states.mailQuery(it)) },
+                counter = { states.filterLookups.count(feed.mailScope, states.mailQuery(it)) },
                 onApplied = {
                     states.pageFilters.keep(page, it)
                     saved = it
                 },
+                onOpen = states.filterLookups::beginCounting,
+                findPeople = states.filterLookups::findPeople,
             )
         }
     LaunchedEffect(filters.applied, states.folders.accounts, states.mailScope) {
