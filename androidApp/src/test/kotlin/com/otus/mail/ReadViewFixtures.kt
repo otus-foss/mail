@@ -159,7 +159,7 @@ internal object ReadViewFixtures {
 
     fun read(
         pages: List<MailMessage>,
-        cameFrom: String? = null,
+        cameFrom: Set<String> = emptySet(),
         applied: (FolderChange) -> Unit = {},
         unsubscribed: () -> Unit = {},
         newFolder: NewFolderSheet? = null,

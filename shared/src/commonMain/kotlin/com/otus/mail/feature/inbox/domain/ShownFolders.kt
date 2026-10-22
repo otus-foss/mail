@@ -10,19 +10,19 @@ data class ShownFolders(
 )
 
 /**
- * The folders of [mailboxIds] worth naming on a Read view strip: never the one the user [cameFrom],
- * Drafts, Sent, Trash, Spam, or Read later, which the bookmark shows. The [cameFrom] folder is null
- * without a folder context, such as All Mail, search, or a notification.
+ * The folders of [mailboxIds] worth naming on a Read view strip: never the ones the list the user
+ * [cameFrom] shows, Drafts, Sent, Trash, Spam, or Read later, which the bookmark shows. [cameFrom]
+ * is empty without a folder context, such as All Mail, search, or a notification.
  */
 fun folderHint(
     mailboxIds: Set<String>,
     folders: Map<String, MessageFolder>,
-    cameFrom: String?,
+    cameFrom: Set<String>,
 ): ShownFolders =
     ShownFolders(
-        also = cameFrom != null,
+        also = cameFrom.isNotEmpty(),
         folders =
-            orderedFolders(mailboxIds - setOfNotNull(cameFrom), folders)
+            orderedFolders(mailboxIds - cameFrom, folders)
                 .filterNot { it.role in UNHINTED || it.readLater },
     )
 

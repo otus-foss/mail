@@ -53,7 +53,7 @@ class ReadViewTest {
     private fun show(
         row: MailMessage,
         pages: List<MailMessage> = listOf(row),
-        cameFrom: String? = null,
+        cameFrom: Set<String> = emptySet(),
         newFolder: NewFolderSheet? = null,
         showQuotes: Boolean = false,
     ) {
@@ -102,7 +102,7 @@ class ReadViewTest {
 
     private fun openMenu() = compose.onNodeWithContentDescription("More actions").performClick()
 
-    private fun showThread() = show(fixtures.threadRow, fixtures.thread, cameFrom = "in")
+    private fun showThread() = show(fixtures.threadRow, fixtures.thread, cameFrom = setOf("in"))
 
     @Test
     fun aThreadOpensOnItsNewestPageAndTheListJumpsToAnOlderOne() {
@@ -175,7 +175,7 @@ class ReadViewTest {
     @Test
     fun aSingleMailWithNothingToAddHasNoStrip() {
         val alone = fixtures.invoice.copy(location = fixtures.invoice.location.copy(mailboxIds = setOf("cl")))
-        show(alone, cameFrom = "cl")
+        show(alone, cameFrom = setOf("cl"))
         compose.onNodeWithText("Hi Alex", substring = true).assertIsDisplayed()
         assertTrue(!exists("Also in"))
         assertTrue(
@@ -185,7 +185,7 @@ class ReadViewTest {
 
     @Test
     fun aSingleMailInAnotherFolderSaysWhereAndItsSheetAppliesTicks() {
-        show(fixtures.invoice, cameFrom = "cl")
+        show(fixtures.invoice, cameFrom = setOf("cl"))
         compose.onNodeWithText("Also in").assertIsDisplayed()
         assertTrue(exists("Invoices"))
         compose.screenshot("read-also-in")
@@ -200,7 +200,7 @@ class ReadViewTest {
     fun theFoldersSheetStartsANewFolderAndComesBackAfterIt() {
         show(
             fixtures.invoice,
-            cameFrom = "cl",
+            cameFrom = setOf("cl"),
             newFolder =
                 NewFolderSheet { accountId, onDismiss ->
                     Text("Naming a folder in $accountId", Modifier.clickable(onClick = onDismiss))
@@ -276,7 +276,7 @@ class ReadViewTest {
 
     @Test
     fun aQuotedReplyFoldsItsQuoteWhenQuotesAreShown() {
-        show(fixtures.threadRow, fixtures.thread, cameFrom = "in", showQuotes = true)
+        show(fixtures.threadRow, fixtures.thread, cameFrom = setOf("in"), showQuotes = true)
         strip("Grace Hopper, message 1 of 6").performClick()
         compose.onNode(hasText("Katherine Johnson", substring = true) and isSelectable()).performClick()
         compose.onNodeWithText("Show quoted text").assertIsDisplayed()

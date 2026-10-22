@@ -47,7 +47,7 @@ class ReadZenTest {
             compose.activity.setContent {
                 OtusTheme {
                     ProvideTextStyle(panelTextStyle()) {
-                        MessageScreen(fixtures.digest, fixtures.actions(), null, context, null, onClose = {})
+                        MessageScreen(fixtures.digest, fixtures.actions(), null, context, emptySet(), onClose = {})
                     }
                 }
             }

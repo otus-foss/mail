@@ -20,27 +20,34 @@ class ReadFoldersTest {
 
     @Test
     fun leavesOutTheFolderTheUserCameFrom() {
-        val hint = folderHint(setOf("cl", "fi"), all, cameFrom = "cl")
+        val hint = folderHint(setOf("cl", "fi"), all, cameFrom = setOf("cl"))
         assertTrue(hint.also)
         assertEquals(listOf(financeInvoices), hint.folders)
     }
 
     @Test
     fun onlyTheFolderTheUserCameFromLeavesNothing() {
-        val hint = folderHint(setOf("cl"), all, cameFrom = "cl")
+        val hint = folderHint(setOf("cl"), all, cameFrom = setOf("cl"))
         assertEquals(emptyList(), hint.folders)
     }
 
     @Test
+    fun aPageOfSeveralFoldersLeavesOutEachOfThem() {
+        val hint = folderHint(setOf("in", "cl", "fi"), all, cameFrom = setOf("in", "cl"))
+        assertTrue(hint.also)
+        assertEquals(listOf(financeInvoices), hint.folders)
+    }
+
+    @Test
     fun withoutContextShowsEveryFolderWithoutAlso() {
-        val hint = folderHint(setOf("cl", "fi", "fr"), all, cameFrom = null)
+        val hint = folderHint(setOf("cl", "fi", "fr"), all, cameFrom = emptySet())
         assertFalse(hint.also)
         assertEquals(listOf(clients, financeInvoices, freelancing), hint.folders)
     }
 
     @Test
     fun leavesOutDraftsReadLaterAndUnknownFolders() {
-        val hint = folderHint(setOf("dr", "rl", "gone", "ar"), all, cameFrom = null)
+        val hint = folderHint(setOf("dr", "rl", "gone", "ar"), all, cameFrom = emptySet())
         assertEquals(listOf(archive), hint.folders)
     }
 
@@ -51,7 +58,7 @@ class ReadFoldersTest {
         val junk = MessageFolder("sp", listOf("Junk"), role = "junk")
         val folders = all + listOf(sent, trash, junk).associateBy { it.id }
         val ids = setOf("se", "tr", "sp", "rl", "cl")
-        assertEquals(listOf(clients), folderHint(ids, folders, cameFrom = null).folders)
+        assertEquals(listOf(clients), folderHint(ids, folders, cameFrom = emptySet()).folders)
         assertEquals(listOf(clients, junk, readLater, sent, trash), orderedFolders(ids, folders))
         assertTrue(inJunk(ids, folders))
         assertFalse(inJunk(setOf("cl"), folders))
@@ -59,12 +66,13 @@ class ReadFoldersTest {
 
     @Test
     fun putsTheInboxFirstThenSortsByPath() {
-        val hint = folderHint(setOf("fri", "ar", "in", "fi"), all, cameFrom = null)
+        val hint = folderHint(setOf("fri", "ar", "in", "fi"), all, cameFrom = emptySet())
         assertEquals(listOf(inbox, archive, financeInvoices, freelancingInvoices), hint.folders)
     }
 
     @Test
-    fun noFoldersMeansAnEmptyHint() = assertEquals(emptyList(), folderHint(emptySet(), all, cameFrom = "in").folders)
+    fun noFoldersMeansAnEmptyHint() =
+        assertEquals(emptyList(), folderHint(emptySet(), all, cameFrom = setOf("in")).folders)
 
     @Test
     fun oneFolderShowsItsFullPath() =
