@@ -56,7 +56,7 @@ internal fun ReadPageBody(
     insets: PaddingValues = PaddingValues(),
     top: @Composable ColumnScope.() -> Unit = {},
 ) {
-    val textInset = Modifier.padding(horizontal = PageTokens.pageInset + PageTokens.textInset)
+    val textInset = Modifier.padding(horizontal = textSide)
     // The parts on top are measured first, so the text gets its room before it first draws:
     // a new room would load an HTML page again.
     SubcomposeLayout(modifier) { constraints ->
@@ -69,6 +69,8 @@ internal fun ReadPageBody(
         val topHeight = tops.maxOfOrNull { it.height } ?: 0
         val room =
             PaddingValues(
+                start = textSide,
+                end = textSide,
                 top = (insetTop + topHeight).toDp() + InboxTokens.itemGap,
                 bottom = insets.calculateBottomPadding(),
             )
@@ -83,7 +85,7 @@ internal fun ReadPageBody(
     }
 }
 
-/** The message's HTML edge to edge, or else its text, with [room] around it to scroll clear of what floats over it. */
+/** The message's HTML, or else its text, with [room] around it to scroll clear of what floats over it. */
 @Composable
 private fun MessageText(
     message: MailMessage,
@@ -96,7 +98,7 @@ private fun MessageText(
     val content = (body as? PageBody.Loaded)?.content
     val html = content?.html
     if (html != null) {
-        // A mail's HTML lays out its own margins, so it runs edge to edge.
+        // Designed HTML runs edge to edge; HtmlView keeps only HTML without a layout off the sides.
         HtmlBody(html, images, quotes.hide, room, Modifier.fillMaxSize())
     } else {
         val text = content?.text?.ifBlank { null } ?: message.preview.ifBlank { message.body }
@@ -211,6 +213,8 @@ internal fun openLink(
         // No installed app opens this link, so the tap does nothing.
     }
 }
+
+private val textSide = PageTokens.pageInset + PageTokens.textInset
 
 private val spacing = Arrangement.spacedBy(InboxTokens.itemGap)
 
