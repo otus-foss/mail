@@ -23,7 +23,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.otus.designsystem.components.ChipPlacement
 import com.otus.designsystem.components.ContextPanel
@@ -40,6 +39,7 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_bookmark_fill
 import com.otus.designsystem.resources.symbol_chevron_left
+import com.otus.designsystem.resources.symbol_self_improvement
 import com.otus.designsystem.theme.ComposeTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.motionTween
@@ -49,8 +49,8 @@ import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 
 /**
  * The Read view's control panel: Back and the [subject] alone, over pills for the [page]'s sender
- * and date, the bookmark, and ⋯. The date reads [dateLabel] and opens [fullDate]; the sender's name
- * gives way first, so the date never shortens.
+ * and date, the bookmark, zen mode, and ⋯. The date reads [dateLabel] and opens [fullDate]; the
+ * sender's name gives way first, so the date never shortens.
  */
 @Composable
 internal fun ReadHeader(
@@ -70,7 +70,7 @@ internal fun ReadHeader(
         trailingAction = { OptionsButton(actions.menu, "More actions") },
         chips = {
             BoxWithConstraints(Modifier.fillRail()) {
-                val labelMax = senderLabelMax(maxWidth, dateLabel, actions.readLater != null)
+                val labelMax = senderLabelMax(maxWidth, dateLabel, if (actions.readLater != null) 2 else 1)
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
@@ -80,6 +80,7 @@ internal fun ReadHeader(
                     item(DATE) { DateChip(dateLabel, fullDate) }
                     Spacer(Modifier.weight(1f))
                     actions.readLater?.let { change -> item(BOOKMARK) { Bookmark(change) } }
+                    item(ZEN) { ZenPill(actions.zen, actions.onZen) }
                 }
             }
         },
@@ -87,25 +88,25 @@ internal fun ReadHeader(
 }
 
 /**
- * The subject on one line; when it does not fit, a tap shows all of it, growing the panel down on
- * the layout-change motion, and another tap folds it back.
+ * The whole subject; when it takes more than one line, a tap folds it to one, shrinking the panel
+ * on the layout-change motion, and another tap shows all of it again.
  */
 @Composable
 private fun ExpandableSubject(subject: String) {
-    var expanded by remember(subject) { mutableStateOf(false) }
-    var cut by remember(subject) { mutableStateOf(false) }
+    var expanded by remember(subject) { mutableStateOf(true) }
+    var long by remember(subject) { mutableStateOf(false) }
     Text(
         subject,
         Modifier
             .animateContentSize(motionTween())
             .clickable(
-                enabled = cut || expanded,
+                enabled = long,
                 onClickLabel = if (expanded) "Show less" else "Show the whole subject",
             ) { expanded = !expanded }
             .semantics { heading() },
         maxLines = if (expanded) Int.MAX_VALUE else 1,
         overflow = TextOverflow.Ellipsis,
-        onTextLayout = { if (!expanded) cut = it.hasVisualOverflow },
+        onTextLayout = { long = if (expanded) it.lineCount > 1 else it.hasVisualOverflow },
     )
 }
 
@@ -139,6 +140,15 @@ private fun DateChip(
     }
 }
 
+/** Zen mode, which hides the banners and strips around the message while it is [on]. */
+@Composable
+private fun ZenPill(
+    on: Boolean,
+    onClick: () -> Unit,
+) {
+    IconPill(if (on) "Leave zen mode" else "Zen mode", Res.drawable.symbol_self_improvement, on, onClick)
+}
+
 @Composable
 private fun Bookmark(change: ReadLaterChange) {
     IconPill(
@@ -151,13 +161,14 @@ private fun Bookmark(change: ReadLaterChange) {
 
 /**
  * How wide the sender's name may be in a rail of [railWidth]: what is left beside the date pill,
- * the bookmark, the gaps, and the sender pill's own avatar, chevron, and padding.
+ * the [iconPills] such as the bookmark, the gaps, and the sender pill's own avatar, chevron, and
+ * padding.
  */
 @Composable
 private fun senderLabelMax(
     railWidth: Dp,
     dateLabel: String,
-    bookmark: Boolean,
+    iconPills: Int,
 ): Dp {
     val measurer = rememberTextMeasurer()
     val style = panelTextStyle()
@@ -169,12 +180,12 @@ private fun senderLabelMax(
                 .toDp()
         }
     val date = max(PanelTokens.touchTarget, dateText + PanelTokens.chipPadding * 2 + PanelTokens.borderWidth * 2)
-    val bookmarkWidth = if (bookmark) PanelTokens.touchTarget + PanelTokens.chipGap else 0.dp
+    val pillsWidth = (PanelTokens.touchTarget + PanelTokens.chipGap) * iconPills
     val senderChrome =
         ComposeTokens.fromAvatarSize + PanelTokens.iconSize + PanelTokens.iconGap * SENDER_GAPS +
             PanelTokens.chipPadding +
             PanelTokens.borderWidth * 2
-    return (railWidth - date - bookmarkWidth - PanelTokens.chipGap * 2 - senderChrome).coerceAtLeast(
+    return (railWidth - date - pillsWidth - PanelTokens.chipGap * 2 - senderChrome).coerceAtLeast(
         PanelTokens.iconSize,
     )
 }
@@ -185,3 +196,4 @@ private const val SENDER_GAPS = 3
 private const val SENDER = "sender"
 private const val DATE = "date"
 private const val BOOKMARK = "bookmark"
+private const val ZEN = "zen"

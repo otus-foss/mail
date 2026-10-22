@@ -40,10 +40,13 @@ class ReadContext(
 
 /**
  * How the Read view shows its pages: [showQuotes] tells whether replies show text quoted from
- * earlier messages of the conversation, and [today] is the day dates are shown against.
+ * earlier messages of the conversation, [zen] whether the view keeps to the message, its control
+ * panel, and its bar, which [setZen] saves, and [today] is the day dates are shown against.
  */
 class ReadDisplay(
     val showQuotes: () -> Boolean = { false },
+    val zen: () -> Boolean = { false },
+    val setZen: (Boolean) -> Unit = {},
     val today: () -> LocalDate = {
         Clock.System
             .now()
@@ -53,15 +56,15 @@ class ReadDisplay(
 )
 
 /**
- * The folders of a message's account as the Read view names them. [cameFrom] is the folder the
- * list shows when it shows one folder, which the strips leave out; null without a folder context.
+ * The folders of a message's account as the Read view names them. [cameFrom] is the folders the
+ * list shows the message from, which the strips leave out; empty without a folder context.
  * [apply] files every email of a conversation as a [FolderChange] says, and runs `onRefused` when
  * the server refuses it. [newFolder] shows the New folder sheet for an account until it runs its
  * `onDismiss`; null where folders cannot be made.
  */
 class ReadFolders(
     val of: (MailMessage) -> List<MessageFolder> = { emptyList() },
-    val cameFrom: (MailMessage) -> String? = { null },
+    val cameFrom: (MailMessage) -> Set<String> = { emptySet() },
     val apply: (change: FolderChange, onRefused: () -> Unit) -> Unit = { _, _ -> },
     val newFolder: NewFolderSheet? = null,
 )
@@ -71,7 +74,7 @@ class ReadFolders(
  * an account. [allowSender] adds an address to the allowed senders.
  */
 class ReadPrivacy(
-    val setting: () -> RemoteImages = { RemoteImages.Known },
+    val setting: () -> RemoteImages = { RemoteImages.Always },
     val allowed: () -> List<String> = { emptyList() },
     val known: KnownPeople = KnownPeople { emptySet() },
     val allowSender: (String) -> Unit = {},

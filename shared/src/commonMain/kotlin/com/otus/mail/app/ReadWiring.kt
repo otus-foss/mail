@@ -76,41 +76,51 @@ internal class ReadWiring(
             files = files,
             services = ReadServices(services.newsletters, services.headers, services.mute, services.blocks, changes),
             effects = effects,
-            display = ReadDisplay(showQuotes = { behavior.behavior.showQuotes }),
+            display =
+                ReadDisplay(
+                    showQuotes = { behavior.behavior.showQuotes },
+                    zen = { behavior.behavior.zenRead },
+                    setZen = { on -> behavior.update { it.copy(zenRead = on) } },
+                ),
         )
     }
 
     /**
-     * The folder [scope] shows when it is one folder of [message]'s account: a folder page, or an
-     * inbox role while only one account is signed in. Null for mixed lists such as the unified inbox.
+     * The folders of [message]'s account that [scope] lists: a folder page's folder, or the account's
+     * folders of the roles a page such as the unified inbox shows, with its own folders when the page
+     * shows them too. Empty for lists without a folder, such as All Mail.
      */
     private fun cameFrom(
         scope: MailScope,
         message: MailMessage,
-    ): String? {
+    ): Set<String> {
         val accountId = message.location.accountId
+        val own = folders.account(accountId)?.folders.orEmpty()
         return when (scope) {
             is MailScope.Folder -> {
-                scope.folderId.takeIf { scope.accountId == accountId }
+                if (scope.accountId == accountId) setOf(scope.folderId) else emptySet()
             }
 
             is MailScope.Folders -> {
                 scope.folders
-                    .singleOrNull()
-                    ?.takeIf { it.accountId == accountId }
-                    ?.folderId
+                    .filter { it.accountId == accountId }
+                    .map { it.folderId }
+                    .toSet()
             }
 
             is MailScope.Role -> {
-                folders.accounts
-                    .singleOrNull()
-                    ?.folders
-                    ?.firstOrNull { it.role == scope.role }
-                    ?.id
+                own.filter { it.role == scope.role }.map { it.id }.toSet()
+            }
+
+            is MailScope.Roles -> {
+                own
+                    .filter { it.role in scope.names || (scope.ownFolders && it.role == null) }
+                    .map { it.id }
+                    .toSet()
             }
 
             else -> {
-                null
+                emptySet()
             }
         }
     }

@@ -15,7 +15,8 @@ package com.otus.mail.feature.inbox.domain
  * how the mail list's rows read. [remoteImages] decides when a message loads images from other
  * servers, and [allowedSenders] are the lowercase addresses whose images always load.
  * [showQuotes] shows a reply's quoted text even when earlier messages of its conversation are a
- * swipe away; off, the Read view leaves that text out.
+ * swipe away; off, the Read view leaves that text out. [zenRead] keeps the Read view to the
+ * message, its control panel, and its bar.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -34,9 +35,10 @@ data class MailBehavior(
     val inbox: InboxContents = InboxContents(),
     val filters: FilterLayout = FilterLayout(),
     val list: MailListLayout = MailListLayout(),
-    val remoteImages: RemoteImages = RemoteImages.Known,
+    val remoteImages: RemoteImages = RemoteImages.Always,
     val allowedSenders: List<String> = emptyList(),
     val showQuotes: Boolean = false,
+    val zenRead: Boolean = false,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =
@@ -143,8 +145,17 @@ fun decodeAddresses(stored: String?): List<String> = stored?.lines()?.filter(Str
 val RemoteImages.storageValue: String
     get() = name.lowercase()
 
-/** Null for a value [storageValue] cannot have made. */
-fun decodeRemoteImages(stored: String?): RemoteImages? = RemoteImages.entries.firstOrNull { it.storageValue == stored }
+/**
+ * The image setting saved under its own key, [stored], else Never when the key it had until images
+ * loaded by default, [earlier], held Never. That key held Known for anyone who saved any setting,
+ * so only Never there was a choice. Null for a value [storageValue] cannot have made.
+ */
+fun decodeRemoteImages(
+    stored: String?,
+    earlier: String?,
+): RemoteImages? =
+    RemoteImages.entries.firstOrNull { it.storageValue == stored }
+        ?: RemoteImages.Never.takeIf { earlier == it.storageValue }
 
 /** App-private storage for [MailBehavior]. Unknown or missing values read as the defaults. */
 interface MailBehaviorStore {

@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalDensity
 import com.otus.designsystem.components.BannerAction
 import com.otus.designsystem.components.ImageBanner
 import com.otus.designsystem.components.SwipeToDismiss
+import com.otus.designsystem.elements.holdsSpace
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_hide_image
 import com.otus.designsystem.resources.symbol_image
@@ -81,7 +82,8 @@ internal class ReadPageLook(
 
     /**
      * The banner above [page]'s text: images blocked with Show, or shown this time with Hide and
-     * Always for its sender; nothing once they are allowed.
+     * Always for its sender; nothing once they are allowed. Zen mode hides it but keeps its space,
+     * so the text does not move and reload, and a tap on an image's placeholder still shows them.
      */
     @Composable
     fun Banner(
@@ -90,7 +92,7 @@ internal class ReadPageLook(
     ) {
         if (!hasRemote(body) || allowed(page) != false) return
         val bodies = state.bodies
-        Dismissible(page) {
+        Dismissible(page, Modifier.holdsSpace(read.display.zen())) {
             if (!bodies.imagesShown(page)) {
                 ImageBanner(
                     Res.drawable.symbol_hide_image,
@@ -119,6 +121,7 @@ internal class ReadPageLook(
     @Composable
     private fun Dismissible(
         page: MailMessage,
+        modifier: Modifier,
         banner: @Composable () -> Unit,
     ) {
         val bodies = state.bodies
@@ -127,7 +130,7 @@ internal class ReadPageLook(
             Spacer(Modifier.height(with(LocalDensity.current) { height.toDp() }))
             return
         }
-        SwipeToDismiss({ bodies.dismissBanner(page) }, Modifier.onSizeChanged { height = it.height }) { banner() }
+        SwipeToDismiss({ bodies.dismissBanner(page) }, modifier.onSizeChanged { height = it.height }) { banner() }
     }
 
     /**
