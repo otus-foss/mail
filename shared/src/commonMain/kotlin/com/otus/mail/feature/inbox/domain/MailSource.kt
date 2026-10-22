@@ -70,6 +70,12 @@ interface MailSource {
     ): InboxSnapshot = messages(scope)
 
     /**
+     * Starts a run of [count] calls, such as one filter panel session: the counts until the next
+     * call may reuse what they read about each account's folders.
+     */
+    fun beginCounting() {}
+
+    /**
      * [scope]'s messages as the device kept them from earlier loads, without asking the server, so
      * a page shows at once. Empty when nothing was kept.
      */

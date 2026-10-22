@@ -1,14 +1,13 @@
 package com.otus.mail.feature.inbox.domain
 
 /**
- * [filters] with what the server needs to run them: each login's chosen and skipped folder ids
- * with subfolders already added, each login's Read later folder, each login's own [addresses],
- * and the [logins] the page shows, or null for all.
+ * [filters] with what the server needs to run them: each login's chosen folder ids with
+ * subfolders already added, each login's Read later folder, each login's own [addresses], and the
+ * [logins] the page shows, or null for all.
  */
 data class MailQuery(
     val filters: InboxFilters = InboxFilters(),
     val folderIds: Map<String, Set<String>> = emptyMap(),
-    val skipIds: Map<String, Set<String>> = emptyMap(),
     val readLaterIds: Map<String, String> = emptyMap(),
     val addresses: Map<String, Set<String>> = emptyMap(),
     val logins: Set<String>? = null,
@@ -17,13 +16,16 @@ data class MailQuery(
     val ownAddresses: Set<String>
         get() = addresses.values.flatten().toSet()
 
-    /** Whether this query reads mail of [loginId] at all; choices of other logins leave it out. */
+    /**
+     * Whether this query reads mail of [loginId] at all; choices of other logins leave it out.
+     * Other recipients in [InboxFilters.to] can be on any login's mail, so they keep every login.
+     */
     fun reads(loginId: String): Boolean =
         (logins == null || loginId in logins) &&
-            (filters.accounts.isEmpty() || loginId in filters.accounts) &&
-            (filters.sentTo.isEmpty() || filters.sentTo.any { it.accountId == loginId }) &&
+            (filters.account == null || loginId == filters.account) &&
+            (filters.sentTo.isEmpty() || filters.to.isNotEmpty() || filters.sentTo.any { it.accountId == loginId }) &&
             (filters.folders.isEmpty() || loginId in folderIds) &&
-            (ShowFacet.ReadLater !in filters.show || loginId in readLaterIds)
+            (!filters.has(QuickFacet.ReadLater) || loginId in readLaterIds)
 }
 
 /**

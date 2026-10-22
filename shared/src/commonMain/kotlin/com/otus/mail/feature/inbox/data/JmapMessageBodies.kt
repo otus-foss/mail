@@ -13,6 +13,8 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.LIST_ID_PROPERTY
+import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mail.putObject
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -106,9 +108,9 @@ class JmapMessageBodies(
                 "htmlBody",
                 "bodyValues",
                 "attachments",
-                "header:List-Unsubscribe:asURLs",
+                LIST_UNSUBSCRIBE_PROPERTY,
                 "header:List-Unsubscribe-Post:asText",
-                "header:List-Id:asText",
+                LIST_ID_PROPERTY,
                 "header:Delivered-To:asAddresses:all",
                 "header:X-Original-To:asAddresses:all",
             )

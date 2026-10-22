@@ -1,6 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,6 +11,7 @@ import com.otus.designsystem.components.AccountGroupRow
 import com.otus.designsystem.components.FilterFolderRow
 import com.otus.designsystem.components.FolderCheck
 import com.otus.designsystem.components.PickerSearch
+import com.otus.designsystem.components.ScopeSheet
 import com.otus.designsystem.components.TreeFolder
 import com.otus.designsystem.elements.FilterChip
 import com.otus.designsystem.elements.FolderGlyph
@@ -28,20 +28,27 @@ import com.otus.mail.feature.inbox.presentation.shownFolders
 import com.otus.mail.feature.inbox.presentation.toggle
 
 /**
- * Every folder of the page's accounts as a checkable tree, under account headers when there are
- * several. A search narrows it to matching folders with their parents' path.
+ * Every folder of the page's accounts as a checkable tree in a sheet, under account headers when
+ * there are several. A search narrows it to matching folders with their parents' path. System
+ * folders are listed unticked like the rest, and a note says they stay out until ticked. Each tick
+ * changes the draft at once; Done, the scrim, or Back close the sheet.
  */
 @Composable
-internal fun FolderPickerPage(
+internal fun FolderPickerSheet(
     draft: InboxFilters,
     options: FilterOptions,
-    onEdit: ((InboxFilters) -> InboxFilters) -> Unit,
+    onEdit: FilterEdit,
+    onDismiss: () -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
     var collapsed by remember { mutableStateOf(emptySet<FolderKey>()) }
     var foldedAccounts by remember { mutableStateOf(emptySet<String>()) }
-    Column(Modifier.padding(horizontal = FilterTokens.bodyInset)) {
-        PickerSearch(query, { query = it }, "Search folders")
+    ScopeSheet(
+        "Folders",
+        onDismiss,
+        search = { PickerSearch(query, { query = it }, "Search folders") },
+        footnote = "Drafts, Sent, Junk and Trash are left out unless you tick them.",
+    ) {
         options.accounts.forEach { account ->
             val open = account.id !in foldedAccounts
             if (options.accounts.size > 1) {
@@ -65,7 +72,7 @@ private fun FolderRows(
     collapsed: Set<FolderKey>,
     draft: InboxFilters,
     options: FilterOptions,
-    onEdit: ((InboxFilters) -> InboxFilters) -> Unit,
+    onEdit: FilterEdit,
     onCollapse: (FolderKey, Boolean) -> Unit,
 ) {
     val searching = query.isNotBlank()
@@ -88,7 +95,7 @@ private fun FolderRows(
 private fun OnlyThisFolder(
     folder: FilterFolder,
     draft: InboxFilters,
-    onEdit: ((InboxFilters) -> InboxFilters) -> Unit,
+    onEdit: FilterEdit,
 ) {
     val only = draft.folders.firstOrNull { it.key == folder.key }?.includeSubfolders == false
     FilterChip(

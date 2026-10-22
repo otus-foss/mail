@@ -60,7 +60,8 @@ class InboxActionBarTest {
     fun filtersOpensTheFilterPanel() {
         start()
         button("Filters").performClick()
-        compose.onNodeWithContentDescription("Close filters").assertExists()
+        // The Show button reads "Show conversations" while it counts and "Show 1 conversation" after.
+        compose.onNodeWithText("conversation", substring = true).assertExists()
     }
 
     @Test

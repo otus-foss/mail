@@ -13,6 +13,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.SenderKey
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterAddress
 import com.otus.mail.feature.inbox.presentation.FilterFolder
@@ -58,25 +59,34 @@ internal object FilterPanelFixtures {
                     FilterAddress(OwnAddress("ada", "otus@rubylabs.design"), ChipAvatar("RL", colorIndex = 5)),
                 ),
             accounts = listOf(FilterAccount("ada", "Ada", ChipAvatar("A", colorIndex = 1), folders)),
-            shortcuts =
-                listOf(
-                    "clients",
-                    "acme",
-                    "free-invoices",
-                    "fin-invoices",
-                    "dev",
-                    "travel",
-                ).map { FolderKey("ada", it) },
-            skip = listOf(FolderKey("ada", "sent"), FolderKey("ada", "trash")),
             folders = true,
             readLater = true,
         )
+
+    /** [options] with a second login, so the Account row and page show. */
+    val twoAccounts =
+        options.copy(
+            addresses =
+                options.addresses +
+                    FilterAddress(OwnAddress("flo", "florian@rubylabs.design"), ChipAvatar("FR", colorIndex = 3)),
+            accounts =
+                options.accounts + FilterAccount("flo", "Personal", ChipAvatar("P", colorIndex = 3), emptyList()),
+        )
+
+    val grace = SenderKey("Grace Hopper", setOf("grace@navy.example"))
+
+    /** Both of ChatGPT's addresses, which the From line merges into one person. */
+    val chatGpt = SenderKey("ChatGPT", setOf("noreply@openai.com", "updates@openai.com"))
 
     val messages =
         listOf(
             message("1", "Sam Rivera", "Invoice for October", daysAgo = 0, unread = true),
             message("2", "Acme Corp", "Kickoff notes", daysAgo = 1),
             message("3", "Lena Park", "Trip itinerary", daysAgo = 3),
+            message("4", "Grace Hopper", "Compiler notes", daysAgo = 4, address = "grace@navy.example"),
+            message("5", "Grace Hopper", "Re: Compiler notes", daysAgo = 5, address = "grace@navy.example"),
+            message("6", "ChatGPT", "Your weekly summary", daysAgo = 6, address = "noreply@openai.com"),
+            message("7", "ChatGPT", "New features", daysAgo = 7, address = "updates@openai.com"),
         )
 
     private fun system(
@@ -109,13 +119,15 @@ internal object FilterPanelFixtures {
         subject: String,
         daysAgo: Int,
         unread: Boolean = false,
+        address: String = "${from.lowercase().replace(' ', '.')}@example.org",
     ) = MailMessage(
         id,
-        MailSender(from, "${from.lowercase().replace(' ', '.')}@example.org"),
+        MailSender(from, address),
         subject,
         "A short preview of the message.",
         ReceivedAt(today.minus(DatePeriod(days = daysAgo)).toString(), "09:30"),
-        MailLocation("Inbox", "Ada"),
+        MailLocation("Inbox", "Ada", accountId = "ada"),
         MailAttributes(unread = unread),
+        to = listOf(MailSender("", "otus@rubylabs.design")),
     )
 }

@@ -1,0 +1,30 @@
+package com.otus.mail.app
+
+import com.otus.mail.feature.inbox.domain.FoundPerson
+import com.otus.mail.feature.inbox.domain.MailQuery
+import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.MailSource
+import com.otus.mail.feature.inbox.domain.PeopleField
+import com.otus.mail.feature.inbox.domain.PeopleSearch
+
+/** What a filter panel asks the servers while it is open: the draft's count and people to pick. */
+internal class FilterLookups(
+    private val mail: MailSource,
+    private val people: PeopleSearch,
+    private val logins: () -> Set<String>?,
+) {
+    /** How many messages of [scope] [query] keeps; null when the accounts could not count them. */
+    suspend fun count(
+        scope: MailScope,
+        query: MailQuery,
+    ): Long? = mail.count(scope, query)
+
+    /** Starts the counts of one filter panel session. */
+    fun beginCounting() = mail.beginCounting()
+
+    /** People of the shown accounts' mail, or contacts, that [text] finds on [field]. */
+    suspend fun findPeople(
+        field: PeopleField,
+        text: String,
+    ): List<FoundPerson> = people.find(field, text, logins())
+}

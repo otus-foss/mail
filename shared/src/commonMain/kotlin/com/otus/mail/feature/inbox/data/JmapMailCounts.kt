@@ -8,10 +8,10 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.ShowFacet
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -29,14 +29,24 @@ internal class JmapMailCounts(
     private val zone: () -> TimeZone,
     private val clock: Clock,
 ) {
-    /** Sums each of [logins]' totals; null when none could be counted. */
+    /** Each login's mailboxes for the counts of one filter panel session. */
+    private var mailboxes: Map<String, List<MailboxObject>> = emptyMap()
+
+    /** Starts a new session: the next counts read each login's mailboxes again. */
+    fun begin() {
+        mailboxes = emptyMap()
+    }
+
+    /**
+     * Sums each of [logins]' totals; null when none could be counted, or when a choice only the
+     * loaded threads can tell is on. Each login's mailboxes load once until [begin].
+     */
     suspend fun count(
         logins: List<JmapLogin>,
         scope: MailScope,
         query: MailQuery,
     ): Long? {
-        // No query finds invites or two-sided threads, so only the loaded mail can be counted.
-        if (query.filters.has(ShowFacet.CalendarInvites) || query.filters.has(ShowFacet.Conversations)) return null
+        if (query.filters.clientOnly) return null
         val now = clock.now()
         val totals =
             coroutineScope {
@@ -57,7 +67,9 @@ internal class JmapMailCounts(
         try {
             val connection = connections.connection(login)
             connection.session().accountFor(JmapCapability.MAIL)?.let { accountId ->
-                val ids = scope.chosen(mailboxesOf(connection, accountId), login.id, query).map { it.id }
+                val known =
+                    mailboxes[login.id] ?: mailboxesOf(connection, accountId).also { mailboxes += login.id to it }
+                val ids = scope.chosen(known, login.id, query).map { it.id }
                 if (ids.isEmpty()) {
                     0L
                 } else {

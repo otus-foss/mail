@@ -16,6 +16,8 @@ import com.otus.mail.core.mail.EmailFolders
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.LIST_ID_PROPERTY
+import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
@@ -99,7 +101,7 @@ class JmapNewsletters(
                 boxes = call(GetMethod(MailboxType, id, properties = listOf("id", "role")))
             }
         val email =
-            first[emails].list.firstOrNull()?.takeIf { it.listId != null || !it.listUnsubscribe.isNullOrEmpty() }
+            first[emails].list.firstOrNull()?.takeIf { it.fromList }
                 ?: return null
         val skipped =
             first[boxes]
@@ -181,7 +183,7 @@ class JmapNewsletters(
         const val ARCHIVE_ROLE = "archive"
         val SKIPPED_ROLES = setOf("trash", "junk")
         val LIST_PROPERTIES =
-            listOf("id", "receivedAt", "from", "header:List-Id:asText", "header:List-Unsubscribe:asURLs")
+            listOf("id", "receivedAt", "from", LIST_ID_PROPERTY, LIST_UNSUBSCRIBE_PROPERTY)
         val OLDER_PROPERTIES = listOf("id", "receivedAt", "mailboxIds")
     }
 }

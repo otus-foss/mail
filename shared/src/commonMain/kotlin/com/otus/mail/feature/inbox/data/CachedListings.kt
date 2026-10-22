@@ -50,6 +50,7 @@ internal suspend fun MailCache.cachedPages(
             shown = chosen.map { it.id }.toSet(),
             trashAndJunk = mailboxes.filter { it.role in HIDDEN_ROLES }.map { it.id }.toSet(),
             sent = mailboxes.filter { it.role == SENT_ROLE }.map { it.id }.toSet(),
+            own = query.addresses[login.id].orEmpty() + login.username,
         )
     return try {
         jmapDecoding {

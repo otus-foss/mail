@@ -48,19 +48,6 @@ fun InboxFilters.includeSubfolders(
     return withFolder(chosen.copy(includeSubfolders = include), on = true)
 }
 
-/** The selected folders' chips: shortcuts first, up to [MAX_SHORTCUTS], then other selected folders. */
-fun FilterOptions.folderChips(filters: InboxFilters): List<FilterFolder> {
-    val shortcuts = shortcuts.take(MAX_SHORTCUTS)
-    val selected = filters.folders.map { it.key }.filter { it !in shortcuts }
-    return (shortcuts + selected).mapNotNull(::folder)
-}
-
-/** How many folders the chip for [ref] stands for beyond its own: its subfolders while they are included. */
-fun FilterOptions.includedCount(ref: FolderRef): Int =
-    if (ref.includeSubfolders) folder(ref.key)?.descendants?.size ?: 0 else 0
-
-const val MAX_SHORTCUTS = 6
-
 /**
  * The folders the tree shows: those matching [query] by name while searching, else every folder
  * whose parents are all open, none of them in [collapsed].

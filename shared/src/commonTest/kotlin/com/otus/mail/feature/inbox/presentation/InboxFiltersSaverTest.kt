@@ -6,9 +6,12 @@ import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.OwnAddress
+import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.ShowFacet
+import com.otus.mail.feature.inbox.domain.SenderKey
 import com.otus.mail.feature.inbox.domain.SizeFilter
+import com.otus.mail.feature.inbox.domain.TypeFacet
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,20 +27,78 @@ class InboxFiltersSaverTest {
     fun everyChoiceSurvivesSaving() {
         val filters =
             InboxFilters(
-                show = setOf(ShowFacet.Unread, ShowFacet.WaitingForReply),
+                status = ReadStatus.Read,
+                quick = setOf(QuickFacet.AwaitingReply, QuickFacet.Flagged),
+                types = setOf(TypeFacet.Newsletters),
+                from =
+                    setOf(
+                        SenderKey("OpenAI", setOf("noreply@openai.com", "news@openai.com")),
+                        SenderKey.of("sam@x.org"),
+                    ),
                 sentTo = setOf(OwnAddress("ada", "ada@example.org")),
+                to = setOf("kim@x.org"),
+                receivedIn = setOf(RecipientField.Bcc),
+                account = "ada",
                 folders = setOf(FolderRef("ada", "f", includeSubfolders = false), FolderRef("bo", "g")),
                 date = DateFilter.Range(LocalDate(2026, 10, 12), LocalDate(2026, 10, 18)),
-                sort = FilterSort.OldestFirst,
-                from = setOf("sam@x.org"),
-                accounts = setOf("ada"),
-                receivedAs = setOf(RecipientField.Cc, RecipientField.Bcc),
-                skipFolders = setOf(FolderRef("ada", "trash")),
                 size = SizeFilter.Over10Mb,
+                sort = FilterSort.OldestFirst,
             )
-        listOf(filters, InboxFilters(), InboxFilters(date = DateFilter.Last30)).forEach { value ->
+        listOf(
+            filters,
+            InboxFilters(),
+            InboxFilters(date = DateFilter.ThisYear),
+            InboxFilters(receivedIn = emptySet()),
+        ).forEach { value ->
             val saved = assertNotNull(with(InboxFiltersSaver) { saveScope.save(value) })
             assertEquals(value, InboxFiltersSaver.restore(saved))
         }
     }
+
+    @Test
+    fun filtersAnEarlierVersionSavedReadAsTheirNewChoices() {
+        val saved =
+            listOf(
+                "NewestFirst",
+                "last30",
+                "Any",
+                line("show", "Unread"),
+                line("show", "WaitingForReply"),
+                line("show", "Conversations"),
+                line("show", "NotFlagged"),
+                line("show", "Replied"),
+                line("show", "NotReplied"),
+                line("show", "Newsletters"),
+                line("show", "CalendarInvites"),
+                line("from", "sam@x.org"),
+                line("account", "ada"),
+                line("to", "ada", "ada@example.org"),
+                line("as", "Cc"),
+                line("folder", "ada", "f", "true"),
+                line("skip", "ada", "trash", "true"),
+            )
+        assertEquals(
+            InboxFilters(
+                status = ReadStatus.Unread,
+                quick = setOf(QuickFacet.AwaitingReply, QuickFacet.Conversations),
+                types = setOf(TypeFacet.Newsletters, TypeFacet.CalendarInvites),
+                from = setOf(SenderKey.of("sam@x.org")),
+                sentTo = setOf(OwnAddress("ada", "ada@example.org")),
+                receivedIn = setOf(RecipientField.Cc),
+                account = "ada",
+                folders = setOf(FolderRef("ada", "f")),
+                date = DateFilter.Last30,
+            ),
+            InboxFiltersSaver.restore(saved),
+        )
+        assertEquals(
+            InboxFilters(status = ReadStatus.Read),
+            InboxFiltersSaver.restore(
+                listOf("NewestFirst", "any", "Any", line("show", "Read"), line("show", "NotFlagged")),
+            ),
+            "Without Received as lines the fields stay the default",
+        )
+    }
+
+    private fun line(vararg values: String) = values.joinToString("\u0000")
 }
