@@ -71,7 +71,7 @@ class ReadPageActionsTest {
                 OtusTheme {
                     ProvideTextStyle(panelTextStyle()) {
                         Box(Modifier.fillMaxSize()) {
-                            MessageScreen(row, actions, null, context, "in", onClose = {})
+                            MessageScreen(row, actions, null, context, setOf("in"), onClose = {})
                             ToastHost(toasts, Modifier.align(Alignment.BottomCenter))
                         }
                     }

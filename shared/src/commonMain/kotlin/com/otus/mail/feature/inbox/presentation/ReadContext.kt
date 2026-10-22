@@ -56,15 +56,15 @@ class ReadDisplay(
 )
 
 /**
- * The folders of a message's account as the Read view names them. [cameFrom] is the folder the
- * list shows when it shows one folder, which the strips leave out; null without a folder context.
+ * The folders of a message's account as the Read view names them. [cameFrom] is the folders the
+ * list shows the message from, which the strips leave out; empty without a folder context.
  * [apply] files every email of a conversation as a [FolderChange] says, and runs `onRefused` when
  * the server refuses it. [newFolder] shows the New folder sheet for an account until it runs its
  * `onDismiss`; null where folders cannot be made.
  */
 class ReadFolders(
     val of: (MailMessage) -> List<MessageFolder> = { emptyList() },
-    val cameFrom: (MailMessage) -> String? = { null },
+    val cameFrom: (MailMessage) -> Set<String> = { emptySet() },
     val apply: (change: FolderChange, onRefused: () -> Unit) -> Unit = { _, _ -> },
     val newFolder: NewFolderSheet? = null,
 )

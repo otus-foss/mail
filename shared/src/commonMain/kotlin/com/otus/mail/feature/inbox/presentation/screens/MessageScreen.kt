@@ -74,8 +74,8 @@ import kotlinx.datetime.LocalDate
  * An open message or conversation as a page over the list. Each message of the conversation is a
  * page, newest first. Filing acts on the whole conversation and closes the page first, while
  * replies and the ⋯ menu's message entries follow the page on screen. A [notice], such as a
- * refused mark, shows under the header. [cameFrom] is the folder the list shows, which the strips
- * leave out; null without a folder context. Back folds the message list, then the files, then the
+ * refused mark, shows under the header. [cameFrom] is the folders the list shows the message from,
+ * which the strips leave out; empty without a folder context. Back folds the message list, then the files, then the
  * details, then runs [onClose]. The details and the page on screen survive a recreated screen. Zen
  * mode leaves out the strips, the message list they open, and the images banner.
  */
@@ -85,7 +85,7 @@ fun MessageScreen(
     actions: MessageActions?,
     notice: String?,
     context: InboxContext,
-    cameFrom: String?,
+    cameFrom: Set<String>,
     onClose: () -> Unit,
 ) {
     val read = context.read ?: remember { ReadContext() }
@@ -157,7 +157,7 @@ private fun ReadLayout(
     parts: ReadParts,
     layout: ReadLayoutState,
     notice: String?,
-    cameFrom: String?,
+    cameFrom: Set<String>,
     padding: PaddingValues,
 ) {
     val state = parts.state
