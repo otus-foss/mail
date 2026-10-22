@@ -48,7 +48,7 @@ class ReadState(
     var threadOpen by mutableStateOf(false)
 
     /** The page whose attachment strip is grown into its files; null while every strip is closed. */
-    private var filesOpenOn by mutableStateOf<String?>(null)
+    var filesOpenOn by mutableStateOf<String?>(null)
 
     var sheet by mutableStateOf<ReadSheet?>(null)
 

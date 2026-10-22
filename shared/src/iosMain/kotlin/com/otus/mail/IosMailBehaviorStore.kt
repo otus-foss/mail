@@ -44,7 +44,13 @@ class IosMailBehaviorStore(
             inbox = preferences.stringForKey(INBOX)?.let(InboxContents::decode) ?: defaults.inbox,
             filters = preferences.stringForKey(FILTERS)?.let(FilterLayout::decode) ?: defaults.filters,
             list = preferences.stringForKey(LIST)?.let(MailListLayout::decode) ?: defaults.list,
-            remoteImages = decodeRemoteImages(preferences.stringForKey(REMOTE_IMAGES)) ?: defaults.remoteImages,
+            remoteImages =
+                decodeRemoteImages(
+                    preferences.stringForKey(REMOTE_IMAGES),
+                    preferences.stringForKey(EARLIER_REMOTE_IMAGES),
+                )
+                    ?: defaults.remoteImages,
+            zenRead = bool(ZEN_READ, defaults.zenRead),
             allowedSenders = decodeAddresses(preferences.stringForKey(ALLOWED_SENDERS)),
         )
     }
@@ -69,6 +75,7 @@ class IosMailBehaviorStore(
         preferences.setObject(FilterLayout.encode(behavior.filters), forKey = FILTERS)
         preferences.setObject(MailListLayout.encode(behavior.list), forKey = LIST)
         preferences.setObject(behavior.remoteImages.storageValue, forKey = REMOTE_IMAGES)
+        preferences.setBool(behavior.zenRead, forKey = ZEN_READ)
         preferences.setObject(encodeAddresses(behavior.allowedSenders), forKey = ALLOWED_SENDERS)
     }
 
@@ -99,7 +106,9 @@ class IosMailBehaviorStore(
         const val INBOX = "otus.mail.inbox_contents"
         const val FILTERS = "otus.mail.filter_layout"
         const val LIST = "otus.mail.mail_list"
-        const val REMOTE_IMAGES = "otus.mail.remote_images"
+        const val REMOTE_IMAGES = "otus.mail.load_remote_images"
+        const val EARLIER_REMOTE_IMAGES = "otus.mail.remote_images"
+        const val ZEN_READ = "otus.mail.read_zen"
         const val ALLOWED_SENDERS = "otus.mail.allowed_senders"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"

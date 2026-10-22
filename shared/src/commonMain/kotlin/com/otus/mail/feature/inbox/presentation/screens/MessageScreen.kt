@@ -32,6 +32,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.LocalSheetPull
 import com.otus.designsystem.components.OptionsItem
+import com.otus.designsystem.elements.holdsSpace
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
@@ -74,9 +75,10 @@ import kotlinx.datetime.LocalDate
  * An open message or conversation as a page over the list. Each message of the conversation is a
  * page, newest first. Filing acts on the whole conversation and closes the page first, while
  * replies and the ⋯ menu's message entries follow the page on screen. A [notice], such as a
- * refused mark, shows under the header. [cameFrom] is the folder the list shows, which the strips
- * leave out; null without a folder context. Back folds the message list, then the files, then the
- * details, then runs [onClose]. The details and the page on screen survive a recreated screen.
+ * refused mark, shows under the header. [cameFrom] is the folders the list shows the message from,
+ * which the strips leave out; empty without a folder context. Back folds the message list, then the files, then the
+ * details, then runs [onClose]. The details and the page on screen survive a recreated screen. Zen
+ * mode leaves out the strips, the message list they open, and the images banner.
  */
 @Composable
 fun MessageScreen(
@@ -84,7 +86,7 @@ fun MessageScreen(
     actions: MessageActions?,
     notice: String?,
     context: InboxContext,
-    cameFrom: String?,
+    cameFrom: Set<String>,
     onClose: () -> Unit,
 ) {
     val read = context.read ?: remember { ReadContext() }
@@ -121,9 +123,11 @@ fun MessageScreen(
             ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds), notice, cameFrom, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
-        val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
-        ReadThreadOverlay(state, index, source, context.rowLook.own, barPadding, folds.thread) {
-            scope.launch { pager.animateScrollToPage(it) }
+        if (!read.display.zen()) {
+            val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
+            ReadThreadOverlay(state, index, source, context.rowLook.own, barPadding, folds.thread) {
+                scope.launch { pager.animateScrollToPage(it) }
+            }
         }
     }
     // A drag on the folders strip pulls the folders sheet up with the finger.
@@ -154,7 +158,7 @@ private fun ReadLayout(
     parts: ReadParts,
     layout: ReadLayoutState,
     notice: String?,
-    cameFrom: String?,
+    cameFrom: Set<String>,
     padding: PaddingValues,
 ) {
     val state = parts.state
@@ -164,7 +168,9 @@ private fun ReadLayout(
     val uriHandler = LocalUriHandler.current
     val strips = remember(read) { ReadStripActions(read) { openLink(uriHandler::openUri, it) } }
     val date = page.received.shortLabel(layout.today)
+    val zen = read.display.zen()
     var stripsHeight by remember { mutableStateOf(0.dp) }
+    // Zen hides the strips but keeps their room, so the text does not move and reload.
     val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
     val density = LocalDensity.current
     var headerHeight by remember { mutableStateOf(0.dp) }
@@ -181,8 +187,8 @@ private fun ReadLayout(
         Column(
             Modifier.padding(PageTokens.pageInset).onSizeChanged { size ->
                 val height = with(density) { size.height.toDp() }
-                // A subject unfolds over the text, so the room stays the folded header's height.
-                if (headerHeight == 0.dp || height < headerHeight) headerHeight = height
+                // The room stays the tallest header, so folding the subject does not move the text.
+                if (height > headerHeight) headerHeight = height
             },
         ) {
             ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
@@ -205,7 +211,8 @@ private fun ReadLayout(
             Modifier
                 .align(Alignment.BottomCenter)
                 .padding(padding)
-                .padding(PageTokens.pageInset),
+                .padding(PageTokens.pageInset)
+                .holdsSpace(zen),
             onFoldedHeight = { stripsHeight = it },
         )
     }
@@ -216,11 +223,22 @@ private fun headerActions(
     menu: List<OptionsItem>,
 ): ReadHeaderActions {
     val actions = parts.actions
+    val read = parts.read
     return ReadHeaderActions(
         onBack = parts::close,
         senderOpen = parts.state.details,
         onSender = { parts.state.details = !parts.state.details },
         // A change that takes the message off this list closes the page first, as filing does.
+        zen = read.display.zen(),
+        onZen = {
+            val on = !read.display.zen()
+            // Zen hides the strips, so their message list and files fold first.
+            if (on) {
+                parts.state.threadOpen = false
+                parts.state.filesOpenOn = null
+            }
+            read.display.setZen(on)
+        },
         readLater =
             actions?.readLater(parts.row)?.takeIf { actions.behavior().readLater }?.let { change ->
                 if (!change.leaves) {
