@@ -32,6 +32,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.LocalSheetPull
 import com.otus.designsystem.components.OptionsItem
+import com.otus.designsystem.elements.holdsSpace
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
@@ -169,7 +170,8 @@ private fun ReadLayout(
     val date = page.received.shortLabel(layout.today)
     val zen = read.display.zen()
     var stripsHeight by remember { mutableStateOf(0.dp) }
-    val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + if (zen) 0.dp else stripsHeight
+    // Zen hides the strips but keeps their room, so the text does not move and reload.
+    val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
     val density = LocalDensity.current
     var headerHeight by remember { mutableStateOf(0.dp) }
     Box(Modifier.fillMaxSize()) {
@@ -192,28 +194,27 @@ private fun ReadLayout(
             ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
             notice?.let { MessageNotice(it) }
         }
-        if (!zen) {
-            val pager = layout.pager
-            val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
-            val threadSwipe =
-                stripSwipe.then(rememberFoldSwipe(rememberUnfoldDrag(layout.folds.thread) { state.threadOpen = it }))
-            val slide =
-                StripGestures(threadSwipe, {
-                    pager.currentPage + pager.currentPageOffsetFraction
-                }, rememberFoldSwipe(layout.folds.folders))
-            ReadBottomStack(
-                state,
-                layout.index,
-                ReadStripSource(row, layout.look.folders, cameFrom, layout.today),
-                strips,
-                slide,
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(padding)
-                    .padding(PageTokens.pageInset),
-                onFoldedHeight = { stripsHeight = it },
-            )
-        }
+        val pager = layout.pager
+        val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
+        val threadSwipe =
+            stripSwipe.then(rememberFoldSwipe(rememberUnfoldDrag(layout.folds.thread) { state.threadOpen = it }))
+        val slide =
+            StripGestures(threadSwipe, {
+                pager.currentPage + pager.currentPageOffsetFraction
+            }, rememberFoldSwipe(layout.folds.folders))
+        ReadBottomStack(
+            state,
+            layout.index,
+            ReadStripSource(row, layout.look.folders, cameFrom, layout.today),
+            strips,
+            slide,
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(padding)
+                .padding(PageTokens.pageInset)
+                .holdsSpace(zen),
+            onFoldedHeight = { stripsHeight = it },
+        )
     }
 }
 
