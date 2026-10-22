@@ -76,7 +76,12 @@ internal class ReadWiring(
             files = files,
             services = ReadServices(services.newsletters, services.headers, services.mute, services.blocks, changes),
             effects = effects,
-            display = ReadDisplay(showQuotes = { behavior.behavior.showQuotes }),
+            display =
+                ReadDisplay(
+                    showQuotes = { behavior.behavior.showQuotes },
+                    zen = { behavior.behavior.zenRead },
+                    setZen = { on -> behavior.update { it.copy(zenRead = on) } },
+                ),
         )
     }
 

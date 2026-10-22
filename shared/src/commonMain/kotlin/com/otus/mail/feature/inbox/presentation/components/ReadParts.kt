@@ -167,14 +167,16 @@ internal fun ReadSheets(
 
 /**
  * What the Read view's header does: Back, the sender pill that shows or hides the details, which
- * are [senderOpen], [readLater] for the bookmark, which is null while Read later is off, and the
- * ⋯ [menu].
+ * are [senderOpen], [readLater] for the bookmark, which is null while Read later is off, the zen
+ * pill, which [onZen] turns on or off while the view is [zen], and the ⋯ [menu].
  */
 internal class ReadHeaderActions(
     val onBack: () -> Unit,
     val senderOpen: Boolean,
     val onSender: () -> Unit,
     val readLater: ReadLaterChange?,
+    val zen: Boolean,
+    val onZen: () -> Unit,
     val menu: List<OptionsItem>,
 )
 

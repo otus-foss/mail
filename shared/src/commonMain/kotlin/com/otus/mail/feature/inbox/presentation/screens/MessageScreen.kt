@@ -76,7 +76,8 @@ import kotlinx.datetime.LocalDate
  * replies and the ⋯ menu's message entries follow the page on screen. A [notice], such as a
  * refused mark, shows under the header. [cameFrom] is the folder the list shows, which the strips
  * leave out; null without a folder context. Back folds the message list, then the files, then the
- * details, then runs [onClose]. The details and the page on screen survive a recreated screen.
+ * details, then runs [onClose]. The details and the page on screen survive a recreated screen. Zen
+ * mode leaves out the strips, the message list they open, and the images banner.
  */
 @Composable
 fun MessageScreen(
@@ -121,9 +122,11 @@ fun MessageScreen(
             ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds), notice, cameFrom, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
-        val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
-        ReadThreadOverlay(state, index, source, context.rowLook.own, barPadding, folds.thread) {
-            scope.launch { pager.animateScrollToPage(it) }
+        if (!read.display.zen()) {
+            val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
+            ReadThreadOverlay(state, index, source, context.rowLook.own, barPadding, folds.thread) {
+                scope.launch { pager.animateScrollToPage(it) }
+            }
         }
     }
     // A drag on the folders strip pulls the folders sheet up with the finger.
@@ -164,8 +167,9 @@ private fun ReadLayout(
     val uriHandler = LocalUriHandler.current
     val strips = remember(read) { ReadStripActions(read) { openLink(uriHandler::openUri, it) } }
     val date = page.received.shortLabel(layout.today)
+    val zen = read.display.zen()
     var stripsHeight by remember { mutableStateOf(0.dp) }
-    val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
+    val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + if (zen) 0.dp else stripsHeight
     val density = LocalDensity.current
     var headerHeight by remember { mutableStateOf(0.dp) }
     Box(Modifier.fillMaxSize()) {
@@ -181,33 +185,35 @@ private fun ReadLayout(
         Column(
             Modifier.padding(PageTokens.pageInset).onSizeChanged { size ->
                 val height = with(density) { size.height.toDp() }
-                // A subject unfolds over the text, so the room stays the folded header's height.
-                if (headerHeight == 0.dp || height < headerHeight) headerHeight = height
+                // The room stays the tallest header, so folding the subject does not move the text.
+                if (height > headerHeight) headerHeight = height
             },
         ) {
             ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
             notice?.let { MessageNotice(it) }
         }
-        val pager = layout.pager
-        val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
-        val threadSwipe =
-            stripSwipe.then(rememberFoldSwipe(rememberUnfoldDrag(layout.folds.thread) { state.threadOpen = it }))
-        val slide =
-            StripGestures(threadSwipe, {
-                pager.currentPage + pager.currentPageOffsetFraction
-            }, rememberFoldSwipe(layout.folds.folders))
-        ReadBottomStack(
-            state,
-            layout.index,
-            ReadStripSource(row, layout.look.folders, cameFrom, layout.today),
-            strips,
-            slide,
-            Modifier
-                .align(Alignment.BottomCenter)
-                .padding(padding)
-                .padding(PageTokens.pageInset),
-            onFoldedHeight = { stripsHeight = it },
-        )
+        if (!zen) {
+            val pager = layout.pager
+            val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
+            val threadSwipe =
+                stripSwipe.then(rememberFoldSwipe(rememberUnfoldDrag(layout.folds.thread) { state.threadOpen = it }))
+            val slide =
+                StripGestures(threadSwipe, {
+                    pager.currentPage + pager.currentPageOffsetFraction
+                }, rememberFoldSwipe(layout.folds.folders))
+            ReadBottomStack(
+                state,
+                layout.index,
+                ReadStripSource(row, layout.look.folders, cameFrom, layout.today),
+                strips,
+                slide,
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(padding)
+                    .padding(PageTokens.pageInset),
+                onFoldedHeight = { stripsHeight = it },
+            )
+        }
     }
 }
 
@@ -216,11 +222,18 @@ private fun headerActions(
     menu: List<OptionsItem>,
 ): ReadHeaderActions {
     val actions = parts.actions
+    val read = parts.read
     return ReadHeaderActions(
         onBack = parts::close,
         senderOpen = parts.state.details,
         onSender = { parts.state.details = !parts.state.details },
         // A change that takes the message off this list closes the page first, as filing does.
+        zen = read.display.zen(),
+        onZen = {
+            val on = !read.display.zen()
+            if (on) parts.state.foldStrips()
+            read.display.setZen(on)
+        },
         readLater =
             actions?.readLater(parts.row)?.takeIf { actions.behavior().readLater }?.let { change ->
                 if (!change.leaves) {

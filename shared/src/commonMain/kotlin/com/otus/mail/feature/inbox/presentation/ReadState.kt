@@ -132,6 +132,12 @@ class ReadState(
         filesOpenOn = if (filesOpen(page)) null else page.id
     }
 
+    /** Folds the message list and the files, such as when zen mode hides their strips. */
+    fun foldStrips() {
+        threadOpen = false
+        filesOpenOn = null
+    }
+
     /** Folds what is open: the message list, then the files, then the details; false when nothing was. */
     fun back(): Boolean {
         when {

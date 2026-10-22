@@ -16,15 +16,25 @@ import org.robolectric.annotation.Config
 class RemoteImagesPersistenceTest {
     private val context = RuntimeEnvironment.getApplication()
 
-    @Test
-    fun settingsSavedBeforeThePrivacyPageLoadImagesFromPeopleTheUserKnows() {
+    private fun readWithEarlierSetting(stored: String): MailBehavior {
         context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit {
             clear()
-            putString("remote_images", "sometimes")
+            putString("remote_images", stored)
         }
-        val read = AndroidMailBehaviorStore(context).read()
-        assertEquals(RemoteImages.Known, read.remoteImages)
-        assertEquals(emptyList<String>(), read.allowedSenders)
+        return AndroidMailBehaviorStore(context).read()
+    }
+
+    @Test
+    fun settingsSavedBeforeImagesLoadedByDefaultLoadThemAlways() {
+        listOf("known", "sometimes").forEach { stored ->
+            assertEquals(RemoteImages.Always, readWithEarlierSetting(stored).remoteImages)
+        }
+        assertEquals(emptyList<String>(), readWithEarlierSetting("known").allowedSenders)
+    }
+
+    @Test
+    fun neverSavedBeforeImagesLoadedByDefaultStaysNever() {
+        assertEquals(RemoteImages.Never, readWithEarlierSetting("never").remoteImages)
     }
 
     @Test

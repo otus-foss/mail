@@ -40,10 +40,13 @@ class ReadContext(
 
 /**
  * How the Read view shows its pages: [showQuotes] tells whether replies show text quoted from
- * earlier messages of the conversation, and [today] is the day dates are shown against.
+ * earlier messages of the conversation, [zen] whether the view keeps to the message, its control
+ * panel, and its bar, which [setZen] saves, and [today] is the day dates are shown against.
  */
 class ReadDisplay(
     val showQuotes: () -> Boolean = { false },
+    val zen: () -> Boolean = { false },
+    val setZen: (Boolean) -> Unit = {},
     val today: () -> LocalDate = {
         Clock.System
             .now()
@@ -71,7 +74,7 @@ class ReadFolders(
  * an account. [allowSender] adds an address to the allowed senders.
  */
 class ReadPrivacy(
-    val setting: () -> RemoteImages = { RemoteImages.Known },
+    val setting: () -> RemoteImages = { RemoteImages.Always },
     val allowed: () -> List<String> = { emptyList() },
     val known: KnownPeople = KnownPeople { emptySet() },
     val allowSender: (String) -> Unit = {},
