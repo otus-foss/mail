@@ -5,10 +5,13 @@ data class PushDistributor(
     val id: String,
     val name: String,
     val isGoogle: Boolean = false,
+    val isApple: Boolean = false,
 )
 
 /** Instant new-mail pushes through the selected service. */
 interface InstantPush {
+    val periodicChecks: Boolean get() = true
+
     suspend fun distributors(): List<PushDistributor>
 
     /** The app in use, or null when Mail only checks periodically. */

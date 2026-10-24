@@ -90,23 +90,23 @@ tasks.register<Exec>("architectureTest") {
 
 tasks.register<Exec>("ruffCheck") {
     group = "verification"
-    commandLine(qualityPython.get(), "-m", "ruff", "check", "tools")
+    commandLine(qualityPython.get(), "-m", "ruff", "check", "tools", "push_bridge")
 }
 
 tasks.register<Exec>("ruffFormatCheck") {
     group = "verification"
-    commandLine(qualityPython.get(), "-m", "ruff", "format", "--check", "tools")
+    commandLine(qualityPython.get(), "-m", "ruff", "format", "--check", "tools", "push_bridge")
 }
 
 tasks.register<Exec>("ruffFix") {
     group = "formatting"
-    commandLine(qualityPython.get(), "-m", "ruff", "check", "--fix", "tools")
+    commandLine(qualityPython.get(), "-m", "ruff", "check", "--fix", "tools", "push_bridge")
 }
 
 tasks.register<Exec>("ruffFormat") {
     group = "formatting"
     dependsOn("ruffFix")
-    commandLine(qualityPython.get(), "-m", "ruff", "format", "tools")
+    commandLine(qualityPython.get(), "-m", "ruff", "format", "tools", "push_bridge")
 }
 
 tasks.register("formatAll") {
@@ -115,11 +115,17 @@ tasks.register("formatAll") {
     dependsOn("spotlessApply", "ruffFormat")
 }
 
+tasks.register<Exec>("pushBridgeTest") {
+    group = "verification"
+    commandLine(qualityPython.get(), "-m", "unittest", "discover", "-s", "push_bridge/tests")
+}
+
 tasks.register("checkAll") {
     group = "verification"
     description = "Run portable quality checks, Android lint, and debug compilation."
     dependsOn(
         "qualityCheck",
+        "pushBridgeTest",
         ":androidApp:lintDebug",
         ":androidApp:assembleDebug",
         ":androidApp:testDebugUnitTest",

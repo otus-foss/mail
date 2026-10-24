@@ -1,3 +1,7 @@
 TEAM_ID=
 BUNDLE_ID=com.otus.mail
 APP_NAME=Otus Mail
+
+// Set to the HTTPS origin of the deployed bridge, without a path.
+PUSH_BRIDGE_URL=
+PUSH_KEYCHAIN_GROUP=$(AppIdentifierPrefix)$(BUNDLE_ID).push

@@ -30,7 +30,7 @@ one uses the main checkout's `.venv`.
 | --- | --- |
 | `formatAll` | Spotless/ktlint Kotlin and Gradle formatting, project text whitespace, Ruff fixes/formatting |
 | `qualityCheck` | Spotless, detekt, architecture/file-length checks and regression tests, Ruff lint/format |
-| `checkAll` | Everything in qualityCheck, Android lint, debug assembly, domain and JMAP host tests, and local Android UI tests |
+| `checkAll` | Everything in qualityCheck, Android lint, debug assembly, domain and JMAP host tests, local Android UI tests, and APNs bridge tests |
 
 Project text formatting covers Markdown, YAML, JSON, XML/plist, and TOML with trailing-whitespace
 removal and a final newline. It does not enforce full syntax-specific formatting or Markdown
@@ -39,6 +39,8 @@ Generated Gradle wrappers, Xcode project files, caches, and build output are exc
 
 Test code gets ktlint formatting only. Android lint (`ignoreTestSources`) and detekt skip test
 source sets, because analyzing them took about a third of lint's time and found little.
+
+SwiftFormat uses `--commas inline` to match SwiftLint's trailing-comma rule.
 
 Swift formatting/lint and the full iOS app build require the separate macOS workflow below; they are
 not included in `formatAll` or `checkAll`.
