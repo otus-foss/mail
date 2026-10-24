@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,6 +74,7 @@ internal fun InboxBody(
                     top = InboxTokens.pageInset + frame.topInset,
                     bottom = InboxTokens.pageInset + frame.bottomInset,
                 ),
+            verticalArrangement = Arrangement.spacedBy(InboxTokens.rowGap),
         ) {
             status.notice?.let {
                 item(key = NOTICE_KEY) {
