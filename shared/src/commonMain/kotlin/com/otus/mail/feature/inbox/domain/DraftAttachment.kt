@@ -28,13 +28,24 @@ data class AttachmentBlob(
     val blobId: String,
 )
 
-/** A file the user picked. [read] loads its bytes, again whenever it is uploaded. */
+/** A picked file. The platform reader must honor the byte limit before allocating a larger buffer. */
 class PickedFile(
     val name: String,
     val type: String,
     val size: Long,
-    val read: suspend () -> ByteArray,
-)
+    private val readBytes: suspend (maxBytes: Int) -> ByteArray,
+) {
+    suspend fun read(maxBytes: Int = MAX_ATTACHMENT_BYTES): ByteArray {
+        require(maxBytes >= 0)
+        if (size > maxBytes) throw UploadException(UploadFailure.TooLarge)
+        val bytes = readBytes(maxBytes)
+        if (bytes.size > maxBytes) throw UploadException(UploadFailure.TooLarge)
+        return bytes
+    }
+}
+
+/** Bounds a file held in memory on the device, even when the server accepts larger uploads. */
+const val MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024
 
 /** Lets the user pick files to attach; empty when they pick none. */
 fun interface AttachmentFiles {
@@ -52,6 +63,9 @@ class UploadException(
 
 /** Uploads files to an account, for drafts to carry. */
 fun interface AttachmentUploads {
+    /** The server upload limit, capped by the device's in-memory file limit. */
+    suspend fun maxBytes(accountId: String): Int = MAX_ATTACHMENT_BYTES
+
     /** Uploads [bytes] of [type] and returns the blob; a failed result holds an [UploadException]. */
     suspend fun upload(
         accountId: String,

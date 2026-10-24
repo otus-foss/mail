@@ -56,7 +56,7 @@ android {
             libs.versions.android.targetSdk
                 .get()
                 .toInt()
-        // The nightly workflow numbers each build by its commit count on main.
+        // The nightly workflow increments the release number for changes in Mail or Meta.
         versionCode = providers.gradleProperty("otus.versionCode").map(String::toInt).getOrElse(1)
         versionName = providers.gradleProperty("otus.versionName").getOrElse("1.0")
         buildConfigField("String", "CHANNEL", "\"Dev\"")
