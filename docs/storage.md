@@ -37,3 +37,15 @@ until sync replaces or destroys them.
 
 Removing an account calls `MailCache.forget`, which deletes every object and value of that login
 before the login itself goes.
+
+## Storage failures
+
+SQLite disk-full, I/O, corruption, read-only, and lock errors become `CacheStorageException`.
+Cancellation and programming errors propagate unchanged. App wiring switches a failed disk cache
+to an empty memory cache for the rest of the process. Reads then act as cache misses, and server
+sync fills the memory cache. The database is retried after restart.
+
+A failed inbox write raises the existing recoverable storage error so the loaded list stays on
+screen until retry. Fresh message bodies and folder lists still open when saving their local copy
+fails. Confirmed server mutations remain successful even if their cache patch fails. Account
+removal always attempts disk cleanup and reports an account-storage error if that cleanup fails.

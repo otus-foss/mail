@@ -8,6 +8,7 @@ import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailBodyPart
@@ -92,7 +93,11 @@ class JmapMessageBodies(
                 .firstOrNull()
         if (email != null) {
             val received = runCatching { Instant.parse(email.receivedAt).toEpochMilliseconds() }.getOrNull()
-            cache.write(loginId) { putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, received) }
+            try {
+                cache.write(loginId) { putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, received) }
+            } catch (expected: CacheStorageException) {
+                // The fetched body can still be opened without a persistent copy.
+            }
         }
         return email
     }

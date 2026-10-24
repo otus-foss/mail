@@ -8,6 +8,7 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
@@ -90,7 +91,13 @@ class JmapFolderRepository(
         val sharedIn = jmapAccountId.takeIf { it != account.id }
         val folders = jmapDecoding { mailboxes.list.map { it.toFolder(account.login.id, sharedIn) } }
         // Only the login's own mailboxes: the cache keeps one set per login, which the inbox reads too.
-        if (sharedIn == null) cache.write(account.login.id) { replaceMailboxes(mailboxes.list) }
+        if (sharedIn == null) {
+            try {
+                cache.write(account.login.id) { replaceMailboxes(mailboxes.list) }
+            } catch (expected: CacheStorageException) {
+                // Fresh server folders remain usable when their local copy cannot be saved.
+            }
+        }
         return folders
     }
 
