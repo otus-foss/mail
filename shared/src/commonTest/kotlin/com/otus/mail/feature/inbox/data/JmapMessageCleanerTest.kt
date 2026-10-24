@@ -14,6 +14,10 @@ import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -45,10 +49,41 @@ class JmapMessageCleanerTest {
 
     private fun cleaner(
         session: String = smallBatches,
+        mailboxes: Map<String, Set<String>> = mapOf("m2" to setOf("t", "p")),
         reply: (String) -> String,
     ): JmapMessageCleaner {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageCleaner(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store)
+        val engine =
+            stalwartLike(session) { body ->
+                if ("Email/get" in body && "Email/query" !in body) membershipReply(body, mailboxes) else reply(body)
+            }
+        return JmapMessageCleaner(JmapConnections(JmapClient(engine), store), store)
+    }
+
+    private fun membershipReply(
+        body: String,
+        mailboxes: Map<String, Set<String>>,
+    ): String {
+        val call =
+            Json
+                .parseToJsonElement(body)
+                .jsonObject
+                .getValue("methodCalls")
+                .jsonArray
+                .single()
+                .jsonArray
+        val ids =
+            call[1]
+                .jsonObject
+                .getValue("ids")
+                .jsonArray
+                .map { it.jsonPrimitive.content }
+        val list =
+            ids.joinToString { id ->
+                val boxes = mailboxes[id].orEmpty().ifEmpty { setOf("t") }.joinToString { "\"$it\":true" }
+                """{"id":"$id","mailboxIds":{$boxes}}"""
+            }
+        return """{"methodResponses":[["Email/get",{"state":"e1","list":[$list]},"c0"]]}"""
     }
 
     /** Destroys or updates every id a `/set` call names, except [refused] destroys. */
@@ -120,7 +155,7 @@ class JmapMessageCleanerTest {
                     ThreadMember("m3", setOf("l", "a"), "l"),
                 )
             val deleted =
-                cleaner {
+                cleaner(mailboxes = mapOf("m2" to setOf("t", "p"), "m3" to setOf("l", "a"))) {
                     sent += it
                     setReply(it)
                 }.delete(listOf(message("m1").copy(conversation = conversationOf(members))))
@@ -149,7 +184,12 @@ class JmapMessageCleanerTest {
     fun refusedAndUnreachableDeletionsAreLeftOut() =
         runTest {
             val messages = listOf(message("m1"), message("m2"), message("m3"))
-            assertEquals(setOf("ada/m1", "ada/m3"), cleaner { setReply(it, refused = setOf("m2")) }.delete(messages))
+            assertEquals(
+                setOf("ada/m1", "ada/m3"),
+                cleaner(mailboxes = emptyMap()) {
+                    setReply(it, refused = setOf("m2"))
+                }.delete(messages),
+            )
             var calls = 0
             val failing =
                 cleaner {
