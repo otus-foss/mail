@@ -39,3 +39,7 @@ Removing an account calls `MailCache.forget`, which deletes every object and val
 before the login itself goes. Removal also cancels in-flight cache work for that account.
 Each operation uses an account generation, so an old request cannot repopulate the cache after
 removal or write into a later connection with the same login ID.
+
+If credential deletion or its preceding cleanup fails, the retained login can start new cache
+operations again. Requests from before the attempted removal remain canceled and cannot write
+into the restored account generation. A completed removal stays inactive.
