@@ -121,24 +121,26 @@ class MailServices(
         )
     }
     internal val accounts: AccountRepository by lazy {
-        JmapAccountRepository(
-            client,
-            connections,
-            logins,
-            AccountService.Mail,
-            onAccountChanged = { loginId ->
-                val connected = withContext(Dispatchers.IO) { logins.logins().any { it.id == loginId } }
-                if (connected) accountCache.connected(loginId)
-                avatars.removeAccount(loginId)
-            },
-            beforeRemove = { loginId ->
-                instantPush?.forget(loginId)
-                stores.folderColors?.forgetAccount(loginId)
-                stores.addressPins?.forgetAccount(loginId)
-                stores.folderNudges?.forgetAccount(loginId)
-                cache.forget(loginId)
-            },
-        )
+        val repository =
+            JmapAccountRepository(
+                client,
+                connections,
+                logins,
+                AccountService.Mail,
+                onAccountChanged = { loginId ->
+                    val connected = withContext(Dispatchers.IO) { logins.logins().any { it.id == loginId } }
+                    if (connected) accountCache.connected(loginId)
+                    avatars.removeAccount(loginId)
+                },
+                beforeRemove = { loginId ->
+                    instantPush?.forget(loginId)
+                    stores.folderColors?.forgetAccount(loginId)
+                    stores.addressPins?.forgetAccount(loginId)
+                    stores.folderNudges?.forgetAccount(loginId)
+                    cache.forget(loginId)
+                },
+            )
+        CacheAccountRepository(repository, logins, accountCache)
     }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache) }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache) }

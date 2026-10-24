@@ -51,6 +51,12 @@ internal class AccountMailCache(
     /** Replacing credentials starts a new generation even when the login ID is unchanged. */
     suspend fun connected(loginId: String) = reset(loginId, active = true)
 
+    /** A failed removal keeps the login, but requests from before removal remain invalid. */
+    suspend fun restore(loginId: String) {
+        val account = account(loginId)
+        account.lock.withLock { account.active = true }
+    }
+
     private suspend fun reset(
         loginId: String,
         active: Boolean,
