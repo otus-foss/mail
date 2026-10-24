@@ -36,14 +36,17 @@ class ComposeAttachmentsTest {
 
     private fun TestScope.attachments(draft: Draft) =
         ComposeAttachments(
-            files = { draft.picks.ifEmpty { listOf(file) } },
-            uploads = { account, _, _ ->
-                draft.uploads += account
-                draft.failNext?.let {
-                    draft.failNext = null
-                    Result.failure(UploadException(it))
-                } ?: Result.success(AttachmentBlob(account, "b${draft.uploads.size}"))
-            },
+            services =
+                ComposeAttachmentServices(
+                    files = { draft.picks.ifEmpty { listOf(file) } },
+                    uploads = { account, _, _ ->
+                        draft.uploads += account
+                        draft.failNext?.let {
+                            draft.failNext = null
+                            Result.failure(UploadException(it))
+                        } ?: Result.success(AttachmentBlob(account, "b${draft.uploads.size}"))
+                    },
+                ),
             scope = backgroundScope,
             body = draft.body,
             accountId = { draft.accountId },

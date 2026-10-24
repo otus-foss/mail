@@ -92,7 +92,9 @@ take the other bar's height, then its width, with the content blurred while the 
 Send without a subject asks first: **Send** or **Add subject**.
 
 **Discard** stops saving and closes the page with a "Draft discarded" toast. Undo opens the
-draft again as it was. The saved copy is deleted once the toast leaves without Undo.
+draft again as it was. The saved copy is deleted once the toast leaves without Undo. Discard
+cancels attachment work. Undo retains the picked-file handles and previews for this session,
+restarts pending uploads, and can upload the files again if the account changes.
 
 ### Attachments
 
