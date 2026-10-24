@@ -143,7 +143,7 @@ internal object ReadViewFixtures {
                     DIGEST,
                     truncated = false,
                     html = MessageHtml(DIGEST_HTML, true),
-                    unsubscribe = Unsubscribe(oneClick = "https://sentry.example/unsubscribe"),
+                    unsubscribe = Unsubscribe(mail = "mailto:unsubscribe@sentry.example"),
                     listName = "Sentry weekly digest",
                 )
             }

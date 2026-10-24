@@ -30,7 +30,6 @@ import com.otus.mail.feature.inbox.domain.MailingList
 import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
-import io.ktor.client.HttpClient
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -47,12 +46,11 @@ import kotlin.time.Instant
 class JmapNewsletters(
     private val connections: JmapConnections,
     private val logins: LoginStore,
-    http: HttpClient,
     drafts: DraftRepository,
     sender: DraftSender,
     private val cache: MailCache = InMemoryMailCache(),
 ) : Newsletters {
-    private val unsubscriber = ListUnsubscriber(http, drafts, sender)
+    private val unsubscriber = ListUnsubscriber(drafts, sender)
 
     override suspend fun list(message: MailMessage): MailingList? =
         try {
