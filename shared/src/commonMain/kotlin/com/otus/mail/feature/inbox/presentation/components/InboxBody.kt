@@ -61,7 +61,6 @@ internal fun InboxBody(
             ) { conversationRows(messages, frame.look, dateFormatter, today) }
         val currentMessages by rememberUpdatedState(messages)
         val currentGestures by rememberUpdatedState(gestures)
-        // Rows reach the screen edges, so a swipe's color does too; the inset aligns their content.
         LazyColumn(
             Modifier.fillMaxSize().dragToSelect(
                 listState,
@@ -133,16 +132,18 @@ private fun LazyItemScope.ConversationItem(
     SwipeActions(
         startToEnd = swipes?.let { actions.swipeAction(message, it.startToEnd) },
         endToStart = swipes?.let { actions.swipeAction(message, it.endToStart) },
-        modifier = Modifier.animateItem(motionTween(), motionTween(), motionTween()),
+        // Inset outside the swipe, so its accent card sits exactly behind the row's card.
+        modifier =
+            Modifier
+                .animateItem(motionTween(), motionTween(), motionTween())
+                .padding(horizontal = InboxTokens.pageInset),
     ) {
-        Box(Modifier.padding(horizontal = InboxTokens.pageInset)) {
-            ConversationRow(
-                message,
-                model,
-                selection = selection,
-                onLongClick = { gestures.onToggle(message) },
-            ) { gestures.tap(message) }
-        }
+        ConversationRow(
+            message,
+            model,
+            selection = selection,
+            onLongClick = { gestures.onToggle(message) },
+        ) { gestures.tap(message) }
     }
 }
 
