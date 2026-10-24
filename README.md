@@ -80,7 +80,7 @@ of at most 72 characters without a final period. Apply the unslop skill to the e
 when available. Keep the wording plain and describe only changes in the commit.
 
 Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
-formatting, `pre-push` runs `checkAll`, and `commit-msg` checks the message. Run this from the
+formatting, and `commit-msg` checks the message and removes AI attribution lines. Run this from the
 repository root with Python 3.11+ installed:
 
 ```sh
