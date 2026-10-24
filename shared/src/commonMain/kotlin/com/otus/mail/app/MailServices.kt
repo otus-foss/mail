@@ -3,6 +3,7 @@ package com.otus.mail.app
 import com.otus.accounts.data.JmapAccountRepository
 import com.otus.accounts.domain.AccountRepository
 import com.otus.accounts.domain.AccountService
+import com.otus.accounts.domain.AccountStorageException
 import com.otus.avatar.AvatarCacheConfig
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
@@ -19,7 +20,9 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
@@ -100,7 +103,7 @@ class MailServices(
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     /** The device's copy of each login's mail; see docs/storage.md. */
-    internal val cache: MailCache get() = stores.cache
+    internal val cache: MailCache = RecoveringMailCache(stores.cache)
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
@@ -128,7 +131,11 @@ class MailServices(
                 stores.folderColors?.forgetAccount(loginId)
                 stores.addressPins?.forgetAccount(loginId)
                 stores.folderNudges?.forgetAccount(loginId)
-                cache.forget(loginId)
+                try {
+                    cache.forget(loginId)
+                } catch (error: CacheStorageException) {
+                    throw AccountStorageException(error)
+                }
             },
         )
     }

@@ -5,6 +5,7 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.SetMethod
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
@@ -85,7 +86,11 @@ internal suspend fun updateAccountEmails(
     cache: MailCache? = null,
 ): Set<String> {
     val updated = sendUpdates(connections, logins, loginId, patches)
-    cache?.patchEmails(loginId, patches.filterKeys { it in updated })
+    try {
+        cache?.patchEmails(loginId, patches.filterKeys { it in updated })
+    } catch (expected: CacheStorageException) {
+        // A cache failure must not turn a confirmed server update into a failed action.
+    }
     return updated
 }
 
