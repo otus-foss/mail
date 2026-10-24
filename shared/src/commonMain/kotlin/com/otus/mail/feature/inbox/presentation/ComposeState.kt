@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
+import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.domain.SendIdentity
@@ -132,7 +133,7 @@ class ComposeState(
 
     private val saving = Mutex()
     private var pending: Job? = null
-    private var stored by mutableStateOf<Draft?>(null)
+    private var stored by mutableStateOf(start.takeIf { it.emailId != null })
 
     /** Set once the draft is discarded or sent; nothing saves after that. */
     private var finished = false
@@ -170,13 +171,11 @@ class ComposeState(
 
     /**
      * Sends from [identity]. One of another account moves the draft there: the next save stores it
-     * in that account's Drafts, and the copy in the old one is deleted.
+     * in that account's Drafts before the copy in the old one is deleted.
      */
     fun chooseFrom(identity: SendIdentity) {
-        val left = draft.takeIf { it.accountId != identity.accountId }
-        val kept = draft.emailId.takeIf { left == null }
+        val kept = stored?.takeIf { it.accountId == identity.accountId }?.emailId
         edit { it.copy(from = identity.sender, accountId = identity.accountId, emailId = kept) }
-        left?.emailId?.let { id -> scope.launch { saving.withLock { drafts.discard(left.accountId, id) } } }
     }
 
     /** Adds or removes the signature in this draft only. */
@@ -198,7 +197,7 @@ class ComposeState(
     fun discard(): () -> Unit {
         finished = true
         pending?.cancel()
-        return { scope.launch { saving.withLock { draft.emailId?.let { drafts.discard(draft.accountId, it) } } } }
+        return { scope.launch { saving.withLock { stored?.discardCopy(drafts) } } }
     }
 
     /**
@@ -215,8 +214,12 @@ class ComposeState(
         val answered = request.answered(outgoing.accountId)
         return { at ->
             saving
-                .withLock { sender.send(outgoing.copy(emailId = draft.emailId), answered, at) }
-                .onSuccess { outgoing.from?.let(onSent) }
+                .withLock {
+                    val copy = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId
+                    sender.send(outgoing.copy(emailId = copy), answered, at).onSuccess {
+                        stored?.takeIf { it.accountId != outgoing.accountId }?.discardCopy(drafts)
+                    }
+                }.onSuccess { outgoing.from?.let(onSent) }
         }
     }
 
@@ -233,19 +236,26 @@ class ComposeState(
 
     private suspend fun save() =
         saving.withLock {
-            val current = draft.copy(signature = signature)
+            val copy = stored?.takeIf { it.accountId == draft.accountId }?.emailId
+            val current = draft.copy(emailId = copy, signature = signature)
             val unchanged = if (current.emailId == null) !edited else current.content() == stored?.content()
             if (finished || unchanged) return@withLock
             drafts.save(current).fold(
                 onSuccess = { id ->
-                    stored = current
+                    val previous = stored
+                    stored = current.copy(emailId = id)
                     // The user may have moved the draft to another account while it saved.
                     if (draft.accountId == current.accountId) draft = draft.copy(emailId = id)
                     notice = null
+                    previous?.takeIf { it.accountId != current.accountId }?.discardCopy(drafts)
                 },
                 onFailure = { notice = ((it as? DraftException)?.failure ?: DraftFailure.ServerProblem).notice },
             )
         }
+}
+
+private suspend fun Draft.discardCopy(drafts: DraftRepository) {
+    emailId?.let { drafts.discard(accountId, it) }
 }
 
 private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =
