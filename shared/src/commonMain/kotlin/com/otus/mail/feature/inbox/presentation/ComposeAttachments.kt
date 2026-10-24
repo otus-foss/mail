@@ -43,7 +43,11 @@ class ComposeAttachments(
 
     /** Each picked file by its attachment's id, kept to upload it again and to draw it. */
     private val picked = mutableMapOf<String, PickedFile>()
-    private val reading = Mutex()
+
+    // One file uploads at a time, so its bytes stay in memory until the server has them. Drawing
+    // reads separately, so an inline image shows while uploads are still queued.
+    private val uploadLock = Mutex()
+    private val drawLock = Mutex()
 
     /** Whether [attachment] is still on its way to the draft's account. */
     fun uploading(attachment: DraftAttachment): Boolean =
@@ -96,7 +100,7 @@ class ComposeAttachments(
             .firstOrNull { it.source == source }
             ?.let { picked[it.id] }
             ?.let { file ->
-                reading.withLock {
+                drawLock.withLock {
                     try {
                         file.read()
                     } catch (expected: UploadException) {
@@ -137,7 +141,7 @@ class ComposeAttachments(
         failures -= id
         scope.launch {
             val result =
-                reading.withLock {
+                uploadLock.withLock {
                     if (account != accountId() || id !in picked) return@launch
                     try {
                         val limit = to.maxBytes(account)
