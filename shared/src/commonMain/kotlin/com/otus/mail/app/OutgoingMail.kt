@@ -4,6 +4,7 @@ import com.otus.designsystem.components.ToastMessage
 import com.otus.designsystem.components.ToastState
 import com.otus.designsystem.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.presentation.components.scheduledLabel
@@ -93,7 +94,15 @@ internal class OutgoingMail(
                 val reopen = outgoing.reopen
                 outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = sent.emailId)))
             },
-            onFailure = { toasts.show(ToastMessage("Couldn't cancel. It's still scheduled.")) },
+            onFailure = { error ->
+                val message =
+                    if (error is DraftRestoreException) {
+                        "Send canceled. Couldn't restore the draft."
+                    } else {
+                        "Couldn't confirm cancellation."
+                    }
+                toasts.show(ToastMessage(message))
+            },
         )
     }
 }

@@ -9,6 +9,7 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.withAccount
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorage
@@ -108,19 +109,21 @@ class JmapMailSource(
     ): UnavailableAccount? {
         val conditions = emailConditions(query, login.id, now, zone()) ?: return null
         return try {
-            val connection = connections.connection(login)
-            val accountId = connection.session().accountFor(JmapCapability.MAIL)
-            if (accountId == null) {
-                UnavailableAccount(login.name, InboxFailure.NoMail)
-            } else {
-                val lists =
-                    MailAccountLists(connection, accountId, login.id, cache, limit) {
-                        clock.now().toEpochMilliseconds()
+            cache.withAccount(login.id) { accountCache ->
+                val connection = connections.connection(login)
+                val accountId = connection.session().accountFor(JmapCapability.MAIL)
+                if (accountId == null) {
+                    UnavailableAccount(login.name, InboxFailure.NoMail)
+                } else {
+                    val lists =
+                        MailAccountLists(connection, accountId, login.id, accountCache, limit) {
+                            clock.now().toEpochMilliseconds()
+                        }
+                    locks.of(login.id).withLock {
+                        lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
                     }
-                locks.of(login.id).withLock {
-                    lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
+                    null
                 }
-                null
             }
         } catch (error: JmapException) {
             UnavailableAccount(login.name, error.toInboxFailure())
@@ -143,8 +146,9 @@ class JmapMailSource(
         val pages =
             selected.flatMap { login ->
                 emailConditions(query, login.id, now, local)
-                    ?.let { cache.cachedPages(login, scope, query, it, local) }
-                    .orEmpty()
+                    ?.let { conditions ->
+                        cache.withAccount(login.id) { it.cachedPages(login, scope, query, conditions, local) }
+                    }.orEmpty()
             }
         val merged = pages.merged(query.filters.sort) { it.receivedAt }
         val messages =
