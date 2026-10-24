@@ -4,48 +4,81 @@ import com.otus.jmap.JmapException
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.feature.inbox.domain.MessageContent
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlin.io.encoding.Base64
 
 /**
- * [content] with each image its HTML shows by `cid:` (RFC 2392) downloaded from [parts] and
- * written into the HTML as a `data:` URI, since the sandboxed view loads nothing from the server.
- * An image over [MAX_INLINE_BYTES] or one that fails to download keeps its `cid:` address and
- * shows as missing; the rest of the message still opens.
+ * Resolves a bounded set of CID images without allowing repeated references to expand the
+ * document beyond its memory budget. Missing or oversized images keep their original addresses.
  */
 internal suspend fun MailAccount.withInlineImages(
     content: MessageContent,
     parts: List<EmailBodyPart>,
 ): MessageContent {
-    val html = content.html
-    val images =
-        coroutineScope {
-            parts.map { part -> async { part.cid.orEmpty() to dataUri(part) } }.awaitAll()
-        }.mapNotNull { (cid, uri) -> uri?.let { cid.lowercase() to it } }
-            .toMap()
-    if (html == null || images.isEmpty()) return content
-    val inlined = CID_URI.replace(html.html) { match -> images[match.groupValues[1].lowercase()] ?: match.value }
-    return content.copy(html = html.copy(html = inlined))
+    val html = content.html?.takeIf { it.html.length <= MAX_HTML_CHARS } ?: return content
+    val images = inlineImages(html.html, parts)
+    return if (images.isEmpty()) {
+        content
+    } else {
+        val inlined = CID_URI.replace(html.html) { match -> images[match.groupValues[1].lowercase()] ?: match.value }
+        content.copy(html = html.copy(html = inlined))
+    }
 }
 
-private suspend fun MailAccount.dataUri(part: EmailBodyPart): String? {
-    val blobId = part.blobId?.takeIf { part.size <= MAX_INLINE_BYTES } ?: return null
-    // The type lands inside an HTML attribute, so only a plain image type is kept.
-    val type = part.type?.lowercase()?.takeIf(IMAGE_MEDIA_TYPE::matches) ?: IMAGE_TYPE
+private suspend fun MailAccount.inlineImages(
+    html: String,
+    parts: List<EmailBodyPart>,
+): Map<String, String> {
+    val references = CID_URI.findAll(html).groupingBy { it.groupValues[1].lowercase() }.eachCount()
+    var remainingBytes = MAX_TOTAL_INLINE_BYTES
+    var remainingChars = MAX_HTML_CHARS.toLong() - html.length
+    return buildMap {
+        parts.asSequence().distinctBy { it.cid?.lowercase() }.take(MAX_INLINE_PARTS).forEach { part ->
+            val cid = part.cid?.lowercase() ?: return@forEach
+            val count = references[cid] ?: return@forEach
+            val limit = minOf(MAX_INLINE_BYTES, remainingBytes)
+            if (limit <= 0 || part.size !in 0..limit) return@forEach
+            val type = part.type?.lowercase()?.takeIf(IMAGE_MEDIA_TYPE::matches) ?: IMAGE_TYPE
+            val prefix = "data:$type;base64,"
+            val estimated = prefix.length + base64Length(part.size)
+            if (estimated * count > remainingChars) return@forEach
+
+            // A failed bounded download consumes its reservation too, so failures cannot
+            // multiply the network budget. Downloads run sequentially to bound peak memory.
+            remainingBytes -= limit
+            val bytes = inlineBytes(part, type, limit) ?: return@forEach
+            remainingBytes += limit - bytes.size
+            val encodedLength = prefix.length + base64Length(bytes.size.toLong())
+            val added = encodedLength * count
+            if (added > remainingChars) return@forEach
+            remainingChars -= added
+            put(cid, prefix + Base64.encode(bytes))
+        }
+    }
+}
+
+private suspend fun MailAccount.inlineBytes(
+    part: EmailBodyPart,
+    type: String,
+    maxBytes: Long,
+): ByteArray? {
+    val blobId = part.blobId ?: return null
     return try {
-        val blob = connection.download(id, blobId, type, MAX_INLINE_BYTES, part.name ?: "image")
-        "data:$type;base64,${Base64.encode(blob.bytes)}"
+        connection.download(id, blobId, type, maxBytes, part.name ?: "image").bytes
     } catch (expected: JmapException) {
         null
     }
 }
 
-/** Larger images stay out of the HTML, which the view holds in memory as text. */
 private const val MAX_INLINE_BYTES = 5L * 1024 * 1024
+private const val MAX_TOTAL_INLINE_BYTES = 8L * 1024 * 1024
+private const val MAX_HTML_CHARS = 12 * 1024 * 1024
+private const val MAX_INLINE_PARTS = 32
 
+/** The type is inserted into an HTML attribute, so keep only a plain image media type. */
 private val IMAGE_MEDIA_TYPE = Regex("""image/[a-z0-9.+-]+""")
-
-/** A type the view still tries to decode when the part names none. */
 private const val IMAGE_TYPE = "image/png"
+
+private fun base64Length(bytes: Long): Long = ((bytes + BASE64_BYTES - 1) / BASE64_BYTES) * BASE64_CHARS
+
+private const val BASE64_BYTES = 3
+private const val BASE64_CHARS = 4
