@@ -18,6 +18,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.cache.AccountMailCache
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.designsystem.resources.Res
@@ -76,10 +77,11 @@ import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.push.PushStateStore
 import com.otus.push.PushSubscriptions
-import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -100,7 +102,8 @@ class MailServices(
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     /** The device's copy of each login's mail; see docs/storage.md. */
-    internal val cache: MailCache get() = stores.cache
+    private val accountCache = AccountMailCache(stores.cache)
+    internal val cache: MailCache get() = accountCache
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
@@ -117,20 +120,26 @@ class MailServices(
         )
     }
     internal val accounts: AccountRepository by lazy {
-        JmapAccountRepository(
-            client,
-            connections,
-            logins,
-            AccountService.Mail,
-            onAccountChanged = avatars::removeAccount,
-            beforeRemove = { loginId ->
-                instantPush?.forget(loginId)
-                stores.folderColors?.forgetAccount(loginId)
-                stores.addressPins?.forgetAccount(loginId)
-                stores.folderNudges?.forgetAccount(loginId)
-                cache.forget(loginId)
-            },
-        )
+        val repository =
+            JmapAccountRepository(
+                client,
+                connections,
+                logins,
+                AccountService.Mail,
+                onAccountChanged = { loginId ->
+                    val connected = withContext(Dispatchers.IO) { logins.logins().any { it.id == loginId } }
+                    if (connected) accountCache.connected(loginId)
+                    avatars.removeAccount(loginId)
+                },
+                beforeRemove = { loginId ->
+                    instantPush?.forget(loginId)
+                    stores.folderColors?.forgetAccount(loginId)
+                    stores.addressPins?.forgetAccount(loginId)
+                    stores.folderNudges?.forgetAccount(loginId)
+                    cache.forget(loginId)
+                },
+            )
+        CacheAccountRepository(repository, logins, accountCache)
     }
     internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache) }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache) }
@@ -154,7 +163,7 @@ class MailServices(
     internal val downloads: AttachmentDownloads by lazy { JmapAttachmentDownloads(connections, logins) }
     internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, logins) }
     internal val newsletters: Newsletters by lazy {
-        JmapNewsletters(connections, logins, unsubscribeHttp, drafts, sender, cache)
+        JmapNewsletters(connections, logins, drafts, sender, cache)
     }
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections, logins) }
     internal val mute: ConversationMute by lazy { JmapConversationMute(connections, logins, cache) }
@@ -170,9 +179,6 @@ class MailServices(
 
     /** Each newsletter strip's step while the process runs, so a reopened message shows it. */
     internal val newsletterSteps = NewsletterSteps()
-
-    /** Sends one-click unsubscribe requests to list servers, which the JMAP client may not reach. */
-    private val unsubscribeHttp by lazy { HttpClient() }
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }
