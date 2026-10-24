@@ -1,15 +1,22 @@
 # Nightly builds
 
-`.github/workflows/nightly.yml` runs at 03:00 UTC, which is 04:00 in Berlin in winter and 05:00 in
-summer. It can also be started by hand. When main has new commits since the last nightly, it builds
-a signed APK of main and publishes it as a release of the public
-[otus-mail-nightly](https://github.com/reazndev/otus-mail-nightly) repository. The source stays
-private. Each release is tagged `nightly-<number>`, where the number is main's commit
-count, and its notes list the commits since the previous nightly.
+`.github/workflows/nightly.yml` runs at 00:00 UTC, which is 01:00 in Berlin in winter and 02:00 in
+summer. It can also be started by hand. Changes to either Mail main or Meta main trigger a signed
+APK release in [otus-mail-nightly](https://github.com/reazndev/otus-mail-nightly). The source stays
+private. Each release is tagged `nightly-<number>`, with a version code one higher than the previous
+release. The first release starts at Mail's commit count. Draft releases reserve their version codes,
+so a retry uses a code above every existing release, including unfinished drafts.
 
-The build uses otus-meta main, the way a local build with `otus.meta.path` does, because Meta
-publishing is paused and Mail main depends on unreleased Meta changes. A night with Meta changes
-but no Mail changes builds nothing; start the workflow by hand to pick them up.
+The version job resolves both commits. The build checks out those exact revisions and publishes
+them in `provenance.json` beside the APK. Notes include Mail and Meta commits since the preceding
+recorded revisions. Only a published release can make an unchanged pair skip scheduled and manual runs.
+The version check reads every release page, so unfinished drafts cannot hide the last publication.
+A rerun after a failed build uses the next unpublished version code; a rerun after publication skips an unchanged pair.
+
+Meta source is used because package publishing is paused. The first release after this workflow
+change rebuilds even if Mail is unchanged, since older releases have no Meta provenance. Its code
+still increases from the previous release, so Android can update it. API or download failures stop
+the workflow instead of treating an unavailable release as an empty history.
 
 ## The nightly app
 

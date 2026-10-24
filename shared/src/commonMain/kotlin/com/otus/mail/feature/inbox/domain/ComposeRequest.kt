@@ -47,6 +47,7 @@ data class OriginalMessage(
     val messageIds: List<String> = emptyList(),
     val references: List<String> = emptyList(),
     val bodyTruncated: Boolean = false,
+    val replyTo: List<MailSender> = emptyList(),
 )
 
 /** The parts of this message a reply or forward quotes and threads with. */
@@ -58,6 +59,7 @@ fun MailMessage.original(): OriginalMessage =
         from = sender,
         to = to,
         cc = cc,
+        replyTo = replyTo,
         sentLabel = "${received.date} ${received.time}",
         body = body,
         messageIds = messageIds,
