@@ -9,6 +9,7 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MUTED_KEYWORD
@@ -45,11 +46,19 @@ class JmapConversationMute(
         message: MailMessage,
         muted: Boolean,
     ): Boolean {
-        val ids = fromServer(message) { _, ids -> ids } ?: return false
-        val patch = buildJsonObject { put("keywords/$MUTED_KEYWORD", if (muted) JsonPrimitive(true) else JsonNull) }
-        val updated =
-            updateAccountEmails(connections, logins, message.location.accountId, ids.associateWith { patch }, cache)
-        return updated.containsAll(ids)
+        return cache.withAccount(message.location.accountId) { accountCache ->
+            val ids = fromServer(message) { _, ids -> ids } ?: return@withAccount false
+            val patch = buildJsonObject { put("keywords/$MUTED_KEYWORD", if (muted) JsonPrimitive(true) else JsonNull) }
+            val updated =
+                updateAccountEmails(
+                    connections,
+                    logins,
+                    message.location.accountId,
+                    ids.associateWith { patch },
+                    accountCache,
+                )
+            updated.containsAll(ids)
+        }
     }
 
     /** [read] with the thread's Email ids; null when the server could not be read or knows none. */
