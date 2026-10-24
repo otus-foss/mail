@@ -11,11 +11,11 @@ import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.answered
+import com.otus.mail.feature.inbox.domain.answeredOriginal
 import com.otus.mail.feature.inbox.domain.preferredIdentity
 import com.otus.mail.feature.inbox.domain.signature
 import com.otus.mail.feature.inbox.domain.startDraft
@@ -135,6 +135,9 @@ class ComposeState(
     private var pending: Job? = null
     private var stored by mutableStateOf(start.takeIf { it.emailId != null })
 
+    // Undo can resume unsaved content with the id of an older copy.
+    private var savedHere = false
+
     /** Set once the draft is discarded or sent; nothing saves after that. */
     private var finished = false
 
@@ -238,12 +241,20 @@ class ComposeState(
         saving.withLock {
             val copy = stored?.takeIf { it.accountId == draft.accountId }?.emailId
             val current = draft.copy(emailId = copy, signature = signature)
-            val unchanged = if (current.emailId == null) !edited else current.content() == stored?.content()
+            val unchanged =
+                if (current.emailId ==
+                    null
+                ) {
+                    !edited
+                } else {
+                    savedHere && current.content() == stored?.content()
+                }
             if (finished || unchanged) return@withLock
             drafts.save(current).fold(
                 onSuccess = { id ->
                     val previous = stored
                     stored = current.copy(emailId = id)
+                    savedHere = true
                     // The user may have moved the draft to another account while it saved.
                     if (draft.accountId == current.accountId) draft = draft.copy(emailId = id)
                     notice = null
@@ -284,13 +295,3 @@ private const val SAVE_DELAY_MILLIS = 2_000L
 /** The request that opens this draft again as it is, such as after Undo. */
 fun ComposeState.reopening(): ComposeRequest.Resume =
     ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request)
-
-/** The message a reply or follow-up answers, whose thread it shows. */
-private val ComposeRequest.answeredOriginal: OriginalMessage?
-    get() =
-        when (this) {
-            is ComposeRequest.Reply -> original
-            is ComposeRequest.FollowUp -> original
-            is ComposeRequest.Resume -> from.answeredOriginal
-            is ComposeRequest.New, is ComposeRequest.Forward -> null
-        }
