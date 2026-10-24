@@ -100,6 +100,13 @@ class FolderRulesUiTest {
         assertTrue(savedScript(), "grace@example.org" in server.script.orEmpty())
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "\"mailboxIds/r\":true" in it } }
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Sort into Receipts")).fetchSemanticsNodes().isEmpty() }
+        // The save closes the sheet before the rules finish reloading.
+        compose.waitUntil(TIMEOUT) {
+            compose
+                .onAllNodes(hasText("grace@example.org") and hasClickAction() and !isSelectable())
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         chip("grace@example.org").assertExists()
     }
 
