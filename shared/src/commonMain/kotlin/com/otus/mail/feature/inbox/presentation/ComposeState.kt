@@ -132,7 +132,7 @@ class ComposeState(
 
     private val saving = Mutex()
     private var pending: Job? = null
-    private var stored by mutableStateOf<Draft?>(null)
+    private var stored by mutableStateOf(start.takeIf { it.emailId != null })
 
     /** Set once the draft is discarded or sent; nothing saves after that. */
     private var finished = false
@@ -234,7 +234,14 @@ class ComposeState(
     private suspend fun save() =
         saving.withLock {
             val current = draft.copy(signature = signature)
-            val unchanged = if (current.emailId == null) !edited else current.content() == stored?.content()
+            val unchanged =
+                if (stored ==
+                    null
+                ) {
+                    !edited
+                } else {
+                    current.copy(emailId = null) == stored?.copy(emailId = null)
+                }
             if (finished || unchanged) return@withLock
             drafts.save(current).fold(
                 onSuccess = { id ->
