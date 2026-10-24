@@ -27,16 +27,14 @@ internal fun EmailObject.inlineParts(html: String?): List<EmailBodyPart> {
 }
 
 /**
- * How to leave the list, from `List-Unsubscribe` and `List-Unsubscribe-Post`. The one-click POST
- * (RFC 8058) needs both headers and an https address; a plain http address is only opened.
+ * Manual unsubscribe routes from `List-Unsubscribe`. A sender-controlled header alone cannot
+ * authorize an RFC 8058 POST without trusted DKIM verification of both unsubscribe headers.
  */
 internal fun EmailObject.unsubscribe(): Unsubscribe? {
     val urls = listUnsubscribe.orEmpty().map { it.trim() }
     val https = urls.firstOrNull { it.startsWith("https://", ignoreCase = true) }
-    val oneClick = https?.takeIf { listUnsubscribePost?.contains(ONE_CLICK, ignoreCase = true) == true }
     val found =
         Unsubscribe(
-            oneClick = oneClick,
             web = https ?: urls.firstOrNull { it.startsWith("http://", ignoreCase = true) },
             mail = urls.firstOrNull { it.startsWith("mailto:", ignoreCase = true) },
             deliveredTo =
@@ -46,7 +44,7 @@ internal fun EmailObject.unsubscribe(): Unsubscribe? {
                     .filter { it.isNotEmpty() }
                     .distinct(),
         )
-    return found.takeIf { it.oneClick != null || it.web != null || it.mail != null }
+    return found.takeIf { it.web != null || it.mail != null }
 }
 
 /** The list's name from a `List-Id` such as `"Weekly digest" <weekly.example.org>`; null when it has none. */
@@ -83,5 +81,4 @@ private fun EmailBodyPart.toAttachment(blobId: String) =
 /** A `cid:` URI up to the quote, space, or bracket that ends the attribute or CSS value holding it. */
 internal val CID_URI = Regex("""cid:([^"'\s)>]+)""", RegexOption.IGNORE_CASE)
 
-private const val ONE_CLICK = "List-Unsubscribe=One-Click"
 private const val GENERIC_TYPE = "application/octet-stream"

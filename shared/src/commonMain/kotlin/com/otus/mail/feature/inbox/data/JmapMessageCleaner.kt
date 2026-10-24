@@ -30,7 +30,8 @@ import kotlinx.serialization.json.longOrNull
  * 4.6) for each email of the row's conversation. Deleting destroys each email that is only in its
  * folder and takes any other one out of it, in `Email/set` calls of at most the session's
  * `maxObjectsInSet` objects (RFC 8620, section 2). Emptying finds the folder's messages with
- * `Email/query` and `Email/get` first.
+ * `Email/query` and `Email/get` first. Each deletion batch rereads membership and conditions
+ * its write on that Email state, so a concurrent move cannot destroy a copy filed elsewhere.
  */
 class JmapMessageCleaner(
     private val connections: JmapConnections,
@@ -83,7 +84,8 @@ class JmapMessageCleaner(
         return try {
             val account = mailAccount(connections, logins, loginId) ?: return Deletion(emptySet(), complete = false)
             val emails = account.find()
-            emails.chunked(account.connection.session().setBatch).forEach { removed += account.removeBatch(it) }
+            val batchSize = minOf(account.session.setBatch, account.session.getBatch)
+            emails.chunked(batchSize).forEach { removed += account.removeBatch(it) }
             Deletion(removed, complete = removed.size == emails.size)
         } catch (expected: JmapException) {
             Deletion(removed, complete = false)
@@ -93,7 +95,19 @@ class JmapMessageCleaner(
     }
 
     private suspend fun MailAccount.removeBatch(emails: List<FolderEmail>): Set<String> {
-        val (elsewhere, onlyHere) = emails.partition { it.elsewhere }
+        val folders = emails.associate { it.emailId to it.folderId }
+        val fresh =
+            connection.call(
+                GetMethod(EmailFoldersType, id, JmapIds.Of(folders.keys.toList()), EMAIL_FOLDERS_PROPERTIES),
+            )
+        val current =
+            fresh.list.mapNotNull { email ->
+                folders[email.id]?.let { folder -> FolderEmail(email.id, folder, email.mailboxIds.keys) }
+            }
+        val (present, absent) = current.partition { it.folderId in it.mailboxIds }
+        val alreadyRemoved = absent.map { it.emailId }.toSet() + fresh.notFound
+        if (present.isEmpty()) return alreadyRemoved
+        val (elsewhere, onlyHere) = present.partition { it.elsewhere }
         val result =
             connection.call(
                 SetMethod(
@@ -105,9 +119,10 @@ class JmapMessageCleaner(
                                 buildJsonObject { put("mailboxIds/${pointer(it.folderId)}", JsonNull) }
                         },
                     destroy = onlyHere.map { it.emailId },
+                    ifInState = fresh.state,
                 ),
             )
-        return result.destroyed.toSet() + result.updated.keys
+        return alreadyRemoved + result.destroyed + result.updated.keys
     }
 
     /**
@@ -148,7 +163,7 @@ class JmapMessageCleaner(
 
 /**
  * Each email of this row's conversation in the folder it is listed in, or the row's own email
- * when it stands alone. Each decides from its own mailboxes whether deleting destroys it.
+ * when it stands alone. Deletion rereads the server's membership before deciding what to destroy.
  */
 private fun MailMessage.listedMembers(): List<FolderEmail> =
     conversation
@@ -161,7 +176,7 @@ private fun MailMessage.listedMembers(): List<FolderEmail> =
 private class FolderEmail(
     val emailId: String,
     val folderId: String,
-    mailboxIds: Set<String>,
+    val mailboxIds: Set<String>,
 ) {
     val elsewhere: Boolean = (mailboxIds - folderId).isNotEmpty()
 }

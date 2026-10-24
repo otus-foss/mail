@@ -65,3 +65,8 @@ interface ScheduledSends {
     /** Cancels a scheduled [message] and makes its copy a draft again. */
     suspend fun cancel(message: SentMessage): Result<Unit>
 }
+
+/** Sending was canceled, but the saved email could not be restored as an editable draft. */
+class DraftRestoreException(
+    cause: Throwable? = null,
+) : Exception("Send canceled; draft restoration failed", cause)
