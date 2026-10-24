@@ -36,7 +36,7 @@ class MessageExtrasTest {
     }
 
     @Test
-    fun oneClickNeedsThePostHeaderAndAnHttpsAddress() {
+    fun anUnauthenticatedPostHeaderStillOffersOnlyManualRoutes() {
         val urls = listOf("<ignored>", "mailto:leave@lists.example.org?subject=bye", "https://lists.example.org/u/1")
         val plain = email.copy(listUnsubscribe = urls)
         assertEquals(
@@ -44,7 +44,7 @@ class MessageExtrasTest {
             plain.unsubscribe(),
         )
         val oneClick = plain.copy(listUnsubscribePost = "List-Unsubscribe=One-Click").unsubscribe()
-        assertEquals("https://lists.example.org/u/1", oneClick?.oneClick)
+        assertEquals(plain.unsubscribe(), oneClick)
         val insecure =
             email
                 .copy(

@@ -10,7 +10,7 @@ the account's Drafts folder and sends them through JMAP `EmailSubmission/set`.
 `ComposeRequest` names what the draft starts from, and `startDraft` builds it:
 
 - **New message** starts blank, in the account the request names or else the first account.
-- **Reply** goes to the original's sender. The subject gets "Re: " unless it already starts with
+- **Reply** goes to the original's Reply-To addresses when present, otherwise its sender. The subject gets "Re: " unless it already starts with
   "Re:" in any case. `inReplyTo` holds the original's Message-ID, and `references` holds its
   References followed by its Message-ID, so the reply stays in the thread. The body starts
   empty. The quote, kept apart from it in `Draft.quote`, is "On <date>, <name> wrote:" and the
@@ -98,8 +98,10 @@ draft again as it was. The saved copy is deleted once the toast leaves without U
 
 Attach opens the system document picker for any number of files of any type. Each file uploads
 at once to the draft's account (RFC 8620, section 6.1) and shows as a chip under the body with
-its name and "Uploading…", then its size. A file larger than the session's `maxSizeUpload`
-says "Too large for this server"; any other failure says "Couldn't upload", and tapping the chip
+its name and "Uploading…", then its size. Reads and uploads run one file at a time. The reader
+stops at the smaller of 20 MiB and the session's `maxSizeUpload`, including when the picker reports
+an incorrect size. A file larger than this limit
+says "File is too large"; any other failure says "Couldn't upload", and tapping the chip
 offers Retry. ✕ removes a file. Choosing an identity of another account uploads every file again there,
 because a blob belongs to one account.
 
@@ -199,7 +201,9 @@ which opens the sheet again; once a time is set the sheet also offers Send now. 
 then reads "Sends to" with the schedule-send symbol. Send sends with an explicit envelope whose `mailFrom`
 carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled for Mon 19 Oct, 8:00" with Undo.
 The scheduled copy stays in Drafts without `$draft` until the server sends it. Undo sets the
-submission's `undoStatus` to `canceled`, marks the copy `$draft` again, and opens it.
+submission's `undoStatus` to `canceled`. Only after the server confirms cancellation does Mail
+mark the copy `$draft` again and open it. If restoring the draft fails, Mail reports that the
+send was canceled but the draft could not be restored.
 
 ## Limits
 

@@ -77,7 +77,8 @@ class FolderCleaningTest {
         val engine =
             stalwartLike { body ->
                 sent.update { it + body }
-                val response = reply(body)
+                val membershipRead = "Email/get" in body && "Email/query" !in body
+                val response = if (membershipRead) membership(body, messages.toList()) else reply(body)
                 val destroyed =
                     Json
                         .parseToJsonElement(response)
@@ -174,6 +175,32 @@ class FolderCleaningTest {
             assertNull(feed.notice)
             assertTrue(sent.value.any { "\"destroy\":[\"m1\"]" in it }, sent.value.toString())
         }
+
+    private fun membership(
+        body: String,
+        messages: List<MailMessage>,
+    ): String {
+        val call =
+            Json
+                .parseToJsonElement(body)
+                .jsonObject
+                .getValue("methodCalls")
+                .jsonArray
+                .single()
+                .jsonArray
+        val ids =
+            call[1]
+                .jsonObject
+                .getValue("ids")
+                .jsonArray
+                .map { it.jsonPrimitive.content }
+        val list =
+            ids.joinToString { id ->
+                val folder = messages.first { it.emailId == id }.location.mailboxId
+                """{"id":"$id","mailboxIds":{"$folder":true}}"""
+            }
+        return """{"methodResponses":[["Email/get",{"state":"fresh","list":[$list]},"c0"]]}"""
+    }
 
     private fun page(
         ids: String,
