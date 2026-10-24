@@ -77,6 +77,25 @@ class AccountMailCacheTest {
         }
 
     @Test
+    fun reconnectKeepsCachedMailWithoutTouchingStorage() =
+        runTest {
+            val disk = InMemoryMailCache()
+            val cache =
+                AccountMailCache(
+                    object : MailCache by disk {
+                        override suspend fun forget(loginId: String) = error("Disk full")
+                    },
+                )
+            disk.write("a") { put(CacheKind.Email, "kept", "mail") }
+
+            cache.connected("a")
+            cache.withAccount("a") { it.write("a") { putValue("state", "a1") } }
+
+            assertEquals(mapOf("kept" to "mail"), disk.readAll("a", CacheKind.Email))
+            assertEquals("a1", cache.value("a", "state"))
+        }
+
+    @Test
     fun removalBlocksNewWorkUntilReconnectAndLeavesOtherAccountsAlone() =
         runTest {
             val cache = AccountMailCache(InMemoryMailCache())
