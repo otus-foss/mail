@@ -42,7 +42,7 @@ class ComposeSendTest {
         }
     }
 
-    private val me = MailSender("Me", "me@example.com")
+    private val me = MailSender("Me", "me@example.com", "a1")
 
     private fun TestScope.state(
         drafts: FakeDrafts = FakeDrafts(listOf(me)),

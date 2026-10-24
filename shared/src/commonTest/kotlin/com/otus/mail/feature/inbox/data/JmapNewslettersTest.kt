@@ -58,9 +58,9 @@ class JmapNewslettersTest {
         val drafts =
             FakeDrafts(
                 listOf(
-                    MailSender("Ada", "ada@alias.example.org"),
-                    MailSender("Ada", "ada@example.org"),
-                    MailSender("Ada", "ada@work.example.org"),
+                    MailSender("Ada", "ada@alias.example.org", login.id),
+                    MailSender("Ada", "ada@example.org", login.id),
+                    MailSender("Ada", "ada@work.example.org", login.id),
                 ),
             )
         val sender =
