@@ -1,24 +1,44 @@
 # Notifications
 
-Mail notifies about new mail within seconds through a UnifiedPush app the user chooses, such as
-ntfy, and checks about every 15 minutes either way. Otus runs no push server; see Meta
+Mail receives new-mail pushes through Google Play services built into the app, or a separate
+UnifiedPush app such as ntfy. It also checks about every 15 minutes. Otus runs no push server; see Meta
 [decision 0015](https://github.com/reazndev/otus-meta/blob/main/docs/decisions/0015-push-notifications.md).
 
 ## Instant delivery
 
-Settings › Notifications lists the installed UnifiedPush apps. Choosing one registers each
-account with it as its own instance, keyed by login id:
+Settings › Notifications lists Google Play services when it is installed on the device, followed
+by installed UnifiedPush apps. Google delivery needs no extra app or Firebase project setup.
+The user chooses the service; periodic checks remain the default until they do.
 
-1. The push app hands `MailPushService` an endpoint URL and Web Push keys.
+The embedded distributor is `org.unifiedpush.android:embedded-fcm-distributor:3.1.0`. It uses
+Play services on the device and contains no proprietary Google SDK, so the same dependency is
+included in every Android build. Devices without Play services retain external distributors
+and background checks. No public gateway is configured.
+
+For Google delivery, each login's JMAP session must advertise `urn:ietf:params:jmap:webpush-vapid`
+and an `applicationServerKey`, as RFC 9749 specifies. Otus passes that key to the connector.
+Servers without it show that Google delivery is unsupported and keep background checks.
+A malformed key, failed registration, or unreachable server has its own account status.
+An account that fails does not prevent another account from registering.
+
+The periodic worker checks signing keys again. A changed key replaces that login's registration
+and server subscription. An endpoint callback does not retry a failed registration immediately;
+the next scheduled check or explicit selection retries it. This prevents a failed Google
+registration from creating a work loop. Choosing a service only saves the choice and schedules
+work, so server discovery never holds the settings screen open.
+
+Choosing a service registers each account as its own instance, keyed by login id:
+
+1. The selected service hands `MailPushService` an endpoint URL and Web Push keys.
 2. `PushSyncWorker` saves them and asks the account's server to push `EmailDelivery` changes
    there, through `PushSubscriptions` from `com.otus:push`.
 3. The server sends a verification push; the worker sends its code back, and the account shows
    "Instant".
-4. Each delivery push starts `NewMailWorker` at once as expedited work, which runs within seconds,
-   even in Doze. The check below then finds and posts the new mail.
+4. Each delivery push requests expedited `NewMailWorker` work. Android can still delay it when
+   expedited-work quotas are exhausted. The check below then finds and posts the new mail.
 
-The UnifiedPush connector decrypts pushes. A push holds only account ids and state strings,
-never mail, so the push app and its server see encrypted change notices only. A server that
+The UnifiedPush connector decrypts pushes from either service. A push holds only account ids
+and state strings, never mail, so the push app and its server see encrypted change notices only. A server that
 refuses push subscriptions shows "The server can't push" and keeps the 15-minute check.
 Choosing Off unregisters every account and deletes its server subscription. The periodic run
 renews subscriptions before they expire and registers accounts added later.
@@ -56,7 +76,20 @@ is saved. Without it, the check still runs and saves state but posts nothing.
 
 - Opening the tapped message, and notification actions such as Archive or Mark as read.
 - Removing a notification when the message is read elsewhere.
+- A device test of Google delivery against a server advertising RFC 9749, including Doze, key
+  rotation, and measured delivery delay.
 - A device test of instant delivery with ntfy and Stalwart, with measured delay and battery use.
+- User-configured gateways for servers without VAPID. Google delivery does not support those
+  servers in this implementation.
 - Showing when the last push arrived, and a button that sends a test notification.
 - A notification icon from the design system; the system mail icon stands in.
 - iOS background checks.
+
+## Validation
+
+`GooglePushRegistrationTest` checks device discovery, VAPID registration, unsupported servers,
+key rotation, persisted failures, retry behavior, cancellation, and external push apps.
+`NotificationSettingsTest` checks choosing Google, switching back to background checks, and
+showing why an account cannot use Google delivery. `GoogleNotificationsScreenTest` records and
+compares settings in Otus, Light, and Black themes, plus the delivery choice sheet. These tests
+use fake accounts and do not prove delivery through Google's servers.

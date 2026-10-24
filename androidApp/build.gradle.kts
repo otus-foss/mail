@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.work.runtime)
     implementation(libs.unifiedpush.connector)
+    implementation(libs.unifiedpush.fcm)
     implementation(libs.sqldelight.android.driver)
     implementation(libs.compose.foundation)
     testImplementation(libs.robolectric)
