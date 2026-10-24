@@ -35,6 +35,8 @@ its behavior settings as `recentFrom`. Otherwise the account's first identity is
 an identity of another account moves the draft: the next save stores it in that account's
 Drafts before deleting the old account's copy. If the destination save fails, the old copy
 remains. A save already running finishes before the move, so the latest saved copy is retained.
+Undo can reopen unsaved edits with an older saved copy ID. The first save after reopening
+persists those edits; later saves skip content already saved by that compose session.
 
 Delivered-To is not read yet, so a reply to mail that reached the account through an alias that
 is not in To or Cc falls back to the account's first identity.
