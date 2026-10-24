@@ -213,7 +213,8 @@ class JmapMessageCleanerTest {
         runTest {
             val members = listOf("m1", "m2").map { ThreadMember(it, setOf("j"), "j") }
             val row = message("m1", folder = "j").copy(conversation = conversationOf(members))
-            val partial = cleaner { setReply(it, refused = setOf("m2")) }
+            val inJ = members.associate { it.emailId to setOf("j") }
+            val partial = cleaner(mailboxes = inJ) { setReply(it, refused = setOf("m2")) }
             assertEquals(emptySet(), partial.delete(listOf(row)))
             assertFalse(partial.notSpam(row, "i", keywords = true))
         }
