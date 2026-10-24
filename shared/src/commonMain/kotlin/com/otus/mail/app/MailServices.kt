@@ -76,7 +76,6 @@ import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.push.PushStateStore
 import com.otus.push.PushSubscriptions
-import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -154,7 +153,7 @@ class MailServices(
     internal val downloads: AttachmentDownloads by lazy { JmapAttachmentDownloads(connections, logins) }
     internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, logins) }
     internal val newsletters: Newsletters by lazy {
-        JmapNewsletters(connections, logins, unsubscribeHttp, drafts, sender, cache)
+        JmapNewsletters(connections, logins, drafts, sender, cache)
     }
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections, logins) }
     internal val mute: ConversationMute by lazy { JmapConversationMute(connections, logins, cache) }
@@ -170,9 +169,6 @@ class MailServices(
 
     /** Each newsletter strip's step while the process runs, so a reopened message shows it. */
     internal val newsletterSteps = NewsletterSteps()
-
-    /** Sends one-click unsubscribe requests to list servers, which the JMAP client may not reach. */
-    private val unsubscribeHttp by lazy { HttpClient() }
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }
