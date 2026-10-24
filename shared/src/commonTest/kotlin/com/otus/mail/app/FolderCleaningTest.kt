@@ -26,6 +26,10 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -48,6 +52,7 @@ class FolderCleaningTest {
             ),
         )
     private val sent = MutableStateFlow<List<String>>(emptyList())
+    private val removed = MutableStateFlow<Set<String>>(emptySet())
     private var reply: (String) -> String = { DESTROYED_M1 }
 
     private fun message(
@@ -72,14 +77,34 @@ class FolderCleaningTest {
         val engine =
             stalwartLike { body ->
                 sent.update { it + body }
-                reply(body)
+                val response = reply(body)
+                val destroyed =
+                    Json
+                        .parseToJsonElement(response)
+                        .jsonObject
+                        .getValue("methodResponses")
+                        .jsonArray
+                        .flatMap {
+                            it.jsonArray[1]
+                                .jsonObject["destroyed"]
+                                ?.jsonArray
+                                .orEmpty()
+                        }.map { it.jsonPrimitive.content }
+                removed.update { it + destroyed }
+                response
             }
         val services = MailServices(logins = store, createClient = { JmapClient(engine) })
         val folders = testFolders(services) { listOf(account) }
         folders.refresh()
         val source =
             object : MailSource {
-                override suspend fun messages(scope: MailScope) = InboxSnapshot(messages.toList())
+                override suspend fun messages(scope: MailScope) =
+                    InboxSnapshot(
+                        messages.filterNot {
+                            it.emailId in
+                                removed.value
+                        },
+                    )
             }
         val feed = InboxFeedState(source, this, defaultScope = scope)
         feed.refresh()
@@ -125,7 +150,7 @@ class FolderCleaningTest {
             assertTrue(feed.messages.isEmpty(), "Both leave at once")
             settle { feed.notice != null }
             assertEquals(listOf("m2"), feed.messages.map { it.id })
-            assertEquals("Couldn't delete 1 message. Try again.", feed.notice)
+            assertEquals("Couldn't finish deleting 1 message. Try again.", feed.notice)
             assertTrue(sent.value.any { "\"destroy\":[\"m1\",\"m2\"]" in it }, sent.value.toString())
         }
 

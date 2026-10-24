@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
@@ -123,6 +124,21 @@ class JmapMessageMoverTest {
             assertFalse(idle.move(message.copy(emailId = ""), "r", setOf("a")), "Supplied messages have no server id")
             val gone = message.copy(location = message.location.copy(accountId = "gone"))
             assertEquals(false, idle.move(gone, "r", setOf("a")))
+        }
+
+    @Test
+    fun aPartlyMovedConversationReportsFailure() =
+        runTest {
+            val members = listOf("m1", "m2").map { ThreadMember(it, setOf("a"), "a") }
+            val row = message.copy(conversation = conversationOf(members))
+            val partial =
+                mover {
+                    """{"methodResponses": [["Email/set", {"newState": "e2",
+                "updated": {"m1": null}, "notUpdated": {"m2": {"type": "forbidden"}}}, "c0"]]}"""
+                }
+            assertFalse(partial.move(row, "r", setOf("a")))
+            assertFalse(partial.setInFolder(row, "r", true))
+            assertFalse(partial.moveBack(row, "r", setOf("a")))
         }
 
     @Test

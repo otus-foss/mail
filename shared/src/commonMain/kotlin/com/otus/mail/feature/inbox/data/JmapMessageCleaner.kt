@@ -55,7 +55,7 @@ class JmapMessageCleaner(
                         }
                     }
             }
-        return message.emailId in updateAccountEmails(connections, logins, message.location.accountId, patches)
+        return updateAccountEmails(connections, logins, message.location.accountId, patches).containsAll(patches.keys)
     }
 
     override suspend fun delete(messages: List<MailMessage>): Set<String> =
@@ -65,7 +65,7 @@ class JmapMessageCleaner(
             .flatMap { (loginId, group) ->
                 val stored = group.flatMap { it.listedMembers() }.distinctBy { it.emailId }
                 val removed = remove(loginId) { stored }.emailIds
-                group.filter { it.emailId in removed }.map { it.id }
+                group.filter { row -> removed.containsAll(row.listedMembers().map { it.emailId }) }.map { it.id }
             }.toSet()
 
     override suspend fun empty(
