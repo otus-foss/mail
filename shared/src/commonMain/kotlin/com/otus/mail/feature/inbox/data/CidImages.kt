@@ -42,9 +42,17 @@ private suspend fun MailAccount.inlineImages(
             val estimated = prefix.length + base64Length(part.size)
             if (estimated * count > remainingChars) return@forEach
 
-            // Downloads run one at a time to bound peak memory, so only a finished download
-            // needs to be charged, at its real size.
-            val bytes = inlineBytes(part, type, limit) ?: return@forEach
+            // Downloads run one at a time to bound peak memory, so a finished download is charged
+            // at its real size. A blob refused as too large was read up to the limit, so it costs that.
+            val bytes =
+                try {
+                    inlineBytes(part, type, limit)
+                } catch (refused: JmapException.ResponseTooLarge) {
+                    remainingBytes -= limit
+                    null
+                } catch (expected: JmapException) {
+                    null
+                } ?: return@forEach
             remainingBytes -= bytes.size
             val encodedLength = prefix.length + base64Length(bytes.size.toLong())
             val added = encodedLength * count
@@ -61,11 +69,7 @@ private suspend fun MailAccount.inlineBytes(
     maxBytes: Long,
 ): ByteArray? {
     val blobId = part.blobId ?: return null
-    return try {
-        connection.download(id, blobId, type, maxBytes, part.name ?: "image").bytes
-    } catch (expected: JmapException) {
-        null
-    }
+    return connection.download(id, blobId, type, maxBytes, part.name ?: "image").bytes
 }
 
 private const val MAX_INLINE_BYTES = 5L * 1024 * 1024
