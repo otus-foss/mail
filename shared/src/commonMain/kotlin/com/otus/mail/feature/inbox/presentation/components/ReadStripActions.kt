@@ -112,7 +112,7 @@ internal class ReadStripActions(
     ) {
         val lists = read.services.newsletters ?: return
         val web = how.web
-        if (how.oneClick == null && how.mail == null && web != null) return openLink(web)
+        if (how.mail == null && web != null) return openLink(web)
         newsletters.set(message, NewsletterStep.Unsubscribed)
         val undo = ToastAction("Undo") { newsletters.set(message, NewsletterStep.Subscribed) }
         val send = {
