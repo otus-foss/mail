@@ -4,12 +4,14 @@
 summer. It can also be started by hand. Changes to either Mail main or Meta main trigger a signed
 APK release in [otus-mail-nightly](https://github.com/reazndev/otus-mail-nightly). The source stays
 private. Each release is tagged `nightly-<number>`, with a version code one higher than the previous
-release. The first release starts at Mail's commit count.
+release. The first release starts at Mail's commit count. Draft releases reserve their version codes,
+so a retry uses a code above every existing release, including unfinished drafts.
 
 The version job resolves both commits. The build checks out those exact revisions and publishes
 them in `provenance.json` beside the APK. Notes include Mail and Meta commits since the preceding
-recorded revisions. An unchanged pair skips both scheduled and manual runs. A rerun after a failed
-build uses the next unpublished version code; a rerun after publication skips an unchanged pair.
+recorded revisions. Only a published release can make an unchanged pair skip scheduled and manual runs.
+The version check reads every release page, so unfinished drafts cannot hide the last publication.
+A rerun after a failed build uses the next unpublished version code; a rerun after publication skips an unchanged pair.
 
 Meta source is used because package publishing is paused. The first release after this workflow
 change rebuilds even if Mail is unchanged, since older releases have no Meta provenance. Its code

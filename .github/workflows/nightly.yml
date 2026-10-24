@@ -48,32 +48,7 @@ jobs:
       - id: number
         env:
           GH_TOKEN: ${{ secrets.OTUS_NIGHTLY_TOKEN }}
-        run: |
-          mail_sha=$(git rev-parse HEAD)
-          meta_sha=$(git -C otus-meta rev-parse HEAD)
-          gh api "repos/$NIGHTLY_REPO/releases?per_page=1" --jq '.[0] // {}' > latest.json
-          latest=$(jq -r '.tag_name // ""' latest.json)
-          previous_mail=
-          previous_meta=
-          number=$(git rev-list --count HEAD)
-          if [ -n "$latest" ]; then
-            [[ "$latest" =~ ^nightly-([0-9]+)$ ]] || { echo "Unexpected release tag: $latest"; exit 1; }
-            number=$((10#${BASH_REMATCH[1]} + 1))
-            if jq -e '.assets[]? | select(.name == "provenance.json")' latest.json > /dev/null; then
-              gh release download "$latest" -R "$NIGHTLY_REPO" -p provenance.json -O previous.json
-              previous_mail=$(jq -er '.mail | select(test("^[0-9a-f]{40}$"))' previous.json)
-              previous_meta=$(jq -er '.meta | select(test("^[0-9a-f]{40}$"))' previous.json)
-            fi
-          fi
-          echo "sha=$mail_sha" >> "$GITHUB_OUTPUT"
-          echo "meta_sha=$meta_sha" >> "$GITHUB_OUTPUT"
-          echo "previous_mail=$previous_mail" >> "$GITHUB_OUTPUT"
-          echo "previous_meta=$previous_meta" >> "$GITHUB_OUTPUT"
-          if [ "$mail_sha" != "$previous_mail" ] || [ "$meta_sha" != "$previous_meta" ]; then
-            echo "number=$number" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::$latest already contains these Mail and Meta revisions."
-          fi
+        run: python3 tools/nightly_version.py
 
   build:
     needs: version
