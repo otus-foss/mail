@@ -12,6 +12,7 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailFolders
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailObject
@@ -72,24 +73,26 @@ class JmapNewsletters(
         accountId: String,
         emailIds: List<String>,
     ): Boolean {
-        val patches =
-            try {
-                if (emailIds.isEmpty()) {
-                    emptyMap()
-                } else {
-                    mailAccount(
-                        connections,
-                        logins,
-                        accountId,
-                    )?.archivePatches(emailIds)
-                }
-            } catch (expected: JmapException) {
-                null
-            } catch (expected: LoginStoreException) {
-                null
-            } ?: return false
-        return patches.isEmpty() ||
-            updateAccountEmails(connections, logins, accountId, patches, cache).containsAll(patches.keys)
+        return cache.withAccount(accountId) { accountCache ->
+            val patches =
+                try {
+                    if (emailIds.isEmpty()) {
+                        emptyMap()
+                    } else {
+                        mailAccount(
+                            connections,
+                            logins,
+                            accountId,
+                        )?.archivePatches(emailIds)
+                    }
+                } catch (expected: JmapException) {
+                    null
+                } catch (expected: LoginStoreException) {
+                    null
+                } ?: return@withAccount false
+            patches.isEmpty() ||
+                updateAccountEmails(connections, logins, accountId, patches, accountCache).containsAll(patches.keys)
+        }
     }
 
     private suspend fun MailAccount.list(message: MailMessage): MailingList? {

@@ -36,4 +36,6 @@ At each start the app removes cached bodies of mail received more than 90 days a
 until sync replaces or destroys them.
 
 Removing an account calls `MailCache.forget`, which deletes every object and value of that login
-before the login itself goes.
+before the login itself goes. Removal also cancels in-flight cache work for that account.
+Each operation uses an account generation, so an old request cannot repopulate the cache after
+removal or write into a later connection with the same login ID.
