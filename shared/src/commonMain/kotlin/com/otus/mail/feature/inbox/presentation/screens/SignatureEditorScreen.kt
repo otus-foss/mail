@@ -99,7 +99,7 @@ fun SignatureEditorScreen(
     }
     if (copying) {
         CopySignatureSheet(signatures, editor.identity, onDismiss = { copying = false }) {
-            editor.switchTo(signatures.identity(editor.identity.id) ?: editor.identity)
+            editor.switchTo(signatures.identity(editor.identity.key) ?: editor.identity)
             onCopied()
         }
     }

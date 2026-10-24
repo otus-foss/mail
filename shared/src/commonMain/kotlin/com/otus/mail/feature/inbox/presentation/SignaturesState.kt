@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.feature.inbox.domain.SendIdentityKey
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.SignatureImage
 import com.otus.mail.feature.inbox.domain.SignatureImages
@@ -40,7 +41,7 @@ class SignaturesState(
         scope.launch { identities = accounts().map { async { drafts.identities(it.id) } }.awaitAll().flatten() }
     }
 
-    fun identity(id: String): SendIdentity? = identities.firstOrNull { it.id == id }
+    fun identity(key: SendIdentityKey): SendIdentity? = identities.firstOrNull { it.key == key }
 
     fun save(
         identity: SendIdentity,
@@ -60,8 +61,8 @@ class SignaturesState(
         signature: Signature,
     ) {
         val before = identities
-        val ids = targets.map { it.id }.toSet()
-        identities = identities.map { if (it.id in ids) it.withSignature(signature) else it }
+        val keys = targets.map { it.key }.toSet()
+        identities = identities.map { if (it.key in keys) it.withSignature(signature) else it }
         scope.launch {
             val failed = targets.map { async { repository.save(it, signature) } }.awaitAll().any { it.isFailure }
             notice = if (failed) "Couldn't save the signature. Check your connection and try again." else null
