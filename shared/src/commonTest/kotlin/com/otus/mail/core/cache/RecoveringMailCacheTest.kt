@@ -47,6 +47,28 @@ class RecoveringMailCacheTest {
         }
 
     @Test
+    fun aTransientLockFailsOneOperationAndKeepsTheDisk() =
+        runTest {
+            val stored = InMemoryMailCache()
+            var locked = true
+            val disk =
+                object : MailCache by stored {
+                    override suspend fun write(
+                        loginId: String,
+                        changes: CacheWrite.() -> Unit,
+                    ) {
+                        if (locked) throw CacheStorageException(IllegalStateException("busy"), transient = true)
+                        stored.write(loginId, changes)
+                    }
+                }
+            val cache = RecoveringMailCache(disk)
+            assertFailsWith<CacheStorageException> { cache.write("a") { putValue("state", "s1") } }
+            locked = false
+            cache.write("a") { putValue("state", "s2") }
+            assertEquals("s2", stored.value("a", "state"))
+        }
+
+    @Test
     fun removalDoesNotHideAFailureToErasePersistentData() =
         runTest {
             val disk =
