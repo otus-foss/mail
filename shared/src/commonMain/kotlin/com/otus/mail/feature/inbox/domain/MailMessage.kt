@@ -17,6 +17,7 @@ data class MailMessage(
     val labels: List<RowFolder> = emptyList(),
     val to: List<MailSender> = emptyList(),
     val cc: List<MailSender> = emptyList(),
+    val replyTo: List<MailSender> = emptyList(),
     /** RFC 5322 Message-ID and References values, which keep a reply in its thread. */
     val messageIds: List<String> = emptyList(),
     val references: List<String> = emptyList(),
