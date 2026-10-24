@@ -91,7 +91,7 @@ private fun OriginalMessage.reply(
     own: Set<String>,
     fromSelf: Boolean = from.address.lowercase() in own,
 ): Draft {
-    val primary = if (fromSelf) to else listOf(from)
+    val primary = if (fromSelf) to else replyTo.ifEmpty { listOf(from) }
     val to = if (all && !fromSelf) primary + to else primary
     val kept =
         (to + if (all) cc else emptyList()).distinctBy { it.address.lowercase() }.filterNot {
