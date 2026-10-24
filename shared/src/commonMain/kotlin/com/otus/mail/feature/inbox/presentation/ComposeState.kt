@@ -242,12 +242,12 @@ class ComposeState(
             val copy = stored?.takeIf { it.accountId == draft.accountId }?.emailId
             val current = draft.copy(emailId = copy, signature = signature)
             val unchanged =
-                if (current.emailId ==
+                if (stored ==
                     null
                 ) {
                     !edited
                 } else {
-                    savedHere && current.content() == stored?.content()
+                    savedHere && current.copy(emailId = null) == stored?.copy(emailId = null)
                 }
             if (finished || unchanged) return@withLock
             drafts.save(current).fold(
