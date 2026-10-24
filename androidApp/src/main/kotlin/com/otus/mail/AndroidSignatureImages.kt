@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
-import com.otus.mail.feature.inbox.domain.SignatureImage
+import com.otus.mail.feature.inbox.domain.SignatureImagePick
 import com.otus.mail.feature.inbox.domain.SignatureImages
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -27,12 +27,13 @@ class AndroidSignatureImages(
         launcher = activity.registerForActivityResult(PickVisualMedia()) { pending?.complete(it) }
     }
 
-    override suspend fun pick(): SignatureImage? {
-        val picker = launcher ?: return null
+    override suspend fun pick(): SignatureImagePick {
+        val picker = launcher ?: return SignatureImagePick.Cancelled
         val result = CompletableDeferred<Uri?>().also { pending = it }
         picker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
-        return result.await()?.let { uri -> withContext(Dispatchers.IO) { shrink(uri) } }
+        val uri = result.await() ?: return SignatureImagePick.Cancelled
+        return withContext(Dispatchers.IO) { shrink(uri) }
     }
 
-    private fun shrink(uri: Uri): SignatureImage? = signatureImage { context.contentResolver.openInputStream(uri) }
+    private fun shrink(uri: Uri): SignatureImagePick = signatureImage { context.contentResolver.openInputStream(uri) }
 }
