@@ -11,6 +11,7 @@ import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.testing.DOWNLOAD_SESSION
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -75,6 +76,19 @@ class CidImagesBudgetTest {
             assertEquals(1, downloads)
         }
 
+    @Test
+    fun failedDownloadsLeaveTheBudgetForLaterImages() =
+        runTest {
+            val parts = listOf(part("broken-1", 1), part("broken-2", 1), part("logo", 1))
+            val html = parts.joinToString("") { "<img src='cid:${it.cid}'>" }
+            val result = inline(html, parts, byteArrayOf(1))
+            assertEquals(
+                "<img src='cid:broken-1'><img src='cid:broken-2'><img src='data:image/png;base64,AQ=='>",
+                result.html?.html,
+            )
+            assertEquals(3, downloads)
+        }
+
     private suspend fun inline(
         html: String,
         parts: List<EmailBodyPart>,
@@ -86,7 +100,11 @@ class CidImagesBudgetTest {
                     respond(DOWNLOAD_SESSION)
                 } else {
                     downloads += 1
-                    respond(bytes)
+                    if ("broken" in request.url.encodedPath) {
+                        respond("", HttpStatusCode.InternalServerError)
+                    } else {
+                        respond(bytes)
+                    }
                 }
             }
         val login = JmapLogin("ada", "https://mail.example.org/session", "ada@example.org", "Ada")

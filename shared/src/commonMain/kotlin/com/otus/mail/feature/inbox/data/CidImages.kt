@@ -42,11 +42,10 @@ private suspend fun MailAccount.inlineImages(
             val estimated = prefix.length + base64Length(part.size)
             if (estimated * count > remainingChars) return@forEach
 
-            // A failed bounded download consumes its reservation too, so failures cannot
-            // multiply the network budget. Downloads run sequentially to bound peak memory.
-            remainingBytes -= limit
+            // Downloads run one at a time to bound peak memory, so only a finished download
+            // needs to be charged, at its real size.
             val bytes = inlineBytes(part, type, limit) ?: return@forEach
-            remainingBytes += limit - bytes.size
+            remainingBytes -= bytes.size
             val encodedLength = prefix.length + base64Length(bytes.size.toLong())
             val added = encodedLength * count
             if (added > remainingChars) return@forEach
