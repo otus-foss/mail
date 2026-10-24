@@ -7,24 +7,14 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
-import io.ktor.client.HttpClient
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
 import io.ktor.http.URLDecodeException
-import io.ktor.http.URLParserException
-import io.ktor.http.content.TextContent
 import io.ktor.http.decodeURLPart
-import io.ktor.http.isSuccess
-import kotlinx.io.IOException
 
 /**
- * Leaves a mailing list the best way its headers allow: the RFC 8058 one-click POST, then an email
- * to its `mailto:` address (RFC 6068) through the account's own send path, then the web page for
- * the user to finish. Each way that fails falls through to the next.
+ * Sends to the list's `mailto:` address through the account, then falls back to its web page.
+ * Automatic RFC 8058 POSTs require trusted DKIM verification that the current JMAP path lacks.
  */
 internal class ListUnsubscriber(
-    private val http: HttpClient,
     private val drafts: DraftRepository,
     private val sender: DraftSender,
 ) {
@@ -33,26 +23,10 @@ internal class ListUnsubscriber(
         how: Unsubscribe,
     ): UnsubscribeResult =
         when {
-            how.oneClick?.let { oneClick(it) } == true -> UnsubscribeResult.Done
             how.mail?.let { mail(message, it, how.deliveredTo) } == true -> UnsubscribeResult.Done
             how.web != null -> UnsubscribeResult.OpenLink(how.web)
             else -> UnsubscribeResult.Failed
         }
-
-    /** Posts `List-Unsubscribe=One-Click` as a form (RFC 8058, section 3.1); only to https addresses. */
-    private suspend fun oneClick(url: String): Boolean {
-        if (!url.startsWith("https://", ignoreCase = true)) return false
-        return try {
-            http
-                .post(url) { setBody(TextContent(ONE_CLICK_BODY, ContentType.Application.FormUrlEncoded)) }
-                .status
-                .isSuccess()
-        } catch (expected: IOException) {
-            false
-        } catch (expected: URLParserException) {
-            false
-        }
-    }
 
     /** Sends the mail a `mailto:` address asks for, from the identity the message was sent to. */
     private suspend fun mail(
@@ -121,7 +95,6 @@ internal fun parseMailto(uri: String): Mailto? {
 }
 
 private const val MAILTO = "mailto:"
-private const val ONE_CLICK_BODY = "List-Unsubscribe=One-Click"
 
 /** The subject when the `mailto:` address names none; list servers act on the address alone. */
 private const val DEFAULT_SUBJECT = "unsubscribe"

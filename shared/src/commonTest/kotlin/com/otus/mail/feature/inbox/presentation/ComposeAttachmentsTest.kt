@@ -10,12 +10,14 @@ import com.otus.mail.feature.inbox.domain.DraftAttachment
 import com.otus.mail.feature.inbox.domain.PickedFile
 import com.otus.mail.feature.inbox.domain.UploadException
 import com.otus.mail.feature.inbox.domain.UploadFailure
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -32,6 +34,7 @@ class ComposeAttachmentsTest {
         var failNext: UploadFailure? = null
         val body = RichText()
         var picks = listOf<PickedFile>()
+        var serverReplies: CompletableDeferred<Unit>? = null
     }
 
     private fun TestScope.attachments(draft: Draft) =
@@ -39,6 +42,7 @@ class ComposeAttachmentsTest {
             files = { draft.picks.ifEmpty { listOf(file) } },
             uploads = { account, _, _ ->
                 draft.uploads += account
+                draft.serverReplies?.await()
                 draft.failNext?.let {
                     draft.failNext = null
                     Result.failure(UploadException(it))
@@ -121,5 +125,22 @@ class ComposeAttachmentsTest {
                 draft.body.images.sources
                     .isEmpty(),
             )
+        }
+
+    @Test
+    fun anInlineImageDrawsWhileItsUploadWaitsForTheServer() =
+        runTest {
+            val draft =
+                Draft().apply {
+                    picks = listOf(PickedFile("board.png", "image/png", 1) { byteArrayOf(7) })
+                    serverReplies = CompletableDeferred()
+                }
+            val attachments = attachments(draft)
+            attachments.attach()
+            runCurrent()
+            val image = draft.files.single()
+            assertTrue(attachments.uploading(image))
+
+            assertContentEquals(byteArrayOf(7), attachments.bytes(image.source))
         }
 }
