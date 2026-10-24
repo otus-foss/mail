@@ -9,12 +9,13 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
+import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.answered
+import com.otus.mail.feature.inbox.domain.answeredOriginal
 import com.otus.mail.feature.inbox.domain.preferredIdentity
 import com.otus.mail.feature.inbox.domain.signature
 import com.otus.mail.feature.inbox.domain.startDraft
@@ -134,6 +135,9 @@ class ComposeState(
     private var pending: Job? = null
     private var stored by mutableStateOf(start.takeIf { it.emailId != null })
 
+    // Undo can resume unsaved content with the id of an older copy.
+    private var savedHere = false
+
     /** Set once the draft is discarded or sent; nothing saves after that. */
     private var finished = false
 
@@ -170,13 +174,11 @@ class ComposeState(
 
     /**
      * Sends from [identity]. One of another account moves the draft there: the next save stores it
-     * in that account's Drafts, and the copy in the old one is deleted.
+     * in that account's Drafts before the copy in the old one is deleted.
      */
     fun chooseFrom(identity: SendIdentity) {
-        val left = draft.takeIf { it.accountId != identity.accountId }
-        val kept = draft.emailId.takeIf { left == null }
+        val kept = stored?.takeIf { it.accountId == identity.accountId }?.emailId
         edit { it.copy(from = identity.sender, accountId = identity.accountId, emailId = kept) }
-        left?.emailId?.let { id -> scope.launch { saving.withLock { drafts.discard(left.accountId, id) } } }
     }
 
     /** Adds or removes the signature in this draft only. */
@@ -198,7 +200,7 @@ class ComposeState(
     fun discard(): () -> Unit {
         finished = true
         pending?.cancel()
-        return { scope.launch { saving.withLock { draft.emailId?.let { drafts.discard(draft.accountId, it) } } } }
+        return { scope.launch { saving.withLock { stored?.discardCopy(drafts) } } }
     }
 
     /**
@@ -215,8 +217,12 @@ class ComposeState(
         val answered = request.answered(outgoing.accountId)
         return { at ->
             saving
-                .withLock { sender.send(outgoing.copy(emailId = draft.emailId), answered, at) }
-                .onSuccess { outgoing.from?.let(onSent) }
+                .withLock {
+                    val copy = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId
+                    sender.send(outgoing.copy(emailId = copy), answered, at).onSuccess {
+                        stored?.takeIf { it.accountId != outgoing.accountId }?.discardCopy(drafts)
+                    }
+                }.onSuccess { outgoing.from?.let(onSent) }
         }
     }
 
@@ -233,26 +239,34 @@ class ComposeState(
 
     private suspend fun save() =
         saving.withLock {
-            val current = draft.copy(signature = signature)
+            val copy = stored?.takeIf { it.accountId == draft.accountId }?.emailId
+            val current = draft.copy(emailId = copy, signature = signature)
             val unchanged =
                 if (stored ==
                     null
                 ) {
                     !edited
                 } else {
-                    current.copy(emailId = null) == stored?.copy(emailId = null)
+                    savedHere && current.copy(emailId = null) == stored?.copy(emailId = null)
                 }
             if (finished || unchanged) return@withLock
             drafts.save(current).fold(
                 onSuccess = { id ->
-                    stored = current
+                    val previous = stored
+                    stored = current.copy(emailId = id)
+                    savedHere = true
                     // The user may have moved the draft to another account while it saved.
                     if (draft.accountId == current.accountId) draft = draft.copy(emailId = id)
                     notice = null
+                    previous?.takeIf { it.accountId != current.accountId }?.discardCopy(drafts)
                 },
                 onFailure = { notice = ((it as? DraftException)?.failure ?: DraftFailure.ServerProblem).notice },
             )
         }
+}
+
+private suspend fun Draft.discardCopy(drafts: DraftRepository) {
+    emailId?.let { drafts.discard(accountId, it) }
 }
 
 private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =
@@ -281,13 +295,3 @@ private const val SAVE_DELAY_MILLIS = 2_000L
 /** The request that opens this draft again as it is, such as after Undo. */
 fun ComposeState.reopening(): ComposeRequest.Resume =
     ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request)
-
-/** The message a reply or follow-up answers, whose thread it shows. */
-private val ComposeRequest.answeredOriginal: OriginalMessage?
-    get() =
-        when (this) {
-            is ComposeRequest.Reply -> original
-            is ComposeRequest.FollowUp -> original
-            is ComposeRequest.Resume -> from.answeredOriginal
-            is ComposeRequest.New, is ComposeRequest.Forward -> null
-        }
