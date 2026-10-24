@@ -8,9 +8,12 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments
 import com.otus.mail.feature.inbox.domain.AttachmentFiles
 import com.otus.mail.feature.inbox.domain.PickedFile
+import com.otus.mail.feature.inbox.domain.UploadException
+import com.otus.mail.feature.inbox.domain.UploadFailure
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 /**
  * Picks files of any type with the system document picker of the activity in front. Each file is
@@ -45,12 +48,25 @@ class AndroidAttachmentFiles(
             name.ifBlank { uri.lastPathSegment ?: "file" },
             resolver.getType(uri) ?: GENERIC_TYPE,
             size,
-        ) {
+        ) { maxBytes ->
             withContext(Dispatchers.IO) {
-                resolver.openInputStream(uri)?.use { it.readBytes() } ?: error("The file is no longer available")
+                try {
+                    read(uri, maxBytes)
+                } catch (error: IOException) {
+                    throw UploadException(UploadFailure.Failed, error)
+                } catch (error: SecurityException) {
+                    throw UploadException(UploadFailure.Failed, error)
+                }
             }
         }
     }
+
+    private suspend fun read(
+        uri: Uri,
+        maxBytes: Int,
+    ): ByteArray =
+        context.contentResolver.openInputStream(uri)?.use { it.readAttachment(maxBytes) }
+            ?: throw UploadException(UploadFailure.Failed)
 
     private companion object {
         const val GENERIC_TYPE = "application/octet-stream"

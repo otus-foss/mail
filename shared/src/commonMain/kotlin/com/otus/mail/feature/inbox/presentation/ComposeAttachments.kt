@@ -15,6 +15,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -41,6 +43,7 @@ class ComposeAttachments(
 
     /** Each picked file by its attachment's id, kept to upload it again and to draw it. */
     private val picked = mutableMapOf<String, PickedFile>()
+    private val reading = Mutex()
 
     /** Whether [attachment] is still on its way to the draft's account. */
     fun uploading(attachment: DraftAttachment): Boolean =
@@ -92,7 +95,15 @@ class ComposeAttachments(
         attachments()
             .firstOrNull { it.source == source }
             ?.let { picked[it.id] }
-            ?.let { runCatching { it.read() }.getOrNull() }
+            ?.let { file ->
+                reading.withLock {
+                    try {
+                        file.read()
+                    } catch (expected: UploadException) {
+                        null
+                    }
+                }
+            }
 
     /**
      * Uploads every file again whenever the draft moves to another account, and removes an inline
@@ -125,21 +136,27 @@ class ComposeAttachments(
         val account = accountId()
         failures -= id
         scope.launch {
-            runCatching { file.read() }
-                .fold(
-                    onSuccess = { to.upload(account, it, file.type) },
-                    onFailure = { Result.failure(UploadException(UploadFailure.Failed, it)) },
-                ).fold(
-                    // A draft moved on during the upload needs the file in its new account instead.
-                    onSuccess = { blob ->
-                        if (accountId() ==
-                            account
-                        ) {
-                            change { list -> list.map { if (it.id == id) it.copy(blob = blob) else it } }
-                        }
-                    },
-                    onFailure = { failures += id to ((it as? UploadException)?.failure ?: UploadFailure.Failed) },
-                )
+            val result =
+                reading.withLock {
+                    if (account != accountId() || id !in picked) return@launch
+                    try {
+                        val limit = to.maxBytes(account)
+                        to.upload(account, file.read(limit), file.type)
+                    } catch (failed: UploadException) {
+                        Result.failure(failed)
+                    }
+                }
+            result.fold(
+                // A draft moved on during the upload needs the file in its new account instead.
+                onSuccess = { blob ->
+                    if (accountId() ==
+                        account
+                    ) {
+                        change { list -> list.map { if (it.id == id) it.copy(blob = blob) else it } }
+                    }
+                },
+                onFailure = { failures += id to ((it as? UploadException)?.failure ?: UploadFailure.Failed) },
+            )
         }
     }
 }
