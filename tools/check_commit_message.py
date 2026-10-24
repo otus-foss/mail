@@ -1,4 +1,4 @@
-"""Validate Otus commit titles and bullet descriptions for the commit-msg hook."""
+"""Validate Otus commit messages for the commit-msg hook and drop AI attribution lines."""
 
 import argparse
 import re
@@ -9,6 +9,16 @@ from pathlib import Path
 TYPES = "feat|fix|refactor|perf|docs|test|build|ci|chore|revert"
 TITLE = re.compile(rf"(?:{TYPES})\([a-z0-9]+(?:-[a-z0-9]+)*\)!?: ([a-z].*\S|[a-z])")
 FOOTER = re.compile(r"(?:BREAKING CHANGE|[A-Za-z][A-Za-z-]*)(?:: | #)\S.*")
+# Coding agents append these on their own; Otus commits credit only their human authors.
+ATTRIBUTION = re.compile(
+    r"\s*co-authored-by:.*\b(?:claude|anthropic|cursor)\b.*|.*generated with \[?claude code\b.*",
+    re.IGNORECASE,
+)
+
+
+def strip_attribution(message: str) -> str:
+    lines = message.splitlines(keepends=True)
+    return "".join(line for line in lines if not ATTRIBUTION.fullmatch(line.rstrip("\r\n")))
 
 
 def violations(message: str, *, allow_merge: bool = False) -> list[str]:
@@ -66,7 +76,10 @@ def main() -> int:
     parser.add_argument("message_file", type=Path)
     args = parser.parse_args()
     try:
-        message = args.message_file.read_text(encoding="utf-8")
+        written = args.message_file.read_text(encoding="utf-8")
+        message = strip_attribution(written)
+        if message != written:
+            args.message_file.write_text(message, encoding="utf-8")
         message = subprocess.run(
             ["git", "stripspace", "--strip-comments"],
             input=message,
