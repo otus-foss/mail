@@ -20,6 +20,8 @@ import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -45,7 +47,7 @@ class FolderCleaningTest {
                 MailFolder("ada", "s", "Sent", role = "sent", total = 9),
             ),
         )
-    private val sent = mutableListOf<String>()
+    private val sent = MutableStateFlow<List<String>>(emptyList())
     private var reply: (String) -> String = { DESTROYED_M1 }
 
     private fun message(
@@ -69,7 +71,7 @@ class FolderCleaningTest {
         val store = InMemoryLoginStore().apply { save(JmapLogin("ada", URL, "ada@example.org", "Ada"), "secret") }
         val engine =
             stalwartLike { body ->
-                sent += body
+                sent.update { it + body }
                 reply(body)
             }
         val services = MailServices(logins = store, createClient = { JmapClient(engine) })
@@ -124,7 +126,7 @@ class FolderCleaningTest {
             settle { feed.notice != null }
             assertEquals(listOf("m2"), feed.messages.map { it.id })
             assertEquals("Couldn't delete 1 message. Try again.", feed.notice)
-            assertTrue(sent.any { "\"destroy\":[\"m1\",\"m2\"]" in it }, sent.toString())
+            assertTrue(sent.value.any { "\"destroy\":[\"m1\",\"m2\"]" in it }, sent.value.toString())
         }
 
     @Test
@@ -140,12 +142,12 @@ class FolderCleaningTest {
             }
             assertNotNull(cleanup.emptying()).run()
             assertTrue(feed.messages.isEmpty())
-            settle { sent.any { "Email/set" in it } }
+            settle { sent.value.any { "Email/set" in it } }
             // A refused deletion would bring the message back; give it the chance.
             settle { false }
             assertTrue(feed.messages.isEmpty())
             assertNull(feed.notice)
-            assertTrue(sent.any { "\"destroy\":[\"m1\"]" in it }, sent.toString())
+            assertTrue(sent.value.any { "\"destroy\":[\"m1\"]" in it }, sent.value.toString())
         }
 
     private fun page(
