@@ -64,7 +64,7 @@ class ComposeAttachmentScreenTest {
         open(files)
         attach("Whiteboard.png")
         compose.onNodeWithText("1.5 MB").assertExists()
-        compose.onNodeWithText("Too large for this server").assertExists()
+        compose.onNodeWithText("File is too large").assertExists()
         compose.onNodeWithText("Whiteboard.png").assertDoesNotExist()
         compose.onNodeWithContentDescription("Whiteboard.png").performClick()
         compose.onNodeWithText("Full").assertIsSelected()
