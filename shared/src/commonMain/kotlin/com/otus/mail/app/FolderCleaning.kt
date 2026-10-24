@@ -110,18 +110,17 @@ internal class FolderCleaning(
         scope.launch {
             val results = emptied.map { it.accountId to services.cleaner.empty(it.accountId, it.id) }
             val removed = results.flatMap { (account, deletion) -> deletion.emailIds.map { account to it } }.toSet()
-            changes.forEach { (message, change) ->
-                val members = message.conversation?.members?.map { it.emailId } ?: listOf(message.emailId)
-                if (members.isNotEmpty() && members.all { message.location.accountId to it in removed }) {
-                    change.confirm()
-                } else {
-                    change.rollBack()
+            val (gone, kept) =
+                changes.entries.partition { (message, _) ->
+                    val members = message.conversation?.members?.map { it.emailId } ?: listOf(message.emailId)
+                    members.isNotEmpty() && members.all { message.location.accountId to it in removed }
                 }
-            }
-            if (results.any { !it.second.complete }) {
-                feed.refresh()
-                feed.report("Couldn't delete every message. Try again.")
-            }
+            gone.forEach { it.value.confirm() }
+            kept.forEach { it.value.rollBack() }
+            val incomplete = results.any { !it.second.complete }
+            // A complete empty can still keep a row whose members moved away meanwhile; refresh shows where they went.
+            if (incomplete || kept.isNotEmpty()) feed.refresh()
+            if (incomplete) feed.report("Couldn't delete every message. Try again.")
             folders.refresh()
         }
     }
