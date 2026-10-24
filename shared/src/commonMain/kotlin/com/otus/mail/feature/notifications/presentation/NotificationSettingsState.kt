@@ -16,6 +16,8 @@ class NotificationSettingsState(
     private val push: InstantPush,
     private val scope: CoroutineScope,
 ) {
+    val periodicChecks: Boolean get() = push.periodicChecks
+
     var distributors: List<PushDistributor> by mutableStateOf(emptyList())
         private set
     var current: PushDistributor? by mutableStateOf(null)

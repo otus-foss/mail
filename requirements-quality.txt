@@ -1,1 +1,2 @@
 ruff==0.16.10
+-r push_bridge/requirements.txt

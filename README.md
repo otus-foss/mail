@@ -48,6 +48,8 @@ run. For a physical device, set `TEAM_ID` in `iosApp/Configuration/Config.xcconf
 signing. Xcode builds the shared Kotlin framework automatically. Targets: iOS ARM64 devices and
 Apple Silicon simulators, iOS 15.3+.
 
+See [Apple push delivery](docs/apple-push.md) for APNs bridge deployment, signing, and notification tests.
+
 ## Toolchain and attribution
 
 Versions are pinned in `gradle/libs.versions.toml`. The Gradle wrapper includes a distribution

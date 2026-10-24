@@ -6,6 +6,7 @@ import com.otus.mail.feature.notifications.domain.PushDistributor
 
 internal class FakeNotificationPush(
     val installed: List<PushDistributor>,
+    override val periodicChecks: Boolean = true,
 ) : InstantPush {
     var chosen: PushDistributor? = null
     var status = PushDeliveryStatus.Connecting
