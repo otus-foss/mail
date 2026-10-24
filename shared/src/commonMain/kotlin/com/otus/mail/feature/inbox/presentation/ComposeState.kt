@@ -249,7 +249,9 @@ class ComposeState(
 }
 
 private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =
-    firstOrNull { it.sender.address.equals(from?.address, ignoreCase = true) }?.signature ?: Signature()
+    firstOrNull {
+        from != null && it.accountId == from.accountKey && it.sender.address.equals(from.address, ignoreCase = true)
+    }?.signature ?: Signature()
 
 /** Every recipient once, in line order, for the bar's context. */
 val Draft.recipients: List<MailSender>

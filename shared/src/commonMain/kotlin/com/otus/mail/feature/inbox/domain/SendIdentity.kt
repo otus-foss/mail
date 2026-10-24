@@ -11,4 +11,11 @@ data class SendIdentity(
     val htmlSignature: String = "",
 ) {
     val accountId: String get() = sender.accountKey
+    val key: SendIdentityKey get() = SendIdentityKey(accountId, id)
 }
+
+/** Identity IDs are unique only within their account. */
+data class SendIdentityKey(
+    val accountId: String,
+    val identityId: String,
+)

@@ -75,7 +75,9 @@ private fun IdentitySection(
         val named = sender.name.isNotBlank() && sender.name != sender.address
         DropdownRow(
             if (named) sender.name else sender.address,
-            selected = sender.address.equals(selected?.address, ignoreCase = true),
+            selected =
+                selected != null && sender.accountKey == selected.accountKey &&
+                    sender.address.equals(selected.address, ignoreCase = true),
             onClick = { onSelect(identity) },
             detail = sender.address.takeIf { named },
         ) { PersonAvatar(chipAvatar(sender.avatar, sender.name, sender.address), ComposeTokens.dropdownAvatarSize) }

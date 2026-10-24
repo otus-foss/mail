@@ -15,6 +15,7 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.SendIdentityKey
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
@@ -97,8 +98,9 @@ internal fun SignatureEditorPage(
     onBack: () -> Unit,
 ) {
     val signatures = states.signatures
-    LaunchedEffect(page) { if (signatures.identity(page.identityId) == null) signatures.load() }
-    val identity = signatures.identity(page.identityId) ?: return
+    val key = SendIdentityKey(page.accountId, page.identityId)
+    LaunchedEffect(page) { if (signatures.identity(key) == null) signatures.load() }
+    val identity = signatures.identity(key) ?: return
     val editor = remember(page) { SignatureEditorState(signatures, identity) }
     SignatureEditorScreen(signatures, editor, onBack) {
         states.moveToasts.toasts.show(ToastMessage("Signature copied"))
