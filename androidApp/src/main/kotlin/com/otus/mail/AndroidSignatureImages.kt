@@ -31,8 +31,8 @@ class AndroidSignatureImages(
         val picker = launcher ?: return SignatureImagePick.Cancelled
         val result = CompletableDeferred<Uri?>().also { pending = it }
         picker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
-        val uri = result.await() ?: return SignatureImagePick.Cancelled
-        return withContext(Dispatchers.IO) { shrink(uri) }
+        return result.await()?.let { uri -> withContext(Dispatchers.IO) { shrink(uri) } }
+            ?: SignatureImagePick.Cancelled
     }
 
     private fun shrink(uri: Uri): SignatureImagePick = signatureImage { context.contentResolver.openInputStream(uri) }
