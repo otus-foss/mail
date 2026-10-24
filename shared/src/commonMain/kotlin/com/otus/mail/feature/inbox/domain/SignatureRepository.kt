@@ -11,7 +11,7 @@ fun interface SignatureRepository {
 
 /**
  * Turns picked image bytes into a signature image: at most [SignatureImages.MAX_WIDTH] pixels wide
- * and about [SignatureImages.MAX_BYTES] bytes. Null where the platform cannot pick images.
+ * and at most [SignatureImages.MAX_BYTES] bytes. Null where the platform cannot pick images.
  */
 interface SignatureImages {
     /** Asks the user for an image; null when they choose none or it cannot be read. */
