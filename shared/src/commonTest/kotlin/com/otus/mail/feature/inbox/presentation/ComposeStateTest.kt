@@ -188,10 +188,11 @@ class ComposeStateTest {
             advanceTimeBy(DELAY + 1)
             state.chooseFrom(SendIdentity("i2", MailSender("Me", "me@home.example", "a2")))
             runCurrent()
-            assertEquals(listOf("d1"), drafts.discarded)
+            assertTrue(drafts.discarded.isEmpty())
             advanceTimeBy(DELAY + 1)
             assertEquals("a2", drafts.saved.last().accountId)
             assertNull(drafts.saved.last().emailId)
+            assertEquals(listOf("d1"), drafts.discarded)
         }
 
     @Test
