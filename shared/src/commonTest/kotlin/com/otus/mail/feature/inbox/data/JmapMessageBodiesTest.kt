@@ -151,7 +151,7 @@ class JmapMessageBodiesTest {
             assertNotNull(content)
             assertEquals("""<p>Hi</p><img src="data:image/png;base64,AQID">""", content.html?.html)
             assertEquals(listOf("plan.pdf"), content.attachments.map { it.name })
-            assertEquals("https://lists.example.org/u/1", content.unsubscribe?.oneClick)
+            assertEquals("https://lists.example.org/u/1", content.unsubscribe?.web)
             assertEquals("Plans", content.listName)
         }
 
