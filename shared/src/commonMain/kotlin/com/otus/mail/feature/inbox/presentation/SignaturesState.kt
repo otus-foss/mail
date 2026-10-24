@@ -14,6 +14,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Every identity's signature for Settings › Signatures. Changes show at once and save to the
@@ -45,7 +47,8 @@ class SignaturesState(
     fun save(
         identity: SendIdentity,
         signature: Signature,
-    ) = saveAll(listOf(identity), signature)
+        onSaved: (Boolean) -> Unit = {},
+    ) = saveOne(identity, signature, onSaved)
 
     /** Gives [targets] the signature of [source], replacing theirs. */
     fun copy(
@@ -55,20 +58,61 @@ class SignaturesState(
 
     suspend fun pickImage(): SignatureImage? = images?.pick()
 
+    internal fun savedSignature(identity: SendIdentity): Signature? = acknowledged[identity.accountId to identity.id]
+
     private fun saveAll(
         targets: List<SendIdentity>,
         signature: Signature,
     ) {
-        val before = identities
-        val ids = targets.map { it.id }.toSet()
-        identities = identities.map { if (it.id in ids) it.withSignature(signature) else it }
+        targets.forEach { saveOne(it, signature) {} }
+    }
+
+    private val locks = mutableMapOf<Pair<String, String>, Mutex>()
+    private val versions = mutableMapOf<Pair<String, String>, Long>()
+    private val acknowledged = mutableMapOf<Pair<String, String>, Signature>()
+    private var failed = emptySet<Pair<String, String>>()
+
+    private fun saveOne(
+        identity: SendIdentity,
+        signature: Signature,
+        onSaved: (Boolean) -> Unit,
+    ) {
+        val key = identity.accountId to identity.id
+        val version = (versions[key] ?: 0L) + 1
+        versions[key] = version
+        acknowledged.getOrPut(key) { identity.signature }
+        val lock = locks.getOrPut(key) { Mutex() }
+        replace(identity, signature)
         scope.launch {
-            val failed = targets.map { async { repository.save(it, signature) } }.awaitAll().any { it.isFailure }
-            notice = if (failed) "Couldn't save the signature. Check your connection and try again." else null
-            if (failed) identities = before
+            lock.withLock {
+                if (versions[key] != version) {
+                    onSaved(false)
+                    return@withLock
+                }
+                val saved = acknowledged[key] == signature || repository.save(identity, signature).isSuccess
+                if (saved) acknowledged[key] = signature
+                if (versions[key] == version) {
+                    failed = if (saved) failed - key else failed + key
+                    notice = if (failed.isEmpty()) null else SAVE_FAILURE
+                    if (!saved) replace(identity, acknowledged.getValue(key))
+                }
+                onSaved(saved)
+            }
         }
+    }
+
+    private fun replace(
+        identity: SendIdentity,
+        signature: Signature,
+    ) {
+        identities =
+            identities.map {
+                if (it.accountId == identity.accountId && it.id == identity.id) it.withSignature(signature) else it
+            }
     }
 }
 
 private fun SendIdentity.withSignature(signature: Signature): SendIdentity =
     copy(htmlSignature = signature.html, textSignature = signature.text)
+
+private const val SAVE_FAILURE = "Couldn't save the signature. Check your connection and try again."
