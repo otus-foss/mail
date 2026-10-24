@@ -6,6 +6,7 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.feature.inbox.data.conversationOf
 import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -14,6 +15,7 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.feature.inbox.presentation.FolderCleanup
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.stalwartLike
@@ -174,6 +176,27 @@ class FolderCleaningTest {
             assertTrue(feed.messages.isEmpty())
             assertNull(feed.notice)
             assertTrue(sent.value.any { "\"destroy\":[\"m1\"]" in it }, sent.value.toString())
+        }
+
+    @Test
+    fun emptyingRefreshesARowWhoseOtherMembersMovedAway() =
+        runTest {
+            // m2 left Spam on another device, so emptying destroys only m1 and the row comes back.
+            val members = listOf(ThreadMember("m1", setOf("j"), "j"), ThreadMember("m2", setOf("i"), "i"))
+            val row = message("m1", "j").copy(conversation = conversationOf(members))
+            val (cleanup, feed) = cleanup(MailScope.Role("junk", "Spam"), row)
+            reply = { body ->
+                when {
+                    "Email/set" in body -> DESTROYED_M1
+                    "\"position\":0" in body -> page("\"m1\"", """{"id": "m1", "mailboxIds": {"j": true}}""")
+                    else -> page("", "")
+                }
+            }
+            assertNotNull(cleanup.emptying()).run()
+            settle { sent.value.any { "Email/set" in it } }
+            settle { false }
+            assertTrue(feed.messages.isEmpty(), "The refresh drops the destroyed row")
+            assertNull(feed.notice)
         }
 
     private fun membership(
