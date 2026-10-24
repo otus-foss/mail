@@ -10,13 +10,11 @@ data class MailAttachment(
 
 /**
  * How to leave the mailing list a message came from, read from its `List-Unsubscribe` header
- * (RFC 2369). [oneClick] is an https address that takes the RFC 8058 one-click POST, set only when
- * `List-Unsubscribe-Post` asks for it. [web] is an address to open, [mail] a mailto address.
+ * (RFC 2369). [web] is an address to open, [mail] a mailto address.
  * [deliveredTo] holds the addresses the mail was delivered to, from `Delivered-To` and
  * `X-Original-To`, which a mailto request should come from when the list wrote to a Bcc.
  */
 data class Unsubscribe(
-    val oneClick: String? = null,
     val web: String? = null,
     val mail: String? = null,
     val deliveredTo: List<String> = emptyList(),
@@ -79,7 +77,7 @@ data class MailingList(
 
 /** What unsubscribing did. */
 sealed interface UnsubscribeResult {
-    /** The list was told, by a one-click request or an email. */
+    /** The app sent the unsubscribe email. */
     data object Done : UnsubscribeResult
 
     /** The list takes no request from the app; the user finishes at [url]. */

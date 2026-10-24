@@ -11,6 +11,7 @@ import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
@@ -42,10 +43,12 @@ class JmapMessageBodies(
     override suspend fun content(message: MailMessage): MessageContent? =
         try {
             val loginId = message.location.accountId
-            val email = cached(loginId, message.emailId) ?: fetched(loginId, message)
-            email?.let { found ->
-                val content = jmapDecoding { found.toMessageContent() }
-                withImages(loginId, content, found.inlineParts(content.html?.html))
+            cache.withAccount(loginId) { accountCache ->
+                val email = accountCache.cached(loginId, message.emailId) ?: accountCache.fetched(loginId, message)
+                email?.let { found ->
+                    val content = jmapDecoding { found.toMessageContent() }
+                    withImages(loginId, content, found.inlineParts(content.html?.html))
+                }
             }
         } catch (expected: JmapException) {
             null
@@ -69,17 +72,16 @@ class JmapMessageBodies(
             }
         }
 
-    private suspend fun cached(
+    private suspend fun MailCache.cached(
         loginId: String,
         emailId: String,
     ): EmailObject? =
-        cache
-            .objects(loginId, CacheKind.Body, EmailObject.serializer(), listOf(emailId))[emailId]
+        objects(loginId, CacheKind.Body, EmailObject.serializer(), listOf(emailId))[emailId]
             // Bodies saved before files were fetched have no attachments list; fetch those again.
             ?.takeIf { it.attachments != null }
 
     /** The email from the server, saved in [cache] for the next open. */
-    private suspend fun fetched(
+    private suspend fun MailCache.fetched(
         loginId: String,
         message: MailMessage,
     ): EmailObject? {
@@ -94,7 +96,7 @@ class JmapMessageBodies(
         if (email != null) {
             val received = runCatching { Instant.parse(email.receivedAt).toEpochMilliseconds() }.getOrNull()
             try {
-                cache.write(loginId) { putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, received) }
+                write(loginId) { putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, received) }
             } catch (expected: CacheStorageException) {
                 // The fetched body can still be opened without a persistent copy.
             }

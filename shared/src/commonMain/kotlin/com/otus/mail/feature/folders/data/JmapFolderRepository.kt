@@ -11,6 +11,7 @@ import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
@@ -51,38 +52,42 @@ class JmapFolderRepository(
 
     override suspend fun cachedAccounts(): List<AccountFolders> =
         accounts.logins().map { login ->
-            AccountFolders(login.id, login.name, cache.mailboxes(login.id).map { it.toFolder(login.id) })
+            cache.withAccount(login.id) { accountCache ->
+                AccountFolders(login.id, login.name, accountCache.mailboxes(login.id).map { it.toFolder(login.id) })
+            }
         }
 
     private suspend fun load(login: JmapLogin): AccountFolders =
         try {
-            val account = accounts.open(login)
-            coroutineScope {
-                val shared =
-                    account.sharedAccountIds().map {
-                        async {
-                            account.loadShared(
-                                it,
-                            ) { id -> folders(account, id) }
+            cache.withAccount(login.id) { accountCache ->
+                val account = accounts.open(login)
+                coroutineScope {
+                    val shared =
+                        account.sharedAccountIds().map {
+                            async {
+                                account.loadShared(
+                                    it,
+                                ) { id -> accountCache.folders(account, id) }
+                            }
                         }
-                    }
-                AccountFolders(
-                    login.id,
-                    login.name,
-                    folders(account, account.id),
-                    limits(account.mailCapability(account.id)),
-                    mailboxOwner =
-                        account.session.accounts[account.id]
-                            ?.name
-                            .orEmpty(),
-                    shared = shared.awaitAll().filterNotNull(),
-                )
+                    AccountFolders(
+                        login.id,
+                        login.name,
+                        accountCache.folders(account, account.id),
+                        limits(account.mailCapability(account.id)),
+                        mailboxOwner =
+                            account.session.accounts[account.id]
+                                ?.name
+                                .orEmpty(),
+                        shared = shared.awaitAll().filterNotNull(),
+                    )
+                }
             }
         } catch (error: JmapException) {
             AccountFolders(login.id, login.name, failure = error.toFolderFailure())
         }
 
-    private suspend fun folders(
+    private suspend fun MailCache.folders(
         account: MailAccount,
         jmapAccountId: String,
     ): List<MailFolder> {
@@ -93,7 +98,7 @@ class JmapFolderRepository(
         // Only the login's own mailboxes: the cache keeps one set per login, which the inbox reads too.
         if (sharedIn == null) {
             try {
-                cache.write(account.login.id) { replaceMailboxes(mailboxes.list) }
+                write(account.login.id) { replaceMailboxes(mailboxes.list) }
             } catch (expected: CacheStorageException) {
                 // Fresh server folders remain usable when their local copy cannot be saved.
             }
