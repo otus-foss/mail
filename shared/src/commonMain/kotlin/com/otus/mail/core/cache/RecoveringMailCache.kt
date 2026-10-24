@@ -4,8 +4,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Continues with an empty memory cache after a disk failure. Server sync repopulates it; the
- * broken database is not retried until process restart. Account removal still must erase disk data.
+ * Continues with an empty memory cache after a permanent disk failure. Server sync repopulates it;
+ * the broken database is not retried until process restart. A transient lock fails only its own
+ * operation. Account removal still must erase disk data.
  */
 internal class RecoveringMailCache(
     private val disk: MailCache,
@@ -54,7 +55,7 @@ internal class RecoveringMailCache(
             try {
                 active.operation()
             } catch (unavailable: CacheStorageException) {
-                if (active !== disk) throw unavailable
+                if (unavailable.transient || active !== disk) throw unavailable
                 active = InMemoryMailCache()
                 val result = active.operation()
                 if (reportWriteFailure) throw unavailable

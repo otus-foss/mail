@@ -47,10 +47,15 @@ into the restored account generation. A completed removal stays inactive.
 
 ## Storage failures
 
-SQLite disk-full, I/O, corruption, read-only, and lock errors become `CacheStorageException`.
-Cancellation and programming errors propagate unchanged. App wiring switches a failed disk cache
-to an empty memory cache for the rest of the process. Reads then act as cache misses, and server
-sync fills the memory cache. The database is retried after restart.
+SQLite disk-full, I/O, corruption, permission, read-only, and lock errors become
+`CacheStorageException`. Cancellation and programming errors propagate unchanged. App wiring
+switches a disk cache with a permanent failure to an empty memory cache for the rest of the
+process. Reads then act as cache misses, and server sync fills the memory cache. The database is
+retried after restart.
+
+`SQLITE_BUSY` and `SQLITE_LOCKED` mean another connection holds the database, so they are marked
+transient. A transient error fails only that operation, and callers handle it like any other
+cache error. The next operation uses the disk cache again.
 
 A failed inbox write raises the existing recoverable storage error so the loaded list stays on
 screen until retry. Fresh message bodies and folder lists still open when saving their local copy

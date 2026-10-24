@@ -1,5 +1,6 @@
 package com.otus.mail.core.cache
 
+import android.database.sqlite.SQLiteDatabaseLockedException
 import android.database.sqlite.SQLiteDiskIOException
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteFullException
@@ -32,6 +33,20 @@ class CacheStorageExceptionTest {
         assertTrue(isCacheStorageFailure(SQLException("extended disk I/O", null, 266)))
         assertFalse(isCacheStorageFailure(SQLException("invalid SQL", null, 1)))
         assertFalse(isCacheStorageFailure(SQLException("constraint", null, 19)))
+    }
+
+    @Test
+    fun locksAreTransientFailures() {
+        assertTrue(isCacheLock(SQLiteDatabaseLockedException("locked")))
+        assertTrue(isCacheLock(SQLException("busy", null, 5)))
+        assertTrue(isCacheLock(SQLException("extended busy", null, 261)))
+        assertTrue(isCacheLock(SQLException("locked", null, 6)))
+        assertFalse(isCacheStorageFailure(SQLException("busy", null, 5)))
+        assertFalse(isCacheLock(SQLiteFullException("full")))
+        val lock = assertFailsWith<CacheStorageException> { cacheStorage { throw SQLiteDatabaseLockedException() } }
+        assertTrue(lock.transient)
+        val full = assertFailsWith<CacheStorageException> { cacheStorage { throw SQLiteFullException() } }
+        assertFalse(full.transient)
     }
 
     @Test

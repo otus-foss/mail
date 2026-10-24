@@ -19,16 +19,27 @@ internal actual fun <T> cacheStorage(block: () -> T): T =
         throw error.cacheFailure()
     }
 
-private fun Exception.cacheFailure(): Exception = if (isCacheStorageFailure(this)) CacheStorageException(this) else this
+private fun Exception.cacheFailure(): Exception =
+    when {
+        isCacheLock(this) -> CacheStorageException(this, transient = true)
+        isCacheStorageFailure(this) -> CacheStorageException(this)
+        else -> this
+    }
+
+/** SQLITE_BUSY or SQLITE_LOCKED: another connection holds the database, so a later attempt can succeed. */
+internal fun isCacheLock(error: Exception): Boolean =
+    when (error) {
+        is SQLException -> error.primaryCode in LOCK_CODES
+        else -> error is SQLiteDatabaseLockedException
+    }
 
 internal fun isCacheStorageFailure(error: Exception): Boolean =
     when (error) {
-        is SQLException -> (error.errorCode and PRIMARY_CODE_MASK) in STORAGE_CODES
+        is SQLException -> error.primaryCode in STORAGE_CODES
 
         is SQLiteAccessPermException,
         is SQLiteCantOpenDatabaseException,
         is SQLiteDatabaseCorruptException,
-        is SQLiteDatabaseLockedException,
         is SQLiteDiskIOException,
         is SQLiteFullException,
         is SQLiteReadOnlyDatabaseException,
@@ -37,11 +48,14 @@ internal fun isCacheStorageFailure(error: Exception): Boolean =
         else -> false
     }
 
+// Extended SQLite result codes retain their primary code in the low byte.
+private val SQLException.primaryCode get() = errorCode and PRIMARY_CODE_MASK
+
+private val LOCK_CODES = setOf(SQLITE_BUSY, SQLITE_LOCKED)
+
 private val STORAGE_CODES =
     setOf(
         SQLITE_PERM,
-        SQLITE_BUSY,
-        SQLITE_LOCKED,
         SQLITE_READONLY,
         SQLITE_IOERR,
         SQLITE_CORRUPT,
@@ -50,7 +64,6 @@ private val STORAGE_CODES =
         SQLITE_NOTADB,
     )
 
-// Extended SQLite result codes retain their primary code in the low byte.
 private const val PRIMARY_CODE_MASK = 0xff
 private const val SQLITE_PERM = 3
 private const val SQLITE_BUSY = 5
