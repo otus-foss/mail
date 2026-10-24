@@ -137,7 +137,9 @@ Settings › **Signatures** lists every address by account with the start of its
 "No signature". **Edit signature** opens the editor: the address pill switches to another
 address in place, **Add image** (Android only), **Copy**, and **Remove signature**, which asks
 first. Edits save a second after the last one and when the page closes, with `Identity/set`. A
-failed save puts the old signature back and says so.
+failed save restores that identity's last acknowledged signature and says so. Saves run in order
+for each identity. Copying to several identities preserves successful saves if another fails.
+An editor acknowledges a change only after the server accepts it, so closing retries a failed save.
 
 An added image is shrunk to at most 600 px wide and about 50 KB: PNG when that is small enough,
 JPEG at falling quality otherwise. It is stored in the signature as a `data:` URI. A selected
