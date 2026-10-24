@@ -46,10 +46,13 @@ internal class AccountMailCache(
         }
     }
 
-    override suspend fun forget(loginId: String) = reset(loginId, active = false)
+    override suspend fun forget(loginId: String) = invalidate(loginId) { storage.forget(loginId) }
 
-    /** Replacing credentials starts a new generation even when the login ID is unchanged. */
-    suspend fun connected(loginId: String) = reset(loginId, active = true)
+    /**
+     * Replacing credentials starts a new generation even when the login ID is unchanged. The login ID
+     * names the same user on the same server, so the cached mail stays and nothing touches storage.
+     */
+    suspend fun connected(loginId: String) = invalidate(loginId) { it.active = true }
 
     /** A failed removal keeps the login, but requests from before removal remain invalid. */
     suspend fun restore(loginId: String) {
@@ -57,9 +60,9 @@ internal class AccountMailCache(
         account.lock.withLock { account.active = true }
     }
 
-    private suspend fun reset(
+    private suspend fun invalidate(
         loginId: String,
-        active: Boolean,
+        then: suspend (Account) -> Unit,
     ) {
         withContext(NonCancellable) {
             val account = account(loginId)
@@ -68,8 +71,7 @@ internal class AccountMailCache(
                 account.active = false
                 account.jobs.forEach { it.cancel(CancellationException("Account changed")) }
                 account.jobs.clear()
-                storage.forget(loginId)
-                account.active = active
+                then(account)
             }
         }
     }
