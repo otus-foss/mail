@@ -3,9 +3,12 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.panelTextStyle
@@ -15,7 +18,6 @@ import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadDisplay
 import com.otus.mail.feature.inbox.presentation.RowLook
 import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -65,11 +67,13 @@ class ReadZenTest {
         compose.onNodeWithContentDescription("Zen mode").performClick()
         compose.waitForIdle()
         assertTrue(zen.value)
-        assertFalse(exists("Images blocked for privacy"))
-        assertFalse(exists("Mailing list"))
+        compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsNotDisplayed()
+        compose.onNodeWithText("Mailing list", substring = true).assertIsNotDisplayed()
         compose.screenshot("read-zen")
         compose.onNodeWithContentDescription("Leave zen mode").performClick()
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
+        compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Mailing list", substring = true).assertIsDisplayed()
     }
 
     private companion object {
