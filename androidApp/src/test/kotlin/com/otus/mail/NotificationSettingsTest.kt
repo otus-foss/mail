@@ -7,11 +7,13 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import com.github.takahirom.roborazzi.captureRoboImage
 import com.otus.mail.app.App
 import com.otus.mail.feature.notifications.domain.InstantPush
+import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
-import com.otus.push.PushStatus
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -28,25 +30,6 @@ class NotificationSettingsTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val ntfy = PushDistributor("io.heckel.ntfy", "ntfy")
 
-    private class FakePush(
-        val installed: List<PushDistributor>,
-    ) : InstantPush {
-        var chosen: PushDistributor? = null
-        var status = PushStatus.Waiting
-
-        override suspend fun distributors() = installed
-
-        override suspend fun current() = chosen
-
-        override suspend fun use(distributor: PushDistributor?) {
-            chosen = distributor
-        }
-
-        override suspend fun statuses() = if (chosen == null) emptyMap() else mapOf("ada" to status)
-
-        override suspend fun forget(loginId: String) = Unit
-    }
-
     private fun open(push: InstantPush?) {
         compose.runOnUiThread { compose.activity.setContent { App(services = FakeFolderServer().services(push)) } }
         compose.onNodeWithContentDescription("Open navigation").performClick()
@@ -55,28 +38,68 @@ class NotificationSettingsTest {
 
     @Test
     fun choosingAPushAppConnectsEachAccount() {
-        val push = FakePush(listOf(ntfy))
+        val push = FakeNotificationPush(listOf(ntfy))
         open(push)
         compose.onNodeWithText("New mail every 15 minutes").assertIsDisplayed()
         compose.onNodeWithText("Notifications").performClick()
-        compose.onNodeWithText("Off, checks every 15 minutes").assertIsDisplayed()
+        compose.onNodeWithText("Off, checks about every 15 minutes").assertIsDisplayed()
         compose.onNodeWithText("Instant delivery").performClick()
         compose.onNodeWithText("ntfy").performClick()
         compose.waitUntil { compose.onAllNodesWithText("Connecting").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(ntfy, push.chosen)
-        compose.onNodeWithText("Through ntfy, within seconds").assertIsDisplayed()
+        compose.onNodeWithText("Through ntfy").assertIsDisplayed()
         compose.onNodeWithText("Ada").assertIsDisplayed()
     }
 
     @Test
-    fun withoutAPushAppThePageSuggestsOne() {
-        open(FakePush(emptyList()))
+    fun googleCanBeChosenWithoutInstallingAPushAppAndTurnedOffAgain() {
+        val google = PushDistributor("com.otus.mail", "Google Play services", isGoogle = true)
+        val push = FakeNotificationPush(listOf(google))
+        open(push)
         compose.onNodeWithText("Notifications").performClick()
         compose
             .onNodeWithText(
-                "To get new mail within seconds, install a UnifiedPush app such as ntfy, then choose it here.",
+                "Choose Google Play services for instant delivery without an extra app.",
+            ).assertIsDisplayed()
+        compose.onNodeWithText("Instant delivery").performClick()
+        compose.onNodeWithText("Built into Otus").assertIsDisplayed()
+        compose.onNodeWithText("Google Play services").performClick()
+        compose.waitUntil { push.chosen == google }
+        compose.onNodeWithText("Instant delivery").performClick()
+        compose.onNodeWithText("Off").performClick()
+        compose.waitUntil { push.chosen == null }
+        compose.onNodeWithText("Off, checks about every 15 minutes").assertIsDisplayed()
+    }
+
+    @Test
+    fun unsupportedServersShowWhyTheyUseBackgroundChecks() {
+        val google = PushDistributor("com.otus.mail", "Google Play services", isGoogle = true)
+        val push =
+            FakeNotificationPush(listOf(google)).apply {
+                chosen = google
+                status = PushDeliveryStatus.VapidRequired
+            }
+        open(push)
+        compose.onNodeWithText("Delivery through Google Play services").assertIsDisplayed()
+        compose.onRoot().captureRoboImage("src/test/screenshots/notifications/google-settings.png")
+        compose.onNodeWithText("Notifications").performClick()
+        compose
+            .onNodeWithText(
+                "The server doesn't support Google delivery. Mail checks periodically.",
+            ).assertIsDisplayed()
+        compose.onAllNodesWithText("Connecting").assertCountEquals(0)
+    }
+
+    @Test
+    fun withoutAPushAppThePageSuggestsOne() {
+        open(FakeNotificationPush(emptyList()))
+        compose.onNodeWithText("Notifications").performClick()
+        compose
+            .onNodeWithText(
+                "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy.",
             ).assertIsDisplayed()
         compose.onAllNodesWithText("Accounts").assertCountEquals(0)
+        compose.onRoot().captureRoboImage("src/test/screenshots/notifications/google-unavailable.png")
     }
 
     @Test

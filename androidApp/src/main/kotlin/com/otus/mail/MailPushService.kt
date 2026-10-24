@@ -1,6 +1,7 @@
 package com.otus.mail
 
 import com.otus.jmap.JmapException
+import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.PushService
 import org.unifiedpush.android.connector.data.PushEndpoint
@@ -41,11 +42,18 @@ class MailPushService : PushService() {
         PushSyncWorker.enqueue(this, PushSyncWorker.cleared(instance))
     }
 
-    // The next background check registers the account again.
     override fun onRegistrationFailed(
         reason: FailedReason,
         instance: String,
-    ) = Unit
+    ) {
+        val problem =
+            when (reason) {
+                FailedReason.VAPID_REQUIRED -> PushDeliveryStatus.VapidRequired
+                FailedReason.NETWORK -> PushDeliveryStatus.Unavailable
+                FailedReason.INTERNAL_ERROR, FailedReason.ACTION_REQUIRED -> PushDeliveryStatus.RegistrationFailed
+            }
+        PushSyncWorker.enqueue(this, PushSyncWorker.failed(instance, problem))
+    }
 
     /**
      * Only pushes encrypted with this endpoint's keys (RFC 8291) are read. Anyone who learns the
