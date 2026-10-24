@@ -1,8 +1,8 @@
 name: nightly
 
 # Builds a signed nightly APK of main and publishes it as a release of the public nightly
-# repository, where the app's update check finds it. A night without new commits on main builds
-# nothing. It builds against otus-meta main, like a local build, because Meta publishing is paused.
+# repository, where the app's update check finds it. Changes in Mail or Meta trigger a build.
+# Both source revisions are resolved together and recorded in the release provenance.
 # See docs/nightly.md for the secrets this needs.
 on:
   schedule:
@@ -27,7 +27,9 @@ jobs:
     runs-on: ubicloud-standard-2
     outputs:
       number: ${{ steps.number.outputs.number }}
-      previous: ${{ steps.number.outputs.previous }}
+      previous_mail: ${{ steps.number.outputs.previous_mail }}
+      previous_meta: ${{ steps.number.outputs.previous_meta }}
+      meta_sha: ${{ steps.number.outputs.meta_sha }}
       sha: ${{ steps.number.outputs.sha }}
     steps:
       # A re-run keeps the commit of its first attempt, so check out main's current tip instead.
@@ -36,19 +38,41 @@ jobs:
           ref: main
           fetch-depth: 0
           persist-credentials: false
-      # Main is squash-merged, so its commit count grows by one per merge and orders the builds.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: reazndev/otus-meta
+          ref: main
+          path: otus-meta
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
       - id: number
         env:
           GH_TOKEN: ${{ secrets.OTUS_NIGHTLY_TOKEN }}
         run: |
+          mail_sha=$(git rev-parse HEAD)
+          meta_sha=$(git -C otus-meta rev-parse HEAD)
+          gh api "repos/$NIGHTLY_REPO/releases?per_page=1" --jq '.[0] // {}' > latest.json
+          latest=$(jq -r '.tag_name // ""' latest.json)
+          previous_mail=
+          previous_meta=
           number=$(git rev-list --count HEAD)
-          latest=$(gh release view -R "$NIGHTLY_REPO" --json tagName -q .tagName 2>/dev/null || true)
-          echo "previous=${latest#nightly-}" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          if [ "$latest" != "nightly-$number" ]; then
+          if [ -n "$latest" ]; then
+            [[ "$latest" =~ ^nightly-([0-9]+)$ ]] || { echo "Unexpected release tag: $latest"; exit 1; }
+            number=$((10#${BASH_REMATCH[1]} + 1))
+            if jq -e '.assets[]? | select(.name == "provenance.json")' latest.json > /dev/null; then
+              gh release download "$latest" -R "$NIGHTLY_REPO" -p provenance.json -O previous.json
+              previous_mail=$(jq -er '.mail | select(test("^[0-9a-f]{40}$"))' previous.json)
+              previous_meta=$(jq -er '.meta | select(test("^[0-9a-f]{40}$"))' previous.json)
+            fi
+          fi
+          echo "sha=$mail_sha" >> "$GITHUB_OUTPUT"
+          echo "meta_sha=$meta_sha" >> "$GITHUB_OUTPUT"
+          echo "previous_mail=$previous_mail" >> "$GITHUB_OUTPUT"
+          echo "previous_meta=$previous_meta" >> "$GITHUB_OUTPUT"
+          if [ "$mail_sha" != "$previous_mail" ] || [ "$meta_sha" != "$previous_meta" ]; then
             echo "number=$number" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::$latest already covers main at $(git rev-parse --short HEAD), so there is nothing to build."
+            echo "::notice::$latest already contains these Mail and Meta revisions."
           fi
 
   build:
@@ -57,7 +81,10 @@ jobs:
     runs-on: ubicloud-standard-2
     env:
       NUMBER: ${{ needs.version.outputs.number }}
-      PREVIOUS: ${{ needs.version.outputs.previous }}
+      PREVIOUS_MAIL: ${{ needs.version.outputs.previous_mail }}
+      PREVIOUS_META: ${{ needs.version.outputs.previous_meta }}
+      MAIL_SHA: ${{ needs.version.outputs.sha }}
+      META_SHA: ${{ needs.version.outputs.meta_sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -67,6 +94,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: reazndev/otus-meta
+          ref: ${{ needs.version.outputs.meta_sha }}
+          fetch-depth: 0
           path: otus-meta
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
@@ -95,8 +124,17 @@ jobs:
         run: |
           apk="otus-mail-nightly-$NUMBER.apk"
           cp androidApp/build/outputs/apk/nightly/androidApp-nightly.apk "$apk"
-          # The notes list each commit since the previous nightly, or the last 20 for the first one.
-          count=$(( ${PREVIOUS:-0} > 0 ? NUMBER - PREVIOUS : 20 ))
-          git log -n "$count" --format='- %s' > notes.md
-          gh release create "nightly-$NUMBER" "$apk" -R "$NIGHTLY_REPO" \
+          jq -n --arg mail "$MAIL_SHA" --arg meta "$META_SHA" --argjson versionCode "$NUMBER" \
+            '{mail: $mail, meta: $meta, versionCode: $versionCode}' > provenance.json
+          history() {
+            local checkout="$1" previous="$2"
+            if [ -n "$previous" ] && git -C "$checkout" merge-base --is-ancestor "$previous" HEAD; then
+              git -C "$checkout" log "$previous..HEAD" --format='- %s'
+            else
+              git -C "$checkout" log -n 20 --format='- %s'
+            fi
+          }
+          history . "$PREVIOUS_MAIL" > notes.md
+          history otus-meta "$PREVIOUS_META" >> notes.md
+          gh release create "nightly-$NUMBER" "$apk" provenance.json -R "$NIGHTLY_REPO" \
             --title "Otus Mail nightly $(date -u +%-d.%-m.%y)" --notes-file notes.md
