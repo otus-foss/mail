@@ -73,7 +73,7 @@ private fun DraftAttachment.status(
     attachments: ComposeAttachments,
 ): String? =
     when {
-        failure == UploadFailure.TooLarge -> "Too large for this server"
+        failure == UploadFailure.TooLarge -> "File is too large"
         failure != null -> "Couldn't upload"
         attachments.uploading(this) -> "Uploading…"
         else -> null

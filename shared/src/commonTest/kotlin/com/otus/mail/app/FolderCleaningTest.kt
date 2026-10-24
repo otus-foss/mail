@@ -26,6 +26,10 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -72,7 +76,7 @@ class FolderCleaningTest {
         val engine =
             stalwartLike { body ->
                 sent.update { it + body }
-                reply(body)
+                if ("Email/get" in body && "Email/query" !in body) membership(body, messages.toList()) else reply(body)
             }
         val services = MailServices(logins = store, createClient = { JmapClient(engine) })
         val folders = testFolders(services) { listOf(account) }
@@ -149,6 +153,32 @@ class FolderCleaningTest {
             assertNull(feed.notice)
             assertTrue(sent.value.any { "\"destroy\":[\"m1\"]" in it }, sent.value.toString())
         }
+
+    private fun membership(
+        body: String,
+        messages: List<MailMessage>,
+    ): String {
+        val call =
+            Json
+                .parseToJsonElement(body)
+                .jsonObject
+                .getValue("methodCalls")
+                .jsonArray
+                .single()
+                .jsonArray
+        val ids =
+            call[1]
+                .jsonObject
+                .getValue("ids")
+                .jsonArray
+                .map { it.jsonPrimitive.content }
+        val list =
+            ids.joinToString { id ->
+                val folder = messages.first { it.emailId == id }.location.mailboxId
+                """{"id":"$id","mailboxIds":{"$folder":true}}"""
+            }
+        return """{"methodResponses":[["Email/get",{"state":"fresh","list":[$list]},"c0"]]}"""
+    }
 
     private fun page(
         ids: String,
