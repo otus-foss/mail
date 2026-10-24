@@ -10,7 +10,7 @@ the account's Drafts folder and sends them through JMAP `EmailSubmission/set`.
 `ComposeRequest` names what the draft starts from, and `startDraft` builds it:
 
 - **New message** starts blank, in the account the request names or else the first account.
-- **Reply** goes to the original's sender. The subject gets "Re: " unless it already starts with
+- **Reply** goes to the original's Reply-To addresses when present, otherwise its sender. The subject gets "Re: " unless it already starts with
   "Re:" in any case. `inReplyTo` holds the original's Message-ID, and `references` holds its
   References followed by its Message-ID, so the reply stays in the thread. The body starts
   empty. The quote, kept apart from it in `Draft.quote`, is "On <date>, <name> wrote:" and the
