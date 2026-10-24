@@ -18,6 +18,7 @@ import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
+import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SendException
@@ -165,30 +166,20 @@ class JmapDraftSender(
     override suspend fun cancel(message: SentMessage): Result<Unit> =
         try {
             val account = mailAccount(connections, logins, message.accountId) ?: failSend(SendFailure.ServerProblem)
-            lateinit var undone: JmapCall<SetResult>
-            val response =
-                account.connection.send {
-                    undone =
-                        call(
-                            SetMethod(
-                                EmailSubmissionType,
-                                account.id,
-                                update =
-                                    mapOf(
-                                        message.submissionId to buildJsonObject { put("undoStatus", "canceled") },
-                                    ),
-                            ),
-                        )
-                    call(
-                        SetMethod(
-                            EmailType,
-                            account.id,
-                            update = mapOf(message.emailId to buildJsonObject { put("keywords/$DRAFT_KEYWORD", true) }),
-                        ),
-                    )
-                }
-            response[undone].notUpdated[message.submissionId]?.let { failSend(it.toSendFailure()) }
+            val undone =
+                account.connection.call(
+                    SetMethod(
+                        EmailSubmissionType,
+                        account.id,
+                        update = mapOf(message.submissionId to buildJsonObject { put("undoStatus", "canceled") }),
+                    ),
+                )
+            undone.notUpdated[message.submissionId]?.let { failSend(it.toSendFailure()) }
+            if (message.submissionId !in undone.updated) failSend(SendFailure.ServerProblem)
+            account.restoreCanceledDraft(message.emailId)
             Result.success(Unit)
+        } catch (error: DraftRestoreException) {
+            Result.failure(error)
         } catch (error: SendException) {
             Result.failure(error)
         } catch (error: JmapException) {
@@ -196,6 +187,22 @@ class JmapDraftSender(
         } catch (error: LoginStoreException) {
             Result.failure(SendException(SendFailure.ServerProblem, error))
         }
+
+    private suspend fun MailAccount.restoreCanceledDraft(emailId: String) {
+        try {
+            val restored =
+                connection.call(
+                    SetMethod(
+                        EmailType,
+                        id,
+                        update = mapOf(emailId to buildJsonObject { put("keywords/$DRAFT_KEYWORD", true) }),
+                    ),
+                )
+            if (emailId !in restored.updated || emailId in restored.notUpdated) throw DraftRestoreException()
+        } catch (error: JmapException) {
+            throw DraftRestoreException(error)
+        }
+    }
 
     /** Deletes the draft's earlier copy [draftId] and marks the answered message. */
     private suspend fun MailAccount.tidy(

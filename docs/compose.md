@@ -199,7 +199,9 @@ which opens the sheet again; once a time is set the sheet also offers Send now. 
 then reads "Sends to" with the schedule-send symbol. Send sends with an explicit envelope whose `mailFrom`
 carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled for Mon 19 Oct, 8:00" with Undo.
 The scheduled copy stays in Drafts without `$draft` until the server sends it. Undo sets the
-submission's `undoStatus` to `canceled`, marks the copy `$draft` again, and opens it.
+submission's `undoStatus` to `canceled`. Only after the server confirms cancellation does Mail
+mark the copy `$draft` again and open it. If restoring the draft fails, Mail reports that the
+send was canceled but the draft could not be restored.
 
 ## Limits
 
