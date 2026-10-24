@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.core.graphics.scale
 import com.otus.mail.feature.inbox.domain.SignatureImage
+import com.otus.mail.feature.inbox.domain.SignatureImagePick
 import com.otus.mail.feature.inbox.domain.SignatureImages
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -11,11 +12,11 @@ import java.io.InputStream
 import kotlin.io.encoding.Base64
 
 /** Reads dimensions first, then decodes at a sample size that bounds both bitmap dimensions. */
-internal fun signatureImage(open: () -> InputStream?): SignatureImage? =
+internal fun signatureImage(open: () -> InputStream?): SignatureImagePick =
     try {
         val source = sampledSignatureBitmap(open)
         if (source == null) {
-            null
+            SignatureImagePick.Unreadable
         } else {
             try {
                 source.signature()
@@ -24,9 +25,9 @@ internal fun signatureImage(open: () -> InputStream?): SignatureImage? =
             }
         }
     } catch (expected: IOException) {
-        null
+        SignatureImagePick.Unreadable
     } catch (expected: SecurityException) {
-        null
+        SignatureImagePick.Unreadable
     }
 
 private fun sampledSignatureBitmap(open: () -> InputStream?): Bitmap? {
@@ -48,22 +49,24 @@ internal fun signatureSample(
     return sample
 }
 
-private fun Bitmap.signature(): SignatureImage? {
+/** Tries PNG, then JPEG at falling quality, until one fits [maxBytes]. */
+internal fun Bitmap.signature(maxBytes: Int = SignatureImages.MAX_BYTES): SignatureImagePick {
     val ratio = minOf(1.0, SignatureImages.MAX_WIDTH.toDouble() / maxOf(width, height))
     val scaled = scale((width * ratio).toInt().coerceAtLeast(1), (height * ratio).toInt().coerceAtLeast(1))
     return try {
-        val png = scaled.encoded(Bitmap.CompressFormat.PNG, FULL_QUALITY)
+        val png = scaled.encoded(Bitmap.CompressFormat.PNG, FULL_QUALITY, maxBytes)
         val encoded =
             if (png != null) {
                 "image/png" to png
             } else {
                 JPEG_QUALITIES.firstNotNullOfOrNull { quality ->
-                    scaled.encoded(Bitmap.CompressFormat.JPEG, quality)?.let { "image/jpeg" to it }
+                    scaled.encoded(Bitmap.CompressFormat.JPEG, quality, maxBytes)?.let { "image/jpeg" to it }
                 }
             }
         encoded?.let { (type, bytes) ->
-            SignatureImage(type, Base64.encode(bytes), scaled.width.coerceIn(MIN_SHOWN_WIDTH, MAX_SHOWN_WIDTH))
-        }
+            val shownWidth = scaled.width.coerceIn(MIN_SHOWN_WIDTH, MAX_SHOWN_WIDTH)
+            SignatureImagePick.Picked(SignatureImage(type, Base64.encode(bytes), shownWidth))
+        } ?: SignatureImagePick.TooLarge
     } finally {
         if (scaled !== this) scaled.recycle()
     }
@@ -73,11 +76,10 @@ private fun Bitmap.signature(): SignatureImage? {
 private fun Bitmap.encoded(
     format: Bitmap.CompressFormat,
     quality: Int,
+    maxBytes: Int,
 ): ByteArray? {
     val output = ByteArrayOutputStream()
-    return if (compress(format, quality, output) &&
-        output.size() <= SignatureImages.MAX_BYTES
-    ) {
+    return if (compress(format, quality, output) && output.size() <= maxBytes) {
         output.toByteArray()
     } else {
         null
@@ -85,8 +87,8 @@ private fun Bitmap.encoded(
 }
 
 private const val FULL_QUALITY = 100
-private const val JPEG_START_QUALITY = 85
-private const val JPEG_MIN_QUALITY = 25
+internal const val JPEG_START_QUALITY = 85
+internal const val JPEG_MIN_QUALITY = 25
 private const val JPEG_QUALITY_STEP = 15
 private val JPEG_QUALITIES = JPEG_START_QUALITY downTo JPEG_MIN_QUALITY step JPEG_QUALITY_STEP
 private const val MIN_SHOWN_WIDTH = 48
