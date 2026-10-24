@@ -56,6 +56,7 @@ internal fun EmailObject.toMessage(
         emailId = id,
         to = to.orEmpty().map { it.toSender(accountId) },
         cc = cc.orEmpty().map { it.toSender(accountId) },
+        replyTo = replyTo.orEmpty().map { it.toSender(accountId) },
         messageIds = messageId.orEmpty(),
         references = references.orEmpty(),
         preview = shortText,
