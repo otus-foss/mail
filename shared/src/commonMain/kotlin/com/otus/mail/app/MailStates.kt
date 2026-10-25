@@ -78,6 +78,10 @@ internal class MailStates(
     /** Each account's folder rules, kept in the Otus block of its active Sieve script. */
     val rules = FolderRulesState(services.rules, scope)
 
+    /** The contact photos sender avatars take from the device's contact list. */
+    val contactAvatars =
+        ContactAvatarUpdates(services.avatars, services.work, { behavior.behavior.allAccountPhotos }) { feed.refresh() }
+
     /** Every login's contacts and the contact changes waiting for the server. */
     val contacts =
         ContactsState(
@@ -89,7 +93,7 @@ internal class MailStates(
             },
             services.pickers.avatarPhotos,
             FrequentContacts(services.mailTraces, services.stores.contacts, services.work),
-            ContactAvatarUpdates(services.avatars, services.work) { feed.refresh() },
+            contactAvatars,
         )
 
     /** Addresses pinned in "Show mail from". */

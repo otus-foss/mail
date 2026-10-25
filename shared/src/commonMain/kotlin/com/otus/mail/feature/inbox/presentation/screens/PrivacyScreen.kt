@@ -87,7 +87,7 @@ private fun PhotosSection(state: MailBehaviorState) {
     }
 }
 
-/** Which outside sources may draw avatars. */
+/** Which outside sources may draw avatars, and whether contacts from every account may. */
 @Composable
 private fun AvatarsSection(state: MailBehaviorState) {
     val behavior = state.behavior
@@ -108,6 +108,13 @@ private fun AvatarsSection(state: MailBehaviorState) {
                 icon = Res.drawable.symbol_person,
             )
         }
+        SettingToggleRow(
+            "Photos from all accounts",
+            checked = behavior.allAccountPhotos,
+            onCheckedChange = { on -> state.update { it.copy(allAccountPhotos = on) } },
+            description = "Shows a contact's photo on mail to any of your accounts, not only the one that saved them",
+            icon = Res.drawable.symbol_person,
+        )
     }
 }
 
