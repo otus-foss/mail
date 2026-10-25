@@ -71,7 +71,17 @@ Each run calls `JmapNewMailChecker`:
 
 `MailNotifications` posts one notification per message on the "New mail" channel: the sender as
 the title, the subject as the text, and the subject and preview when expanded. Messages are
-grouped by account with a summary. The lock screen shows only "New mail" and the account name.
+grouped by account with a summary. Settings › Notifications › **Previews** decides what they show,
+saved by `AndroidNotificationPreviewStore`:
+
+- **When unlocked**, the default, posts them with `VISIBILITY_SECRET`, so nothing shows on the
+  lock screen and the full alert shows once the device is unlocked.
+- **Always** posts them with `VISIBILITY_PRIVATE`. Android then shows the content on the lock
+  screen unless the device's own setting hides sensitive content, which stock Android does not by
+  default; a hidden alert shows only "New mail".
+- **Never** shows only "New mail", without the sender, subject, preview, or account.
+
+Apple alerts never show message content, so iOS has no Previews setting.
 A tap opens the app; opening the message itself is not built yet.
 
 On Android 13 and later, the app asks for the notification permission at launch when an account

@@ -12,13 +12,16 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ForegroundInfo
 import com.otus.mail.feature.notifications.domain.NewMail
+import com.otus.mail.feature.notifications.domain.NotificationPreviews
 
 /**
- * Posts one notification per new message, grouped by account. The lock screen shows only
- * "New mail" and the account until the device is unlocked.
+ * Posts one notification per new message, grouped by account, showing what [previews] allows: by
+ * default nothing on the lock screen and the sender and subject once the device is unlocked. A
+ * lock screen that shows an alert at all shows only "New mail", never the account.
  */
 class MailNotifications(
     context: Context,
+    private val previews: () -> NotificationPreviews = { AndroidNotificationPreviewStore(context).read() },
 ) {
     private val context = context.applicationContext
     private val manager = NotificationManagerCompat.from(this.context)
@@ -57,40 +60,59 @@ class MailNotifications(
         ) {
             return
         }
+        val shown = previews()
         mail.groupBy { it.loginId }.forEach { (loginId, messages) ->
-            messages.forEach { manager.notify("$loginId/${it.emailId}", MESSAGE_ID, message(it)) }
-            manager.notify(loginId, SUMMARY_ID, summary(messages.last()))
+            messages.forEach { manager.notify("$loginId/${it.emailId}", MESSAGE_ID, message(it, shown)) }
+            manager.notify(loginId, SUMMARY_ID, summary(messages.last(), shown))
         }
     }
 
-    private fun message(mail: NewMail) =
-        base(mail)
-            .setContentTitle(mail.sender)
-            .setContentText(subject(mail))
-            .setStyle(NotificationCompat.BigTextStyle().bigText(listOf(subject(mail), mail.preview).joinToString("\n")))
-            .setWhen(mail.receivedAt.toEpochMilliseconds())
-            .setShowWhen(true)
-            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .setPublicVersion(
-                base(mail)
-                    .setContentTitle(context.getString(R.string.notification_new_mail))
-                    .setContentText(mail.accountName)
-                    .build(),
-            ).build()
+    private fun message(
+        mail: NewMail,
+        shown: NotificationPreviews,
+    ) = when (shown) {
+        NotificationPreviews.Never -> {
+            newMail(mail).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        }
 
-    private fun summary(latest: NewMail) =
-        base(latest)
-            .setContentTitle(latest.accountName)
-            .setGroupSummary(true)
-            .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
-            .build()
+        NotificationPreviews.Always, NotificationPreviews.Unlocked -> {
+            base(mail)
+                .setContentTitle(mail.sender)
+                .setContentText(subject(mail))
+                .setSubText(mail.accountName)
+                .setStyle(NotificationCompat.BigTextStyle().bigText("${subject(mail)}\n${mail.preview}"))
+                .setVisibility(lockScreen(shown))
+                .setPublicVersion(newMail(mail).build())
+        }
+    }.setWhen(mail.receivedAt.toEpochMilliseconds())
+        .setShowWhen(true)
+        .build()
+
+    private fun summary(
+        latest: NewMail,
+        shown: NotificationPreviews,
+    ) = when (shown) {
+        NotificationPreviews.Never -> newMail(latest).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        else -> base(latest).setContentTitle(latest.accountName).setVisibility(lockScreen(shown))
+    }.setGroupSummary(true)
+        .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+        .build()
+
+    /** "New mail" alone, the most a lock screen shows. */
+    private fun newMail(mail: NewMail) = base(mail).setContentTitle(context.getString(R.string.notification_new_mail))
+
+    /** Always leaves the lock screen to the device's setting; When unlocked keeps alerts off it. */
+    private fun lockScreen(shown: NotificationPreviews) =
+        when (shown) {
+            NotificationPreviews.Always -> NotificationCompat.VISIBILITY_PRIVATE
+            else -> NotificationCompat.VISIBILITY_SECRET
+        }
 
     private fun base(mail: NewMail) =
         NotificationCompat
             .Builder(context, CHANNEL)
             .setSmallIcon(android.R.drawable.sym_action_email)
             .setCategory(NotificationCompat.CATEGORY_EMAIL)
-            .setSubText(mail.accountName)
             .setGroup("mail/${mail.loginId}")
             .setContentIntent(openApp())
             .setAutoCancel(true)
