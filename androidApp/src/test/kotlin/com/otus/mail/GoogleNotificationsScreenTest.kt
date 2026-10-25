@@ -1,0 +1,105 @@
+package com.otus.mail
+
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import com.github.takahirom.roborazzi.captureRoboImage
+import com.otus.accounts.domain.ConnectedAccount
+import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.ThemeBase
+import com.otus.designsystem.theme.ThemeChoice
+import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
+import com.otus.mail.feature.notifications.domain.PushDistributor
+import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
+import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w412dp-h892dp-xhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class GoogleNotificationsScreenTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    private val google = PushDistributor("com.otus.mail", "Google Play services", isGoogle = true)
+
+    @Test
+    fun activeGoogleDeliveryUsesTheSelectedTheme() {
+        listOf(ThemeBase.Otus, ThemeBase.Light, ThemeBase.Black).forEach { theme ->
+            show(theme, PushDeliveryStatus.Active)
+            compose.onNodeWithText("Instant").assertIsDisplayed()
+            capture("google-${theme.name.lowercase()}")
+        }
+    }
+
+    @Test
+    fun unsupportedServerExplainsTheFallback() {
+        show(ThemeBase.Light, PushDeliveryStatus.VapidRequired)
+        compose
+            .onNodeWithText(
+                "The server doesn't support Google delivery. Mail checks periodically.",
+            ).assertIsDisplayed()
+        capture("google-unsupported")
+    }
+
+    @Test
+    fun failedRegistrationExplainsTheRetry() {
+        show(ThemeBase.Black, PushDeliveryStatus.RegistrationFailed)
+        compose
+            .onNodeWithText(
+                "Push registration failed. Mail will retry and keep checking periodically.",
+            ).assertIsDisplayed()
+        capture("google-failed")
+    }
+
+    @Test
+    fun connectingAndChoosingGoogleNeedNoExtraApp() {
+        show(ThemeBase.Otus, PushDeliveryStatus.Connecting)
+        compose.onNodeWithText("Connecting").assertIsDisplayed()
+        capture("google-connecting")
+        compose.onNodeWithText("Instant delivery").performClick()
+        compose.onNodeWithText("Built into Otus").assertIsDisplayed()
+        capture("google-choice")
+        compose.onNodeWithText("Off").performClick()
+        compose.onNodeWithText("Off, checks about every 15 minutes").assertIsDisplayed()
+        capture("google-off")
+    }
+
+    private fun show(
+        theme: ThemeBase,
+        status: PushDeliveryStatus,
+    ) {
+        val push =
+            FakeNotificationPush(listOf(google)).apply {
+                chosen = google
+                this.status = status
+            }
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                val scope = rememberCoroutineScope()
+                val state = remember(push) { NotificationSettingsState(push, scope) }
+                OtusTheme(ThemeChoice(base = theme).palette) {
+                    NotificationsScreen(
+                        state,
+                        listOf(ConnectedAccount("ada", "Ada", "ada@example.org", "example.org")),
+                        onBack = {},
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun capture(name: String) {
+        compose.onAllNodes(isRoot()).onLast().captureRoboImage("src/test/screenshots/notifications/$name.png")
+    }
+}

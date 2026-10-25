@@ -12,7 +12,10 @@ import com.otus.mail.feature.inbox.domain.PickedFile
 import com.otus.mail.feature.inbox.domain.UploadException
 import com.otus.mail.feature.inbox.domain.UploadFailure
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -27,14 +30,16 @@ import kotlin.uuid.Uuid
  * from the text removes it. Without [files] and [uploads], nothing can be attached.
  */
 class ComposeAttachments(
-    private val files: AttachmentFiles?,
-    private val uploads: AttachmentUploads?,
+    services: ComposeAttachmentServices,
     private val scope: CoroutineScope,
     private val body: RichText,
     private val accountId: () -> String,
     private val attachments: () -> List<DraftAttachment>,
     private val change: ((List<DraftAttachment>) -> List<DraftAttachment>) -> Unit,
+    initialSources: Map<String, PickedFile> = emptyMap(),
 ) {
+    private val files = services.files
+    private val uploads = services.uploads
     val canAttach: Boolean get() = files != null && uploads != null
 
     /** Why each attachment's last upload failed, by its id; its chip offers Retry. */
@@ -42,7 +47,17 @@ class ComposeAttachments(
         private set
 
     /** Each picked file by its attachment's id, kept to upload it again and to draw it. */
-    private val picked = mutableMapOf<String, PickedFile>()
+    private val picked = initialSources.toMutableMap()
+    private val jobs = mutableMapOf<String, Job>()
+
+    /** Sources stay available to Undo, without copying their file bytes into the draft. */
+    val sourceFiles: Map<String, PickedFile> get() = picked.toMap()
+
+    /** A closed composer must not publish upload results into a later editing session. */
+    fun stop() {
+        jobs.values.forEach { it.cancel() }
+        jobs.clear()
+    }
 
     // One file uploads at a time, so its bytes stay in memory until the server has them. Drawing
     // reads separately, so an inline image shows while uploads are still queued.
@@ -61,12 +76,11 @@ class ComposeAttachments(
 
     fun remove(id: String) {
         attachments().firstOrNull { it.id == id }?.takeIf { it.inline }?.let { body.images.remove(it.source) }
+        jobs.remove(id)?.cancel()
         picked -= id
         failures -= id
         change { list -> list.filterNot { it.id == id } }
     }
-
-    fun retry(id: String) = upload(id)
 
     /** Shows an image in the body at the cursor, or takes it out and attaches it as a file. */
     fun showInline(
@@ -85,12 +99,13 @@ class ComposeAttachments(
             val file = from.pick().firstOrNull { it.type.startsWith("image/") } ?: return@launch
             val old = attachments().firstOrNull { it.id == id } ?: return@launch
             val new = newAttachment(file).copy(inline = true)
+            jobs.remove(id)?.cancel()
             picked -= id
             failures -= id
             picked[new.id] = file
             change { list -> list.map { if (it.id == id) new else it } }
             body.images.replace(old.source, new.source)
-            upload(new.id)
+            retry(new.id)
         }
     }
 
@@ -116,8 +131,8 @@ class ComposeAttachments(
     suspend fun follow() =
         coroutineScope {
             launch {
-                snapshotFlow(accountId).drop(1).collect { account ->
-                    attachments().filterNot { it.uploadedTo(account) }.forEach { upload(it.id) }
+                snapshotFlow(accountId).collect { account ->
+                    attachments().filterNot { it.uploadedTo(account) }.forEach { retry(it.id) }
                 }
             }
             snapshotFlow { body.images.sources }.drop(1).collect { sources ->
@@ -131,37 +146,38 @@ class ComposeAttachments(
         picked[shown.id] = file
         change { it + shown }
         if (shown.inline) body.images.insert(shown.source)
-        upload(shown.id)
+        retry(shown.id)
     }
 
-    private fun upload(id: String) {
+    /** Uploads the picked file again, replacing any earlier attempt. */
+    fun retry(id: String) {
         val file = picked[id] ?: return
         val to = uploads ?: return
         val account = accountId()
         failures -= id
-        scope.launch {
-            val result =
-                uploadLock.withLock {
-                    if (account != accountId() || id !in picked) return@launch
-                    try {
-                        val limit = to.maxBytes(account)
-                        to.upload(account, file.read(limit), file.type)
-                    } catch (failed: UploadException) {
-                        Result.failure(failed)
+        jobs.remove(id)?.cancel()
+        jobs[id] =
+            scope.launch {
+                val result =
+                    uploadLock.withLock {
+                        if (account != accountId() || id !in picked) return@launch
+                        try {
+                            val limit = to.maxBytes(account)
+                            to.upload(account, file.read(limit), file.type)
+                        } catch (failed: UploadException) {
+                            Result.failure(failed)
+                        }
                     }
-                }
-            result.fold(
+                currentCoroutineContext().ensureActive()
                 // A draft moved on during the upload needs the file in its new account instead.
-                onSuccess = { blob ->
-                    if (accountId() ==
-                        account
-                    ) {
+                if (accountId() != account) return@launch
+                result.fold(
+                    onSuccess = { blob ->
                         change { list -> list.map { if (it.id == id) it.copy(blob = blob) else it } }
-                    }
-                },
-                onFailure = { failures += id to ((it as? UploadException)?.failure ?: UploadFailure.Failed) },
-            )
-        }
+                    },
+                    onFailure = { failures += id to ((it as? UploadException)?.failure ?: UploadFailure.Failed) },
+                )
+            }
     }
 }
 
@@ -170,3 +186,9 @@ private fun newAttachment(file: PickedFile) = DraftAttachment(Uuid.random().toSt
 
 /** Where the body's HTML points at an inline image (RFC 2392). */
 internal val DraftAttachment.source: String get() = "cid:$cid"
+
+/** The platform picker and account uploader used by the attachment editor. */
+class ComposeAttachmentServices(
+    val files: AttachmentFiles?,
+    val uploads: AttachmentUploads?,
+)

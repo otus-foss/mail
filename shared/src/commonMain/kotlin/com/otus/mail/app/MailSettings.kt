@@ -30,7 +30,7 @@ internal fun mailSettingsEntries(
         notifications?.let { state ->
             SettingsEntry(
                 "Notifications",
-                state.current?.let { "Instant through ${it.name}" } ?: "New mail every 15 minutes",
+                state.current?.let { "Delivery through ${it.name}" } ?: "New mail every 15 minutes",
                 Res.drawable.symbol_notifications,
             ) { navigation.go(MailPage.Notifications) }
         },

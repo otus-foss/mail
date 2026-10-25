@@ -1,14 +1,13 @@
 package com.otus.mail.feature.notifications.domain
 
-import com.otus.push.PushStatus
-
-/** An installed UnifiedPush app, such as ntfy, that can deliver pushes to Mail. */
+/** A push service, either built into Mail or supplied by an installed app. */
 data class PushDistributor(
     val id: String,
     val name: String,
+    val isGoogle: Boolean = false,
 )
 
-/** Instant new-mail pushes through the user's UnifiedPush app. */
+/** Instant new-mail pushes through the selected service. */
 interface InstantPush {
     suspend fun distributors(): List<PushDistributor>
 
@@ -19,7 +18,7 @@ interface InstantPush {
     suspend fun use(distributor: PushDistributor?)
 
     /** Each login's push status, keyed by login id. */
-    suspend fun statuses(): Map<String, PushStatus>
+    suspend fun statuses(): Map<String, PushDeliveryStatus>
 
     /** Stops pushes for a login that is being removed, while its credentials still exist. */
     suspend fun forget(loginId: String)

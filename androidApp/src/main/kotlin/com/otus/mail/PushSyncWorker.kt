@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.otus.jmap.PushKeys
 import com.otus.jmap.PushMessage
+import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.push.PushEndpoint
 
 /**
@@ -27,17 +28,22 @@ class PushSyncWorker(
         val login = inputData.getString(LOGIN)
         if (login != null) {
             when (inputData.getString(KIND)) {
-                ENDPOINT -> app.push.setEndpoint(login, endpoint())
+                ENDPOINT -> app.instantPush.endpoint(login, endpoint())
+                FAILED -> app.instantPush.failed(login, problem())
                 CLEARED -> app.push.clearEndpoint(login)
                 VERIFICATION -> app.push.receive(login, verification())
             }
         }
-        app.instantPush.registerMissing()
+        app.instantPush.registerAccounts(retry = inputData.getString(KIND) == null)
         app.push.sync()
         return Result.success()
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo = MailNotifications(applicationContext).backgroundWork()
+
+    private fun problem(): PushDeliveryStatus =
+        PushDeliveryStatus.entries.find { it.name == inputData.getString(PROBLEM) }
+            ?: PushDeliveryStatus.RegistrationFailed
 
     private fun endpoint(): PushEndpoint {
         val p256dh = inputData.getString(P256DH)
@@ -59,6 +65,8 @@ class PushSyncWorker(
         private const val SUBSCRIPTION = "subscription"
         private const val CODE = "code"
         private const val ENDPOINT = "endpoint"
+        private const val FAILED = "failed"
+        private const val PROBLEM = "problem"
         private const val CLEARED = "cleared"
         private const val VERIFICATION = "verification"
 
@@ -68,6 +76,11 @@ class PushSyncWorker(
             p256dh: String?,
             auth: String?,
         ): Data = workDataOf(KIND to ENDPOINT, LOGIN to login, URL to url, P256DH to p256dh, AUTH to auth)
+
+        fun failed(
+            login: String,
+            problem: PushDeliveryStatus,
+        ): Data = workDataOf(KIND to FAILED, LOGIN to login, PROBLEM to problem.name)
 
         fun cleared(login: String): Data = workDataOf(KIND to CLEARED, LOGIN to login)
 
