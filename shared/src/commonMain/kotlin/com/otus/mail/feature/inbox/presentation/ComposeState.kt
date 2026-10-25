@@ -155,7 +155,8 @@ class ComposeState(
             if (draft.from ==
                 null
             ) {
-                draft = draft.copy(from = request.preferredIdentity(found.map { it.sender }, origin.recentFrom))
+                val preferred = request.preferredIdentity(found.map { it.sender }, origin.recentFrom)
+                found.firstOrNull { it.sender == preferred }?.let(::chooseFrom)
             }
         }
     }
