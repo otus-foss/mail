@@ -1,4 +1,4 @@
-package com.otus.mail
+package com.otus.mail.app
 
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
