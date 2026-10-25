@@ -208,7 +208,16 @@ class MailServices(
     fun pushSubscriptions(
         states: PushStateStore,
         deviceClientId: String,
-    ): PushSubscriptions = PushSubscriptions(connections, logins, states, deviceClientId, listOf("EmailDelivery"))
+        beforeCreate: suspend (String) -> Unit = {},
+    ): PushSubscriptions =
+        PushSubscriptions(
+            connections,
+            logins,
+            states,
+            deviceClientId,
+            listOf("EmailDelivery"),
+            beforeCreate = beforeCreate,
+        )
 
     /**
      * Drops cached bodies of mail received more than [BODY_RETENTION] before [now], so the cache
@@ -220,6 +229,9 @@ class MailServices(
 
     /** The server signing key used to register directly with Google (RFC 9749). */
     suspend fun pushVapidKey(login: JmapLogin): String? = connections.connection(login).session().vapidPublicKey
+
+    /** Push cleanup must distinguish an empty account list from locked or unavailable storage. */
+    internal fun notificationLogins(): List<JmapLogin> = logins.logins()
 
     /** The saved logins; none when storage cannot be read. Call it off the main thread. */
     fun logins(): List<JmapLogin> =

@@ -38,3 +38,6 @@ local.properties
 .venv/
 __pycache__/
 .ruff_cache/
+
+# Swift package tests for notification encryption.
+iosApp/.build/
