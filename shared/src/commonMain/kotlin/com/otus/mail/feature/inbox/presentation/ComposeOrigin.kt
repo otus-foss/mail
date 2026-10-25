@@ -28,14 +28,14 @@ class ComposeServices(
     val threads: ThreadHistory? = null,
     val uploads: AttachmentUploads? = null,
     val files: AttachmentFiles? = null,
-    val photoCleaning: () -> PhotoCleaning = { PhotoCleaning.Never },
 )
 
 /**
  * The accounts around a draft: it starts in [accountId], and every one of [accounts] can send it.
  * [ownAddresses] are left out of Reply all, and [recentFrom] picks the address of a new message
  * from all accounts. A new message always gets the identity's signature; replies and forwards
- * get it only with [signatureInReplies].
+ * get it only with [signatureInReplies]. [photoCleaning] decides whether attached photos lose their
+ * metadata and names; without it, files attach as picked.
  */
 class ComposeOrigin(
     val accountId: String,
@@ -43,4 +43,5 @@ class ComposeOrigin(
     val ownAddresses: Collection<String>,
     val recentFrom: List<String> = emptyList(),
     val signatureInReplies: Boolean = true,
+    val photoCleaning: () -> PhotoCleaning = { PhotoCleaning.Never },
 )

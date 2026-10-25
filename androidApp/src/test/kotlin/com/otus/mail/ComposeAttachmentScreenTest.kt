@@ -156,11 +156,15 @@ class ComposeAttachmentScreenTest {
                                         }
                                     },
                                     files = { files },
-                                    photoCleaning = { cleaning },
                                 ),
                                 scope,
                                 ComposeRequest.New(),
-                                ComposeOrigin("a1", listOf(ComposeAccount("a1", "Company A")), emptyList()),
+                                ComposeOrigin(
+                                    "a1",
+                                    listOf(ComposeAccount("a1", "Company A")),
+                                    emptyList(),
+                                    photoCleaning = { cleaning },
+                                ),
                                 saveDelayMillis = 60_000,
                             )
                         }
