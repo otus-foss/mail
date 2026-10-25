@@ -105,7 +105,10 @@ Attach opens the system document picker for any number of files of any type. Eac
 at once to the draft's account (RFC 8620, section 6.1) and shows as a chip under the body with
 its name and "Uploading…", then its size. Reads and uploads run one file at a time. The reader
 stops at the smaller of 20 MiB and the session's `maxSizeUpload`, including when the picker reports
-an incorrect size. A file larger than this limit
+an incorrect size. JPEG, PNG, and WebP images are read without their metadata
+(`withoutImageMetadata`): EXIF, with GPS position, capture time, and camera model, plus XMP, IPTC,
+comments, and trailing data are dropped, while pixels, color profiles, and a JPEG's orientation
+stay. Other formats, including HEIC, upload unchanged. A file larger than this limit
 says "File is too large"; any other failure says "Couldn't upload", and tapping the chip
 offers Retry. ✕ removes a file. Choosing an identity of another account uploads every file again there,
 because a blob belongs to one account.
