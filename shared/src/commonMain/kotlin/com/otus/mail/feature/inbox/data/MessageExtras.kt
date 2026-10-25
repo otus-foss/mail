@@ -37,9 +37,10 @@ internal fun EmailObject.unsubscribe(): Unsubscribe? {
         Unsubscribe(
             web = https ?: urls.firstOrNull { it.startsWith("http://", ignoreCase = true) },
             mail = urls.firstOrNull { it.startsWith("mailto:", ignoreCase = true) },
+            // Only the topmost of each header comes from the user's own server; a sender can write
+            // more below it to learn which aliases belong together.
             deliveredTo =
-                (deliveredTo.orEmpty() + originalTo.orEmpty())
-                    .flatMap { it.orEmpty() }
+                (deliveredTo?.firstOrNull().orEmpty() + originalTo?.firstOrNull().orEmpty())
                     .map { it.email.trim() }
                     .filter { it.isNotEmpty() }
                     .distinct(),

@@ -50,19 +50,19 @@ internal class ListUnsubscriber(
     }
 
     /**
-     * The identity the list reached: the address the mail was [deliveredTo], else one in its To or
-     * Cc, else the account's sign-in address. Never another alias, since the list would learn it.
-     * Wildcard identities, such as `*@example.org`, cannot be a sender address.
+     * The address the list reached: the one the mail was [deliveredTo], else one in its To or Cc,
+     * when an identity sends as it. A wildcard identity, such as `*@example.org`, sends as the exact
+     * address under it, so a catch-all alias stays the only address the list knows. Null when none
+     * matches: falling back to the sign-in address or another alias would tell the list about it.
      */
     private suspend fun sendingAs(
         message: MailMessage,
         deliveredTo: List<String>,
     ): MailSender? {
-        val identities =
-            drafts.identities(message.location.accountId).map { it.sender }.filterNot { '*' in it.address }
-        val byAddress = identities.associateBy { it.address.lowercase() }
-        return (deliveredTo + (message.to + message.cc).map { it.address } + message.location.accountAddress)
-            .firstNotNullOfOrNull { byAddress[it.trim().lowercase()] }
+        val identities = drafts.identities(message.location.accountId).map { it.sender }
+        return (deliveredTo + (message.to + message.cc).map { it.address })
+            .map { it.trim() }
+            .firstNotNullOfOrNull { address -> identities.sendingAs(address)?.copy(address = address.lowercase()) }
     }
 }
 
@@ -98,3 +98,11 @@ private const val MAILTO = "mailto:"
 
 /** The subject when the `mailto:` address names none; list servers act on the address alone. */
 private const val DEFAULT_SUBJECT = "unsubscribe"
+
+/** The identity with exactly [address], else a wildcard identity for its domain. */
+private fun List<MailSender>.sendingAs(address: String): MailSender? {
+    val wanted = address.lowercase()
+    val domain = wanted.substringAfterLast('@', missingDelimiterValue = "")
+    return firstOrNull { it.address.lowercase() == wanted }
+        ?: firstOrNull { domain.isNotEmpty() && it.address.lowercase() == "*@$domain" }
+}
