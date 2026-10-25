@@ -36,11 +36,15 @@ import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.PossibleDuplicate
 import com.otus.mail.feature.contacts.presentation.avatar
+import com.otus.mail.feature.contacts.presentation.groupAvatar
 import com.otus.mail.feature.contacts.presentation.peopleCount
 import com.otus.mail.feature.contacts.presentation.rowLabel
 import kotlinx.coroutines.launch
 
-/** What the list shows: the notices on top, the groups, then the people filed by letter. */
+/**
+ * What the list shows: the notices on top, the [frequent] people as faces, the groups, then the
+ * people filed by letter.
+ */
 internal class ContactListContent(
     val people: List<ContactPerson>,
     val groups: List<ContactCard>,
@@ -50,6 +54,7 @@ internal class ContactListContent(
     val readOnly: ContactBook?,
     val booksOf: (ContactCard) -> List<ContactBook>,
     val membersOf: (ContactCard) -> Int,
+    val frequent: List<ContactPerson> = emptyList(),
 )
 
 /** What tapping and holding rows does; while [selected] is not empty a tap toggles a row. */
@@ -81,6 +86,9 @@ internal fun ContactList(
         verticalArrangement = Arrangement.spacedBy(EntryTokens.gap),
     ) {
         notices(content, actions)
+        if (content.frequent.isNotEmpty()) {
+            item("frequent") { FrequentPeople(content.frequent, actions.onOpen) }
+        }
         if (content.groups.isNotEmpty()) {
             item("groups") { SectionCaption("Groups", Modifier.padding(top = PageTokens.rowGap)) }
             val groupKeys = content.groups.map { it.key }
@@ -89,7 +97,7 @@ internal fun ContactList(
                 ListRow(
                     group.displayName,
                     peopleCount(content.membersOf(group)),
-                    groupAvatar,
+                    group.groupAvatar,
                     group.key,
                     rowSelection(groupKeys, index, actions.selected),
                     actions,
@@ -128,12 +136,12 @@ internal fun ContactList(
 }
 
 /**
- * Where each letter's heading sits among the list's items: after the notices and the groups with
- * their heading, then after each earlier letter's heading and people.
+ * Where each letter's heading sits among the list's items: after the notices, the frequent
+ * people, and the groups with their heading, then after each earlier letter's heading and people.
  */
 private fun ContactListContent.letterPositions(sections: Map<String, List<ContactPerson>>): Map<String, Int> {
     val notices = listOfNotNull(readOnly, waiting.takeIf { it > 0 }, duplicate).size
-    val first = notices + if (groups.isNotEmpty()) groups.size + 1 else 0
+    val first = notices + (if (frequent.isNotEmpty()) 1 else 0) + (if (groups.isNotEmpty()) groups.size + 1 else 0)
     return sections.keys.zip(sections.values.runningFold(first) { at, people -> at + 1 + people.size }).toMap()
 }
 
@@ -207,8 +215,6 @@ private fun ListRow(
         label = label,
     )
 }
-
-private val groupAvatar = ChipAvatar("", 0, symbol = Res.drawable.symbol_group)
 
 /** A pill for a change not on the server yet. */
 private fun CardSync.label(): ContactRowLabel? =

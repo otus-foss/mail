@@ -1,13 +1,20 @@
 package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ContactEntry
 import com.otus.designsystem.components.ContactHeader
 import com.otus.designsystem.components.ContactValueRow
 import com.otus.designsystem.components.InfoStrip
+import com.otus.designsystem.components.OptionsItem
+import com.otus.designsystem.components.OptionsMenu
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.RowGroup
 import com.otus.designsystem.components.StripAction
@@ -18,6 +25,7 @@ import com.otus.designsystem.resources.symbol_call
 import com.otus.designsystem.resources.symbol_cloud_off
 import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_group
+import com.otus.designsystem.resources.symbol_group_remove
 import com.otus.designsystem.resources.symbol_notes
 import com.otus.designsystem.theme.EntryTokens
 import com.otus.designsystem.theme.PageTokens
@@ -31,6 +39,8 @@ import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.ContactValue
 import com.otus.mail.feature.contacts.domain.ContactWriteFailure
 import com.otus.mail.feature.contacts.presentation.avatar
+import com.otus.mail.feature.contacts.presentation.formatPhone
+import com.otus.mail.feature.contacts.presentation.groupAvatar
 import com.otus.mail.feature.contacts.presentation.icon
 import com.otus.mail.feature.contacts.presentation.owner
 import com.otus.mail.feature.contacts.presentation.text
@@ -43,11 +53,15 @@ internal class PersonFacts(
     val saveElsewhere: ContactBook?,
 )
 
-/** A person's values in raised groups: addresses, then numbers and dates, then where it is saved. */
+/**
+ * A person's values in titled groups: addresses; then numbers, birthday, groups, and note
+ * together under Details, each marked by its icon; then where it is saved.
+ */
 @Composable
 internal fun ContactDetails(
     facts: PersonFacts,
     onWriteTo: (String) -> Unit,
+    onCopyNumber: (String) -> Unit,
     onOpen: (CardKey) -> Unit,
     onSaveElsewhere: () -> Unit,
     modifier: Modifier = Modifier,
@@ -71,31 +85,47 @@ internal fun ContactDetails(
         }
         ContactHeader(person.avatar, listOfNotNull(main.role))
         if (person.emails.isNotEmpty()) {
-            SectionCaption("Email")
-            // With several addresses, the primary one, which Mail fills in first, stands apart.
+            // With several addresses, the primary one, which Mail fills in first, stands out.
             val primary = person.emails.first().takeIf { person.emails.size > 1 }
-            val rows = { emails: List<ContactValue>, caption: String? ->
-                emails.map { email ->
-                    @Composable {
+            Section(
+                "Email",
+                person.emails.map { email ->
+                    {
                         ContactValueRow(
                             email.value,
-                            caption,
+                            "Primary".takeIf { email == primary },
                             label = email.label.text,
-                            highlighted = caption != null,
+                            highlighted = email == primary,
                             onClick = { onWriteTo(email.value) },
                         )
                     }
-                }
-            }
-            primary?.let {
-                RowGroup(rows(listOf(it), "Primary"), raised = true, highlighted = true)
-            }
-            RowGroup(rows(person.emails - setOfNotNull(primary), null), raised = true)
+                },
+            )
         }
-        val other = otherRows(person, facts.groups)
-        if (other.isNotEmpty()) RowGroup(other, raised = true)
-        SectionCaption("Saved in")
-        RowGroup(
+        Section(
+            "Details",
+            buildList {
+                person.cards.flatMap { it.phones }.distinctBy { it.value }.forEach { phone ->
+                    add {
+                        ContactValueRow(
+                            formatPhone(phone.value),
+                            null,
+                            icon = Res.drawable.symbol_call,
+                            label = phone.label.text,
+                            onClick = { onCopyNumber(phone.value) },
+                        )
+                    }
+                }
+                person.birthday?.let { add { ContactValueRow(it.text(), null, icon = Res.drawable.symbol_cake) } }
+                if (facts.groups.isNotEmpty()) {
+                    val names = facts.groups.joinToString(", ") { it.displayName }
+                    add { ContactValueRow(names, null, icon = Res.drawable.symbol_group) }
+                }
+                person.note?.let { add { ContactValueRow(it, null, icon = Res.drawable.symbol_notes) } }
+            },
+        )
+        Section(
+            "Saved in",
             person.cards.flatMap { card -> facts.booksOf(card).map { card to it } }.map { (card, book) ->
                 {
                     ContactValueRow(
@@ -106,7 +136,6 @@ internal fun ContactDetails(
                     )
                 }
             },
-            raised = true,
         )
         if (person.cards.size > 1) {
             PageNote("Shown as one person. The cards stay separate on your server.")
@@ -114,59 +143,80 @@ internal fun ContactDetails(
     }
 }
 
-private fun otherRows(
-    person: ContactPerson,
-    groups: List<ContactCard>,
-): List<@Composable () -> Unit> =
-    buildList {
-        person.cards.flatMap { it.phones }.distinctBy { it.value }.forEach { phone ->
-            add { ContactValueRow(phone.value, null, icon = Res.drawable.symbol_call, label = phone.label.text) }
-        }
-        person.cards
-            .firstNotNullOfOrNull { card ->
-                card.card.anniversaries
-                    ?.values
-                    ?.firstOrNull { it.kind == AnniversaryKind.Birth }
-                    ?.date as? PartialDate
-            }?.let { birthday -> add { ContactValueRow(birthday.text(), "Birthday", icon = Res.drawable.symbol_cake) } }
-        if (groups.isNotEmpty()) {
-            add {
-                ContactValueRow(
-                    groups.joinToString(", ") { it.displayName },
-                    "Groups",
-                    icon = Res.drawable.symbol_group,
-                )
-            }
-        }
-        person.cards
-            .firstNotNullOfOrNull {
-                it.card.notes
-                    ?.values
-                    ?.firstOrNull()
-                    ?.note
-            }?.let { note ->
-                add { ContactValueRow(note, "Note", icon = Res.drawable.symbol_notes) }
-            }
-    }
+/** A [SectionCaption] over [rows] in a raised group; nothing without rows. */
+@Composable
+private fun Section(
+    title: String,
+    rows: List<@Composable () -> Unit>,
+) {
+    if (rows.isEmpty()) return
+    SectionCaption(title)
+    RowGroup(rows, raised = true)
+}
 
-/** A group's members, each opening their own page. */
+private val ContactPerson.birthday: PartialDate?
+    get() =
+        cards.firstNotNullOfOrNull { card ->
+            card.card.anniversaries
+                ?.values
+                ?.firstOrNull { it.kind == AnniversaryKind.Birth }
+                ?.date as? PartialDate
+        }
+
+private val ContactPerson.note: String?
+    get() =
+        cards.firstNotNullOfOrNull {
+            it.card.notes
+                ?.values
+                ?.firstOrNull()
+                ?.note
+        }
+
+/**
+ * A group's members, each opening their own page. Holding one offers to take them out of the
+ * group, through [onRemove], when the group can change. An empty group says how to fill it.
+ */
 @Composable
 internal fun GroupMembers(
     group: ContactCard,
     members: List<ContactPerson>,
     onOpen: (CardKey) -> Unit,
+    onRemove: ((ContactPerson) -> Unit)?,
     modifier: Modifier = Modifier,
+    photoChoices: List<OptionsItem> = emptyList(),
 ) {
-    Column(modifier) {
-        ContactHeader(group.avatar, listOf(if (members.size == 1) "1 person" else "${members.size} people"))
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) {
+        ContactHeader(
+            group.groupAvatar,
+            listOf(if (members.size == 1) "1 person" else "${members.size} people"),
+            photoChoices = photoChoices,
+        )
+        if (members.isEmpty()) {
+            PageNote("No one in this group yet. Add people to write to all of them at once.")
+        }
         Column(verticalArrangement = Arrangement.spacedBy(EntryTokens.gap)) {
             members.forEach { person ->
-                ContactEntry(
-                    person.name,
-                    person.emails.firstOrNull()?.value ?: "No address",
-                    person.avatar,
-                    { onOpen(person.main.key) },
-                )
+                var open by remember { mutableStateOf(false) }
+                Box {
+                    ContactEntry(
+                        person.name,
+                        person.emails.firstOrNull()?.value ?: "No address",
+                        person.avatar,
+                        { onOpen(person.main.key) },
+                        onLongClick = onRemove?.let { { open = true } },
+                    )
+                    if (open && onRemove != null) {
+                        OptionsMenu(
+                            listOf(
+                                OptionsItem.Action(
+                                    "Remove from group",
+                                    Res.drawable.symbol_group_remove,
+                                    { onRemove(person) },
+                                ),
+                            ),
+                        ) { open = false }
+                    }
+                }
             }
         }
     }

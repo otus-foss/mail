@@ -45,6 +45,7 @@ internal class ContactsState(
     private val scope: CoroutineScope,
     private val files: ContactFiles? = null,
     private val photos: AvatarPhotoPicker? = null,
+    private val frequent: FrequentContacts? = null,
 ) {
     var snapshot by mutableStateOf<ContactsSnapshot?>(null)
         private set
@@ -98,6 +99,17 @@ internal class ContactsState(
 
     val cards: List<ContactCard> by derivedStateOf { applyEdits(snapshot?.cards.orEmpty(), sync.edits, sync.refused) }
     val people: List<ContactPerson> by derivedStateOf { people(cards, sync.links) }
+
+    /** The [FREQUENT_SHOWN] people the user deals with most, by their best-scoring address. */
+    val mostFrequent: List<ContactPerson> by derivedStateOf {
+        val scores = frequent?.scores.orEmpty()
+        people
+            .map { person -> person to (person.emails.maxOfOrNull { scores[it.value.lowercase()] ?: 0.0 } ?: 0.0) }
+            .filter { (_, score) -> score > 0 }
+            .sortedByDescending { it.second }
+            .take(FREQUENT_SHOWN)
+            .map { it.first }
+    }
     val groups: List<ContactCard> by derivedStateOf {
         cards.filter { it.isGroup }.sortedBy { it.displayName.lowercase() }
     }
@@ -125,6 +137,7 @@ internal class ContactsState(
     }
 
     fun refresh() {
+        frequent?.refresh()
         if (loading) return
         loading = true
         scope.launch {
@@ -189,6 +202,9 @@ internal class ContactsState(
     /** Shows [keys] as one person without changing the cards. */
     fun showAsOne(keys: Set<CardKey>) = sync.link(keys)
 
+    /** Lists [keys] as separate people again, undoing [showAsOne]. */
+    fun showSeparately(keys: Collection<CardKey>) = sync.unlink(keys)
+
     /** Stops suggesting that [keys] are the same person. */
     fun notDuplicates(keys: Set<CardKey>) = sync.dismiss(keys)
 
@@ -238,8 +254,14 @@ internal class ContactsState(
         cards: List<ContactCard>,
     ) {
         val members = group.card.members.orEmpty() + cards.mapNotNull { it.card.uid }.associateWith { true }
-        sync.add(ContactEdit.Update(newId(), group.key, group.card, group.card.copy(members = members)), ::sent)
+        update(group, group.card.copy(members = members))
     }
+
+    /** Saves [after] over [card], at once on screen and on the server once it is reachable. */
+    fun update(
+        card: ContactCard,
+        after: Card,
+    ) = sync.add(ContactEdit.Update(newId(), card.key, card.card, after), ::sent)
 
     /** Saves a refused change as a new card in [book] instead. */
     fun saveElsewhere(
@@ -265,3 +287,6 @@ internal class ContactsState(
     @OptIn(ExperimentalUuidApi::class)
     private fun newUid(): String = "urn:uuid:${Uuid.random()}"
 }
+
+/** How many of the most frequent people the list shows above everyone. */
+internal const val FREQUENT_SHOWN = 5

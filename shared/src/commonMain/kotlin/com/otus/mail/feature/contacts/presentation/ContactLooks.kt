@@ -2,9 +2,12 @@ package com.otus.mail.feature.contacts.presentation
 
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.components.ContactRowLabel
+import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.components.Recipient
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_group
+import com.otus.designsystem.resources.symbol_hide_image
+import com.otus.designsystem.resources.symbol_image
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_work
 import com.otus.jscontact.Media
@@ -24,6 +27,10 @@ internal val ContactCard.avatar: ChipAvatar
         val generated = chipAvatar(null, displayName, emails.firstOrNull()?.value ?: displayName)
         return generated.withPhoto(card.photo)
     }
+
+/** A group's own photo, else the group symbol, as the list and the group's page show it. */
+internal val ContactCard.groupAvatar: ChipAvatar
+    get() = ChipAvatar("", 0, symbol = Res.drawable.symbol_group).withPhoto(card.photo)
 
 /**
  * What the editor shows for the contact it is making: [photo], the draft photo's decoded bytes,
@@ -110,3 +117,20 @@ internal fun peopleCount(count: Int): String = if (count == 1) "1 person" else "
 
 /** A generated avatar for a name alone, such as a group's. */
 internal fun nameAvatar(name: String): ChipAvatar = chipAvatar(null, name, name)
+
+/**
+ * The photo menu of a contact or group: Choose photo, or Change photo while it [hasPhoto], where
+ * a photo can be picked, and Remove photo while it has one.
+ */
+internal fun photoChoices(
+    hasPhoto: Boolean,
+    canPick: Boolean,
+    onPick: () -> Unit,
+    onRemove: () -> Unit,
+): List<OptionsItem> =
+    listOfNotNull(
+        OptionsItem.Action(if (hasPhoto) "Change photo" else "Choose photo", Res.drawable.symbol_image, onPick).takeIf {
+            canPick
+        },
+        OptionsItem.Action("Remove photo", Res.drawable.symbol_hide_image, onRemove).takeIf { hasPhoto },
+    )
