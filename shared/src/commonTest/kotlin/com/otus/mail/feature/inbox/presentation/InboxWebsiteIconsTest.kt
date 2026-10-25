@@ -3,9 +3,9 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.avatar.AvatarImage
 import com.otus.avatar.AvatarImageLoader
 import com.otus.avatar.AvatarService
-import com.otus.avatar.ContactPhotoSource
 import com.otus.avatar.ResolvedAvatar
 import com.otus.mail.core.avatar.mailAvatarOptions
+import com.otus.mail.core.avatar.photoSource
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -35,7 +35,7 @@ class InboxWebsiteIconsTest {
             var websiteIcons = true
             val avatars =
                 AvatarService(
-                    ContactPhotoSource { _, external ->
+                    photoSource { _, external ->
                         if (!external) ownServer.await()
                         null
                     },
