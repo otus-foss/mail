@@ -27,6 +27,8 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.designsystem.resources.Res
+import com.otus.mail.feature.contacts.data.JmapContactRepository
+import com.otus.mail.feature.contacts.domain.ContactRepository
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
@@ -171,6 +173,7 @@ class MailServices(
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
     internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
+    internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, logins) }
     internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, logins, addressBook) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins, cache) }

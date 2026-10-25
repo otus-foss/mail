@@ -17,6 +17,11 @@ sealed interface SidebarPin {
         override val storageValue = "conversations"
     }
 
+    /** Every login's contacts; not a mailbox, but it sits with them in the sidebar. */
+    data object Contacts : SidebarPin {
+        override val storageValue = "contacts"
+    }
+
     /** Each account's folder with [role], such as `sent` (RFC 8621, section 2). */
     data class Role(
         val role: String,
@@ -34,7 +39,8 @@ sealed interface SidebarPin {
     companion object {
         /** Read later and Conversations, then the system folders in the order the sidebar always listed them. */
         val defaults: List<SidebarPin> =
-            listOf(ReadLater, Conversations) + listOf("drafts", "sent", "archive", "junk", "trash").map(::Role)
+            listOf(ReadLater, Conversations) + listOf("drafts", "sent", "archive", "junk", "trash").map(::Role) +
+                Contacts
 
         /** [pins] saved as one value without commas or line breaks, so it fits one layout line. */
         fun encode(pins: List<SidebarPin>): String = pins.joinToString(SEPARATOR) { it.storageValue }
@@ -51,6 +57,7 @@ sealed interface SidebarPin {
             when {
                 value == ReadLater.storageValue -> ReadLater
                 value == Conversations.storageValue -> Conversations
+                value == Contacts.storageValue -> Contacts
                 value.startsWith(ROLE_PREFIX) -> Role(value.removePrefix(ROLE_PREFIX)).takeIf { it.role.isNotEmpty() }
                 value.startsWith(FOLDER_PREFIX) -> folder(value.removePrefix(FOLDER_PREFIX))
                 else -> null

@@ -16,6 +16,7 @@ import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.domain.SavedFiles
 import com.otus.mail.feature.inbox.domain.SenderBlocks
 import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
+import com.otus.mail.feature.inbox.presentation.components.PersonSheet
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -36,6 +37,8 @@ class ReadContext(
     val services: ReadServices = ReadServices(),
     val effects: ReadEffects = ReadEffects(),
     val display: ReadDisplay = ReadDisplay(),
+    /** What tapping a person in a message's details opens; null leaves the pills plain. */
+    val person: PersonSheet? = null,
 )
 
 /**

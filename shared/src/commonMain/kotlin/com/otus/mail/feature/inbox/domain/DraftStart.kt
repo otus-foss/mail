@@ -21,7 +21,7 @@ fun ComposeRequest.startDraft(
 ): Draft =
     when (this) {
         is ComposeRequest.New -> {
-            Draft(accountId)
+            Draft(accountId, to = to)
         }
 
         is ComposeRequest.Reply -> {

@@ -33,6 +33,8 @@ otus-designsystem = { module = "com.otus:designsystem", version.ref = "otus-meta
 otus-settings = { module = "com.otus:settings", version.ref = "otus-meta" }
 otus-accounts = { module = "com.otus:accounts", version.ref = "otus-meta" }
 otus-push = { module = "com.otus:push", version.ref = "otus-meta" }
+otus-jscontact = { module = "com.otus:jscontact", version.ref = "otus-meta" }
+otus-jmap-contacts = { module = "com.otus:jmap-contacts", version.ref = "otus-meta" }
 unifiedpush-fcm = { module = "org.unifiedpush.android:embedded-fcm-distributor", version.ref = "unifiedpush-fcm" }
 unifiedpush-connector = { module = "org.unifiedpush.android:connector", version.ref = "unifiedpush" }
 kotlinx-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }

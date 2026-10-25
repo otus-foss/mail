@@ -24,6 +24,7 @@ import com.otus.mail.feature.inbox.presentation.ReadFolders
 import com.otus.mail.feature.inbox.presentation.ReadPrivacy
 import com.otus.mail.feature.inbox.presentation.ReadServices
 import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
+import com.otus.mail.feature.inbox.presentation.components.PersonSheet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -55,7 +56,10 @@ internal class ReadWiring(
     private val files = ReadFiles(services.downloads, services.pickers.savedFiles, services.pickers.printer)
 
     /** The Read view of messages that [feed] lists, whose folder, when it shows one, is left out of strips. */
-    fun context(feed: InboxFeedState): ReadContext {
+    fun context(
+        feed: InboxFeedState,
+        person: PersonSheet? = null,
+    ): ReadContext {
         val changes = ReadPageChanges(services, folders, moveToasts, scope, feed)
         return ReadContext(
             pages = services.conversationMessages,
@@ -82,6 +86,7 @@ internal class ReadWiring(
                     zen = { behavior.behavior.zenRead },
                     setZen = { on -> behavior.update { it.copy(zenRead = on) } },
                 ),
+            person = person,
         )
     }
 
@@ -145,4 +150,5 @@ internal class ReadWiring(
 internal fun rememberReadContext(
     states: MailStates,
     feed: InboxFeedState,
-): ReadContext = remember(states, feed) { states.reading.context(feed) }
+    navigation: MailNavigation,
+): ReadContext = remember(states, feed) { states.reading.context(feed, contactSheet(states, navigation)) }
