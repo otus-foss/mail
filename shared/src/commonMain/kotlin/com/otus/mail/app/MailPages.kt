@@ -107,7 +107,7 @@ private fun SettingsPageContent(
         }
 
         MailPage.EmailAccounts -> {
-            AccountSetupScreen(states.accounts, "Email accounts", AccountService.Mail, onBack = back)
+            AccountSetupScreen(states.accounts, states.ownAvatars, "Email accounts", AccountService.Mail, onBack = back)
         }
 
         MailPage.Appearance -> {

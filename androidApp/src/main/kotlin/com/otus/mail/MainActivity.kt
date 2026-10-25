@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val dateFormatState = DateFormatSettingsState(AndroidDateFormatPreferenceStore(this))
         val app = application as OtusMailApplication
-        app.signatureImages.attach(this)
+        app.photoPicker.attach(this)
         app.attachmentFiles.attach(this)
         app.printer.attach(this)
         val services = app.services
