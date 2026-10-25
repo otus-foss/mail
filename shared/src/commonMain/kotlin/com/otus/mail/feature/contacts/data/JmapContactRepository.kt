@@ -167,31 +167,39 @@ internal class JmapContactRepository(
         var properties: List<String>? = contactCardPropertiesWithVCard
         while (cards.size < MAX_CARDS) {
             val position = cards.size
-            val asked = properties
-            val result =
+            val list =
                 try {
-                    connection.request {
-                        val query =
-                            call(
-                                QueryMethod(
-                                    ContactCardType,
-                                    account,
-                                    limit = page,
-                                    extra = mapOf("position" to JsonPrimitive(position)),
-                                ),
-                            )
-                        call(GetMethod(ContactCardType, account, JmapIds.Result(query.resultOf("/ids")), asked))
-                    }
+                    cardPage(connection, account, CardPage(position, page, properties))
                 } catch (error: JmapException.MethodError) {
-                    if (asked == null || error.type != "invalidArguments") throw error
+                    if (properties == null || error.type != "invalidArguments") throw error
                     properties = null
-                    continue
+                    cardPage(connection, account, CardPage(position, page, null))
                 }
-            cards += result.list
-            if (result.list.size < page) break
+            cards += list
+            if (list.size < page) break
         }
         return cards
     }
+
+    /** One [page] of [account]'s cards. */
+    private suspend fun cardPage(
+        connection: JmapConnection,
+        account: String,
+        page: CardPage,
+    ): List<Card> =
+        connection
+            .request {
+                val query =
+                    call(
+                        QueryMethod(
+                            ContactCardType,
+                            account,
+                            limit = page.size,
+                            extra = mapOf("position" to JsonPrimitive(page.position)),
+                        ),
+                    )
+                call(GetMethod(ContactCardType, account, JmapIds.Result(query.resultOf("/ids")), page.properties))
+            }.list
 
     /** Runs a change, calling a missing connection [ContactWriteFailure.Offline]. */
     private suspend fun <T> write(
@@ -276,3 +284,10 @@ internal fun bookName(
     val trimmed = if (bracket != null && account) name.removeRange(bracket.range) else name
     return trimmed.trim().ifBlank { "Contacts" }
 }
+
+/** Where a page of cards starts, how many it holds, and the properties it asks for; null asks for all. */
+private class CardPage(
+    val position: Int,
+    val size: Int,
+    val properties: List<String>?,
+)
