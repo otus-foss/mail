@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.PickRow
+import com.otus.designsystem.components.PickRowLayout
 import com.otus.designsystem.components.SettingPageRow
 import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
@@ -35,74 +36,107 @@ fun PrivacyScreen(
     onBack: () -> Unit,
     device: DevicePrivacy = DevicePrivacy(),
 ) {
-    val behavior = state.behavior
     Subpage("Privacy", onBack) {
-        SettingsSection("Load remote images") {
-            RemoteImages.entries.forEach { choice ->
-                ImagesChoiceRow(choice, selected = choice == behavior.remoteImages) {
-                    state.update { it.copy(remoteImages = choice) }
-                }
+        RemoteImagesSection(state, onOpenAllowed)
+        PhotosSection(state)
+        AvatarsSection(state)
+        DeviceSection(state, device)
+    }
+}
+
+/** Which senders' remote images load, and the list of senders allowed to. */
+@Composable
+private fun RemoteImagesSection(
+    state: MailBehaviorState,
+    onOpenAllowed: () -> Unit,
+) {
+    val behavior = state.behavior
+    SettingsSection("Load remote images") {
+        RemoteImages.entries.forEach { choice ->
+            ImagesChoiceRow(choice, selected = choice == behavior.remoteImages) {
+                state.update { it.copy(remoteImages = choice) }
             }
-            Box(Modifier.padding(vertical = PageTokens.rowGap)) {
-                PageNote("Images that are part of the mail itself always show. Mail in Spam never loads remote images.")
-            }
-            val count = behavior.allowedSenders.size
-            SettingPageRow(
-                "Allowed senders",
-                onOpenAllowed,
-                description = if (count == 1) "1 sender" else "$count senders",
-                icon = Res.drawable.symbol_verified_user,
+        }
+        Box(Modifier.padding(vertical = PageTokens.rowGap)) {
+            PageNote("Images that are part of the mail itself always show. Mail in Spam never loads remote images.")
+        }
+        val count = behavior.allowedSenders.size
+        SettingPageRow(
+            "Allowed senders",
+            onOpenAllowed,
+            description = if (count == 1) "1 sender" else "$count senders",
+            icon = Res.drawable.symbol_verified_user,
+        )
+    }
+}
+
+/** What leaves the photos the user attaches. */
+@Composable
+private fun PhotosSection(state: MailBehaviorState) {
+    val behavior = state.behavior
+    SettingsSection("Photos you attach") {
+        PhotoCleaning.entries.forEach { choice ->
+            PickRow(
+                choice.title,
+                choice.description,
+                PickMark(choice == behavior.photoCleaning, atStart = true),
+                { state.update { it.copy(photoCleaning = choice) } },
+                layout = PickRowLayout(subtitleLines = DESCRIPTION_LINES),
             )
         }
-        SettingsSection("Photos you attach") {
-            PhotoCleaning.entries.forEach { choice ->
-                PickRow(
-                    choice.title,
-                    choice.description,
-                    PickMark(choice == behavior.photoCleaning, atStart = true),
-                    { state.update { it.copy(photoCleaning = choice) } },
-                    subtitleLines = DESCRIPTION_LINES,
-                )
-            }
-        }
-        SettingsSection("Avatars") {
+    }
+}
+
+/** Which outside sources may draw avatars. */
+@Composable
+private fun AvatarsSection(state: MailBehaviorState) {
+    val behavior = state.behavior
+    SettingsSection("Avatars") {
+        SettingToggleRow(
+            "Website icons",
+            checked = behavior.websiteIcons,
+            onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
+            description = "Logos from sender websites, which see your IP address and that you got their mail",
+            icon = Res.drawable.symbol_person,
+        )
+        if (behavior.websiteIcons) {
             SettingToggleRow(
-                "Website icons",
-                checked = behavior.websiteIcons,
-                onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
-                description = "Logos from sender websites, which see your IP address and that you got their mail",
+                "Ask DuckDuckGo",
+                checked = behavior.duckDuckGoIcons,
+                onCheckedChange = { on -> state.update { it.copy(duckDuckGoIcons = on) } },
+                description = "For sites without an icon. DuckDuckGo sees your IP address and each sender's domain",
                 icon = Res.drawable.symbol_person,
             )
-            if (behavior.websiteIcons) {
+        }
+    }
+}
+
+/** The screen and keyboard protections this device offers, when it offers any. */
+@Composable
+private fun DeviceSection(
+    state: MailBehaviorState,
+    device: DevicePrivacy,
+) {
+    val behavior = state.behavior
+    if (device.screen || device.keyboard) {
+        SettingsSection("This device") {
+            if (device.screen) {
                 SettingToggleRow(
-                    "Ask DuckDuckGo",
-                    checked = behavior.duckDuckGoIcons,
-                    onCheckedChange = { on -> state.update { it.copy(duckDuckGoIcons = on) } },
-                    description = "For sites without an icon. DuckDuckGo sees your IP address and each sender's domain",
-                    icon = Res.drawable.symbol_person,
+                    "Screen security",
+                    checked = behavior.screenSecurity,
+                    onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
+                    description = "Hides Mail in recent apps and blocks screenshots and screen recording",
+                    icon = Res.drawable.symbol_visibility_off,
                 )
             }
-        }
-        if (device.screen || device.keyboard) {
-            SettingsSection("This device") {
-                if (device.screen) {
-                    SettingToggleRow(
-                        "Screen security",
-                        checked = behavior.screenSecurity,
-                        onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
-                        description = "Hides Mail in recent apps and blocks screenshots and screen recording",
-                        icon = Res.drawable.symbol_visibility_off,
-                    )
-                }
-                if (device.keyboard) {
-                    SettingToggleRow(
-                        "Incognito keyboard",
-                        checked = behavior.incognitoKeyboard,
-                        onCheckedChange = { on -> state.update { it.copy(incognitoKeyboard = on) } },
-                        description = "Asks the keyboard not to learn from what you type. Some keyboards ignore it.",
-                        icon = Res.drawable.symbol_edit,
-                    )
-                }
+            if (device.keyboard) {
+                SettingToggleRow(
+                    "Incognito keyboard",
+                    checked = behavior.incognitoKeyboard,
+                    onCheckedChange = { on -> state.update { it.copy(incognitoKeyboard = on) } },
+                    description = "Asks the keyboard not to learn from what you type. Some keyboards ignore it.",
+                    icon = Res.drawable.symbol_edit,
+                )
             }
         }
     }
@@ -120,7 +154,7 @@ private fun ImagesChoiceRow(
         choice.description,
         PickMark(selected, atStart = true),
         onClick,
-        subtitleLines = DESCRIPTION_LINES,
+        layout = PickRowLayout(subtitleLines = DESCRIPTION_LINES),
     )
 }
 

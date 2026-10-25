@@ -27,6 +27,7 @@ import com.otus.designsystem.components.OptionsMenu
 import com.otus.designsystem.components.PersonAvatar
 import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.PickRow
+import com.otus.designsystem.components.PickRowLayout
 import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.RowGroup
 import com.otus.designsystem.components.SheetConfirm
@@ -226,7 +227,7 @@ private fun DeleteRow(
         null,
         PickMark(plan.deleteOthers, multiple = true),
         { onChange(plan.copy(deleteOthers = !plan.deleteOthers)) },
-        density = RowDensity.Compact,
+        layout = PickRowLayout(RowDensity.Compact),
     )
 }
 
@@ -235,7 +236,8 @@ private val MergeInfo =
         "Merge or show as one",
         listOf(
             "Merge saves one card with what you picked, in the book you chose. Other contact apps see it too.",
-            "Show as one leaves the cards as they are on your server and only lists them as one person in Otus. Show separately undoes that.",
+            "Show as one leaves the cards as they are on your server and only lists them as one person " +
+                "in Otus. Show separately undoes that.",
         ),
     )
 

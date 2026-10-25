@@ -19,38 +19,26 @@ import androidx.compose.ui.Modifier
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import com.otus.designsystem.components.ActionBar
 import com.otus.designsystem.components.ActionBarHost
-import com.otus.designsystem.components.BarAction
-import com.otus.designsystem.components.BarContext
-import com.otus.designsystem.components.BarMinimized
-import com.otus.designsystem.components.BarToken
 import com.otus.designsystem.components.ContextPanel
-import com.otus.designsystem.components.MenuAction
-import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.IconButtonLook
 import com.otus.designsystem.elements.Symbol
-import com.otus.designsystem.elements.isKeyboardUp
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_check
 import com.otus.designsystem.resources.symbol_close
-import com.otus.designsystem.resources.symbol_delete
-import com.otus.designsystem.resources.symbol_download
-import com.otus.designsystem.resources.symbol_hide_image
-import com.otus.designsystem.resources.symbol_image
-import com.otus.designsystem.resources.symbol_more_horiz
-import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey
+import com.otus.mail.feature.contacts.domain.ContactBook
+import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.presentation.ContactsState
+import com.otus.mail.feature.contacts.presentation.card
 import com.otus.mail.feature.contacts.presentation.components.ContactForm
 import com.otus.mail.feature.contacts.presentation.components.ContactLabels
 import com.otus.mail.feature.contacts.presentation.deleteLabel
-import com.otus.mail.feature.contacts.presentation.icon
-import com.otus.mail.feature.contacts.presentation.nameAvatar
 import com.otus.mail.feature.contacts.presentation.photoChoices
+import com.otus.mail.feature.contacts.presentation.save
 import com.otus.mail.feature.contacts.presentation.withLabel
 import kotlinx.coroutines.launch
 
@@ -68,23 +56,12 @@ internal fun ContactEditorScreen(
 ) {
     NavigationBackHandler(rememberNavigationEventState(NavigationEventInfo.None), onBackCompleted = onClose)
     val existing = key?.let(state::card)
-    var draft by remember(key) {
-        mutableStateOf(existing?.let(ContactDraft::of) ?: state.prefill.also { state.prefill = null } ?: ContactDraft())
-    }
+    var draft by remember(key) { mutableStateOf(state.startDraft(existing)) }
     var book by remember(key) { mutableStateOf(existing?.books?.firstOrNull() ?: state.defaultBook?.key) }
-    val books =
-        state.writableBooks.filter {
-            existing == null ||
-                (it.key.loginId == existing.key.loginId && it.key.accountId == existing.key.accountId)
-        }
-    val save = { andNext: Boolean ->
+    val save: (Boolean) -> Unit = { andNext ->
         book?.let { target ->
             val saved = state.save(draft, existing, target)
-            if (andNext) {
-                draft = ContactDraft()
-            } else {
-                onSaved(saved)
-            }
+            if (andNext) draft = ContactDraft() else onSaved(saved)
         }
     }
     val scope = rememberCoroutineScope()
@@ -95,72 +72,22 @@ internal fun ContactEditorScreen(
             onPick = { scope.launch { state.pickPhoto()?.let { draft = draft.copy(photo = it) } } },
             onRemove = { draft = draft.copy(photo = null) },
         )
-    val typing = isKeyboardUp()
     ProvideTextStyle(panelTextStyle()) {
         ActionBarHost(
             bar = {
-                val chosen = books.firstOrNull { it.key == book }
-                val name =
-                    draft.fullName.ifEmpty {
-                        draft.emails
-                            .firstOrNull()
-                            ?.value
-                            .orEmpty()
-                    }
-                ActionBar(
-                    BarAction(
-                        "Save",
-                        Res.drawable.symbol_check,
-                        enabled = draft.canSave && chosen != null,
-                    ) { save(false) },
-                    secondary =
-                        listOfNotNull(
-                            BarAction("Discard", Res.drawable.symbol_delete, onClick = onClose),
-                            BarAction(
-                                "More options",
-                                Res.drawable.symbol_more_horiz,
-                                menu =
-                                    listOfNotNull(
-                                        MenuAction(
-                                            "Save and add another",
-                                            Res.drawable.symbol_person_add,
-                                        ) { save(true) }
-                                            .takeIf { existing == null && draft.canSave },
-                                        MenuAction(
-                                            "Import from a vCard file",
-                                            Res.drawable.symbol_download,
-                                        ) { state.pickImport() }
-                                            .takeIf { existing == null && state.canTransfer },
-                                    ),
-                            ) {}.takeIf { existing == null },
-                        ),
-                    context =
-                        chosen?.let {
-                            BarContext(
-                                "To ${it.name}",
-                                BarToken.Person(nameAvatar(name.ifEmpty { "?" })),
-                                "Save to ${it.name}. Change the address book",
-                                choices =
-                                    books.filter { b -> b.key != book }.map { b ->
-                                        MenuAction("Save to ${b.name}", b.icon) {
-                                            book =
-                                                b.key
-                                        }
-                                    },
-                            )
-                        },
-                    minimized = BarMinimized().takeIf { typing },
+                ContactEditorBar(
+                    draft,
+                    editorBarContext(draft, state.targetBooks(existing), book) { book = it },
+                    isNew = existing == null,
+                    onSave = save,
+                    onImport = { state.pickImport() }.takeIf { state.canTransfer },
+                    onDiscard = onClose,
                 )
             },
             Modifier.fillMaxSize().safeDrawingPadding().imePadding(),
         ) { barPadding ->
             Column(Modifier.fillMaxSize().padding(horizontal = PageTokens.pageInset)) {
-                ContextPanel(
-                    Modifier.padding(top = PageTokens.pageInset),
-                    navigation = {
-                        IconButton("Discard", onClose, outlined = false) { Symbol(Res.drawable.symbol_close) }
-                    },
-                ) { Text(if (existing == null) "New contact" else "Edit contact") }
+                EditorPanel(isNew = existing == null, onClose)
                 ContactForm(
                     draft,
                     { draft = it },
@@ -177,3 +104,27 @@ internal fun ContactEditorScreen(
         }
     }
 }
+
+/** The panel over the form: its title and ✕, which discards like the bar's Discard. */
+@Composable
+private fun EditorPanel(
+    isNew: Boolean,
+    onClose: () -> Unit,
+) {
+    ContextPanel(
+        Modifier.padding(top = PageTokens.pageInset),
+        navigation = {
+            IconButton("Discard", onClose, look = IconButtonLook.Plain) { Symbol(Res.drawable.symbol_close) }
+        },
+    ) { Text(if (isNew) "New contact" else "Edit contact") }
+}
+
+/** The draft the editor opens with: the card's own fields, else a prefill handed over once, else blank. */
+private fun ContactsState.startDraft(existing: ContactCard?): ContactDraft =
+    existing?.let(ContactDraft::of) ?: prefill.also { prefill = null } ?: ContactDraft()
+
+/** The books the card can be saved to: any writable one for a new card, else one in the card's own account. */
+private fun ContactsState.targetBooks(existing: ContactCard?): List<ContactBook> =
+    writableBooks.filter {
+        existing == null || (it.key.loginId == existing.key.loginId && it.key.accountId == existing.key.accountId)
+    }

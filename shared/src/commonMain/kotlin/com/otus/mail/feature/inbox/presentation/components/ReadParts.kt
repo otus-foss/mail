@@ -176,7 +176,7 @@ internal fun ReadSheets(
         }
 
         is ReadSheet.Person -> {
-            read.person?.Show(sheet.person, dismiss)
+            read.services.person?.Show(sheet.person, dismiss)
         }
 
         is ReadSheet.People -> {

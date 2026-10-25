@@ -193,10 +193,12 @@ internal class JmapContactRepository(
                 ?: throw ContactWriteException(ContactWriteFailure.Refused)
         return try {
             block(connections.connection(login))
-        } catch (error: JmapException.Unreachable) {
-            throw ContactWriteException(ContactWriteFailure.Offline, error)
-        } catch (error: JmapException.MethodError) {
-            throw refused(error.type)
+        } catch (error: JmapException) {
+            throw when (error) {
+                is JmapException.Unreachable -> ContactWriteException(ContactWriteFailure.Offline, error)
+                is JmapException.MethodError -> refused(error.type, error)
+                else -> error
+            }
         }
     }
 
@@ -214,8 +216,11 @@ internal class JmapContactRepository(
     }
 }
 
-private fun refused(type: String): ContactWriteException =
-    ContactWriteException(if (type == "forbidden") ContactWriteFailure.ReadOnly else ContactWriteFailure.Refused)
+private fun refused(
+    type: String,
+    cause: Throwable? = null,
+): ContactWriteException =
+    ContactWriteException(if (type == "forbidden") ContactWriteFailure.ReadOnly else ContactWriteFailure.Refused, cause)
 
 /**
  * A PatchObject that sets each top-level property that differs between [before] and [after], and

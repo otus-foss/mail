@@ -148,7 +148,7 @@ internal class ReadPageLook(
             page.received.fullLabel(),
             shown,
             onFolders = { state.sheet = ReadSheet.Folders },
-            onPerson = read.person?.let { { person -> state.sheet = ReadSheet.Person(person) } },
+            onPerson = read.services.person?.let { { person -> state.sheet = ReadSheet.Person(person) } },
         )
     }
 }

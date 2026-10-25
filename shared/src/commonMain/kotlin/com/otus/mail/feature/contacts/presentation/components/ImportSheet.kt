@@ -18,6 +18,7 @@ import com.otus.designsystem.components.SegmentedToggle
 import com.otus.designsystem.components.SheetConfirm
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
+import com.otus.jscontact.Card
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactFile
@@ -53,57 +54,63 @@ internal fun ImportSheet(
             Text("${file.name} · $cards", Inset, color = OtusColors.text2)
             ChoiceHeading("Import into")
             BookChoices(books, book?.key) { book = it }
-            if (plan != null && plan.matched.isNotEmpty()) {
-                val people = if (plan.matched.size == 1) "1 person is" else "${plan.matched.size} people are"
-                ChoiceHeading("$people already in ${book?.name}")
-                SegmentedToggle(
-                    ImportMode.entries.map { it.label },
-                    mode.ordinal,
-                    { mode = ImportMode.entries[it] },
-                    Inset,
-                )
-                Text(mode.note, Inset, color = OtusColors.text2)
-            }
-            if (file.failures.isNotEmpty()) {
-                val failed =
-                    if (file.failures.size ==
-                        1
-                    ) {
-                        "1 card can’t be read"
-                    } else {
-                        "${file.failures.size} cards can’t be read"
-                    }
-                ChoiceHeading(failed)
-                file.failures.forEach { (position, reason) ->
-                    Text(if (position > 0) "Card $position: $reason" else reason, Inset, color = OtusColors.text2)
-                }
-            }
-            if (file.cards.isNotEmpty()) {
-                ChoiceHeading("Preview")
-                file.cards.take(PREVIEW).forEach { card ->
-                    val name =
-                        card.name?.full ?: card.emails
-                            ?.values
-                            ?.firstOrNull()
-                            ?.address ?: "No name"
-                    val address =
-                        card.emails
-                            ?.values
-                            ?.firstOrNull()
-                            ?.address
-                    val tag = mode.label.takeIf { plan?.match(card) != null }
-                    Text(listOfNotNull(name, address, tag).joinToString(" · "), Inset, maxLines = 1)
-                }
-                if (file.cards.size >
-                    PREVIEW
-                ) {
-                    Text("and ${file.cards.size - PREVIEW} more", Inset, color = OtusColors.text2)
-                }
-            }
+            book?.let { chosen -> plan?.let { MatchedPeople(it, chosen, mode) { picked -> mode = picked } } }
+            Failures(file.failures)
+            Preview(file.cards, plan, mode)
         }
     }
 }
 
+/** For cards whose people are already in [book]: the toggle between the ways to import them. */
+@Composable
+private fun MatchedPeople(
+    plan: ImportPlan,
+    book: ContactBook,
+    mode: ImportMode,
+    onMode: (ImportMode) -> Unit,
+) {
+    val matched = plan.matched.size
+    if (matched == 0) return
+    val people = if (matched == 1) "1 person is" else "$matched people are"
+    ChoiceHeading("$people already in ${book.name}")
+    SegmentedToggle(ImportMode.entries.map { it.label }, mode.ordinal, { onMode(ImportMode.entries[it]) }, Inset)
+    Text(mode.note, Inset, color = OtusColors.text2)
+}
+
+/** The cards the file could not read, by position when known, with why. */
+@Composable
+private fun Failures(failures: List<Pair<Int, String>>) {
+    if (failures.isEmpty()) return
+    val cards = if (failures.size == 1) "1 card can’t be read" else "${failures.size} cards can’t be read"
+    ChoiceHeading(cards)
+    failures.forEach { (position, reason) ->
+        Text(if (position > 0) "Card $position: $reason" else reason, Inset, color = OtusColors.text2)
+    }
+}
+
+/** The first few cards by name and address, tagged with [mode] where the person is already in the book. */
+@Composable
+private fun Preview(
+    cards: List<Card>,
+    plan: ImportPlan?,
+    mode: ImportMode,
+) {
+    if (cards.isEmpty()) return
+    ChoiceHeading("Preview")
+    cards.take(PREVIEW).forEach { card ->
+        val address =
+            card.emails
+                ?.values
+                ?.firstOrNull()
+                ?.address
+        val name = card.name?.full ?: address ?: "No name"
+        val tag = mode.label.takeIf { plan?.match(card) != null }
+        Text(listOfNotNull(name, address, tag).joinToString(" · "), Inset, maxLines = 1)
+    }
+    if (cards.size > PREVIEW) Text("and ${cards.size - PREVIEW} more", Inset, color = OtusColors.text2)
+}
+
+/** How many cards the preview lists before it sums up the rest. */
 private const val PREVIEW = 5
 
 /** Text and controls that are not rows line up with the rows' content. */

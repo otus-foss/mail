@@ -60,38 +60,34 @@ internal class ContactSync(
     suspend fun flush(sent: SentChange) {
         if (sending.isLocked) return
         sending.withLock {
-            while (true) {
-                val edit = edits.firstOrNull { it.id !in refused } ?: break
-                try {
-                    val created = send(edit)
-                    edits = edits.filterNot { it.id == edit.id }
-                    if (created != null) {
-                        edits = rekey(edits, edit.key, created)
-                        links =
-                            ContactLinks(
-                                links.sets.map { set ->
-                                    set
-                                        .map {
-                                            if (it ==
-                                                edit.key
-                                            ) {
-                                                created
-                                            } else {
-                                                it
-                                            }
-                                        }.toSet()
-                                },
-                            )
-                    }
-                    save()
-                    sent { it.copy(cards = afterSent(it.cards, edit, created)) }
-                } catch (error: ContactWriteException) {
-                    if (error.failure == ContactWriteFailure.Offline) break
-                    refused = refused + (edit.id to error.failure)
-                }
-            }
+            var next = edits.firstOrNull { it.id !in refused }
+            while (next != null && sendOne(next, sent)) next = edits.firstOrNull { it.id !in refused }
         }
     }
+
+    /**
+     * Sends [edit] and moves its key, and any link to it, to the server's id for a new card. False
+     * when there is no connection, so the changes after it wait too; a refused change is kept aside.
+     */
+    private suspend fun sendOne(
+        edit: ContactEdit,
+        sent: SentChange,
+    ): Boolean =
+        try {
+            val created = send(edit)
+            edits = edits.filterNot { it.id == edit.id }
+            if (created != null) {
+                edits = rekey(edits, edit.key, created)
+                links = ContactLinks(links.sets.map { set -> set.map { if (it == edit.key) created else it }.toSet() })
+            }
+            save()
+            sent { it.copy(cards = afterSent(it.cards, edit, created)) }
+            true
+        } catch (error: ContactWriteException) {
+            val offline = error.failure == ContactWriteFailure.Offline
+            if (!offline) refused = refused + (edit.id to error.failure)
+            !offline
+        }
 
     /** Drops every waiting change of [key], refused or not. */
     fun drop(key: CardKey) {

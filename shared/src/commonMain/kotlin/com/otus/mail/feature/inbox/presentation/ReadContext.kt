@@ -37,8 +37,6 @@ class ReadContext(
     val services: ReadServices = ReadServices(),
     val effects: ReadEffects = ReadEffects(),
     val display: ReadDisplay = ReadDisplay(),
-    /** What tapping a person in a message's details opens; null leaves the pills plain. */
-    val person: PersonSheet? = null,
 )
 
 /**
@@ -91,8 +89,9 @@ class ReadFiles(
 )
 
 /**
- * The services behind the newsletter strip and the ⋯ menu, including [changes] to one page's email;
- * each is null where none is wired.
+ * The services behind the newsletter strip and the ⋯ menu, including [changes] to one page's email,
+ * and [person], what tapping a person or the menu's contact entries open; each is null where none
+ * is wired, and without [person] the pills stay plain.
  */
 class ReadServices(
     val newsletters: Newsletters? = null,
@@ -100,6 +99,7 @@ class ReadServices(
     val mute: ConversationMute? = null,
     val blocks: SenderBlocks? = null,
     val changes: PageChanges? = null,
+    val person: PersonSheet? = null,
 )
 
 /**

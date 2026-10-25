@@ -42,21 +42,57 @@ internal class ReadMenuActions(
         content: MessageContent?,
     ) {
         when (entry) {
-            is ReadMenuEntry.OtherReply -> reply(page.withContent(content), entry.action)
-            ReadMenuEntry.Forward -> reply(page.withContent(content), MailAction.Forward)
-            ReadMenuEntry.MarkUnread -> mark(page, MessageFlag.Read, on = page.attributes.unread)
-            is ReadMenuEntry.Flag -> mark(page, MessageFlag.Flagged, on = !entry.flagged)
-            ReadMenuEntry.ViewDetails -> state.sheet = ReadSheet.Details(page)
-            ReadMenuEntry.Print -> read.files.printer?.print(page.subject, printable(page, content))
-            ReadMenuEntry.DeleteThisMessage -> deletePage(page)
-            is ReadMenuEntry.AlwaysShowImages -> read.privacy.allowSender(page.sender.address)
-            ReadMenuEntry.BlockSender -> block(page)
-            ReadMenuEntry.ReportSpam -> offer(MailAction.Spam)?.let(perform)
-            is ReadMenuEntry.MoveTo -> offer(MailAction.Move)?.let(perform)
-            is ReadMenuEntry.Mute -> mute(!entry.on)
-            ReadMenuEntry.DeleteConversation -> offer(MailAction.Trash)?.let(perform)
-            ReadMenuEntry.SenderContact -> state.sheet = ReadSheet.Person(page.sender)
-            is ReadMenuEntry.People -> state.sheet = ReadSheet.People(entry.people)
+            is ReadMenuEntry.OtherReply -> {
+                reply(page.withContent(content), entry.action)
+            }
+
+            ReadMenuEntry.Forward -> {
+                reply(page.withContent(content), MailAction.Forward)
+            }
+
+            ReadMenuEntry.MarkUnread -> {
+                mark(page, MessageFlag.Read, on = page.attributes.unread)
+            }
+
+            is ReadMenuEntry.Flag -> {
+                mark(page, MessageFlag.Flagged, on = !entry.flagged)
+            }
+
+            ReadMenuEntry.ViewDetails, ReadMenuEntry.SenderContact, is ReadMenuEntry.People -> {
+                state.sheet = sheet(entry, page)
+            }
+
+            ReadMenuEntry.Print -> {
+                read.files.printer?.print(page.subject, printable(page, content))
+            }
+
+            ReadMenuEntry.DeleteThisMessage -> {
+                deletePage(page)
+            }
+
+            is ReadMenuEntry.AlwaysShowImages -> {
+                read.privacy.allowSender(page.sender.address)
+            }
+
+            ReadMenuEntry.BlockSender -> {
+                block(page)
+            }
+
+            ReadMenuEntry.ReportSpam -> {
+                offer(MailAction.Spam)?.let(perform)
+            }
+
+            is ReadMenuEntry.MoveTo -> {
+                offer(MailAction.Move)?.let(perform)
+            }
+
+            is ReadMenuEntry.Mute -> {
+                mute(!entry.on)
+            }
+
+            ReadMenuEntry.DeleteConversation -> {
+                offer(MailAction.Trash)?.let(perform)
+            }
         }
     }
 
@@ -72,7 +108,7 @@ internal class ReadMenuActions(
             ReadMenuEntry.ReportSpam -> offer(MailAction.Spam) != null
             is ReadMenuEntry.MoveTo -> offer(MailAction.Move) != null
             ReadMenuEntry.DeleteConversation -> offer(MailAction.Trash) != null
-            ReadMenuEntry.SenderContact, is ReadMenuEntry.People -> read.person != null
+            ReadMenuEntry.SenderContact, is ReadMenuEntry.People -> read.services.person != null
             else -> true
         }
 
@@ -145,3 +181,15 @@ private fun printable(
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace("\n", "<br>")
+
+/** The sheet an entry opens over [page]: its headers, the sender's contact, or everyone in it. */
+private fun sheet(
+    entry: ReadMenuEntry,
+    page: MailMessage,
+): ReadSheet? =
+    when (entry) {
+        ReadMenuEntry.ViewDetails -> ReadSheet.Details(page)
+        ReadMenuEntry.SenderContact -> ReadSheet.Person(page.sender)
+        is ReadMenuEntry.People -> ReadSheet.People(entry.people)
+        else -> null
+    }

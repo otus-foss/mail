@@ -58,11 +58,16 @@ internal class SelectionBarActions(
     val onWrite: () -> Unit,
     val onMerge: (() -> Unit)?,
     val sharedAddress: Boolean,
-    val groups: List<ContactCard>,
-    val onAddToGroup: (ContactCard) -> Unit,
-    val onNewGroup: () -> Unit,
+    val grouping: GroupChoices,
     val onExport: () -> Unit,
     val onDelete: (() -> Unit)?,
+)
+
+/** The [groups] the selected people can join, and what adding them to one or to a new group does. */
+internal class GroupChoices(
+    val groups: List<ContactCard>,
+    val onAdd: (ContactCard) -> Unit,
+    val onNew: () -> Unit,
 )
 
 /**
@@ -111,13 +116,13 @@ internal fun ContactsSelectionBar(
             ?.takeIf { merge == null }
             ?.let { MenuAction("Merge into one", Res.drawable.symbol_call_merge, it) }
     val groupItems =
-        actions.groups.map { group ->
-            MenuAction("Add to ${group.displayName}", Res.drawable.symbol_group) { actions.onAddToGroup(group) }
+        actions.grouping.groups.map { group ->
+            MenuAction("Add to ${group.displayName}", Res.drawable.symbol_group) { actions.grouping.onAdd(group) }
         }
     val more =
         listOfNotNull(mergeItem) + groupItems +
             listOfNotNull(
-                MenuAction("New group…", Res.drawable.symbol_group_add, actions.onNewGroup),
+                MenuAction("New group…", Res.drawable.symbol_group_add, actions.grouping.onNew),
                 MenuAction("Export as vCard", Res.drawable.symbol_upload, actions.onExport),
                 actions.onDelete?.let { MenuAction("Delete", Res.drawable.symbol_delete, it) },
             )

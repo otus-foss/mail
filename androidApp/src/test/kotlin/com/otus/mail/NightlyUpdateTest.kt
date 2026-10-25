@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.mail.app.App
+import com.otus.mail.app.MailPlatform
 import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.feature.updates.domain.InstalledBuild
@@ -33,16 +34,18 @@ class NightlyUpdateTest {
     private fun show(build: InstalledBuild) {
         val services =
             MailServices(
-                nightly =
-                    NightlyUpdates(
-                        createFeed = {
-                            NightlyFeed {
-                                listOf(
-                                    NightlyBuild(142, APK, listOf("- feat(sidebar): show the owl"), "2026-10-18"),
-                                )
-                            }
-                        },
-                        installer = UpdateInstaller { download, _ -> installed += download },
+                host =
+                    MailPlatform(
+                        NightlyUpdates(
+                            createFeed = {
+                                NightlyFeed {
+                                    listOf(
+                                        NightlyBuild(142, APK, listOf("- feat(sidebar): show the owl"), "2026-10-18"),
+                                    )
+                                }
+                            },
+                            installer = UpdateInstaller { download, _ -> installed += download },
+                        ),
                     ),
             )
         compose.activity.setContent { App(services = services, build = build) }
