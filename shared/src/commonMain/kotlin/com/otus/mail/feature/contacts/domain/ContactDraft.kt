@@ -1,5 +1,8 @@
 package com.otus.mail.feature.contacts.domain
 
+import com.otus.avatar.AVATAR_PHOTO_KEY
+import com.otus.avatar.isAvatarCard
+import com.otus.avatar.withoutAvatarStyle
 import com.otus.jscontact.Anniversary
 import com.otus.jscontact.AnniversaryKind
 import com.otus.jscontact.Card
@@ -146,19 +149,27 @@ data class ContactDraft(
     }
 }
 
-/** The card's first photo. */
-internal val Card.photo: Media? get() = media?.values?.firstOrNull { it.kind == MediaKind.Photo }
+/** The card's photo: the avatar photo on an avatar card, else its first. */
+internal val Card.photo: Media?
+    get() =
+        media?.get(AVATAR_PHOTO_KEY)?.takeIf { it.kind == MediaKind.Photo }
+            ?: media?.values?.firstOrNull { it.kind == MediaKind.Photo }
 
-/** This card with [photo] in place of every photo it had, so other apps show the same one; null removes them. */
-internal fun Card.withPhoto(photo: Media?): Card =
-    copy(
-        media =
-            media
-                .orEmpty()
-                .filterValues { it.kind != MediaKind.Photo }
-                .plus(listOfNotNull(photo?.let { PHOTO_KEY to it }))
-                .takeIf { it.isNotEmpty() },
-    )
+/**
+ * This card with [photo] in place of every photo it had, so other apps show the same one; null
+ * removes them. An avatar card stays one: the photo goes under the avatar key and replaces its
+ * style, as the avatar settings save a photo.
+ */
+internal fun Card.withPhoto(photo: Media?): Card {
+    val avatar = isAvatarCard
+    val photos =
+        media
+            .orEmpty()
+            .filterValues { it.kind != MediaKind.Photo }
+            .plus(listOfNotNull(photo?.let { (if (avatar) AVATAR_PHOTO_KEY else PHOTO_KEY) to it }))
+            .takeIf { it.isNotEmpty() }
+    return copy(media = photos).let { if (avatar && photo != null) it.withoutAvatarStyle() else it }
+}
 
 private const val PHOTO_KEY = "photo"
 

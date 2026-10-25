@@ -3,11 +3,13 @@ package com.otus.mail.feature.contacts.presentation
 import com.otus.accounts.presentation.toChipAvatar
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
+import com.otus.avatar.isAvatarCard
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.components.ContactRowLabel
 import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.components.Recipient
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_badge
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_hide_image
 import com.otus.designsystem.resources.symbol_image
@@ -88,3 +90,9 @@ internal fun initialsAvatar(
     name: String,
     address: String,
 ): ChipAvatar = ResolvedAvatar(generatedAvatar(name, address)).toChipAvatar()
+
+/** Whether one of the person's cards holds one of the user's own avatars. */
+internal val ContactPerson.isAvatar: Boolean get() = cards.any { it.card.isAvatarCard }
+
+/** The pill on a contact list row of a card that holds one of the user's own avatars. */
+internal val AvatarLabel = ContactRowLabel("Your avatar", Res.drawable.symbol_badge)
