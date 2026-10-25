@@ -1,5 +1,8 @@
 included:
   - iosApp/iosApp
+  - iosApp/PushSupport
+  - iosApp/NotificationService
+  - iosApp/PushSupportTests
 strict: true
 disabled_rules:
   - file_length # Owned by the architecture gate and its scoped exception policy.

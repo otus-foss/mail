@@ -79,3 +79,16 @@ Mail feature adapters supply domain-derived labels, values, and callbacks to sha
 The checker rejects local production design-system code and drawable resources.
 
 See [the component inventory](component-inventory.md) for every Otus UI declaration and its owner.
+
+## Apple notification delivery
+
+`app/ApplePushRuntime` connects the Swift lifecycle to `ApplePushSession`, which uses the shared
+JMAP subscription library and Mail's bridge client. Swift owns APNs registration, the shared
+push Keychain group, and CryptoKit. The notification extension links only `PushSupport`, not the
+Compose framework, and receives no mail credentials. The iOS app and background refresh use the
+same `MailServices` instance.
+
+`push_bridge/` is the deployable APNs provider for Mail. It accepts encrypted Web Push, stores
+short-lived ciphertext in SQLite and sends APNs alerts. It is a separate process with Apple
+signing credentials; neither the app nor shared libraries hold those credentials. See
+[Apple push](apple-push.md) for the protocol, setup, limits and validation.
