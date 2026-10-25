@@ -75,11 +75,23 @@ class InboxPillPersistenceTest {
     }
 
     @Test
-    fun websiteIconsStayOnUntilTurnedOffAndStayOffAfterReopeningTheStore() {
+    fun websiteIconsStayOffUntilTurnedOnAndStayOnAfterReopeningTheStore() {
         val context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit { clear() }
+        assertFalse(AndroidMailBehaviorStore(context).read().websiteIcons)
+        assertFalse(AndroidMailBehaviorStore(context).read().duckDuckGoIcons)
+        AndroidMailBehaviorStore(context).write(MailBehavior(websiteIcons = true, duckDuckGoIcons = true))
         assertTrue(AndroidMailBehaviorStore(context).read().websiteIcons)
-        AndroidMailBehaviorStore(context).write(MailBehavior(websiteIcons = false))
+        assertTrue(AndroidMailBehaviorStore(context).read().duckDuckGoIcons)
+    }
+
+    @Test
+    fun websiteIconsSavedOnUnderTheEarlierKeyReadAsOff() {
+        val context = RuntimeEnvironment.getApplication()
+        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit {
+            clear()
+            putBoolean("website_icons", true)
+        }
         assertFalse(AndroidMailBehaviorStore(context).read().websiteIcons)
     }
 }
