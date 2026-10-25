@@ -112,7 +112,8 @@ internal class MailStates(
         InboxFeedState(services.mail, pageScope, services.avatars, ::avatarOptions, defaultScope = mailScope)
 
     /** Avatars load from outside the user's servers only while Website icons is on. */
-    private fun avatarOptions(): AvatarOptions = mailAvatarOptions(behavior.behavior.websiteIcons)
+    private fun avatarOptions(): AvatarOptions =
+        mailAvatarOptions(behavior.behavior.websiteIcons, behavior.behavior.duckDuckGoIcons)
 
     /** Every account's folder names in folder order, once each, for search to choose from. */
     fun mailboxNames(): List<String> =
