@@ -67,6 +67,21 @@ class MessageExtrasTest {
     }
 
     @Test
+    fun onlyTheTopmostDeliveryHeadersCount() {
+        val probed =
+            email.copy(
+                listUnsubscribe = listOf("mailto:leave@lists.example.org"),
+                deliveredTo =
+                    listOf(
+                        listOf(EmailAddress(email = "ada@alias.example.org")),
+                        listOf(EmailAddress(email = "ada@other-alias.example.org")),
+                    ),
+                originalTo = listOf(null, listOf(EmailAddress(email = "ada@example.org"))),
+            )
+        assertEquals(listOf("ada@alias.example.org"), probed.unsubscribe()?.deliveredTo)
+    }
+
+    @Test
     fun theListIdNamesTheList() {
         assertEquals("Sentry weekly digest", listName("\"Sentry weekly digest\" <weekly.sentry.io>"))
         assertEquals("weekly.sentry.io", listIdentifier("\"Sentry weekly digest\" <weekly.sentry.io>"))
