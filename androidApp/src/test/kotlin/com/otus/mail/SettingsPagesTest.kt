@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -97,6 +98,15 @@ class SettingsPagesTest {
         compose.onNodeWithContentDescription("Server").assertDoesNotExist()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("Appearance").assertIsDisplayed()
+    }
+
+    @Test
+    fun systemBackFromSettingsReturnsToTheInboxInsteadOfClosingMail() {
+        openSettings()
+        compose.onNodeWithText("Appearance").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Appearance").assertDoesNotExist()
+        assertFalse(compose.activity.isFinishing)
     }
 
     @Test
