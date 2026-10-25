@@ -13,6 +13,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Saves received files to the device's Downloads through MediaStore, which needs no storage
@@ -29,23 +32,42 @@ class AndroidSavedFiles(
     ): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
         return withContext(Dispatchers.IO) {
-            val resolver = context.contentResolver
-            val details =
-                ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, safeName(name))
-                    put(MediaStore.MediaColumns.MIME_TYPE, type)
-                    put(MediaStore.MediaColumns.IS_PENDING, 1)
-                }
-            val uri =
-                resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, details) ?: return@withContext false
-            try {
-                resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: throw IOException("No output for $uri")
-                resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
-                true
-            } catch (expected: IOException) {
-                resolver.delete(uri, null, null)
-                false
+            // MediaStore numbers a name that is taken, "name (1)", but gives up after a few dozen;
+            // then the file goes in under the time instead.
+            write(safeName(name), type, bytes) ?: write(timedName(safeName(name)), type, bytes) ?: false
+        }
+    }
+
+    /** True once [bytes] are in Downloads as [name]; null when MediaStore could not take the name. */
+    private fun write(
+        name: String,
+        type: String,
+        bytes: ByteArray,
+    ): Boolean? {
+        val resolver = context.contentResolver
+        val details =
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(MediaStore.MediaColumns.MIME_TYPE, type)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
+        val uri =
+            try {
+                resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, details)
+            } catch (expected: IllegalStateException) {
+                null
+            } ?: return null
+        return try {
+            resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: throw IOException("No output for $uri")
+            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+            true
+        } catch (expected: IOException) {
+            resolver.delete(uri, null, null)
+            false
+        } catch (expected: IllegalStateException) {
+            // Publishing the file can fail too when no free name is left.
+            resolver.delete(uri, null, null)
+            null
         }
     }
 
@@ -122,4 +144,11 @@ class AndroidSavedFiles(
                 .trim()
                 .takeUnless { it.isEmpty() || it == "." || it == ".." } ?: "attachment"
     }
+}
+
+/** [name] with the current time before its extension, such as "Contacts 20261025-162235.vcf". */
+private fun timedName(name: String): String {
+    val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(Date())
+    val dot = name.lastIndexOf('.').takeIf { it > 0 } ?: name.length
+    return "${name.substring(0, dot)} $stamp${name.substring(dot)}"
 }
