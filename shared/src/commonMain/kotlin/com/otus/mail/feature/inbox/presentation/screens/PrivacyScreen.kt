@@ -24,7 +24,8 @@ import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 /**
  * Settings › Privacy: when mail loads images from other servers, who may always show them
  * ([onOpenAllowed] opens that list), whether avatars load website icons, and the screen and
- * keyboard protections that [device] offers. Each change is saved at once.
+ * keyboard protections that [device] offers. Each change is saved at once. Website icons and
+ * DuckDuckGo are off by default, so avatars reach only the user's servers.
  */
 @Composable
 fun PrivacyScreen(
@@ -57,9 +58,18 @@ fun PrivacyScreen(
                 "Website icons",
                 checked = behavior.websiteIcons,
                 onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
-                description = "Logos from sender websites and DuckDuckGo, which see your IP address",
+                description = "Logos from sender websites, which see your IP address and that you got their mail",
                 icon = Res.drawable.symbol_person,
             )
+            if (behavior.websiteIcons) {
+                SettingToggleRow(
+                    "Ask DuckDuckGo",
+                    checked = behavior.duckDuckGoIcons,
+                    onCheckedChange = { on -> state.update { it.copy(duckDuckGoIcons = on) } },
+                    description = "For sites without an icon. DuckDuckGo sees your IP address and each sender's domain",
+                    icon = Res.drawable.symbol_person,
+                )
+            }
         }
         if (device.screen || device.keyboard) {
             SettingsSection("This device") {

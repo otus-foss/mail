@@ -7,7 +7,8 @@ package com.otus.mail.feature.inbox.domain
  * [sidebar] arranges the sidebar. [actionBar] holds each place's bar, and [actionBarMode] picks
  * whether places use their own or the Everywhere bar. A [minimizedBar] shows only its primary,
  * as a round button. A null swipe does nothing. [websiteIcons] lets sender avatars load images
- * from outside the user's servers, such as sender websites and DuckDuckGo. [recentFrom] holds the
+ * from outside the user's servers, such as sender websites, and [duckDuckGoIcons] also asks
+ * DuckDuckGo's icon cache for a site without an icon. [recentFrom] holds the
  * addresses the user last sent from, newest first, which compose offers first and a new message
  * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
  * forwards too; new messages always get it. [undoSendSeconds] holds each sent message on the device
@@ -30,7 +31,8 @@ data class MailBehavior(
     val actionBar: Map<ActionBarPlace, ActionBarLayout> = ActionBarPlace.entries.associateWith { it.defaultLayout },
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
     val minimizedBar: Boolean = false,
-    val websiteIcons: Boolean = true,
+    val websiteIcons: Boolean = false,
+    val duckDuckGoIcons: Boolean = false,
     val recentFrom: List<String> = emptyList(),
     val signatureInReplies: Boolean = true,
     val undoSendSeconds: Int = DEFAULT_UNDO_SEND_SECONDS,
