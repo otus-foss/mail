@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.feature.inbox.domain.Participant
 import com.otus.mail.feature.inbox.domain.memberMailboxes
 import com.otus.mail.feature.inbox.domain.withFlag
 
@@ -28,6 +29,11 @@ sealed interface ReadSheet {
     /** What the app offers for a [person] the message names, such as adding them to contacts. */
     data class Person(
         val person: MailSender,
+    ) : ReadSheet
+
+    /** Everyone a conversation names besides the user, each opening their [Person] sheet. */
+    data class People(
+        val people: List<Participant>,
     ) : ReadSheet
 }
 

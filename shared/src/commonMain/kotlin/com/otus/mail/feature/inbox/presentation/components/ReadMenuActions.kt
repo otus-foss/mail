@@ -55,6 +55,8 @@ internal class ReadMenuActions(
             is ReadMenuEntry.MoveTo -> offer(MailAction.Move)?.let(perform)
             is ReadMenuEntry.Mute -> mute(!entry.on)
             ReadMenuEntry.DeleteConversation -> offer(MailAction.Trash)?.let(perform)
+            ReadMenuEntry.SenderContact -> state.sheet = ReadSheet.Person(page.sender)
+            is ReadMenuEntry.People -> state.sheet = ReadSheet.People(entry.people)
         }
     }
 
@@ -70,6 +72,7 @@ internal class ReadMenuActions(
             ReadMenuEntry.ReportSpam -> offer(MailAction.Spam) != null
             is ReadMenuEntry.MoveTo -> offer(MailAction.Move) != null
             ReadMenuEntry.DeleteConversation -> offer(MailAction.Trash) != null
+            ReadMenuEntry.SenderContact, is ReadMenuEntry.People -> read.person != null
             else -> true
         }
 

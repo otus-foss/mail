@@ -6,14 +6,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.components.ContactEntry
 import com.otus.designsystem.components.ContactRowLabel
+import com.otus.designsystem.components.IndexLetter
 import com.otus.designsystem.components.InfoStrip
+import com.otus.designsystem.components.LetterIndexState
 import com.otus.designsystem.components.RowSelection
 import com.otus.designsystem.components.StripAction
+import com.otus.designsystem.components.letterIndexHandle
 import com.otus.designsystem.components.rowSelection
 import com.otus.designsystem.elements.SectionCaption
 import com.otus.designsystem.resources.Res
@@ -33,6 +38,7 @@ import com.otus.mail.feature.contacts.domain.PossibleDuplicate
 import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.peopleCount
 import com.otus.mail.feature.contacts.presentation.rowLabel
+import kotlinx.coroutines.launch
 
 /** What the list shows: the notices on top, the groups, then the people filed by letter. */
 internal class ContactListContent(
@@ -59,9 +65,21 @@ internal fun ContactList(
     content: ContactListContent,
     actions: ContactListActions,
     padding: PaddingValues,
+    letterIndex: LetterIndexState,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier, contentPadding = padding, verticalArrangement = Arrangement.spacedBy(EntryTokens.gap)) {
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val sections = content.people.groupBy { it.letter }
+    val positions = content.letterPositions(sections)
+    val indexLetters = sections.map { (letter, people) -> IndexLetter(letter, people.size) }
+    val jump = { letter: String -> positions[letter]?.let { scope.launch { listState.scrollToItem(it) } } }
+    LazyColumn(
+        modifier,
+        listState,
+        contentPadding = padding,
+        verticalArrangement = Arrangement.spacedBy(EntryTokens.gap),
+    ) {
         notices(content, actions)
         if (content.groups.isNotEmpty()) {
             item("groups") { SectionCaption("Groups", Modifier.padding(top = PageTokens.rowGap)) }
@@ -79,8 +97,15 @@ internal fun ContactList(
                 )
             }
         }
-        content.people.groupBy { it.letter }.forEach { (letter, people) ->
-            item("letter:$letter") { SectionCaption(letter, Modifier.padding(top = PageTokens.rowGap)) }
+        sections.forEach { (letter, people) ->
+            item("letter:$letter") {
+                SectionCaption(
+                    letter,
+                    Modifier
+                        .padding(top = PageTokens.rowGap)
+                        .letterIndexHandle(letterIndex, letter, indexLetters) { jump(it) },
+                )
+            }
             val keys = people.map { it.main.key }
             itemsIndexed(people, key = { _, person -> person.main.key.toString() }) { index, person ->
                 val main = person.main
@@ -100,6 +125,16 @@ internal fun ContactList(
             }
         }
     }
+}
+
+/**
+ * Where each letter's heading sits among the list's items: after the notices and the groups with
+ * their heading, then after each earlier letter's heading and people.
+ */
+private fun ContactListContent.letterPositions(sections: Map<String, List<ContactPerson>>): Map<String, Int> {
+    val notices = listOfNotNull(readOnly, waiting.takeIf { it > 0 }, duplicate).size
+    val first = notices + if (groups.isNotEmpty()) groups.size + 1 else 0
+    return sections.keys.zip(sections.values.runningFold(first) { at, people -> at + 1 + people.size }).toMap()
 }
 
 private fun LazyListScope.notices(

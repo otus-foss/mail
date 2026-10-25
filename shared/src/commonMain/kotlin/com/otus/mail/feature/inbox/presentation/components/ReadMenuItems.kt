@@ -8,10 +8,12 @@ import com.otus.designsystem.resources.symbol_delete_sweep
 import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forward
+import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_info
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_notifications_off
+import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.resources.symbol_print
 import com.otus.designsystem.resources.symbol_reply
 import com.otus.designsystem.resources.symbol_reply_all
@@ -120,6 +122,14 @@ private val ReadMenuEntry.icon: DrawableResource
 
             is ReadMenuEntry.Mute -> {
                 Res.drawable.symbol_notifications_off
+            }
+
+            ReadMenuEntry.SenderContact -> {
+                Res.drawable.symbol_person_add
+            }
+
+            is ReadMenuEntry.People -> {
+                Res.drawable.symbol_group
             }
 
             ReadMenuEntry.DeleteConversation -> {
