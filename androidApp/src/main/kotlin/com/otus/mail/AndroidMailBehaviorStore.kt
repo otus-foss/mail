@@ -45,6 +45,7 @@ class AndroidMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.getString(ACTION_BAR_MODE, null)) ?: defaults.actionBarMode,
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
+            duckDuckGoIcons = preferences.getBoolean(DUCKDUCKGO_ICONS, defaults.duckDuckGoIcons),
             showQuotes = preferences.getBoolean(SHOW_QUOTES, defaults.showQuotes),
             zenRead = preferences.getBoolean(ZEN_READ, defaults.zenRead),
             screenSecurity = preferences.getBoolean(SCREEN_SECURITY, defaults.screenSecurity),
@@ -78,6 +79,7 @@ class AndroidMailBehaviorStore(
             putString(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
+            putBoolean(DUCKDUCKGO_ICONS, behavior.duckDuckGoIcons)
             putBoolean(SHOW_QUOTES, behavior.showQuotes)
             putBoolean(ZEN_READ, behavior.zenRead)
             putBoolean(SCREEN_SECURITY, behavior.screenSecurity)
@@ -102,7 +104,11 @@ class AndroidMailBehaviorStore(
         const val SIDEBAR = "sidebar_layout"
         const val ACTION_BAR_MODE = "action_bar_mode"
         const val MINIMIZED_BAR = "action_bar_minimized"
-        const val WEBSITE_ICONS = "website_icons"
+
+        // Website icons moved here when they turned off by default, since the earlier key held on for
+        // anyone who saved any setting.
+        const val WEBSITE_ICONS = "load_website_icons"
+        const val DUCKDUCKGO_ICONS = "duckduckgo_icons"
         const val SHOW_QUOTES = "show_quotes"
         const val ZEN_READ = "read_zen"
         const val SCREEN_SECURITY = "screen_security"

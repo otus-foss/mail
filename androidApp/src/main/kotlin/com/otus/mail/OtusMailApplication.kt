@@ -42,6 +42,7 @@ class OtusMailApplication :
                     AndroidAddressPinStore(this),
                     AndroidFolderNudgeStore(this),
                     SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
+                    AndroidNotificationPreviewStore(this),
                 ),
             nightly = NightlyUpdates(installer = AndroidUpdateInstaller(this)),
             instantPush = instantPush,
