@@ -9,7 +9,8 @@ so a retry uses a code above every existing release, including unfinished drafts
 
 The version job resolves both commits. The build checks out those exact revisions and publishes
 them in `provenance.json` beside the APK. Notes include Mail and Meta commits since the preceding
-recorded revisions. Only a published release can make an unchanged pair skip scheduled and manual runs.
+recorded revisions. When the preceding release has no recorded revision, the notes list the commits
+since it was published instead. Only a published release can make an unchanged pair skip scheduled and manual runs.
 The version check reads every release page, so unfinished drafts cannot hide the last publication.
 A rerun after a failed build uses the next unpublished version code; a rerun after publication skips an unchanged pair.
 
@@ -31,7 +32,8 @@ The `nightly` build type is the release build with these changes:
 
 At each launch the nightly app reads the recent releases of the nightly repository. When one is
 newer than the installed build, a circled arrow leads the version in the sidebar footer. Tapping
-the version opens a sheet with the changes of every newer build, grouped by commit scope. Only
+the version opens a sheet with the changes of every newer build, grouped by commit scope. Scopes spelled with and without hyphens share a group, and a change
+listed by both Mail and Meta appears once. Only
 `feat`, `fix`, and `perf` commits appear there. Changelog, beside Install update, lists every
 published nightly by date, with the installed ones on a lighter panel under an "Installed"
 divider. A failed check shows nothing. Other builds never check.

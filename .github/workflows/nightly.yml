@@ -29,6 +29,7 @@ jobs:
       number: ${{ steps.number.outputs.number }}
       previous_mail: ${{ steps.number.outputs.previous_mail }}
       previous_meta: ${{ steps.number.outputs.previous_meta }}
+      previous_date: ${{ steps.number.outputs.previous_date }}
       meta_sha: ${{ steps.number.outputs.meta_sha }}
       sha: ${{ steps.number.outputs.sha }}
     steps:
@@ -58,6 +59,7 @@ jobs:
       NUMBER: ${{ needs.version.outputs.number }}
       PREVIOUS_MAIL: ${{ needs.version.outputs.previous_mail }}
       PREVIOUS_META: ${{ needs.version.outputs.previous_meta }}
+      PREVIOUS_DATE: ${{ needs.version.outputs.previous_date }}
       MAIL_SHA: ${{ needs.version.outputs.sha }}
       META_SHA: ${{ needs.version.outputs.meta_sha }}
     steps:
@@ -101,10 +103,14 @@ jobs:
           cp androidApp/build/outputs/apk/nightly/androidApp-nightly.apk "$apk"
           jq -n --arg mail "$MAIL_SHA" --arg meta "$META_SHA" --argjson versionCode "$NUMBER" \
             '{mail: $mail, meta: $meta, versionCode: $versionCode}' > provenance.json
+          # Without a recorded revision, such as after a release from before provenance, the notes
+          # list the commits since the previous release was published, not old ones again.
           history() {
             local checkout="$1" previous="$2"
             if [ -n "$previous" ] && git -C "$checkout" merge-base --is-ancestor "$previous" HEAD; then
               git -C "$checkout" log "$previous..HEAD" --format='- %s'
+            elif [ -n "$PREVIOUS_DATE" ]; then
+              git -C "$checkout" log --since="$PREVIOUS_DATE" --format='- %s'
             else
               git -C "$checkout" log -n 20 --format='- %s'
             fi
