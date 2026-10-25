@@ -45,54 +45,44 @@ data class ContactDraft(
     fun applyTo(card: Card = Card(kind = CardKind.Individual)): Card {
         val keptEmails = emails.filter { it.value.isNotBlank() }
         val keptPhones = phones.filter { it.value.isNotBlank() }
-        return card.copy(
-            name = name(card.name),
-            emails =
-                keptEmails
-                    .mapIndexed { index, it ->
-                        val old = it.id?.let { id -> card.emails?.get(id) }
-                        it.key(index, "e") to
-                            (old ?: EmailAddress(it.value.trim())).copy(
-                                address = it.value.trim(),
-                                contexts = it.label.contexts(old?.contexts),
-                                label = it.label.custom,
-                                pref = if (it.preferred && keptEmails.size > 1) 1 else null,
-                            )
-                    }.toMap()
-                    .takeIf { it.isNotEmpty() },
-            phones =
-                keptPhones
-                    .mapIndexed { index, it ->
-                        val old = it.id?.let { id -> card.phones?.get(id) }
-                        it.key(index, "p") to
-                            (old ?: Phone(it.value.trim())).copy(
-                                number = it.value.trim(),
-                                contexts = it.label.contexts(old?.contexts),
-                                label = it.label.custom,
-                            )
-                    }.toMap()
-                    .takeIf { it.isNotEmpty() },
-            organizations = replaceFirst(card.organizations, organization) { Organization(name = it) },
-            titles = replaceFirst(card.titles, title) { Title(it) },
-            anniversaries =
-                card.anniversaries
-                    .orEmpty()
-                    .filterValues { it.kind != AnniversaryKind.Birth }
-                    .plus(listOfNotNull(birthday?.let { BIRTHDAY to Anniversary(AnniversaryKind.Birth, it) }))
-                    .takeIf { it.isNotEmpty() },
-            notes = replaceFirst(card.notes, note) { Note(it) },
-            media =
-                if (photo == card.photo) {
-                    card.media
-                } else {
-                    // A new or removed photo replaces every photo, so other apps show the same one.
-                    card.media
+        return card
+            .copy(
+                name = name(card.name),
+                emails =
+                    keptEmails
+                        .mapIndexed { index, it ->
+                            val old = it.id?.let { id -> card.emails?.get(id) }
+                            it.key(index, "e") to
+                                (old ?: EmailAddress(it.value.trim())).copy(
+                                    address = it.value.trim(),
+                                    contexts = it.label.contexts(old?.contexts),
+                                    label = it.label.custom,
+                                    pref = if (it.preferred && keptEmails.size > 1) 1 else null,
+                                )
+                        }.toMap()
+                        .takeIf { it.isNotEmpty() },
+                phones =
+                    keptPhones
+                        .mapIndexed { index, it ->
+                            val old = it.id?.let { id -> card.phones?.get(id) }
+                            it.key(index, "p") to
+                                (old ?: Phone(it.value.trim())).copy(
+                                    number = it.value.trim(),
+                                    contexts = it.label.contexts(old?.contexts),
+                                    label = it.label.custom,
+                                )
+                        }.toMap()
+                        .takeIf { it.isNotEmpty() },
+                organizations = replaceFirst(card.organizations, organization) { Organization(name = it) },
+                titles = replaceFirst(card.titles, title) { Title(it) },
+                anniversaries =
+                    card.anniversaries
                         .orEmpty()
-                        .filterValues { it.kind != MediaKind.Photo }
-                        .plus(listOfNotNull(photo?.let { PHOTO to it }))
-                        .takeIf { it.isNotEmpty() }
-                },
-        )
+                        .filterValues { it.kind != AnniversaryKind.Birth }
+                        .plus(listOfNotNull(birthday?.let { BIRTHDAY to Anniversary(AnniversaryKind.Birth, it) }))
+                        .takeIf { it.isNotEmpty() },
+                notes = replaceFirst(card.notes, note) { Note(it) },
+            ).let { if (photo == card.photo) it else it.withPhoto(photo) }
     }
 
     private fun name(old: Name?): Name? {
@@ -153,12 +143,24 @@ data class ContactDraft(
             )
 
         private const val BIRTHDAY = "birthday"
-        private const val PHOTO = "photo"
     }
 }
 
 /** The card's first photo. */
 internal val Card.photo: Media? get() = media?.values?.firstOrNull { it.kind == MediaKind.Photo }
+
+/** This card with [photo] in place of every photo it had, so other apps show the same one; null removes them. */
+internal fun Card.withPhoto(photo: Media?): Card =
+    copy(
+        media =
+            media
+                .orEmpty()
+                .filterValues { it.kind != MediaKind.Photo }
+                .plus(listOfNotNull(photo?.let { PHOTO_KEY to it }))
+                .takeIf { it.isNotEmpty() },
+    )
+
+private const val PHOTO_KEY = "photo"
 
 /** One address or number in the editor; [id] is its key on the card, null for a new one. */
 data class DraftValue(

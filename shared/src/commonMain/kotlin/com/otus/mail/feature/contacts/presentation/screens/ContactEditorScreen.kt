@@ -50,6 +50,7 @@ import com.otus.mail.feature.contacts.presentation.components.ContactLabels
 import com.otus.mail.feature.contacts.presentation.deleteLabel
 import com.otus.mail.feature.contacts.presentation.icon
 import com.otus.mail.feature.contacts.presentation.nameAvatar
+import com.otus.mail.feature.contacts.presentation.photoChoices
 import com.otus.mail.feature.contacts.presentation.withLabel
 import kotlinx.coroutines.launch
 
@@ -88,15 +89,11 @@ internal fun ContactEditorScreen(
     }
     val scope = rememberCoroutineScope()
     val photoChoices =
-        listOfNotNull(
-            OptionsItem
-                .Action(if (draft.photo == null) "Choose photo" else "Change photo", Res.drawable.symbol_image, {
-                    scope.launch { state.pickPhoto()?.let { draft = draft.copy(photo = it) } }
-                })
-                .takeIf { state.canPickPhoto },
-            OptionsItem
-                .Action("Remove photo", Res.drawable.symbol_hide_image, { draft = draft.copy(photo = null) })
-                .takeIf { draft.photo != null },
+        photoChoices(
+            hasPhoto = draft.photo != null,
+            canPick = state.canPickPhoto,
+            onPick = { scope.launch { state.pickPhoto()?.let { draft = draft.copy(photo = it) } } },
+            onRemove = { draft = draft.copy(photo = null) },
         )
     val typing = isKeyboardUp()
     ProvideTextStyle(panelTextStyle()) {

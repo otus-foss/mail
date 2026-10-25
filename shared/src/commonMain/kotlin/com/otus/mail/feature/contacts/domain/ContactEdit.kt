@@ -75,6 +75,7 @@ interface ContactStore {
         const val EDITS = "edits"
         const val LINKS = "links"
         const val DISMISSED = "dismissed"
+        const val FREQUENT = "frequent"
     }
 }
 

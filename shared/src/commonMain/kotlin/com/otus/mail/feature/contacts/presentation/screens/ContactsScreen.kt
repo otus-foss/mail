@@ -19,9 +19,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.ConfirmDialog
-import com.otus.designsystem.components.rememberLetterIndexState
 import com.otus.designsystem.components.InputSheet
 import com.otus.designsystem.components.LetterIndex
+import com.otus.designsystem.components.rememberLetterIndexState
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -83,139 +83,146 @@ internal fun ContactsScreen(
     val clear = { selected = emptySet() }
     ProvideTextStyle(panelTextStyle()) {
         LetterIndex(letterIndex, Modifier.fillMaxSize()) {
-        ActionBarHost(
-            bar = {
-                if (selected.isEmpty()) {
-                    ContactsListBar(
-                        ListBarActions(
-                            navigation.onNew,
-                            onNewGroup = { naming = true }.takeIf { state.defaultBook != null },
-                            onFindDuplicates =
-                                duplicates.firstOrNull()?.let {
-                                    {
-                                        merging =
-                                            planFor(listOf(it.first, it.second))
-                                    }
-                                },
-                            duplicates = duplicates.size,
-                            onImport = state::pickImport.takeIf { state.canTransfer && state.defaultBook != null },
-                            onExport =
-                                { state.export(state.cards.filterNot { it.isGroup }) }.takeIf {
-                                    state.canTransfer &&
-                                        state.cards.isNotEmpty()
-                                },
-                        ),
-                    )
-                } else {
-                    val pair = chosenCards.takeIf { it.size == 2 }
-                    val sameAddress =
-                        pair != null &&
-                            duplicates.any { setOf(it.first.key, it.second.key) == pair.map { c -> c.key }.toSet() }
-                    ContactsSelectionBar(
-                        chosen,
-                        SelectionBarActions(
-                            onWrite = {
-                                navigation.onWrite(
-                                    chosen.mapNotNull { p ->
-                                        p.emails.firstOrNull()?.let { MailSender(p.name, it.value) }
-                                    },
-                                )
-                                clear()
-                            },
-                            onMerge =
-                                chosenCards
-                                    .takeIf { it.size >= 2 && chosen.size == selected.size }
-                                    ?.let { planFor(it) }
-                                    ?.let { plan -> { merging = plan } },
-                            sharedAddress = sameAddress,
-                            groups =
-                                state.groups.filter { group ->
-                                    state.book(group.books.first())?.canWrite == true
-                                },
-                            onAddToGroup = { group ->
-                                state.addToGroup(group, chosenCards)
-                                clear()
-                            },
-                            onNewGroup = { naming = true },
-                            onExport = { state.export(chosenCards) },
-                            onDelete =
-                                { deleting = true }.takeIf {
-                                    chosenCards.all { card ->
-                                        card.books.all {
-                                            state.book(it)?.canWrite ==
-                                                true
+            ActionBarHost(
+                bar = {
+                    if (selected.isEmpty()) {
+                        ContactsListBar(
+                            ListBarActions(
+                                navigation.onNew,
+                                onNewGroup = { naming = true }.takeIf { state.defaultBook != null },
+                                onFindDuplicates =
+                                    duplicates.firstOrNull()?.let {
+                                        {
+                                            merging =
+                                                planFor(listOf(it.first, it.second))
                                         }
-                                    }
-                                },
-                        ),
-                    )
-                }
-            },
-            Modifier.fillMaxSize().safeDrawingPadding().imePadding(),
-        ) { barPadding ->
-            Column(Modifier.fillMaxSize().padding(horizontal = PageTokens.pageInset)) {
-                ContactsPanel(
-                    query,
-                    { query = it },
-                    state.books,
-                    books,
-                    { books = it },
-                    { filtering = true },
-                    selected.size,
-                    navigation.onOpenNavigation,
-                    clear,
-                    Modifier
-                        .padding(top = PageTokens.pageInset)
-                        .onSizeChanged { panelHeight = with(density) { it.height.toDp() } },
-                )
-                Box(Modifier.weight(1f)) {
-                    val content =
-                        ContactListContent(
-                            people,
-                            state.groups.filter { g -> query.isBlank() && inBooks(books, g.books) },
-                            duplicates.firstOrNull()?.takeIf { books.isEmpty() && query.isBlank() },
-                            duplicates.size,
-                            state.waiting,
-                            books.singleOrNull()?.let(state::book)?.takeIf { !it.canWrite },
-                            booksOf = { card -> card.books.mapNotNull(state::book) },
-                            membersOf = { group -> state.members(group).size },
-                        )
-                    val empty = emptyKind(state, people.isEmpty() && content.groups.isEmpty(), query.isNotBlank())
-                    if (empty != null) {
-                        ContactsEmpty(
-                            empty,
-                            state::pickImport.takeIf { state.canTransfer && state.defaultBook != null },
+                                    },
+                                duplicates = duplicates.size,
+                                onImport = state::pickImport.takeIf { state.canTransfer && state.defaultBook != null },
+                                onExport =
+                                    { state.export(state.cards.filterNot { it.isGroup }) }.takeIf {
+                                        state.canTransfer &&
+                                            state.cards.isNotEmpty()
+                                    },
+                            ),
                         )
                     } else {
-                        ContactList(
-                            content,
-                            ContactListActions(
-                                selected,
-                                navigation.onOpen,
-                                onToggle = { key ->
-                                    selected =
-                                        if (key in
-                                            selected
-                                        ) {
-                                            selected - key
-                                        } else {
-                                            selected + key
+                        val pair = chosenCards.takeIf { it.size == 2 }
+                        val sameAddress =
+                            pair != null &&
+                                duplicates.any { setOf(it.first.key, it.second.key) == pair.map { c -> c.key }.toSet() }
+                        ContactsSelectionBar(
+                            chosen,
+                            SelectionBarActions(
+                                onWrite = {
+                                    navigation.onWrite(
+                                        chosen.mapNotNull { p ->
+                                            p.emails.firstOrNull()?.let { MailSender(p.name, it.value) }
+                                        },
+                                    )
+                                    clear()
+                                },
+                                onMerge =
+                                    chosenCards
+                                        .takeIf { it.size >= 2 && chosen.size == selected.size }
+                                        ?.let { planFor(it) }
+                                        ?.let { plan -> { merging = plan } },
+                                sharedAddress = sameAddress,
+                                groups =
+                                    state.groups.filter { group ->
+                                        state.book(group.books.first())?.canWrite == true
+                                    },
+                                onAddToGroup = { group ->
+                                    state.addToGroup(group, chosenCards)
+                                    clear()
+                                },
+                                onNewGroup = { naming = true },
+                                onExport = { state.export(chosenCards) },
+                                onDelete =
+                                    { deleting = true }.takeIf {
+                                        chosenCards.all { card ->
+                                            card.books.all {
+                                                state.book(it)?.canWrite ==
+                                                    true
+                                            }
                                         }
-                                },
-                                onReviewDuplicate = {
-                                    content.duplicate?.let {
-                                        merging =
-                                            planFor(listOf(it.first, it.second))
-                                    }
-                                },
+                                    },
                             ),
-                            barPadding,
-                            letterIndex,
                         )
+                    }
+                },
+                Modifier.fillMaxSize().safeDrawingPadding().imePadding(),
+            ) { barPadding ->
+                Column(Modifier.fillMaxSize().padding(horizontal = PageTokens.pageInset)) {
+                    ContactsPanel(
+                        query,
+                        { query = it },
+                        state.books,
+                        books,
+                        { books = it },
+                        { filtering = true },
+                        selected.size,
+                        navigation.onOpenNavigation,
+                        clear,
+                        Modifier
+                            .padding(top = PageTokens.pageInset)
+                            .onSizeChanged { panelHeight = with(density) { it.height.toDp() } },
+                    )
+                    Box(Modifier.weight(1f)) {
+                        val content =
+                            ContactListContent(
+                                people,
+                                state.groups.filter { g -> query.isBlank() && inBooks(books, g.books) },
+                                duplicates.firstOrNull()?.takeIf { books.isEmpty() && query.isBlank() },
+                                duplicates.size,
+                                state.waiting,
+                                books.singleOrNull()?.let(state::book)?.takeIf { !it.canWrite },
+                                booksOf = { card -> card.books.mapNotNull(state::book) },
+                                membersOf = { group -> state.members(group).size },
+                                // Only the full list features them, not a search, a filter, or a selection.
+                                frequent =
+                                    state.mostFrequent
+                                        .takeIf {
+                                            query.isBlank() && books.isEmpty() &&
+                                                selected.isEmpty()
+                                        }.orEmpty(),
+                            )
+                        val empty = emptyKind(state, people.isEmpty() && content.groups.isEmpty(), query.isNotBlank())
+                        if (empty != null) {
+                            ContactsEmpty(
+                                empty,
+                                state::pickImport.takeIf { state.canTransfer && state.defaultBook != null },
+                            )
+                        } else {
+                            ContactList(
+                                content,
+                                ContactListActions(
+                                    selected,
+                                    navigation.onOpen,
+                                    onToggle = { key ->
+                                        selected =
+                                            if (key in
+                                                selected
+                                            ) {
+                                                selected - key
+                                            } else {
+                                                selected + key
+                                            }
+                                    },
+                                    onReviewDuplicate = {
+                                        content.duplicate?.let {
+                                            merging =
+                                                planFor(listOf(it.first, it.second))
+                                        }
+                                    },
+                                ),
+                                barPadding,
+                                letterIndex,
+                            )
+                        }
                     }
                 }
             }
-        }
         }
     }
     ContactsFilterPanel(
@@ -231,7 +238,7 @@ internal fun ContactsScreen(
         onDismiss = { filtering = false },
     )
     merging?.let { plan ->
-        MergeSheet(plan, state.writableBooks, onChange = { merging = it }, onShowAsOne = {
+        MergeSheet(plan, state.writableBooks, onChange = { merging = it }, "Show as one", onAlternative = {
             state.showAsOne(plan.cards.map { it.key }.toSet())
             merging = null
             clear()

@@ -135,12 +135,16 @@ internal class ContactSync(
         }
 
     private fun save() {
-        store?.write(
-            mapOf(
-                ContactStore.EDITS to ContactEdit.encode(edits),
-                ContactStore.LINKS to KeySets.encode(links.sets),
-                ContactStore.DISMISSED to KeySets.encode(dismissed.toList()),
-            ),
-        )
+        // A write replaces every saved value, so the others, such as the frequent scores, are kept.
+        store?.let {
+            it.write(
+                it.read() +
+                    mapOf(
+                        ContactStore.EDITS to ContactEdit.encode(edits),
+                        ContactStore.LINKS to KeySets.encode(links.sets),
+                        ContactStore.DISMISSED to KeySets.encode(dismissed.toList()),
+                    ),
+            )
+        }
     }
 }

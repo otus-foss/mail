@@ -7,6 +7,7 @@ import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.contacts.data.VCardFiles
 import com.otus.mail.feature.contacts.presentation.ContactSync
 import com.otus.mail.feature.contacts.presentation.ContactsState
+import com.otus.mail.feature.contacts.presentation.FrequentContacts
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
@@ -87,6 +88,7 @@ internal class MailStates(
                 services.pickers.savedFiles?.let { VCardFiles(picker, it) }
             },
             services.pickers.avatarPhotos,
+            FrequentContacts(services.mailTraces, services.stores.contacts, services.work),
         )
 
     /** Addresses pinned in "Show mail from". */

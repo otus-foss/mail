@@ -1,9 +1,13 @@
 package com.otus.mail.feature.contacts.presentation
 
+import com.otus.jscontact.Media
+import com.otus.jscontact.Name
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.ContactLabel
+import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.DraftValue
+import com.otus.mail.feature.contacts.domain.withPhoto
 
 /** Cards with [label] on an address or number, compared without case. */
 internal fun ContactsState.withLabel(label: String): List<ContactCard> =
@@ -51,3 +55,28 @@ internal fun ContactsState.addAddress(
     val draft = ContactDraft.of(card)
     save(draft.copy(emails = draft.emails + DraftValue(value = address)), card, card.books.first())
 }
+
+/** Takes [person]'s cards out of [group]; the cards themselves stay. */
+internal fun ContactsState.removeFromGroup(
+    group: ContactCard,
+    person: ContactPerson,
+) {
+    val uids = person.cards.mapNotNull { it.card.uid }.toSet()
+    val members =
+        group.card.members
+            .orEmpty()
+            .filterKeys { it !in uids }
+    update(group, group.card.copy(members = members.takeIf { it.isNotEmpty() }))
+}
+
+/** Gives [group] a new [name]. */
+internal fun ContactsState.renameGroup(
+    group: ContactCard,
+    name: String,
+) = update(group, group.card.copy(name = Name(full = name.trim())))
+
+/** Gives [card], such as a group, [photo], or takes its photo away when null. */
+internal fun ContactsState.setPhoto(
+    card: ContactCard,
+    photo: Media?,
+) = update(card, card.card.withPhoto(photo))
