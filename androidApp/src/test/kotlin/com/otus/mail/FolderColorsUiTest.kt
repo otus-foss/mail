@@ -129,7 +129,7 @@ class FolderColorsUiTest {
         compose.onNodeWithText("Appearance").performClick()
         compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
         compose
-            .onNode(hasText("Colors only change the folder icon. They stay on this device.") and isToggleable())
+            .onNode(hasText("Only changes the folder icon") and isToggleable())
             .performScrollTo()
             .performClick()
         assertFalse(behavior.behavior.sidebar.folderColors)

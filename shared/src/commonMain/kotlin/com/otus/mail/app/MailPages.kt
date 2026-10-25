@@ -120,18 +120,8 @@ private fun SettingsPageContent(
             MailBehaviorPage(states, navigation, back)
         }
 
-        MailPage.Notifications -> {
-            states.notifications?.let {
-                NotificationsScreen(
-                    it,
-                    states.accounts.accounts,
-                    onBack = back,
-                ) { navigation.go(MailPage.NotificationOverrides) }
-            }
-        }
-
-        MailPage.NotificationOverrides -> {
-            states.notifications?.let { NotificationOverridesScreen(it, states.accounts.accounts, onBack = back) }
+        MailPage.Notifications, MailPage.NotificationOverrides -> {
+            NotificationPages(page, states, navigation, back)
         }
 
         MailPage.SidebarSettings -> {
@@ -252,5 +242,23 @@ internal fun rememberLabeled(
     val colors = states.folderColors.colors to states.behavior.behavior.sidebar.folderColors
     return remember(feed.messages, states.folders.accounts, scope, colors) {
         states.filing.labeled(feed.messages.within(scope))
+    }
+}
+
+/** Notifications and its page of account and address previews; neither shows where pushes are unavailable. */
+@Composable
+private fun NotificationPages(
+    page: MailPage,
+    states: MailStates,
+    navigation: MailNavigation,
+    back: () -> Unit,
+) {
+    val notifications = states.notifications ?: return
+    if (page == MailPage.NotificationOverrides) {
+        NotificationOverridesScreen(notifications, states.accounts.accounts, onBack = back)
+    } else {
+        NotificationsScreen(notifications, states.accounts.accounts, onBack = back) {
+            navigation.go(MailPage.NotificationOverrides)
+        }
     }
 }
