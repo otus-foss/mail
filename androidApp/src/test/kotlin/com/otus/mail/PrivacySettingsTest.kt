@@ -1,6 +1,7 @@
 package com.otus.mail
 
 import androidx.activity.compose.setContent
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.RemoteImages
@@ -77,9 +79,10 @@ class PrivacySettingsTest {
     fun websiteIconsAndDuckDuckGoStartOffAndDuckDuckGoShowsOnlyWithIcons() {
         openPrivacy()
         compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).assertDoesNotExist()
-        compose.onNode(hasText("Website icons") and isToggleable()).performClick()
+        // The row's info button sits mid-row, so the switch is flipped by its action, not a tap at the center.
+        compose.onNode(hasText("Website icons") and isToggleable()).performSemanticsAction(SemanticsActions.OnClick)
         assertTrue(behavior.behavior.websiteIcons)
-        compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).performClick()
+        compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).performSemanticsAction(SemanticsActions.OnClick)
         assertTrue(behavior.behavior.duckDuckGoIcons)
     }
 }

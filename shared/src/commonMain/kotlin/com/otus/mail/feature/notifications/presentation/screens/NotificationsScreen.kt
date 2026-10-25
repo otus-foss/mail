@@ -19,6 +19,7 @@ import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.components.Subpage
 import com.otus.designsystem.elements.ValueButton
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
+import com.otus.mail.feature.notifications.domain.PreviewChoices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
@@ -50,46 +51,8 @@ fun NotificationsScreen(
                 ValueButton(current?.let { if (it.isGoogle) "Google" else it.name } ?: "Off")
             }
         }
-        state.previews?.let { previews ->
-            SettingsSection("Previews", info = PreviewsInfo) {
-                NotificationPreviews.entries.forEach { choice ->
-                    PickRow(
-                        choice.title,
-                        choice.description,
-                        PickMark(choice == previews.all, atStart = true),
-                        { state.choosePreviews { it.copy(all = choice) } },
-                        subtitleLines = PREVIEW_LINES,
-                    )
-                }
-            }
-            if (accounts.isNotEmpty()) {
-                SettingPageRow(
-                    "Accounts and addresses",
-                    onOpenOverrides,
-                    description = previews.overrideSummary(accounts),
-                )
-            }
-        }
-        // Accounts show only when instant delivery fails for them; mail still arrives through
-        // periodic checks then, so nothing else tells the user why alerts come late.
-        val troubled =
-            accounts.filter { account ->
-                state.statuses[account.id].let {
-                    it != null && it != PushDeliveryStatus.Active &&
-                        it != PushDeliveryStatus.Connecting
-                }
-            }
-        if (current != null && troubled.isNotEmpty()) {
-            SettingsSection("Not instant", info = notInstantInfo(state.periodicChecks)) {
-                troubled.forEach { account ->
-                    SettingRow(
-                        account.name,
-                        onClick = null,
-                        description = state.statuses[account.id].label(state.periodicChecks),
-                    )
-                }
-            }
-        }
+        state.previews?.let { PreviewsSection(state, it, accounts, onOpenOverrides) }
+        if (current != null) NotInstantSection(state, accounts)
     }
     if (choosing) {
         ChoiceSheet(
@@ -105,11 +68,60 @@ fun NotificationsScreen(
     }
 }
 
+/** What alerts show for all mail, and the page that sets it per account and address. */
+@Composable
+private fun PreviewsSection(
+    state: NotificationSettingsState,
+    previews: PreviewChoices,
+    accounts: List<ConnectedAccount>,
+    onOpenOverrides: () -> Unit,
+) {
+    SettingsSection("Previews", info = PreviewsInfo) {
+        NotificationPreviews.entries.forEach { choice ->
+            PickRow(
+                choice.title,
+                choice.description,
+                PickMark(choice == previews.all, atStart = true),
+                { state.choosePreviews { it.copy(all = choice) } },
+                subtitleLines = PREVIEW_LINES,
+            )
+        }
+    }
+    if (accounts.isNotEmpty()) {
+        SettingPageRow("Accounts and addresses", onOpenOverrides, description = previews.overrideSummary(accounts))
+    }
+}
+
+/**
+ * The accounts whose instant delivery fails, and why; nothing while every account is instant or
+ * still connecting. Mail still arrives through periodic checks then, so nothing else tells the
+ * user why alerts come late.
+ */
+@Composable
+private fun NotInstantSection(
+    state: NotificationSettingsState,
+    accounts: List<ConnectedAccount>,
+) {
+    val healthy = setOf(PushDeliveryStatus.Active, PushDeliveryStatus.Connecting)
+    val troubled = accounts.filter { account -> state.statuses[account.id].let { it != null && it !in healthy } }
+    if (troubled.isEmpty()) return
+    SettingsSection("Not instant", info = notInstantInfo(state.periodicChecks)) {
+        troubled.forEach { account ->
+            SettingRow(
+                account.name,
+                onClick = null,
+                description = state.statuses[account.id].label(state.periodicChecks),
+            )
+        }
+    }
+}
+
 private fun notInstantInfo(periodicChecks: Boolean) =
     InfoText(
         "Not instant",
         if (periodicChecks) {
-            "Mail still arrives for these accounts through checks about every 15 minutes, and keeps retrying instant delivery."
+            "Mail still arrives for these accounts through checks about every 15 minutes, and Mail keeps " +
+                "retrying instant delivery."
         } else {
             "These accounts get no new-mail alerts until instant delivery works. Opening Mail retries it."
         },

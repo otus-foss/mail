@@ -58,57 +58,72 @@ fun PrivacyScreen(
                 )
             }
         }
-        SettingsSection("Avatars") {
+        AvatarsSection(state)
+        if (device.screen || device.keyboard) DeviceSection(state, device)
+    }
+}
+
+/** Whether avatars load website icons, and from DuckDuckGo when a site has none. */
+@Composable
+private fun AvatarsSection(state: MailBehaviorState) {
+    val behavior = state.behavior
+    SettingsSection("Avatars") {
+        SettingToggleRow(
+            "Website icons",
+            checked = behavior.websiteIcons,
+            onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
+            description = "Logos from sender websites",
+            icon = Res.drawable.symbol_person,
+            info =
+                InfoText(
+                    "Website icons",
+                    "The sender's website sees your IP address and that you got their mail.",
+                ),
+        )
+        if (behavior.websiteIcons) {
             SettingToggleRow(
-                "Website icons",
-                checked = behavior.websiteIcons,
-                onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
-                description = "Logos from sender websites",
+                "Ask DuckDuckGo",
+                checked = behavior.duckDuckGoIcons,
+                onCheckedChange = { on -> state.update { it.copy(duckDuckGoIcons = on) } },
+                description = "For sites without an icon",
                 icon = Res.drawable.symbol_person,
+                info = InfoText("Ask DuckDuckGo", "DuckDuckGo sees your IP address and each sender's domain."),
+            )
+        }
+    }
+}
+
+/** The screen and keyboard protections [device] offers. */
+@Composable
+private fun DeviceSection(
+    state: MailBehaviorState,
+    device: DevicePrivacy,
+) {
+    val behavior = state.behavior
+    SettingsSection("This device") {
+        if (device.screen) {
+            SettingToggleRow(
+                "Screen security",
+                checked = behavior.screenSecurity,
+                onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
+                description = "Hides Mail from recent apps and screenshots",
                 info =
                     InfoText(
-                        "Website icons",
-                        "The sender's website sees your IP address and that you got their mail.",
-                    ),
-            )
-            if (behavior.websiteIcons) {
-                SettingToggleRow(
-                    "Ask DuckDuckGo",
-                    checked = behavior.duckDuckGoIcons,
-                    onCheckedChange = { on -> state.update { it.copy(duckDuckGoIcons = on) } },
-                    description = "For sites without an icon",
-                    icon = Res.drawable.symbol_person,
-                    info = InfoText("Ask DuckDuckGo", "DuckDuckGo sees your IP address and each sender's domain."),
-                )
-            }
-        }
-        if (device.screen || device.keyboard) {
-            SettingsSection("This device") {
-                if (device.screen) {
-                    SettingToggleRow(
                         "Screen security",
-                        checked = behavior.screenSecurity,
-                        onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
-                        description = "Hides Mail from recent apps and screenshots",
-                        info =
-                            InfoText(
-                                "Screen security",
-                                "Mail is hidden in recent apps, and screenshots and screen recording are blocked.",
-                            ),
-                        icon = Res.drawable.symbol_visibility_off,
-                    )
-                }
-                if (device.keyboard) {
-                    SettingToggleRow(
-                        "Incognito keyboard",
-                        checked = behavior.incognitoKeyboard,
-                        onCheckedChange = { on -> state.update { it.copy(incognitoKeyboard = on) } },
-                        description = "Asks the keyboard not to learn what you type",
-                        info = InfoText("Incognito keyboard", "Some keyboards ignore the request and learn anyway."),
-                        icon = Res.drawable.symbol_edit,
-                    )
-                }
-            }
+                        "Mail is hidden in recent apps, and screenshots and screen recording are blocked.",
+                    ),
+                icon = Res.drawable.symbol_visibility_off,
+            )
+        }
+        if (device.keyboard) {
+            SettingToggleRow(
+                "Incognito keyboard",
+                checked = behavior.incognitoKeyboard,
+                onCheckedChange = { on -> state.update { it.copy(incognitoKeyboard = on) } },
+                description = "Asks the keyboard not to learn what you type",
+                info = InfoText("Incognito keyboard", "Some keyboards ignore the request and learn anyway."),
+                icon = Res.drawable.symbol_edit,
+            )
         }
     }
 }
