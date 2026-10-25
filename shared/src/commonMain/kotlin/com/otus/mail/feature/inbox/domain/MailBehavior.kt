@@ -35,7 +35,7 @@ data class MailBehavior(
     val inbox: InboxContents = InboxContents(),
     val filters: FilterLayout = FilterLayout(),
     val list: MailListLayout = MailListLayout(),
-    val remoteImages: RemoteImages = RemoteImages.Always,
+    val remoteImages: RemoteImages = RemoteImages.Known,
     val allowedSenders: List<String> = emptyList(),
     val showQuotes: Boolean = false,
     val zenRead: Boolean = false,
@@ -146,16 +146,17 @@ val RemoteImages.storageValue: String
     get() = name.lowercase()
 
 /**
- * The image setting saved under its own key, [stored], else Never when the key it had until images
- * loaded by default, [earlier], held Never. That key held Known for anyone who saved any setting,
- * so only Never there was a choice. Null for a value [storageValue] cannot have made.
+ * The image setting saved under its own key, [stored], else Never when a key it had before, in
+ * [earlier], held Never. Each earlier key held its default for anyone who saved any setting, Known
+ * and then Always, so an earlier value is kept only when it was a choice and differs from the
+ * default now, which is Never alone. Null for a value [storageValue] cannot have made.
  */
 fun decodeRemoteImages(
     stored: String?,
-    earlier: String?,
+    vararg earlier: String?,
 ): RemoteImages? =
     RemoteImages.entries.firstOrNull { it.storageValue == stored }
-        ?: RemoteImages.Never.takeIf { earlier == it.storageValue }
+        ?: RemoteImages.Never.takeIf { it.storageValue in earlier }
 
 /** App-private storage for [MailBehavior]. Unknown or missing values read as the defaults. */
 interface MailBehaviorStore {
