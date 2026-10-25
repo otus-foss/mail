@@ -5,6 +5,7 @@ import com.otus.mail.feature.inbox.domain.AttachmentFiles
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
+import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 
@@ -27,6 +28,7 @@ class ComposeServices(
     val threads: ThreadHistory? = null,
     val uploads: AttachmentUploads? = null,
     val files: AttachmentFiles? = null,
+    val photoCleaning: () -> PhotoCleaning = { PhotoCleaning.Never },
 )
 
 /**

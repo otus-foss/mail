@@ -15,6 +15,7 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.theme.PageTokens
+import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
@@ -47,6 +48,17 @@ fun PrivacyScreen(
                 description = if (count == 1) "1 sender" else "$count senders",
                 icon = Res.drawable.symbol_verified_user,
             )
+        }
+        SettingsSection("Photos you attach") {
+            PhotoCleaning.entries.forEach { choice ->
+                PickRow(
+                    choice.title,
+                    choice.description,
+                    PickMark(choice == behavior.photoCleaning, atStart = true),
+                    { state.update { it.copy(photoCleaning = choice) } },
+                    subtitleLines = DESCRIPTION_LINES,
+                )
+            }
         }
         SettingsSection("Avatars") {
             SettingToggleRow(
@@ -100,5 +112,29 @@ private val RemoteImages.description: String
 
             RemoteImages.Never -> {
                 "Always ask, for every mail."
+            }
+        }
+
+private val PhotoCleaning.title: String
+    get() =
+        when (this) {
+            PhotoCleaning.Ask -> "Ask each time"
+            PhotoCleaning.Always -> "Always remove details"
+            PhotoCleaning.Never -> "Keep details"
+        }
+
+private val PhotoCleaning.description: String
+    get() =
+        when (this) {
+            PhotoCleaning.Ask -> {
+                "When you attach a photo, choose whether to remove its details. Removing them is offered first."
+            }
+
+            PhotoCleaning.Always -> {
+                "Location, time, camera, and file name are removed from every JPEG, PNG, and WebP photo."
+            }
+
+            PhotoCleaning.Never -> {
+                "Photos go out as they are, so recipients can see where, when, and with what they were taken."
             }
         }

@@ -137,6 +137,7 @@ internal class MailStates(
                 services.threads,
                 services.uploads,
                 services.pickers.attachmentFiles,
+                photoCleaning = { behavior.behavior.photoCleaning },
             ),
             scope,
             request,
