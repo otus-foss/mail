@@ -77,7 +77,8 @@ internal class MailStates(
     val addressPins = AddressPinsState(services.stores.addressPins)
 
     /** Null where the platform has no instant pushes, which hides the Notifications page. */
-    val notifications = services.instantPush?.let { NotificationSettingsState(it, scope) }
+    val notifications =
+        services.instantPush?.let { NotificationSettingsState(it, scope, services.stores.notificationPreviews) }
 
     /** Rules keep only addresses, so senders take their names from the inbox's loaded mail. */
     val folderSenders =
