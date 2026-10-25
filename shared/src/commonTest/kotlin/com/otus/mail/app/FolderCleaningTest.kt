@@ -6,6 +6,7 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.feature.inbox.data.conversationOf
 import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -14,6 +15,7 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.feature.inbox.presentation.FolderCleanup
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.stalwartLike
@@ -52,6 +54,7 @@ class FolderCleaningTest {
             ),
         )
     private val sent = MutableStateFlow<List<String>>(emptyList())
+    private val removed = MutableStateFlow<Set<String>>(emptySet())
     private var reply: (String) -> String = { DESTROYED_M1 }
 
     private fun message(
@@ -76,14 +79,35 @@ class FolderCleaningTest {
         val engine =
             stalwartLike { body ->
                 sent.update { it + body }
-                if ("Email/get" in body && "Email/query" !in body) membership(body, messages.toList()) else reply(body)
+                val membershipRead = "Email/get" in body && "Email/query" !in body
+                val response = if (membershipRead) membership(body, messages.toList()) else reply(body)
+                val destroyed =
+                    Json
+                        .parseToJsonElement(response)
+                        .jsonObject
+                        .getValue("methodResponses")
+                        .jsonArray
+                        .flatMap {
+                            it.jsonArray[1]
+                                .jsonObject["destroyed"]
+                                ?.jsonArray
+                                .orEmpty()
+                        }.map { it.jsonPrimitive.content }
+                removed.update { it + destroyed }
+                response
             }
         val services = MailServices(logins = store, createClient = { JmapClient(engine) })
         val folders = testFolders(services) { listOf(account) }
         folders.refresh()
         val source =
             object : MailSource {
-                override suspend fun messages(scope: MailScope) = InboxSnapshot(messages.toList())
+                override suspend fun messages(scope: MailScope) =
+                    InboxSnapshot(
+                        messages.filterNot {
+                            it.emailId in
+                                removed.value
+                        },
+                    )
             }
         val feed = InboxFeedState(source, this, defaultScope = scope)
         feed.refresh()
@@ -129,7 +153,7 @@ class FolderCleaningTest {
             assertTrue(feed.messages.isEmpty(), "Both leave at once")
             settle { feed.notice != null }
             assertEquals(listOf("m2"), feed.messages.map { it.id })
-            assertEquals("Couldn't delete 1 message. Try again.", feed.notice)
+            assertEquals("Couldn't finish deleting 1 message. Try again.", feed.notice)
             assertTrue(sent.value.any { "\"destroy\":[\"m1\",\"m2\"]" in it }, sent.value.toString())
         }
 
@@ -152,6 +176,27 @@ class FolderCleaningTest {
             assertTrue(feed.messages.isEmpty())
             assertNull(feed.notice)
             assertTrue(sent.value.any { "\"destroy\":[\"m1\"]" in it }, sent.value.toString())
+        }
+
+    @Test
+    fun emptyingRefreshesARowWhoseOtherMembersMovedAway() =
+        runTest {
+            // m2 left Spam on another device, so emptying destroys only m1 and the row comes back.
+            val members = listOf(ThreadMember("m1", setOf("j"), "j"), ThreadMember("m2", setOf("i"), "i"))
+            val row = message("m1", "j").copy(conversation = conversationOf(members))
+            val (cleanup, feed) = cleanup(MailScope.Role("junk", "Spam"), row)
+            reply = { body ->
+                when {
+                    "Email/set" in body -> DESTROYED_M1
+                    "\"position\":0" in body -> page("\"m1\"", """{"id": "m1", "mailboxIds": {"j": true}}""")
+                    else -> page("", "")
+                }
+            }
+            assertNotNull(cleanup.emptying()).run()
+            settle { sent.value.any { "Email/set" in it } }
+            settle { false }
+            assertTrue(feed.messages.isEmpty(), "The refresh drops the destroyed row")
+            assertNull(feed.notice)
         }
 
     private fun membership(

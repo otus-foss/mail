@@ -170,8 +170,19 @@ class JmapMessageMarkerTest {
                     sent += it
                     setReply(it, refused = setOf("m2"))
                 }.mark(listOf(thread, message("m4")), MessageFlag.Read, true)
-            assertEquals(setOf("ada/m1", "ada/m4"), marked, "A row counts when its own email changed")
+            assertEquals(setOf("ada/m4"), marked, "A conversation succeeds only when every member changed")
             assertEquals(listOf(listOf("m1", "m2"), listOf("m3", "m4")), sent.map(::updateIds))
+        }
+
+    @Test
+    fun aRefusedRepresentativeAlsoLeavesTheConversationIncomplete() =
+        runTest {
+            val members = listOf("m1", "m2", "m3").map { ThreadMember(it, setOf("a"), "a") }
+            val row = message("m1").copy(conversation = conversationOf(members))
+            val changed =
+                marker(smallBatches) { setReply(it, refused = setOf("m1")) }
+                    .mark(listOf(row), MessageFlag.Read, true)
+            assertTrue(changed.isEmpty())
         }
 
     private companion object {

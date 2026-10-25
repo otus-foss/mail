@@ -34,10 +34,13 @@ internal class MessageMarking(
             val marked = services.marker.mark(messages, flag, on)
             changes.forEach { (id, change) -> if (id in marked) change.confirm() else change.rollBack() }
             // Folder unread counts follow the read mark; one refresh covers every message.
-            if (flag == MessageFlag.Read && marked.isNotEmpty()) folders.refresh()
+            if (flag == MessageFlag.Read) folders.refresh()
             val kept = changes.keys.count { it !in marked }
             val what = if (changes.size == 1) "the message" else countText(kept)
-            if (kept > 0) feed.report("Couldn't change $what. Try again.")
+            if (kept > 0) {
+                feed.refresh()
+                feed.report("Couldn't finish changing $what. Try again.")
+            }
         }
     }
 }

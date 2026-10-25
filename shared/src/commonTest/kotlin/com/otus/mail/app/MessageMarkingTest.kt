@@ -17,6 +17,8 @@ import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -27,7 +29,9 @@ import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MessageMarkingTest {
-    private val sent = mutableListOf<String>()
+    private val sent = MutableStateFlow<List<String>>(emptyList())
+    private val serverMessages = MutableStateFlow<List<MailMessage>>(emptyList())
+    private var messageLoads = 0
     private var refused = emptySet<String>()
     private var folderLoads = 0
 
@@ -45,10 +49,11 @@ class MessageMarkingTest {
 
     /** Marking for a feed holding [messages], and the feed. Each folder refresh counts a load. */
     private fun TestScope.marking(vararg messages: MailMessage): Pair<MessageMarking, InboxFeedState> {
+        serverMessages.value = messages.toList()
         val store = InMemoryLoginStore().apply { save(JmapLogin("ada", URL, "ada@example.org", "Ada"), "secret") }
         val engine =
             stalwartLike { body ->
-                sent += body
+                sent.update { it + body }
                 setReply(body)
             }
         val services = MailServices(logins = store, createClient = { JmapClient(engine) })
@@ -59,7 +64,10 @@ class MessageMarkingTest {
             }
         val source =
             object : MailSource {
-                override suspend fun messages(scope: MailScope) = InboxSnapshot(messages.toList())
+                override suspend fun messages(scope: MailScope): InboxSnapshot {
+                    messageLoads++
+                    return InboxSnapshot(serverMessages.value)
+                }
             }
         val feed = InboxFeedState(source, this)
         feed.refresh()
@@ -70,6 +78,9 @@ class MessageMarkingTest {
     /** Updates every id the `Email/set` call names, except [refused] ones. */
     private fun setReply(body: String): String {
         val (kept, changed) = UPDATE.findAll(body).map { it.groupValues[1] }.partition { it in refused }
+        serverMessages.update { rows ->
+            rows.map { if (it.emailId in changed) it.copy(attributes = it.attributes.copy(unread = false)) else it }
+        }
         val updated = changed.joinToString { "\"$it\": null" }
         val notUpdated = kept.joinToString { "\"$it\": {\"type\": \"forbidden\"}" }
         return """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {$updated},
@@ -87,7 +98,7 @@ class MessageMarkingTest {
             settle { folderLoads > 0 }
             // Another refresh would follow here; give it the chance.
             settle { false }
-            assertEquals(1, sent.count { "Email/set" in it }, sent.toString())
+            assertEquals(1, sent.value.count { "Email/set" in it }, sent.value.toString())
             assertEquals(1, folderLoads)
             assertEquals(emptyList(), feed.unread())
             assertNull(feed.notice)
@@ -101,24 +112,25 @@ class MessageMarkingTest {
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
             settle { feed.notice != null }
             assertEquals(listOf("m2"), feed.unread())
-            assertEquals("Couldn't change 1 message. Try again.", feed.notice)
+            assertEquals(2, messageLoads)
+            assertEquals("Couldn't finish changing 1 message. Try again.", feed.notice)
             settle { folderLoads > 0 }
             assertEquals(1, folderLoads, "The marked messages still change the unread counts")
         }
 
     @Test
-    fun aRefusedSingleMarkGoesBackWithoutRefreshingFolders() =
+    fun aRefusedSingleMarkRefreshesFoldersAndKeepsTheFailureNotice() =
         runTest {
             refused = setOf("m1")
             val (marking, feed) = marking(message("m1"))
-            // A read mark, because only read marks refresh the folder counts when they are saved.
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
             assertEquals(emptyList(), feed.unread())
             settle { feed.notice != null }
             settle { false }
             assertEquals(listOf("m1"), feed.unread())
-            assertEquals("Couldn't change the message. Try again.", feed.notice)
-            assertEquals(0, folderLoads)
+            assertEquals("Couldn't finish changing the message. Try again.", feed.notice)
+            assertEquals(1, folderLoads)
+            assertEquals(2, messageLoads)
         }
 
     /** Lets the JMAP calls, which read logins off the test thread, finish until [done], or for a short while. */
