@@ -3,6 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import com.otus.accounts.presentation.ownAddresses
 import com.otus.designsystem.components.ToastMessage
 import com.otus.designsystem.elements.ToastAction
 import com.otus.designsystem.theme.FolderColor
@@ -16,13 +17,21 @@ import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.presentation.ListNudge
 import com.otus.mail.feature.inbox.presentation.RowLook
 
-/** The Mail list settings and every account's sign-in and sending addresses, for the rows. */
+/** The Mail list settings and every account's sign-in and sending addresses and their avatars, for the rows. */
 @Composable
 internal fun rememberRowLook(states: MailStates): RowLook {
     val layout = states.behavior.behavior.list
     val accounts = states.accounts.accounts
-    return remember(layout, accounts) {
-        RowLook(layout, OwnAddresses(accounts.associate { it.id to it.emailAddresses + it.username }))
+    LaunchedEffect(accounts) { states.ownAvatars.load(accounts) }
+    val avatars =
+        accounts
+            .flatMap { account ->
+                account.ownAddresses.mapNotNull { email ->
+                    states.ownAvatars.avatar(account, email)?.let { (account.id to email.lowercase()) to it }
+                }
+            }.toMap()
+    return remember(layout, accounts, avatars) {
+        RowLook(layout, OwnAddresses(accounts.associate { it.id to it.emailAddresses + it.username }), avatars)
     }
 }
 

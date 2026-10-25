@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +31,7 @@ import com.otus.designsystem.components.BarMorph
 import com.otus.designsystem.components.ConfirmDialog
 import com.otus.designsystem.components.EditableImage
 import com.otus.designsystem.components.FormattingBar
+import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.ResizableImage
 import com.otus.designsystem.components.RichTextBody
 import com.otus.designsystem.elements.isKeyboardUp
@@ -93,13 +95,14 @@ fun SignatureEditorScreen(
                     onCopy = { copying = true },
                     onRemove = { removing = true },
                 )
+                signatures.notice?.let { Box(Modifier.padding(top = PageTokens.contentInset)) { PageNote(it) } }
                 SignatureBox(editor)
             }
         }
     }
     if (copying) {
         CopySignatureSheet(signatures, editor.identity, onDismiss = { copying = false }) {
-            editor.reload(signatures.identity(editor.identity.id) ?: editor.identity)
+            editor.reload(signatures.identity(editor.identity.key) ?: editor.identity)
             onCopied()
         }
     }

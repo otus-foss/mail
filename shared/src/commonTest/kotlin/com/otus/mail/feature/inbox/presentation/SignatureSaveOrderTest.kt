@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.SendIdentityKey
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.SignatureImage
 import com.otus.mail.feature.inbox.domain.SignatureRepository
@@ -39,7 +40,7 @@ class SignatureSaveOrderTest {
                     }
                 }
             runCurrent()
-            val identity = state.identity("a@example.com")!!
+            val identity = state.identity(SendIdentityKey("a", "a@example.com"))!!
             state.save(identity, Signature(text = "first"))
             runCurrent()
             state.save(identity, Signature(text = "second"))
@@ -48,7 +49,7 @@ class SignatureSaveOrderTest {
             first.complete(Unit)
             runCurrent()
             assertEquals(listOf("first", "second"), calls)
-            assertEquals("first", state.identity(identity.id)?.textSignature)
+            assertEquals("first", state.identity(identity.key)?.textSignature)
             assertNotNull(state.notice)
         }
 
@@ -63,8 +64,8 @@ class SignatureSaveOrderTest {
             val targets = state.identities
             state.copy(targets.first().copy(textSignature = "new"), targets)
             runCurrent()
-            assertEquals("", state.identity("a@example.com")?.textSignature)
-            assertEquals("new", state.identity("b@example.com")?.textSignature)
+            assertEquals("", state.identity(SendIdentityKey("a", "a@example.com"))?.textSignature)
+            assertEquals("new", state.identity(SendIdentityKey("a", "b@example.com"))?.textSignature)
         }
 
     @Test
@@ -124,12 +125,12 @@ class SignatureSaveOrderTest {
                     }
                 }
             runCurrent()
-            val editor = SignatureEditorState(state, state.identity("a@example.com")!!)
+            val editor = SignatureEditorState(state, state.identity(SendIdentityKey("a", "a@example.com"))!!)
             editor.text.setHtml("<p>Keep this edit</p>")
             editor.close()
             runCurrent()
-            editor.switchTo(state.identity("b@example.com")!!)
-            editor.switchTo(state.identity("a@example.com")!!)
+            editor.switchTo(state.identity(SendIdentityKey("a", "b@example.com"))!!)
+            editor.switchTo(state.identity(SendIdentityKey("a", "a@example.com"))!!)
             finish.complete(Unit)
             runCurrent()
 
