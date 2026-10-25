@@ -28,7 +28,10 @@ data class AttachmentBlob(
     val blobId: String,
 )
 
-/** A picked file. The platform reader must honor the byte limit before allocating a larger buffer. */
+/**
+ * A picked file. The platform reader must honor the byte limit before allocating a larger buffer.
+ * [read] returns a JPEG, PNG, or WebP image without its metadata, see [withoutImageMetadata].
+ */
 class PickedFile(
     val name: String,
     val type: String,
@@ -40,7 +43,8 @@ class PickedFile(
         if (size > maxBytes) throw UploadException(UploadFailure.TooLarge)
         val bytes = readBytes(maxBytes)
         if (bytes.size > maxBytes) throw UploadException(UploadFailure.TooLarge)
-        return bytes
+        // Recipients get the picture, not where, when, or with what device it was taken.
+        return withoutImageMetadata(bytes)
     }
 }
 
