@@ -16,25 +16,37 @@ import org.robolectric.annotation.Config
 class RemoteImagesPersistenceTest {
     private val context = RuntimeEnvironment.getApplication()
 
-    private fun readWithEarlierSetting(stored: String): MailBehavior {
+    private fun readWithEarlierSetting(
+        key: String,
+        stored: String,
+    ): MailBehavior {
         context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit {
             clear()
-            putString("remote_images", stored)
+            putString(key, stored)
         }
         return AndroidMailBehaviorStore(context).read()
     }
 
     @Test
-    fun settingsSavedBeforeImagesLoadedByDefaultLoadThemAlways() {
-        listOf("known", "sometimes").forEach { stored ->
-            assertEquals(RemoteImages.Always, readWithEarlierSetting(stored).remoteImages)
+    fun settingsSavedUnderEarlierDefaultsAskForUnknownSenders() {
+        val earlier =
+            mapOf(
+                "load_remote_images" to listOf("always", "known"),
+                "remote_images" to listOf("known", "sometimes"),
+            )
+        earlier.forEach { (key, values) ->
+            values.forEach { stored ->
+                assertEquals(RemoteImages.Known, readWithEarlierSetting(key, stored).remoteImages)
+            }
         }
-        assertEquals(emptyList<String>(), readWithEarlierSetting("known").allowedSenders)
+        assertEquals(emptyList<String>(), readWithEarlierSetting("load_remote_images", "always").allowedSenders)
     }
 
     @Test
-    fun neverSavedBeforeImagesLoadedByDefaultStaysNever() {
-        assertEquals(RemoteImages.Never, readWithEarlierSetting("never").remoteImages)
+    fun neverSavedUnderAnEarlierKeyStaysNever() {
+        listOf("load_remote_images", "remote_images").forEach { key ->
+            assertEquals(RemoteImages.Never, readWithEarlierSetting(key, "never").remoteImages)
+        }
     }
 
     @Test

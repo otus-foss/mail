@@ -47,14 +47,14 @@ class PrivacySettingsTest {
     }
 
     @Test
-    fun alwaysIsTheDefaultAndAChoiceIsSavedAtOnce() {
+    fun knownPeopleIsTheDefaultAndAChoiceIsSavedAtOnce() {
         openPrivacy()
-        compose.onNodeWithText("Always").assertIsSelected()
+        compose.onNodeWithText("From people you know").assertIsSelected()
         compose.screenshot("2026-10-19-feat-read-view-privacy")
         compose.onNodeWithText("Never").performClick()
         assertEquals(RemoteImages.Never, behavior.behavior.remoteImages)
         compose.onNodeWithText("Never").assertIsSelected()
-        compose.onNodeWithText("Always").assertIsNotSelected()
+        compose.onNodeWithText("From people you know").assertIsNotSelected()
     }
 
     @Test

@@ -47,6 +47,7 @@ class IosMailBehaviorStore(
             remoteImages =
                 decodeRemoteImages(
                     preferences.stringForKey(REMOTE_IMAGES),
+                    preferences.stringForKey(ALWAYS_REMOTE_IMAGES),
                     preferences.stringForKey(EARLIER_REMOTE_IMAGES),
                 )
                     ?: defaults.remoteImages,
@@ -106,7 +107,10 @@ class IosMailBehaviorStore(
         const val INBOX = "otus.mail.inbox_contents"
         const val FILTERS = "otus.mail.filter_layout"
         const val LIST = "otus.mail.mail_list"
-        const val REMOTE_IMAGES = "otus.mail.load_remote_images"
+        const val REMOTE_IMAGES = "otus.mail.remote_images_setting"
+
+        // The keys the setting had while images loaded always, and before that, by default.
+        const val ALWAYS_REMOTE_IMAGES = "otus.mail.load_remote_images"
         const val EARLIER_REMOTE_IMAGES = "otus.mail.remote_images"
         const val ZEN_READ = "otus.mail.read_zen"
         const val ALLOWED_SENDERS = "otus.mail.allowed_senders"

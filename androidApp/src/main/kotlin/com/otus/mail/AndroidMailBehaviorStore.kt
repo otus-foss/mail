@@ -56,6 +56,7 @@ class AndroidMailBehaviorStore(
             remoteImages =
                 decodeRemoteImages(
                     preferences.getString(REMOTE_IMAGES, null),
+                    preferences.getString(ALWAYS_REMOTE_IMAGES, null),
                     preferences.getString(EARLIER_REMOTE_IMAGES, null),
                 )
                     ?: defaults.remoteImages,
@@ -106,7 +107,10 @@ class AndroidMailBehaviorStore(
         const val INBOX = "inbox_contents"
         const val FILTERS = "filter_layout"
         const val LIST = "mail_list"
-        const val REMOTE_IMAGES = "load_remote_images"
+        const val REMOTE_IMAGES = "remote_images_setting"
+
+        // The keys the setting had while images loaded always, and before that, by default.
+        const val ALWAYS_REMOTE_IMAGES = "load_remote_images"
         const val EARLIER_REMOTE_IMAGES = "remote_images"
         const val ALLOWED_SENDERS = "allowed_senders"
 

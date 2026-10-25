@@ -135,4 +135,20 @@ class MailBehaviorTest {
             behavior.copiedBar(ActionBarPlace.Message, ActionBarPlace.Inbox),
         )
     }
+
+    @Test
+    fun imagesLoadFromPeopleYouKnowByDefault() = assertEquals(RemoteImages.Known, MailBehavior().remoteImages)
+
+    @Test
+    fun theSavedImageSettingWinsOverEarlierKeys() =
+        assertEquals(RemoteImages.Always, decodeRemoteImages("always", "never", "never"))
+
+    @Test
+    fun onlyNeverCarriesOverFromAnEarlierKey() {
+        assertEquals(RemoteImages.Never, decodeRemoteImages(null, null, "never"))
+        assertEquals(RemoteImages.Never, decodeRemoteImages(null, "never", "known"))
+        listOf("always", "known", "sometimes", null).forEach { earlier ->
+            assertEquals(null, decodeRemoteImages(null, earlier, earlier))
+        }
+    }
 }
