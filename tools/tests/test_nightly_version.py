@@ -20,6 +20,7 @@ def release(number, *, draft=False, provenance=True):
     return {
         "tag_name": f"nightly-{number}",
         "draft": draft,
+        "published_at": None if draft else f"2026-10-{number - 180:02d}T00:10:00Z",
         "assets": [{"name": "provenance.json"}] if provenance else [],
     }
 
@@ -56,7 +57,11 @@ class NightlyVersionTests(unittest.TestCase):
         result = self.outputs([[release(201, provenance=False)]])
         self.assertEqual("202", result["number"])
         self.assertEqual("", result["previous_mail"])
+        self.assertEqual("2026-10-21T00:10:00Z", result["previous_date"])
         self.assertEqual([], self.downloaded)
+
+    def test_first_release_has_no_previous_date(self):
+        self.assertEqual("", self.outputs([[]])["previous_date"])
 
     def test_matching_published_sources_skip(self):
         result = self.outputs([[release(201)]], {"mail": MAIL, "meta": META})
@@ -85,6 +90,7 @@ class NightlyVersionTests(unittest.TestCase):
         self.assertEqual("204", result["number"])
         self.assertEqual(["nightly-201"], self.downloaded)
         self.assertEqual(OLD_MAIL, result["previous_mail"])
+        self.assertEqual("2026-10-21T00:10:00Z", result["previous_date"])
 
     def test_matching_publication_on_a_later_page_skips_despite_newer_drafts(self):
         result = self.outputs(
