@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.components.ContactEntry
 import com.otus.designsystem.components.ContactHeader
-import com.otus.designsystem.components.ContactRow
 import com.otus.designsystem.components.ContactValueRow
 import com.otus.designsystem.components.InfoStrip
 import com.otus.designsystem.components.PageNote
@@ -19,6 +19,7 @@ import com.otus.designsystem.resources.symbol_cloud_off
 import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_notes
+import com.otus.designsystem.theme.EntryTokens
 import com.otus.designsystem.theme.PageTokens
 import com.otus.jscontact.AnniversaryKind
 import com.otus.jscontact.PartialDate
@@ -158,13 +159,15 @@ internal fun GroupMembers(
 ) {
     Column(modifier) {
         ContactHeader(group.avatar, listOf(if (members.size == 1) "1 person" else "${members.size} people"))
-        members.forEach { person ->
-            ContactRow(
-                person.name,
-                person.emails.firstOrNull()?.value ?: "No address",
-                person.avatar,
-                { onOpen(person.main.key) },
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(EntryTokens.gap)) {
+            members.forEach { person ->
+                ContactEntry(
+                    person.name,
+                    person.emails.firstOrNull()?.value ?: "No address",
+                    person.avatar,
+                    { onOpen(person.main.key) },
+                )
+            }
         }
     }
 }

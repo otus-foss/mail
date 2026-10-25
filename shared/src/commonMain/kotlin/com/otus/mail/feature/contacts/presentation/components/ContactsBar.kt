@@ -7,7 +7,6 @@ import com.otus.designsystem.components.BarContext
 import com.otus.designsystem.components.BarToken
 import com.otus.designsystem.components.MenuAction
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.resources.symbol_call_merge
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_download
@@ -47,18 +46,18 @@ internal fun ContactsListBar(actions: ListBarActions) {
         )
     ActionBar(
         BarAction("New contact", Res.drawable.symbol_person_add, onClick = actions.onNew),
-        secondary =
-            listOfNotNull(
-                BarAction("More options", Res.drawable.symbol_more_horiz, menu = more) {
-                }.takeIf { more.isNotEmpty() },
-            ),
+        secondary = moreOptions(more),
     )
 }
 
-/** What the bar does with the selected people. */
+/**
+ * What the bar does with the selected people. [onMerge] is null while fewer than two cards are
+ * selected; [sharedAddress] says two of them share an address, which makes Merge the primary.
+ */
 internal class SelectionBarActions(
     val onWrite: () -> Unit,
     val onMerge: (() -> Unit)?,
+    val sharedAddress: Boolean,
     val groups: List<ContactCard>,
     val onAddToGroup: (ContactCard) -> Unit,
     val onNewGroup: () -> Unit,
@@ -68,14 +67,15 @@ internal class SelectionBarActions(
 
 /**
  * The bar while people are selected. The primary shrinks to its icon and its context names who:
- * one person's avatar and name, or a count. Two cards that share an address make it Merge.
+ * one person's avatar and name, or a count. Two cards that share an address make it Merge. Every
+ * other action sits in the ⋯ menu.
  */
 @Composable
 internal fun ContactsSelectionBar(
     chosen: List<ContactPerson>,
     actions: SelectionBarActions,
 ) {
-    val merge = actions.onMerge
+    val merge = actions.onMerge?.takeIf { actions.sharedAddress }
     val primary =
         if (merge != null) {
             BarAction("Merge", Res.drawable.symbol_call_merge, onClick = merge)
@@ -106,17 +106,30 @@ internal fun ContactsSelectionBar(
                 BarContext(peopleCount(chosen.size), BarToken.Count(chosen.size), "to ${peopleCount(chosen.size)}")
             }
         }
-    val groupMenu =
-        actions.groups.map { MenuAction(it.displayName, Res.drawable.symbol_group) { actions.onAddToGroup(it) } } +
-            MenuAction("New group…", Res.drawable.symbol_add, actions.onNewGroup)
+    val mergeItem =
+        actions.onMerge
+            ?.takeIf { merge == null }
+            ?.let { MenuAction("Merge into one", Res.drawable.symbol_call_merge, it) }
+    val groupItems =
+        actions.groups.map { group ->
+            MenuAction("Add to ${group.displayName}", Res.drawable.symbol_group) { actions.onAddToGroup(group) }
+        }
+    val more =
+        listOfNotNull(mergeItem) + groupItems +
+            listOfNotNull(
+                MenuAction("New group…", Res.drawable.symbol_group_add, actions.onNewGroup),
+                MenuAction("Export as vCard", Res.drawable.symbol_upload, actions.onExport),
+                actions.onDelete?.let { MenuAction("Delete", Res.drawable.symbol_delete, it) },
+            )
     ActionBar(
         primary,
-        secondary =
-            listOfNotNull(
-                BarAction("Add to a group", Res.drawable.symbol_group_add, menu = groupMenu) {},
-                BarAction("Export as vCard", Res.drawable.symbol_upload, onClick = actions.onExport),
-                actions.onDelete?.let { BarAction("Delete", Res.drawable.symbol_delete, onClick = it) },
-            ),
+        secondary = moreOptions(more),
         context = context,
     )
 }
+
+/** The bar's ⋯ button with every secondary action in its menu, or no button when there are none. */
+internal fun moreOptions(items: List<MenuAction>): List<BarAction> =
+    listOfNotNull(
+        BarAction("More options", Res.drawable.symbol_more_horiz, menu = items) {}.takeIf { items.isNotEmpty() },
+    )

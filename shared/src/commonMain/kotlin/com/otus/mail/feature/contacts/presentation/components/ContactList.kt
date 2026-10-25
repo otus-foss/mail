@@ -1,17 +1,20 @@
 package com.otus.mail.feature.contacts.presentation.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ChipAvatar
-import com.otus.designsystem.components.ContactRow
+import com.otus.designsystem.components.ContactEntry
 import com.otus.designsystem.components.ContactRowLabel
 import com.otus.designsystem.components.InfoStrip
+import com.otus.designsystem.components.RowSelection
 import com.otus.designsystem.components.StripAction
+import com.otus.designsystem.components.rowSelection
 import com.otus.designsystem.elements.SectionCaption
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_call_merge
@@ -19,6 +22,7 @@ import com.otus.designsystem.resources.symbol_cloud_off
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_lock
 import com.otus.designsystem.resources.symbol_schedule
+import com.otus.designsystem.theme.EntryTokens
 import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.CardSync
@@ -57,17 +61,19 @@ internal fun ContactList(
     padding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier, contentPadding = padding) {
+    LazyColumn(modifier, contentPadding = padding, verticalArrangement = Arrangement.spacedBy(EntryTokens.gap)) {
         notices(content, actions)
         if (content.groups.isNotEmpty()) {
             item("groups") { SectionCaption("Groups", Modifier.padding(top = PageTokens.rowGap)) }
-            items(content.groups, key = { "group:${it.key}" }) { group ->
+            val groupKeys = content.groups.map { it.key }
+            itemsIndexed(content.groups, key = { _, group -> "group:${group.key}" }) { index, group ->
                 val shared = content.booksOf(group).firstNotNullOfOrNull { it.rowLabel() }
                 ListRow(
                     group.displayName,
                     peopleCount(content.membersOf(group)),
                     groupAvatar,
                     group.key,
+                    rowSelection(groupKeys, index, actions.selected),
                     actions,
                     label = shared,
                 )
@@ -75,7 +81,8 @@ internal fun ContactList(
         }
         content.people.groupBy { it.letter }.forEach { (letter, people) ->
             item("letter:$letter") { SectionCaption(letter, Modifier.padding(top = PageTokens.rowGap)) }
-            items(people, key = { it.main.key.toString() }) { person ->
+            val keys = people.map { it.main.key }
+            itemsIndexed(people, key = { _, person -> person.main.key.toString() }) { index, person ->
                 val main = person.main
                 val extra = person.emails.size - 1
                 ListRow(
@@ -83,6 +90,7 @@ internal fun ContactList(
                     person.emails.firstOrNull()?.value ?: main.role ?: "No address",
                     person.avatar,
                     main.key,
+                    rowSelection(keys, index, actions.selected),
                     actions,
                     detail = "+$extra".takeIf { extra > 0 },
                     label =
@@ -148,18 +156,18 @@ private fun ListRow(
     subtitle: String,
     avatar: ChipAvatar,
     key: CardKey,
+    selection: RowSelection?,
     actions: ContactListActions,
     detail: String? = null,
     label: ContactRowLabel? = null,
 ) {
-    val selecting = actions.selected.isNotEmpty()
-    ContactRow(
+    ContactEntry(
         title,
         subtitle,
         avatar,
-        onClick = { if (selecting) actions.onToggle(key) else actions.onOpen(key) },
+        onClick = { if (selection != null) actions.onToggle(key) else actions.onOpen(key) },
         onLongClick = { actions.onToggle(key) },
-        selected = key in actions.selected,
+        selection = selection,
         detail = detail,
         label = label,
     )

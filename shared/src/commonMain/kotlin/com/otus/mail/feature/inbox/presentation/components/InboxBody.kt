@@ -21,12 +21,13 @@ import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.components.EmptyState
-import com.otus.designsystem.components.RowSelection
 import com.otus.designsystem.components.SwipeActions
+import com.otus.designsystem.components.rowSelection
 import com.otus.designsystem.elements.RefreshIndicator
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_search
+import com.otus.designsystem.theme.EntryTokens
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.motionTween
@@ -59,6 +60,7 @@ internal fun InboxBody(
                 dateFormatter,
                 today,
             ) { conversationRows(messages, frame.look, dateFormatter, today) }
+        val ids = remember(messages) { messages.map { it.id } }
         val currentMessages by rememberUpdatedState(messages)
         val currentGestures by rememberUpdatedState(gestures)
         LazyColumn(
@@ -73,7 +75,7 @@ internal fun InboxBody(
                     top = InboxTokens.pageInset + frame.topInset,
                     bottom = InboxTokens.pageInset + frame.bottomInset,
                 ),
-            verticalArrangement = Arrangement.spacedBy(InboxTokens.rowGap),
+            verticalArrangement = Arrangement.spacedBy(EntryTokens.gap),
         ) {
             status.notice?.let {
                 item(key = NOTICE_KEY) {
@@ -92,7 +94,7 @@ internal fun InboxBody(
             }
             itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
                 val model = rows[message.id] ?: return@itemsIndexed
-                ConversationItem(message, model, messages, index, gestures)
+                ConversationItem(message, model, ids, index, gestures)
             }
             if (status.loadingMore) loadingMoreFooter()
         }
@@ -113,20 +115,11 @@ private fun LazyListScope.loadingMoreFooter() {
 private fun LazyItemScope.ConversationItem(
     message: MailMessage,
     model: ConversationRowModel,
-    messages: List<MailMessage>,
+    ids: List<String>,
     index: Int,
     gestures: RowGestures,
 ) {
-    val selectedIds = gestures.selectedIds
-    val selected = message.id in selectedIds
-
-    fun neighborSelected(offset: Int) = selected && messages.getOrNull(index + offset)?.id in selectedIds
-    val selection =
-        RowSelection(
-            selected,
-            neighborSelected(-1),
-            neighborSelected(1),
-        ).takeIf { selectedIds.isNotEmpty() }
+    val selection = rowSelection(ids, index, gestures.selectedIds)
     val actions = gestures.actions
     val swipes = actions?.behavior?.invoke()
     SwipeActions(
