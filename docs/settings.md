@@ -21,7 +21,7 @@ own page.
   button, under large section titles, and connects new ones with a JMAP
   server, username, and password or app password. It supports compatible JMAP mail servers with
   HTTP Basic authentication, such as Stalwart; no provider-specific behavior exists.
-- **Notifications** chooses the UnifiedPush app for instant delivery and shows each account's push
+- **Notifications** chooses Google Play services or a UnifiedPush app for instant delivery and shows each account's push
   status; see [notifications](notifications.md).
 - **Appearance** (`AppearanceSettingsScreen` from `com.otus.settings`) holds only visual choices,
   in one **Look** section, and every row has an icon. Rows that open a page are Meta's `SettingPageRow`s: they end in a

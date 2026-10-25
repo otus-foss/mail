@@ -12,7 +12,7 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-quality.txt
 ```
 
-To build against an unreleased otus-meta checkout, including in the pre-push hook, set
+To build against an unreleased otus-meta checkout, set
 `GRADLE_OPTS=-Dorg.gradle.project.otus.meta.path=../otus-meta`.
 
 Daily commands:
@@ -116,10 +116,11 @@ rules, including function and type length, remain enabled.
 
 No lint baselines, blanket warning allowances, or failure-tolerant checks. The narrowly scoped
 file-length exception above is permitted. The versioned Git hooks
-are the main gate. `pre-commit` runs the Spotless and Ruff checks. `pre-push` runs `checkAll`
-before every push that sends commits, including pushes to `main` and tags. Both check the
-working tree, so stash unrelated changes first. `git push --no-verify` skips the hooks; do not
-use it to get past a failing check.
+are the main gate. `pre-commit` runs the Spotless and Ruff checks on the working tree, so stash
+unrelated changes first. No hook runs `checkAll`, because a full build on every push is too
+heavy for a laptop. Run `./gradlew checkAll` before pushing work that needs it, such as a direct
+push to `main`. `git commit --no-verify` skips the hooks; do not use it to get past a failing
+check.
 
 CI runs `checkAll` once per ready pull request that changes more than Markdown, to save runner
 minutes.
@@ -153,7 +154,10 @@ imperative verbs, accurate claims, breaking-change explanations, and the 72-char
 Git-generated merge messages are exempt during a merge. Temporary `fixup!`, `squash!`, and
 `amend!` messages are exempt; review the final squash message before committing it.
 
-`checkAll`, and so the pre-push hook and CI, runs the checker's regression tests, including Git rejection in a
+The hook also removes AI attribution lines, such as `Co-authored-by` trailers that name Claude,
+Anthropic, or Cursor and "Generated with Claude Code" lines, before Git saves the commit.
+
+`checkAll`, and so CI, runs the checker's regression tests, including Git rejection in a
 temporary repository. They do not inspect commit history or install local hooks. New clones must
 enable the hook with the command above. See [the decision](decisions/0004-commit-messages.md).
 

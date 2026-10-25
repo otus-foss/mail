@@ -97,10 +97,13 @@ interface MailSource {
     ): Long? = null
 }
 
-/** Saved account metadata could not be read. Existing inbox data should be retained. */
+/** Local storage failed. Existing inbox data should be retained until the user retries. */
 class InboxStorageException(
     cause: Throwable,
-) : Exception("Inbox account storage is unavailable.", cause)
+    val storage: InboxStorage = InboxStorage.Accounts,
+) : Exception("Inbox storage is unavailable.", cause)
+
+enum class InboxStorage { Accounts, Cache }
 
 /** Turns message marks on or off on the server. */
 interface MessageMarker {
