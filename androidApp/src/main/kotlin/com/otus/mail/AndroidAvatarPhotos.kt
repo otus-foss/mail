@@ -8,22 +8,32 @@ import com.otus.avatar.ContactAvatar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Picks an avatar photo and crops its center to a square JPEG of at most [SIZE] pixels a side. */
+/**
+ * Picks an avatar photo, decodes it at a bounded size, and crops its center to a square JPEG of at
+ * most [SIZE] pixels a side.
+ */
 class AndroidAvatarPhotos(
     private val photos: AndroidPhotoPicker,
 ) : AvatarPhotoPicker {
     override suspend fun pick(): ContactAvatar.Photo? {
-        val source = photos.pick() ?: return null
-        return withContext(Dispatchers.Default) {
-            val side = minOf(source.width, source.height)
-            val square = Bitmap.createBitmap(source, (source.width - side) / 2, (source.height - side) / 2, side, side)
-            val scaled = square.scale(minOf(side, SIZE), minOf(side, SIZE))
-            ContactAvatar.Photo(AvatarImage(scaled.encoded(Bitmap.CompressFormat.JPEG, QUALITY)), "image/jpeg")
-        }
+        val open = photos.pick() ?: return null
+        // An unreadable photo is the same as none: the sheet keeps the current avatar.
+        val source = withContext(Dispatchers.IO) { runCatching { sampledBitmap(open, DECODE_SIDE) }.getOrNull() }
+        return source?.let { withContext(Dispatchers.Default) { it.avatar() } }
+    }
+
+    private fun Bitmap.avatar(): ContactAvatar.Photo {
+        val side = minOf(width, height)
+        val square = Bitmap.createBitmap(this, (width - side) / 2, (height - side) / 2, side, side)
+        val scaled = square.scale(minOf(side, SIZE), minOf(side, SIZE))
+        return ContactAvatar.Photo(AvatarImage(scaled.encoded(Bitmap.CompressFormat.JPEG, QUALITY)), "image/jpeg")
     }
 
     private companion object {
         const val SIZE = 512
+
+        /** Room for a center crop of [SIZE] from a photo up to four times as long as it is wide. */
+        const val DECODE_SIDE = SIZE * 4
         const val QUALITY = 85
     }
 }
