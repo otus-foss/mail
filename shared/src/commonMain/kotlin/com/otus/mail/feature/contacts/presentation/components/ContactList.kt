@@ -31,8 +31,10 @@ import com.otus.mail.feature.contacts.domain.CardSync
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
+import com.otus.mail.feature.contacts.presentation.AvatarLabel
 import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.groupAvatar
+import com.otus.mail.feature.contacts.presentation.isAvatar
 import com.otus.mail.feature.contacts.presentation.peopleCount
 import com.otus.mail.feature.contacts.presentation.rowLabel
 import kotlinx.coroutines.launch
@@ -141,6 +143,7 @@ private fun LazyListScope.letterSections(
                     detail = "+$extra".takeIf { extra > 0 },
                     label =
                         main.sync.label()
+                            ?: AvatarLabel.takeIf { person.isAvatar }
                             ?: person.cards.flatMap(content.booksOf).firstNotNullOfOrNull { it.rowLabel() },
                 ),
             )

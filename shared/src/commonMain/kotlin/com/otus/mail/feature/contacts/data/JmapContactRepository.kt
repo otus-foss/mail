@@ -12,6 +12,7 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.contacts.AddressBookOrder
 import com.otus.jmap.contacts.AddressBookType
 import com.otus.jmap.contacts.ContactCardType
+import com.otus.jmap.contacts.contactCardPropertiesWithVCard
 import com.otus.jmap.contacts.toCreation
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
@@ -162,20 +163,29 @@ internal class JmapContactRepository(
     ): List<Card> {
         val page = (session.maxObjectsInGet ?: DEFAULT_PAGE).toInt().coerceIn(1, DEFAULT_PAGE)
         val cards = mutableListOf<Card>()
+        // Asks for `vCard` too, where an avatar card keeps its style, unless the server refuses it.
+        var properties: List<String>? = contactCardPropertiesWithVCard
         while (cards.size < MAX_CARDS) {
             val position = cards.size
+            val asked = properties
             val result =
-                connection.request {
-                    val query =
-                        call(
-                            QueryMethod(
-                                ContactCardType,
-                                account,
-                                limit = page,
-                                extra = mapOf("position" to JsonPrimitive(position)),
-                            ),
-                        )
-                    call(GetMethod(ContactCardType, account, JmapIds.Result(query.resultOf("/ids"))))
+                try {
+                    connection.request {
+                        val query =
+                            call(
+                                QueryMethod(
+                                    ContactCardType,
+                                    account,
+                                    limit = page,
+                                    extra = mapOf("position" to JsonPrimitive(position)),
+                                ),
+                            )
+                        call(GetMethod(ContactCardType, account, JmapIds.Result(query.resultOf("/ids")), asked))
+                    }
+                } catch (error: JmapException.MethodError) {
+                    if (asked == null || error.type != "invalidArguments") throw error
+                    properties = null
+                    continue
                 }
             cards += result.list
             if (result.list.size < page) break

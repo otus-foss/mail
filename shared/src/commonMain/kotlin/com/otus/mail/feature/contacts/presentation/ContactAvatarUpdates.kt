@@ -3,8 +3,12 @@ package com.otus.mail.feature.contacts.presentation
 import com.otus.avatar.AvatarImage
 import com.otus.avatar.AvatarRequest
 import com.otus.avatar.AvatarService
+import com.otus.avatar.AvatarStyle
 import com.otus.avatar.ContactAvatar
 import com.otus.avatar.avatarEmailKey
+import com.otus.avatar.avatarStyle
+import com.otus.avatar.isAvatarCard
+import com.otus.jscontact.Card
 import com.otus.jscontact.Media
 import com.otus.mail.feature.contacts.domain.ContactsSnapshot
 import com.otus.mail.feature.contacts.domain.photo
@@ -29,7 +33,7 @@ internal class ContactAvatarUpdates(
     private var contacts: ContactsSnapshot? = null
 
     // The photo each address was last given, so only changes reach the avatar cache.
-    private var given = emptyMap<PhotoAddress, Media?>()
+    private var given = emptyMap<PhotoAddress, ShownAvatar?>()
 
     /** Makes mail show the photos of [snapshot], the contact list as it is now. */
     fun shown(snapshot: ContactsSnapshot) {
@@ -62,18 +66,30 @@ internal data class PhotoAddress(
     val email: String,
 )
 
+/** What an address shows: an avatar [style] from an avatar card, else a [photo]. */
+internal data class ShownAvatar(
+    val photo: Media? = null,
+    val style: AvatarStyle? = null,
+) {
+    fun toAvatar(): ContactAvatar? =
+        style?.let(ContactAvatar::Styled)
+            ?: photo?.inlineBytes()?.let { ContactAvatar.Photo(AvatarImage(it), photo.mediaType ?: DEFAULT_PHOTO_TYPE) }
+}
+
 /**
- * The photo mail to each login should show for each address on a card: one from a card in that
- * login first, then, with [allAccounts], one from another login's card. Null for an address whose
- * cards have no inline photo, so a photo stored as a link or a blob is still found on the server.
+ * What mail to each login should show for each address on a card. One of the user's avatar cards
+ * wins, then a card in that login, then, with [allAccounts], another login's card. Null for an
+ * address whose cards have no style and no inline photo, so a photo stored as a link or a blob is
+ * still found on the server.
  */
 internal fun contactPhotos(
     snapshot: ContactsSnapshot,
     allAccounts: Boolean,
-): Map<PhotoAddress, Media?> {
+): Map<PhotoAddress, ShownAvatar?> {
     val entries =
         snapshot.cards.flatMap { card ->
-            card.emails.map { PhotoEntry(card.key.loginId, avatarEmailKey(it.value), card.card.photo) }
+            val shown = card.card.shownAvatar()
+            card.emails.map { PhotoEntry(card.key.loginId, avatarEmailKey(it.value), card.card.isAvatarCard, shown) }
         }
     val logins = (snapshot.books.map { it.key.loginId } + entries.map { it.loginId }).toSet()
     return logins
@@ -82,19 +98,21 @@ internal fun contactPhotos(
                 .filter { allAccounts || it.loginId == login }
                 .groupBy { it.email }
                 .map { (email, found) ->
-                    val own = found.firstNotNullOfOrNull { entry -> entry.photo.takeIf { entry.loginId == login } }
-                    PhotoAddress(login, email) to (own ?: found.firstNotNullOfOrNull { it.photo })
+                    val ranked = found.sortedWith(compareBy({ !it.avatarCard }, { it.loginId != login }))
+                    PhotoAddress(login, email) to ranked.firstNotNullOfOrNull { it.shown }
                 }
         }.toMap()
 }
 
+private fun Card.shownAvatar(): ShownAvatar? =
+    avatarStyle?.let { ShownAvatar(style = it) }
+        ?: photo?.takeIf { it.inlineBytes() != null }?.let { ShownAvatar(photo = it) }
+
 private class PhotoEntry(
     val loginId: String,
     val email: String,
-    val photo: Media?,
+    val avatarCard: Boolean,
+    val shown: ShownAvatar?,
 )
-
-private fun Media.toAvatar(): ContactAvatar.Photo? =
-    inlineBytes()?.let { ContactAvatar.Photo(AvatarImage(it), mediaType ?: DEFAULT_PHOTO_TYPE) }
 
 private const val DEFAULT_PHOTO_TYPE = "image/jpeg"
