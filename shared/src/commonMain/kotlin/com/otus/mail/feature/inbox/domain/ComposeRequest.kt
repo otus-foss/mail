@@ -27,6 +27,7 @@ sealed interface ComposeRequest {
     data class Resume(
         val draft: Draft,
         val from: ComposeRequest,
+        val attachmentSources: Map<String, PickedFile> = emptyMap(),
     ) : ComposeRequest
 }
 

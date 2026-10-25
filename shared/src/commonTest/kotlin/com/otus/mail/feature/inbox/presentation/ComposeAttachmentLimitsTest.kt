@@ -23,8 +23,7 @@ class ComposeAttachmentLimitsTest {
     ): ComposeAttachments {
         var attached = emptyList<DraftAttachment>()
         return ComposeAttachments(
-            { files },
-            uploads,
+            ComposeAttachmentServices({ files }, uploads),
             backgroundScope,
             RichText(),
             { "a" },
