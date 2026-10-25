@@ -15,9 +15,9 @@ import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.components.Subpage
 import com.otus.designsystem.elements.ValueButton
+import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
-import com.otus.push.PushStatus
 
 /**
  * Chooses how new mail arrives: through a UnifiedPush app within seconds, or by a check about every
@@ -37,9 +37,9 @@ fun NotificationsScreen(
             SettingRow(
                 "Instant delivery",
                 { choosing = true },
-                description = current?.let { "Through ${it.name}, within seconds" } ?: "Off, checks every 15 minutes",
+                description = current?.let { "Through ${it.name}" } ?: "Off, checks about every 15 minutes",
             ) {
-                ValueButton(current?.name ?: "Off")
+                ValueButton(current?.let { if (it.isGoogle) "Google" else it.name } ?: "Off")
             }
         }
         if (current != null && accounts.isNotEmpty()) {
@@ -50,10 +50,23 @@ fun NotificationsScreen(
             }
         }
         PageNote(
-            if (state.distributors.isEmpty()) {
-                "To get new mail within seconds, install a UnifiedPush app such as ntfy, then choose it here."
-            } else {
-                "The push app sees only encrypted notices that something changed, never your mail."
+            when {
+                current?.isGoogle == true -> {
+                    "Google receives encrypted change notices, never your mail. " +
+                        "Your mail server must support Google delivery."
+                }
+
+                current != null -> {
+                    "The push app sees only encrypted notices that something changed, never your mail."
+                }
+
+                state.distributors.any { it.isGoogle } -> {
+                    "Choose Google Play services for instant delivery without an extra app."
+                }
+
+                else -> {
+                    "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy."
+                }
             },
         )
     }
@@ -72,12 +85,38 @@ fun NotificationsScreen(
 }
 
 private val PushDistributor?.choiceRow: ChoiceRow
-    get() = this?.let { ChoiceRow(it.name, "Within seconds") } ?: ChoiceRow("Off", "Checks every 15 minutes")
+    get() =
+        this?.let { ChoiceRow(it.name, if (it.isGoogle) "Built into Otus" else "Through a separate app") }
+            ?: ChoiceRow("Off", "Checks about every 15 minutes")
 
-private val PushStatus?.label: String
+private val PushDeliveryStatus?.label: String
     get() =
         when (this) {
-            PushStatus.Active -> "Instant"
-            PushStatus.Refused -> "The server can't push, so Mail checks every 15 minutes"
-            PushStatus.Waiting, PushStatus.Off, null -> "Connecting"
+            PushDeliveryStatus.Active -> {
+                "Instant"
+            }
+
+            PushDeliveryStatus.ServerRefused -> {
+                "The server can't push, so Mail checks periodically"
+            }
+
+            PushDeliveryStatus.VapidRequired -> {
+                "The server doesn't support Google delivery. Mail checks periodically."
+            }
+
+            PushDeliveryStatus.InvalidKey -> {
+                "The server's push signing key is invalid. Mail checks periodically."
+            }
+
+            PushDeliveryStatus.Unavailable -> {
+                "Couldn't connect. Mail will retry and keep checking periodically."
+            }
+
+            PushDeliveryStatus.RegistrationFailed -> {
+                "Push registration failed. Mail will retry and keep checking periodically."
+            }
+
+            PushDeliveryStatus.Connecting, null -> {
+                "Connecting"
+            }
         }

@@ -101,7 +101,7 @@ class MailServices(
     avatarStore: AvatarStore = EmptyAvatarStore,
     internal val stores: MailDeviceStores = MailDeviceStores(),
     internal val nightly: NightlyUpdates = NightlyUpdates(),
-    /** Instant pushes through the user's UnifiedPush app; null where the platform has none. */
+    /** Instant pushes through the selected service; null where the platform has none. */
     internal val instantPush: InstantPush? = null,
     internal val pickers: MailPickers = MailPickers(),
     createClient: () -> JmapClient = { JmapClient() },
@@ -217,6 +217,9 @@ class MailServices(
     suspend fun trimCache(now: Instant = Clock.System.now()) {
         cache.trim(CacheKind.Body, (now - BODY_RETENTION).toEpochMilliseconds())
     }
+
+    /** The server signing key used to register directly with Google (RFC 9749). */
+    suspend fun pushVapidKey(login: JmapLogin): String? = connections.connection(login).session().vapidPublicKey
 
     /** The saved logins; none when storage cannot be read. Call it off the main thread. */
     fun logins(): List<JmapLogin> =
