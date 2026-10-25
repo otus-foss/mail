@@ -5,6 +5,7 @@ import com.otus.accounts.presentation.OwnAvatarsState
 import com.otus.avatar.AvatarOptions
 import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.contacts.data.VCardFiles
+import com.otus.mail.feature.contacts.presentation.ContactAvatarUpdates
 import com.otus.mail.feature.contacts.presentation.ContactSync
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.FrequentContacts
@@ -89,6 +90,7 @@ internal class MailStates(
             },
             services.pickers.avatarPhotos,
             FrequentContacts(services.mailTraces, services.stores.contacts, services.work),
+            ContactAvatarUpdates(services.avatars, services.work) { feed.refresh() },
         )
 
     /** Addresses pinned in "Show mail from". */
