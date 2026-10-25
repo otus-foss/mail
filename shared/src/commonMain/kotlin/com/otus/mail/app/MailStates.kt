@@ -137,7 +137,6 @@ internal class MailStates(
                 services.threads,
                 services.uploads,
                 services.pickers.attachmentFiles,
-                photoCleaning = { behavior.behavior.photoCleaning },
             ),
             scope,
             request,
@@ -147,6 +146,7 @@ internal class MailStates(
                 account.emailAddresses + account.username,
                 behavior.behavior.recentFrom,
                 behavior.behavior.signatureInReplies,
+                photoCleaning = { behavior.behavior.photoCleaning },
             ),
             onSent = { from -> behavior.update { it.sentFrom(from.address) } },
         )

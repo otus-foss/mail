@@ -77,7 +77,7 @@ class ComposeState(
 
     val attachments =
         ComposeAttachments(
-            ComposeAttachmentServices(services.files, services.uploads, services.photoCleaning),
+            ComposeAttachmentServices(services.files, services.uploads, origin.photoCleaning),
             scope,
             body,
             accountId = { draft.accountId },
