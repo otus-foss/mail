@@ -10,6 +10,7 @@ import com.otus.designsystem.elements.SidebarInboxEntry
 import com.otus.designsystem.elements.SidebarMailboxTile
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
+import com.otus.designsystem.resources.symbol_contacts
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.theme.FolderColor
@@ -80,6 +81,10 @@ internal fun pinnableMailboxes(accounts: List<AccountFolders>): List<Pair<Sideba
                     SidebarMailbox("Convos", Res.drawable.symbol_forum, MailPage.Conversations, emptyList()),
             )
         }
+        add(
+            SidebarPin.Contacts to
+                SidebarMailbox("Contacts", Res.drawable.symbol_contacts, MailPage.Contacts, emptyList()),
+        )
         combinedFolders(accounts).forEach { (folder, folders) ->
             add(
                 SidebarPin.Role(folder.role) to

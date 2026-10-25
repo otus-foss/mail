@@ -6,6 +6,7 @@ import androidx.compose.runtime.produceState
 import com.otus.designsystem.components.OptionsItem
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.presentation.InboxContext
@@ -56,6 +57,15 @@ internal class ReadParts(
 
     /** The loaded body of [page]; null while it loads or after it failed. */
     fun content(page: MailMessage): MessageContent? = (state.bodies.body(page) as? PageBody.Loaded)?.content
+}
+
+/** The sheet for a person a message names, which the app supplies; it shows until it runs `onDismiss`. */
+fun interface PersonSheet {
+    @Composable
+    fun Show(
+        person: MailSender,
+        onDismiss: () -> Unit,
+    )
 }
 
 /** The New folder sheet for an account, which the app supplies; it shows until it runs `onDismiss`. */
@@ -161,6 +171,10 @@ internal fun ReadSheets(
 
         is ReadSheet.Details -> {
             MessageDetailsSheet(sheet.message, { read.services.headers?.headers(sheet.message) }, dismiss)
+        }
+
+        is ReadSheet.Person -> {
+            read.person?.Show(sheet.person, dismiss)
         }
     }
 }

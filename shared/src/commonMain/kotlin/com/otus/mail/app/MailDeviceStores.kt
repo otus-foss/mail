@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.ReadLaterStore
@@ -20,4 +21,5 @@ class MailDeviceStores(
     val folderNudges: FolderNudgeStore? = null,
     val cache: MailCache = InMemoryMailCache(),
     val notificationPreviews: NotificationPreviewStore? = null,
+    val contacts: ContactStore? = null,
 )

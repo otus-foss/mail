@@ -2,9 +2,13 @@ package com.otus.mail.feature.inbox.domain
 
 /** What a draft starts from: a blank message, a reply, a follow-up, a forward, or an earlier draft. */
 sealed interface ComposeRequest {
-    /** A blank message, from [accountId] when given, else the first account that can send. */
+    /**
+     * A message with nothing written yet, from [accountId] when given, else the first account that
+     * can send. It goes [to] these people, such as contacts picked on the Contacts page.
+     */
     data class New(
         val accountId: String? = null,
+        val to: List<MailSender> = emptyList(),
     ) : ComposeRequest
 
     /** An answer to [original]: its sender, or with [all] everyone else it went to as well. */

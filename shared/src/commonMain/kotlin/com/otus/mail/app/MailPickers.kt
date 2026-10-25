@@ -9,7 +9,7 @@ import com.otus.mail.feature.inbox.domain.SignatureImages
 /**
  * The platform's pickers and file handling: [signatureImages] picks and shrinks signature images,
  * [attachmentFiles] picks files to attach, [savedFiles] saves and opens received files, and
- * [printer] prints a message, and [avatarPhotos] picks the photo of one of the user's addresses.
+ * [printer] prints a message, and [avatarPhotos] picks the photo of one of the user's addresses or of a contact.
  * Each is null where the platform has none.
  */
 class MailPickers(

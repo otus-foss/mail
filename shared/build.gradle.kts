@@ -48,6 +48,8 @@ kotlin {
             api(libs.otus.settings)
             api(libs.otus.accounts)
             api(libs.otus.push)
+            implementation(libs.otus.jscontact)
+            implementation(libs.otus.jmap.contacts)
             implementation(libs.ktor.client.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)

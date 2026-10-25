@@ -4,6 +4,9 @@ import com.otus.accounts.presentation.AccountsState
 import com.otus.accounts.presentation.OwnAvatarsState
 import com.otus.avatar.AvatarOptions
 import com.otus.mail.core.avatar.mailAvatarOptions
+import com.otus.mail.feature.contacts.data.VCardFiles
+import com.otus.mail.feature.contacts.presentation.ContactSync
+import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
@@ -74,6 +77,18 @@ internal class MailStates(
     /** Each account's folder rules, kept in the Otus block of its active Sieve script. */
     val rules = FolderRulesState(services.rules, scope)
 
+    /** Every login's contacts and the contact changes waiting for the server. */
+    val contacts =
+        ContactsState(
+            services.contacts,
+            ContactSync(services.contacts, services.stores.contacts, services.work),
+            services.work,
+            services.pickers.attachmentFiles?.let { picker ->
+                services.pickers.savedFiles?.let { VCardFiles(picker, it) }
+            },
+            services.pickers.avatarPhotos,
+        )
+
     /** Addresses pinned in "Show mail from". */
     val addressPins = AddressPinsState(services.stores.addressPins)
 
@@ -100,6 +115,7 @@ internal class MailStates(
     val accounts =
         AccountsState(services.accounts, scope) {
             feed.refresh()
+            contacts.refresh()
             folders.refresh()
             rules.refresh()
             folderColors.reload()
