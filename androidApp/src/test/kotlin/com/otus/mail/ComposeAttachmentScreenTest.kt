@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -20,6 +21,7 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.AttachmentBlob
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.PickedFile
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.UploadException
@@ -108,6 +110,21 @@ class ComposeAttachmentScreenTest {
         handle.performTouchInput { up() }
     }
 
+    @Test
+    fun aPhotoAttachesWithoutItsDetailsUnlessTheUserKeepsThem() {
+        open(files.take(1), PhotoCleaning.Ask)
+        compose.onNodeWithContentDescription("Attach").performClick()
+        compose.onNodeWithText("Attach this photo").assertExists()
+        compose.onNodeWithText("Remove details").performClick()
+        compose.waitUntil(DECODE_MILLIS) {
+            compose
+                .onAllNodes(hasContentDescription("photo-", substring = true))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Whiteboard.png").assertDoesNotExist()
+    }
+
     /** Attaches the picked files and waits for the image [name], which decodes off the first frames. */
     private fun attach(name: String) {
         compose.onNodeWithContentDescription("Attach").performClick()
@@ -116,7 +133,10 @@ class ComposeAttachmentScreenTest {
         }
     }
 
-    private fun open(files: List<PickedFile>) {
+    private fun open(
+        files: List<PickedFile>,
+        cleaning: PhotoCleaning = PhotoCleaning.Never,
+    ) {
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
@@ -139,7 +159,12 @@ class ComposeAttachmentScreenTest {
                                 ),
                                 scope,
                                 ComposeRequest.New(),
-                                ComposeOrigin("a1", listOf(ComposeAccount("a1", "Company A")), emptyList()),
+                                ComposeOrigin(
+                                    "a1",
+                                    listOf(ComposeAccount("a1", "Company A")),
+                                    emptyList(),
+                                    photoCleaning = { cleaning },
+                                ),
                                 saveDelayMillis = 60_000,
                             )
                         }

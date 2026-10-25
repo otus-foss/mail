@@ -5,6 +5,7 @@ import com.otus.mail.feature.inbox.domain.AttachmentFiles
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
+import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 
@@ -33,7 +34,8 @@ class ComposeServices(
  * The accounts around a draft: it starts in [accountId], and every one of [accounts] can send it.
  * [ownAddresses] are left out of Reply all, and [recentFrom] picks the address of a new message
  * from all accounts. A new message always gets the identity's signature; replies and forwards
- * get it only with [signatureInReplies].
+ * get it only with [signatureInReplies]. [photoCleaning] decides whether attached photos lose their
+ * metadata and names; without it, files attach as picked.
  */
 class ComposeOrigin(
     val accountId: String,
@@ -41,4 +43,5 @@ class ComposeOrigin(
     val ownAddresses: Collection<String>,
     val recentFrom: List<String> = emptyList(),
     val signatureInReplies: Boolean = true,
+    val photoCleaning: () -> PhotoCleaning = { PhotoCleaning.Never },
 )

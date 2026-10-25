@@ -10,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.MailListLayout
+import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.decodeAddresses
 import com.otus.mail.feature.inbox.domain.decodeRemoteImages
@@ -55,6 +56,7 @@ class IosMailBehaviorStore(
             zenRead = bool(ZEN_READ, defaults.zenRead),
             screenSecurity = bool(SCREEN_SECURITY, defaults.screenSecurity),
             incognitoKeyboard = bool(INCOGNITO_KEYBOARD, defaults.incognitoKeyboard),
+            photoCleaning = PhotoCleaning.decode(preferences.stringForKey(PHOTO_CLEANING)),
             allowedSenders = decodeAddresses(preferences.stringForKey(ALLOWED_SENDERS)),
         )
     }
@@ -83,6 +85,7 @@ class IosMailBehaviorStore(
         preferences.setBool(behavior.zenRead, forKey = ZEN_READ)
         preferences.setBool(behavior.screenSecurity, forKey = SCREEN_SECURITY)
         preferences.setBool(behavior.incognitoKeyboard, forKey = INCOGNITO_KEYBOARD)
+        preferences.setObject(behavior.photoCleaning.storageValue, forKey = PHOTO_CLEANING)
         preferences.setObject(encodeAddresses(behavior.allowedSenders), forKey = ALLOWED_SENDERS)
     }
 
@@ -125,6 +128,7 @@ class IosMailBehaviorStore(
         const val ZEN_READ = "otus.mail.read_zen"
         const val SCREEN_SECURITY = "otus.mail.screen_security"
         const val INCOGNITO_KEYBOARD = "otus.mail.incognito_keyboard"
+        const val PHOTO_CLEANING = "otus.mail.photo_cleaning"
         const val ALLOWED_SENDERS = "otus.mail.allowed_senders"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"

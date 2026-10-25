@@ -60,6 +60,9 @@ own page.
   that contact cards link to. While it is on, **Ask DuckDuckGo**, also off by default, fills in
   sites without an icon; see [website icons](avatars.md#website-icons). The choice and the
   list are saved in `MailBehavior.remoteImages` and `allowedSenders` before they are shown.
+  **Photos you attach** chooses **Ask each time** (the default), **Always remove details**, or
+  **Keep details** for the location, time, camera, and file name of attached photos, saved in
+  `MailBehavior.photoCleaning`; see [attachments](compose.md).
   On Android, **This device** adds **Screen security**, off by default, which sets `FLAG_SECURE`
   so screenshots, screen recordings, casting, and the recent apps preview show nothing, and
   **Incognito keyboard**, on by default, which adds `IME_FLAG_NO_PERSONALIZED_LEARNING` to every

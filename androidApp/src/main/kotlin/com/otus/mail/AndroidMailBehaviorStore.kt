@@ -12,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.MailListLayout
+import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.decodeAddresses
 import com.otus.mail.feature.inbox.domain.decodeRemoteImages
@@ -50,6 +51,7 @@ class AndroidMailBehaviorStore(
             zenRead = preferences.getBoolean(ZEN_READ, defaults.zenRead),
             screenSecurity = preferences.getBoolean(SCREEN_SECURITY, defaults.screenSecurity),
             incognitoKeyboard = preferences.getBoolean(INCOGNITO_KEYBOARD, defaults.incognitoKeyboard),
+            photoCleaning = PhotoCleaning.decode(preferences.getString(PHOTO_CLEANING, null)),
             recentFrom = decodeAddresses(preferences.getString(RECENT_FROM, null)),
             signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
@@ -84,6 +86,7 @@ class AndroidMailBehaviorStore(
             putBoolean(ZEN_READ, behavior.zenRead)
             putBoolean(SCREEN_SECURITY, behavior.screenSecurity)
             putBoolean(INCOGNITO_KEYBOARD, behavior.incognitoKeyboard)
+            putString(PHOTO_CLEANING, behavior.photoCleaning.storageValue)
             putString(RECENT_FROM, encodeAddresses(behavior.recentFrom))
             putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
             putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
@@ -113,6 +116,7 @@ class AndroidMailBehaviorStore(
         const val ZEN_READ = "read_zen"
         const val SCREEN_SECURITY = "screen_security"
         const val INCOGNITO_KEYBOARD = "incognito_keyboard"
+        const val PHOTO_CLEANING = "photo_cleaning"
         const val RECENT_FROM = "recent_from"
         const val SIGNATURE_IN_REPLIES = "signature_in_replies"
         const val UNDO_SEND_SECONDS = "undo_send_seconds"
