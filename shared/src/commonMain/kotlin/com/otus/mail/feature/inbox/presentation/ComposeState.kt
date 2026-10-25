@@ -77,13 +77,13 @@ class ComposeState(
 
     val attachments =
         ComposeAttachments(
-            services.files,
-            services.uploads,
+            ComposeAttachmentServices(services.files, services.uploads),
             scope,
             body,
             accountId = { draft.accountId },
             attachments = { draft.attachments },
             change = { files -> edit { it.copy(attachments = files(it.attachments)) } },
+            initialSources = (request as? ComposeRequest.Resume)?.attachmentSources.orEmpty(),
         )
 
     /** The thread a reply or follow-up answers; null for a new message or a forward. */
@@ -199,6 +199,7 @@ class ComposeState(
      * that copy, after any save in progress, once Undo has passed.
      */
     fun discard(): () -> Unit {
+        attachments.stop()
         finished = true
         pending?.cancel()
         return { scope.launch { saving.withLock { stored?.discardCopy(drafts) } } }
@@ -297,4 +298,4 @@ private const val SAVE_DELAY_MILLIS = 2_000L
 
 /** The request that opens this draft again as it is, such as after Undo. */
 fun ComposeState.reopening(): ComposeRequest.Resume =
-    ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request)
+    ComposeRequest.Resume(draft, (request as? ComposeRequest.Resume)?.from ?: request, attachments.sourceFiles)
