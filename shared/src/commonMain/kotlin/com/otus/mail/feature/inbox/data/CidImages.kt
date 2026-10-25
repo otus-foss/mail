@@ -47,7 +47,7 @@ private suspend fun MailAccount.inlineImages(
             val bytes =
                 try {
                     inlineBytes(part, type, limit)
-                } catch (refused: JmapException.ResponseTooLarge) {
+                } catch (expected: JmapException.ResponseTooLarge) {
                     remainingBytes -= limit
                     null
                 } catch (expected: JmapException) {

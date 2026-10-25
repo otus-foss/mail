@@ -144,8 +144,9 @@ address in place, **Add image** (Android only), **Copy**, and **Remove signature
 first. Edits save a second after the last one and when the page closes, with `Identity/set`. A
 failed save puts the old signature back and says so.
 
-An added image is shrunk to at most 600 px wide and about 50 KB: PNG when that is small enough,
-JPEG at falling quality otherwise. It is stored in the signature as a `data:` URI. A selected
+An added image is sampled during decoding, then shrunk to at most 600 px on either side. Its
+encoded size must fit 50 KB: PNG when small enough, JPEG at falling quality otherwise. Mail
+rejects an image that cannot fit the limit. It is stored in the signature as a `data:` URI. A selected
 image has a `text2` outline, a ✕, and one corner handle that keeps its aspect ratio between 48
 and 300 px and snaps to Small (96), Medium (132), or Large (200) within 6 px. The size pill under
 it names the preset or the pixel size. When a draft is saved or sent, each image is uploaded and
