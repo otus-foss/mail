@@ -61,6 +61,8 @@ internal class FolderCleaning(
                 folders.refresh()
             } else {
                 change.rollBack()
+                feed.refresh()
+                folders.refresh()
                 feed.report("Couldn't move the message to ${inbox.label}. Try again.")
             }
         }
@@ -75,7 +77,10 @@ internal class FolderCleaning(
             val deleted = services.cleaner.delete(messages)
             changes.forEach { (id, change) -> if (id in deleted) change.confirm() else change.rollBack() }
             val kept = messages.size - deleted.size
-            if (kept > 0) feed.report("Couldn't delete ${countText(kept)}. Try again.")
+            if (kept > 0) {
+                feed.refresh()
+                feed.report("Couldn't finish deleting ${countText(kept)}. Try again.")
+            }
             folders.refresh()
         }
     }
@@ -105,10 +110,17 @@ internal class FolderCleaning(
         scope.launch {
             val results = emptied.map { it.accountId to services.cleaner.empty(it.accountId, it.id) }
             val removed = results.flatMap { (account, deletion) -> deletion.emailIds.map { account to it } }.toSet()
-            changes.forEach { (message, change) ->
-                if (message.location.accountId to message.emailId in removed) change.confirm() else change.rollBack()
-            }
-            if (results.any { !it.second.complete }) feed.report("Couldn't delete every message. Try again.")
+            val (gone, kept) =
+                changes.entries.partition { (message, _) ->
+                    val members = message.conversation?.members?.map { it.emailId } ?: listOf(message.emailId)
+                    members.isNotEmpty() && members.all { message.location.accountId to it in removed }
+                }
+            gone.forEach { it.value.confirm() }
+            kept.forEach { it.value.rollBack() }
+            val incomplete = results.any { !it.second.complete }
+            // A complete empty can still keep a row whose members moved away meanwhile; refresh shows where they went.
+            if (incomplete || kept.isNotEmpty()) feed.refresh()
+            if (incomplete) feed.report("Couldn't delete every message. Try again.")
             folders.refresh()
         }
     }

@@ -75,8 +75,11 @@ class InboxFeedState(
     private val pending = PendingChanges()
     private val avatars = FeedAvatars(avatars)
 
-    /** Shows [text] in place of the last load's notice, such as a failed change. */
+    private var reportedNotice: String? = null
+
+    /** Keeps an action failure visible through the current load, until the next refresh. */
     fun report(text: String) {
+        reportedNotice = text
         notice = text
     }
 
@@ -140,6 +143,7 @@ class InboxFeedState(
         val cachedFirst = messages.isEmpty()
         loading = true
         loadingMore = false
+        reportedNotice = null
         notice = null
         start(onEnd = { loading = false }) { load ->
             if (cachedFirst) launch { showCached(load) }
@@ -170,11 +174,12 @@ class InboxFeedState(
                     publish(load, fetch(this, load))
                 } catch (expected: InboxStorageException) {
                     if (load.number == request) {
-                        notice =
+                        val failure =
                             when (expected.storage) {
                                 InboxStorage.Accounts -> "Couldn't load saved accounts. Try again in Settings."
                                 InboxStorage.Cache -> "Couldn't save cached mail. Refresh to try again."
                             }
+                        notice = loadNotice(reportedNotice, failure)
                     }
                 } finally {
                     if (load.number == request) onEnd()
@@ -211,7 +216,8 @@ class InboxFeedState(
         avatars.shown(load.options)
         if (fromServer) {
             load.served = true
-            notice = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
+            val unavailable = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
+            notice = loadNotice(reportedNotice, unavailable)
         }
     }
 }
@@ -235,3 +241,8 @@ private fun UnavailableAccount.notice(): String =
         InboxFailure.Unreachable -> "$name: couldn't reach the server."
         InboxFailure.ServerProblem -> "$name: the server returned an error."
     }
+
+private fun loadNotice(
+    reported: String?,
+    loading: String?,
+): String? = listOfNotNull(reported, loading).distinct().joinToString(" ").ifEmpty { null }

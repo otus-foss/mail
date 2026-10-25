@@ -101,12 +101,18 @@ class JmapMessageCleanerTest {
                 .let(IDS::findAll)
                 .map { it.groupValues[1] }
                 .toList()
-        val updated = UPDATE.findAll(body).map { "\"${it.groupValues[1]}\": null" }.joinToString()
+        val (rejectedUpdates, acceptedUpdates) =
+            UPDATE.findAll(body).map { it.groupValues[1] }.partition {
+                it in
+                    refused
+            }
+        val updated = acceptedUpdates.joinToString { "\"$it\": null" }
+        val notUpdated = rejectedUpdates.joinToString { "\"$it\": {\"type\": \"forbidden\"}" }
         val (kept, gone) = destroy.partition { it in refused }
         val destroyed = gone.joinToString { "\"$it\"" }
         val notDestroyed = kept.joinToString { "\"$it\": {\"type\": \"forbidden\"}" }
         return """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {$updated},
-            "destroyed": [$destroyed], "notDestroyed": {$notDestroyed}}, "c0"]]}"""
+            "destroyed": [$destroyed], "notDestroyed": {$notDestroyed}, "notUpdated": {$notUpdated}}, "c0"]]}"""
     }
 
     @Test
@@ -200,6 +206,17 @@ class JmapMessageCleanerTest {
                 emptySet(),
                 cleaner { error("Nothing is sent") }.delete(listOf(message("").copy(emailId = ""))),
             )
+        }
+
+    @Test
+    fun aRefusedConversationMemberKeepsTheRowAndReportsNotSpamFailure() =
+        runTest {
+            val members = listOf("m1", "m2").map { ThreadMember(it, setOf("j"), "j") }
+            val row = message("m1", folder = "j").copy(conversation = conversationOf(members))
+            val inJ = members.associate { it.emailId to setOf("j") }
+            val partial = cleaner(mailboxes = inJ) { setReply(it, refused = setOf("m2")) }
+            assertEquals(emptySet(), partial.delete(listOf(row)))
+            assertFalse(partial.notSpam(row, "i", keywords = true))
         }
 
     @Test
