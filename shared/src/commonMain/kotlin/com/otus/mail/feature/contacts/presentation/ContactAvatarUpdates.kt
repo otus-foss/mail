@@ -6,59 +6,93 @@ import com.otus.avatar.AvatarService
 import com.otus.avatar.ContactAvatar
 import com.otus.avatar.avatarEmailKey
 import com.otus.jscontact.Media
-import com.otus.mail.feature.contacts.domain.ContactCard
+import com.otus.mail.feature.contacts.domain.ContactsSnapshot
 import com.otus.mail.feature.contacts.domain.photo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
- * Keeps sender avatars in step with contact changes the server accepted. Without it, mail keeps
- * the photo it found before, or none, for as long as the avatar cache holds it. An address whose
- * card now has an inline photo shows it at once; any other changed address is looked up again.
- * Then [refresh] redraws the mail.
+ * Gives sender avatars the photos of the contact list the device already has, so mail shows them
+ * at once and without asking the server. Mail to a login uses that login's cards first; while
+ * [allAccounts] is on, an address with no photo there takes one from another login's card. An
+ * address whose photo changed or went is looked up again. Then [refresh] redraws the mail.
  */
 internal class ContactAvatarUpdates(
     private val avatars: AvatarService,
     private val scope: CoroutineScope,
+    private val allAccounts: () -> Boolean,
     private val refresh: () -> Unit,
 ) {
-    fun changed(
-        before: List<ContactCard>,
-        after: List<ContactCard>,
-    ) {
-        val changes = photoChanges(before, after)
-        if (changes.isEmpty()) return
+    private val lock = Mutex()
+    private var contacts: ContactsSnapshot? = null
+
+    // The photo each address was last given, so only changes reach the avatar cache.
+    private var given = emptyMap<PhotoAddress, Media?>()
+
+    /** Makes mail show the photos of [snapshot], the contact list as it is now. */
+    fun shown(snapshot: ContactsSnapshot) {
+        contacts = snapshot
+        apply()
+    }
+
+    /** Gives every address the photo the contacts and [allAccounts] call for now. */
+    fun apply() {
         scope.launch {
-            changes.forEach { (address, photo) ->
-                avatars.saved(AvatarRequest(address.loginId, address.email), photo?.toAvatar())
-            }
-            refresh()
+            val changed =
+                lock.withLock {
+                    val wanted = contacts?.let { contactPhotos(it, allAccounts()) } ?: return@launch
+                    // At first every address counts, so photos removed while Mail was closed go too.
+                    val changes = (given.keys + wanted.keys).filter { it !in given || given[it] != wanted[it] }
+                    changes.forEach { address ->
+                        avatars.saved(AvatarRequest(address.loginId, address.email), wanted[address]?.toAvatar())
+                    }
+                    given = wanted
+                    changes.isNotEmpty()
+                }
+            if (changed) refresh()
         }
     }
 }
 
-/** An address as one login's contacts know it. */
+/** An address as mail to one login sees it. */
 internal data class PhotoAddress(
     val loginId: String,
     val email: String,
 )
 
-/** Each address whose photo differs between [before] and [after], with the photo it has now. */
-internal fun photoChanges(
-    before: List<ContactCard>,
-    after: List<ContactCard>,
+/**
+ * The photo mail to each login should show for each address on a card: one from a card in that
+ * login first, then, with [allAccounts], one from another login's card. Null for an address whose
+ * cards have no inline photo, so a photo stored as a link or a blob is still found on the server.
+ */
+internal fun contactPhotos(
+    snapshot: ContactsSnapshot,
+    allAccounts: Boolean,
 ): Map<PhotoAddress, Media?> {
-    val old = photosByAddress(before)
-    val new = photosByAddress(after)
-    return (old.keys + new.keys).filter { old[it] != new[it] }.associateWith { new[it] }
+    val entries =
+        snapshot.cards.flatMap { card ->
+            card.emails.map { PhotoEntry(card.key.loginId, avatarEmailKey(it.value), card.card.photo) }
+        }
+    val logins = (snapshot.books.map { it.key.loginId } + entries.map { it.loginId }).toSet()
+    return logins
+        .flatMap { login ->
+            entries
+                .filter { allAccounts || it.loginId == login }
+                .groupBy { it.email }
+                .map { (email, found) ->
+                    val own = found.firstNotNullOfOrNull { entry -> entry.photo.takeIf { entry.loginId == login } }
+                    PhotoAddress(login, email) to (own ?: found.firstNotNullOfOrNull { it.photo })
+                }
+        }.toMap()
 }
 
-private fun photosByAddress(cards: List<ContactCard>): Map<PhotoAddress, Media?> =
-    cards
-        .flatMap { card ->
-            card.emails.map { PhotoAddress(card.key.loginId, avatarEmailKey(it.value)) to card.card.photo }
-        }.groupBy({ it.first }, { it.second })
-        .mapValues { (_, photos) -> photos.firstNotNullOfOrNull { it } }
+private class PhotoEntry(
+    val loginId: String,
+    val email: String,
+    val photo: Media?,
+)
 
 private fun Media.toAvatar(): ContactAvatar.Photo? =
     inlineBytes()?.let { ContactAvatar.Photo(AvatarImage(it), mediaType ?: DEFAULT_PHOTO_TYPE) }

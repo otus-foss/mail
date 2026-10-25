@@ -47,6 +47,7 @@ class AndroidMailBehaviorStore(
             minimizedBar = preferences.getBoolean(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
             duckDuckGoIcons = preferences.getBoolean(DUCKDUCKGO_ICONS, defaults.duckDuckGoIcons),
+            allAccountPhotos = preferences.getBoolean(ALL_ACCOUNT_PHOTOS, defaults.allAccountPhotos),
             showQuotes = preferences.getBoolean(SHOW_QUOTES, defaults.showQuotes),
             zenRead = preferences.getBoolean(ZEN_READ, defaults.zenRead),
             screenSecurity = preferences.getBoolean(SCREEN_SECURITY, defaults.screenSecurity),
@@ -82,6 +83,7 @@ class AndroidMailBehaviorStore(
             putBoolean(MINIMIZED_BAR, behavior.minimizedBar)
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
             putBoolean(DUCKDUCKGO_ICONS, behavior.duckDuckGoIcons)
+            putBoolean(ALL_ACCOUNT_PHOTOS, behavior.allAccountPhotos)
             putBoolean(SHOW_QUOTES, behavior.showQuotes)
             putBoolean(ZEN_READ, behavior.zenRead)
             putBoolean(SCREEN_SECURITY, behavior.screenSecurity)
@@ -112,6 +114,7 @@ class AndroidMailBehaviorStore(
         // anyone who saved any setting.
         const val WEBSITE_ICONS = "load_website_icons"
         const val DUCKDUCKGO_ICONS = "duckduckgo_icons"
+        const val ALL_ACCOUNT_PHOTOS = "all_account_photos"
         const val SHOW_QUOTES = "show_quotes"
         const val ZEN_READ = "read_zen"
         const val SCREEN_SECURITY = "screen_security"

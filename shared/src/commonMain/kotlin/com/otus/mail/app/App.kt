@@ -76,6 +76,14 @@ fun App(
             .drop(1)
             .collect { states.feed.refresh() }
     }
+    // Contacts load at launch so sender avatars can show their photos. Photos from all accounts
+    // changes which of those photos the avatars take.
+    LaunchedEffect(states) {
+        states.contacts.refresh()
+        snapshotFlow { behaviorState.behavior.allAccountPhotos }
+            .drop(1)
+            .collect { states.contactAvatars.apply() }
+    }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
     val settings =

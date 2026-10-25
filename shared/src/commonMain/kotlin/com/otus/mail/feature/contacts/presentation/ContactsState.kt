@@ -127,6 +127,7 @@ internal class ContactsState(
             try {
                 val loaded = repository.load()
                 snapshot = loaded
+                avatars?.shown(loaded)
                 if (loaded.failedLogins.isNotEmpty() && loaded.cards.isEmpty()) notice = "Couldn’t load your contacts."
                 sync.flush(this@ContactsState::sent)
             } finally {
@@ -164,10 +165,9 @@ internal class ContactsState(
 
     /** Keeps the device's view, and the avatars mail shows, in step with a change the server accepted. */
     private fun sent(update: (ContactsSnapshot) -> ContactsSnapshot) {
-        val before = snapshot ?: return
-        val after = update(before)
+        val after = snapshot?.let(update) ?: return
         snapshot = after
-        avatars?.changed(before.cards, after.cards)
+        avatars?.shown(after)
     }
 }
 
