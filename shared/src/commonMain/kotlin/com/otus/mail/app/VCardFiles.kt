@@ -1,4 +1,4 @@
-package com.otus.mail.feature.contacts.data
+package com.otus.mail.app
 
 import com.otus.jscontact.Card
 import com.otus.jscontact.VCard

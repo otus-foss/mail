@@ -3,11 +3,12 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.otus.designsystem.components.ToastMessage
+import com.otus.mail.feature.contacts.domain.ContactAddress
+import com.otus.mail.feature.contacts.presentation.ContactNavigation
+import com.otus.mail.feature.contacts.presentation.ContactsNavigation
 import com.otus.mail.feature.contacts.presentation.components.PersonContactSheet
 import com.otus.mail.feature.contacts.presentation.screens.ContactEditorScreen
-import com.otus.mail.feature.contacts.presentation.screens.ContactNavigation
 import com.otus.mail.feature.contacts.presentation.screens.ContactScreen
-import com.otus.mail.feature.contacts.presentation.screens.ContactsNavigation
 import com.otus.mail.feature.contacts.presentation.screens.ContactsScreen
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -21,7 +22,7 @@ internal fun contactSheet(
     PersonSheet { person, onDismiss ->
         LaunchedEffect(Unit) { if (states.contacts.snapshot == null) states.contacts.refresh() }
         PersonContactSheet(
-            person,
+            ContactAddress(person.name, person.address),
             states.contacts,
             onNew = {
                 onDismiss()
@@ -49,7 +50,10 @@ internal fun ContactsPages(
         contacts.notice?.let { states.moveToasts.toasts.show(ToastMessage(it)) }
         contacts.notice = null
     }
-    val write = { to: List<MailSender> -> navigation.go(MailPage.Compose(ComposeRequest.New(to = to), parent = page)) }
+    val write = { to: List<ContactAddress> ->
+        val recipients = to.map { MailSender(it.name, it.address) }
+        navigation.go(MailPage.Compose(ComposeRequest.New(to = recipients), parent = page))
+    }
     when (page) {
         is MailPage.Contact -> {
             ContactScreen(

@@ -4,7 +4,6 @@ import com.otus.accounts.presentation.AccountsState
 import com.otus.accounts.presentation.OwnAvatarsState
 import com.otus.avatar.AvatarOptions
 import com.otus.mail.core.avatar.mailAvatarOptions
-import com.otus.mail.feature.contacts.data.VCardFiles
 import com.otus.mail.feature.contacts.presentation.ContactAvatarUpdates
 import com.otus.mail.feature.contacts.presentation.ContactSync
 import com.otus.mail.feature.contacts.presentation.ContactsState

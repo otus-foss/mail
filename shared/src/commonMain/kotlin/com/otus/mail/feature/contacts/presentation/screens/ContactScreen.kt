@@ -36,22 +36,28 @@ import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.CardSync
+import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.MergePlan
 import com.otus.mail.feature.contacts.domain.photo
+import com.otus.mail.feature.contacts.presentation.ContactNavigation
+import com.otus.mail.feature.contacts.presentation.ContactPage
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.book
 import com.otus.mail.feature.contacts.presentation.card
 import com.otus.mail.feature.contacts.presentation.components.ContactDetails
+import com.otus.mail.feature.contacts.presentation.components.ContactOverlay
+import com.otus.mail.feature.contacts.presentation.components.ContactOverlaySheet
+import com.otus.mail.feature.contacts.presentation.components.ContactPageBar
 import com.otus.mail.feature.contacts.presentation.components.GroupMembers
 import com.otus.mail.feature.contacts.presentation.components.PersonFacts
+import com.otus.mail.feature.contacts.presentation.contactPage
 import com.otus.mail.feature.contacts.presentation.groupsOf
 import com.otus.mail.feature.contacts.presentation.photoChoices
 import com.otus.mail.feature.contacts.presentation.plainTextClip
 import com.otus.mail.feature.contacts.presentation.removeFromGroup
 import com.otus.mail.feature.contacts.presentation.saveElsewhere
 import com.otus.mail.feature.contacts.presentation.setPhoto
-import com.otus.mail.feature.inbox.domain.MailSender
 import kotlinx.coroutines.launch
 
 /**
@@ -189,7 +195,7 @@ private fun PersonBody(
             groups = person.cards.flatMap(state::groupsOf).distinctBy { it.key },
             saveElsewhere = saveTo,
         ),
-        onWriteTo = { address -> navigation.onWrite(listOf(MailSender(name, address))) },
+        onWriteTo = { address -> navigation.onWrite(listOf(ContactAddress(name, address))) },
         onCopyNumber = { number ->
             scope.launch { clipboard.setClipEntry(plainTextClip("Phone number", number)) }
             state.notice = "Copied phone number"

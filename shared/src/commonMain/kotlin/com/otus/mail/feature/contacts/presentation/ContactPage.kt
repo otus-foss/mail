@@ -1,6 +1,7 @@
-package com.otus.mail.feature.contacts.presentation.screens
+package com.otus.mail.feature.contacts.presentation
 
 import com.otus.mail.feature.contacts.domain.CardKey
+import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.ContactValue
@@ -8,7 +9,6 @@ import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.book
 import com.otus.mail.feature.contacts.presentation.members
 import com.otus.mail.feature.contacts.presentation.person
-import com.otus.mail.feature.inbox.domain.MailSender
 
 /**
  * What one contact page shows: the [card] it opened, the [person] that card belongs to, or a
@@ -30,11 +30,11 @@ internal class ContactPage(
     val cards: List<ContactCard> = person?.cards ?: listOf(card)
 
     /** Who Write addresses: each member's first address for a group, else the preferred one. */
-    val recipients: List<MailSender> =
+    val recipients: List<ContactAddress> =
         if (card.isGroup) {
-            members.mapNotNull { p -> p.emails.firstOrNull()?.let { MailSender(p.name, it.value) } }
+            members.mapNotNull { p -> p.emails.firstOrNull()?.let { ContactAddress(p.name, it.value) } }
         } else {
-            emails.take(1).map { MailSender(name, it.value) }
+            emails.take(1).map { ContactAddress(name, it.value) }
         }
 }
 

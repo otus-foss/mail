@@ -1,4 +1,4 @@
-package com.otus.mail.feature.contacts.presentation.screens
+package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.components.ActionBar

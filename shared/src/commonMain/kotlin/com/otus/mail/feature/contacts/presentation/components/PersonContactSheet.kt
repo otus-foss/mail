@@ -25,6 +25,7 @@ import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.contacts.domain.CardKey
+import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.DraftValue
@@ -33,7 +34,6 @@ import com.otus.mail.feature.contacts.presentation.addAddress
 import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.book
 import com.otus.mail.feature.contacts.presentation.withAddress
-import com.otus.mail.feature.inbox.domain.MailSender
 
 /**
  * What the app offers for a person a message names: their card when the address is saved already;
@@ -42,7 +42,7 @@ import com.otus.mail.feature.inbox.domain.MailSender
  */
 @Composable
 internal fun PersonContactSheet(
-    person: MailSender,
+    person: ContactAddress,
     state: ContactsState,
     onNew: () -> Unit,
     onOpen: (CardKey) -> Unit,
@@ -115,7 +115,7 @@ private fun CardRow(
 }
 
 /** A draft named and addressed as the message names [person]. */
-private fun newDraft(person: MailSender): ContactDraft {
+private fun newDraft(person: ContactAddress): ContactDraft {
     val words =
         person.name
             .trim()
