@@ -11,15 +11,18 @@ import com.otus.designsystem.components.ChoiceOptions
 import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.PageNote
+import com.otus.designsystem.components.PickMark
+import com.otus.designsystem.components.PickRow
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.components.Subpage
 import com.otus.designsystem.elements.ValueButton
+import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 
-/** Delivery choices and registration status for this platform. */
+/** Delivery choices, registration status, and, where alerts can show mail, what they show. */
 @Composable
 fun NotificationsScreen(
     state: NotificationSettingsState,
@@ -39,6 +42,19 @@ fun NotificationsScreen(
                         ?: if (state.periodicChecks) "Off, checks about every 15 minutes" else "New-mail alerts off",
             ) {
                 ValueButton(current?.let { if (it.isGoogle) "Google" else it.name } ?: "Off")
+            }
+        }
+        state.previews?.let { previews ->
+            SettingsSection("Previews") {
+                NotificationPreviews.entries.forEach { choice ->
+                    PickRow(
+                        choice.title,
+                        choice.description,
+                        PickMark(choice == previews, atStart = true),
+                        { state.choosePreviews(choice) },
+                        subtitleLines = PREVIEW_LINES,
+                    )
+                }
             }
         }
         if (current != null && accounts.isNotEmpty()) {
@@ -138,3 +154,30 @@ private fun NotificationSettingsState.deliveryNote(): String =
             "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy."
         }
     }
+
+private val NotificationPreviews.title: String
+    get() =
+        when (this) {
+            NotificationPreviews.Always -> "Always"
+            NotificationPreviews.Unlocked -> "When unlocked"
+            NotificationPreviews.Never -> "Never"
+        }
+
+private val NotificationPreviews.description: String
+    get() =
+        when (this) {
+            NotificationPreviews.Always -> {
+                "Sender and subject show on the lock screen too, unless the device hides sensitive content."
+            }
+
+            NotificationPreviews.Unlocked -> {
+                "Nothing shows on the lock screen. Sender and subject show once the device is unlocked."
+            }
+
+            NotificationPreviews.Never -> {
+                "Alerts say only \"New mail\"."
+            }
+        }
+
+/** Enough lines for the longest description on a narrow phone. */
+private const val PREVIEW_LINES = 3

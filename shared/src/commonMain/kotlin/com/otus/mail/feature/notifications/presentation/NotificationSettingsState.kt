@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.mail.feature.notifications.domain.InstantPush
+import com.otus.mail.feature.notifications.domain.NotificationPreviewStore
+import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
 import kotlinx.coroutines.CoroutineScope
@@ -11,12 +13,26 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
-/** The Notifications page: which service delivers new mail, and each account's status. */
+/**
+ * The Notifications page: which service delivers new mail, each account's status, and what alerts
+ * show, which [previewStore] keeps; null where alerts never show message content.
+ */
 class NotificationSettingsState(
     private val push: InstantPush,
     private val scope: CoroutineScope,
+    private val previewStore: NotificationPreviewStore? = null,
 ) {
     val periodicChecks: Boolean get() = push.periodicChecks
+
+    /** What alerts show; null where they never show message content. */
+    var previews: NotificationPreviews? by mutableStateOf(previewStore?.read())
+        private set
+
+    fun choosePreviews(choice: NotificationPreviews) {
+        val store = previewStore ?: return
+        previews = choice
+        store.write(choice)
+    }
 
     var distributors: List<PushDistributor> by mutableStateOf(emptyList())
         private set
