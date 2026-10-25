@@ -5,7 +5,6 @@ import com.otus.avatar.AvatarImageLoader
 import com.otus.avatar.AvatarOrigin
 import com.otus.avatar.AvatarRequest
 import com.otus.avatar.AvatarService
-import com.otus.avatar.ContactPhotoSource
 import com.otus.avatar.DomainIconSource
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -22,7 +21,7 @@ class MailAvatarOptionsTest {
     private val proxied = mutableListOf<String>()
     private val avatars =
         AvatarService(
-            ContactPhotoSource { request, allowExternal ->
+            photoSource { request, allowExternal ->
                 external += allowExternal
                 photo.takeIf { request.email == "ada@example.org" }
             },

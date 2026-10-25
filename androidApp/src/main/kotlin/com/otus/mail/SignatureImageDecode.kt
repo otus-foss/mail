@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.core.graphics.scale
 import com.otus.mail.feature.inbox.domain.SignatureImage
 import com.otus.mail.feature.inbox.domain.SignatureImagePick
@@ -11,10 +10,10 @@ import java.io.IOException
 import java.io.InputStream
 import kotlin.io.encoding.Base64
 
-/** Reads dimensions first, then decodes at a sample size that bounds both bitmap dimensions. */
+/** Decodes the image at a bounded size, then shrinks it to fit the signature limits. */
 internal fun signatureImage(open: () -> InputStream?): SignatureImagePick =
     try {
-        val source = sampledSignatureBitmap(open)
+        val source = sampledBitmap(open, SignatureImages.MAX_WIDTH)
         if (source == null) {
             SignatureImagePick.Unreadable
         } else {
@@ -29,25 +28,6 @@ internal fun signatureImage(open: () -> InputStream?): SignatureImagePick =
     } catch (expected: SecurityException) {
         SignatureImagePick.Unreadable
     }
-
-private fun sampledSignatureBitmap(open: () -> InputStream?): Bitmap? {
-    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    open()?.use { BitmapFactory.decodeStream(it, null, bounds) }
-    val sample = signatureSample(bounds.outWidth, bounds.outHeight) ?: return null
-    val options = BitmapFactory.Options().apply { inSampleSize = sample }
-    return open()?.use { BitmapFactory.decodeStream(it, null, options) }
-}
-
-internal fun signatureSample(
-    width: Int,
-    height: Int,
-): Int? {
-    if (width <= 0 || height <= 0) return null
-    val longest = maxOf(width, height).toLong()
-    var sample = 1
-    while ((longest + sample - 1) / sample > SignatureImages.MAX_WIDTH) sample *= 2
-    return sample
-}
 
 /** Tries PNG, then JPEG at falling quality, until one fits [maxBytes]. */
 internal fun Bitmap.signature(maxBytes: Int = SignatureImages.MAX_BYTES): SignatureImagePick {
