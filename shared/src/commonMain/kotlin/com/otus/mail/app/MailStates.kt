@@ -1,6 +1,7 @@
 package com.otus.mail.app
 
 import com.otus.accounts.presentation.AccountsState
+import com.otus.accounts.presentation.OwnAvatarsState
 import com.otus.avatar.AvatarOptions
 import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.folders.domain.FolderRights
@@ -86,6 +87,11 @@ internal class MailStates(
                 ?.sender
                 ?.name
         }
+
+    /** The avatars of the user's own addresses; a change redraws the mail that shows them. */
+    val ownAvatars =
+        OwnAvatarsState(services.ownAvatars(::avatarOptions), services.pickers.avatarPhotos, scope) { feed.refresh() }
+
     val accounts =
         AccountsState(services.accounts, scope) {
             feed.refresh()

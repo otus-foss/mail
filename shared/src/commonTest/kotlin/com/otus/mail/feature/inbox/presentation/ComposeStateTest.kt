@@ -156,13 +156,14 @@ class ComposeStateTest {
     @Test
     fun aReplyIsSentFromTheIdentityTheOriginalWentTo() =
         runTest {
-            val work = MailSender("Me", "work@example.com")
-            val me = MailSender("Me", "me@example.com")
+            val work = MailSender("Me", "work@example.com", "a2")
+            val me = MailSender("Me", "me@example.com", "a1")
             val state = state(FakeDrafts(listOf(work, me)), ComposeRequest.Reply(original, all = false))
             state.loadIdentities()
             runCurrent()
             assertEquals(me, state.draft.from)
-            assertEquals(listOf(work, me, work, me), state.identities.map { it.sender })
+            assertEquals(listOf(me, work), state.identities.map { it.sender })
+            assertEquals("a1", state.draft.accountId)
             assertFalse(state.edited)
         }
 
@@ -187,10 +188,11 @@ class ComposeStateTest {
             advanceTimeBy(DELAY + 1)
             state.chooseFrom(SendIdentity("i2", MailSender("Me", "me@home.example", "a2")))
             runCurrent()
-            assertEquals(listOf("d1"), drafts.discarded)
+            assertTrue(drafts.discarded.isEmpty())
             advanceTimeBy(DELAY + 1)
             assertEquals("a2", drafts.saved.last().accountId)
             assertNull(drafts.saved.last().emailId)
+            assertEquals(listOf("d1"), drafts.discarded)
         }
 
     @Test

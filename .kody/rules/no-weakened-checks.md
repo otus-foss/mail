@@ -11,7 +11,8 @@ record in `docs/decisions/`. That includes:
 
 - `@Suppress`, `@file:Suppress`, `ktlint-disable`, formatter-off markers, or new lint baselines.
 - Skipped, ignored, or deleted tests that the pull request does not replace.
-- CI steps marked `continue-on-error`, removed checks, or hook changes that skip `checkAll`.
+- CI steps marked `continue-on-error`, removed checks, or hook changes that skip the Spotless,
+  Ruff, or commit message checks.
 - Changes to `tools/` checkers, `config/detekt.yml`, or Spotless settings that accept more than
   before.
 - Unpinned or ranged dependency and tool versions.

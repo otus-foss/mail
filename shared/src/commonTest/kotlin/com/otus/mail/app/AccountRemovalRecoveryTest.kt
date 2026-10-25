@@ -6,6 +6,7 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
@@ -91,6 +92,20 @@ class AccountRemovalRecoveryTest {
             assertEquals(listOf(login), saved.logins())
             services.cache.withAccount(login.id) { it.write(login.id) { putValue("state", "new") } }
             assertEquals("new", services.cache.value(login.id, "state"))
+        }
+
+    @Test
+    fun aCacheStorageFailureDuringRemovalIsAnAccountStorageError() =
+        runTest {
+            val cache =
+                object : MailCache by InMemoryMailCache() {
+                    override suspend fun forget(loginId: String) =
+                        throw CacheStorageException(IllegalStateException("disk I/O"))
+                }
+            val services = MailServices(saved, stores = MailDeviceStores(cache = cache))
+            val failure = assertFailsWith<AccountStorageException> { services.accounts.remove(login.id) }
+            assertTrue(generateSequence<Throwable>(failure) { it.cause }.any { it is CacheStorageException })
+            assertEquals(listOf(login), saved.logins())
         }
 
     @Test
