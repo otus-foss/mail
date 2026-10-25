@@ -58,6 +58,7 @@ import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
+import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.KnownPeople
@@ -104,6 +105,8 @@ class MailServices(
     /** Instant pushes through the selected service; null where the platform has none. */
     internal val instantPush: InstantPush? = null,
     internal val pickers: MailPickers = MailPickers(),
+    /** The screen and keyboard protections this platform can apply. */
+    internal val devicePrivacy: DevicePrivacy = DevicePrivacy(),
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     /** The device's copy of each login's mail; see docs/storage.md. */
