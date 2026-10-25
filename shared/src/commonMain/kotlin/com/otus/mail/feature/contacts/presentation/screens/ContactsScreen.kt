@@ -118,7 +118,12 @@ internal fun ContactsScreen(
                                 )
                                 clear()
                             },
-                            onMerge = pair?.takeIf { sameAddress }?.let { { merging = planFor(it) } },
+                            onMerge =
+                                chosenCards
+                                    .takeIf { it.size >= 2 && chosen.size == selected.size }
+                                    ?.let { planFor(it) }
+                                    ?.let { plan -> { merging = plan } },
+                            sharedAddress = sameAddress,
                             groups = state.groups.filter { group -> state.book(group.books.first())?.canWrite == true },
                             onAddToGroup = { group ->
                                 state.addToGroup(group, chosenCards)

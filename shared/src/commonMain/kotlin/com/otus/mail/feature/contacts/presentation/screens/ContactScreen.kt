@@ -51,6 +51,7 @@ import com.otus.mail.feature.contacts.presentation.components.ContactDetails
 import com.otus.mail.feature.contacts.presentation.components.GroupMembers
 import com.otus.mail.feature.contacts.presentation.components.MergeSheet
 import com.otus.mail.feature.contacts.presentation.components.PersonFacts
+import com.otus.mail.feature.contacts.presentation.components.moreOptions
 import com.otus.mail.feature.contacts.presentation.peopleCount
 import com.otus.mail.feature.inbox.domain.MailSender
 
@@ -101,15 +102,19 @@ internal fun ContactScreen(
                         enabled = recipients.isNotEmpty(),
                     ) { write(recipients) },
                     secondary =
-                        listOfNotNull(
-                            BarAction(
-                                "Edit",
-                                Res.drawable.symbol_person_edit,
-                            ) { navigation.onEdit(key) }.takeIf { writable },
-                            BarAction("Export as vCard", Res.drawable.symbol_upload) {
-                                state.export(person?.cards ?: listOf(card))
-                            }.takeIf { state.canTransfer },
-                            BarAction("Delete", Res.drawable.symbol_delete) { deleting = true }.takeIf { writable },
+                        moreOptions(
+                            listOfNotNull(
+                                MenuAction("Edit", Res.drawable.symbol_person_edit) {
+                                    navigation.onEdit(key)
+                                }.takeIf { writable },
+                                MenuAction("Export as vCard", Res.drawable.symbol_upload) {
+                                    state.export(person?.cards ?: listOf(card))
+                                }.takeIf { state.canTransfer },
+                                MenuAction(
+                                    "Delete",
+                                    Res.drawable.symbol_delete,
+                                ) { deleting = true }.takeIf { writable },
+                            ),
                         ),
                     context =
                         when {
