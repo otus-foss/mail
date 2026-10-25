@@ -16,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
+import com.otus.mail.app.IncognitoKeyboard
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.updates.domain.InstalledBuild
