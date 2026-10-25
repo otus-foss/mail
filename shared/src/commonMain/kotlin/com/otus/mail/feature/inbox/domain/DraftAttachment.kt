@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import kotlin.random.Random
+
 /**
  * A file attached to a draft, [size] bytes of [type]. [blob] is its upload, which belongs to one
  * account; a draft moved to another account needs it uploaded there too. An [inline] image shows
@@ -28,7 +30,10 @@ data class AttachmentBlob(
     val blobId: String,
 )
 
-/** A picked file. The platform reader must honor the byte limit before allocating a larger buffer. */
+/**
+ * A picked file. The platform reader must honor the byte limit before allocating a larger buffer.
+ * A [cleanable] photo can attach [cleaned] instead.
+ */
 class PickedFile(
     val name: String,
     val type: String,
@@ -41,6 +46,25 @@ class PickedFile(
         val bytes = readBytes(maxBytes)
         if (bytes.size > maxBytes) throw UploadException(UploadFailure.TooLarge)
         return bytes
+    }
+
+    /** Whether this is a JPEG, PNG, or WebP image, whose metadata [cleaned] can remove. */
+    val cleanable: Boolean get() = type.lowercase() in CLEANABLE_TYPES
+
+    /**
+     * This photo without its metadata, see [withoutImageMetadata], under a random name that keeps
+     * only its extension, so recipients learn neither where, when, nor with what it was taken.
+     */
+    fun cleaned(): PickedFile {
+        val extension =
+            name
+                .substringAfterLast('.', missingDelimiterValue = "")
+                .lowercase()
+                .takeIf { it.length in 1..MAX_EXTENSION && it.all(Char::isLetterOrDigit) }
+        val random = (1..NAME_DIGITS).joinToString("") { Random.nextInt(HEX).toString(HEX) }
+        return PickedFile("photo-$random" + extension?.let { ".$it" }.orEmpty(), type, size) { maxBytes ->
+            withoutImageMetadata(readBytes(maxBytes))
+        }
     }
 }
 
@@ -73,3 +97,8 @@ fun interface AttachmentUploads {
         type: String,
     ): Result<AttachmentBlob>
 }
+
+private val CLEANABLE_TYPES = setOf("image/jpeg", "image/jpg", "image/png", "image/webp")
+private const val NAME_DIGITS = 8
+private const val MAX_EXTENSION = 4
+private const val HEX = 16

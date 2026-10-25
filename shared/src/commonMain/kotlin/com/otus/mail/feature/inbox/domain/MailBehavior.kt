@@ -19,7 +19,8 @@ package com.otus.mail.feature.inbox.domain
  * swipe away; off, the Read view leaves that text out. [zenRead] keeps the Read view to the
  * message, its control panel, and its bar. [screenSecurity] keeps Mail out of screenshots, screen
  * recordings, and recent apps, and [incognitoKeyboard] asks the keyboard not to learn from what the
- * user types, where [DevicePrivacy] allows them.
+ * user types, where [DevicePrivacy] allows them. [photoCleaning] decides whether attached photos
+ * lose their metadata and file names.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -45,6 +46,7 @@ data class MailBehavior(
     val zenRead: Boolean = false,
     val screenSecurity: Boolean = false,
     val incognitoKeyboard: Boolean = true,
+    val photoCleaning: PhotoCleaning = PhotoCleaning.Ask,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =

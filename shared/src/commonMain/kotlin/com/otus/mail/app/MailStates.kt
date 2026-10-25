@@ -152,6 +152,7 @@ internal class MailStates(
                 account.emailAddresses + account.username,
                 behavior.behavior.recentFrom,
                 behavior.behavior.signatureInReplies,
+                photoCleaning = { behavior.behavior.photoCleaning },
             ),
             onSent = { from -> behavior.update { it.sentFrom(from.address) } },
         )
