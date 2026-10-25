@@ -23,6 +23,7 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_group_add
 import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactAddress
@@ -75,13 +76,13 @@ internal fun PersonContactSheet(
                 }
 
                 saved.isNotEmpty() -> {
-                    SectionCaption("In your contacts")
+                    SectionCaption("In your contacts", RowInset)
                     saved.forEach { card -> CardRow(card) { onOpen(card.key) } }
                 }
 
                 else -> {
                     sameName.firstOrNull()?.let { match ->
-                        SectionCaption("Maybe already in your contacts")
+                        SectionCaption("Maybe already in your contacts", RowInset)
                         CardRow(match) { onOpen(match.key) }
                         ActionButton("Add this address there", { add(match) }, Inset.fillMaxWidth(), primary = true)
                     }
@@ -111,7 +112,7 @@ private fun CardRow(
     card: ContactCard,
     onClick: () -> Unit,
 ) {
-    ContactRow(card.displayName, card.emails.firstOrNull()?.value ?: "No address", card.avatar, onClick)
+    ContactRow(card.displayName, card.emails.firstOrNull()?.value ?: "No address", card.avatar, onClick, RowInset)
 }
 
 /** A draft named and addressed as the message names [person]. */
@@ -132,3 +133,6 @@ private const val PICKER_LIMIT = 50
 
 /** Text and controls that are not rows line up with the rows' content. */
 private val Inset = Modifier.padding(horizontal = SheetTokens.inset)
+
+// Captions and contact rows pad their own text by the page's text inset, so they add only the rest.
+private val RowInset = Modifier.padding(horizontal = SheetTokens.inset - PageTokens.textInset)
