@@ -8,9 +8,11 @@ import com.otus.designsystem.elements.RichText
 import com.otus.mail.feature.inbox.domain.AttachmentFiles
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.DraftAttachment
+import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.PickedFile
 import com.otus.mail.feature.inbox.domain.UploadException
 import com.otus.mail.feature.inbox.domain.UploadFailure
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -27,7 +29,8 @@ import kotlin.uuid.Uuid
  * The files attached to a draft of [accountId]. Each picked file uploads at once, and again when
  * the draft moves to another account; [attachments] and [change] read and edit the draft's list.
  * A picked image goes into [body] at the cursor; it can switch to a file and back, and deleting it
- * from the text removes it. Without [files] and [uploads], nothing can be attached.
+ * from the text removes it. Without [files] and [uploads], nothing can be attached. Photos lose their
+ * metadata and names as the services' cleaning choice says, which may ask with [cleaningQuestion].
  */
 class ComposeAttachments(
     services: ComposeAttachmentServices,
@@ -40,7 +43,19 @@ class ComposeAttachments(
 ) {
     private val files = services.files
     private val uploads = services.uploads
+    private val cleaning = services.cleaning
     val canAttach: Boolean get() = files != null && uploads != null
+
+    /** How many picked photos wait for [answerCleaning] to say whether they lose their metadata and names. */
+    var cleaningQuestion by mutableStateOf<Int?>(null)
+        private set
+    private var cleaningAnswer: CompletableDeferred<Boolean>? = null
+
+    /** Answers [cleaningQuestion]: [clean] photos attach without their metadata and under random names. */
+    fun answerCleaning(clean: Boolean) {
+        cleaningQuestion = null
+        cleaningAnswer?.complete(clean)
+    }
 
     /** Why each attachment's last upload failed, by its id; its chip offers Retry. */
     var failures by mutableStateOf<Map<String, UploadFailure>>(emptyMap())
@@ -71,7 +86,30 @@ class ComposeAttachments(
     /** Lets the user pick files and attaches each of them. */
     fun attach() {
         val from = files ?: return
-        scope.launch { from.pick().forEach(::add) }
+        scope.launch { cleanedAsChosen(from.pick()).forEach(::add) }
+    }
+
+    /** [files] with each cleanable photo [PickedFile.cleaned] when the user's choice, or answer, says so. */
+    private suspend fun cleanedAsChosen(files: List<PickedFile>): List<PickedFile> {
+        val photos = files.count { it.cleanable }
+        val clean =
+            photos > 0 &&
+                when (cleaning()) {
+                    PhotoCleaning.Always -> true
+                    PhotoCleaning.Never -> false
+                    PhotoCleaning.Ask -> ask(photos)
+                }
+        return if (clean) files.map { if (it.cleanable) it.cleaned() else it } else files
+    }
+
+    private suspend fun ask(photos: Int): Boolean {
+        val answer = CompletableDeferred<Boolean>().also { cleaningAnswer = it }
+        cleaningQuestion = photos
+        return try {
+            answer.await()
+        } finally {
+            cleaningQuestion = null
+        }
     }
 
     fun remove(id: String) {
@@ -96,7 +134,8 @@ class ComposeAttachments(
     fun replace(id: String) {
         val from = files ?: return
         scope.launch {
-            val file = from.pick().firstOrNull { it.type.startsWith("image/") } ?: return@launch
+            val picked = from.pick().firstOrNull { it.type.startsWith("image/") } ?: return@launch
+            val file = cleanedAsChosen(listOf(picked)).single()
             val old = attachments().firstOrNull { it.id == id } ?: return@launch
             val new = newAttachment(file).copy(inline = true)
             jobs.remove(id)?.cancel()
@@ -187,8 +226,12 @@ private fun newAttachment(file: PickedFile) = DraftAttachment(Uuid.random().toSt
 /** Where the body's HTML points at an inline image (RFC 2392). */
 internal val DraftAttachment.source: String get() = "cid:$cid"
 
-/** The platform picker and account uploader used by the attachment editor. */
+/**
+ * The platform picker and account uploader used by the attachment editor, and whether attached
+ * photos lose their metadata and names; without a [cleaning] choice, files attach as picked.
+ */
 class ComposeAttachmentServices(
     val files: AttachmentFiles?,
     val uploads: AttachmentUploads?,
+    val cleaning: () -> PhotoCleaning = { PhotoCleaning.Never },
 )
