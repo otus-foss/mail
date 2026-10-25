@@ -132,19 +132,12 @@ class AccountConnectionTest {
         compose.onNodeWithText("Connect").performClick()
         compose.waitUntil(
             TIMEOUT,
-        ) {
-            compose
-                .onAllNodes(
-                    hasText("ada@example.org\nada@other.example\nmail.example.org"),
-                ).fetchSemanticsNodes()
-                .isNotEmpty()
-        }
+        ) { compose.onAllNodes(hasText("ada@other.example")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Server").assertDoesNotExist()
-        compose
-            .onNodeWithText(
-                "ada@example.org\nada@other.example\nmail.example.org",
-            ).performScrollTo()
-            .assertIsDisplayed()
+        // The account's addresses are avatar pills now, so the detail below its name keeps only the server.
+        compose.onNodeWithText("mail.example.org").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("ada@example.org").assertIsDisplayed()
+        compose.onNodeWithText("ada@other.example").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("1 account connected").assertIsDisplayed()
 
