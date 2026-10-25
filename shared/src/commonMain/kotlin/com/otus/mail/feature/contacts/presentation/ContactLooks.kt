@@ -1,5 +1,8 @@
 package com.otus.mail.feature.contacts.presentation
 
+import com.otus.accounts.presentation.toChipAvatar
+import com.otus.avatar.ResolvedAvatar
+import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.designsystem.components.ContactRowLabel
 import com.otus.designsystem.components.OptionsItem
@@ -17,14 +20,13 @@ import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.photo
-import com.otus.mail.feature.inbox.presentation.components.chipAvatar
 import org.jetbrains.compose.resources.DrawableResource
 import kotlin.io.encoding.Base64
 
 /** The card's own photo when it carries one inline, else initials colored by its first address. */
 internal val ContactCard.avatar: ChipAvatar
     get() {
-        val generated = chipAvatar(null, displayName, emails.firstOrNull()?.value ?: displayName)
+        val generated = initialsAvatar(displayName, emails.firstOrNull()?.value ?: displayName)
         return generated.withPhoto(card.photo)
     }
 
@@ -79,4 +81,10 @@ private val MONTHS =
 internal fun peopleCount(count: Int): String = if (count == 1) "1 person" else "$count people"
 
 /** A generated avatar for a name alone, such as a group's. */
-internal fun nameAvatar(name: String): ChipAvatar = chipAvatar(null, name, name)
+internal fun nameAvatar(name: String): ChipAvatar = initialsAvatar(name, name)
+
+/** Initials on a color picked from [address], as everywhere else in the app before a photo loads. */
+internal fun initialsAvatar(
+    name: String,
+    address: String,
+): ChipAvatar = ResolvedAvatar(generatedAvatar(name, address)).toChipAvatar()

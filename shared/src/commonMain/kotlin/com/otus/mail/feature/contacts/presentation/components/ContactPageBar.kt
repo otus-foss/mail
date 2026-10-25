@@ -1,4 +1,4 @@
-package com.otus.mail.feature.contacts.presentation.screens
+package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.components.ActionBar
@@ -13,12 +13,14 @@ import com.otus.designsystem.resources.symbol_group_add
 import com.otus.designsystem.resources.symbol_mail
 import com.otus.designsystem.resources.symbol_person_edit
 import com.otus.designsystem.resources.symbol_upload
+import com.otus.mail.feature.contacts.domain.ContactAddress
+import com.otus.mail.feature.contacts.presentation.ContactNavigation
+import com.otus.mail.feature.contacts.presentation.ContactPage
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.components.GroupEdit
 import com.otus.mail.feature.contacts.presentation.components.moreOptions
 import com.otus.mail.feature.contacts.presentation.peopleCount
-import com.otus.mail.feature.inbox.domain.MailSender
 
 /**
  * The page's bar: Write to its recipients, the person's or group's other actions in the menu, and
@@ -86,7 +88,7 @@ private fun groupContext(count: Int): BarContext =
 /** The preferred address, with the others as choices; none when the person has no address. */
 private fun personContext(
     page: ContactPage,
-    onWrite: (List<MailSender>) -> Unit,
+    onWrite: (List<ContactAddress>) -> Unit,
 ): BarContext? {
     val first = page.emails.firstOrNull() ?: return null
     return BarContext(
@@ -96,7 +98,7 @@ private fun personContext(
         choices =
             page.emails.drop(1).map { email ->
                 MenuAction("Write to ${email.value}", Res.drawable.symbol_mail) {
-                    onWrite(listOf(MailSender(page.name, email.value)))
+                    onWrite(listOf(ContactAddress(page.name, email.value)))
                 }
             },
     )

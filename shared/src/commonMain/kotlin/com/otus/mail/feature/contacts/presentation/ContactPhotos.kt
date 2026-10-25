@@ -17,7 +17,6 @@ import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.photo
-import com.otus.mail.feature.inbox.presentation.components.chipAvatar
 import org.jetbrains.compose.resources.DrawableResource
 import kotlin.io.encoding.Base64
 
@@ -28,7 +27,7 @@ import kotlin.io.encoding.Base64
  */
 internal fun ContactDraft.avatar(photo: ByteArray?): ChipAvatar {
     val name = fullName.ifEmpty { emails.firstOrNull()?.value.orEmpty() }.ifEmpty { "?" }
-    val generated = chipAvatar(null, name, emails.firstOrNull()?.value ?: name)
+    val generated = initialsAvatar(name, emails.firstOrNull()?.value ?: name)
     return photo?.let { ChipAvatar(generated.initials, generated.colorIndex, it) } ?: generated
 }
 

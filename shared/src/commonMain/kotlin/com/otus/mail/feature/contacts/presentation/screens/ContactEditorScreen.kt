@@ -34,8 +34,10 @@ import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.card
+import com.otus.mail.feature.contacts.presentation.components.ContactEditorBar
 import com.otus.mail.feature.contacts.presentation.components.ContactForm
 import com.otus.mail.feature.contacts.presentation.components.ContactLabels
+import com.otus.mail.feature.contacts.presentation.components.editorBarContext
 import com.otus.mail.feature.contacts.presentation.deleteLabel
 import com.otus.mail.feature.contacts.presentation.photoChoices
 import com.otus.mail.feature.contacts.presentation.save

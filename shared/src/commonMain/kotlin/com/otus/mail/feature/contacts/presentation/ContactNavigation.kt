@@ -1,4 +1,4 @@
-package com.otus.mail.feature.contacts.presentation.screens
+package com.otus.mail.feature.contacts.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,6 +49,7 @@ import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.CardSync
+import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.MergePlan
 import com.otus.mail.feature.contacts.domain.photo
@@ -66,7 +67,6 @@ import com.otus.mail.feature.contacts.presentation.photoChoices
 import com.otus.mail.feature.contacts.presentation.plainTextClip
 import com.otus.mail.feature.contacts.presentation.removeFromGroup
 import com.otus.mail.feature.contacts.presentation.setPhoto
-import com.otus.mail.feature.inbox.domain.MailSender
 import kotlinx.coroutines.launch
 
 /** Where one person's page leads. */
@@ -74,5 +74,5 @@ internal class ContactNavigation(
     val onBack: () -> Unit,
     val onEdit: (CardKey) -> Unit,
     val onOpen: (CardKey) -> Unit,
-    val onWrite: (List<MailSender>) -> Unit,
+    val onWrite: (List<ContactAddress>) -> Unit,
 )

@@ -1,4 +1,4 @@
-package com.otus.mail.feature.contacts.presentation.screens
+package com.otus.mail.feature.contacts.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +26,7 @@ import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
+import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.MergePlan
@@ -43,12 +44,11 @@ import com.otus.mail.feature.contacts.presentation.components.ListBarActions
 import com.otus.mail.feature.contacts.presentation.components.MergeSheet
 import com.otus.mail.feature.contacts.presentation.components.SelectionBarActions
 import com.otus.mail.feature.contacts.presentation.components.emptyKind
-import com.otus.mail.feature.inbox.domain.MailSender
 
 /** Where the Contacts page leads. */
 internal class ContactsNavigation(
     val onOpenNavigation: () -> Unit,
     val onOpen: (CardKey) -> Unit,
     val onNew: () -> Unit,
-    val onWrite: (List<MailSender>) -> Unit,
+    val onWrite: (List<ContactAddress>) -> Unit,
 )

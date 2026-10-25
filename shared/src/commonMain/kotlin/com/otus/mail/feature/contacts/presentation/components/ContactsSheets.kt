@@ -1,4 +1,4 @@
-package com.otus.mail.feature.contacts.presentation.screens
+package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.components.ConfirmDialog
@@ -7,8 +7,10 @@ import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.MergePlan
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.components.ContactsFilterPanel
+import com.otus.mail.feature.contacts.presentation.components.ContactsView
 import com.otus.mail.feature.contacts.presentation.components.ImportSheet
 import com.otus.mail.feature.contacts.presentation.components.MergeSheet
+import com.otus.mail.feature.contacts.presentation.components.peopleIn
 import com.otus.mail.feature.contacts.presentation.createGroup
 import com.otus.mail.feature.contacts.presentation.delete
 import com.otus.mail.feature.contacts.presentation.merge
