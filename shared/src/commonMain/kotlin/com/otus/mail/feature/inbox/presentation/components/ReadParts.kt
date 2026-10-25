@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder
+import com.otus.mail.feature.inbox.domain.participants
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.PageBody
@@ -126,6 +127,7 @@ internal fun rememberReadMenu(
             imagesBlocked = look.blocked(page, state.bodies.body(page)),
             muted = state.muted == true,
             suggestedPath = suggested?.let(::listOf),
+            people = participants(state.pages, parts.context.rowLook.own),
         )
     val menu =
         ReadMenuActions(
@@ -175,6 +177,10 @@ internal fun ReadSheets(
 
         is ReadSheet.Person -> {
             read.person?.Show(sheet.person, dismiss)
+        }
+
+        is ReadSheet.People -> {
+            PeopleSheet(sheet.people, onPick = { state.sheet = ReadSheet.Person(it) }, onDismiss = dismiss)
         }
     }
 }

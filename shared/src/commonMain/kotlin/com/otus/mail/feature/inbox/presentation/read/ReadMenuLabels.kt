@@ -19,6 +19,7 @@ fun ReadMenuEntry.label(): String =
         is ReadMenuEntry.AlwaysShowImages -> "Always show images from $sender"
         is ReadMenuEntry.MoveTo -> "Move to…"
         is ReadMenuEntry.Mute -> "Mute conversation"
+        is ReadMenuEntry.People -> "People (${people.size})"
         else -> FIXED_LABELS.getValue(this)
     }
 
@@ -41,4 +42,5 @@ private val FIXED_LABELS: Map<ReadMenuEntry, String> =
         ReadMenuEntry.BlockSender to "Block sender",
         ReadMenuEntry.ReportSpam to "Report spam or phishing",
         ReadMenuEntry.DeleteConversation to "Delete conversation",
+        ReadMenuEntry.SenderContact to "Add to contacts",
     )

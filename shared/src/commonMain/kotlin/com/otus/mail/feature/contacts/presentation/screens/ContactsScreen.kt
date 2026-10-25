@@ -19,7 +19,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.otus.designsystem.components.ActionBarHost
 import com.otus.designsystem.components.ConfirmDialog
+import com.otus.designsystem.components.rememberLetterIndexState
 import com.otus.designsystem.components.InputSheet
+import com.otus.designsystem.components.LetterIndex
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -67,6 +69,7 @@ internal fun ContactsScreen(
     var panelHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
     var selected by remember { mutableStateOf(emptySet<CardKey>()) }
+    val letterIndex = rememberLetterIndexState()
     var merging by remember { mutableStateOf<MergePlan?>(null) }
     var naming by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
@@ -79,6 +82,7 @@ internal fun ContactsScreen(
     val planFor = { cards: List<ContactCard> -> MergePlan.of(cards, state.writableBooks) }
     val clear = { selected = emptySet() }
     ProvideTextStyle(panelTextStyle()) {
+        LetterIndex(letterIndex, Modifier.fillMaxSize()) {
         ActionBarHost(
             bar = {
                 if (selected.isEmpty()) {
@@ -124,7 +128,10 @@ internal fun ContactsScreen(
                                     ?.let { planFor(it) }
                                     ?.let { plan -> { merging = plan } },
                             sharedAddress = sameAddress,
-                            groups = state.groups.filter { group -> state.book(group.books.first())?.canWrite == true },
+                            groups =
+                                state.groups.filter { group ->
+                                    state.book(group.books.first())?.canWrite == true
+                                },
                             onAddToGroup = { group ->
                                 state.addToGroup(group, chosenCards)
                                 clear()
@@ -165,7 +172,7 @@ internal fun ContactsScreen(
                     val content =
                         ContactListContent(
                             people,
-                            if (query.isBlank()) state.groups.filter { g -> inBooks(books, g.books) } else emptyList(),
+                            state.groups.filter { g -> query.isBlank() && inBooks(books, g.books) },
                             duplicates.firstOrNull()?.takeIf { books.isEmpty() && query.isBlank() },
                             duplicates.size,
                             state.waiting,
@@ -203,10 +210,12 @@ internal fun ContactsScreen(
                                 },
                             ),
                             barPadding,
+                            letterIndex,
                         )
                     }
                 }
             }
+        }
         }
     }
     ContactsFilterPanel(
