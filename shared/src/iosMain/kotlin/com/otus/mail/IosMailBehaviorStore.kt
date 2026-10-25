@@ -102,6 +102,7 @@ class IosMailBehaviorStore(
         const val SIDEBAR = "otus.mail.sidebar_layout"
         const val ACTION_BAR_MODE = "otus.mail.action_bar_mode"
         const val MINIMIZED_BAR = "otus.mail.action_bar_minimized"
+
         // Website icons moved here when they turned off by default, since the earlier key held on for
         // anyone who saved any setting.
         const val WEBSITE_ICONS = "otus.mail.load_website_icons"
