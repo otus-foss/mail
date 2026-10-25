@@ -4,12 +4,14 @@ import com.otus.accounts.data.JmapAccountRepository
 import com.otus.accounts.domain.AccountRepository
 import com.otus.accounts.domain.AccountService
 import com.otus.avatar.AvatarCacheConfig
+import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
 import com.otus.avatar.DomainIconSource
 import com.otus.avatar.EmptyAvatarStore
 import com.otus.avatar.HttpAvatarImageLoader
-import com.otus.avatar.JmapContactPhotoSource
+import com.otus.avatar.JmapContactAvatarSource
+import com.otus.avatar.JmapOwnAvatars
 import com.otus.avatar.PublicSuffixDomainResolver
 import com.otus.designsystem.components.ToastState
 import com.otus.jmap.JmapClient
@@ -109,7 +111,7 @@ class MailServices(
     private val avatarImages by lazy { HttpAvatarImageLoader() }
     internal val avatars by lazy {
         AvatarService(
-            JmapContactPhotoSource(connections, logins, avatarImages),
+            JmapContactAvatarSource(connections, logins, avatarImages),
             avatarImages,
             domains = PublicSuffixDomainResolver(::avatarSuffixRules),
             iconFallback =
@@ -119,6 +121,11 @@ class MailServices(
             cacheConfig = AvatarCacheConfig(store = avatarStore),
         )
     }
+
+    /** The avatar of each of the user's own addresses, read with [options] like any sender's. */
+    internal fun ownAvatars(options: () -> AvatarOptions): JmapOwnAvatars =
+        JmapOwnAvatars(connections, logins, avatars, options)
+
     internal val accounts: AccountRepository by lazy {
         val repository =
             JmapAccountRepository(

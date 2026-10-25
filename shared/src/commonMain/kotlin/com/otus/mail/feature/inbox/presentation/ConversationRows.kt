@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.avatar.GeneratedAvatar
+import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.CompactRowText
@@ -30,6 +30,8 @@ import kotlinx.datetime.LocalDate
 data class RowLook(
     val layout: MailListLayout = MailListLayout(),
     val own: OwnAddresses = OwnAddresses(emptyMap()),
+    /** The avatar of each own address, by login id and lowercase address. */
+    val ownAvatars: Map<Pair<String, String>, ResolvedAvatar> = emptyMap(),
 )
 
 /**
@@ -40,7 +42,7 @@ data class RowLook(
 data class ConversationRowModel(
     val text: CompactRowText,
     val read: Boolean,
-    val badge: GeneratedAvatar?,
+    val badge: ResolvedAvatar?,
 )
 
 /** Each of [messages]' rows by message id, with the badge only when they came to several of the user's addresses. */
@@ -108,7 +110,11 @@ private fun MailMessage.rowModel(
     return ConversationRowModel(
         text,
         read = !attributes.unread,
-        badge = receivedOn?.let { generatedAvatar(location.account, it) },
+        badge =
+            receivedOn?.let {
+                look.ownAvatars[location.accountId to it.lowercase()]
+                    ?: ResolvedAvatar(generatedAvatar(location.account, it))
+            },
     )
 }
 

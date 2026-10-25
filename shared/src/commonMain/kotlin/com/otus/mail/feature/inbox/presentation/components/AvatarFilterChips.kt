@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
+import com.otus.accounts.presentation.toChipAvatar
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.components.AvatarStackChip
@@ -68,10 +69,7 @@ internal fun chipAvatar(
     avatar: ResolvedAvatar?,
     name: String,
     address: String,
-): ChipAvatar {
-    val fallback = avatar?.fallback ?: generatedAvatar(name, address)
-    return ChipAvatar(fallback.initials, fallback.colorIndex, avatar?.image?.bytes)
-}
+): ChipAvatar = (avatar ?: ResolvedAvatar(generatedAvatar(name, address))).toChipAvatar()
 
 private fun shortName(sender: MailSender): String =
     sender.name
