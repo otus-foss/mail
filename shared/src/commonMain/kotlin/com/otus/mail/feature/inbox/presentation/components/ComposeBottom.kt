@@ -53,7 +53,8 @@ internal fun ComposeBottom(
     }
     if (linking) LinkDialog(state.body::addLink) { linking = false }
     if (showingThread) state.thread?.let { ThreadSheet(it) { showingThread = false } }
-    state.attachments.cleaning.question?.let { PhotoCleaningSheet(it, state.attachments.cleaning::answer) }
+    state.attachments.cleaning.question
+        ?.let { PhotoCleaningSheet(it, state.attachments.cleaning::answer) }
 }
 
 /** The action bar, the formatting row while the keyboard is up, or the image bar; each morphs into the next. */
