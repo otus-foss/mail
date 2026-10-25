@@ -17,7 +17,9 @@ package com.otus.mail.feature.inbox.domain
  * servers, and [allowedSenders] are the lowercase addresses whose images always load.
  * [showQuotes] shows a reply's quoted text even when earlier messages of its conversation are a
  * swipe away; off, the Read view leaves that text out. [zenRead] keeps the Read view to the
- * message, its control panel, and its bar.
+ * message, its control panel, and its bar. [screenSecurity] keeps Mail out of screenshots, screen
+ * recordings, and recent apps, and [incognitoKeyboard] asks the keyboard not to learn from what the
+ * user types, where [DevicePrivacy] allows them.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -41,6 +43,8 @@ data class MailBehavior(
     val allowedSenders: List<String> = emptyList(),
     val showQuotes: Boolean = false,
     val zenRead: Boolean = false,
+    val screenSecurity: Boolean = false,
+    val incognitoKeyboard: Boolean = true,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =
