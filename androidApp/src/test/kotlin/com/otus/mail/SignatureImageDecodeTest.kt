@@ -20,11 +20,11 @@ class SignatureImageDecodeTest {
     @Test
     fun dimensionsAreBoundedBeforeDecodeForTallAndWideImages() {
         listOf(100_000 to 1, 1 to 100_000, Int.MAX_VALUE to Int.MAX_VALUE).forEach { (width, height) ->
-            val sample = requireNotNull(signatureSample(width, height))
+            val sample = requireNotNull(sampleSize(width, height, SignatureImages.MAX_WIDTH))
             assertTrue((maxOf(width, height).toLong() + sample - 1) / sample <= SignatureImages.MAX_WIDTH)
         }
-        assertNull(signatureSample(-1, -1))
-        assertNull(signatureSample(0, 100))
+        assertNull(sampleSize(-1, -1, SignatureImages.MAX_WIDTH))
+        assertNull(sampleSize(0, 100, SignatureImages.MAX_WIDTH))
     }
 
     @Test

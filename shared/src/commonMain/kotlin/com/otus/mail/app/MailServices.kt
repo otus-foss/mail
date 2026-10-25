@@ -3,13 +3,16 @@ package com.otus.mail.app
 import com.otus.accounts.data.JmapAccountRepository
 import com.otus.accounts.domain.AccountRepository
 import com.otus.accounts.domain.AccountService
+import com.otus.accounts.domain.AccountStorageException
 import com.otus.avatar.AvatarCacheConfig
+import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
 import com.otus.avatar.DomainIconSource
 import com.otus.avatar.EmptyAvatarStore
 import com.otus.avatar.HttpAvatarImageLoader
-import com.otus.avatar.JmapContactPhotoSource
+import com.otus.avatar.JmapContactAvatarSource
+import com.otus.avatar.JmapOwnAvatars
 import com.otus.avatar.PublicSuffixDomainResolver
 import com.otus.designsystem.components.ToastState
 import com.otus.jmap.JmapClient
@@ -20,7 +23,9 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.AccountMailCache
 import com.otus.mail.core.cache.CacheKind
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
@@ -102,14 +107,14 @@ class MailServices(
     createClient: () -> JmapClient = { JmapClient() },
 ) {
     /** The device's copy of each login's mail; see docs/storage.md. */
-    private val accountCache = AccountMailCache(stores.cache)
+    private val accountCache = AccountMailCache(RecoveringMailCache(stores.cache))
     internal val cache: MailCache get() = accountCache
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
     internal val avatars by lazy {
         AvatarService(
-            JmapContactPhotoSource(connections, logins, avatarImages),
+            JmapContactAvatarSource(connections, logins, avatarImages),
             avatarImages,
             domains = PublicSuffixDomainResolver(::avatarSuffixRules),
             iconFallback =
@@ -119,6 +124,11 @@ class MailServices(
             cacheConfig = AvatarCacheConfig(store = avatarStore),
         )
     }
+
+    /** The avatar of each of the user's own addresses, read with [options] like any sender's. */
+    internal fun ownAvatars(options: () -> AvatarOptions): JmapOwnAvatars =
+        JmapOwnAvatars(connections, logins, avatars, options)
+
     internal val accounts: AccountRepository by lazy {
         val repository =
             JmapAccountRepository(
@@ -136,7 +146,11 @@ class MailServices(
                     stores.folderColors?.forgetAccount(loginId)
                     stores.addressPins?.forgetAccount(loginId)
                     stores.folderNudges?.forgetAccount(loginId)
-                    cache.forget(loginId)
+                    try {
+                        cache.forget(loginId)
+                    } catch (error: CacheStorageException) {
+                        throw AccountStorageException(error)
+                    }
                 },
             )
         CacheAccountRepository(repository, logins, accountCache)

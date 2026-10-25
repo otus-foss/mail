@@ -11,10 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import com.otus.avatar.generatedAvatar
-import com.otus.designsystem.elements.Avatar
+import com.otus.designsystem.components.PersonAvatar
 import com.otus.designsystem.elements.SelectionRow
-import com.otus.designsystem.elements.rememberAvatarImage
+import com.otus.designsystem.theme.AvatarTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
@@ -143,9 +142,7 @@ private fun SectionCaption(text: String) {
 
 @Composable
 private fun AccountAvatar(location: MailLocation) {
-    val avatar = location.accountAvatar
-    val fallback = avatar?.fallback ?: generatedAvatar(location.account, location.accountAddress)
-    Avatar(fallback.initials, image = rememberAvatarImage(avatar?.image?.bytes), colorIndex = fallback.colorIndex)
+    PersonAvatar(chipAvatar(location.accountAvatar, location.account, location.accountAddress), AvatarTokens.size)
 }
 
 @Composable

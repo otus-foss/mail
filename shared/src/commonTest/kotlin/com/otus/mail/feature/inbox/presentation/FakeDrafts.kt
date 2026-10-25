@@ -18,7 +18,11 @@ internal class FakeDrafts(
     val discarded = mutableListOf<String>()
     var failure: DraftFailure? = null
 
-    override suspend fun identities(accountId: String) = identities.map { SendIdentity(it.address, it) }
+    override suspend fun identities(accountId: String) =
+        identities
+            .filter {
+                it.accountKey == accountId
+            }.map { SendIdentity(it.address, it) }
 
     override suspend fun save(draft: Draft): Result<String> {
         failure?.let { return Result.failure(DraftException(it)) }
