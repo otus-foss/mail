@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -69,8 +70,22 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = light
                 }
             }
-            App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
+            val secure = behaviorState.behavior.screenSecurity
+            SideEffect { keepScreenPrivate(secure) }
+            IncognitoKeyboard(behaviorState.behavior.incognitoKeyboard) {
+                App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
+            }
         }
+    }
+
+    /** Keeps the window out of screenshots, screen recordings, casting, and the recent apps preview while [on]. */
+    private fun keepScreenPrivate(on: Boolean) {
+        if (on) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setRecentsScreenshotEnabled(!on)
     }
 
     // Switching the launcher icon can close the app on some launchers, so it waits until Mail is hidden.

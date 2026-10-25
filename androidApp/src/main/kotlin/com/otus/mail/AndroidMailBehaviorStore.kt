@@ -47,6 +47,8 @@ class AndroidMailBehaviorStore(
             websiteIcons = preferences.getBoolean(WEBSITE_ICONS, defaults.websiteIcons),
             showQuotes = preferences.getBoolean(SHOW_QUOTES, defaults.showQuotes),
             zenRead = preferences.getBoolean(ZEN_READ, defaults.zenRead),
+            screenSecurity = preferences.getBoolean(SCREEN_SECURITY, defaults.screenSecurity),
+            incognitoKeyboard = preferences.getBoolean(INCOGNITO_KEYBOARD, defaults.incognitoKeyboard),
             recentFrom = decodeAddresses(preferences.getString(RECENT_FROM, null)),
             signatureInReplies = preferences.getBoolean(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = preferences.getInt(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
@@ -78,6 +80,8 @@ class AndroidMailBehaviorStore(
             putBoolean(WEBSITE_ICONS, behavior.websiteIcons)
             putBoolean(SHOW_QUOTES, behavior.showQuotes)
             putBoolean(ZEN_READ, behavior.zenRead)
+            putBoolean(SCREEN_SECURITY, behavior.screenSecurity)
+            putBoolean(INCOGNITO_KEYBOARD, behavior.incognitoKeyboard)
             putString(RECENT_FROM, encodeAddresses(behavior.recentFrom))
             putBoolean(SIGNATURE_IN_REPLIES, behavior.signatureInReplies)
             putInt(UNDO_SEND_SECONDS, behavior.undoSendSeconds)
@@ -101,6 +105,8 @@ class AndroidMailBehaviorStore(
         const val WEBSITE_ICONS = "website_icons"
         const val SHOW_QUOTES = "show_quotes"
         const val ZEN_READ = "read_zen"
+        const val SCREEN_SECURITY = "screen_security"
+        const val INCOGNITO_KEYBOARD = "incognito_keyboard"
         const val RECENT_FROM = "recent_from"
         const val SIGNATURE_IN_REPLIES = "signature_in_replies"
         const val UNDO_SEND_SECONDS = "undo_send_seconds"

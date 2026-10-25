@@ -14,6 +14,7 @@ import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.components.folderActions
 import com.otus.mail.feature.folders.presentation.forget
 import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
@@ -75,6 +76,9 @@ internal class MailStates(
 
     /** Addresses pinned in "Show mail from". */
     val addressPins = AddressPinsState(services.stores.addressPins)
+
+    /** The screen and keyboard protections Settings › Privacy offers on this platform. */
+    val devicePrivacy: DevicePrivacy get() = services.devicePrivacy
 
     /** Null where the platform has no instant pushes, which hides the Notifications page. */
     val notifications = services.instantPush?.let { NotificationSettingsState(it, scope) }

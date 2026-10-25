@@ -12,22 +12,26 @@ import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.components.Subpage
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_verified_user
+import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.designsystem.theme.PageTokens
+import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
  * Settings › Privacy: when mail loads images from other servers, who may always show them
- * ([onOpenAllowed] opens that list), and whether avatars load website icons. Each change is saved
- * at once.
+ * ([onOpenAllowed] opens that list), whether avatars load website icons, and the screen and
+ * keyboard protections that [device] offers. Each change is saved at once.
  */
 @Composable
 fun PrivacyScreen(
     state: MailBehaviorState,
     onOpenAllowed: () -> Unit,
     onBack: () -> Unit,
+    device: DevicePrivacy = DevicePrivacy(),
 ) {
     val behavior = state.behavior
     Subpage("Privacy", onBack) {
@@ -56,6 +60,28 @@ fun PrivacyScreen(
                 description = "Logos from sender websites and DuckDuckGo, which see your IP address",
                 icon = Res.drawable.symbol_person,
             )
+        }
+        if (device.screen || device.keyboard) {
+            SettingsSection("This device") {
+                if (device.screen) {
+                    SettingToggleRow(
+                        "Screen security",
+                        checked = behavior.screenSecurity,
+                        onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
+                        description = "Hides Mail in recent apps and blocks screenshots and screen recording",
+                        icon = Res.drawable.symbol_visibility_off,
+                    )
+                }
+                if (device.keyboard) {
+                    SettingToggleRow(
+                        "Incognito keyboard",
+                        checked = behavior.incognitoKeyboard,
+                        onCheckedChange = { on -> state.update { it.copy(incognitoKeyboard = on) } },
+                        description = "Asks the keyboard not to learn from what you type. Some keyboards ignore it.",
+                        icon = Res.drawable.symbol_edit,
+                    )
+                }
+            }
         }
     }
 }

@@ -52,6 +52,8 @@ class IosMailBehaviorStore(
                 )
                     ?: defaults.remoteImages,
             zenRead = bool(ZEN_READ, defaults.zenRead),
+            screenSecurity = bool(SCREEN_SECURITY, defaults.screenSecurity),
+            incognitoKeyboard = bool(INCOGNITO_KEYBOARD, defaults.incognitoKeyboard),
             allowedSenders = decodeAddresses(preferences.stringForKey(ALLOWED_SENDERS)),
         )
     }
@@ -77,6 +79,8 @@ class IosMailBehaviorStore(
         preferences.setObject(MailListLayout.encode(behavior.list), forKey = LIST)
         preferences.setObject(behavior.remoteImages.storageValue, forKey = REMOTE_IMAGES)
         preferences.setBool(behavior.zenRead, forKey = ZEN_READ)
+        preferences.setBool(behavior.screenSecurity, forKey = SCREEN_SECURITY)
+        preferences.setBool(behavior.incognitoKeyboard, forKey = INCOGNITO_KEYBOARD)
         preferences.setObject(encodeAddresses(behavior.allowedSenders), forKey = ALLOWED_SENDERS)
     }
 
@@ -113,6 +117,8 @@ class IosMailBehaviorStore(
         const val ALWAYS_REMOTE_IMAGES = "otus.mail.load_remote_images"
         const val EARLIER_REMOTE_IMAGES = "otus.mail.remote_images"
         const val ZEN_READ = "otus.mail.read_zen"
+        const val SCREEN_SECURITY = "otus.mail.screen_security"
+        const val INCOGNITO_KEYBOARD = "otus.mail.incognito_keyboard"
         const val ALLOWED_SENDERS = "otus.mail.allowed_senders"
 
         fun actionBarKey(place: ActionBarPlace) = "otus.mail.action_bar_${place.storageValue}"
