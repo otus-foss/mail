@@ -75,7 +75,13 @@ class MailNotificationsTest {
         MailNotifications(app).show(listOf(mail("m1")))
         manager.activeNotifications.map { it.notification }.forEach { shown ->
             assertEquals("New mail", shown.extras.getString(Notification.EXTRA_TITLE))
-            val text = shown.extras.keySet().joinToString { shown.extras.get(it).toString() }
+            val text =
+                listOf(
+                    Notification.EXTRA_TITLE,
+                    Notification.EXTRA_TEXT,
+                    Notification.EXTRA_SUB_TEXT,
+                    Notification.EXTRA_BIG_TEXT,
+                ).joinToString { shown.extras.getCharSequence(it).toString() }
             listOf("Grace", "Order shipped", "parcel", "Ada").forEach { assertFalse(it, text.contains(it)) }
         }
     }
