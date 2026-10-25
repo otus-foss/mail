@@ -21,6 +21,7 @@ import com.otus.designsystem.theme.ComposeTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.feature.inbox.domain.SendIdentityKey
 import com.otus.mail.feature.inbox.domain.signature
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 
@@ -37,14 +38,14 @@ internal fun CopySignatureSheet(
 ) {
     var direction by remember { mutableIntStateOf(FROM) }
     var source by remember { mutableStateOf<SendIdentity?>(null) }
-    var targets by remember { mutableStateOf(emptySet<String>()) }
-    val others = signatures.identities.filter { it.id != current.id }
+    var targets by remember { mutableStateOf(emptySet<SendIdentityKey>()) }
+    val others = signatures.identities.filter { it.key != current.key }
     val ready = if (direction == FROM) source != null else targets.isNotEmpty()
     val copy = {
         if (direction == FROM) {
             source?.let { signatures.copy(it, listOf(current)) }
         } else {
-            signatures.copy(current, others.filter { it.id in targets })
+            signatures.copy(current, others.filter { it.key in targets })
         }
         onCopied()
     }
@@ -64,30 +65,33 @@ internal fun CopySignatureSheet(
             color = OtusColors.text3,
         )
         others.forEach { identity ->
-            val sender = identity.sender
-            val preview = identity.signature.preview
-            val chosen = if (direction == FROM) source?.id == identity.id else identity.id in targets
-            PickRow(
-                sender.address,
-                preview.ifEmpty { "No signature" },
-                PickMark(chosen, multiple = direction == TO),
-                onClick =
-                    when {
-                        direction == TO -> {
-                            { targets = if (identity.id in targets) targets - identity.id else targets + identity.id }
-                        }
-
-                        preview.isNotEmpty() -> {
-                            { source = identity }
-                        }
-
-                        else -> {
-                            null
-                        }
-                    },
-            ) { PersonAvatar(sender.chipAvatar(), ComposeTokens.dropdownAvatarSize) }
+            val chosen = if (direction == FROM) source?.key == identity.key else identity.key in targets
+            SignatureCopyRow(identity, chosen, multiple = direction == TO) {
+                if (direction == TO) {
+                    targets = if (identity.key in targets) targets - identity.key else targets + identity.key
+                } else {
+                    source = identity
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun SignatureCopyRow(
+    identity: SendIdentity,
+    chosen: Boolean,
+    multiple: Boolean,
+    onSelect: () -> Unit,
+) {
+    val sender = identity.sender
+    val preview = identity.signature.preview
+    PickRow(
+        sender.address,
+        preview.ifEmpty { "No signature" },
+        PickMark(chosen, multiple = multiple),
+        onClick = onSelect.takeIf { multiple || preview.isNotEmpty() },
+    ) { PersonAvatar(sender.chipAvatar(), ComposeTokens.dropdownAvatarSize) }
 }
 
 private const val FROM = 0

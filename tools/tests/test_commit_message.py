@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check_commit_message import violations
+from check_commit_message import strip_attribution, violations
 
 VALID = "feat(inbox): add avatars\n\n- Show sender photos.\n"
 ROOT = Path(__file__).resolve().parents[2]
@@ -98,9 +98,22 @@ class CommitMessageTests(unittest.TestCase):
     def test_title_length_is_only_a_target(self):
         self.assertFalse(violations("feat(inbox): add " + "a" * 80 + "\n\n- Add a field.\n"))
 
+    def test_strips_ai_attribution_and_keeps_other_footers(self):
+        message = (
+            VALID
+            + "\nRefs: #12\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n"
+            + "co-authored-by: Cursor <cursoragent@cursor.com>\n"
+            + "Co-authored-by: Ada Lovelace <ada@example.org>\n"
+            + "🤖 Generated with [Claude Code](https://claude.com/claude-code)\n"
+        )
+        self.assertEqual(
+            strip_attribution(message),
+            VALID + "\nRefs: #12\nCo-authored-by: Ada Lovelace <ada@example.org>\n",
+        )
+
 
 # Git exports GIT_DIR and similar variables to hooks. Dropping them keeps the test repository
-# separate when checkAll runs from the pre-push hook.
+# separate when checkAll runs inside another Git hook.
 ISOLATED_GIT_ENV = {
     name: value for name, value in os.environ.items() if not name.startswith("GIT_")
 }
@@ -143,7 +156,8 @@ class GitHookTests(unittest.TestCase):
                 self.assertNotEqual(rejected.returncode, 0)
                 self.assertIn("Commit message rejected", rejected.stderr)
                 self.assertNotEqual(git("rev-parse", "--verify", "HEAD", check=False).returncode, 0)
-            git("commit", "--allow-empty", "-m", VALID)
+            attributed = VALID + "\nCo-Authored-By: Claude <noreply@anthropic.com>\n"
+            git("commit", "--allow-empty", "-m", attributed)
             self.assertEqual(git("log", "-1", "--format=%B").stdout.strip(), VALID.strip())
             git("config", "core.commentChar", ";")
             message_file = repo / "message.txt"

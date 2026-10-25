@@ -44,11 +44,18 @@ class OtusMailApplication :
                 ),
             nightly = NightlyUpdates(installer = AndroidUpdateInstaller(this)),
             instantPush = instantPush,
-            pickers = MailPickers(signatureImages, attachmentFiles, AndroidSavedFiles(this), printer),
+            pickers =
+                MailPickers(
+                    AndroidSignatureImages(photoPicker),
+                    attachmentFiles,
+                    AndroidSavedFiles(this),
+                    printer,
+                    AndroidAvatarPhotos(photoPicker),
+                ),
         )
     }
 
-    val signatureImages: AndroidSignatureImages by lazy { AndroidSignatureImages(this) }
+    val photoPicker: AndroidPhotoPicker by lazy { AndroidPhotoPicker(this) }
 
     val attachmentFiles: AndroidAttachmentFiles by lazy { AndroidAttachmentFiles(this) }
 
