@@ -24,6 +24,7 @@ import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.screens.SignatureEditorScreen
 import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
 import com.otus.mail.feature.inbox.presentation.status
+import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
@@ -55,6 +56,7 @@ internal fun MailPageContent(
         }
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
+        MailPage.NotificationOverrides,
         MailPage.SidebarSettings, MailPage.ThemeSettings, MailPage.MailListSettings, MailPage.ActionBarSettings,
         MailPage.Folders, is MailPage.FolderDetail,
         -> {
@@ -119,7 +121,17 @@ private fun SettingsPageContent(
         }
 
         MailPage.Notifications -> {
-            states.notifications?.let { NotificationsScreen(it, states.accounts.accounts, onBack = back) }
+            states.notifications?.let {
+                NotificationsScreen(
+                    it,
+                    states.accounts.accounts,
+                    onBack = back,
+                ) { navigation.go(MailPage.NotificationOverrides) }
+            }
+        }
+
+        MailPage.NotificationOverrides -> {
+            states.notifications?.let { NotificationOverridesScreen(it, states.accounts.accounts, onBack = back) }
         }
 
         MailPage.SidebarSettings -> {

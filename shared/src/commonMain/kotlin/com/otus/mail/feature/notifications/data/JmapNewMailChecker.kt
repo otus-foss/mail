@@ -178,7 +178,7 @@ class JmapNewMailChecker(
         const val MAX_FETCHED = 50
 
         val EMAIL_PROPERTIES =
-            listOf("id", "threadId", "mailboxIds", "keywords", "from", "subject", "preview", "receivedAt")
+            listOf("id", "threadId", "mailboxIds", "keywords", "from", "to", "cc", "subject", "preview", "receivedAt")
         val MEMBER_PROPERTIES = listOf("id", "threadId", "keywords", "receivedAt")
     }
 }
@@ -194,5 +194,6 @@ private fun EmailObject.toNewMail(account: MailAccount): NewMail {
         preview = preview,
         // One malformed date must not stop every later check.
         receivedAt = Instant.parseOrNull(receivedAt) ?: Clock.System.now(),
+        recipients = (to.orEmpty() + cc.orEmpty()).map { it.email },
     )
 }

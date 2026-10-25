@@ -11,6 +11,8 @@ data class NewMail(
     val subject: String,
     val preview: String,
     val receivedAt: Instant,
+    /** The To and Cc addresses, for previews chosen per address. */
+    val recipients: List<String> = emptyList(),
 )
 
 /** Each login's Email state from the last check, keyed by login id. */
