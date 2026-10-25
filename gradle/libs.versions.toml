@@ -9,6 +9,7 @@ android-minSdk = "24"
 androidx-activity = "1.13.0"
 androidx-work = "2.11.0"
 unifiedpush = "3.3.5"
+unifiedpush-fcm = "3.1.0"
 
 robolectric = "4.17"
 roborazzi = "1.76.0"
@@ -32,6 +33,7 @@ otus-designsystem = { module = "com.otus:designsystem", version.ref = "otus-meta
 otus-settings = { module = "com.otus:settings", version.ref = "otus-meta" }
 otus-accounts = { module = "com.otus:accounts", version.ref = "otus-meta" }
 otus-push = { module = "com.otus:push", version.ref = "otus-meta" }
+unifiedpush-fcm = { module = "org.unifiedpush.android:embedded-fcm-distributor", version.ref = "unifiedpush-fcm" }
 unifiedpush-connector = { module = "org.unifiedpush.android:connector", version.ref = "unifiedpush" }
 kotlinx-io = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
