@@ -46,6 +46,7 @@ internal class ContactsState(
     private val files: ContactFiles? = null,
     private val photos: AvatarPhotoPicker? = null,
     private val frequent: FrequentContacts? = null,
+    private val avatars: ContactAvatarUpdates? = null,
 ) {
     var snapshot by mutableStateOf<ContactsSnapshot?>(null)
         private set
@@ -276,9 +277,12 @@ internal class ContactsState(
     /** Drops the refused change of [key], showing the card as the server has it. */
     fun discard(key: CardKey) = sync.drop(key)
 
-    /** Keeps the device's view in step with a change the server accepted. */
+    /** Keeps the device's view, and the avatars mail shows, in step with a change the server accepted. */
     private fun sent(update: (ContactsSnapshot) -> ContactsSnapshot) {
-        snapshot = snapshot?.let(update)
+        val before = snapshot ?: return
+        val after = update(before)
+        snapshot = after
+        avatars?.changed(before.cards, after.cards)
     }
 
     @OptIn(ExperimentalUuidApi::class)
