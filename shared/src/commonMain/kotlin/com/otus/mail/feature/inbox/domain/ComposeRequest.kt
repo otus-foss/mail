@@ -47,6 +47,7 @@ data class OriginalMessage(
     val messageIds: List<String> = emptyList(),
     val references: List<String> = emptyList(),
     val bodyTruncated: Boolean = false,
+    val replyTo: List<MailSender> = emptyList(),
 )
 
 /** The parts of this message a reply or forward quotes and threads with. */
@@ -58,9 +59,20 @@ fun MailMessage.original(): OriginalMessage =
         from = sender,
         to = to,
         cc = cc,
+        replyTo = replyTo,
         sentLabel = "${received.date} ${received.time}",
         body = body,
         messageIds = messageIds,
         references = references,
         bodyTruncated = bodyTruncated,
     )
+
+/** The message a reply or follow-up answers, whose thread it shows. */
+internal val ComposeRequest.answeredOriginal: OriginalMessage?
+    get() =
+        when (this) {
+            is ComposeRequest.Reply -> original
+            is ComposeRequest.FollowUp -> original
+            is ComposeRequest.Resume -> from.answeredOriginal
+            is ComposeRequest.New, is ComposeRequest.Forward -> null
+        }

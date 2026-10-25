@@ -8,6 +8,7 @@ import com.otus.avatar.AvatarService
 import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
+import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
@@ -168,7 +169,13 @@ class InboxFeedState(
                 try {
                     publish(load, fetch(this, load))
                 } catch (expected: InboxStorageException) {
-                    if (load.number == request) notice = "Couldn't load saved accounts. Try again in Settings."
+                    if (load.number == request) {
+                        notice =
+                            when (expected.storage) {
+                                InboxStorage.Accounts -> "Couldn't load saved accounts. Try again in Settings."
+                                InboxStorage.Cache -> "Couldn't save cached mail. Refresh to try again."
+                            }
+                    }
                 } finally {
                     if (load.number == request) onEnd()
                 }

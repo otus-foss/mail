@@ -71,7 +71,7 @@ class SqlMailCache(
         }
     }
 
-    private suspend fun <T> io(block: () -> T): T = withContext(Dispatchers.IO) { block() }
+    private suspend fun <T> io(block: () -> T): T = withContext(Dispatchers.IO) { cacheStorage(block) }
 
     /** Runs each change at once, inside the transaction [write] opened. */
     private inner class SqlWrite(
