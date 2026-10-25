@@ -6,10 +6,13 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.withAccount
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
+import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
@@ -66,7 +69,10 @@ class JmapMailSource(
     override suspend fun cached(
         scope: MailScope,
         query: MailQuery,
-    ): InboxSnapshot = snapshot(selected(scope), scope, query, clock.now(), unavailable = emptyList())
+    ): InboxSnapshot =
+        cacheErrors {
+            snapshot(selected(scope), scope, query, clock.now(), unavailable = emptyList())
+        }
 
     private suspend fun selected(scope: MailScope): List<JmapLogin> =
         withContext(Dispatchers.IO) {
@@ -82,15 +88,16 @@ class JmapMailSource(
         scope: MailScope,
         query: MailQuery,
         sync: suspend MailAccountLists.(ListingsOf) -> Unit,
-    ): InboxSnapshot {
-        val selected = selected(scope)
-        val now = clock.now()
-        val failures =
-            coroutineScope {
-                selected.map { login -> async { syncLogin(login, scope, query, now, sync) } }.awaitAll()
-            }
-        return snapshot(selected, scope, query, now, failures.filterNotNull())
-    }
+    ): InboxSnapshot =
+        cacheErrors {
+            val selected = selected(scope)
+            val now = clock.now()
+            val failures =
+                coroutineScope {
+                    selected.map { login -> async { syncLogin(login, scope, query, now, sync) } }.awaitAll()
+                }
+            snapshot(selected, scope, query, now, failures.filterNotNull())
+        }
 
     /** Why [login] could not be brought up to date, or null when it was or the query reads none of it. */
     private suspend fun syncLogin(
@@ -102,19 +109,21 @@ class JmapMailSource(
     ): UnavailableAccount? {
         val conditions = emailConditions(query, login.id, now, zone()) ?: return null
         return try {
-            val connection = connections.connection(login)
-            val accountId = connection.session().accountFor(JmapCapability.MAIL)
-            if (accountId == null) {
-                UnavailableAccount(login.name, InboxFailure.NoMail)
-            } else {
-                val lists =
-                    MailAccountLists(connection, accountId, login.id, cache, limit) {
-                        clock.now().toEpochMilliseconds()
+            cache.withAccount(login.id) { accountCache ->
+                val connection = connections.connection(login)
+                val accountId = connection.session().accountFor(JmapCapability.MAIL)
+                if (accountId == null) {
+                    UnavailableAccount(login.name, InboxFailure.NoMail)
+                } else {
+                    val lists =
+                        MailAccountLists(connection, accountId, login.id, accountCache, limit) {
+                            clock.now().toEpochMilliseconds()
+                        }
+                    locks.of(login.id).withLock {
+                        lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
                     }
-                locks.of(login.id).withLock {
-                    lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
+                    null
                 }
-                null
             }
         } catch (error: JmapException) {
             UnavailableAccount(login.name, error.toInboxFailure())
@@ -137,8 +146,9 @@ class JmapMailSource(
         val pages =
             selected.flatMap { login ->
                 emailConditions(query, login.id, now, local)
-                    ?.let { cache.cachedPages(login, scope, query, it, local) }
-                    .orEmpty()
+                    ?.let { conditions ->
+                        cache.withAccount(login.id) { it.cachedPages(login, scope, query, conditions, local) }
+                    }.orEmpty()
             }
         val merged = pages.merged(query.filters.sort) { it.receivedAt }
         val messages =
@@ -164,4 +174,11 @@ private fun JmapException.toInboxFailure(): InboxFailure =
         is JmapException.Unsupported -> InboxFailure.NoMail
         is JmapException.Unreachable -> InboxFailure.Unreachable
         else -> InboxFailure.ServerProblem
+    }
+
+private suspend fun <T> cacheErrors(operation: suspend () -> T): T =
+    try {
+        operation()
+    } catch (error: CacheStorageException) {
+        throw InboxStorageException(error, InboxStorage.Cache)
     }

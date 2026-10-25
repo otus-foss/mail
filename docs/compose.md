@@ -10,7 +10,7 @@ the account's Drafts folder and sends them through JMAP `EmailSubmission/set`.
 `ComposeRequest` names what the draft starts from, and `startDraft` builds it:
 
 - **New message** starts blank, in the account the request names or else the first account.
-- **Reply** goes to the original's sender. The subject gets "Re: " unless it already starts with
+- **Reply** goes to the original's Reply-To addresses when present, otherwise its sender. The subject gets "Re: " unless it already starts with
   "Re:" in any case. `inReplyTo` holds the original's Message-ID, and `references` holds its
   References followed by its Message-ID, so the reply stays in the thread. The body starts
   empty. The quote, kept apart from it in `Draft.quote`, is "On <date>, <name> wrote:" and the
@@ -33,7 +33,10 @@ a follow-up from the one that sent it. A new message from one account's inbox co
 account. A new message from all accounts comes from the address used last, which Mail keeps in
 its behavior settings as `recentFrom`. Otherwise the account's first identity is used. Choosing
 an identity of another account moves the draft: the next save stores it in that account's
-Drafts, and the copy in the old account is deleted.
+Drafts before deleting the old account's copy. If the destination save fails, the old copy
+remains. A save already running finishes before the move, so the latest saved copy is retained.
+Undo can reopen unsaved edits with an older saved copy ID. The first save after reopening
+persists those edits; later saves skip content already saved by that compose session.
 
 Delivered-To is not read yet, so a reply to mail that reached the account through an alias that
 is not in To or Cc falls back to the account's first identity.
@@ -98,8 +101,10 @@ draft again as it was. The saved copy is deleted once the toast leaves without U
 
 Attach opens the system document picker for any number of files of any type. Each file uploads
 at once to the draft's account (RFC 8620, section 6.1) and shows as a chip under the body with
-its name and "Uploading…", then its size. A file larger than the session's `maxSizeUpload`
-says "Too large for this server"; any other failure says "Couldn't upload", and tapping the chip
+its name and "Uploading…", then its size. Reads and uploads run one file at a time. The reader
+stops at the smaller of 20 MiB and the session's `maxSizeUpload`, including when the picker reports
+an incorrect size. A file larger than this limit
+says "File is too large"; any other failure says "Couldn't upload", and tapping the chip
 offers Retry. ✕ removes a file. Choosing an identity of another account uploads every file again there,
 because a blob belongs to one account.
 
@@ -139,8 +144,9 @@ address in place, **Add image** (Android only), **Copy**, and **Remove signature
 first. Edits save a second after the last one and when the page closes, with `Identity/set`. A
 failed save puts the old signature back and says so.
 
-An added image is shrunk to at most 600 px wide and about 50 KB: PNG when that is small enough,
-JPEG at falling quality otherwise. It is stored in the signature as a `data:` URI. A selected
+An added image is sampled during decoding, then shrunk to at most 600 px on either side. Its
+encoded size must fit 50 KB: PNG when small enough, JPEG at falling quality otherwise. Mail
+rejects an image that cannot fit the limit. It is stored in the signature as a `data:` URI. A selected
 image has a `text2` outline, a ✕, and one corner handle that keeps its aspect ratio between 48
 and 300 px and snaps to Small (96), Medium (132), or Large (200) within 6 px. The size pill under
 it names the preset or the pixel size. When a draft is saved or sent, each image is uploaded and
@@ -199,7 +205,9 @@ which opens the sheet again; once a time is set the sheet also offers Send now. 
 then reads "Sends to" with the schedule-send symbol. Send sends with an explicit envelope whose `mailFrom`
 carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled for Mon 19 Oct, 8:00" with Undo.
 The scheduled copy stays in Drafts without `$draft` until the server sends it. Undo sets the
-submission's `undoStatus` to `canceled`, marks the copy `$draft` again, and opens it.
+submission's `undoStatus` to `canceled`. Only after the server confirms cancellation does Mail
+mark the copy `$draft` again and open it. If restoring the draft fails, Mail reports that the
+send was canceled but the draft could not be restored.
 
 ## Limits
 

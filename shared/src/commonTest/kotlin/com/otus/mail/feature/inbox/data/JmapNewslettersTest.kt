@@ -15,13 +15,6 @@ import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import com.otus.mail.feature.inbox.presentation.FakeDrafts
 import com.otus.mail.testing.stalwartLike
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.request.HttpRequestData
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.TextContent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,9 +23,7 @@ import kotlin.test.assertTrue
 class JmapNewslettersTest {
     private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
     private val requests = mutableListOf<String>()
-    private val posts = mutableListOf<HttpRequestData>()
     private val sent = mutableListOf<Draft>()
-    private var postStatus = HttpStatusCode.OK
 
     private val newsletter =
         MailMessage(
@@ -48,19 +39,12 @@ class JmapNewslettersTest {
 
     private fun newsletters(reply: (String) -> String = { error("no JMAP call expected: $it") }): JmapNewsletters {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        val web =
-            HttpClient(
-                MockEngine { request ->
-                    posts += request
-                    respond("", postStatus)
-                },
-            )
         val drafts =
             FakeDrafts(
                 listOf(
-                    MailSender("Ada", "ada@alias.example.org"),
-                    MailSender("Ada", "ada@example.org"),
-                    MailSender("Ada", "ada@work.example.org"),
+                    MailSender("Ada", "ada@alias.example.org", login.id),
+                    MailSender("Ada", "ada@example.org", login.id),
+                    MailSender("Ada", "ada@work.example.org", login.id),
                 ),
             )
         val sender =
@@ -73,7 +57,7 @@ class JmapNewslettersTest {
                 requests += body
                 reply(body)
             }
-        return JmapNewsletters(JmapConnections(JmapClient(engine), store), store, web, drafts, sender)
+        return JmapNewsletters(JmapConnections(JmapClient(engine), store), store, drafts, sender)
     }
 
     @Test
@@ -103,29 +87,14 @@ class JmapNewslettersTest {
         }
 
     @Test
-    fun oneClickPostsTheFormToTheListServer() =
+    fun mailtoSendsFromTheAddressTheListReached() =
         runTest {
-            val how = Unsubscribe(oneClick = "https://sentry.io/u/1", mail = "mailto:leave@sentry.io")
-            assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(newsletter, how))
-            val post = posts.single()
-            assertEquals(HttpMethod.Post, post.method)
-            assertEquals("https://sentry.io/u/1", post.url.toString())
-            val body = post.body as TextContent
-            assertEquals("List-Unsubscribe=One-Click", body.text)
-            assertEquals("application/x-www-form-urlencoded", body.contentType.toString())
-            assertTrue(sent.isEmpty(), "No email when the POST worked")
-        }
-
-    @Test
-    fun aRefusedPostFallsBackToTheMailtoAddress() =
-        runTest {
-            postStatus = HttpStatusCode.InternalServerError
-            val how = Unsubscribe(oneClick = "https://sentry.io/u/1", mail = "mailto:leave@sentry.io?subject=stop")
+            val how = Unsubscribe(mail = "mailto:leave@sentry.io?subject=stop")
             assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(newsletter, how))
             val draft = sent.single()
             assertEquals(listOf("leave@sentry.io"), draft.to.map { it.address })
             assertEquals("stop", draft.subject)
-            assertEquals("ada@work.example.org", draft.from?.address, "Sent from the address the list writes to")
+            assertEquals("ada@work.example.org", draft.from?.address)
         }
 
     @Test
@@ -147,17 +116,16 @@ class JmapNewslettersTest {
         }
 
     @Test
-    fun withoutPostOrMailTheUserFinishesOnTheWeb() =
+    fun withoutMailTheUserFinishesOnTheWeb() =
         runTest {
             val newsletters = newsletters()
             assertEquals(
                 UnsubscribeResult.OpenLink("http://sentry.io/u/1"),
                 newsletters.unsubscribe(
                     newsletter,
-                    Unsubscribe(oneClick = "http://sentry.io/u/1", web = "http://sentry.io/u/1"),
+                    Unsubscribe(web = "http://sentry.io/u/1"),
                 ),
             )
-            assertTrue(posts.isEmpty(), "Plain http never gets the POST")
             assertEquals(UnsubscribeResult.Failed, newsletters.unsubscribe(newsletter, Unsubscribe()))
         }
 

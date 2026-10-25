@@ -36,4 +36,28 @@ At each start the app removes cached bodies of mail received more than 90 days a
 until sync replaces or destroys them.
 
 Removing an account calls `MailCache.forget`, which deletes every object and value of that login
-before the login itself goes.
+before the login itself goes. Removal also cancels in-flight cache work for that account.
+Each operation uses an account generation, so an old request cannot repopulate the cache after
+removal or write into a later connection with the same login ID. Reconnecting a login only
+starts a new generation and keeps its cached mail.
+
+If credential deletion or its preceding cleanup fails, the retained login can start new cache
+operations again. Requests from before the attempted removal remain canceled and cannot write
+into the restored account generation. A completed removal stays inactive.
+
+## Storage failures
+
+SQLite disk-full, I/O, corruption, permission, read-only, and lock errors become
+`CacheStorageException`. Cancellation and programming errors propagate unchanged. App wiring
+switches a disk cache with a permanent failure to an empty memory cache for the rest of the
+process. Reads then act as cache misses, and server sync fills the memory cache. The database is
+retried after restart.
+
+`SQLITE_BUSY` and `SQLITE_LOCKED` mean another connection holds the database, so they are marked
+transient. A transient error fails only that operation, and callers handle it like any other
+cache error. The next operation uses the disk cache again.
+
+A failed inbox write raises the existing recoverable storage error so the loaded list stays on
+screen until retry. Fresh message bodies and folder lists still open when saving their local copy
+fails. Confirmed server mutations remain successful even if their cache patch fails. Account
+removal always attempts disk cleanup and reports an account-storage error if that cleanup fails.
