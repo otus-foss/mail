@@ -60,6 +60,8 @@ def version_outputs(repository):
         "meta_sha": meta_sha,
         "previous_mail": previous_mail,
         "previous_meta": previous_meta,
+        # Notes fall back to commits since this date when a revision is missing or unreachable.
+        "previous_date": (published or {}).get("published_at") or "",
     }
     if (mail_sha, meta_sha) != (previous_mail, previous_meta):
         # Draft releases reserve their tags even when their assets were never published.
