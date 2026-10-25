@@ -7,8 +7,8 @@ import com.otus.avatar.AvatarImageLoader
 import com.otus.avatar.AvatarOrigin
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
-import com.otus.avatar.ContactPhotoSource
 import com.otus.avatar.StoredAvatar
+import com.otus.mail.core.avatar.photoSource
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -33,7 +33,7 @@ class InboxAvatarTest {
             val urls = mutableListOf<String>()
             val avatars =
                 AvatarService(
-                    ContactPhotoSource { _, external ->
+                    photoSource { _, external ->
                         assertTrue(external)
                         null
                     },
@@ -75,7 +75,7 @@ class InboxAvatarTest {
             var calls = 0
             val avatars =
                 AvatarService(
-                    ContactPhotoSource { _, _ ->
+                    photoSource { _, _ ->
                         calls++
                         entered.complete(Unit)
                         release.await()
@@ -112,7 +112,7 @@ class InboxAvatarTest {
             var iconCalls = 0
             val avatars =
                 AvatarService(
-                    ContactPhotoSource { sender, _ ->
+                    photoSource { sender, _ ->
                         contactCalls++
                         if (sender.email.startsWith("new")) release.await()
                         null
@@ -231,7 +231,7 @@ class InboxAvatarTest {
             val image = AvatarImage(byteArrayOf(2))
             val avatars =
                 AvatarService(
-                    ContactPhotoSource { request, _ ->
+                    photoSource { request, _ ->
                         image.takeIf {
                             request.email ==
                                 "me@work.example"
