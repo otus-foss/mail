@@ -115,6 +115,8 @@ val screenshots = layout.projectDirectory.dir("src/test/screenshots")
 val recordScreenshots = providers.gradleProperty("roborazzi.record").isPresent
 
 tasks.withType<Test>().configureEach {
+    // Robolectric UI tests are most of checkAll; two JVMs roughly halve them for about 1 GB more RAM.
+    maxParallelForks = 2
     inputs.dir(screenshots).withPropertyName("screenshots").optional()
     systemProperty(if (recordScreenshots) "roborazzi.test.record" else "roborazzi.test.verify", "true")
     jvmArgs(
