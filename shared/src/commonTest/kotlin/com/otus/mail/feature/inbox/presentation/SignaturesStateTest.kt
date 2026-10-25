@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.feature.inbox.domain.SendIdentityKey
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.signature
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,11 +44,11 @@ class SignaturesStateTest {
     fun copyingToOthersSavesTheSignatureOnEachOfThem() =
         runTest {
             val state = state()
-            val source = state.identity("sales@companya.com")!!.copy(textSignature = "Company A Sales")
-            state.copy(source, listOf(state.identity("support@companya.com")!!))
+            val source = state.identity(SendIdentityKey("a1", sales.address))!!.copy(textSignature = "Company A Sales")
+            state.copy(source, listOf(state.identity(SendIdentityKey("a1", support.address))!!))
             runCurrent()
             assertEquals(listOf("support@companya.com" to Signature(text = "Company A Sales")), saved)
-            assertEquals("Company A Sales", state.identity("support@companya.com")?.signature?.text)
+            assertEquals("Company A Sales", state.identity(SendIdentityKey("a1", support.address))?.signature?.text)
             assertNull(state.notice)
         }
 
@@ -56,9 +57,9 @@ class SignaturesStateTest {
         runTest {
             val state = state()
             failing = true
-            state.save(state.identity("sales@companya.com")!!, Signature(text = "New"))
+            state.save(state.identity(SendIdentityKey("a1", sales.address))!!, Signature(text = "New"))
             runCurrent()
-            assertEquals("", state.identity("sales@companya.com")?.textSignature)
+            assertEquals("", state.identity(SendIdentityKey("a1", sales.address))?.textSignature)
             assertNotNull(state.notice)
         }
 
