@@ -7,7 +7,8 @@ package com.otus.mail.feature.inbox.domain
  * [sidebar] arranges the sidebar. [actionBar] holds each place's bar, and [actionBarMode] picks
  * whether places use their own or the Everywhere bar. A [minimizedBar] shows only its primary,
  * as a round button. A null swipe does nothing. [websiteIcons] lets sender avatars load images
- * from outside the user's servers, such as sender websites and DuckDuckGo. [recentFrom] holds the
+ * from outside the user's servers, such as sender websites, and [duckDuckGoIcons] also asks
+ * DuckDuckGo's icon cache for a site without an icon. [recentFrom] holds the
  * addresses the user last sent from, newest first, which compose offers first and a new message
  * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
  * forwards too; new messages always get it. [undoSendSeconds] holds each sent message on the device
@@ -16,8 +17,10 @@ package com.otus.mail.feature.inbox.domain
  * servers, and [allowedSenders] are the lowercase addresses whose images always load.
  * [showQuotes] shows a reply's quoted text even when earlier messages of its conversation are a
  * swipe away; off, the Read view leaves that text out. [zenRead] keeps the Read view to the
- * message, its control panel, and its bar. [photoCleaning] decides whether attached photos lose
- * their metadata and file names.
+ * message, its control panel, and its bar. [screenSecurity] keeps Mail out of screenshots, screen
+ * recordings, and recent apps, and [incognitoKeyboard] asks the keyboard not to learn from what the
+ * user types, where [DevicePrivacy] allows them. [photoCleaning] decides whether attached photos
+ * lose their metadata and file names.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -29,7 +32,8 @@ data class MailBehavior(
     val actionBar: Map<ActionBarPlace, ActionBarLayout> = ActionBarPlace.entries.associateWith { it.defaultLayout },
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
     val minimizedBar: Boolean = false,
-    val websiteIcons: Boolean = true,
+    val websiteIcons: Boolean = false,
+    val duckDuckGoIcons: Boolean = false,
     val recentFrom: List<String> = emptyList(),
     val signatureInReplies: Boolean = true,
     val undoSendSeconds: Int = DEFAULT_UNDO_SEND_SECONDS,
@@ -40,6 +44,8 @@ data class MailBehavior(
     val allowedSenders: List<String> = emptyList(),
     val showQuotes: Boolean = false,
     val zenRead: Boolean = false,
+    val screenSecurity: Boolean = false,
+    val incognitoKeyboard: Boolean = true,
     val photoCleaning: PhotoCleaning = PhotoCleaning.Ask,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */

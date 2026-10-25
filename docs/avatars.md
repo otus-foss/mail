@@ -12,14 +12,19 @@ with its MPL 2.0 notice in `public_suffix_list_MPL-2.0.txt`. Android and iOS ent
 ## Website icons
 
 The **Website icons** switch under Settings › Privacy decides whether
-avatars may load images from servers other than the user's own. It is on by default and is saved
-with the other behavior settings in `MailBehavior.websiteIcons`. `mailAvatarOptions` turns it into
-`AvatarOptions`: while it is on, `externalContactImages`, `domainIcons`, and `domainIconProxy` are
+avatars may load images from servers other than the user's own. It is off by default and is saved
+with the other behavior settings in `MailBehavior.websiteIcons`, under a key of its own since it
+turned off by default: the earlier key held on for anyone who saved any setting. `mailAvatarOptions`
+turns it into `AvatarOptions`: while it is on, `externalContactImages` and `domainIcons` are
 enabled for inbox senders, account avatars, and the senders of folder rules. Contacts with linked
-photos and senders without a contact photo then show images automatically. `MailServices` injects
-a `DomainIconSource` that requests `https://icons.duckduckgo.com/ip3/{domain}.ico`, which receives
-only the website domain. Linked photo hosts, sender websites, and DuckDuckGo each see the device's
-IP address when Mail looks up an avatar.
+photos and senders without a contact photo then show images automatically. Linked photo hosts and
+sender websites each see the device's IP address, and a sender's website learns that its mail was
+listed.
+
+While Website icons is on, **Ask DuckDuckGo** (`MailBehavior.duckDuckGoIcons`, off by default)
+also enables `domainIconProxy`. `MailServices` injects a `DomainIconSource` that requests
+`https://icons.duckduckgo.com/ip3/{domain}.ico` for a site without an icon. DuckDuckGo receives the
+website domain and the device's IP address.
 
 Turned off, Mail loads only contact photos stored as JMAP blobs or embedded data URIs, which come
 from the user's own JMAP server; other senders show initials. Contact cache keys include the

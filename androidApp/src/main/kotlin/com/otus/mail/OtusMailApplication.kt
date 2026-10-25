@@ -11,6 +11,7 @@ import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
+import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.push.PushSubscriptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +42,7 @@ class OtusMailApplication :
                     AndroidAddressPinStore(this),
                     AndroidFolderNudgeStore(this),
                     SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
+                    AndroidNotificationPreviewStore(this),
                 ),
             nightly = NightlyUpdates(installer = AndroidUpdateInstaller(this)),
             instantPush = instantPush,
@@ -52,6 +54,7 @@ class OtusMailApplication :
                     printer,
                     AndroidAvatarPhotos(photoPicker),
                 ),
+            devicePrivacy = DevicePrivacy(screen = true, keyboard = true),
         )
     }
 

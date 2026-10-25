@@ -39,6 +39,7 @@ class IosMailBehaviorStore(
                 ActionBarMode.fromStorageValue(preferences.stringForKey(ACTION_BAR_MODE)) ?: defaults.actionBarMode,
             minimizedBar = bool(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = bool(WEBSITE_ICONS, defaults.websiteIcons),
+            duckDuckGoIcons = bool(DUCKDUCKGO_ICONS, defaults.duckDuckGoIcons),
             recentFrom = decodeAddresses(preferences.stringForKey(RECENT_FROM)),
             signatureInReplies = bool(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
@@ -53,6 +54,8 @@ class IosMailBehaviorStore(
                 )
                     ?: defaults.remoteImages,
             zenRead = bool(ZEN_READ, defaults.zenRead),
+            screenSecurity = bool(SCREEN_SECURITY, defaults.screenSecurity),
+            incognitoKeyboard = bool(INCOGNITO_KEYBOARD, defaults.incognitoKeyboard),
             photoCleaning = PhotoCleaning.decode(preferences.stringForKey(PHOTO_CLEANING)),
             allowedSenders = decodeAddresses(preferences.stringForKey(ALLOWED_SENDERS)),
         )
@@ -71,6 +74,7 @@ class IosMailBehaviorStore(
         preferences.setObject(behavior.actionBarMode.storageValue, forKey = ACTION_BAR_MODE)
         preferences.setBool(behavior.minimizedBar, forKey = MINIMIZED_BAR)
         preferences.setBool(behavior.websiteIcons, forKey = WEBSITE_ICONS)
+        preferences.setBool(behavior.duckDuckGoIcons, forKey = DUCKDUCKGO_ICONS)
         preferences.setObject(encodeAddresses(behavior.recentFrom), forKey = RECENT_FROM)
         preferences.setBool(behavior.signatureInReplies, forKey = SIGNATURE_IN_REPLIES)
         preferences.setInteger(behavior.undoSendSeconds.toLong(), forKey = UNDO_SEND_SECONDS)
@@ -79,6 +83,8 @@ class IosMailBehaviorStore(
         preferences.setObject(MailListLayout.encode(behavior.list), forKey = LIST)
         preferences.setObject(behavior.remoteImages.storageValue, forKey = REMOTE_IMAGES)
         preferences.setBool(behavior.zenRead, forKey = ZEN_READ)
+        preferences.setBool(behavior.screenSecurity, forKey = SCREEN_SECURITY)
+        preferences.setBool(behavior.incognitoKeyboard, forKey = INCOGNITO_KEYBOARD)
         preferences.setObject(behavior.photoCleaning.storageValue, forKey = PHOTO_CLEANING)
         preferences.setObject(encodeAddresses(behavior.allowedSenders), forKey = ALLOWED_SENDERS)
     }
@@ -103,7 +109,11 @@ class IosMailBehaviorStore(
         const val SIDEBAR = "otus.mail.sidebar_layout"
         const val ACTION_BAR_MODE = "otus.mail.action_bar_mode"
         const val MINIMIZED_BAR = "otus.mail.action_bar_minimized"
-        const val WEBSITE_ICONS = "otus.mail.website_icons"
+
+        // Website icons moved here when they turned off by default, since the earlier key held on for
+        // anyone who saved any setting.
+        const val WEBSITE_ICONS = "otus.mail.load_website_icons"
+        const val DUCKDUCKGO_ICONS = "otus.mail.duckduckgo_icons"
         const val RECENT_FROM = "otus.mail.recent_from"
         const val SIGNATURE_IN_REPLIES = "otus.mail.signature_in_replies"
         const val UNDO_SEND_SECONDS = "otus.mail.undo_send_seconds"
@@ -116,6 +126,8 @@ class IosMailBehaviorStore(
         const val ALWAYS_REMOTE_IMAGES = "otus.mail.load_remote_images"
         const val EARLIER_REMOTE_IMAGES = "otus.mail.remote_images"
         const val ZEN_READ = "otus.mail.read_zen"
+        const val SCREEN_SECURITY = "otus.mail.screen_security"
+        const val INCOGNITO_KEYBOARD = "otus.mail.incognito_keyboard"
         const val PHOTO_CLEANING = "otus.mail.photo_cleaning"
         const val ALLOWED_SENDERS = "otus.mail.allowed_senders"
 

@@ -30,6 +30,7 @@ import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.components.BackHandler
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel
@@ -71,7 +72,9 @@ fun App(
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
     // Changing Website icons stops the inbox's avatar lookups at once and looks again with the new choice.
     LaunchedEffect(states) {
-        snapshotFlow { behaviorState.behavior.websiteIcons }.drop(1).collect { states.feed.refresh() }
+        snapshotFlow { behaviorState.behavior.let { it.websiteIcons to it.duckDuckGoIcons } }
+            .drop(1)
+            .collect { states.feed.refresh() }
     }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
@@ -86,6 +89,9 @@ fun App(
             LocalBottomClearance provides remember { BottomClearance() },
         ) {
             Box(Modifier.fillMaxSize()) {
+                // Back from another sidebar page returns to the inbox, so only the inbox's back closes
+                // Mail. Pages and sheets shown later take back first.
+                BackHandler(enabled = page.parent == null && page != MailPage.Inbox) { page = MailPage.Inbox }
                 // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
                 SidebarSwipeArea(sidebar, enabled = page.parent == null) {
                     SlidingPages(page, depth = MailPage::depth) { shown ->

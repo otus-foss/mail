@@ -45,6 +45,7 @@ class JmapNewslettersTest {
                     MailSender("Ada", "ada@alias.example.org", login.id),
                     MailSender("Ada", "ada@example.org", login.id),
                     MailSender("Ada", "ada@work.example.org", login.id),
+                    MailSender("Ada", "*@catch.example.org", login.id),
                 ),
             )
         val sender =
@@ -107,12 +108,24 @@ class JmapNewslettersTest {
         }
 
     @Test
-    fun withoutAKnownRecipientTheSignInAddressSendsNeverAnotherAlias() =
+    fun withoutAKnownRecipientNoAddressOfTheUserIsRevealed() =
         runTest {
             val bcc = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.io")))
-            val how = Unsubscribe(mail = "mailto:leave@sentry.io")
-            assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(bcc, how))
-            assertEquals("ada@example.org", sent.single().from?.address)
+            val newsletters = newsletters()
+            val mailOnly = Unsubscribe(mail = "mailto:leave@sentry.io")
+            assertEquals(UnsubscribeResult.Failed, newsletters.unsubscribe(bcc, mailOnly))
+            val both = Unsubscribe(web = "https://sentry.io/u/1", mail = "mailto:leave@sentry.io")
+            assertEquals(UnsubscribeResult.OpenLink("https://sentry.io/u/1"), newsletters.unsubscribe(bcc, both))
+            assertTrue(sent.isEmpty(), "Neither the sign-in address nor another alias writes to the list: $sent")
+        }
+
+    @Test
+    fun aCatchAllAliasUnsubscribesFromTheExactAddressTheListReached() =
+        runTest {
+            val shop = newsletter.copy(to = listOf(MailSender("Digest", "digest@sentry.io")))
+            val how = Unsubscribe(mail = "mailto:leave@sentry.io", deliveredTo = listOf("Sentry@Catch.example.org"))
+            assertEquals(UnsubscribeResult.Done, newsletters().unsubscribe(shop, how))
+            assertEquals("sentry@catch.example.org", sent.single().from?.address)
         }
 
     @Test

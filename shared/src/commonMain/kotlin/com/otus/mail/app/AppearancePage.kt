@@ -76,7 +76,12 @@ internal fun PrivacyPage(
     if (page == MailPage.AllowedSenders) {
         AllowedSendersScreen(states.behavior, onBack = back)
     } else {
-        PrivacyScreen(states.behavior, onOpenAllowed = { navigation.go(MailPage.AllowedSenders) }, onBack = back)
+        PrivacyScreen(
+            states.behavior,
+            onOpenAllowed = { navigation.go(MailPage.AllowedSenders) },
+            onBack = back,
+            device = states.devicePrivacy,
+        )
     }
 }
 
