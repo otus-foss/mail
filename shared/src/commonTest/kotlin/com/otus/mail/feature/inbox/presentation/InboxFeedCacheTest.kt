@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.feature.inbox.domain.InboxStorage
+import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
@@ -75,5 +77,22 @@ class InboxFeedCacheTest {
             assertEquals(listOf("later"), state.messages.map { it.id })
             source.loads.forEach { it.complete(snapshot("later")) }
             runCurrent()
+        }
+
+    @Test
+    fun aFailedCacheWriteKeepsTheListAndAsksForARefresh() =
+        runTest {
+            val source = GatedSource()
+            val state = InboxFeedState(source, this)
+            state.refresh()
+            runCurrent()
+            source.cachedReads.single().complete(snapshot("kept"))
+            source.loads.single().completeExceptionally(
+                InboxStorageException(IllegalStateException("disk full"), InboxStorage.Cache),
+            )
+            runCurrent()
+            assertEquals(listOf("kept"), state.messages.map { it.id })
+            assertEquals("Couldn't save cached mail. Refresh to try again.", state.notice)
+            assertFalse(state.loading)
         }
 }

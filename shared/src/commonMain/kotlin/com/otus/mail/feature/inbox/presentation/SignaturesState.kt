@@ -7,6 +7,7 @@ import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.SignatureImage
+import com.otus.mail.feature.inbox.domain.SignatureImagePick
 import com.otus.mail.feature.inbox.domain.SignatureImages
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import com.otus.mail.feature.inbox.domain.signature
@@ -17,8 +18,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Every identity's signature for Settings › Signatures. Changes show at once and save to the
- * server; a failed save puts the old signature back and shows a [notice]. [images] picks images
- * where the platform can.
+ * server; a failed save puts the old signature back and shows a [notice], as does an image that
+ * can't be used. [images] picks images where the platform can.
  */
 class SignaturesState(
     private val drafts: DraftRepository,
@@ -53,7 +54,18 @@ class SignaturesState(
         targets: List<SendIdentity>,
     ) = saveAll(targets, source.signature)
 
-    suspend fun pickImage(): SignatureImage? = images?.pick()
+    /** Picks an image, or shows a [notice] when the picked one can't be used. Null when there is none. */
+    suspend fun pickImage(): SignatureImage? {
+        val pick = images?.pick() ?: return null
+        notice =
+            when (pick) {
+                is SignatureImagePick.Picked -> null
+                SignatureImagePick.Cancelled -> notice
+                SignatureImagePick.TooLarge -> "This image is too large for a signature. Pick a smaller one."
+                SignatureImagePick.Unreadable -> "Couldn't read this image. Pick another one."
+            }
+        return (pick as? SignatureImagePick.Picked)?.image
+    }
 
     private fun saveAll(
         targets: List<SendIdentity>,

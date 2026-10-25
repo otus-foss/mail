@@ -5,12 +5,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import com.otus.designsystem.components.PersonAvatar
 import com.otus.designsystem.components.RuleChip
 import com.otus.designsystem.components.SettingToggleRow
-import com.otus.designsystem.elements.Avatar
 import com.otus.designsystem.elements.Chip
 import com.otus.designsystem.elements.SelectionRow
-import com.otus.designsystem.elements.rememberAvatarImage
+import com.otus.designsystem.theme.AvatarTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.SheetTokens
@@ -57,7 +57,7 @@ internal fun RuleSuggestionList(
 @Composable
 private fun SuggestionAvatar(condition: RuleCondition) {
     val avatar = condition.chipText().chipLine().avatar ?: return
-    Avatar(avatar.initials, image = rememberAvatarImage(avatar.imageBytes), colorIndex = avatar.colorIndex)
+    PersonAvatar(avatar, AvatarTokens.size)
 }
 
 /** The chip [condition] adds to the folder, under what it does. */
