@@ -41,10 +41,10 @@ class SignatureEditorState(
 
     /** Copies every edit of the text or images to the identity, after a pause. Runs until cancelled. */
     suspend fun follow() {
-        snapshotFlow { Triple(identity.id, text.html, images) }
+        snapshotFlow { Triple(identity.key, text.html, images) }
             .drop(1)
             .collectLatest { (id, _, _) ->
-                if (id != identity.id) return@collectLatest
+                if (id != identity.key) return@collectLatest
                 delay(saveDelayMillis)
                 save()
             }
@@ -92,7 +92,7 @@ class SignatureEditorState(
         val signature = current()
         if (signature == stored) return
         stored = signature
-        signatures.save(signatures.identity(identity.id) ?: identity, signature)
+        signatures.save(signatures.identity(identity.key) ?: identity, signature)
     }
 
     private fun current(): Signature = Signature(SignatureParts(text.html, images).html(), text.text)
