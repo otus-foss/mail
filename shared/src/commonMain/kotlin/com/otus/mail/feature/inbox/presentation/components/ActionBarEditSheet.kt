@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.PreviewCard
 import com.otus.designsystem.components.SheetFrame
 import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.IconButtonLook
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_content_copy
@@ -50,7 +51,7 @@ internal fun ActionBarEditSheet(
             IconButton("Copy to other screens", {
                 copyNext = true
                 done()
-            }, outlined = false) { Symbol(Res.drawable.symbol_content_copy) }
+            }, look = IconButtonLook.Plain) { Symbol(Res.drawable.symbol_content_copy) }
         },
     ) {
         Column(

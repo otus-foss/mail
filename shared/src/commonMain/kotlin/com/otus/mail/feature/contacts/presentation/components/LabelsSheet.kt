@@ -23,13 +23,6 @@ import com.otus.designsystem.resources.symbol_label
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
 
-/** The custom labels in use, how many cards carry each, and removing one from all of them. */
-internal class ContactLabels(
-    val names: List<String>,
-    val uses: (String) -> Int,
-    val delete: (String) -> Unit,
-)
-
 /**
  * Adds custom labels and lists the ones in use with how many saved cards use each, including labels
  * only the open contact uses so far. Delete asks first, since it changes every one of those cards;
@@ -75,7 +68,8 @@ internal fun LabelsSheet(
                 if (uses == 0) {
                     "No saved card uses it."
                 } else {
-                    "It’s removed from ${if (uses == 1) "1 card" else "$uses cards"}. Those addresses and numbers keep no label."
+                    val cards = if (uses == 1) "1 card" else "$uses cards"
+                    "It’s removed from $cards. Those addresses and numbers keep no label."
                 },
             confirmLabel = "Delete",
             onConfirm = {

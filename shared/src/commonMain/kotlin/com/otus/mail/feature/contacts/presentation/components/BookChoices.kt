@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.PickRow
+import com.otus.designsystem.components.PickRowLayout
 import com.otus.designsystem.components.RowDensity
 import com.otus.designsystem.components.RowGroup
 import com.otus.designsystem.theme.OtusColors
@@ -46,7 +47,7 @@ internal fun BookChoices(
                                 null,
                                 PickMark(book.key == selected),
                                 { onSelect(book) },
-                                density = RowDensity.Compact,
+                                layout = PickRowLayout(RowDensity.Compact),
                             )
                         }
                     },

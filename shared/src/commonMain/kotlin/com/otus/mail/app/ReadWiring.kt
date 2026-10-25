@@ -78,7 +78,8 @@ internal class ReadWiring(
                 ),
             privacy = privacy,
             files = files,
-            services = ReadServices(services.newsletters, services.headers, services.mute, services.blocks, changes),
+            services =
+                ReadServices(services.newsletters, services.headers, services.mute, services.blocks, changes, person),
             effects = effects,
             display =
                 ReadDisplay(
@@ -86,7 +87,6 @@ internal class ReadWiring(
                     zen = { behavior.behavior.zenRead },
                     setZen = { on -> behavior.update { it.copy(zenRead = on) } },
                 ),
-            person = person,
         )
     }
 

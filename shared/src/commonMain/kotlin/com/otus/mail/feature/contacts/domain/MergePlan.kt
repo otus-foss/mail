@@ -59,7 +59,10 @@ data class MergePlan(
     }
 
     companion object {
-        /** A plan that keeps the first name a card has and every address, saved in the first card's first writable book. */
+        /**
+         * A plan that keeps the first name a card has and every address, saved in the first card's
+         * first writable book.
+         */
         fun of(
             cards: List<ContactCard>,
             writable: List<ContactBook>,

@@ -7,6 +7,7 @@ import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.AndroidLoginStore
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailPickers
+import com.otus.mail.app.MailPlatform
 import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.core.cache.MailDatabase
@@ -45,7 +46,6 @@ class OtusMailApplication :
                     AndroidNotificationPreviewStore(this),
                     AndroidContactStore(this),
                 ),
-            nightly = NightlyUpdates(installer = AndroidUpdateInstaller(this)),
             instantPush = instantPush,
             pickers =
                 MailPickers(
@@ -55,7 +55,11 @@ class OtusMailApplication :
                     printer,
                     AndroidAvatarPhotos(photoPicker),
                 ),
-            devicePrivacy = DevicePrivacy(screen = true, keyboard = true),
+            host =
+                MailPlatform(
+                    NightlyUpdates(installer = AndroidUpdateInstaller(this)),
+                    DevicePrivacy(screen = true, keyboard = true),
+                ),
         )
     }
 

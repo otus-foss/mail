@@ -13,6 +13,7 @@ import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.PageNote
 import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.PickRow
+import com.otus.designsystem.components.PickRowLayout
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.components.Subpage
@@ -52,7 +53,7 @@ fun NotificationsScreen(
                         choice.description,
                         PickMark(choice == previews, atStart = true),
                         { state.choosePreviews(choice) },
-                        subtitleLines = PREVIEW_LINES,
+                        layout = PickRowLayout(subtitleLines = PREVIEW_LINES),
                     )
                 }
             }

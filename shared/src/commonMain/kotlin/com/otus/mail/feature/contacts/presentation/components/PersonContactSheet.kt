@@ -31,6 +31,7 @@ import com.otus.mail.feature.contacts.domain.DraftValue
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.addAddress
 import com.otus.mail.feature.contacts.presentation.avatar
+import com.otus.mail.feature.contacts.presentation.book
 import com.otus.mail.feature.contacts.presentation.withAddress
 import com.otus.mail.feature.inbox.domain.MailSender
 

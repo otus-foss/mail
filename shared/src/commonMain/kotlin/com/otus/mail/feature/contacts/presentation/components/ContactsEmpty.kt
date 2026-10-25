@@ -8,9 +8,6 @@ import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.resources.symbol_person_search
 import com.otus.mail.feature.contacts.presentation.ContactsState
 
-/** Why the list has nothing to show. */
-internal enum class ContactsEmptyKind { Loading, NoContacts, Empty, NoMatches }
-
 /** The empty state for [state]'s list, or null when it has rows to show. */
 internal fun emptyKind(
     state: ContactsState,

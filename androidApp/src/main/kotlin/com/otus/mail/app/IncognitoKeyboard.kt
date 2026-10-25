@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import android.os.Build
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import androidx.compose.runtime.Composable
@@ -25,7 +26,11 @@ fun IncognitoKeyboard(
                 object : PlatformTextInputMethodRequest {
                     override fun createInputConnection(outAttributes: EditorInfo): InputConnection =
                         request.createInputConnection(outAttributes).also {
-                            outAttributes.imeOptions = outAttributes.imeOptions or NO_LEARNING
+                            // The flag exists from Android 8; older keyboards have no way to be asked.
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                outAttributes.imeOptions =
+                                    outAttributes.imeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+                            }
                         }
                 },
             )
@@ -33,5 +38,3 @@ fun IncognitoKeyboard(
         content = content,
     )
 }
-
-private const val NO_LEARNING = EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING

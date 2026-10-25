@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ContactEntry
 import com.otus.designsystem.components.ContactHeader
 import com.otus.designsystem.components.ContactValueRow
+import com.otus.designsystem.components.EntryTaps
 import com.otus.designsystem.components.InfoStrip
 import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.components.OptionsMenu
@@ -45,14 +46,6 @@ import com.otus.mail.feature.contacts.presentation.icon
 import com.otus.mail.feature.contacts.presentation.owner
 import com.otus.mail.feature.contacts.presentation.text
 
-/** What one person's page shows besides the header: their books, groups, and a refused change. */
-internal class PersonFacts(
-    val person: ContactPerson,
-    val booksOf: (ContactCard) -> List<ContactBook>,
-    val groups: List<ContactCard>,
-    val saveElsewhere: ContactBook?,
-)
-
 /**
  * A person's values in titled groups: addresses; then numbers, birthday, groups, and note
  * together under Details, each marked by its icon; then where it is saved.
@@ -67,78 +60,96 @@ internal fun ContactDetails(
     modifier: Modifier = Modifier,
 ) {
     val person = facts.person
-    val main = person.main
     Column(modifier, verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) {
-        (person.cards.firstNotNullOfOrNull { (it.sync as? CardSync.Refused)?.reason })?.let { reason ->
-            InfoStrip(
-                Res.drawable.symbol_cloud_off,
-                "Not saved",
-                reason.text(),
-                facts.saveElsewhere?.let {
-                    StripAction(
-                        "Save to ${it.name}",
-                        Res.drawable.symbol_drive_file_move,
-                        onSaveElsewhere,
-                    )
-                },
-            )
-        }
-        ContactHeader(person.avatar, listOfNotNull(main.role))
-        if (person.emails.isNotEmpty()) {
-            // With several addresses, the primary one, which Mail fills in first, stands out.
-            val primary = person.emails.first().takeIf { person.emails.size > 1 }
-            Section(
-                "Email",
-                person.emails.map { email ->
-                    {
-                        ContactValueRow(
-                            email.value,
-                            "Primary".takeIf { email == primary },
-                            label = email.label.text,
-                            highlighted = email == primary,
-                            onClick = { onWriteTo(email.value) },
-                        )
-                    }
-                },
-            )
-        }
-        Section(
-            "Details",
-            buildList {
-                person.cards.flatMap { it.phones }.distinctBy { it.value }.forEach { phone ->
-                    add {
-                        ContactValueRow(
-                            formatPhone(phone.value),
-                            null,
-                            icon = Res.drawable.symbol_call,
-                            label = phone.label.text,
-                            onClick = { onCopyNumber(phone.value) },
-                        )
-                    }
-                }
-                person.birthday?.let { add { ContactValueRow(it.text(), null, icon = Res.drawable.symbol_cake) } }
-                if (facts.groups.isNotEmpty()) {
-                    val names = facts.groups.joinToString(", ") { it.displayName }
-                    add { ContactValueRow(names, null, icon = Res.drawable.symbol_group) }
-                }
-                person.note?.let { add { ContactValueRow(it, null, icon = Res.drawable.symbol_notes) } }
-            },
-        )
-        Section(
-            "Saved in",
-            person.cards.flatMap { card -> facts.booksOf(card).map { card to it } }.map { (card, book) ->
-                {
-                    ContactValueRow(
-                        book.name,
-                        listOfNotNull(book.owner(), "Read-only".takeUnless { book.canWrite }).joinToString(" · "),
-                        icon = book.icon,
-                        onClick = { onOpen(card.key) }.takeIf { person.cards.size > 1 },
-                    )
-                }
-            },
-        )
+        RefusedStrip(facts, onSaveElsewhere)
+        ContactHeader(person.avatar, listOfNotNull(person.main.role))
+        Section("Email", emailRows(person, onWriteTo))
+        Section("Details", detailRows(facts, onCopyNumber))
+        Section("Saved in", savedInRows(facts, onOpen))
         if (person.cards.size > 1) {
             PageNote("Shown as one person. The cards stay separate on your server.")
+        }
+    }
+}
+
+/** Says a change was not saved and why, offering another book when one can take the card. */
+@Composable
+private fun RefusedStrip(
+    facts: PersonFacts,
+    onSaveElsewhere: () -> Unit,
+) {
+    val reason = facts.person.cards.firstNotNullOfOrNull { (it.sync as? CardSync.Refused)?.reason } ?: return
+    InfoStrip(
+        Res.drawable.symbol_cloud_off,
+        "Not saved",
+        reason.text(),
+        facts.saveElsewhere?.let {
+            StripAction("Save to ${it.name}", Res.drawable.symbol_drive_file_move, onSaveElsewhere)
+        },
+    )
+}
+
+/** One row per address, each writing to it. */
+private fun emailRows(
+    person: ContactPerson,
+    onWriteTo: (String) -> Unit,
+): List<@Composable () -> Unit> {
+    // With several addresses, the primary one, which Mail fills in first, stands out.
+    val primary = person.emails.firstOrNull()?.takeIf { person.emails.size > 1 }
+    return person.emails.map { email ->
+        {
+            ContactValueRow(
+                email.value,
+                "Primary".takeIf { email == primary },
+                label = email.label.text,
+                highlighted = email == primary,
+                onClick = { onWriteTo(email.value) },
+            )
+        }
+    }
+}
+
+/** Numbers, birthday, groups, and note, each marked by its icon; tapping a number copies it. */
+private fun detailRows(
+    facts: PersonFacts,
+    onCopyNumber: (String) -> Unit,
+): List<@Composable () -> Unit> {
+    val person = facts.person
+    return buildList {
+        person.cards.flatMap { it.phones }.distinctBy { it.value }.forEach { phone ->
+            add {
+                ContactValueRow(
+                    formatPhone(phone.value),
+                    null,
+                    icon = Res.drawable.symbol_call,
+                    label = phone.label.text,
+                    onClick = { onCopyNumber(phone.value) },
+                )
+            }
+        }
+        person.birthday?.let { add { ContactValueRow(it.text(), null, icon = Res.drawable.symbol_cake) } }
+        if (facts.groups.isNotEmpty()) {
+            val names = facts.groups.joinToString(", ") { it.displayName }
+            add { ContactValueRow(names, null, icon = Res.drawable.symbol_group) }
+        }
+        person.note?.let { add { ContactValueRow(it, null, icon = Res.drawable.symbol_notes) } }
+    }
+}
+
+/** Each book holding a card; with several cards, tapping one opens that card alone. */
+private fun savedInRows(
+    facts: PersonFacts,
+    onOpen: (CardKey) -> Unit,
+): List<@Composable () -> Unit> {
+    val person = facts.person
+    return person.cards.flatMap { card -> facts.booksOf(card).map { card to it } }.map { (card, book) ->
+        {
+            ContactValueRow(
+                book.name,
+                listOfNotNull(book.owner(), "Read-only".takeUnless { book.canWrite }).joinToString(" · "),
+                icon = book.icon,
+                onClick = { onOpen(card.key) }.takeIf { person.cards.size > 1 },
+            )
         }
     }
 }
@@ -202,8 +213,7 @@ internal fun GroupMembers(
                         person.name,
                         person.emails.firstOrNull()?.value ?: "No address",
                         person.avatar,
-                        { onOpen(person.main.key) },
-                        onLongClick = onRemove?.let { { open = true } },
+                        EntryTaps({ onOpen(person.main.key) }, onRemove?.let { { open = true } }),
                     )
                     if (open && onRemove != null) {
                         OptionsMenu(

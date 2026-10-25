@@ -50,26 +50,26 @@ data class ContactDraft(
                 name = name(card.name),
                 emails =
                     keptEmails
-                        .mapIndexed { index, it ->
-                            val old = it.id?.let { id -> card.emails?.get(id) }
-                            it.key(index, "e") to
-                                (old ?: EmailAddress(it.value.trim())).copy(
-                                    address = it.value.trim(),
-                                    contexts = it.label.contexts(old?.contexts),
-                                    label = it.label.custom,
-                                    pref = if (it.preferred && keptEmails.size > 1) 1 else null,
+                        .mapIndexed { index, value ->
+                            val old = value.id?.let { id -> card.emails?.get(id) }
+                            value.key(index, "e") to
+                                (old ?: EmailAddress(value.value.trim())).copy(
+                                    address = value.value.trim(),
+                                    contexts = value.label.contexts(old?.contexts),
+                                    label = value.label.custom,
+                                    pref = if (value.preferred && keptEmails.size > 1) 1 else null,
                                 )
                         }.toMap()
                         .takeIf { it.isNotEmpty() },
                 phones =
                     keptPhones
-                        .mapIndexed { index, it ->
-                            val old = it.id?.let { id -> card.phones?.get(id) }
-                            it.key(index, "p") to
-                                (old ?: Phone(it.value.trim())).copy(
-                                    number = it.value.trim(),
-                                    contexts = it.label.contexts(old?.contexts),
-                                    label = it.label.custom,
+                        .mapIndexed { index, value ->
+                            val old = value.id?.let { id -> card.phones?.get(id) }
+                            value.key(index, "p") to
+                                (old ?: Phone(value.value.trim())).copy(
+                                    number = value.value.trim(),
+                                    contexts = value.label.contexts(old?.contexts),
+                                    label = value.label.custom,
                                 )
                         }.toMap()
                         .takeIf { it.isNotEmpty() },

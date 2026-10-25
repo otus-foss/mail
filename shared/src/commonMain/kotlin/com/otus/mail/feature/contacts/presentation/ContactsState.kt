@@ -41,7 +41,7 @@ import kotlin.uuid.Uuid
  */
 internal class ContactsState(
     private val repository: ContactRepository,
-    private val sync: ContactSync,
+    val sync: ContactSync,
     private val scope: CoroutineScope,
     private val files: ContactFiles? = null,
     private val photos: AvatarPhotoPicker? = null,
@@ -119,24 +119,6 @@ internal class ContactsState(
     /** Whether some change has not reached the server yet. */
     val waiting: Int get() = sync.edits.count { it.id !in sync.refused }
 
-    fun book(key: BookKey): ContactBook? = books.firstOrNull { it.key == key }
-
-    fun card(key: CardKey): ContactCard? = cards.firstOrNull { it.key == key }
-
-    /** The person [key]'s card belongs to, joined with any card shown as one with it. */
-    fun person(key: CardKey): ContactPerson? = people.firstOrNull { person -> person.cards.any { it.key == key } }
-
-    /** Group cards whose members include [card]. */
-    fun groupsOf(card: ContactCard): List<ContactCard> =
-        card.card.uid
-            ?.let { uid -> groups.filter { uid in it.members } }
-            .orEmpty()
-
-    fun members(group: ContactCard): List<ContactPerson> {
-        val uids = group.members
-        return people.filter { person -> person.cards.any { it.card.uid in uids } }
-    }
-
     fun refresh() {
         frequent?.refresh()
         if (loading) return
@@ -153,62 +135,6 @@ internal class ContactsState(
         }
     }
 
-    /**
-     * Saves [draft] over [existing], or as a new card in [book]. Returns the card's key, which for a
-     * new card is a device key until the server names it.
-     */
-    fun save(
-        draft: ContactDraft,
-        existing: ContactCard?,
-        book: BookKey,
-    ): CardKey {
-        val edit =
-            if (existing == null) {
-                ContactEdit.Create(newId(), book, draft.applyTo(Card(kind = CardKind.Individual, uid = newUid())))
-            } else {
-                val moved = book !in existing.books
-                val after = draft.applyTo(existing.card)
-                ContactEdit.Update(
-                    newId(),
-                    existing.key,
-                    existing.card,
-                    if (moved) after.copy(addressBookIds = mapOf(book.bookId to true)) else after,
-                )
-            }
-        sync.add(edit, ::sent)
-        return edit.key
-    }
-
-    fun delete(keys: Collection<CardKey>) {
-        keys.forEach { key -> sync.add(ContactEdit.Delete(newId(), key), ::sent) }
-        sync.unlink(keys)
-    }
-
-    /** Saves [plan]'s merged card, then removes the others if the plan says so. */
-    fun merge(plan: MergePlan): CardKey {
-        val merged = plan.merged()
-        val target = plan.target
-        val key =
-            if (target == null) {
-                ContactEdit.Create(newId(), plan.book, merged.copy(id = null)).also { sync.add(it, ::sent) }.key
-            } else {
-                sync.add(ContactEdit.Update(newId(), target.key, target.card, merged), ::sent)
-                target.key
-            }
-        delete(plan.removed.map { it.key })
-        sync.dismiss(plan.cards.map { it.key }.toSet())
-        return key
-    }
-
-    /** Shows [keys] as one person without changing the cards. */
-    fun showAsOne(keys: Set<CardKey>) = sync.link(keys)
-
-    /** Lists [keys] as separate people again, undoing [showAsOne]. */
-    fun showSeparately(keys: Collection<CardKey>) = sync.unlink(keys)
-
-    /** Stops suggesting that [keys] are the same person. */
-    fun notDuplicates(keys: Set<CardKey>) = sync.dismiss(keys)
-
     /** Asks for a vCard file and holds it in [importing] for the import sheet. */
     fun pickImport() {
         val files = files ?: return
@@ -219,7 +145,7 @@ internal class ContactsState(
         plan: ImportPlan,
         mode: ImportMode,
     ) {
-        plan.edits(mode, ::newId).forEach { sync.add(it, ::sent) }
+        plan.edits(mode) { newId() }.forEach(::send)
         importing = null
     }
 
@@ -233,49 +159,8 @@ internal class ContactsState(
         }
     }
 
-    /** A new group named [name] in [book] holding [members]. */
-    fun createGroup(
-        name: String,
-        book: BookKey,
-        members: List<ContactCard> = emptyList(),
-    ): CardKey {
-        val group =
-            Card(
-                kind = CardKind.Group,
-                uid = newUid(),
-                name = Name(full = name.trim()),
-                members = members.mapNotNull { it.card.uid }.associateWith { true }.takeIf { it.isNotEmpty() },
-            )
-        return ContactEdit.Create(newId(), book, group).also { sync.add(it, ::sent) }.key
-    }
-
-    /** Adds [cards] to [group]. Cards without a uid cannot be members, so they stay out. */
-    fun addToGroup(
-        group: ContactCard,
-        cards: List<ContactCard>,
-    ) {
-        val members = group.card.members.orEmpty() + cards.mapNotNull { it.card.uid }.associateWith { true }
-        update(group, group.card.copy(members = members))
-    }
-
-    /** Saves [after] over [card], at once on screen and on the server once it is reachable. */
-    fun update(
-        card: ContactCard,
-        after: Card,
-    ) = sync.add(ContactEdit.Update(newId(), card.key, card.card, after), ::sent)
-
-    /** Saves a refused change as a new card in [book] instead. */
-    fun saveElsewhere(
-        key: CardKey,
-        book: BookKey,
-    ) {
-        val card = card(key) ?: return
-        sync.drop(key)
-        sync.add(ContactEdit.Create(newId(), book, card.card.copy(id = null, uid = newUid())), ::sent)
-    }
-
-    /** Drops the refused change of [key], showing the card as the server has it. */
-    fun discard(key: CardKey) = sync.drop(key)
+    /** Queues [edit]: it shows at once and goes to the server once it is reachable. */
+    fun send(edit: ContactEdit) = sync.add(edit, ::sent)
 
     /** Keeps the device's view, and the avatars mail shows, in step with a change the server accepted. */
     private fun sent(update: (ContactsSnapshot) -> ContactsSnapshot) {
@@ -284,13 +169,13 @@ internal class ContactsState(
         snapshot = after
         avatars?.changed(before.cards, after.cards)
     }
-
-    @OptIn(ExperimentalUuidApi::class)
-    private fun newId(): String = Uuid.random().toString()
-
-    @OptIn(ExperimentalUuidApi::class)
-    private fun newUid(): String = "urn:uuid:${Uuid.random()}"
 }
 
 /** How many of the most frequent people the list shows above everyone. */
 internal const val FREQUENT_SHOWN = 5
+
+@OptIn(ExperimentalUuidApi::class)
+internal fun newId(): String = Uuid.random().toString()
+
+@OptIn(ExperimentalUuidApi::class)
+internal fun newUid(): String = "urn:uuid:${Uuid.random()}"

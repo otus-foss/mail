@@ -19,14 +19,15 @@ internal class VCardFiles(
             try {
                 file.read(MAX_BYTES).decodeToString()
             } catch (expected: UploadException) {
-                return ContactFile(
-                    file.name,
-                    emptyList(),
-                    listOf(0 to "The file is larger than ${MAX_BYTES / MEGABYTE} MB."),
-                )
+                null
             }
-        val read = VCard.parse(text)
-        return ContactFile(file.name, read.cards, read.failures.map { it.position to it.reason })
+        val read = text?.let(VCard::parse)
+        return ContactFile(
+            file.name,
+            read?.cards.orEmpty(),
+            read?.failures?.map { it.position to it.reason }
+                ?: listOf(0 to "The file is larger than ${MAX_BYTES / MEGABYTE} MB."),
+        )
     }
 
     override suspend fun save(

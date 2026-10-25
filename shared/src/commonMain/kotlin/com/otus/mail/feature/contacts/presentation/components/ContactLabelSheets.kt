@@ -1,0 +1,71 @@
+package com.otus.mail.feature.contacts.presentation.components
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.otus.designsystem.components.InputSheet
+import com.otus.mail.feature.contacts.domain.ContactDraft
+import com.otus.mail.feature.contacts.domain.ContactLabel
+import com.otus.mail.feature.contacts.domain.DraftValue
+
+/**
+ * The form's label sheets. While [managing] is set, the labels sheet is open for the field it
+ * relabels; New label there swaps it for the custom label sheet, which applies the typed label to
+ * that field. [labels] lists the form's own labels too, so they show before the contact is saved.
+ */
+@Composable
+internal fun ContactLabelSheets(
+    draft: ContactDraft,
+    onChange: (ContactDraft) -> Unit,
+    knownLabels: ContactLabels,
+    labels: List<String>,
+    managing: ((ContactLabel) -> Unit)?,
+    onManagingDone: () -> Unit,
+) {
+    var naming by remember { mutableStateOf<((ContactLabel) -> Unit)?>(null) }
+    naming?.let { apply -> CustomLabelSheet(apply) { naming = null } }
+    managing?.let { apply ->
+        // Deleting also clears the label from this form's fields, which are not saved yet.
+        val delete = { label: String ->
+            onChange(draft.withoutLabel(label))
+            knownLabels.delete(label)
+        }
+        LabelsSheet(
+            ContactLabels(labels, knownLabels.uses, delete),
+            onNew = {
+                onManagingDone()
+                naming = apply
+            },
+            onDismiss = onManagingDone,
+        )
+    }
+}
+
+/** Asks for a custom label's name and hands it to [onLabel]; a blank name cannot be used. */
+@Composable
+private fun CustomLabelSheet(
+    onLabel: (ContactLabel) -> Unit,
+    onDone: () -> Unit,
+) {
+    InputSheet(
+        title = "Custom label",
+        label = "Label",
+        confirmLabel = "Use",
+        onConfirm = { text ->
+            onLabel(ContactLabel.Custom(text.trim()))
+            onDone()
+        },
+        onDismiss = onDone,
+        problem = { text -> if (text.isBlank()) "" else null },
+    )
+}
+
+/** The draft with the custom [label] gone from every address and number, which then keep no label. */
+private fun ContactDraft.withoutLabel(label: String): ContactDraft {
+    val cleared = { values: List<DraftValue> ->
+        values.map { if (it.label.custom.equals(label, ignoreCase = true)) it.copy(label = ContactLabel.Other) else it }
+    }
+    return copy(emails = cleared(emails), phones = cleared(phones))
+}

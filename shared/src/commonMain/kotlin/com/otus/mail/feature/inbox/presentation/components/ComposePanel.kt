@@ -18,6 +18,7 @@ import com.otus.designsystem.components.PersonAvatar
 import com.otus.designsystem.elements.AddressPill
 import com.otus.designsystem.elements.ButtonPill
 import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.IconButtonLook
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
@@ -45,7 +46,7 @@ internal fun ComposePanel(
     ContextPanel(
         placement = ChipPlacement.Overlapping,
         navigation = {
-            IconButton("Back", onBack, outlined = false) {
+            IconButton("Back", onBack, look = IconButtonLook.Plain) {
                 Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
             }
         },

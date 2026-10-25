@@ -5,6 +5,7 @@ import com.otus.designsystem.components.ChipPlacement
 import com.otus.designsystem.components.ContextPanel
 import com.otus.designsystem.elements.Chip
 import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.IconButtonLook
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_chevron_left
@@ -25,7 +26,7 @@ fun PanelDemo(
     ContextPanel(
         placement = if (overlap) ChipPlacement.Overlapping else ChipPlacement.Below,
         navigation = {
-            IconButton("Back to inbox", { onAction(PanelDemoAction.Back) }, outlined = false) {
+            IconButton("Back to inbox", { onAction(PanelDemoAction.Back) }, look = IconButtonLook.Plain) {
                 Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
             }
         },
