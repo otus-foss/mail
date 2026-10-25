@@ -15,7 +15,7 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,9 +74,12 @@ class PrivacySettingsTest {
     }
 
     @Test
-    fun websiteIconsMovedHereFromMailBehavior() {
+    fun websiteIconsAndDuckDuckGoStartOffAndDuckDuckGoShowsOnlyWithIcons() {
         openPrivacy()
+        compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).assertDoesNotExist()
         compose.onNode(hasText("Website icons") and isToggleable()).performClick()
-        assertFalse(behavior.behavior.websiteIcons)
+        assertTrue(behavior.behavior.websiteIcons)
+        compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).performClick()
+        assertTrue(behavior.behavior.duckDuckGoIcons)
     }
 }

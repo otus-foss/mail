@@ -72,7 +72,9 @@ fun App(
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
     // Changing Website icons stops the inbox's avatar lookups at once and looks again with the new choice.
     LaunchedEffect(states) {
-        snapshotFlow { behaviorState.behavior.websiteIcons }.drop(1).collect { states.feed.refresh() }
+        snapshotFlow { behaviorState.behavior.let { it.websiteIcons to it.duckDuckGoIcons } }
+            .drop(1)
+            .collect { states.feed.refresh() }
     }
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
