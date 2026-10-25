@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.RemoteImages
@@ -79,7 +80,7 @@ class PrivacySettingsTest {
         compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).assertDoesNotExist()
         compose.onNode(hasText("Website icons") and isToggleable()).performClick()
         assertTrue(behavior.behavior.websiteIcons)
-        compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).performClick()
+        compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).performScrollTo().performClick()
         assertTrue(behavior.behavior.duckDuckGoIcons)
     }
 }

@@ -137,7 +137,8 @@ class SidebarEditTest {
         compose.onNodeWithText("Appearance").performClick()
         compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
         compose.onNode(hasText("Shown below the Inbox")).performClick()
-        compose.onNodeWithText("Nothing shown yet. Add something below.").assertIsDisplayed()
+        // Contacts is pinned by default and needs no folder, so it is the only pin shown at first.
+        compose.onNode(hasText("Contacts")).assertIsDisplayed()
         row("Receipts").performClick()
         closeChoice()
         assertEquals(SidebarPin.defaults + SidebarPin.Folder(listOf("receipts")), behavior.behavior.sidebar.pinned)
