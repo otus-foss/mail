@@ -10,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.SignatureImage
 import com.otus.mail.feature.inbox.domain.SignatureParts
 import com.otus.mail.feature.inbox.domain.parseSignature
+import com.otus.mail.feature.inbox.domain.signature
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
@@ -36,6 +37,11 @@ class SignatureEditorState(
     /** The signature as last loaded or saved, so loading alone never saves. */
     private var stored = current()
 
+    // Rich text normalizes the loaded text, so compare server acknowledgements with the original value.
+    private var baseline = identity.signature
+    private var pending: Signature? = null
+    private var session = 0L
+
     /** The image showing its handles, by index. */
     var selected by mutableStateOf<Int?>(null)
 
@@ -53,12 +59,20 @@ class SignatureEditorState(
     /** Saves this signature, then edits [other]'s in its place. */
     fun switchTo(other: SendIdentity) {
         save()
+        reload(other)
+    }
+
+    /** Replaces the editor after a copy without saving the contents it replaced. */
+    internal fun reload(other: SendIdentity) {
+        session += 1
         identity = other
         parts = parseSignature(other.htmlSignature)
         text.setHtml(parts.textHtml)
         images = parts.images
         selected = null
         stored = current()
+        baseline = other.signature
+        pending = null
     }
 
     fun addImage(image: SignatureImage) {
@@ -90,9 +104,21 @@ class SignatureEditorState(
 
     private fun save() {
         val signature = current()
-        if (signature == stored) return
-        stored = signature
-        signatures.save(signatures.identity(identity.key) ?: identity, signature)
+        val acknowledged = signatures.savedSignature(identity)
+        val unchanged = signature == stored && (acknowledged == null || acknowledged == baseline)
+        if ((unchanged && pending == null) || signature == pending) return
+        val edited = signatures.identity(identity.key) ?: identity
+        val savingSession = session
+        pending = signature
+        signatures.save(edited, signature) { saved ->
+            if (session == savingSession) {
+                if (saved) {
+                    stored = signature
+                    baseline = signature
+                }
+                if (pending == signature) pending = null
+            }
+        }
     }
 
     private fun current(): Signature = Signature(SignatureParts(text.html, images).html(), text.text)

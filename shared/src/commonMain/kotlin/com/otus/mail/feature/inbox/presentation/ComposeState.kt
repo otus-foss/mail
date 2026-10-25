@@ -152,9 +152,7 @@ class ComposeState(
             thread?.load()
             identities = found
             delayLimits = limits.awaitAll().toMap()
-            if (draft.from ==
-                null
-            ) {
+            if (draft.from == null) {
                 val preferred = request.preferredIdentity(found.map { it.sender }, origin.recentFrom)
                 found.firstOrNull { it.sender == preferred }?.let(::chooseFrom)
             }
@@ -244,9 +242,7 @@ class ComposeState(
             val copy = stored?.takeIf { it.accountId == draft.accountId }?.emailId
             val current = draft.copy(emailId = copy, signature = signature)
             val unchanged =
-                if (stored ==
-                    null
-                ) {
+                if (stored == null) {
                     !edited
                 } else {
                     savedHere && current.copy(emailId = null) == stored?.copy(emailId = null)

@@ -102,7 +102,7 @@ fun SignatureEditorScreen(
     }
     if (copying) {
         CopySignatureSheet(signatures, editor.identity, onDismiss = { copying = false }) {
-            editor.switchTo(signatures.identity(editor.identity.key) ?: editor.identity)
+            editor.reload(signatures.identity(editor.identity.key) ?: editor.identity)
             onCopied()
         }
     }
