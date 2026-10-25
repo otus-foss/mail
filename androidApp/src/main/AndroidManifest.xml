@@ -12,6 +12,9 @@
     android:supportsRtl="true"
     android:theme="@style/OtusTheme"
   >
+    <!-- Every WebView, for message bodies and printing, keeps usage metrics and the addresses it loads from Google. -->
+    <meta-data android:name="android.webkit.WebView.MetricsOptOut" android:value="true" />
+    <meta-data android:name="android.webkit.WebView.EnableSafeBrowsing" android:value="false" />
     <activity
       android:name=".MainActivity"
       android:exported="true"

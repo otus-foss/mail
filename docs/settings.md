@@ -56,12 +56,18 @@ own page.
   loads remote images. Mail in a folder the app has not loaded yet waits as if it were in Spam. **Allowed senders** names how many there are and opens their page
   (`AllowedSendersScreen`), which lists each address with a **Remove** button, or says how to add
   one. The Read view adds a sender with "Always for" on its image banner. Under **Avatars**, the
-  **Website icons** switch lets avatars load logos from sender websites and DuckDuckGo, and photos
-  that contact cards link to; see [website icons](avatars.md#website-icons). The choice and the
+  **Website icons** switch, off by default, lets avatars load logos from sender websites and photos
+  that contact cards link to. While it is on, **Ask DuckDuckGo**, also off by default, fills in
+  sites without an icon; see [website icons](avatars.md#website-icons). The choice and the
   list are saved in `MailBehavior.remoteImages` and `allowedSenders` before they are shown.
   **Photos you attach** chooses **Ask each time** (the default), **Always remove details**, or
   **Keep details** for the location, time, camera, and file name of attached photos, saved in
-  `MailBehavior.photoCleaning`; see [attachments](compose.md). The
+  `MailBehavior.photoCleaning`; see [attachments](compose.md).
+  On Android, **This device** adds **Screen security**, off by default, which sets `FLAG_SECURE`
+  so screenshots, screen recordings, casting, and the recent apps preview show nothing, and
+  **Incognito keyboard**, on by default, which adds `IME_FLAG_NO_PERSONALIZED_LEARNING` to every
+  text field through `IncognitoKeyboard`, so the keyboard is asked not to learn from what is typed.
+  `DevicePrivacy` names the protections a platform offers; iOS offers neither yet. The
   setting moved to a new key when this default returned; from the keys before it, only Never
   carries over, since those held their default for anyone who saved any setting.
 - **Theme** (`ThemeSettingsScreen` from `com.otus.settings`), a subpage of Appearance, previews
