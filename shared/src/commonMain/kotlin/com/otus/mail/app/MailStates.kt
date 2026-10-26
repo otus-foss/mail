@@ -177,6 +177,9 @@ internal class MailStates(
                 behavior.behavior.recentFrom,
                 behavior.behavior.signatureInReplies,
                 photoCleaning = { behavior.behavior.photoCleaning },
+                ownAvatar = { accountId, address ->
+                    all.firstOrNull { it.id == accountId }?.let { ownAvatars.avatar(it, address) }
+                },
             ),
             onSent = { from -> behavior.update { it.sentFrom(from.address) } },
         )

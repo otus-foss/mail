@@ -2,7 +2,9 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.components.ChipAvatar
 import com.otus.mail.feature.inbox.domain.AccountAddresses
+import com.otus.mail.feature.inbox.domain.DomainGroup
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.feature.inbox.domain.avatarOf
 import com.otus.mail.feature.inbox.domain.domainGroups
 import com.otus.mail.feature.inbox.presentation.components.chipAvatar
 
@@ -24,7 +26,7 @@ fun scopeHeader(
     val account = accounts.firstOrNull { it.accountId == choice.accountId }
     return when {
         choice is MailScopeChoice.Address && account != null -> {
-            ScopeHeader(choice.address, account.name, listOf(addressAvatar(choice.address)))
+            ScopeHeader(choice.address, account.name, listOf(account.avatar(choice.address)))
         }
 
         account != null -> {
@@ -45,19 +47,25 @@ fun allMailSummary(accounts: List<AccountAddresses>): String {
 
 fun addressCount(count: Int): String = if (count == 1) "1 address" else "$count addresses"
 
-/** Each account's initials, or each domain's when there is one account. */
+/** Each account's avatar, or each domain's when there is one account. */
 fun allMailAvatars(accounts: List<AccountAddresses>): List<ChipAvatar> =
     if (accounts.size == 1) {
-        domainGroups(accounts).map { domainAvatar(it.domain) }
+        domainGroups(accounts).map { domainAvatar(it, accounts) }
     } else {
         accounts.map { it.avatar }
     }
 
+/** The avatar of the account's first address, which giving all its addresses one avatar sets, else its initials. */
 val AccountAddresses.avatar: ChipAvatar
-    get() = chipAvatar(null, name, addresses.firstOrNull().orEmpty())
+    get() = addresses.firstOrNull().orEmpty().let { first -> chipAvatar(avatarOf(first), name, first) }
 
-fun addressAvatar(address: String): ChipAvatar = chipAvatar(null, "", address)
+/** The avatar the user gave [address], else initials from the address. */
+fun AccountAddresses.avatar(address: String): ChipAvatar = chipAvatar(avatarOf(address), "", address)
 
-fun domainAvatar(domain: String): ChipAvatar = chipAvatar(null, domain, "")
+/** The first avatar the user gave an address of [group], else the domain's initials. */
+fun domainAvatar(
+    group: DomainGroup,
+    accounts: List<AccountAddresses>,
+): ChipAvatar = chipAvatar(group.addresses.firstNotNullOfOrNull(accounts::avatarOf), group.domain, "")
 
 const val ALL_MAIL = "All mail"

@@ -148,7 +148,12 @@ class ComposeState(
                 accounts.map { account ->
                     async { account.id to (scheduled?.maxDelaySeconds(account.id) ?: 0L) }
                 }
-            val found = accounts.map { async { drafts.identities(it.id) } }.awaitAll().flatten()
+            val found =
+                accounts
+                    .map { async { drafts.identities(it.id) } }
+                    .awaitAll()
+                    .flatten()
+                    .map { it.withOwnAvatar() }
             thread?.load()
             identities = found
             delayLimits = limits.awaitAll().toMap()
@@ -158,6 +163,9 @@ class ComposeState(
             }
         }
     }
+
+    private fun SendIdentity.withOwnAvatar(): SendIdentity =
+        origin.ownAvatar(accountId, sender.address)?.let { copy(sender = sender.copy(avatar = it)) } ?: this
 
     /** Copies every change of [body] into [draft], which saves it. Runs until cancelled. */
     suspend fun followBody() {
