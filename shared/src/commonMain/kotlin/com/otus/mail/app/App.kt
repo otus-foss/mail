@@ -70,12 +70,7 @@ fun App(
     LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
     // Reload whenever the inbox is shown, including at launch.
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
-    // Changing Website icons stops the inbox's avatar lookups at once and looks again with the new choice.
-    LaunchedEffect(states) {
-        snapshotFlow { behaviorState.behavior.let { it.websiteIcons to it.duckDuckGoIcons } }
-            .drop(1)
-            .collect { states.feed.refresh() }
-    }
+    AvatarEffects(states, behaviorState)
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
     val settings =
@@ -119,6 +114,28 @@ fun App(
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
             SenderRuleSheets(states)
         }
+    }
+}
+
+/** Keeps sender avatars in step with the avatar settings and the contacts' photos. */
+@Composable
+private fun AvatarEffects(
+    states: MailStates,
+    behaviorState: MailBehaviorState,
+) {
+    // Changing Website icons stops the inbox's avatar lookups at once and looks again with the new choice.
+    LaunchedEffect(states) {
+        snapshotFlow { behaviorState.behavior.let { it.websiteIcons to it.duckDuckGoIcons } }
+            .drop(1)
+            .collect { states.feed.refresh() }
+    }
+    // Contacts load at launch so sender avatars can show their photos. Photos from all accounts
+    // changes which of those photos the avatars take.
+    LaunchedEffect(states) {
+        states.contacts.loadCards()
+        snapshotFlow { behaviorState.behavior.allAccountPhotos }
+            .drop(1)
+            .collect { states.contactAvatars.apply() }
     }
 }
 

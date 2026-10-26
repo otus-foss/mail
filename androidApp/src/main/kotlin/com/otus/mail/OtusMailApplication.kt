@@ -44,6 +44,7 @@ class OtusMailApplication :
                     AndroidFolderNudgeStore(this),
                     SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
                     AndroidNotificationPreviewStore(this),
+                    AndroidContactStore(this),
                 ),
             instantPush = instantPush,
             pickers =

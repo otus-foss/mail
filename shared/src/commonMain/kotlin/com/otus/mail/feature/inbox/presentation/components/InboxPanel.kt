@@ -18,6 +18,7 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ChipPlacement
 import com.otus.designsystem.components.ContextPanel
 import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.IconButtonLook
 import com.otus.designsystem.elements.SearchField
 import com.otus.designsystem.elements.SearchPrompt
 import com.otus.designsystem.elements.Symbol
@@ -97,11 +98,11 @@ private fun InboxNavigation(
     onCloseSearch: () -> Unit,
 ) {
     if (searching) {
-        IconButton("Back to inbox", onCloseSearch, outlined = false) {
+        IconButton("Back to inbox", onCloseSearch, look = IconButtonLook.Plain) {
             Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
         }
     } else {
-        IconButton("Open navigation", onOpenNavigation, outlined = false) {
+        IconButton("Open navigation", onOpenNavigation, look = IconButtonLook.Plain) {
             Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
         }
     }
@@ -131,7 +132,11 @@ private fun InboxSearchInput(
             onSubmit,
         )
         if (query.isNotEmpty()) {
-            IconButton("Clear search", { onChange("") }, outlined = false) { Symbol(Res.drawable.symbol_close) }
+            IconButton(
+                "Clear search",
+                { onChange("") },
+                look = IconButtonLook.Plain,
+            ) { Symbol(Res.drawable.symbol_close) }
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.saveable.Saver
+import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.folders.domain.CombinedFolder
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 
@@ -122,6 +123,23 @@ internal sealed interface MailPage {
         val key: List<String>,
     ) : MailPage
 
+    /** Every login's contacts. */
+    data object Contacts : MailPage
+
+    /** One person, opened from the card [key]; a group card opens its members. */
+    data class Contact(
+        val key: CardKey,
+    ) : MailPage {
+        override val parent = Contacts
+    }
+
+    /** The editor for the card [key], or for a new contact while it is null. */
+    data class ContactEditor(
+        val key: CardKey? = null,
+    ) : MailPage {
+        override val parent: MailPage = key?.let(::Contact) ?: Contacts
+    }
+
     companion object {
         private val fixed =
             listOf(
@@ -136,6 +154,7 @@ internal sealed interface MailPage {
                 Folders,
                 ReadLater,
                 Conversations,
+                Contacts,
                 SidebarSettings,
                 ThemeSettings,
                 MailListSettings,
@@ -152,6 +171,8 @@ internal sealed interface MailPage {
                         FOLDER_DETAIL -> FolderDetail(saved[1], saved[2], saved[3].ifEmpty { null })
                         COMBINED -> CombinedFolder.entries.firstOrNull { it.name == saved[1] }?.let(::Combined) ?: Inbox
                         SHARED -> Shared(saved.drop(1))
+                        CONTACT -> Contact(CardKey(saved[1], saved[2], saved[3]))
+                        CONTACT_EDITOR -> ContactEditor(saved.getOrNull(1)?.let { CardKey(it, saved[2], saved[3]) })
                         else -> fixed.firstOrNull { it.toString() == saved.firstOrNull() } ?: Inbox
                     }
                 },
@@ -160,17 +181,45 @@ internal sealed interface MailPage {
         /** A draft's request holds a whole message, so a restored app returns to the page that opened it. */
         private fun saved(page: MailPage): List<String> =
             when (page) {
-                is Folder -> listOf(FOLDER, page.accountId, page.folderId)
-                is FolderDetail -> listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
-                is Combined -> listOf(COMBINED, page.folder.name)
-                is Shared -> listOf(SHARED) + page.key
-                is Compose -> saved(page.parent)
-                else -> listOf(page.toString())
+                is Folder -> {
+                    listOf(FOLDER, page.accountId, page.folderId)
+                }
+
+                is FolderDetail -> {
+                    listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
+                }
+
+                is Combined -> {
+                    listOf(COMBINED, page.folder.name)
+                }
+
+                is Shared -> {
+                    listOf(SHARED) + page.key
+                }
+
+                is Compose -> {
+                    saved(page.parent)
+                }
+
+                is Contact -> {
+                    listOf(CONTACT, page.key.loginId, page.key.accountId, page.key.cardId)
+                }
+
+                is ContactEditor -> {
+                    listOf(CONTACT_EDITOR) +
+                        page.key?.let { listOf(it.loginId, it.accountId, it.cardId) }.orEmpty()
+                }
+
+                else -> {
+                    listOf(page.toString())
+                }
             }
 
         private const val FOLDER = "Folder"
         private const val FOLDER_DETAIL = "FolderDetail"
         private const val COMBINED = "Combined"
         private const val SHARED = "Shared"
+        private const val CONTACT = "Contact"
+        private const val CONTACT_EDITOR = "ContactEditor"
     }
 }

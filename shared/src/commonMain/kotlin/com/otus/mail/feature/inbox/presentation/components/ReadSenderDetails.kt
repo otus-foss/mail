@@ -42,12 +42,13 @@ internal fun ReadSenderDetails(
     folders: List<MessageFolder>,
     onFolders: () -> Unit,
     modifier: Modifier = Modifier,
+    onPerson: ((MailSender) -> Unit)? = null,
 ) {
     val rows =
         buildList {
-            add(DetailLine("From") { People(listOf(message.sender)) })
-            if (message.to.isNotEmpty()) add(DetailLine("To") { People(message.to) })
-            if (message.cc.isNotEmpty()) add(DetailLine("Cc") { People(message.cc) })
+            add(DetailLine("From") { People(listOf(message.sender), onPerson) })
+            if (message.to.isNotEmpty()) add(DetailLine("To") { People(message.to, onPerson) })
+            if (message.cc.isNotEmpty()) add(DetailLine("Cc") { People(message.cc, onPerson) })
             add(DetailLine("Date") { Text(fullDate, style = panelTextStyle(), fontSize = ReadTokens.previewSize) })
             if (folders.isNotEmpty()) add(DetailLine("Folders") { FolderLines(folders, onFolders) })
             val marks = message.marks()
@@ -57,14 +58,20 @@ internal fun ReadSenderDetails(
 }
 
 @Composable
-private fun People(people: List<MailSender>) {
+private fun People(
+    people: List<MailSender>,
+    onPerson: ((MailSender) -> Unit)?,
+) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
         verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
     ) {
         people.forEach { person ->
             val name = person.name.ifBlank { person.address }
-            PersonChip(Recipient(name, person.chipAvatar, "$name, ${person.address}"))
+            PersonChip(
+                Recipient(name, person.chipAvatar, "$name, ${person.address}"),
+                onClick = onPerson?.let { { it(person) } },
+            )
         }
     }
 }

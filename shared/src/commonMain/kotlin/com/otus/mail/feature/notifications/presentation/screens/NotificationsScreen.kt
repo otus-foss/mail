@@ -13,6 +13,7 @@ import com.otus.designsystem.components.ChoiceSheet
 import com.otus.designsystem.components.InfoText
 import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.PickRow
+import com.otus.designsystem.components.PickRowLayout
 import com.otus.designsystem.components.SettingPageRow
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingsSection
@@ -83,7 +84,7 @@ private fun PreviewsSection(
                 choice.description,
                 PickMark(choice == previews.all, atStart = true),
                 { state.choosePreviews { it.copy(all = choice) } },
-                subtitleLines = PREVIEW_LINES,
+                layout = PickRowLayout(subtitleLines = PREVIEW_LINES),
             )
         }
     }

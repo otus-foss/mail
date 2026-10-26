@@ -33,6 +33,7 @@ import com.otus.designsystem.components.PersonAvatar
 import com.otus.designsystem.elements.AddressPill
 import com.otus.designsystem.elements.DatePill
 import com.otus.designsystem.elements.IconButton
+import com.otus.designsystem.elements.IconButtonLook
 import com.otus.designsystem.elements.IconPill
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
@@ -63,7 +64,7 @@ internal fun ReadHeader(
     ContextPanel(
         placement = ChipPlacement.Overlapping,
         navigation = {
-            IconButton("Back", actions.onBack, outlined = false) {
+            IconButton("Back", actions.onBack, look = IconButtonLook.Plain) {
                 Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
             }
         },

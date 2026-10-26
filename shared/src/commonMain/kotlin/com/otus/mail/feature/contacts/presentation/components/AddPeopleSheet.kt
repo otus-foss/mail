@@ -1,0 +1,69 @@
+package com.otus.mail.feature.contacts.presentation.components
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.otus.designsystem.components.ClosableSheet
+import com.otus.designsystem.components.PersonAvatar
+import com.otus.designsystem.components.PickMark
+import com.otus.designsystem.components.PickRow
+import com.otus.designsystem.components.PickerSearch
+import com.otus.designsystem.components.SheetConfirm
+import com.otus.designsystem.theme.AvatarTokens
+import com.otus.designsystem.theme.SheetTokens
+import com.otus.mail.feature.contacts.domain.CardKey
+import com.otus.mail.feature.contacts.domain.ContactPerson
+import com.otus.mail.feature.contacts.presentation.avatar
+
+/**
+ * Picks people to add to a group: everyone in [people] who is not in it yet, searchable by name
+ * or address, any number at once. Add confirms them through [onAdd].
+ */
+@Composable
+internal fun AddPeopleSheet(
+    people: List<ContactPerson>,
+    onAdd: (List<ContactPerson>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var query by remember { mutableStateOf("") }
+    var picked by remember { mutableStateOf(emptySet<CardKey>()) }
+    val chosen = people.filter { it.main.key in picked }
+    ClosableSheet(
+        "Add people",
+        onDismiss,
+        SheetConfirm(
+            if (chosen.size ==
+                1
+            ) {
+                "Add 1 person"
+            } else {
+                "Add ${chosen.size} people"
+            },
+            { onAdd(chosen) },
+            enabled = chosen.isNotEmpty(),
+        ),
+    ) {
+        PickerSearch(query, { query = it }, "Search people…", Modifier.padding(horizontal = SheetTokens.inset))
+        LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
+            items(people.filter { query.isBlank() || it.matches(query) }, key = {
+                it.main.key.cardId +
+                    it.main.key.accountId
+            }) { person ->
+                val key = person.main.key
+                PickRow(
+                    person.name,
+                    person.emails.firstOrNull()?.value,
+                    PickMark(key in picked, multiple = true),
+                    { picked = if (key in picked) picked - key else picked + key },
+                ) { PersonAvatar(person.avatar, AvatarTokens.size) }
+            }
+        }
+    }
+}

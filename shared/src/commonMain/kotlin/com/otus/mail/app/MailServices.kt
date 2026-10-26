@@ -27,6 +27,11 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.designsystem.resources.Res
+import com.otus.mail.feature.contacts.data.JmapContactRepository
+import com.otus.mail.feature.contacts.data.JmapMailTraces
+import com.otus.mail.feature.contacts.domain.ContactRepository
+import com.otus.mail.feature.contacts.domain.MailTraceSource
+import com.otus.mail.feature.contacts.domain.forgetAccount
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
@@ -152,6 +157,7 @@ class MailServices(
                     stores.folderColors?.forgetAccount(loginId)
                     stores.addressPins?.forgetAccount(loginId)
                     stores.folderNudges?.forgetAccount(loginId)
+                    stores.contacts?.forgetAccount(loginId)
                     try {
                         cache.forget(loginId)
                     } catch (error: CacheStorageException) {
@@ -174,6 +180,10 @@ class MailServices(
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
     internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
+    internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, logins) }
+
+    /** Each login's recent mail, for the people the user deals with most. */
+    internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections, logins) }
     internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, logins, addressBook) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins, cache) }

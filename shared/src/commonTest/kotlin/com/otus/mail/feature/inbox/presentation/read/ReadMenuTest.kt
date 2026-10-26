@@ -55,7 +55,7 @@ class ReadMenuTest {
                     "View details | Headers, encryption, original",
                     "Print or save as PDF",
                 ),
-                listOf("Grace Hopper", "Block sender", "Report spam or phishing"),
+                listOf("Grace Hopper", "Add to contacts", "Block sender", "Report spam or phishing"),
                 conversation,
             ),
             menu(ReadPage(message(), own, index = 0, count = 6, suggestedPath = listOf("Projects", "Q4"))),
@@ -100,7 +100,7 @@ class ReadMenuTest {
                     "View details | Headers, encryption, original",
                     "Print or save as PDF",
                 ),
-                listOf("Grace Hopper", "Block sender", "Report spam or phishing"),
+                listOf("Grace Hopper", "Add to contacts", "Block sender", "Report spam or phishing"),
             ),
             menu(ReadPage(message(to = listOf(alex)), own)),
         )
@@ -118,7 +118,7 @@ class ReadMenuTest {
                     "View details | Headers, encryption, original",
                     "Print or save as PDF",
                 ),
-                listOf("Sentry", "Block sender", "Report spam or phishing"),
+                listOf("Sentry", "Add to contacts", "Block sender", "Report spam or phishing"),
             ),
             menu(ReadPage(message(sender = sentry), own, newsletter = true, imagesBlocked = true)),
         )

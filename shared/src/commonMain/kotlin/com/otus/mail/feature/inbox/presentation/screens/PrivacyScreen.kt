@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.otus.designsystem.components.InfoText
 import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.PickRow
+import com.otus.designsystem.components.PickRowLayout
 import com.otus.designsystem.components.SettingPageRow
 import com.otus.designsystem.components.SettingToggleRow
 import com.otus.designsystem.components.SettingsSection
@@ -54,7 +55,7 @@ fun PrivacyScreen(
                     choice.description,
                     PickMark(choice == behavior.photoCleaning, atStart = true),
                     { state.update { it.copy(photoCleaning = choice) } },
-                    subtitleLines = DESCRIPTION_LINES,
+                    layout = PickRowLayout(subtitleLines = DESCRIPTION_LINES),
                 )
             }
         }
@@ -63,7 +64,7 @@ fun PrivacyScreen(
     }
 }
 
-/** Whether avatars load website icons, and from DuckDuckGo when a site has none. */
+/** Whether avatars load website icons, from DuckDuckGo when a site has none, and contacts from every account. */
 @Composable
 private fun AvatarsSection(state: MailBehaviorState) {
     val behavior = state.behavior
@@ -90,6 +91,18 @@ private fun AvatarsSection(state: MailBehaviorState) {
                 info = InfoText("Ask DuckDuckGo", "DuckDuckGo sees your IP address and each sender's domain."),
             )
         }
+        SettingToggleRow(
+            "Photos from all accounts",
+            checked = behavior.allAccountPhotos,
+            onCheckedChange = { on -> state.update { it.copy(allAccountPhotos = on) } },
+            description = "Contact photos on mail to any account",
+            icon = Res.drawable.symbol_person,
+            info =
+                InfoText(
+                    "Photos from all accounts",
+                    "Mail to one of your accounts shows a contact's photo even when another account saved the contact.",
+                ),
+        )
     }
 }
 
@@ -140,7 +153,7 @@ private fun ImagesChoiceRow(
         choice.description,
         PickMark(selected, atStart = true),
         onClick,
-        subtitleLines = DESCRIPTION_LINES,
+        layout = PickRowLayout(subtitleLines = DESCRIPTION_LINES),
     )
 }
 

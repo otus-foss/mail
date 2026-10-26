@@ -40,6 +40,7 @@ class IosMailBehaviorStore(
             minimizedBar = bool(MINIMIZED_BAR, defaults.minimizedBar),
             websiteIcons = bool(WEBSITE_ICONS, defaults.websiteIcons),
             duckDuckGoIcons = bool(DUCKDUCKGO_ICONS, defaults.duckDuckGoIcons),
+            allAccountPhotos = bool(ALL_ACCOUNT_PHOTOS, defaults.allAccountPhotos),
             recentFrom = decodeAddresses(preferences.stringForKey(RECENT_FROM)),
             signatureInReplies = bool(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
             undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
@@ -75,6 +76,7 @@ class IosMailBehaviorStore(
         preferences.setBool(behavior.minimizedBar, forKey = MINIMIZED_BAR)
         preferences.setBool(behavior.websiteIcons, forKey = WEBSITE_ICONS)
         preferences.setBool(behavior.duckDuckGoIcons, forKey = DUCKDUCKGO_ICONS)
+        preferences.setBool(behavior.allAccountPhotos, forKey = ALL_ACCOUNT_PHOTOS)
         preferences.setObject(encodeAddresses(behavior.recentFrom), forKey = RECENT_FROM)
         preferences.setBool(behavior.signatureInReplies, forKey = SIGNATURE_IN_REPLIES)
         preferences.setInteger(behavior.undoSendSeconds.toLong(), forKey = UNDO_SEND_SECONDS)
@@ -114,6 +116,7 @@ class IosMailBehaviorStore(
         // anyone who saved any setting.
         const val WEBSITE_ICONS = "otus.mail.load_website_icons"
         const val DUCKDUCKGO_ICONS = "otus.mail.duckduckgo_icons"
+        const val ALL_ACCOUNT_PHOTOS = "otus.mail.all_account_photos"
         const val RECENT_FROM = "otus.mail.recent_from"
         const val SIGNATURE_IN_REPLIES = "otus.mail.signature_in_replies"
         const val UNDO_SEND_SECONDS = "otus.mail.undo_send_seconds"

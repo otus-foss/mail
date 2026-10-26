@@ -16,6 +16,7 @@ import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.domain.SavedFiles
 import com.otus.mail.feature.inbox.domain.SenderBlocks
 import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
+import com.otus.mail.feature.inbox.presentation.components.PersonSheet
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -88,8 +89,9 @@ class ReadFiles(
 )
 
 /**
- * The services behind the newsletter strip and the ⋯ menu, including [changes] to one page's email;
- * each is null where none is wired.
+ * The services behind the newsletter strip and the ⋯ menu, including [changes] to one page's email,
+ * and [person], what tapping a person or the menu's contact entries open; each is null where none
+ * is wired, and without [person] the pills stay plain.
  */
 class ReadServices(
     val newsletters: Newsletters? = null,
@@ -97,6 +99,7 @@ class ReadServices(
     val mute: ConversationMute? = null,
     val blocks: SenderBlocks? = null,
     val changes: PageChanges? = null,
+    val person: PersonSheet? = null,
 )
 
 /**
