@@ -122,6 +122,7 @@ internal class MailStates(
     val accounts =
         AccountsState(services.accounts, scope) {
             feed.refresh()
+            contacts.sync.reload()
             contacts.refresh()
             folders.refresh()
             rules.refresh()

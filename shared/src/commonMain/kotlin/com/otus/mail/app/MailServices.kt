@@ -31,6 +31,7 @@ import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
 import com.otus.mail.feature.contacts.domain.ContactRepository
 import com.otus.mail.feature.contacts.domain.MailTraceSource
+import com.otus.mail.feature.contacts.domain.forgetAccount
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
@@ -156,6 +157,7 @@ class MailServices(
                     stores.folderColors?.forgetAccount(loginId)
                     stores.addressPins?.forgetAccount(loginId)
                     stores.folderNudges?.forgetAccount(loginId)
+                    stores.contacts?.forgetAccount(loginId)
                     try {
                         cache.forget(loginId)
                     } catch (error: CacheStorageException) {
