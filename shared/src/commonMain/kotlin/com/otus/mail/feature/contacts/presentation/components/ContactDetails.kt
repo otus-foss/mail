@@ -43,7 +43,6 @@ import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.formatPhone
 import com.otus.mail.feature.contacts.presentation.groupAvatar
 import com.otus.mail.feature.contacts.presentation.icon
-import com.otus.mail.feature.contacts.presentation.isAvatar
 import com.otus.mail.feature.contacts.presentation.owner
 import com.otus.mail.feature.contacts.presentation.text
 
@@ -59,12 +58,13 @@ internal fun ContactDetails(
     onOpen: (CardKey) -> Unit,
     onSaveElsewhere: () -> Unit,
     modifier: Modifier = Modifier,
+    onEditAvatar: (() -> Unit)? = null,
 ) {
     val person = facts.person
     Column(modifier, verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) {
         RefusedStrip(facts, onSaveElsewhere)
-        ContactHeader(person.avatar, listOfNotNull(person.main.role))
-        if (person.isAvatar) PageNote("Your avatar. Mail shows it wherever your own address appears.")
+        ContactHeader(person.avatar, listOfNotNull(person.main.role), onEdit = onEditAvatar)
+        if (facts.ownAvatar) PageNote("This is you. Mail shows this avatar wherever your address appears.")
         Section("Email", emailRows(person, onWriteTo))
         Section("Details", detailRows(facts, onCopyNumber))
         Section("Saved in", savedInRows(facts, onOpen))
@@ -196,13 +196,13 @@ internal fun GroupMembers(
     onOpen: (CardKey) -> Unit,
     onRemove: ((ContactPerson) -> Unit)?,
     modifier: Modifier = Modifier,
-    photoChoices: List<OptionsItem> = emptyList(),
+    onEditAvatar: (() -> Unit)? = null,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) {
         ContactHeader(
             group.groupAvatar,
             listOf(if (members.size == 1) "1 person" else "${members.size} people"),
-            photoChoices = photoChoices,
+            onEdit = onEditAvatar,
         )
         if (members.isEmpty()) {
             PageNote("No one in this group yet. Add people to write to all of them at once.")

@@ -1,8 +1,8 @@
 package com.otus.mail.feature.contacts.presentation
 
+import com.otus.avatar.ContactAvatar
 import com.otus.jscontact.Card
 import com.otus.jscontact.CardKind
-import com.otus.jscontact.Media
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactCard
@@ -11,7 +11,7 @@ import com.otus.mail.feature.contacts.domain.ContactEdit
 import com.otus.mail.feature.contacts.domain.ContactLabel
 import com.otus.mail.feature.contacts.domain.DraftValue
 import com.otus.mail.feature.contacts.domain.MergePlan
-import com.otus.mail.feature.contacts.domain.withPhoto
+import com.otus.mail.feature.contacts.domain.withAvatar
 
 /**
  * Saves [draft] over [existing], or as a new card in [book]. Returns the card's key, which for a
@@ -79,11 +79,11 @@ internal fun ContactsState.saveElsewhere(
 /** Drops the refused change of [key], showing the card as the server has it. */
 internal fun ContactsState.discard(key: CardKey) = sync.drop(key)
 
-/** Gives [card], such as a group, [photo], or takes its photo away when null. */
-internal fun ContactsState.setPhoto(
+/** Gives [card] [avatar], a photo or a style, or takes its look away when null. */
+internal fun ContactsState.setAvatar(
     card: ContactCard,
-    photo: Media?,
-) = update(card, card.card.withPhoto(photo))
+    avatar: ContactAvatar?,
+) = update(card, card.card.withAvatar(avatar))
 
 /** Adds [address] to [card], keeping its other addresses and which one is preferred. */
 internal fun ContactsState.addAddress(

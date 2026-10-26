@@ -13,9 +13,9 @@ import com.otus.designsystem.elements.SectionCaption
 import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.AddressPins
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.feature.inbox.domain.avatarOf
 import com.otus.mail.feature.inbox.domain.searchAddresses
 import com.otus.mail.feature.inbox.presentation.ALL_MAIL
-import com.otus.mail.feature.inbox.presentation.addressAvatar
 import com.otus.mail.feature.inbox.presentation.allMailAvatars
 import com.otus.mail.feature.inbox.presentation.allMailSummary
 
@@ -40,7 +40,7 @@ fun MailScopeSheet(
     var expanded by rememberSaveable { mutableStateOf(listOfNotNull(groupKey(chosen, accounts))) }
     val total = accounts.sumOf { it.addresses.size }
     val rows =
-        MailScopeRows(chosen, count, onChoose, onTogglePin, expanded) { key, open ->
+        MailScopeRows(accounts, chosen, count, onChoose, onTogglePin, expanded) { key, open ->
             expanded = if (open) expanded + key else expanded - key
         }
     ScopeSheet(
@@ -82,12 +82,19 @@ private fun Pinned(
     shown.forEach { rows.Address(it, pinned = true) }
 }
 
-/** The option for one address row. */
+/** The option for one address row, with the avatar the user gave it in [accounts]. */
 internal fun addressOption(
     address: MailScopeChoice.Address,
+    accounts: List<AccountAddresses>,
     count: String?,
     pinned: Boolean,
-): ScopeOption = ScopeOption(address.address, listOf(addressAvatar(address.address)), count = count, pinned = pinned)
+): ScopeOption =
+    ScopeOption(
+        address.address,
+        listOf(chipAvatar(accounts.avatarOf(address), "", address.address)),
+        count = count,
+        pinned = pinned,
+    )
 
 private const val SEARCH_FROM = 8
 private const val SEVERAL_ACCOUNTS = "Choose an account to see all its addresses, or one address. Long-press to pin."

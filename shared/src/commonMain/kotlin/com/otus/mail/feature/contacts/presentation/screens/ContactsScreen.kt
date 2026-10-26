@@ -140,5 +140,6 @@ private fun ContactsState.listContent(view: ContactsView): ContactListContent {
         membersOf = { group -> members(group).size },
         // Only the full list features them, not a search, a filter, or a selection.
         frequent = mostFrequent.takeIf { view.showsAll && view.selected.isEmpty() }.orEmpty(),
+        ownAddresses = ownAddresses(),
     )
 }

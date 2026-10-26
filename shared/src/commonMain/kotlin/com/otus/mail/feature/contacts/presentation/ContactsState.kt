@@ -5,10 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.avatar.AvatarPhotoPicker
+import com.otus.avatar.ContactAvatar
 import com.otus.jscontact.Card
 import com.otus.jscontact.CardKind
-import com.otus.jscontact.Media
-import com.otus.jscontact.MediaKind
 import com.otus.jscontact.Name
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
@@ -31,7 +30,6 @@ import com.otus.mail.feature.contacts.domain.duplicates
 import com.otus.mail.feature.contacts.domain.people
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlin.io.encoding.Base64
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -43,10 +41,11 @@ internal class ContactsState(
     private val repository: ContactRepository,
     val sync: ContactSync,
     private val scope: CoroutineScope,
-    private val files: ContactFiles? = null,
-    private val photos: AvatarPhotoPicker? = null,
+    pickers: ContactPickers = ContactPickers(),
     private val frequent: FrequentContacts? = null,
     private val avatars: ContactAvatarUpdates? = null,
+    /** The user's own addresses, lowercase, which tell their avatar cards from other contacts. */
+    val ownAddresses: () -> Set<String> = { emptySet() },
 ) {
     var snapshot by mutableStateOf<ContactsSnapshot?>(null)
         private set
@@ -59,22 +58,12 @@ internal class ContactsState(
     /** A vCard file picked for import, waiting for the user to confirm it. */
     var importing by mutableStateOf<ContactFile?>(null)
 
+    private val files = pickers.files
+
     val canTransfer: Boolean get() = files != null
 
-    val canPickPhoto: Boolean get() = photos != null
-
-    /**
-     * A photo the user picks, cropped and small, as an inline `data:` URI: Stalwart refuses a
-     * `blobId` in `media`, and an inline photo shows in every contact app. Null when cancelled.
-     */
-    suspend fun pickPhoto(): Media? =
-        photos?.pick()?.let {
-            Media(
-                MediaKind.Photo,
-                uri = "data:${it.mediaType};base64,${Base64.encode(it.image.bytes)}",
-                mediaType = it.mediaType,
-            )
-        }
+    /** Picks a photo, cropped and small, or null when cancelled; null where photos cannot be picked. */
+    val photoPicker: (suspend () -> ContactAvatar.Photo?)? = pickers.photos?.let { picker -> { picker.pick() } }
 
     /** What the next new-contact editor starts from, such as a message's sender; taken once. */
     var prefill by mutableStateOf<ContactDraft?>(null)
@@ -185,3 +174,9 @@ internal fun newId(): String = Uuid.random().toString()
 
 @OptIn(ExperimentalUuidApi::class)
 internal fun newUid(): String = "urn:uuid:${Uuid.random()}"
+
+/** What the platform lets contacts pick and save: vCard [files] and avatar [photos]; null where it cannot. */
+internal class ContactPickers(
+    val files: ContactFiles? = null,
+    val photos: AvatarPhotoPicker? = null,
+)
