@@ -152,7 +152,7 @@ internal class ContactsState(
         plan: ImportPlan,
         mode: ImportMode,
     ) {
-        plan.edits(mode) { newId() }.forEach(::send)
+        sync.add(plan.edits(mode) { newId() }, ::sent)
         importing = null
     }
 
@@ -167,7 +167,7 @@ internal class ContactsState(
     }
 
     /** Queues [edit]: it shows at once and goes to the server once it is reachable. */
-    fun send(edit: ContactEdit) = sync.add(edit, ::sent)
+    fun send(edit: ContactEdit) = sync.add(listOf(edit), ::sent)
 
     /** Keeps the device's view, and the avatars mail shows, in step with a change the server accepted. */
     private fun sent(update: (ContactsSnapshot) -> ContactsSnapshot) {

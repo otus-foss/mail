@@ -15,6 +15,7 @@ import com.otus.mail.feature.contacts.domain.KeySets
 import com.otus.mail.feature.contacts.domain.afterSent
 import com.otus.mail.feature.contacts.domain.enqueue
 import com.otus.mail.feature.contacts.domain.rekey
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -34,24 +35,43 @@ internal class ContactSync(
     private val store: ContactStore?,
     private val scope: CoroutineScope,
 ) {
-    private val saved = store?.read().orEmpty()
-
-    var edits by mutableStateOf(ContactEdit.decode(saved[ContactStore.EDITS]))
+    var edits by mutableStateOf(emptyList<ContactEdit>())
         private set
     var refused by mutableStateOf(emptyMap<String, ContactWriteFailure>())
         private set
-    var links by mutableStateOf(ContactLinks(KeySets.decode(saved[ContactStore.LINKS])))
+    var links by mutableStateOf(ContactLinks(emptyList()))
         private set
-    var dismissed by mutableStateOf(KeySets.decode(saved[ContactStore.DISMISSED]).toSet())
+    var dismissed by mutableStateOf(emptySet<Set<CardKey>>())
+        private set
+
+    /** The server's key for each card created on the device, by the key it had until then. */
+    var renamed by mutableStateOf(emptyMap<CardKey, CardKey>())
         private set
 
     private val sending = Mutex()
 
+    // The change on its way to the server, which a new change must not join.
+    private var inFlight: String? = null
+
+    init {
+        reload()
+    }
+
+    /** Reads the store again, as after an account is removed and its changes with it. */
+    fun reload() {
+        val saved = store?.read().orEmpty()
+        edits = ContactEdit.decode(saved[ContactStore.EDITS])
+        links = ContactLinks(KeySets.decode(saved[ContactStore.LINKS]))
+        dismissed = KeySets.decode(saved[ContactStore.DISMISSED]).toSet()
+        refused = refused.filterKeys { id -> edits.any { it.id == id } }
+    }
+
+    /** Queues [changes] and saves the queue once, so a large import does not save it per card. */
     fun add(
-        edit: ContactEdit,
+        changes: List<ContactEdit>,
         sent: SentChange,
     ) {
-        edits = enqueue(edits, edit)
+        edits = changes.fold(edits) { queued, edit -> enqueue(queued, edit, inFlight) }
         save()
         scope.launch { flush(sent) }
     }
@@ -74,9 +94,11 @@ internal class ContactSync(
         sent: SentChange,
     ): Boolean =
         try {
+            inFlight = edit.id
             val created = send(edit)
             edits = edits.filterNot { it.id == edit.id }
             if (created != null) {
+                renamed = renamed + (edit.key to created)
                 edits = rekey(edits, edit.key, created)
                 links = ContactLinks(links.sets.map { set -> set.map { if (it == edit.key) created else it }.toSet() })
             }
@@ -87,6 +109,13 @@ internal class ContactSync(
             val offline = error.failure == ContactWriteFailure.Offline
             if (!offline) refused = refused + (edit.id to error.failure)
             !offline
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            // Anything else, such as an unreadable reply, waits like no connection rather than crash.
+            false
+        } finally {
+            inFlight = null
         }
 
     /** Drops every waiting change of [key], refused or not. */
