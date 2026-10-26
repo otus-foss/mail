@@ -132,7 +132,7 @@ private fun AvatarEffects(
     // Contacts load at launch so sender avatars can show their photos. Photos from all accounts
     // changes which of those photos the avatars take.
     LaunchedEffect(states) {
-        states.contacts.refresh()
+        states.contacts.loadCards()
         snapshotFlow { behaviorState.behavior.allAccountPhotos }
             .drop(1)
             .collect { states.contactAvatars.apply() }

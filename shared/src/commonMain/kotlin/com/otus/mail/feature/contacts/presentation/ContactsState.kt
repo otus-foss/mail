@@ -119,8 +119,14 @@ internal class ContactsState(
     /** Whether some change has not reached the server yet. */
     val waiting: Int get() = sync.edits.count { it.id !in sync.refused }
 
+    /** Loads the cards and the most frequent people again. */
     fun refresh() {
         frequent?.refresh()
+        loadCards()
+    }
+
+    /** Loads every login's cards again, without the frequent people, which read mail. */
+    fun loadCards() {
         if (loading) return
         loading = true
         scope.launch {
