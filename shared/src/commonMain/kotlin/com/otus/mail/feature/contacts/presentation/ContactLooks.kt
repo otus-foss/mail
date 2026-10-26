@@ -96,4 +96,4 @@ internal fun ContactPerson.isOwnAvatar(own: Set<String>): Boolean =
     cards.any { it.card.isAvatarCard } && emails.any { it.value.lowercase() in own }
 
 /** The pill on a contact list row of a card that holds one of the user's own avatars. */
-internal val AvatarLabel = ContactRowLabel("Your avatar", Res.drawable.symbol_badge)
+internal val AvatarLabel = ContactRowLabel("You", Res.drawable.symbol_badge)

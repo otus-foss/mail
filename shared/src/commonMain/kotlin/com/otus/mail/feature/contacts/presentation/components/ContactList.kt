@@ -50,7 +50,7 @@ internal class ContactListContent(
     val booksOf: (ContactCard) -> List<ContactBook>,
     val membersOf: (ContactCard) -> Int,
     val frequent: List<ContactPerson> = emptyList(),
-    /** The user's own addresses, lowercase, whose avatar cards get a Your avatar pill. */
+    /** The user's own addresses, lowercase, whose avatar cards get a You pill. */
     val ownAddresses: Set<String> = emptySet(),
 )
 
