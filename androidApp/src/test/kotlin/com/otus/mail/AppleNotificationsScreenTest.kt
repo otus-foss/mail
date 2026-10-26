@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -36,7 +37,7 @@ class AppleNotificationsScreenTest {
     fun appleDeliveryExplainsPrivacyAndDoesNotOfferAndroidServices() {
         listOf(ThemeBase.Otus, ThemeBase.Light, ThemeBase.Black).forEach { theme ->
             show(theme, PushDeliveryStatus.Active)
-            compose.onNodeWithText("Instant").assertIsDisplayed()
+            compose.onNodeWithText("Not instant").assertDoesNotExist()
             compose.onNodeWithText("Google Play services").assertDoesNotExist()
             capture("apple-${theme.name.lowercase()}")
         }
@@ -45,7 +46,7 @@ class AppleNotificationsScreenTest {
     @Test
     fun choosingAndDisablingAppleNeverPromisesPeriodicChecks() {
         show(ThemeBase.Light, PushDeliveryStatus.Connecting)
-        compose.onNodeWithText("Connecting").assertIsDisplayed()
+        compose.onNodeWithText("Not instant").assertDoesNotExist()
         capture("apple-connecting")
         compose.onNodeWithText("Instant delivery").performClick()
         compose.onNodeWithText("Built into Otus").assertIsDisplayed()
@@ -66,6 +67,7 @@ class AppleNotificationsScreenTest {
     @Test
     fun unconfiguredBuildExplainsWhyApplePushIsUnavailable() {
         show(ThemeBase.Light, PushDeliveryStatus.Connecting, configured = false)
+        compose.onNodeWithContentDescription("About Instant delivery").performClick()
         compose.onNodeWithText("Apple push is not configured in this build.").assertIsDisplayed()
         capture("apple-unconfigured")
     }
@@ -89,6 +91,7 @@ class AppleNotificationsScreenTest {
                         state,
                         listOf(ConnectedAccount("ada", "Ada", "ada@example.org", "example.org")),
                         onBack = {},
+                        onOpenOverrides = {},
                     )
                 }
             }

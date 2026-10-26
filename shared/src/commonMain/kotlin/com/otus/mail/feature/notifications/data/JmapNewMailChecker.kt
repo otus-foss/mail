@@ -11,6 +11,7 @@ import com.otus.jmap.JmapResponse
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.mail.DELIVERED_TO_PROPERTY
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MUTED_KEYWORD
@@ -18,6 +19,7 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
@@ -178,7 +180,20 @@ class JmapNewMailChecker(
         const val MAX_FETCHED = 50
 
         val EMAIL_PROPERTIES =
-            listOf("id", "threadId", "mailboxIds", "keywords", "from", "subject", "preview", "receivedAt")
+            listOf(
+                "id",
+                "threadId",
+                "mailboxIds",
+                "keywords",
+                "from",
+                "to",
+                "cc",
+                "subject",
+                "preview",
+                "receivedAt",
+                DELIVERED_TO_PROPERTY,
+                ORIGINAL_TO_PROPERTY,
+            )
         val MEMBER_PROPERTIES = listOf("id", "threadId", "keywords", "receivedAt")
     }
 }
@@ -194,5 +209,6 @@ private fun EmailObject.toNewMail(account: MailAccount): NewMail {
         preview = preview,
         // One malformed date must not stop every later check.
         receivedAt = Instant.parseOrNull(receivedAt) ?: Clock.System.now(),
+        recipients = (to.orEmpty() + cc.orEmpty()).map { it.email } + deliveredAddresses,
     )
 }

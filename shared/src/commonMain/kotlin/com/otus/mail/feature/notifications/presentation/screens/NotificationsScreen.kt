@@ -10,18 +10,24 @@ import com.otus.accounts.domain.ConnectedAccount
 import com.otus.designsystem.components.ChoiceOptions
 import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
-import com.otus.designsystem.components.PageNote
+import com.otus.designsystem.components.InfoText
 import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.PickRow
 import com.otus.designsystem.components.PickRowLayout
+import com.otus.designsystem.components.SettingPageRow
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingsSection
 import com.otus.designsystem.components.Subpage
 import com.otus.designsystem.elements.ValueButton
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
+import com.otus.mail.feature.notifications.domain.PreviewChoices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
+import com.otus.mail.feature.notifications.presentation.PreviewsInfo
+import com.otus.mail.feature.notifications.presentation.description
+import com.otus.mail.feature.notifications.presentation.overrideSummary
+import com.otus.mail.feature.notifications.presentation.title
 
 /** Delivery choices, registration status, and, where alerts can show mail, what they show. */
 @Composable
@@ -29,12 +35,13 @@ fun NotificationsScreen(
     state: NotificationSettingsState,
     accounts: List<ConnectedAccount>,
     onBack: () -> Unit,
+    onOpenOverrides: () -> Unit,
 ) {
     LaunchedEffect(state) { state.watch() }
     var choosing by rememberSaveable { mutableStateOf(false) }
     val current = state.current
     Subpage("Notifications", onBack) {
-        SettingsSection("New mail") {
+        SettingsSection("New mail", info = InfoText("Instant delivery", state.deliveryNote())) {
             SettingRow(
                 "Instant delivery",
                 { choosing = true },
@@ -45,31 +52,8 @@ fun NotificationsScreen(
                 ValueButton(current?.let { if (it.isGoogle) "Google" else it.name } ?: "Off")
             }
         }
-        state.previews?.let { previews ->
-            SettingsSection("Previews") {
-                NotificationPreviews.entries.forEach { choice ->
-                    PickRow(
-                        choice.title,
-                        choice.description,
-                        PickMark(choice == previews, atStart = true),
-                        { state.choosePreviews(choice) },
-                        layout = PickRowLayout(subtitleLines = PREVIEW_LINES),
-                    )
-                }
-            }
-        }
-        if (current != null && accounts.isNotEmpty()) {
-            SettingsSection("Accounts") {
-                accounts.forEach { account ->
-                    SettingRow(
-                        account.name,
-                        onClick = null,
-                        description = state.statuses[account.id].label(state.periodicChecks),
-                    )
-                }
-            }
-        }
-        PageNote(state.deliveryNote())
+        state.previews?.let { PreviewsSection(state, it, accounts, onOpenOverrides) }
+        if (current != null) NotInstantSection(state, accounts)
     }
     if (choosing) {
         ChoiceSheet(
@@ -85,24 +69,80 @@ fun NotificationsScreen(
     }
 }
 
+/** What alerts show for all mail, and the page that sets it per account and address. */
+@Composable
+private fun PreviewsSection(
+    state: NotificationSettingsState,
+    previews: PreviewChoices,
+    accounts: List<ConnectedAccount>,
+    onOpenOverrides: () -> Unit,
+) {
+    SettingsSection("Previews", info = PreviewsInfo) {
+        NotificationPreviews.entries.forEach { choice ->
+            PickRow(
+                choice.title,
+                choice.description,
+                PickMark(choice == previews.all, atStart = true),
+                { state.choosePreviews { it.copy(all = choice) } },
+                layout = PickRowLayout(subtitleLines = PREVIEW_LINES),
+            )
+        }
+    }
+    if (accounts.isNotEmpty()) {
+        SettingPageRow("Accounts and addresses", onOpenOverrides, description = previews.overrideSummary(accounts))
+    }
+}
+
+/**
+ * The accounts whose instant delivery fails, and why; nothing while every account is instant or
+ * still connecting. Mail still arrives through periodic checks then, so nothing else tells the
+ * user why alerts come late.
+ */
+@Composable
+private fun NotInstantSection(
+    state: NotificationSettingsState,
+    accounts: List<ConnectedAccount>,
+) {
+    val healthy = setOf(PushDeliveryStatus.Active, PushDeliveryStatus.Connecting)
+    val troubled = accounts.filter { account -> state.statuses[account.id].let { it != null && it !in healthy } }
+    if (troubled.isEmpty()) return
+    SettingsSection("Not instant", info = notInstantInfo(state.periodicChecks)) {
+        troubled.forEach { account ->
+            SettingRow(
+                account.name,
+                onClick = null,
+                description = state.statuses[account.id].label(state.periodicChecks),
+            )
+        }
+    }
+}
+
+private fun notInstantInfo(periodicChecks: Boolean) =
+    InfoText(
+        "Not instant",
+        if (periodicChecks) {
+            "Mail still arrives for these accounts through checks about every 15 minutes, and Mail keeps " +
+                "retrying instant delivery."
+        } else {
+            "These accounts get no new-mail alerts until instant delivery works. Opening Mail retries it."
+        },
+    )
+
 private fun PushDistributor?.choiceRow(periodicChecks: Boolean): ChoiceRow =
     this?.let { ChoiceRow(it.name, if (it.isGoogle || it.isApple) "Built into Otus" else "Through a separate app") }
         ?: ChoiceRow("Off", if (periodicChecks) "Checks about every 15 minutes" else "No new-mail alerts")
 
 private fun PushDeliveryStatus?.label(periodicChecks: Boolean): String {
-    val fallback = if (periodicChecks) " Mail checks periodically." else " Open Mail to retry."
-    val retry = if (periodicChecks) " Mail will retry and keep checking periodically." else " Open Mail to retry."
+    // With periodic checks mail still arrives, which the section's info explains; without them the
+    // user has to act, so the row says so.
+    val fallback = if (periodicChecks) "" else " Open Mail to retry."
     return when (this) {
         PushDeliveryStatus.Active -> {
             "Instant"
         }
 
         PushDeliveryStatus.ServerRefused -> {
-            if (periodicChecks) {
-                "The server can't push, so Mail checks periodically"
-            } else {
-                "The server can't push.$fallback"
-            }
+            "The server can't push.$fallback"
         }
 
         PushDeliveryStatus.VapidRequired -> {
@@ -114,11 +154,11 @@ private fun PushDeliveryStatus?.label(periodicChecks: Boolean): String {
         }
 
         PushDeliveryStatus.Unavailable -> {
-            "Couldn't connect.$retry"
+            "Couldn't connect.$fallback"
         }
 
         PushDeliveryStatus.RegistrationFailed -> {
-            "Push registration failed.$retry"
+            "Push registration failed.$fallback"
         }
 
         PushDeliveryStatus.Connecting, null -> {
@@ -155,30 +195,6 @@ private fun NotificationSettingsState.deliveryNote(): String =
             "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy."
         }
     }
-
-private val NotificationPreviews.title: String
-    get() =
-        when (this) {
-            NotificationPreviews.Always -> "Always"
-            NotificationPreviews.Unlocked -> "When unlocked"
-            NotificationPreviews.Never -> "Never"
-        }
-
-private val NotificationPreviews.description: String
-    get() =
-        when (this) {
-            NotificationPreviews.Always -> {
-                "Sender and subject show on the lock screen too, unless the device hides sensitive content."
-            }
-
-            NotificationPreviews.Unlocked -> {
-                "Nothing shows on the lock screen. Sender and subject show once the device is unlocked."
-            }
-
-            NotificationPreviews.Never -> {
-                "Alerts say only \"New mail\"."
-            }
-        }
 
 /** Enough lines for the longest description on a narrow phone. */
 private const val PREVIEW_LINES = 3

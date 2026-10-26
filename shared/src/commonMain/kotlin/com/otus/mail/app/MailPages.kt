@@ -24,6 +24,7 @@ import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.screens.SignatureEditorScreen
 import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
 import com.otus.mail.feature.inbox.presentation.status
+import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
@@ -55,6 +56,7 @@ internal fun MailPageContent(
         }
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
+        MailPage.NotificationOverrides,
         MailPage.SidebarSettings, MailPage.ThemeSettings, MailPage.MailListSettings, MailPage.ActionBarSettings,
         MailPage.Folders, is MailPage.FolderDetail,
         -> {
@@ -122,8 +124,8 @@ private fun SettingsPageContent(
             MailBehaviorPage(states, navigation, back)
         }
 
-        MailPage.Notifications -> {
-            states.notifications?.let { NotificationsScreen(it, states.accounts.accounts, onBack = back) }
+        MailPage.Notifications, MailPage.NotificationOverrides -> {
+            NotificationPages(page, states, navigation, back)
         }
 
         MailPage.SidebarSettings -> {
@@ -244,5 +246,23 @@ internal fun rememberLabeled(
     val colors = states.folderColors.colors to states.behavior.behavior.sidebar.folderColors
     return remember(feed.messages, states.folders.accounts, scope, colors) {
         states.filing.labeled(feed.messages.within(scope))
+    }
+}
+
+/** Notifications and its page of account and address previews; neither shows where pushes are unavailable. */
+@Composable
+private fun NotificationPages(
+    page: MailPage,
+    states: MailStates,
+    navigation: MailNavigation,
+    back: () -> Unit,
+) {
+    val notifications = states.notifications ?: return
+    if (page == MailPage.NotificationOverrides) {
+        NotificationOverridesScreen(notifications, states.accounts.accounts, onBack = back)
+    } else {
+        NotificationsScreen(notifications, states.accounts.accounts, onBack = back) {
+            navigation.go(MailPage.NotificationOverrides)
+        }
     }
 }
