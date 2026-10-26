@@ -64,7 +64,7 @@ internal fun ContactDetails(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) {
         RefusedStrip(facts, onSaveElsewhere)
         ContactHeader(person.avatar, listOfNotNull(person.main.role), onEdit = onEditAvatar)
-        if (facts.ownAvatar) PageNote("Your avatar. Mail shows it wherever your own address appears.")
+        if (facts.ownAvatar) PageNote("This is you. Mail shows this avatar wherever your address appears.")
         Section("Email", emailRows(person, onWriteTo))
         Section("Details", detailRows(facts, onCopyNumber))
         Section("Saved in", savedInRows(facts, onOpen))
