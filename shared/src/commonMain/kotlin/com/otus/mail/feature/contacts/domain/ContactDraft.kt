@@ -48,6 +48,8 @@ data class ContactDraft(
     fun applyTo(card: Card = Card(kind = CardKind.Individual)): Card {
         val keptEmails = emails.filter { it.value.isNotBlank() }
         val keptPhones = phones.filter { it.value.isNotBlank() }
+        val emailKeys = valueKeys(keptEmails, "e", card.emails.orEmpty().keys)
+        val phoneKeys = valueKeys(keptPhones, "p", card.phones.orEmpty().keys)
         return card
             .copy(
                 name = name(card.name),
@@ -55,7 +57,7 @@ data class ContactDraft(
                     keptEmails
                         .mapIndexed { index, value ->
                             val old = value.id?.let { id -> card.emails?.get(id) }
-                            value.key(index, "e") to
+                            emailKeys[index] to
                                 (old ?: EmailAddress(value.value.trim())).copy(
                                     address = value.value.trim(),
                                     contexts = value.label.contexts(old?.contexts),
@@ -68,7 +70,7 @@ data class ContactDraft(
                     keptPhones
                         .mapIndexed { index, value ->
                             val old = value.id?.let { id -> card.phones?.get(id) }
-                            value.key(index, "p") to
+                            phoneKeys[index] to
                                 (old ?: Phone(value.value.trim())).copy(
                                     number = value.value.trim(),
                                     contexts = value.label.contexts(old?.contexts),
@@ -76,15 +78,18 @@ data class ContactDraft(
                                 )
                         }.toMap()
                         .takeIf { it.isNotEmpty() },
-                organizations = replaceFirst(card.organizations, organization) { Organization(name = it) },
-                titles = replaceFirst(card.titles, title) { Title(it) },
+                organizations =
+                    replaceFirst(card.organizations, organization) { old, text ->
+                        old?.copy(name = text) ?: Organization(name = text)
+                    },
+                titles = replaceFirst(card.titles, title) { old, text -> old?.copy(name = text) ?: Title(text) },
                 anniversaries =
                     card.anniversaries
                         .orEmpty()
                         .filterValues { it.kind != AnniversaryKind.Birth }
                         .plus(listOfNotNull(birthday?.let { BIRTHDAY to Anniversary(AnniversaryKind.Birth, it) }))
                         .takeIf { it.isNotEmpty() },
-                notes = replaceFirst(card.notes, note) { Note(it) },
+                notes = replaceFirst(card.notes, note) { old, text -> old?.copy(note = text) ?: Note(text) },
             ).let { if (photo == card.photo) it else it.withPhoto(photo) }
     }
 
@@ -182,24 +187,32 @@ data class DraftValue(
 ) {
     /** Filled in but not an address a server accepts, such as "ada" without a domain. */
     val isInvalidEmail: Boolean get() = value.isNotBlank() && !isEmailAddress(value.trim())
-
-    /** The card key to store it under: its own, else the next free one such as `e2`. */
-    internal fun key(
-        index: Int,
-        prefix: String,
-    ): String = id ?: "$prefix${index + 1}${NEW_SUFFIX}"
 }
 
-// New keys get a suffix so they never collide with a key the card already uses.
+/**
+ * The card key for each of [values]: its own, else the next key such as `e2n` that neither the
+ * card's [taken] keys nor another value uses, so a new value never replaces one that stays.
+ */
+private fun valueKeys(
+    values: List<DraftValue>,
+    prefix: String,
+    taken: Set<String>,
+): List<String> {
+    val fresh = freeKeys(prefix, taken + values.mapNotNull { it.id }, NEW_SUFFIX).iterator()
+    return values.map { it.id ?: fresh.next() }
+}
+
+// New keys get a suffix so they rarely look like a key another app chose.
 private const val NEW_SUFFIX = "n"
 
 /**
- * [values] with its first entry set to [text], or removed when [text] is blank; the others stay.
+ * [values] with its first entry set to [text] through [update], which gets the old entry so its
+ * other properties stay, or removed when [text] is blank; the other entries stay.
  */
 private fun <T> replaceFirst(
     values: Map<String, T>?,
     text: String?,
-    make: (String) -> T,
+    update: (old: T?, text: String) -> T,
 ): Map<String, T>? {
     val first = values?.keys?.firstOrNull() ?: "1"
     val rest = values.orEmpty() - first
@@ -207,7 +220,7 @@ private fun <T> replaceFirst(
         text
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
-            ?.let { mapOf(first to make(it)) }
+            ?.let { mapOf(first to update(values?.get(first), it)) }
             .orEmpty()
     return (kept + rest).takeIf { it.isNotEmpty() }
 }
