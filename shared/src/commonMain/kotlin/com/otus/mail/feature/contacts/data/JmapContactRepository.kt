@@ -201,7 +201,10 @@ internal class JmapContactRepository(
                 call(GetMethod(ContactCardType, account, JmapIds.Result(query.resultOf("/ids")), page.properties))
             }.list
 
-    /** Runs a change, calling a missing connection [ContactWriteFailure.Offline]. */
+    /**
+     * Runs a change. A missing connection, a sign-in the server rejects, or a server error is
+     * [ContactWriteFailure.Offline], so the change waits and goes again later instead of failing.
+     */
     private suspend fun <T> write(
         loginId: String,
         block: suspend (JmapConnection) -> T,
@@ -213,9 +216,8 @@ internal class JmapContactRepository(
             block(connections.connection(login))
         } catch (error: JmapException) {
             throw when (error) {
-                is JmapException.Unreachable -> ContactWriteException(ContactWriteFailure.Offline, error)
                 is JmapException.MethodError -> refused(error.type, error)
-                else -> error
+                else -> ContactWriteException(ContactWriteFailure.Offline, error)
             }
         }
     }

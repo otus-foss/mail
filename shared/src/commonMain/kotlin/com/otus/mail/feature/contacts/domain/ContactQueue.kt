@@ -44,13 +44,15 @@ fun applyEdits(
 /**
  * [edits] with [edit] added, folded into a waiting change of the same card so the server sees one
  * change per card: an update of a card not sent yet changes its creation, a second update keeps
- * the first one's starting point, and deleting a card not sent yet drops it entirely.
+ * the first one's starting point, and deleting a card not sent yet drops it entirely. The change
+ * [sending] names is on its way to the server, so [edit] waits after it instead of joining it.
  */
 fun enqueue(
     edits: List<ContactEdit>,
     edit: ContactEdit,
+    sending: String? = null,
 ): List<ContactEdit> {
-    val earlier = edits.lastOrNull { it.key == edit.key }
+    val earlier = edits.lastOrNull { it.key == edit.key }?.takeIf { it.id != sending }
     return when {
         earlier is ContactEdit.Create && edit is ContactEdit.Update -> {
             edits.map { if (it == earlier) earlier.copy(card = edit.after) else it }
