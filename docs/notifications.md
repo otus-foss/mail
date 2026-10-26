@@ -23,7 +23,7 @@ and background checks. No public gateway is configured.
 For Google delivery, each login's JMAP session must advertise `urn:ietf:params:jmap:webpush-vapid`
 and an `applicationServerKey`, as RFC 9749 specifies. Otus passes that key to the connector.
 Servers without it show that Google delivery is unsupported and keep background checks.
-A malformed key, failed registration, or unreachable server has its own account status.
+A malformed key, failed registration, or unreachable server has its own account status. Settings › Notifications lists an account under **Not instant** only while its status is one of these problems; accounts that are instant or still connecting are not listed.
 An account that fails does not prevent another account from registering.
 
 The periodic worker checks signing keys again. A changed key replaces that login's registration
@@ -74,12 +74,23 @@ the title, the subject as the text, and the subject and preview when expanded. M
 grouped by account with a summary. Settings › Notifications › **Previews** decides what they show,
 saved by `AndroidNotificationPreviewStore`:
 
-- **When unlocked**, the default, posts them with `VISIBILITY_SECRET`, so nothing shows on the
-  lock screen and the full alert shows once the device is unlocked.
-- **Always** posts them with `VISIBILITY_PRIVATE`. Android then shows the content on the lock
-  screen unless the device's own setting hides sensitive content, which stock Android does not by
-  default; a hidden alert shows only "New mail".
-- **Never** shows only "New mail", without the sender, subject, preview, or account.
+- **Use device setting**, the default, posts them with `VISIBILITY_PRIVATE` and a public version
+  that says only "New mail". Unlocked, the alert shows the sender and subject. On the lock screen,
+  Android's own notification setting decides: it shows the alert in full, shows the public
+  version, or shows nothing.
+- **New mail only** shows only "New mail", locked or unlocked, without the sender, subject,
+  preview, or account.
+
+**Accounts and addresses** opens a page that overrides the choice for one login's mail, or for
+mail sent to one of its addresses. Mail counts as sent to an address when To or Cc names it, or
+when the topmost `Delivered-To` or `X-Original-To` header does, which covers Bcc and list mail. A
+wildcard identity such as `*@example.org` covers every address of its domain that has no choice
+of its own. Its row on the Notifications page says how many have a setting
+of their own, and says nothing while none do. An address's choice wins over its account's, which wins
+over the choice for all mail. Mail sent to several of the user's addresses with choices follows the
+more private one, and an account's summary says only "New mail" when any of its alerts does. The
+earlier choices carry over: Always and When unlocked become Use device setting, Never becomes New
+mail only.
 
 Apple alerts never show message content, so iOS has no Previews setting.
 A tap opens the app; opening the message itself is not built yet.

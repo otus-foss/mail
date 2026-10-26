@@ -12,11 +12,13 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
+import com.otus.mail.core.mail.DELIVERED_TO_PROPERTY
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.LIST_ID_PROPERTY
 import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
+import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mail.putObject
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -118,8 +120,8 @@ class JmapMessageBodies(
                 LIST_UNSUBSCRIBE_PROPERTY,
                 "header:List-Unsubscribe-Post:asText",
                 LIST_ID_PROPERTY,
-                "header:Delivered-To:asAddresses:all",
-                "header:X-Original-To:asAddresses:all",
+                DELIVERED_TO_PROPERTY,
+                ORIGINAL_TO_PROPERTY,
             )
 
         /** Each part's `type` tells an HTML part from a plain one; the rest name and fetch files. */

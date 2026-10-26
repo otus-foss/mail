@@ -48,7 +48,7 @@ internal fun FolderRulesSection(
         AddRuleChip("Add rule", onAdd, Modifier.fillMaxWidth())
     }
     parents.forEach { parent ->
-        PageNote("Checked first, in ${parent.folder.name}. Mail that matches goes there.")
+        PageNote("From ${parent.folder.name}, checked first")
         Column(
             Modifier.padding(horizontal = PageTokens.textInset),
             verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap),
