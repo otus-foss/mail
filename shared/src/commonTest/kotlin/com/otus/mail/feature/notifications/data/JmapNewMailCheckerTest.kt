@@ -162,6 +162,33 @@ class JmapNewMailCheckerTest {
         }
 
     @Test
+    fun bccAndListMailNamesTheAddressItWasDeliveredTo() =
+        runTest {
+            val shown =
+                check(States(mapOf("ada" to "e1"))) { body ->
+                    if ("Email/changes" in body) {
+                        """{"methodResponses": [["Email/changes", {"oldState": "e1", "newState": "e2",
+                           "hasMoreChanges": false, "created": ["m1"]}, "c0"]]}"""
+                    } else {
+                        assertTrue("header:Delivered-To:asAddresses:all" in body, body)
+                        val headers =
+                            """{"to": [{"email": "list@lists.example.org"}],
+                               "header:Delivered-To:asAddresses:all": [[{"email": "ada+news@example.org"}],
+                                 [{"email": "forged@example.org"}]],
+                               "header:X-Original-To:asAddresses:all": [[{"email": "news@example.org"}]], "id""""
+                        val delivered = email("m1", "i", "{}").replace("{\"id\"", headers)
+                        """{"methodResponses": [
+                           ["Mailbox/get", {"state": "b1", "list": [{"id": "i", "role": "inbox"}]}, "c0"],
+                           ["Email/get", {"state": "e2", "list": [$delivered]}, "c1"]]}"""
+                    }
+                }
+            assertEquals(
+                listOf("list@lists.example.org", "ada+news@example.org", "news@example.org"),
+                shown.single().recipients,
+            )
+        }
+
+    @Test
     fun mailInAMutedConversationIsNotShown() =
         runTest {
             val states = States(mapOf("ada" to "e1"))

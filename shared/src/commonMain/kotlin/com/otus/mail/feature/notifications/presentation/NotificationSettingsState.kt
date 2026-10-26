@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.NotificationPreviewStore
-import com.otus.mail.feature.notifications.domain.NotificationPreviews
+import com.otus.mail.feature.notifications.domain.PreviewChoices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
 import kotlinx.coroutines.CoroutineScope
@@ -24,14 +24,15 @@ class NotificationSettingsState(
 ) {
     val periodicChecks: Boolean get() = push.periodicChecks
 
-    /** What alerts show; null where they never show message content. */
-    var previews: NotificationPreviews? by mutableStateOf(previewStore?.read())
+    /** What alerts show, for all mail and per login and address; null where they never show message content. */
+    var previews: PreviewChoices? by mutableStateOf(previewStore?.read())
         private set
 
-    fun choosePreviews(choice: NotificationPreviews) {
+    fun choosePreviews(change: (PreviewChoices) -> PreviewChoices) {
         val store = previewStore ?: return
-        previews = choice
-        store.write(choice)
+        val chosen = change(previews ?: PreviewChoices())
+        previews = chosen
+        store.write(chosen)
     }
 
     var distributors: List<PushDistributor> by mutableStateOf(emptyList())

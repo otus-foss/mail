@@ -101,8 +101,8 @@ class ComposeAttachments(
     fun replace(id: String) {
         val from = files ?: return
         scope.launch {
-            val picked = from.pick().firstOrNull { it.type.startsWith("image/") } ?: return@launch
-            val file = cleaning.cleanedAsChosen(listOf(picked)).single()
+            val chosen = from.pick().firstOrNull { it.type.startsWith("image/") } ?: return@launch
+            val file = cleaning.cleanedAsChosen(listOf(chosen)).single()
             val old = attachments().firstOrNull { it.id == id } ?: return@launch
             val new = newAttachment(file).copy(inline = true)
             jobs.remove(id)?.cancel()

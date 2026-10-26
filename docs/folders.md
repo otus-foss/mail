@@ -176,8 +176,8 @@ and an empty folder reads "No messages". Then come these rows:
   (see [Folder colors](#folder-colors)).
 - **Rules**, "New mail that matches any of these goes here", lists the folder's rules as
   full-width chips and ends with a dashed **Add rule** chip. See [Rules](#rules). Below them,
-  each folder above it that has rules follows, top level first, under "Checked first, in
-  Clients. Mail that matches goes there." Those chips are faded, and tapping one opens that
+  each folder above it that has rules follows, top level first, under "From Clients, checked
+  first". Those chips are faded, and tapping one opens that
   folder's page.
 - **Delete folder** asks first and then deletes the folder and its rules. It stays off, with
   "Empty its messages and subfolders first", until the folder has no messages and no subfolders.

@@ -164,10 +164,10 @@ class FolderRulesUiTest {
     fun aSubfolderShowsItsParentsRulesAsCheckedFirst() {
         seedRule("""{"field":"from","operator":"is","value":"grace@example.org"}""")
         openFolder("Amazon")
-        compose.onNodeWithText("Checked first, in Receipts. Mail that matches goes there.").performScrollTo()
+        compose.onNodeWithText("From Receipts, checked first").performScrollTo()
         chip("grace@example.org").performScrollTo().performClick()
         // The parent's own page lists the rule as its own, with nothing checked before it.
-        compose.waitUntil(TIMEOUT) { count("Checked first") == 0 }
+        compose.waitUntil(TIMEOUT) { count("checked first") == 0 }
         chip("grace@example.org").assertExists()
     }
 
