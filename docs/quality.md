@@ -15,14 +15,17 @@ python3 -m venv .venv
 To build against an unreleased otus-meta checkout, set
 `GRADLE_OPTS=-Dorg.gradle.project.otus.meta.path=../otus-meta`.
 
-Daily commands:
+During development, batch edits and run the linters plus the test classes affected by the change:
 
 ```sh
-./gradlew formatAll
-./gradlew checkAll
+./gradlew spotlessCheck detekt ruffCheck ruffFormatCheck
+./gradlew :androidApp:testDebugUnitTest --tests 'com.otus.mail.FilterPanelScreenshotTest'
 ```
 
-Run formatting first, then checks. Formatting cannot fix every static-analysis violation.
+Use `:shared:testAndroidHostTest --tests '<fully qualified class>'` for shared tests. Use
+`qualityCheck` when architecture and tooling checks are also needed. Run `formatAll` when files
+need formatting; it cannot fix every static-analysis violation. Run `checkAll` once after the
+final batch, and repeat it only when later changes or failures require another full check.
 Gradle uses the repository's Python virtual environment when present. A linked worktree without
 one uses the main checkout's `.venv`.
 
@@ -73,6 +76,31 @@ JMAP iOS storage tests live in otus-meta as `:jmap:iosSimulatorArm64Test`. Meta'
 does not run them, and its macOS `ios` job is paused, so they run only when started by hand on a Mac.
 Android setup installs `platform-tools`
 and the pinned platform/build-tools packages rather than the removed legacy `tools` package.
+
+## Profiling and cache reuse
+
+Use `./gradlew checkAll --profile --console=plain` to write task timings to
+`build/reports/profile/`. Compare it with an unchanged repeat. To measure actual UI test execution
+without forcing compilation and lint to rerun, use
+`./gradlew :androidApp:testDebugUnitTest --rerun --profile --console=plain`.
+Use `--info` to see why a task ran or whether it restored outputs from the build cache.
+
+Record queue waits separately. On the shared machine, the build queue waits inside a task action,
+so Gradle can charge waiting time to an otherwise cheap task. Test timings also include JVM,
+Robolectric, and native-renderer startup. Compare the same source revisions and test selection.
+
+Screenshot baselines are task inputs with relative path sensitivity. Their names and contents
+must invalidate verification when they change; the checkout's absolute path must not. Keep these
+inputs when changing the test configuration. A test task also tracks its runtime classpath, so
+editing application code or a dependency can legitimately rerun the entire UI test task.
+Recording with `-Proborazzi.record` always executes and does not cache test results, because
+baseline PNGs are written outside the test task's declared output directories.
+
+On 2026-10-26, the 83 tracked Android test classes took 83.3 seconds with one worker, 77.9 seconds
+with two, and 114.1 seconds with three on the shared machine with eight logical CPUs. Peak combined test-worker
+RSS was 1.7, 2.8, and 3.8 GiB respectively. These are individual runs with queue time excluded,
+not a CI benchmark. Keep the two-worker default. After the relative-path fix, a fresh checkout
+restored the same full test result from cache in 0.17 seconds.
 
 ## Coverage
 

@@ -115,10 +115,18 @@ val screenshots = layout.projectDirectory.dir("src/test/screenshots")
 val recordScreenshots = providers.gradleProperty("roborazzi.record").isPresent
 
 tasks.withType<Test>().configureEach {
-    // Robolectric UI tests are most of checkAll; two JVMs roughly halve them for about 1 GB more RAM.
+    // Keep native UI-test memory bounded on shared machines.
     maxParallelForks = 2
-    inputs.dir(screenshots).withPropertyName("screenshots").optional()
+    inputs
+        .dir(screenshots)
+        .withPropertyName("screenshots")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+        .optional()
     systemProperty(if (recordScreenshots) "roborazzi.test.record" else "roborazzi.test.verify", "true")
+    if (recordScreenshots) {
+        outputs.upToDateWhen { false }
+        outputs.doNotCacheIf("Recording writes baselines outside the test outputs") { true }
+    }
     jvmArgs(
         "--add-opens=java.base/java.lang=ALL-UNNAMED",
         "--add-opens=java.base/java.util=ALL-UNNAMED",
