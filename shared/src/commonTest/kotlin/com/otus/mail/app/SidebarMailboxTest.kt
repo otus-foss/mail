@@ -40,6 +40,7 @@ class SidebarMailboxTest {
         assertEquals(
             listOf(
                 SidebarPin.Conversations,
+                SidebarPin.Contacts,
                 SidebarPin.Role("sent"),
                 SidebarPin.Folder(listOf("work")),
                 SidebarPin.Folder(listOf("work", "clients")),

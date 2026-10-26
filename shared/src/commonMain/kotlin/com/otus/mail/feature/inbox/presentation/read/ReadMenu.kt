@@ -3,13 +3,15 @@ package com.otus.mail.feature.inbox.presentation.read
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
+import com.otus.mail.feature.inbox.domain.Participant
 import com.otus.mail.feature.inbox.domain.isOwn
 import com.otus.mail.feature.inbox.domain.otherReply
 
 /**
  * The Read view page the ⋯ menu acts on: its [message], at [index] of [count] in its conversation,
  * newest first. [imagesBlocked] while its sender may not show remote images. [suggestedPath] is the
- * folder this sender's mail usually goes to, when one is known.
+ * folder this sender's mail usually goes to, when one is known. [people] is everyone the
+ * conversation names besides the user.
  */
 data class ReadPage(
     val message: MailMessage,
@@ -20,6 +22,7 @@ data class ReadPage(
     val imagesBlocked: Boolean = false,
     val muted: Boolean = false,
     val suggestedPath: List<String>? = null,
+    val people: List<Participant> = emptyList(),
 )
 
 /** A part of the ⋯ menu: the page's message, its sender, or the whole conversation. */
@@ -79,19 +82,28 @@ sealed interface ReadMenuEntry {
     ) : ReadMenuEntry
 
     data object DeleteConversation : ReadMenuEntry
+
+    /** Opens what the app offers for the sender: their card, or ways to save the address. */
+    data object SenderContact : ReadMenuEntry
+
+    /** Lists everyone the conversation names, so any of them can be saved or opened. */
+    data class People(
+        val people: List<Participant>,
+    ) : ReadMenuEntry
 }
 
 /**
  * The ⋯ menu for [page]: what acts on its message, then its sender, then the whole conversation.
  * A single message moves from its own section and has no conversation section. A newsletter
  * offers no reply, and the user's own message has no reply or sender section. Always show images
- * appears only while images are blocked.
+ * appears only while images are blocked. People appears once anyone besides the sender takes part:
+ * with the conversation's entries in a thread, else with the message's.
  */
 fun readMenu(page: ReadPage): List<ReadMenuSection> =
     buildList {
         add(ReadMenuSection(ReadMenuPart.ThisMessage, page.messageEntries()))
         if (!page.fromUser) {
-            val entries = listOf(ReadMenuEntry.BlockSender, ReadMenuEntry.ReportSpam)
+            val entries = listOf(ReadMenuEntry.SenderContact, ReadMenuEntry.BlockSender, ReadMenuEntry.ReportSpam)
             add(ReadMenuSection(ReadMenuPart.Sender(page.senderName), entries))
         }
         if (page.thread) {
@@ -100,7 +112,7 @@ fun readMenu(page: ReadPage): List<ReadMenuSection> =
                     ReadMenuEntry.MoveTo(page.suggestedPath),
                     ReadMenuEntry.Mute(page.muted),
                     ReadMenuEntry.DeleteConversation,
-                )
+                ) + listOfNotNull(page.peopleEntry)
             add(ReadMenuSection(ReadMenuPart.Conversation, entries))
         }
     }
@@ -118,7 +130,12 @@ private fun ReadPage.messageEntries(): List<ReadMenuEntry> =
         add(ReadMenuEntry.ViewDetails)
         add(ReadMenuEntry.Print)
         if (thread && index > 0) add(ReadMenuEntry.DeleteThisMessage)
+        if (!thread) peopleEntry?.let(::add)
     }
+
+/** People, once the page names someone besides its sender; the sender alone has its own entry. */
+private val ReadPage.peopleEntry: ReadMenuEntry.People?
+    get() = ReadMenuEntry.People(people).takeIf { people.size > if (fromUser) 0 else 1 }
 
 private val ReadPage.thread: Boolean
     get() = count > 1

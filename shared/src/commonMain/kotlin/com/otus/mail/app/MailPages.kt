@@ -87,6 +87,10 @@ internal fun MailPageContent(
         is MailPage.Shared -> {
             SharedFolderPage(page, states, dateFormatter, navigation)
         }
+
+        MailPage.Contacts, is MailPage.Contact, is MailPage.ContactEditor -> {
+            ContactsPages(page, states, navigation, back)
+        }
     }
 }
 
@@ -203,7 +207,7 @@ internal fun FeedPage(
             InboxContext.folder(name, states.behavior.behavior.pills).copy(
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
                 loadContent = states::messageContent,
-                read = rememberReadContext(states, feed),
+                read = rememberReadContext(states, feed, navigation),
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, page, filters.applied),
                 rowLook = rememberRowLook(states),
