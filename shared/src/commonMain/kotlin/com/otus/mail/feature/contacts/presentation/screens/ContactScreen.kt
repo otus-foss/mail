@@ -52,6 +52,7 @@ import com.otus.mail.feature.contacts.presentation.components.ContactPageBar
 import com.otus.mail.feature.contacts.presentation.components.GroupMembers
 import com.otus.mail.feature.contacts.presentation.components.PersonFacts
 import com.otus.mail.feature.contacts.presentation.contactPage
+import com.otus.mail.feature.contacts.presentation.current
 import com.otus.mail.feature.contacts.presentation.groupsOf
 import com.otus.mail.feature.contacts.presentation.photoChoices
 import com.otus.mail.feature.contacts.presentation.plainTextClip
@@ -68,10 +69,11 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun ContactScreen(
     state: ContactsState,
-    key: CardKey,
+    opened: CardKey,
     navigation: ContactNavigation,
 ) {
     NavigationBackHandler(rememberNavigationEventState(NavigationEventInfo.None), onBackCompleted = navigation.onBack)
+    val key = state.current(opened)
     val card = state.card(key)
     LaunchedEffect(card == null, state.snapshot) { if (card == null && state.snapshot != null) navigation.onBack() }
     card ?: return
