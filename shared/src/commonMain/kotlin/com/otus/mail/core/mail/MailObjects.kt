@@ -125,20 +125,36 @@ data class EmailObject(
     @SerialName(LIST_ID_PROPERTY)
     val listId: String? = null,
     /** Every `Delivered-To` header's addresses, which name the mailbox a Bcc'd list reached. */
-    @SerialName("header:Delivered-To:asAddresses:all")
+    @SerialName(DELIVERED_TO_PROPERTY)
     val deliveredTo: List<List<EmailAddress>?>? = null,
     /** Every `X-Original-To` header's addresses, which some servers write in place of `Delivered-To`. */
-    @SerialName("header:X-Original-To:asAddresses:all")
+    @SerialName(ORIGINAL_TO_PROPERTY)
     val originalTo: List<List<EmailAddress>?>? = null,
 ) {
     /** Whether a mailing list or newsletter sent it. */
     val fromList: Boolean
         get() = listId != null || !listUnsubscribe.isNullOrEmpty()
+
+    /**
+     * The addresses the user's server delivered it to, from the topmost `Delivered-To` and
+     * `X-Original-To`. Only the topmost of each header comes from that server; a sender can write
+     * more below it to learn which aliases belong together.
+     */
+    val deliveredAddresses: List<String>
+        get() =
+            (deliveredTo?.firstOrNull().orEmpty() + originalTo?.firstOrNull().orEmpty())
+                .map { it.email.trim() }
+                .filter { it.isNotEmpty() }
+                .distinct()
 }
 
 /** The `Email/get` properties that read a mailing list's headers, which mark newsletters. */
 const val LIST_ID_PROPERTY = "header:List-Id:asText"
 const val LIST_UNSUBSCRIBE_PROPERTY = "header:List-Unsubscribe:asURLs"
+
+/** The `Email/get` properties that read the delivery headers behind [EmailObject.deliveredAddresses]. */
+const val DELIVERED_TO_PROPERTY = "header:Delivered-To:asAddresses:all"
+const val ORIGINAL_TO_PROPERTY = "header:X-Original-To:asAddresses:all"
 
 /** One header field as the message has it (RFC 8621, section 4.1.3). */
 @Serializable

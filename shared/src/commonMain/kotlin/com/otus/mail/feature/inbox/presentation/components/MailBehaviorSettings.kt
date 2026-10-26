@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.otus.designsystem.components.ChoiceOptions
 import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
+import com.otus.designsystem.components.InfoText
 import com.otus.designsystem.components.SettingPageRow
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingToggleRow
@@ -136,7 +137,12 @@ fun MailBehaviorSettings(
             "Show quoted text",
             checked = behavior.showQuotes,
             onCheckedChange = { on -> state.update { it.copy(showQuotes = on) } },
-            description = "Off, replies in a conversation show only what is new; swipe for the earlier messages",
+            description = "When off, replies show only what's new",
+            info =
+                InfoText(
+                    "Show quoted text",
+                    "With it off, swipe through the conversation to read the earlier messages.",
+                ),
             icon = Res.drawable.symbol_forum,
         )
     }

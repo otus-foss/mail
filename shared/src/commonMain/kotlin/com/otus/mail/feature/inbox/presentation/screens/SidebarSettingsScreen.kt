@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.components.ChoiceOptions
 import com.otus.designsystem.components.ChoiceRow
 import com.otus.designsystem.components.ChoiceSheet
+import com.otus.designsystem.components.InfoText
 import com.otus.designsystem.components.ReorderableColumn
 import com.otus.designsystem.components.SettingRow
 import com.otus.designsystem.components.SettingToggleRow
@@ -89,7 +90,8 @@ fun SidebarSettingsScreen(
                 "Folder colors",
                 checked = layout.folderColors,
                 onCheckedChange = { shown -> change { it.copy(folderColors = shown) } },
-                description = "Colors only change the folder icon. They stay on this device.",
+                description = "Only changes the folder icon",
+                info = InfoText("Folder colors", "Colors stay on this device. Other apps and devices don't see them."),
             )
         }
     }

@@ -101,14 +101,17 @@ class MailServices(
     private val logins: LoginStore = InMemoryLoginStore(),
     avatarStore: AvatarStore = EmptyAvatarStore,
     internal val stores: MailDeviceStores = MailDeviceStores(),
-    internal val nightly: NightlyUpdates = NightlyUpdates(),
     /** Instant pushes through the selected service; null where the platform has none. */
     internal val instantPush: InstantPush? = null,
     internal val pickers: MailPickers = MailPickers(),
-    /** The screen and keyboard protections this platform can apply. */
-    internal val devicePrivacy: DevicePrivacy = DevicePrivacy(),
+    private val host: MailPlatform = MailPlatform(),
     createClient: () -> JmapClient = { JmapClient() },
 ) {
+    internal val nightly: NightlyUpdates get() = host.nightly
+
+    /** The screen and keyboard protections this platform can apply. */
+    internal val devicePrivacy: DevicePrivacy get() = host.devicePrivacy
+
     /** The device's copy of each login's mail; see docs/storage.md. */
     private val accountCache = AccountMailCache(RecoveringMailCache(stores.cache))
     internal val cache: MailCache get() = accountCache

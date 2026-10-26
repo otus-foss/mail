@@ -21,8 +21,9 @@ own page.
   button, under large section titles, and connects new ones with a JMAP
   server, username, and password or app password. It supports compatible JMAP mail servers with
   HTTP Basic authentication, such as Stalwart; no provider-specific behavior exists.
-- **Notifications** chooses Google Play services or a UnifiedPush app for instant delivery and shows each account's push
-  status; see [notifications](notifications.md).
+- **Notifications** chooses Google Play services or a UnifiedPush app for instant delivery, sets
+  what alerts show under **Previews**, and lists only accounts whose push failed under **Not
+  instant**; see [notifications](notifications.md).
 - **Appearance** (`AppearanceSettingsScreen` from `com.otus.settings`) holds only visual choices,
   in one **Look** section, and every row has an icon. Rows that open a page are Meta's `SettingPageRow`s: they end in a
   chevron and name the page's value under the title. **Theme** names the theme and opens the Theme
@@ -30,8 +31,8 @@ own page.
   **Sidebar** names how many sections the sidebar shows, such as "2 sections", and opens the
   Sidebar page, which arranges the sidebar's sections, mailboxes, and counts (see
   [Mail destinations](sidebar.md#mail-destinations)). Its **Folder colors** switch, on by default,
-  hides folder icon colors without deleting them, with the caption "Colors only change the folder
-  icon. They stay on this device." **Date format** shows the pattern in a `ValueButton`, with an
+  hides folder icon colors without deleting them, with the caption "Only changes the folder icon";
+  its info button adds that colors stay on this device. **Date format** shows the pattern in a `ValueButton`, with an
   example date below the title. Tapping the row opens a `ChoiceSheet` with every format and its
   example; choosing one applies it at once and moves the check, and Done, the scrim, Back, or
   swiping down anywhere on the sheet closes it. A short, slow pull springs back. **Animations**
@@ -52,8 +53,8 @@ own page.
 - **Privacy** (`PrivacyScreen`) decides what mail and avatars load from other servers. Under
   **Load remote images**, three rows choose **Always**, **From people you know** (the default:
   contacts, people the user wrote to, and allowed senders), or **Never**; the chosen one ends in a
-  check. A note says that images inside the mail itself always show and that mail in Spam never
-  loads remote images. Mail in a folder the app has not loaded yet waits as if it were in Spam. **Allowed senders** names how many there are and opens their page
+  check. The section's info button explains each choice and says that images inside the mail
+  itself always show and that mail in Spam never loads remote images. Mail in a folder the app has not loaded yet waits as if it were in Spam. **Allowed senders** names how many there are and opens their page
   (`AllowedSendersScreen`), which lists each address with a **Remove** button, or says how to add
   one. The Read view adds a sender with "Always for" on its image banner. Under **Avatars**, the
   **Website icons** switch, off by default, lets avatars load logos from sender websites and photos

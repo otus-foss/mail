@@ -1,10 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.PageNote
+import com.otus.designsystem.components.InfoText
 import com.otus.designsystem.components.PickMark
 import com.otus.designsystem.components.PickRow
 import com.otus.designsystem.components.SettingPageRow
@@ -16,7 +13,6 @@ import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.resources.symbol_visibility_off
-import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.RemoteImages
@@ -37,14 +33,11 @@ fun PrivacyScreen(
 ) {
     val behavior = state.behavior
     Subpage("Privacy", onBack) {
-        SettingsSection("Load remote images") {
+        SettingsSection("Load remote images", info = ImagesInfo) {
             RemoteImages.entries.forEach { choice ->
                 ImagesChoiceRow(choice, selected = choice == behavior.remoteImages) {
                     state.update { it.copy(remoteImages = choice) }
                 }
-            }
-            Box(Modifier.padding(vertical = PageTokens.rowGap)) {
-                PageNote("Images that are part of the mail itself always show. Mail in Spam never loads remote images.")
             }
             val count = behavior.allowedSenders.size
             SettingPageRow(
@@ -54,7 +47,7 @@ fun PrivacyScreen(
                 icon = Res.drawable.symbol_verified_user,
             )
         }
-        SettingsSection("Photos you attach") {
+        SettingsSection("Photos you attach", info = PhotosInfo) {
             PhotoCleaning.entries.forEach { choice ->
                 PickRow(
                     choice.title,
@@ -65,45 +58,72 @@ fun PrivacyScreen(
                 )
             }
         }
-        SettingsSection("Avatars") {
+        AvatarsSection(state)
+        if (device.screen || device.keyboard) DeviceSection(state, device)
+    }
+}
+
+/** Whether avatars load website icons, and from DuckDuckGo when a site has none. */
+@Composable
+private fun AvatarsSection(state: MailBehaviorState) {
+    val behavior = state.behavior
+    SettingsSection("Avatars") {
+        SettingToggleRow(
+            "Website icons",
+            checked = behavior.websiteIcons,
+            onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
+            description = "Logos from sender websites",
+            icon = Res.drawable.symbol_person,
+            info =
+                InfoText(
+                    "Website icons",
+                    "The sender's website sees your IP address and that you got their mail.",
+                ),
+        )
+        if (behavior.websiteIcons) {
             SettingToggleRow(
-                "Website icons",
-                checked = behavior.websiteIcons,
-                onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
-                description = "Logos from sender websites, which see your IP address and that you got their mail",
+                "Ask DuckDuckGo",
+                checked = behavior.duckDuckGoIcons,
+                onCheckedChange = { on -> state.update { it.copy(duckDuckGoIcons = on) } },
+                description = "For sites without an icon",
                 icon = Res.drawable.symbol_person,
+                info = InfoText("Ask DuckDuckGo", "DuckDuckGo sees your IP address and each sender's domain."),
             )
-            if (behavior.websiteIcons) {
-                SettingToggleRow(
-                    "Ask DuckDuckGo",
-                    checked = behavior.duckDuckGoIcons,
-                    onCheckedChange = { on -> state.update { it.copy(duckDuckGoIcons = on) } },
-                    description = "For sites without an icon. DuckDuckGo sees your IP address and each sender's domain",
-                    icon = Res.drawable.symbol_person,
-                )
-            }
         }
-        if (device.screen || device.keyboard) {
-            SettingsSection("This device") {
-                if (device.screen) {
-                    SettingToggleRow(
+    }
+}
+
+/** The screen and keyboard protections [device] offers. */
+@Composable
+private fun DeviceSection(
+    state: MailBehaviorState,
+    device: DevicePrivacy,
+) {
+    val behavior = state.behavior
+    SettingsSection("This device") {
+        if (device.screen) {
+            SettingToggleRow(
+                "Screen security",
+                checked = behavior.screenSecurity,
+                onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
+                description = "Hides Mail from recent apps and screenshots",
+                info =
+                    InfoText(
                         "Screen security",
-                        checked = behavior.screenSecurity,
-                        onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
-                        description = "Hides Mail in recent apps and blocks screenshots and screen recording",
-                        icon = Res.drawable.symbol_visibility_off,
-                    )
-                }
-                if (device.keyboard) {
-                    SettingToggleRow(
-                        "Incognito keyboard",
-                        checked = behavior.incognitoKeyboard,
-                        onCheckedChange = { on -> state.update { it.copy(incognitoKeyboard = on) } },
-                        description = "Asks the keyboard not to learn from what you type. Some keyboards ignore it.",
-                        icon = Res.drawable.symbol_edit,
-                    )
-                }
-            }
+                        "Mail is hidden in recent apps, and screenshots and screen recording are blocked.",
+                    ),
+                icon = Res.drawable.symbol_visibility_off,
+            )
+        }
+        if (device.keyboard) {
+            SettingToggleRow(
+                "Incognito keyboard",
+                checked = behavior.incognitoKeyboard,
+                onCheckedChange = { on -> state.update { it.copy(incognitoKeyboard = on) } },
+                description = "Asks the keyboard not to learn what you type",
+                info = InfoText("Incognito keyboard", "Some keyboards ignore the request and learn anyway."),
+                icon = Res.drawable.symbol_edit,
+            )
         }
     }
 }
@@ -125,7 +145,7 @@ private fun ImagesChoiceRow(
 }
 
 /** Enough lines for the longest description on a narrow phone. */
-private const val DESCRIPTION_LINES = 4
+private const val DESCRIPTION_LINES = 2
 
 private val RemoteImages.title: String
     get() =
@@ -139,15 +159,15 @@ private val RemoteImages.description: String
     get() =
         when (this) {
             RemoteImages.Always -> {
-                "Every mail looks as the sender designed it. Senders can see when you open their mail."
+                "Senders can see when you open their mail"
             }
 
             RemoteImages.Known -> {
-                "Contacts, people you've written to and senders you allowed. Everyone else asks first."
+                "Contacts and senders you allowed"
             }
 
             RemoteImages.Never -> {
-                "Always ask, for every mail."
+                "Always ask"
             }
         }
 
@@ -163,14 +183,35 @@ private val PhotoCleaning.description: String
     get() =
         when (this) {
             PhotoCleaning.Ask -> {
-                "When you attach a photo, choose whether to remove its details. Removing them is offered first."
+                "Choose for each photo"
             }
 
             PhotoCleaning.Always -> {
-                "Location, time, camera, and file name are removed from every JPEG, PNG, and WebP photo."
+                "Removes location, time, and camera"
             }
 
             PhotoCleaning.Never -> {
-                "Photos go out as they are, so recipients can see where, when, and with what they were taken."
+                "Photos go out as they are"
             }
         }
+
+private val ImagesInfo =
+    InfoText(
+        "Remote images",
+        listOf(
+            "Always shows every mail as the sender designed it, and lets senders see when you open their mail.",
+            "From people you know loads images from contacts, people you've written to, and senders you " +
+                "allowed. Everyone else asks first.",
+            "Images that are part of the mail itself always show. Mail in Spam never loads remote images.",
+        ),
+    )
+
+private val PhotosInfo =
+    InfoText(
+        "Photo details",
+        listOf(
+            "Photos can carry where, when, and with what camera they were taken, and their file name.",
+            "Always remove details strips these from every JPEG, PNG, and WebP photo. Ask each time offers " +
+                "removing them first. Keep details sends photos as they are.",
+        ),
+    )

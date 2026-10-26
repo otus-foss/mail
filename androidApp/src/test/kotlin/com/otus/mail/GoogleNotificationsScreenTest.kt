@@ -36,7 +36,7 @@ class GoogleNotificationsScreenTest {
     fun activeGoogleDeliveryUsesTheSelectedTheme() {
         listOf(ThemeBase.Otus, ThemeBase.Light, ThemeBase.Black).forEach { theme ->
             show(theme, PushDeliveryStatus.Active)
-            compose.onNodeWithText("Instant").assertIsDisplayed()
+            compose.onNodeWithText("Not instant").assertDoesNotExist()
             capture("google-${theme.name.lowercase()}")
         }
     }
@@ -46,7 +46,7 @@ class GoogleNotificationsScreenTest {
         show(ThemeBase.Light, PushDeliveryStatus.VapidRequired)
         compose
             .onNodeWithText(
-                "The server doesn't support Google delivery. Mail checks periodically.",
+                "The server doesn't support Google delivery.",
             ).assertIsDisplayed()
         capture("google-unsupported")
     }
@@ -56,7 +56,7 @@ class GoogleNotificationsScreenTest {
         show(ThemeBase.Black, PushDeliveryStatus.RegistrationFailed)
         compose
             .onNodeWithText(
-                "Push registration failed. Mail will retry and keep checking periodically.",
+                "Push registration failed.",
             ).assertIsDisplayed()
         capture("google-failed")
     }
@@ -64,7 +64,7 @@ class GoogleNotificationsScreenTest {
     @Test
     fun connectingAndChoosingGoogleNeedNoExtraApp() {
         show(ThemeBase.Otus, PushDeliveryStatus.Connecting)
-        compose.onNodeWithText("Connecting").assertIsDisplayed()
+        compose.onNodeWithText("Not instant").assertDoesNotExist()
         capture("google-connecting")
         compose.onNodeWithText("Instant delivery").performClick()
         compose.onNodeWithText("Built into Otus").assertIsDisplayed()
@@ -92,6 +92,7 @@ class GoogleNotificationsScreenTest {
                         state,
                         listOf(ConnectedAccount("ada", "Ada", "ada@example.org", "example.org")),
                         onBack = {},
+                        onOpenOverrides = {},
                     )
                 }
             }

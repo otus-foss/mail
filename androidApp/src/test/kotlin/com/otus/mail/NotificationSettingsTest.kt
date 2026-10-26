@@ -45,10 +45,11 @@ class NotificationSettingsTest {
         compose.onNodeWithText("Off, checks about every 15 minutes").assertIsDisplayed()
         compose.onNodeWithText("Instant delivery").performClick()
         compose.onNodeWithText("ntfy").performClick()
-        compose.waitUntil { compose.onAllNodesWithText("Connecting").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil { compose.onAllNodesWithText("Through ntfy").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(ntfy, push.chosen)
         compose.onNodeWithText("Through ntfy").assertIsDisplayed()
-        compose.onNodeWithText("Ada").assertIsDisplayed()
+        // Accounts show only when instant delivery fails for them.
+        compose.onNodeWithText("Not instant").assertDoesNotExist()
     }
 
     @Test
@@ -57,10 +58,13 @@ class NotificationSettingsTest {
         val push = FakeNotificationPush(listOf(google))
         open(push)
         compose.onNodeWithText("Notifications").performClick()
+        compose.onNodeWithContentDescription("About Instant delivery").performClick()
         compose
             .onNodeWithText(
                 "Choose Google Play services for instant delivery without an extra app.",
             ).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Close").performClick()
+        compose.waitForIdle()
         compose.onNodeWithText("Instant delivery").performClick()
         compose.onNodeWithText("Built into Otus").assertIsDisplayed()
         compose.onNodeWithText("Google Play services").performClick()
@@ -85,7 +89,7 @@ class NotificationSettingsTest {
         compose.onNodeWithText("Notifications").performClick()
         compose
             .onNodeWithText(
-                "The server doesn't support Google delivery. Mail checks periodically.",
+                "The server doesn't support Google delivery.",
             ).assertIsDisplayed()
         compose.onAllNodesWithText("Connecting").assertCountEquals(0)
     }
@@ -94,6 +98,7 @@ class NotificationSettingsTest {
     fun withoutAPushAppThePageSuggestsOne() {
         open(FakeNotificationPush(emptyList()))
         compose.onNodeWithText("Notifications").performClick()
+        compose.onNodeWithContentDescription("About Instant delivery").performClick()
         compose
             .onNodeWithText(
                 "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy.",

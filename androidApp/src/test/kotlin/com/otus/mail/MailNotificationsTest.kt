@@ -9,6 +9,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
+import com.otus.mail.feature.notifications.domain.PreviewChoices
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,7 +36,7 @@ class MailNotificationsTest {
     @Test
     fun eachMessageIsShownAndGroupedByAccount() {
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
-        val notifications = MailNotifications(app) { NotificationPreviews.Always }
+        val notifications = MailNotifications(app) { PreviewChoices() }
         notifications.show(listOf(mail("m1"), mail("m2", subject = " "), mail("m3", login = "bob")))
         val posted = manager.activeNotifications.associate { it.tag to it.notification }
         assertEquals(setOf("ada/m1", "ada/m2", "bob/m3", "ada", "bob"), posted.keys)
@@ -58,20 +59,37 @@ class MailNotificationsTest {
     }
 
     @Test
-    fun byDefaultAlertsStayOffTheLockScreen() {
+    fun byDefaultTheDeviceDecidesTheLockScreen() {
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
-        AndroidNotificationPreviewStore(app).write(NotificationPreviews.default)
+        AndroidNotificationPreviewStore(app).write(PreviewChoices())
         MailNotifications(app).show(listOf(mail("m1")))
         val posted = manager.activeNotifications.associate { it.tag to it.notification }
-        assertEquals(Notification.VISIBILITY_SECRET, posted.getValue("ada/m1").visibility)
-        assertEquals(Notification.VISIBILITY_SECRET, posted.getValue("ada").visibility)
+        assertEquals(Notification.VISIBILITY_PRIVATE, posted.getValue("ada/m1").visibility)
+        assertEquals(Notification.VISIBILITY_PRIVATE, posted.getValue("ada").visibility)
+        assertEquals(
+            "New mail",
+            posted
+                .getValue("ada")
+                .publicVersion.extras
+                .getString(Notification.EXTRA_TITLE),
+        )
         assertEquals("Grace", posted.getValue("ada/m1").extras.getString(Notification.EXTRA_TITLE))
+    }
+
+    @Test
+    fun anAccountCanHideItsMailWhileOthersShowIt() {
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        AndroidNotificationPreviewStore(app).write(PreviewChoices().withLogin("bob", NotificationPreviews.Hidden))
+        MailNotifications(app).show(listOf(mail("m1"), mail("m2", login = "bob")))
+        val posted = manager.activeNotifications.associate { it.tag to it.notification }
+        assertEquals("Grace", posted.getValue("ada/m1").extras.getString(Notification.EXTRA_TITLE))
+        assertEquals("New mail", posted.getValue("bob/m2").extras.getString(Notification.EXTRA_TITLE))
     }
 
     @Test
     fun withoutPreviewsAlertsSayOnlyNewMail() {
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
-        AndroidNotificationPreviewStore(app).write(NotificationPreviews.Never)
+        AndroidNotificationPreviewStore(app).write(PreviewChoices(all = NotificationPreviews.Hidden))
         MailNotifications(app).show(listOf(mail("m1")))
         manager.activeNotifications.map { it.notification }.forEach { shown ->
             assertEquals("New mail", shown.extras.getString(Notification.EXTRA_TITLE))
