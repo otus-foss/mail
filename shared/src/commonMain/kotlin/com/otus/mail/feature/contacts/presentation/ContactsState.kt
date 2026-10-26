@@ -41,8 +41,7 @@ internal class ContactsState(
     private val repository: ContactRepository,
     val sync: ContactSync,
     private val scope: CoroutineScope,
-    private val files: ContactFiles? = null,
-    private val photos: AvatarPhotoPicker? = null,
+    pickers: ContactPickers = ContactPickers(),
     private val frequent: FrequentContacts? = null,
     private val avatars: ContactAvatarUpdates? = null,
     /** The user's own addresses, lowercase, which tell their avatar cards from other contacts. */
@@ -59,12 +58,12 @@ internal class ContactsState(
     /** A vCard file picked for import, waiting for the user to confirm it. */
     var importing by mutableStateOf<ContactFile?>(null)
 
+    private val files = pickers.files
+
     val canTransfer: Boolean get() = files != null
 
-    val canPickPhoto: Boolean get() = photos != null
-
-    /** A photo the user picks, cropped and small; null when cancelled. */
-    suspend fun pickPhoto(): ContactAvatar.Photo? = photos?.pick()
+    /** Picks a photo, cropped and small, or null when cancelled; null where photos cannot be picked. */
+    val photoPicker: (suspend () -> ContactAvatar.Photo?)? = pickers.photos?.let { picker -> { picker.pick() } }
 
     /** What the next new-contact editor starts from, such as a message's sender; taken once. */
     var prefill by mutableStateOf<ContactDraft?>(null)
@@ -175,3 +174,9 @@ internal fun newId(): String = Uuid.random().toString()
 
 @OptIn(ExperimentalUuidApi::class)
 internal fun newUid(): String = "urn:uuid:${Uuid.random()}"
+
+/** What the platform lets contacts pick and save: vCard [files] and avatar [photos]; null where it cannot. */
+internal class ContactPickers(
+    val files: ContactFiles? = null,
+    val photos: AvatarPhotoPicker? = null,
+)

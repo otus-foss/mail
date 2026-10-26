@@ -44,6 +44,7 @@ import com.otus.mail.feature.contacts.presentation.ContactPage
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.book
 import com.otus.mail.feature.contacts.presentation.card
+import com.otus.mail.feature.contacts.presentation.components.ContactAvatarSheet
 import com.otus.mail.feature.contacts.presentation.components.ContactDetails
 import com.otus.mail.feature.contacts.presentation.components.ContactOverlay
 import com.otus.mail.feature.contacts.presentation.components.ContactOverlaySheet
@@ -164,7 +165,10 @@ private fun GroupBody(
         onEditAvatar = { editing = true }.takeIf { page.writable },
     )
     if (editing) {
-        ContactAvatarSheet(card.displayName, null, card.look, state, { state.setAvatar(card, it) }) { editing = false }
+        ContactAvatarSheet(card.displayName, null, card.look, state.photoPicker, { state.setAvatar(card, it) }) {
+            editing =
+                false
+        }
     }
 }
 
@@ -188,7 +192,13 @@ private fun PersonBody(
     var editing by remember { mutableStateOf(false) }
     if (editing) {
         val address = main.emails.firstOrNull()?.value
-        ContactAvatarSheet(name, address, main.look, state, { state.setAvatar(main, it) }) { editing = false }
+        ContactAvatarSheet(
+            name,
+            address,
+            main.look,
+            state.photoPicker,
+            { state.setAvatar(main, it) },
+        ) { editing = false }
     }
     ContactDetails(
         PersonFacts(

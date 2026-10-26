@@ -6,6 +6,7 @@ import com.otus.accounts.presentation.ownAddresses
 import com.otus.avatar.AvatarOptions
 import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.contacts.presentation.ContactAvatarUpdates
+import com.otus.mail.feature.contacts.presentation.ContactPickers
 import com.otus.mail.feature.contacts.presentation.ContactSync
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.FrequentContacts
@@ -89,10 +90,12 @@ internal class MailStates(
             services.contacts,
             ContactSync(services.contacts, services.stores.contacts, services.work),
             services.work,
-            services.pickers.attachmentFiles?.let { picker ->
-                services.pickers.savedFiles?.let { VCardFiles(picker, it) }
-            },
-            services.pickers.avatarPhotos,
+            ContactPickers(
+                services.pickers.attachmentFiles?.let { picker ->
+                    services.pickers.savedFiles?.let { VCardFiles(picker, it) }
+                },
+                services.pickers.avatarPhotos,
+            ),
             FrequentContacts(services.mailTraces, services.stores.contacts, services.work),
             contactAvatars,
             ownAddresses = {
