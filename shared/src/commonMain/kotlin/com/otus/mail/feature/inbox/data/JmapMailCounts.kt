@@ -15,9 +15,12 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.concurrent.Volatile
 import kotlin.time.Clock
 
 /**
@@ -30,7 +33,10 @@ internal class JmapMailCounts(
     private val clock: Clock,
 ) {
     /** Each login's mailboxes for the counts of one filter panel session. */
-    private var mailboxes: Map<String, List<MailboxObject>> = emptyMap()
+    @Volatile private var mailboxes: Map<String, List<MailboxObject>> = emptyMap()
+
+    // Logins count in parallel, so their mailboxes join the map one at a time.
+    private val adding = Mutex()
 
     /** Starts a new session: the next counts read each login's mailboxes again. */
     fun begin() {
@@ -68,7 +74,8 @@ internal class JmapMailCounts(
             val connection = connections.connection(login)
             connection.session().accountFor(JmapCapability.MAIL)?.let { accountId ->
                 val known =
-                    mailboxes[login.id] ?: mailboxesOf(connection, accountId).also { mailboxes += login.id to it }
+                    mailboxes[login.id]
+                        ?: mailboxesOf(connection, accountId).also { adding.withLock { mailboxes += login.id to it } }
                 val ids = scope.chosen(known, login.id, query).map { it.id }
                 if (ids.isEmpty()) {
                     0L
