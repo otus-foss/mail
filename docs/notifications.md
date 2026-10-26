@@ -82,7 +82,10 @@ saved by `AndroidNotificationPreviewStore`:
   preview, or account.
 
 **Accounts and addresses** opens a page that overrides the choice for one login's mail, or for
-mail sent to one of its addresses. Its row on the Notifications page says how many have a setting
+mail sent to one of its addresses. Mail counts as sent to an address when To or Cc names it, or
+when the topmost `Delivered-To` or `X-Original-To` header does, which covers Bcc and list mail. A
+wildcard identity such as `*@example.org` covers every address of its domain that has no choice
+of its own. Its row on the Notifications page says how many have a setting
 of their own, and says nothing while none do. An address's choice wins over its account's, which wins
 over the choice for all mail. Mail sent to several of the user's addresses with choices follows the
 more private one, and an account's summary says only "New mail" when any of its alerts does. The

@@ -17,9 +17,9 @@ import com.otus.mail.feature.notifications.domain.PreviewChoices
 
 /**
  * Posts one notification per new message, grouped by account, showing what [previews] allows for
- * its account and addresses: by default the sender and subject, with the lock screen left to the
- * device's setting, which shows them or only "New mail". [NotificationPreviews.Hidden] says only
- * "New mail" everywhere. A lock screen never shows the account.
+ * its account and addresses: by default the sender, subject, preview and account. On the lock
+ * screen the device's setting decides whether such an alert shows in full or only "New mail".
+ * [NotificationPreviews.Hidden] says only "New mail" everywhere, without the account.
  */
 class MailNotifications(
     context: Context,
@@ -120,7 +120,7 @@ class MailNotifications(
         .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
         .build()
 
-    /** "New mail" alone, the most a lock screen shows. */
+    /** "New mail" alone: a hidden alert, and what a locked device shows when it hides details. */
     private fun newMail(mail: NewMail) = base(mail).setContentTitle(context.getString(R.string.notification_new_mail))
 
     private fun base(mail: NewMail) =

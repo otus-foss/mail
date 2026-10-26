@@ -26,6 +26,17 @@ class PreviewChoicesTest {
     }
 
     @Test
+    fun aWildcardAddressCoversItsDomainUnlessAnAddressHasItsOwnChoice() {
+        val wildcard =
+            choices
+                .withAddress("*@Team.example.org", NotificationPreviews.Hidden)
+                .withAddress("lead@team.example.org", NotificationPreviews.Device)
+        assertEquals(NotificationPreviews.Hidden, wildcard.forMail("home", listOf("Anyone@team.example.org")))
+        assertEquals(NotificationPreviews.Device, wildcard.forMail("home", listOf("lead@team.example.org")))
+        assertEquals(NotificationPreviews.Device, wildcard.forMail("home", listOf("someone@example.org")))
+    }
+
+    @Test
     fun choicesSurviveStorageAndOldValuesCarryOver() {
         assertEquals(choices, PreviewChoices.decode(choices.encode()))
         assertEquals(NotificationPreviews.Device, PreviewChoices.decode(mapOf("previews" to "unlocked")).all)
