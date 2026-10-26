@@ -39,20 +39,24 @@ data class PreviewChoices(
 ) {
     /**
      * What an alert for mail of [loginId] sent to [recipients] shows. An address's choice wins over
-     * its login's, which wins over the choice for all mail. When the mail went to several addresses
-     * with choices, the more private one wins.
+     * its login's, which wins over the choice for all mail. A wildcard address such as
+     * `*@example.org` covers every address of its domain without a choice of its own. When the mail
+     * went to several addresses with choices, the more private one wins.
      */
     fun forMail(
         loginId: String,
         recipients: List<String>,
     ): NotificationPreviews {
-        val chosen = recipients.mapNotNull { addresses[it.lowercase()] }
+        val chosen = recipients.mapNotNull { forAddress(it.lowercase()) }
         return when {
             NotificationPreviews.Hidden in chosen -> NotificationPreviews.Hidden
             chosen.isNotEmpty() -> chosen.first()
             else -> forLogin(loginId)
         }
     }
+
+    private fun forAddress(address: String): NotificationPreviews? =
+        addresses[address] ?: address.substringAfterLast('@', "").takeIf { it.isNotEmpty() }?.let { addresses["*@$it"] }
 
     /** What mail of [loginId] shows when no address choice applies. */
     fun forLogin(loginId: String): NotificationPreviews = logins[loginId] ?: all
