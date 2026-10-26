@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +39,7 @@ import com.otus.mail.feature.contacts.presentation.components.ContactEditorBar
 import com.otus.mail.feature.contacts.presentation.components.ContactForm
 import com.otus.mail.feature.contacts.presentation.components.ContactLabels
 import com.otus.mail.feature.contacts.presentation.components.editorBarContext
+import com.otus.mail.feature.contacts.presentation.current
 import com.otus.mail.feature.contacts.presentation.deleteLabel
 import com.otus.mail.feature.contacts.presentation.photoChoices
 import com.otus.mail.feature.contacts.presentation.save
@@ -57,7 +59,12 @@ internal fun ContactEditorScreen(
     onSaved: (CardKey) -> Unit,
 ) {
     NavigationBackHandler(rememberNavigationEventState(NavigationEventInfo.None), onBackCompleted = onClose)
-    val existing = key?.let(state::card)
+    val existing = key?.let { state.card(state.current(it)) }
+    // After Android restores Mail, the card shows up once contacts load; drafting before that would start blank.
+    if (key != null && existing == null) {
+        LaunchedEffect(state.snapshot) { if (state.snapshot != null) onClose() }
+        return
+    }
     var draft by remember(key) { mutableStateOf(state.startDraft(existing)) }
     var book by remember(key) { mutableStateOf(existing?.books?.firstOrNull() ?: state.defaultBook?.key) }
     val save: (Boolean) -> Unit = { andNext ->

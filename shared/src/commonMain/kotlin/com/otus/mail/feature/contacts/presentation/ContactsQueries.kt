@@ -40,6 +40,9 @@ internal fun ContactsState.book(key: BookKey): ContactBook? = books.firstOrNull 
 
 internal fun ContactsState.card(key: CardKey): ContactCard? = cards.firstOrNull { it.key == key }
 
+/** [key], or the server's key once a card made on the device has one, so its page stays open. */
+internal fun ContactsState.current(key: CardKey): CardKey = sync.renamed[key] ?: key
+
 /** The person [key]'s card belongs to, joined with any card shown as one with it. */
 internal fun ContactsState.person(key: CardKey): ContactPerson? =
     people.firstOrNull { person ->
