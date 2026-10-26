@@ -15,8 +15,12 @@ import com.otus.mail.feature.inbox.presentation.addressCount
 import com.otus.mail.feature.inbox.presentation.avatar
 import com.otus.mail.feature.inbox.presentation.domainAvatar
 
-/** The rows of a [MailScopeSheet]; [expanded] holds the keys of the open groups. */
+/**
+ * The rows of a [MailScopeSheet] for [accounts], whose avatars the rows show; [expanded] holds the
+ * keys of the open groups.
+ */
 internal class MailScopeRows(
+    private val accounts: List<AccountAddresses>,
     private val chosen: MailScopeChoice,
     private val count: (MailScopeChoice) -> String?,
     private val onChoose: (MailScopeChoice) -> Unit,
@@ -31,7 +35,7 @@ internal class MailScopeRows(
         pinned: Boolean,
     ) {
         ScopeRow(
-            addressOption(address, count(address), pinned),
+            addressOption(address, accounts, count(address), pinned),
             chosen = chosen == address,
             onClick = { onChoose(address) },
             onLongClick = { onTogglePin(address) },
@@ -64,7 +68,7 @@ internal class MailScopeRows(
                 domainKey(group.domain),
                 ScopeOption(
                     group.domain,
-                    listOf(domainAvatar(group.domain)),
+                    listOf(domainAvatar(group, accounts)),
                     addressCount(group.addresses.size),
                     domainCount(group),
                 ),
@@ -93,7 +97,7 @@ internal class MailScopeRows(
             Column {
                 addresses.forEach { address ->
                     ScopeChildRow(
-                        addressOption(address, count(address), pinned = false),
+                        addressOption(address, accounts, count(address), pinned = false),
                         chosen = chosen == address,
                         onClick = { onChoose(address) },
                         onLongClick = { onTogglePin(address) },

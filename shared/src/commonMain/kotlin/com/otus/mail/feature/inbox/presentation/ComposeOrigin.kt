@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.avatar.ResolvedAvatar
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.AttachmentFiles
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
@@ -35,7 +36,8 @@ class ComposeServices(
  * [ownAddresses] are left out of Reply all, and [recentFrom] picks the address of a new message
  * from all accounts. A new message always gets the identity's signature; replies and forwards
  * get it only with [signatureInReplies]. [photoCleaning] decides whether attached photos lose their
- * metadata and names; without it, files attach as picked.
+ * metadata and names; without it, files attach as picked. [ownAvatar] is the avatar the user gave
+ * an account's address, which the Send-from choices show.
  */
 class ComposeOrigin(
     val accountId: String,
@@ -44,4 +46,5 @@ class ComposeOrigin(
     val recentFrom: List<String> = emptyList(),
     val signatureInReplies: Boolean = true,
     val photoCleaning: () -> PhotoCleaning = { PhotoCleaning.Never },
+    val ownAvatar: (accountId: String, address: String) -> ResolvedAvatar? = { _, _ -> null },
 )
