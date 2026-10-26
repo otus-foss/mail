@@ -34,6 +34,7 @@ import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.card
+import com.otus.mail.feature.contacts.presentation.components.ContactAvatarSheet
 import com.otus.mail.feature.contacts.presentation.components.ContactEditorBar
 import com.otus.mail.feature.contacts.presentation.components.ContactForm
 import com.otus.mail.feature.contacts.presentation.components.ContactLabels
@@ -76,7 +77,7 @@ internal fun ContactEditorScreen(
     if (editingAvatar) {
         val look = draft.look(remember(draft.photo) { draft.photo?.inlineBytes() })
         val address = draft.emails.firstOrNull { it.value.isNotBlank() }?.value
-        ContactAvatarSheet(draft.fullName.ifEmpty { "New contact" }, address, look, state, {
+        ContactAvatarSheet(draft.fullName.ifEmpty { "New contact" }, address, look, state.photoPicker, {
             draft = draft.withAvatar(it)
         }) { editingAvatar = false }
     }

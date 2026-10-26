@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.ScheduledSends
+import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 
 /** An account a draft can be sent from, by its [name] in the Send-from list. */
@@ -48,3 +49,9 @@ class ComposeOrigin(
     val photoCleaning: () -> PhotoCleaning = { PhotoCleaning.Never },
     val ownAvatar: (accountId: String, address: String) -> ResolvedAvatar? = { _, _ -> null },
 )
+
+/** [identity] with the avatar the user gave its address, for the Send-from choices. */
+internal fun ComposeOrigin.withOwnAvatar(identity: SendIdentity): SendIdentity =
+    ownAvatar(identity.accountId, identity.sender.address)
+        ?.let { identity.copy(sender = identity.sender.copy(avatar = it)) }
+        ?: identity
