@@ -45,45 +45,51 @@ data class ImportPlan(
     fun edits(
         mode: ImportMode,
         id: () -> String,
-    ): List<ContactEdit> =
-        cards.mapNotNull { card ->
-            val match = match(card)
-            when {
-                match == null || mode == ImportMode.AddAsNew -> {
-                    ContactEdit.Create(id(), book, card.copy(id = null, addressBookIds = mapOf(book.bookId to true)))
-                }
-
-                mode == ImportMode.Skip -> {
-                    null
-                }
-
-                else -> {
-                    val plan =
-                        MergePlan(
-                            listOf(match, ContactCard(match.key, card, listOf(book))),
-                            match.key,
-                            emptySet(),
-                            book,
-                        )
-                    val merged =
-                        plan.merged().copy(
-                            emails = (match.card.emails.orEmpty() + card.renumbered(match.card)),
-                        )
-                    ContactEdit.Update(id(), match.key, match.card, merged)
-                }
+    ): List<ContactEdit> {
+        val creates =
+            cards
+                .filter { mode == ImportMode.AddAsNew || match(it) == null }
+                .map { ContactEdit.Create(id(), book, it.copy(id = null, addressBookIds = mapOf(book.bookId to true))) }
+        // Every file card that matches one card merges into a single change, so none is lost.
+        val merges =
+            if (mode == ImportMode.Merge) {
+                cards
+                    .mapNotNull { card -> match(card)?.let { it to card } }
+                    .groupBy({ it.first }, { it.second })
+                    .map { (match, files) ->
+                        ContactEdit.Update(id(), match.key, match.card, files.fold(match.card, Card::mergedWith))
+                    }
+            } else {
+                emptyList()
             }
-        }
+        return creates + merges
+    }
 }
 
-/** [card]'s addresses that [existing] lacks, under keys [existing] does not use. */
-private fun Card.renumbered(existing: Card) =
-    emails
-        .orEmpty()
-        .values
-        .filter { email ->
-            existing.emails
-                .orEmpty()
-                .values
-                .none { it.address.equals(email.address, ignoreCase = true) }
-        }.mapIndexed { index, email -> "i${index + 1}" to email }
-        .toMap()
+/**
+ * This card with what [file] adds: each property it lacks, and the addresses and numbers it does
+ * not have yet, under keys it does not use. Its books and everything it has stay as they are.
+ */
+private fun Card.mergedWith(file: Card): Card {
+    val newEmails =
+        file.emails
+            .orEmpty()
+            .values
+            .filter { email -> emails.orEmpty().values.none { it.address.equals(email.address, ignoreCase = true) } }
+            .distinctBy { it.address.lowercase() }
+    val newPhones =
+        file.phones
+            .orEmpty()
+            .values
+            .filter { phone -> phones.orEmpty().values.none { it.number.digits() == phone.number.digits() } }
+            .distinctBy { it.number.digits() }
+    val emailKeys = freeKeys("i", emails.orEmpty().keys).iterator()
+    val phoneKeys = freeKeys("i", phones.orEmpty().keys).iterator()
+    return filledFrom(file).copy(
+        name = name ?: file.name,
+        emails = (emails.orEmpty() + newEmails.associateBy { emailKeys.next() }).takeIf { it.isNotEmpty() },
+        phones = (phones.orEmpty() + newPhones.associateBy { phoneKeys.next() }).takeIf { it.isNotEmpty() },
+    )
+}
+
+private fun String.digits() = filter(Char::isDigit)

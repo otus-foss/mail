@@ -82,7 +82,7 @@ data class MergePlan(
 }
 
 /** This card with each property it lacks taken from [other]. */
-private fun Card.filledFrom(other: Card): Card =
+internal fun Card.filledFrom(other: Card): Card =
     copy(
         organizations = organizations ?: other.organizations,
         titles = titles ?: other.titles,
