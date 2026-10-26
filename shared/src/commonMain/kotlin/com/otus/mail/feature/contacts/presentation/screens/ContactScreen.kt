@@ -39,7 +39,6 @@ import com.otus.mail.feature.contacts.domain.CardSync
 import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.MergePlan
-import com.otus.mail.feature.contacts.domain.photo
 import com.otus.mail.feature.contacts.presentation.ContactNavigation
 import com.otus.mail.feature.contacts.presentation.ContactPage
 import com.otus.mail.feature.contacts.presentation.ContactsState
@@ -54,11 +53,12 @@ import com.otus.mail.feature.contacts.presentation.components.PersonFacts
 import com.otus.mail.feature.contacts.presentation.contactPage
 import com.otus.mail.feature.contacts.presentation.current
 import com.otus.mail.feature.contacts.presentation.groupsOf
-import com.otus.mail.feature.contacts.presentation.photoChoices
+import com.otus.mail.feature.contacts.presentation.isOwnAvatar
+import com.otus.mail.feature.contacts.presentation.look
 import com.otus.mail.feature.contacts.presentation.plainTextClip
 import com.otus.mail.feature.contacts.presentation.removeFromGroup
 import com.otus.mail.feature.contacts.presentation.saveElsewhere
-import com.otus.mail.feature.contacts.presentation.setPhoto
+import com.otus.mail.feature.contacts.presentation.setAvatar
 import kotlinx.coroutines.launch
 
 /**
@@ -147,32 +147,25 @@ private fun ContactBody(
     }
 }
 
-/** A group's members, with photo choices and removal when the group can change. */
+/** A group's members, with its avatar and removal editable when the group can change. */
 @Composable
 private fun GroupBody(
     page: ContactPage,
     state: ContactsState,
     onOpen: (CardKey) -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
     val card = page.card
+    var editing by remember { mutableStateOf(false) }
     GroupMembers(
         card,
         page.members,
         onOpen,
         { member: ContactPerson -> state.removeFromGroup(card, member) }.takeIf { page.writable },
-        photoChoices =
-            if (page.writable) {
-                photoChoices(
-                    hasPhoto = card.card.photo != null,
-                    canPick = state.canPickPhoto,
-                    onPick = { scope.launch { state.pickPhoto()?.let { state.setPhoto(card, it) } } },
-                    onRemove = { state.setPhoto(card, null) },
-                )
-            } else {
-                emptyList()
-            },
+        onEditAvatar = { editing = true }.takeIf { page.writable },
     )
+    if (editing) {
+        ContactAvatarSheet(card.displayName, null, card.look, state, { state.setAvatar(card, it) }) { editing = false }
+    }
 }
 
 /**
@@ -190,13 +183,22 @@ private fun PersonBody(
     val scope = rememberCoroutineScope()
     val refusedIn = person.cards.firstOrNull { it.sync is CardSync.Refused }
     val saveTo = state.writableBooks.firstOrNull { b -> refusedIn?.books?.contains(b.key) == false }
+    val main = person.main
+    val writable = main.books.all { state.book(it)?.canWrite == true }
+    var editing by remember { mutableStateOf(false) }
+    if (editing) {
+        val address = main.emails.firstOrNull()?.value
+        ContactAvatarSheet(name, address, main.look, state, { state.setAvatar(main, it) }) { editing = false }
+    }
     ContactDetails(
         PersonFacts(
             person,
             booksOf = { c -> c.books.mapNotNull(state::book) },
             groups = person.cards.flatMap(state::groupsOf).distinctBy { it.key },
             saveElsewhere = saveTo,
+            ownAvatar = person.isOwnAvatar(state.ownAddresses()),
         ),
+        onEditAvatar = { editing = true }.takeIf { writable },
         onWriteTo = { address -> navigation.onWrite(listOf(ContactAddress(name, address))) },
         onCopyNumber = { number ->
             scope.launch { clipboard.setClipEntry(plainTextClip("Phone number", number)) }

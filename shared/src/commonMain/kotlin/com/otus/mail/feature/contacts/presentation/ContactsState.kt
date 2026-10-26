@@ -5,10 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.avatar.AvatarPhotoPicker
+import com.otus.avatar.ContactAvatar
 import com.otus.jscontact.Card
 import com.otus.jscontact.CardKind
-import com.otus.jscontact.Media
-import com.otus.jscontact.MediaKind
 import com.otus.jscontact.Name
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
@@ -31,7 +30,6 @@ import com.otus.mail.feature.contacts.domain.duplicates
 import com.otus.mail.feature.contacts.domain.people
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlin.io.encoding.Base64
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -47,6 +45,8 @@ internal class ContactsState(
     private val photos: AvatarPhotoPicker? = null,
     private val frequent: FrequentContacts? = null,
     private val avatars: ContactAvatarUpdates? = null,
+    /** The user's own addresses, lowercase, which tell their avatar cards from other contacts. */
+    val ownAddresses: () -> Set<String> = { emptySet() },
 ) {
     var snapshot by mutableStateOf<ContactsSnapshot?>(null)
         private set
@@ -63,18 +63,8 @@ internal class ContactsState(
 
     val canPickPhoto: Boolean get() = photos != null
 
-    /**
-     * A photo the user picks, cropped and small, as an inline `data:` URI: Stalwart refuses a
-     * `blobId` in `media`, and an inline photo shows in every contact app. Null when cancelled.
-     */
-    suspend fun pickPhoto(): Media? =
-        photos?.pick()?.let {
-            Media(
-                MediaKind.Photo,
-                uri = "data:${it.mediaType};base64,${Base64.encode(it.image.bytes)}",
-                mediaType = it.mediaType,
-            )
-        }
+    /** A photo the user picks, cropped and small; null when cancelled. */
+    suspend fun pickPhoto(): ContactAvatar.Photo? = photos?.pick()
 
     /** What the next new-contact editor starts from, such as a message's sender; taken once. */
     var prefill by mutableStateOf<ContactDraft?>(null)
