@@ -1,11 +1,18 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.avatar.ResolvedAvatar
+
 /** The addresses one account receives mail at, as "Show mail from" lists them. */
 data class AccountAddresses(
     val accountId: String,
     val name: String,
     val addresses: List<String>,
+    /** The avatar the user gave each address, by lowercase address; an address without one is missing. */
+    val avatars: Map<String, ResolvedAvatar> = emptyMap(),
 ) {
+    /** The avatar the user gave [address], if any. */
+    fun avatarOf(address: String): ResolvedAvatar? = avatars[address.lowercase()]
+
     companion object {
         /**
          * The sign-in [username] when it is an address, then the account's JMAP [identities], each
@@ -69,3 +76,7 @@ fun addressCount(
         .toLong()
         .takeIf { it > 0 }
 }
+
+/** The avatar the user gave [address] in its account, if any. */
+fun List<AccountAddresses>.avatarOf(address: MailScopeChoice.Address): ResolvedAvatar? =
+    firstOrNull { it.accountId == address.accountId }?.avatarOf(address.address)

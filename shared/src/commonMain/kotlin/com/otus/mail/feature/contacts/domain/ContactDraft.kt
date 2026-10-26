@@ -1,7 +1,11 @@
 package com.otus.mail.feature.contacts.domain
 
 import com.otus.avatar.AVATAR_PHOTO_KEY
+import com.otus.avatar.AvatarStyle
+import com.otus.avatar.ContactAvatar
+import com.otus.avatar.avatarStyle
 import com.otus.avatar.isAvatarCard
+import com.otus.avatar.withAvatarStyle
 import com.otus.avatar.withoutAvatarStyle
 import com.otus.jscontact.Anniversary
 import com.otus.jscontact.AnniversaryKind
@@ -35,7 +39,12 @@ data class ContactDraft(
     val birthday: PartialDate? = null,
     val note: String? = null,
     val photo: Media? = null,
+    val style: AvatarStyle? = null,
 ) {
+    /** This draft with [avatar] as its look, a photo or a style; null takes both away. */
+    fun withAvatar(avatar: ContactAvatar?): ContactDraft =
+        copy(photo = (avatar as? ContactAvatar.Photo)?.toMedia(), style = (avatar as? ContactAvatar.Styled)?.style)
+
     /** A draft is worth saving once it names the person or has an address, and every address it has is valid. */
     val canSave: Boolean
         get() =
@@ -90,7 +99,9 @@ data class ContactDraft(
                         .plus(listOfNotNull(birthday?.let { BIRTHDAY to Anniversary(AnniversaryKind.Birth, it) }))
                         .takeIf { it.isNotEmpty() },
                 notes = replaceFirst(card.notes, note) { old, text -> old?.copy(note = text) ?: Note(text) },
-            ).let { if (photo == card.photo) it else it.withPhoto(photo) }
+            ).let {
+                if (photo == card.photo && style == card.avatarStyle) it else it.withPhoto(photo).withAvatarStyle(style)
+            }
     }
 
     private fun name(old: Name?): Name? {
@@ -148,6 +159,7 @@ data class ContactDraft(
                         ?.firstOrNull()
                         ?.note,
                 photo = card.card.photo,
+                style = card.card.avatarStyle,
             )
 
         private const val BIRTHDAY = "birthday"

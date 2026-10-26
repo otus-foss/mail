@@ -8,7 +8,15 @@ import com.otus.mail.feature.inbox.presentation.components.MailScopeSheet
 
 /** Each account's sign-in and sending addresses, for "Show mail from". */
 internal fun MailStates.accountAddresses(): List<AccountAddresses> =
-    accounts.accounts.map { AccountAddresses.of(it.id, it.name, it.username, it.emailAddresses) }
+    accounts.accounts.map { account ->
+        val addresses = AccountAddresses.of(account.id, account.name, account.username, account.emailAddresses)
+        addresses.copy(
+            avatars =
+                addresses.addresses
+                    .mapNotNull { email -> ownAvatars.avatar(account, email)?.let { email.lowercase() to it } }
+                    .toMap(),
+        )
+    }
 
 /**
  * The count beside a "Show mail from" choice, by the Counts setting. Accounts and All mail count

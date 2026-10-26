@@ -148,7 +148,8 @@ class ComposeState(
                 accounts.map { account ->
                     async { account.id to (scheduled?.maxDelaySeconds(account.id) ?: 0L) }
                 }
-            val found = accounts.map { async { drafts.identities(it.id) } }.awaitAll().flatten()
+            val loaded = accounts.map { async { drafts.identities(it.id) } }.awaitAll().flatten()
+            val found = loaded.map(origin::withOwnAvatar)
             thread?.load()
             identities = found
             delayLimits = limits.awaitAll().toMap()
