@@ -14,6 +14,9 @@ import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -76,21 +79,23 @@ class JmapFilteredMailTest {
             assertEquals(null, source.count(MailScope.Inbox, query), "Only the loaded threads can tell")
         }
 
+    @OptIn(ExperimentalAtomicApi::class)
     @Test
     fun countsReadEachLoginsMailboxesOncePerSession() =
         runTest {
-            var mailboxLoads = 0
+            // The fake server answers both logins at once, on different threads.
+            val mailboxLoads = AtomicInt(0)
             val source =
                 source { body ->
-                    if ("Mailbox/get" in body) MAILBOX_REPLY.also { mailboxLoads++ } else COUNT
+                    if ("Mailbox/get" in body) MAILBOX_REPLY.also { mailboxLoads.incrementAndFetch() } else COUNT
                 }
             source.beginCounting()
             source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Unread)))
             source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Read)))
-            assertEquals(2, mailboxLoads, "One per login, not one per count")
+            assertEquals(2, mailboxLoads.load(), "One per login, not one per count")
             source.beginCounting()
             source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Read)))
-            assertEquals(4, mailboxLoads, "A new session reads them again")
+            assertEquals(4, mailboxLoads.load(), "A new session reads them again")
         }
 
     @Test
