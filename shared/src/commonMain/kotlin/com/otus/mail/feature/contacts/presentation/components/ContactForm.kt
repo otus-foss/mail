@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.otus.accounts.presentation.toChipAvatar
 import com.otus.designsystem.components.ContactFieldLook
 import com.otus.designsystem.components.ContactFieldRow
 import com.otus.designsystem.components.ContactHeader
@@ -25,10 +26,11 @@ import com.otus.mail.feature.contacts.domain.ContactLabel
 import com.otus.mail.feature.contacts.domain.DraftValue
 import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.inlineBytes
+import com.otus.mail.feature.contacts.presentation.look
 import com.otus.mail.feature.contacts.presentation.text
 
 /**
- * The editor's fields: the photo, which opens [photoChoices], name, addresses with a label and a
+ * The editor's fields: the avatar, which runs [onEditAvatar], name, addresses with a label and a
  * preferred star, numbers, and the optional fields, which stay hidden until added from one row of
  * + chips. The birthday opens date wheels.
  */
@@ -38,7 +40,7 @@ internal fun ContactForm(
     onChange: (ContactDraft) -> Unit,
     knownLabels: ContactLabels,
     modifier: Modifier = Modifier,
-    photoChoices: List<OptionsItem> = emptyList(),
+    onEditAvatar: (() -> Unit)? = null,
 ) {
     // Set while the labels sheet is open; it labels the field whose menu opened it.
     var managing by remember { mutableStateOf<((ContactLabel) -> Unit)?>(null) }
@@ -47,7 +49,7 @@ internal fun ContactForm(
     val menu = LabelMenu(labels) { managing = it }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) {
         val photo = remember(draft.photo) { draft.photo?.inlineBytes() }
-        ContactHeader(draft.avatar(photo), emptyList(), photoChoices = photoChoices)
+        ContactHeader(draft.look(photo).toChipAvatar(), emptyList(), onEdit = onEditAvatar)
         NameRow(draft, onChange)
         EmailGroup(draft, onChange, menu)
         PhoneGroup(draft, onChange, menu)

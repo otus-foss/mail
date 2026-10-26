@@ -14,7 +14,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigationevent.NavigationEventInfo
@@ -41,10 +40,10 @@ import com.otus.mail.feature.contacts.presentation.components.ContactLabels
 import com.otus.mail.feature.contacts.presentation.components.editorBarContext
 import com.otus.mail.feature.contacts.presentation.current
 import com.otus.mail.feature.contacts.presentation.deleteLabel
-import com.otus.mail.feature.contacts.presentation.photoChoices
+import com.otus.mail.feature.contacts.presentation.inlineBytes
+import com.otus.mail.feature.contacts.presentation.look
 import com.otus.mail.feature.contacts.presentation.save
 import com.otus.mail.feature.contacts.presentation.withLabel
-import kotlinx.coroutines.launch
 
 /**
  * Creates a contact, or edits the card [key]. The bar saves; its context names the address book
@@ -73,14 +72,14 @@ internal fun ContactEditorScreen(
             if (andNext) draft = ContactDraft() else onSaved(saved)
         }
     }
-    val scope = rememberCoroutineScope()
-    val photoChoices =
-        photoChoices(
-            hasPhoto = draft.photo != null,
-            canPick = state.canPickPhoto,
-            onPick = { scope.launch { state.pickPhoto()?.let { draft = draft.copy(photo = it) } } },
-            onRemove = { draft = draft.copy(photo = null) },
-        )
+    var editingAvatar by remember { mutableStateOf(false) }
+    if (editingAvatar) {
+        val look = draft.look(remember(draft.photo) { draft.photo?.inlineBytes() })
+        val address = draft.emails.firstOrNull { it.value.isNotBlank() }?.value
+        ContactAvatarSheet(draft.fullName.ifEmpty { "New contact" }, address, look, state, {
+            draft = draft.withAvatar(it)
+        }) { editingAvatar = false }
+    }
     ProvideTextStyle(panelTextStyle()) {
         ActionBarHost(
             bar = {
@@ -101,7 +100,7 @@ internal fun ContactEditorScreen(
                     draft,
                     { draft = it },
                     ContactLabels(state.customLabels, { state.withLabel(it).size }, state::deleteLabel),
-                    photoChoices = photoChoices,
+                    onEditAvatar = { editingAvatar = true },
                     modifier =
                         Modifier
                             .weight(1f)

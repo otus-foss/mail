@@ -52,4 +52,6 @@ internal class PersonFacts(
     val booksOf: (ContactCard) -> List<ContactBook>,
     val groups: List<ContactCard>,
     val saveElsewhere: ContactBook?,
+    /** Whether the person's card holds the avatar of one of the user's own addresses. */
+    val ownAvatar: Boolean = false,
 )

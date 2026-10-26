@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import com.otus.accounts.presentation.AccountsState
 import com.otus.accounts.presentation.OwnAvatarsState
+import com.otus.accounts.presentation.ownAddresses
 import com.otus.avatar.AvatarOptions
 import com.otus.mail.core.avatar.mailAvatarOptions
 import com.otus.mail.feature.contacts.presentation.ContactAvatarUpdates
@@ -83,7 +84,7 @@ internal class MailStates(
         ContactAvatarUpdates(services.avatars, services.work, { behavior.behavior.allAccountPhotos }) { feed.refresh() }
 
     /** Every login's contacts and the contact changes waiting for the server. */
-    val contacts =
+    val contacts: ContactsState =
         ContactsState(
             services.contacts,
             ContactSync(services.contacts, services.stores.contacts, services.work),
@@ -94,6 +95,12 @@ internal class MailStates(
             services.pickers.avatarPhotos,
             FrequentContacts(services.mailTraces, services.stores.contacts, services.work),
             contactAvatars,
+            ownAddresses = {
+                accounts.accounts
+                    .flatMap { it.ownAddresses }
+                    .map(String::lowercase)
+                    .toSet()
+            },
         )
 
     /** Addresses pinned in "Show mail from". */
