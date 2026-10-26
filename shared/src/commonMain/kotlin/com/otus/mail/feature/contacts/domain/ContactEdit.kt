@@ -79,6 +79,31 @@ interface ContactStore {
     }
 }
 
+/**
+ * Drops [loginId]'s waiting changes, and its cards from those shown as one and from dismissed
+ * pairs, so nothing of a removed account stays on the device.
+ */
+fun ContactStore.forgetAccount(loginId: String) {
+    val saved = read()
+
+    fun others(name: String) =
+        KeySets.encode(
+            KeySets.decode(saved[name]).map { set -> set.filterNot { it.loginId == loginId }.toSet() }.filter {
+                it.size >
+                    1
+            },
+        )
+    val edits = ContactEdit.decode(saved[ContactStore.EDITS]).filterNot { it.key.loginId == loginId }
+    write(
+        saved +
+            mapOf(
+                ContactStore.EDITS to ContactEdit.encode(edits),
+                ContactStore.LINKS to others(ContactStore.LINKS),
+                ContactStore.DISMISSED to others(ContactStore.DISMISSED),
+            ),
+    )
+}
+
 /** Sets of card keys as JSON, for [ContactLinks] and dismissed duplicates. */
 internal object KeySets {
     private val serializer = ListSerializer(ListSerializer(CardKey.serializer()))
