@@ -43,13 +43,18 @@ class InboxFeedState(
             if (showingOwn) show(null)
         }
 
-    /** The applied filters, which the server runs; a new value loads again from the start. */
+    /**
+     * The applied filters, which the server runs; a new value loads again from the start. A list
+     * shown moments ago comes back at once; otherwise the list stays until the device's matches
+     * replace it, so a filter never blanks it first.
+     */
     var query: MailQuery = MailQuery()
         set(value) {
             if (value == field) return
             field = value
-            messages = emptyList()
-            refresh()
+            val shown = recent.of(mailScope, value)
+            if (shown != null) messages = shown
+            refresh(cachedFirst = shown == null)
         }
 
     /** What the list loads: the page's own messages, or what a search or folder pill shows in their place. */
@@ -74,6 +79,7 @@ class InboxFeedState(
     private var request = 0
     private val pending = PendingChanges()
     private val avatars = FeedAvatars(avatars)
+    private val recent = RecentLists()
 
     private var reportedNotice: String? = null
 
@@ -92,7 +98,9 @@ class InboxFeedState(
         transform: (MailMessage) -> MailMessage,
         undo: (MailMessage) -> MailMessage,
     ): LocalChange {
-        messages = messages.map { if (it.id == id) transform(it) else it }
+        val edited = { list: List<MailMessage> -> list.map { if (it.id == id) transform(it) else it } }
+        messages = edited(messages)
+        recent.edit(edited)
         return track(pending.add(id, scope = null, edit = transform)) {
             messages = messages.map { if (it.id == id) undo(it) else it }
         }
@@ -103,6 +111,7 @@ class InboxFeedState(
         val before = messages.firstOrNull { it.id == id }
         val previousScope = mailScope
         messages = messages.filterNot { it.id == id }
+        recent.edit { list -> list.filterNot { it.id == id } }
         return track(pending.add(id, previousScope) { null }) {
             // Put it back after the server refused the move, unless a reload already did.
             if (mailScope == previousScope && before != null && messages.none { it.id == before.id }) {
@@ -124,23 +133,24 @@ class InboxFeedState(
 
     /**
      * Loads [scope] in place of the page's own messages, or returns to them when it is null. The
-     * previous scope's messages leave at once, so they never show under the new one.
+     * previous scope's messages leave at once, so they never show under the new one; the new
+     * scope's list shows at once when it was shown moments ago.
      */
     fun show(scope: MailScope?) {
         val next = scope ?: defaultScope
         if (next == mailScope) return
         mailScope = next
-        messages = emptyList()
-        refresh()
+        val shown = recent.of(next, query)
+        messages = shown.orEmpty()
+        refresh(cachedFirst = shown == null)
     }
 
     /**
-     * Loads the scope's messages from the server again, with as many pages as are shown. A list
-     * left empty by a new scope or query first shows what the device kept, while [loading] stays
-     * true, unless the server answers first.
+     * Loads the scope's messages from the server again, with as many pages as are shown. With
+     * [cachedFirst], as for a list left empty by a new scope or a new query, it first shows what
+     * the device kept, while [loading] stays true, unless the server answers first.
      */
-    fun refresh() {
-        val cachedFirst = messages.isEmpty()
+    fun refresh(cachedFirst: Boolean = messages.isEmpty()) {
         loading = true
         loadingMore = false
         reportedNotice = null
@@ -184,6 +194,10 @@ class InboxFeedState(
                 } finally {
                     if (load.number == request) onEnd()
                 }
+                // A filtered list goes on loading pages while the server has more, so matches past
+                // the first pages show without scrolling. A new filter or scope replaces the search,
+                // a failed page stops it until the next refresh, and the next load resolves avatars.
+                if (load.number == request && load.served && query.filters.activeCount > 0) loadMore()
                 if (load.number == request) {
                     avatars.resolve(messages, load.options, { load.number == request }) { edit ->
                         messages = messages.map(edit)
@@ -211,7 +225,15 @@ class InboxFeedState(
     ) {
         val incoming = avatars.restored(snapshot.messages, messages, load.options)
         if (load.number != request || load.served) return
-        messages = pending.publish(incoming, load.number, load.scope)
+        val filters = load.query.filters
+        val shown =
+            if (fromServer && snapshot.hasMore && filters.activeCount > 0) {
+                incoming.withShownBeyond(messages, filters.sort)
+            } else {
+                incoming
+            }
+        messages = pending.publish(shown, load.number, load.scope)
+        recent.keep(load.scope, load.query, messages)
         hasMore = snapshot.hasMore
         avatars.shown(load.options)
         if (fromServer) {
