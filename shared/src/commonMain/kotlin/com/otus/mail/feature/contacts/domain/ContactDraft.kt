@@ -61,7 +61,7 @@ data class ContactDraft(
         val phoneKeys = valueKeys(keptPhones, "p", card.phones.orEmpty().keys)
         return card
             .copy(
-                name = name(card.name),
+                name = nameFor(card),
                 emails =
                     keptEmails
                         .mapIndexed { index, value ->
@@ -104,6 +104,11 @@ data class ContactDraft(
             }
     }
 
+    // Rebuilding the name sets its full form, order and separators from the two fields alone, so a
+    // name the user left alone stays as the card had it.
+    private fun nameFor(card: Card): Name? =
+        if (given == card.draftGiven && surname == card.surname) card.name else name(card.name)
+
     private fun name(old: Name?): Name? {
         val parts =
             listOf(NameComponentKind.Given to given, NameComponentKind.Surname to surname)
@@ -127,14 +132,7 @@ data class ContactDraft(
         /** The editor's values for [card]: its first organization, title and note, and its birthday. */
         fun of(card: ContactCard): ContactDraft =
             ContactDraft(
-                given =
-                    card.card.givenName.ifEmpty {
-                        card.card.name
-                            ?.full
-                            .orEmpty()
-                            .takeIf { card.card.surname.isEmpty() }
-                            .orEmpty()
-                    },
+                given = card.card.draftGiven,
                 surname = card.card.surname,
                 emails = card.emails.map { DraftValue(it.id, it.value, it.label, it.preferred) },
                 phones = card.phones.map { DraftValue(it.id, it.value, it.label) },
@@ -165,6 +163,17 @@ data class ContactDraft(
         private const val BIRTHDAY = "birthday"
     }
 }
+
+/** The editor's given name for this card: its given names, else its full name when it has no parts. */
+private val Card.draftGiven: String
+    get() =
+        givenName.ifEmpty {
+            name
+                ?.full
+                .orEmpty()
+                .takeIf { surname.isEmpty() }
+                .orEmpty()
+        }
 
 /** The card's photo: the avatar photo on an avatar card, else its first. */
 internal val Card.photo: Media?
