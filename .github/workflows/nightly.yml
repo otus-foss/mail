@@ -1,7 +1,7 @@
 name: nightly
 
 # Builds a signed nightly APK of main and publishes it as a release of the public nightly
-# repository, where the app's update check finds it. Changes in Mail or Meta trigger a build.
+# repository, where the app's update check finds it. Changes to either selected revision trigger a build.
 # Both source revisions are resolved together and recorded in the release provenance.
 # See docs/nightly.md for the secrets this needs.
 on:
@@ -42,7 +42,9 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: reazndev/otus-meta
-          ref: main
+          # Keep Mail main compatible while Mail #174 changes Meta's public packages.
+          # Restore main once Mail main builds against those packages on Meta main.
+          ref: b1a860f37f73bb46a12f15bbf9a93ddc8b6cdfa1
           path: otus-meta
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
