@@ -4,12 +4,10 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.GetResult
 import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.QueryResult
 import com.otus.jmap.login.LoginStore
-import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
@@ -23,6 +21,7 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.core.mail.pointer
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
@@ -54,12 +53,8 @@ class JmapNewsletters(
     private val unsubscriber = ListUnsubscriber(drafts, sender)
 
     override suspend fun list(message: MailMessage): MailingList? =
-        try {
+        mailCallOr(null) {
             mailAccount(connections, logins, message.location.accountId)?.list(message)
-        } catch (expected: JmapException) {
-            null
-        } catch (expected: LoginStoreException) {
-            null
         }
 
     override suspend fun unsubscribe(
@@ -73,7 +68,7 @@ class JmapNewsletters(
     ): Boolean {
         return cache.withAccount(accountId) { accountCache ->
             val patches =
-                try {
+                mailCallOr(null) {
                     if (emailIds.isEmpty()) {
                         emptyMap()
                     } else {
@@ -83,10 +78,6 @@ class JmapNewsletters(
                             accountId,
                         )?.archivePatches(emailIds)
                     }
-                } catch (expected: JmapException) {
-                    null
-                } catch (expected: LoginStoreException) {
-                    null
                 } ?: return@withAccount false
             patches.isEmpty() ||
                 updateAccountEmails(connections, logins, accountId, patches, accountCache).containsAll(patches.keys)

@@ -1,9 +1,8 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.JmapException
 import com.otus.jmap.login.LoginStore
-import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -17,14 +16,10 @@ class JmapAttachmentDownloads(
         message: MailMessage,
         file: MailAttachment,
     ): ByteArray? =
-        try {
+        mailCallOr(null) {
             mailAccount(connections, logins, message.location.accountId)?.let { account ->
                 account.connection.download(account.id, file.blobId, file.type, MAX_FILE_BYTES, file.name).bytes
             }
-        } catch (expected: JmapException) {
-            null
-        } catch (expected: LoginStoreException) {
-            null
         }
 
     private companion object {

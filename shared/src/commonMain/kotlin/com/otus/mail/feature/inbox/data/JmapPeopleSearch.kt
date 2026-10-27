@@ -2,7 +2,6 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapDecoding
@@ -15,6 +14,7 @@ import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.anyOf
 import com.otus.mail.core.mail.condition
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.FoundPerson
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -66,7 +66,7 @@ class JmapPeopleSearch(
         field: PeopleField,
         text: String,
     ): List<FoundPerson> =
-        try {
+        mailCallOr(emptyList()) {
             mailAccount(connections, logins, loginId)
                 ?.let { account ->
                     val emails =
@@ -78,10 +78,6 @@ class JmapPeopleSearch(
                         }
                     jmapDecoding { people(emails.list, field) }
                 }.orEmpty()
-        } catch (expected: JmapException) {
-            emptyList()
-        } catch (expected: LoginStoreException) {
-            emptyList()
         }
 
     private companion object {
