@@ -43,7 +43,7 @@ jobs:
         with:
           repository: reazndev/otus-meta
           # Keep Mail main compatible while Mail #174 changes Meta's public packages.
-          # Restore main once Mail main builds against those packages on Meta main.
+          # Restore main in the same change that migrates Mail's imports to those packages.
           ref: b1a860f37f73bb46a12f15bbf9a93ddc8b6cdfa1
           path: otus-meta
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
