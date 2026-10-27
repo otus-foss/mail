@@ -1,6 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.ReadStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -36,6 +39,26 @@ class InboxFeedPagingTest {
             assertEquals(listOf("a", "b", "c"), state.messages.map { it.id })
             assertFalse(state.loadingMore)
             assertFalse(state.hasMore)
+        }
+
+    @Test
+    fun aFilteredListLoadsEveryPageWithoutScrolling() =
+        runTest {
+            val source = GatedSource()
+            val state = InboxFeedState(source, this)
+            state.query = MailQuery(filters = InboxFilters(status = ReadStatus.Unread))
+            runCurrent()
+            source.cachedReads.single().complete(snapshot("a"))
+            source.loads.single().complete(snapshot("a", "b", hasMore = true))
+            runCurrent()
+            assertTrue(state.loadingMore, "The next page loads on its own")
+            source.pages.single().complete(snapshot("a", "b", "c", hasMore = true))
+            runCurrent()
+            source.pages.last().complete(snapshot("a", "b", "c", "d"))
+            runCurrent()
+            assertEquals(2, source.pages.size)
+            assertEquals(listOf("a", "b", "c", "d"), state.messages.map { it.id })
+            assertFalse(state.loadingMore)
         }
 
     @Test
