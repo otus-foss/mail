@@ -7,12 +7,6 @@ private. Each release is tagged `nightly-<number>`, with a version code one high
 release. The first release starts at Mail's commit count. Draft releases reserve their version codes,
 so a retry uses a code above every existing release, including unfinished drafts.
 
-The version job temporarily pins Meta while [Mail issue #174](https://github.com/reazndev/otus-mail/issues/174)
-migrates Mail to Meta's new public packages. Changes on Meta main do not trigger builds while the
-pin is active. The consumer PR must restore the version job's Meta checkout `ref` to `main`
-in the same merge as the migrated imports. It also removes this paragraph and the pin's workflow
-comments. Base that PR on the preparation branch so the pin removal stays explicit.
-
 The version job resolves both commits. The build checks out those exact revisions and publishes
 them in `provenance.json` beside the APK. Notes include Mail and Meta commits since the preceding
 recorded revisions. When the preceding release has no recorded revision, the notes list the commits
