@@ -185,6 +185,10 @@ class InboxFeedState(
                 } finally {
                     if (load.number == request) onEnd()
                 }
+                // A filtered list goes on loading pages while the server has more, so matches past
+                // the first pages show without scrolling. A new filter or scope replaces the search,
+                // a failed page stops it until the next refresh, and the next load resolves avatars.
+                if (load.number == request && load.served && query.filters.activeCount > 0) loadMore()
                 if (load.number == request) {
                     avatars.resolve(messages, load.options, { load.number == request }) { edit ->
                         messages = messages.map(edit)
@@ -212,7 +216,14 @@ class InboxFeedState(
     ) {
         val incoming = avatars.restored(snapshot.messages, messages, load.options)
         if (load.number != request || load.served) return
-        messages = pending.publish(incoming, load.number, load.scope)
+        val filters = load.query.filters
+        val shown =
+            if (fromServer && snapshot.hasMore && filters.activeCount > 0) {
+                incoming.withShownBeyond(messages, filters.sort)
+            } else {
+                incoming
+            }
+        messages = pending.publish(shown, load.number, load.scope)
         hasMore = snapshot.hasMore
         avatars.shown(load.options)
         if (fromServer) {
