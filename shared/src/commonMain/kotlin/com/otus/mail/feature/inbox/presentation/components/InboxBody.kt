@@ -47,6 +47,7 @@ internal fun InboxBody(
     status: InboxStatus,
     emptyContent: @Composable () -> Unit,
 ) {
+    val mixed = rememberMixedAddresses(messages, frame.look.own, frame.narrowed)
     if (messages.isEmpty()) {
         Box(
             Modifier.padding(start = InboxTokens.pageInset, top = frame.topInset, end = InboxTokens.pageInset),
@@ -59,7 +60,8 @@ internal fun InboxBody(
                 frame.look,
                 dateFormatter,
                 today,
-            ) { conversationRows(messages, frame.look, dateFormatter, today) }
+                mixed,
+            ) { conversationRows(messages, frame.look, dateFormatter, today, mixed) }
         val ids = remember(messages) { messages.map { it.id } }
         val currentMessages by rememberUpdatedState(messages)
         val currentGestures by rememberUpdatedState(gestures)
