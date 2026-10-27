@@ -2,15 +2,14 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
-import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.matching
@@ -56,16 +55,12 @@ class JmapAddressBook(
         }
 
     private suspend fun load(accountId: String): List<MailSender>? =
-        try {
+        mailCallOr(null) {
             mailAccount(connections, logins, accountId)?.let { account ->
                 (account.contactCards(CONTACT_SCAN) + correspondents(account))
                     .distinctBy { it.address.lowercase() }
                     .map { it.copy(accountKey = accountId) }
             }
-        } catch (expected: JmapException) {
-            null
-        } catch (expected: LoginStoreException) {
-            null
         }
 
     private suspend fun correspondents(account: MailAccount): List<MailSender> {

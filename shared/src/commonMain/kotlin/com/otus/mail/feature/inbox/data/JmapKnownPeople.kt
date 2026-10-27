@@ -2,15 +2,14 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.login.LoginStore
-import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -41,17 +40,13 @@ class JmapKnownPeople(
             ?: emptySet()
 
     private suspend fun load(accountId: String): Set<String>? =
-        try {
+        mailCallOr(null) {
             mailAccount(connections, logins, accountId)?.let { account ->
                 (account.contactCards(CONTACT_SCAN).map { it.address } + account.sentTo())
                     .map { it.trim().lowercase() }
                     .filter { it.isNotEmpty() }
                     .toSet()
             }
-        } catch (expected: JmapException) {
-            null
-        } catch (expected: LoginStoreException) {
-            null
         }
 
     /**

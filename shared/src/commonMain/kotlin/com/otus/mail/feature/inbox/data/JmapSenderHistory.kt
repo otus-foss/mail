@@ -2,16 +2,15 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
-import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EMAIL_FOLDERS_PROPERTIES
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.SenderHistory
 import kotlinx.serialization.json.JsonPrimitive
@@ -30,12 +29,8 @@ class JmapSenderHistory(
     override suspend fun recentFolders(message: MailMessage): List<Set<String>> {
         val address = message.sender.address
         if (address.isBlank() || message.emailId.isEmpty()) return emptyList()
-        return try {
+        return mailCallOr(emptyList()) {
             mailAccount(connections, logins, message.location.accountId)?.let { query(it, address) }.orEmpty()
-        } catch (expected: JmapException) {
-            emptyList()
-        } catch (expected: LoginStoreException) {
-            emptyList()
         }
     }
 

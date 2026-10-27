@@ -23,8 +23,8 @@ class JmapNewMailCheckerTest {
     ) : MailStateStore {
         override fun read() = saved
 
-        override fun write(states: Map<String, String>) {
-            saved = states
+        override fun write(values: Map<String, String>) {
+            saved = values
         }
     }
 
