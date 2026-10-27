@@ -40,7 +40,9 @@ from one of the login's own addresses, and it also queries the Sent mailbox, bec
 user started may have no email elsewhere. Needs my reply keeps threads whose newest email is
 someone else's, sent to the user directly or in a thread the user wrote in, and not from a list.
 Conversations keeps threads with emails both in and outside Sent, and Calendar invites keeps mail
-with a `text/calendar` part or an `.ics` file. With any of these on, the panel shows no count.
+with a `text/calendar` or `application/ics` attachment or an `.ics` or `.ifb` file. With any of
+these on, the panel shows no count. The same check gives a row the calendar mark: a conversation
+with an invitation shows it, and the paperclip appears only for its other files.
 Otherwise its count is the same query with `limit: 0`, `calculateTotal: true`, and
 `collapseThreads`, one per login, summed; each panel session reads each login's mailboxes once.
 The From and To lines also search beyond the loaded rows as the user types: `Email/query` with a `from`, or `to` and

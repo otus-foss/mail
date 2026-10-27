@@ -125,7 +125,8 @@ internal fun SidebarMailboxList(
         inbox.icon,
         selected = current == inbox.page,
         onClick = { onSelect(inbox.page) },
-        count = counter.of(inbox.folders),
+        // Above the tiles the count takes their badge, so it shares their cap.
+        count = if (style == MailboxStyle.Grid) counter.badge(inbox.folders) else counter.of(inbox.folders),
         inset = style == MailboxStyle.Grid,
     )
     when (style) {

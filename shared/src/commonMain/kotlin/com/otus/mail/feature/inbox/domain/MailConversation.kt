@@ -25,6 +25,8 @@ data class MailConversation(
     val exchanged: Boolean = false,
     /** Who wrote [last] and to whom, read against the login's own addresses. */
     val reply: ReplyState = ReplyState(),
+    /** Whether any counted email carries a calendar invitation, which the row marks apart from files. */
+    val invite: Boolean = false,
 ) {
     /** The user wrote the newest email, so the thread waits for someone else. */
     val awaitingReply: Boolean

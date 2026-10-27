@@ -94,7 +94,10 @@ data class MailAttributes(
     val answered: Boolean = false,
     /** The message has the `$forwarded` keyword. */
     val forwarded: Boolean = false,
-    /** Whether any email of the conversation has an attachment, even when this one has none. */
+    /**
+     * Whether any email of the conversation has a file other than a calendar invitation, even when
+     * this one has none. Invitations get their own mark from [invite] and [MailConversation.invite].
+     */
     val hasAttachment: Boolean = attachments.isNotEmpty(),
 )
 
