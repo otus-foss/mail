@@ -6,6 +6,9 @@ import com.otus.jscontact.EmailAddress
 import com.otus.jscontact.Name
 import com.otus.jscontact.PersonalInfo
 import com.otus.jscontact.PersonalInfoKind
+import com.otus.jscontact.Relation
+import com.otus.jscontact.RelationType
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -55,7 +58,53 @@ class MergePlanTest {
     }
 
     @Test
+    fun setsAndRelationsJoinByKey() {
+        val friend = mapOf(RelationType.Friend to true)
+        val plan =
+            plan(
+                base.card.copy(keywords = mapOf("work" to true), relatedTo = mapOf("u1" to Relation(friend))),
+                other.card.copy(
+                    keywords = mapOf("golf" to true),
+                    relatedTo =
+                        mapOf("u2" to Relation(friend), "u1" to Relation(mapOf(RelationType.Colleague to true))),
+                ),
+            )
+        val merged = plan.merged()
+        assertEquals(mapOf("work" to true, "golf" to true), merged.keywords)
+        assertEquals(
+            mapOf("u1" to Relation(friend + (RelationType.Colleague to true)), "u2" to Relation(friend)),
+            merged.relatedTo,
+        )
+    }
+
+    @Test
+    fun aLocalizationKeepsOnlyTheValuesTheMergeKeptUnderTheirKeys() {
+        val patch =
+            JsonObject(
+                mapOf(
+                    "addresses/a1/full" to JsonPrimitive("Ockham, Surrey"),
+                    "personalInfo/p1/value" to JsonPrimitive("Poesie"),
+                ),
+            )
+        val merged = plan(base.card, other.card.copy(localizations = mapOf("de" to patch))).merged()
+        assertEquals(
+            mapOf("de" to JsonObject(mapOf("personalInfo/p1/value" to JsonPrimitive("Poesie")))),
+            merged.localizations,
+        )
+    }
+
+    @Test
     fun theMergedCardStaysInEachBookOfTheTarget() {
         assertEquals(mapOf("home" to true, "work" to true), plan.merged().addressBookIds)
     }
+
+    private fun plan(
+        baseCard: Card,
+        otherCard: Card,
+    ) = MergePlan(
+        listOf(base.copy(card = baseCard), other.copy(card = otherCard)),
+        base.key,
+        setOf("ada@home.test", "ada@work.test"),
+        home,
+    )
 }

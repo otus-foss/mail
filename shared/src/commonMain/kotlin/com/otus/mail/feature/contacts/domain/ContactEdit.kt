@@ -68,6 +68,13 @@ sealed interface ContactEdit {
 }
 
 /**
+ * Whether this is a delete waiting for a change the server refused. It waits for the user to save
+ * or drop that change, not for a connection, so its card still shows.
+ */
+fun ContactEdit.isHeld(refused: Map<String, ContactWriteFailure>): Boolean =
+    this is ContactEdit.Delete && waitsFor?.let { it in refused } == true
+
+/**
  * The device's own contact data: changes waiting for the server, cards shown as one person, and
  * duplicate pairs the user said are different people. Values are text under fixed keys.
  */

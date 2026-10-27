@@ -14,6 +14,7 @@ import com.otus.mail.feature.contacts.domain.ContactsSnapshot
 import com.otus.mail.feature.contacts.domain.KeySets
 import com.otus.mail.feature.contacts.domain.afterSent
 import com.otus.mail.feature.contacts.domain.enqueue
+import com.otus.mail.feature.contacts.domain.isHeld
 import com.otus.mail.feature.contacts.domain.rekey
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -24,8 +25,7 @@ import kotlinx.coroutines.sync.withLock
 private val ContactEdit.dependsOn: String? get() = (this as? ContactEdit.Delete)?.waitsFor
 
 /** Whether the server has refused neither this change nor the one it waits for. */
-private fun ContactEdit.isReady(refused: Map<String, ContactWriteFailure>): Boolean =
-    id !in refused && dependsOn !in refused
+private fun ContactEdit.isReady(refused: Map<String, ContactWriteFailure>): Boolean = id !in refused && !isHeld(refused)
 
 /** How [ContactSync] tells the contact list about a change the server accepted. */
 internal typealias SentChange = ((ContactsSnapshot) -> ContactsSnapshot) -> Unit
