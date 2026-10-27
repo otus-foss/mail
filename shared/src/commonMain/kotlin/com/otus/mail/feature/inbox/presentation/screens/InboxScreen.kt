@@ -50,6 +50,7 @@ import com.otus.mail.feature.inbox.presentation.components.inboxBar
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterAnchor
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberInboxRows
+import com.otus.mail.feature.inbox.presentation.components.rememberUnreadCount
 import com.otus.mail.feature.inbox.presentation.listFrame
 
 @Composable
@@ -71,6 +72,7 @@ fun InboxScreen(
     val rows = rememberInboxRows(messages, messageActions)
     val filters = context.filters ?: remember { InboxFilterState() }
     val listed = ListedMail(messages, filters.applied)
+    val unreadCount = rememberUnreadCount(listed, status.loading)
     val anchor = rememberFilterAnchor(filters, context.filterOptions, messages, dateFormatter)
     val page = shownPage(state, context)
     val headerActions = InboxHeaderActions(searchCloser(state), onOpenNavigation, { filter = it }, filters::open)
@@ -100,7 +102,7 @@ fun InboxScreen(
                             page,
                             dateFormatter,
                             headerActions,
-                            PanelLook(compact && !state.searching, listed.unreadCount, anchor.filters),
+                            PanelLook(compact && !state.searching, unreadCount, anchor.filters),
                             anchor.measure.then(modifier),
                         )
                     }) { topInset, onCompactChange ->
