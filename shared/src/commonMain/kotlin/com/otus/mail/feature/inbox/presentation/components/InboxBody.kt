@@ -154,8 +154,13 @@ internal fun InboxEmptyState(
     onReset: () -> Unit,
     onRefresh: () -> Unit,
 ) {
-    if (status.loading) {
-        EmptyState("Loading mail", "Fetching messages from your accounts.", Res.drawable.symbol_inbox)
+    if (status.loading || status.loadingMore) {
+        // A filtered list keeps searching later pages, so an empty one is not a final answer yet.
+        if (filtered) {
+            EmptyState("Searching mail", "Looking for matching messages in your accounts.", Res.drawable.symbol_search)
+        } else {
+            EmptyState("Loading mail", "Fetching messages from your accounts.", Res.drawable.symbol_inbox)
+        }
         return
     }
     if (!hasMessages && status.notice != null) {
