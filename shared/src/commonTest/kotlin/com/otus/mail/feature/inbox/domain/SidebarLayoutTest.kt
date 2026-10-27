@@ -34,6 +34,14 @@ class SidebarLayoutTest {
     }
 
     @Test
+    fun aLayoutSavedBeforeContactsPinsItOnce() {
+        val saved = SidebarLayout.decode("pinned=read_later,role:sent")
+        assertEquals(listOf(SidebarPin.ReadLater, SidebarPin.Role("sent"), SidebarPin.Contacts), saved.pinned)
+        val unpinned = saved.copy(pinned = saved.pinned - SidebarPin.Contacts)
+        assertEquals(unpinned, SidebarLayout.decode(SidebarLayout.encode(unpinned)))
+    }
+
+    @Test
     fun movingAndHidingASectionKeepsTheRest() {
         val layout = SidebarLayout().moved(from = 1, to = 0).withShown(SidebarSection.Mailboxes, shown = false)
         assertEquals(listOf(SidebarSection.Folders, SidebarSection.Mailboxes), layout.sections)
