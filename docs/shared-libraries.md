@@ -16,10 +16,8 @@ uses:
 | `com.otus:jscontact` | `libs.otus.jscontact` |
 | `com.otus:jmap-contacts` | `libs.otus.jmap.contacts` |
 
-This branch pins the Meta 0.10.0 candidate for all Otus libraries. It includes the design-system
-package restructure from [issue #174](https://github.com/reazndev/otus-mail/issues/174).
-Validate it through source substitution or the candidate repository below until Meta publishes
-the release. The version pin alone does not make artifacts available on GitHub Packages.
+Mail pins Meta 0.10.0 for all Otus libraries. While Meta publishing is paused, builds use Meta's
+source through `otus.meta.path`, as [Changing shared code](#changing-shared-code) describes.
 See [the component inventory](component-inventory.md) for historical ownership decisions.
 
 All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.toml`.
@@ -43,8 +41,8 @@ SSH Git credentials do not authenticate Maven downloads.
 ## Package status
 
 Meta publishing is paused. Tags do not upload packages, and manual publisher runs validate without
-uploading. The release flow needs to resume before this candidate becomes a downloadable version.
-Mail's quality workflow uses a Meta branch with the same name as this branch when one exists,
+uploading. The release flow needs to resume before 0.10.0 becomes a downloadable version.
+Mail's quality workflow uses a Meta branch with the same name as the branch it checks when one exists,
 otherwise Meta main. Versions 0.3.1 to 0.5.0 are not on GitHub Packages.
 iOS linking against the artifacts is unverified while the macOS `ios` job is paused.
 See [hosting and CI](hosting.md).
@@ -57,11 +55,8 @@ Meta keeps one `designsystem` artifact. Its UI now lives in
 [Meta's declaration map](https://github.com/reazndev/otus-meta/blob/main/docs/ui-package-migration.md).
 Theme tokens, resource identifiers, and the app's own feature layers are unchanged.
 
-Mail's nightly must stay on a compatible Meta revision while the two repositories change
-packages. Merge the temporary nightly-pin preparation first. This consumer PR restores the
-nightly's Meta checkout to main in the same change as the migrated imports. Keep the package
-migration PR in draft until Meta publishes 0.10.0, then merge both parts of the consumer change
-together.
+The nightly builds Mail main against Meta main, so merge a Meta package move and Mail's import
+update one after the other, away from the nightly's 00:00 UTC run.
 
 ## Changing shared code
 
