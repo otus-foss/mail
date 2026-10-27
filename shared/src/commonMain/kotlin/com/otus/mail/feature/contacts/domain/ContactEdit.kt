@@ -37,11 +37,16 @@ sealed interface ContactEdit {
         val after: Card,
     ) : ContactEdit
 
+    /**
+     * Removes the card. [waitsFor] names a change this one depends on, such as the merged card a
+     * merge saves: while the server refuses that change, the card is not removed.
+     */
     @Serializable
     @SerialName("delete")
     data class Delete(
         override val id: String,
         override val key: CardKey,
+        val waitsFor: String? = null,
     ) : ContactEdit
 
     companion object {

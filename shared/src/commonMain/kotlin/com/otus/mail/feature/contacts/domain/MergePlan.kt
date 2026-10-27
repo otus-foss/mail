@@ -22,8 +22,8 @@ data class MergePlan(
 
     /**
      * The merged card. It starts from [target], or the card the name comes from, and takes the
-     * ticked addresses, every number, and each property the base lacks from the others, so no
-     * value is lost unless the user unticked it.
+     * ticked addresses, every number, and every other value of the others it lacks, so no value is
+     * lost unless the user unticked it.
      */
     fun merged(): Card {
         val nameCard = cards.first { it.key == name }
@@ -49,11 +49,11 @@ data class MergePlan(
                 }.distinctBy { it.number.filter(Char::isDigit) }
                 .mapIndexed { index, phone -> "p${index + 1}" to phone }
                 .toMap()
-        return others.fold(base.card) { card, other -> card.filledFrom(other.card) }.copy(
+        return others.fold(base.card) { card, other -> card.unitedWith(other.card) }.copy(
             name = nameCard.card.name,
             emails = emails.takeIf { it.isNotEmpty() },
             phones = phones.takeIf { it.isNotEmpty() },
-            addressBookIds = mapOf(book.bookId to true),
+            addressBookIds = target?.card?.addressBookIds.orEmpty() + (book.bookId to true),
             id = target?.key?.cardId,
         )
     }
@@ -94,3 +94,45 @@ internal fun Card.filledFrom(other: Card): Card =
         links = links ?: other.links,
         onlineServices = onlineServices ?: other.onlineServices,
     )
+
+/**
+ * This card with every value of [other] it lacks. Its own values and their keys stay; a value of
+ * [other] whose key it already uses gets a free key. Single values come from [other] only where
+ * this card has none, and the merge sets the name, addresses, numbers and books itself.
+ */
+private fun Card.unitedWith(other: Card): Card =
+    copy(
+        relatedTo = relatedTo.unitedWith(other.relatedTo),
+        members = members.unitedWith(other.members),
+        nicknames = nicknames.unitedWith(other.nicknames),
+        organizations = organizations.unitedWith(other.organizations),
+        speakToAs = speakToAs ?: other.speakToAs,
+        titles = titles.unitedWith(other.titles),
+        onlineServices = onlineServices.unitedWith(other.onlineServices),
+        preferredLanguages = preferredLanguages.unitedWith(other.preferredLanguages),
+        calendars = calendars.unitedWith(other.calendars),
+        schedulingAddresses = schedulingAddresses.unitedWith(other.schedulingAddresses),
+        addresses = addresses.unitedWith(other.addresses),
+        cryptoKeys = cryptoKeys.unitedWith(other.cryptoKeys),
+        directories = directories.unitedWith(other.directories),
+        links = links.unitedWith(other.links),
+        media = media.unitedWith(other.media),
+        // Keyed by language tag, so a second localization for a language cannot move to another key.
+        localizations = (other.localizations.orEmpty() + localizations.orEmpty()).takeIf { it.isNotEmpty() },
+        anniversaries = anniversaries.unitedWith(other.anniversaries),
+        keywords = keywords.unitedWith(other.keywords),
+        notes = notes.unitedWith(other.notes),
+        personalInfo = personalInfo.unitedWith(other.personalInfo),
+        language = language ?: other.language,
+        extra = other.extra + extra,
+    )
+
+private fun <T> Map<String, T>?.unitedWith(other: Map<String, T>?): Map<String, T>? =
+    other
+        .orEmpty()
+        .entries
+        .filterNot { (_, value) -> this?.containsValue(value) == true }
+        .fold(this ?: other?.let { emptyMap() }) { united, (key, value) ->
+            val taken = united.orEmpty().keys
+            united.orEmpty() + ((key.takeUnless { it in taken } ?: freeKeys("$key-", taken).first()) to value)
+        }
