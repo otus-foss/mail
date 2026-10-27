@@ -3,6 +3,8 @@ package com.otus.mail.feature.notifications.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import com.otus.accounts.domain.ConnectedAccount
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.NotificationPreviewStore
 import com.otus.mail.feature.notifications.domain.PreviewChoices
@@ -10,17 +12,21 @@ import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 /**
  * The Notifications page: which service delivers new mail, each account's status, and what alerts
- * show, which [previewStore] keeps; null where alerts never show message content.
+ * show, which [previewStore] keeps; null where alerts never show message content. Address choices
+ * saved before they were kept per login go to the logins that own them once [accounts] loads, so
+ * they keep working without reaching other logins' mail.
  */
 class NotificationSettingsState(
     private val push: InstantPush,
     private val scope: CoroutineScope,
     private val previewStore: NotificationPreviewStore? = null,
+    accounts: () -> List<ConnectedAccount> = { emptyList() },
 ) {
     val periodicChecks: Boolean get() = push.periodicChecks
 
@@ -52,6 +58,12 @@ class NotificationSettingsState(
 
     init {
         scope.launch { load() }
+        if (previews?.unclaimed.orEmpty().isNotEmpty()) {
+            scope.launch {
+                val owners = snapshotFlow(accounts).first { it.isNotEmpty() }.associate { it.id to it.addresses }
+                choosePreviews { it.claim(owners) }
+            }
+        }
     }
 
     fun choose(distributor: PushDistributor?) {
