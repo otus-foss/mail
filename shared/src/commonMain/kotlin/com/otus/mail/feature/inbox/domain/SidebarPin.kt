@@ -42,6 +42,12 @@ sealed interface SidebarPin {
             listOf(ReadLater, Conversations) + listOf("drafts", "sent", "archive", "junk", "trash").map(::Role) +
                 Contacts
 
+        /**
+         * Pins added to [defaults] after layouts were saved. A layout saved before one of them pins it
+         * once; after that the user's choice stays.
+         */
+        val introduced: List<SidebarPin> = listOf(Contacts)
+
         /** [pins] saved as one value without commas or line breaks, so it fits one layout line. */
         fun encode(pins: List<SidebarPin>): String = pins.joinToString(SEPARATOR) { it.storageValue }
 
