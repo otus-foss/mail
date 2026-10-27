@@ -77,13 +77,32 @@ class ContactSyncTest {
             assertEquals(listOf("1"), sync.edits.map { it.id })
         }
 
+    @Test
+    fun aRefusedMergeKeepsTheCardsItWouldRemove() =
+        runTest {
+            val readOnly = ContactWriteException(ContactWriteFailure.ReadOnly, JmapException.Unauthorized())
+            val repository = HeldRepository(createFailure = readOnly)
+            repository.release.complete(Unit)
+            val sync = sync(repository)
+            val merge = ContactEdit.Create("1", book, card("Ada"))
+            sync.add(listOf(merge, ContactEdit.Delete("2", key, waitsFor = merge.id))) {}
+            runCurrent()
+            assertTrue(repository.deletes.isEmpty())
+            sync.drop(merge.key)
+            assertTrue(sync.edits.isEmpty())
+        }
+
     private fun TestScope.sync(repository: ContactRepository) = ContactSync(repository, null, this)
 
     private fun card(name: String) = Card(name = Name(full = name))
 
-    /** Holds every change until [release] completes, then records it or throws [failure]. */
+    /**
+     * Holds every change until [release] completes, then records it or throws [failure], or
+     * [createFailure] for a new card.
+     */
     private class HeldRepository(
         private val failure: Exception? = null,
+        private val createFailure: Exception? = failure,
     ) : ContactRepository {
         val release = CompletableDeferred<Unit>()
         val updates = mutableListOf<Card>()
@@ -96,7 +115,7 @@ class ContactSyncTest {
             card: Card,
         ): CardKey {
             release.await()
-            failure?.let { throw it }
+            createFailure?.let { throw it }
             return CardKey(book.loginId, book.accountId, "server")
         }
 

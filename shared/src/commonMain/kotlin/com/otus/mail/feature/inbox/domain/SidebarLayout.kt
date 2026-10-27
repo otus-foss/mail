@@ -71,6 +71,7 @@ data class SidebarLayout(
                 SECTIONS to layout.sections.joinToString(",") { it.storageValue },
                 HIDDEN to layout.hidden.joinToString(",") { it.storageValue },
                 PINNED to SidebarPin.encode(layout.pinned),
+                OFFERED to SidebarPin.encode(SidebarPin.introduced),
                 MAILBOXES to layout.mailboxes.storageValue,
                 COUNTS to layout.counts.storageValue,
                 FOLDER_COLORS to layout.folderColors.toString(),
@@ -78,7 +79,8 @@ data class SidebarLayout(
 
         /**
          * Unknown values read as the defaults, and sections missing from the saved order go last.
-         * A layout saved before pins existed pins the mailboxes the sidebar always showed.
+         * A layout saved before pins existed pins the mailboxes the sidebar always showed, and one
+         * saved before a pin was introduced gets that pin.
          */
         fun decode(saved: String): SidebarLayout {
             val values = saved.lines().associate { it.substringBefore("=") to it.substringAfter("=", "") }
@@ -93,7 +95,11 @@ data class SidebarLayout(
             return SidebarLayout(
                 sections = sections(SECTIONS).let { it + (SidebarSection.entries - it.toSet()) },
                 hidden = sections(HIDDEN).toSet(),
-                pinned = values[PINNED]?.let(SidebarPin::decode) ?: defaults.pinned,
+                pinned =
+                    values[PINNED]?.let(SidebarPin::decode)?.let { pins ->
+                        val offered = values[OFFERED]?.let(SidebarPin::decode).orEmpty()
+                        pins + (SidebarPin.introduced - offered.toSet() - pins.toSet())
+                    } ?: defaults.pinned,
                 mailboxes =
                     MailboxStyle.entries.firstOrNull { it.storageValue == values[MAILBOXES] } ?: defaults.mailboxes,
                 counts = SidebarCount.entries.firstOrNull { it.storageValue == values[COUNTS] } ?: defaults.counts,
@@ -104,6 +110,7 @@ data class SidebarLayout(
         private const val SECTIONS = "sections"
         private const val HIDDEN = "hidden"
         private const val PINNED = "pinned"
+        private const val OFFERED = "offered"
         private const val MAILBOXES = "mailboxes"
         private const val COUNTS = "counts"
         private const val FOLDER_COLORS = "folderColors"
