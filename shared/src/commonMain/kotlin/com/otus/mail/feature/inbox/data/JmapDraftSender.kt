@@ -16,6 +16,7 @@ import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityObject
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
@@ -146,7 +147,7 @@ class JmapDraftSender(
     )
 
     override suspend fun maxDelaySeconds(accountId: String): Long =
-        try {
+        mailCallOr(0L) {
             mailAccount(connections, logins, accountId)
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
                 ?.let { account ->
@@ -157,10 +158,6 @@ class JmapDraftSender(
                         ?.jsonPrimitive
                         ?.longOrNull
                 } ?: 0L
-        } catch (expected: JmapException) {
-            0L
-        } catch (expected: LoginStoreException) {
-            0L
         }
 
     override suspend fun cancel(message: SentMessage): Result<Unit> =

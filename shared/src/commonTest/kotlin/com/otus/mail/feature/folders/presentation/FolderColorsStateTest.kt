@@ -24,8 +24,8 @@ class FolderColorsStateTest {
 
         override fun read() = saved
 
-        override fun write(names: Map<String, String>) {
-            saved = names
+        override fun write(values: Map<String, String>) {
+            saved = values
         }
     }
 

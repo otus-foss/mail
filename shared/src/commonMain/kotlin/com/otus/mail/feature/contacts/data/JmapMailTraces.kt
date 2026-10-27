@@ -2,7 +2,6 @@ package com.otus.mail.feature.contacts.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.login.LoginStore
@@ -14,6 +13,7 @@ import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.contacts.domain.MailTrace
 import com.otus.mail.feature.contacts.domain.MailTraceSource
 import com.otus.mail.feature.contacts.domain.MailTraces
@@ -40,14 +40,10 @@ internal class JmapMailTraces(
         }
 
     override suspend fun traces(loginId: String): MailTraces? =
-        try {
+        mailCallOr(null) {
             accounts.open(loginId)?.let { account ->
                 MailTraces(account.newest(SENT_ROLE), account.newest(INBOX_ROLE))
             }
-        } catch (expected: JmapException) {
-            null
-        } catch (expected: LoginStoreException) {
-            null
         }
 
     private suspend fun MailAccount.newest(role: String): List<MailTrace> {

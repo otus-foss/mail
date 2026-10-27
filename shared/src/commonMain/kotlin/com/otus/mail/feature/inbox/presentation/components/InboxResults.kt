@@ -50,7 +50,7 @@ internal fun InboxResults(
             listState,
             dateFormatter,
             gestures,
-            frame,
+            frame.copy(narrowed = filters.activeCount > 0),
             status,
             emptyContent = emptyContent,
         )

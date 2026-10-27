@@ -9,13 +9,15 @@ import androidx.compose.ui.unit.Dp
  * last row scroll above the action bar, [onCompactChange] shrinks the panel while the list
  * scrolls down, and [onLoadMore] loads the next page near the end.
  */
-internal class ListFrame(
+internal data class ListFrame(
     val look: RowLook,
     val nudge: ListNudge?,
     val topInset: Dp,
     val bottomInset: Dp,
     val onCompactChange: (Boolean) -> Unit,
     val onLoadMore: () -> Unit,
+    /** Whether filters narrow the list, so its rows keep the address badges the whole list had. */
+    val narrowed: Boolean = false,
 )
 
 /** This page's list frame; a search hides the nudge, which is about the page's own mail. */

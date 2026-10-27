@@ -1,11 +1,10 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.JmapException
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
-import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 import com.otus.mail.feature.inbox.domain.ThreadMessage
@@ -27,16 +26,12 @@ class JmapThreadHistory(
         accountId: String,
         emailId: String,
     ): List<ThreadMessage> =
-        try {
+        mailCallOr(emptyList()) {
             mailAccount(connections, logins, accountId)
                 ?.let { account ->
                     val emails = account.threadEmails(emailId, PROPERTIES)
                     jmapDecoding { emails.upTo(emailId).map { it.threadMessage() } }
                 }.orEmpty()
-        } catch (expected: JmapException) {
-            emptyList()
-        } catch (expected: LoginStoreException) {
-            emptyList()
         }
 
     /** The messages received no later than [emailId], newest first, without drafts. */

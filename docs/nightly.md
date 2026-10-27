@@ -8,9 +8,10 @@ release. The first release starts at Mail's commit count. Draft releases reserve
 so a retry uses a code above every existing release, including unfinished drafts.
 
 The version job resolves both commits. The build checks out those exact revisions and publishes
-them in `provenance.json` beside the APK. Notes include Mail and Meta commits since the preceding
-recorded revisions. When the preceding release has no recorded revision, the notes list the commits
-since it was published instead. Only a published release can make an unchanged pair skip scheduled and manual runs.
+them in `provenance.json` beside the APK. Notes include only `feat`, `fix`, and `perf` commits from
+Mail and Meta since the preceding recorded revisions. Internal changes such as `refactor`, `docs`, `test`, `build`, `ci`, and `chore`
+are omitted from both the release notes and the in-app changelog. When the preceding release has no
+recorded revision, the notes list the commits since it was published instead. Only a published release can make an unchanged pair skip scheduled and manual runs.
 The version check reads every release page, so unfinished drafts cannot hide the last publication.
 A rerun after a failed build uses the next unpublished version code; a rerun after publication skips an unchanged pair.
 
