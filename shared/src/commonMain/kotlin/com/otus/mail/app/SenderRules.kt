@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.otus.designsystem.components.ChoiceDialog
+import com.otus.designsystem.shared.selection.components.ChoiceDialog
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.domain.folderTree

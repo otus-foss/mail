@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.designsystem.components.ChipAvatar
+import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.FolderColor
 import com.otus.mail.feature.inbox.domain.FilterLayout
 import com.otus.mail.feature.inbox.domain.FolderRef

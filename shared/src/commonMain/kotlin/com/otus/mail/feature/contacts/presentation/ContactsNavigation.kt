@@ -17,11 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.otus.designsystem.components.ActionBarHost
-import com.otus.designsystem.components.ConfirmDialog
-import com.otus.designsystem.components.InputSheet
-import com.otus.designsystem.components.LetterIndex
-import com.otus.designsystem.components.rememberLetterIndexState
+import com.otus.designsystem.shared.actionbar.components.ActionBarHost
+import com.otus.designsystem.shared.contacts.components.LetterIndex
+import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
+import com.otus.designsystem.shared.overlays.components.ConfirmDialog
+import com.otus.designsystem.shared.overlays.components.InputSheet
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -30,7 +30,6 @@ import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.MergePlan
-import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.components.ContactList
 import com.otus.mail.feature.contacts.presentation.components.ContactListActions
 import com.otus.mail.feature.contacts.presentation.components.ContactListContent

@@ -1,11 +1,11 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.PageNote
-import com.otus.designsystem.components.SettingRow
-import com.otus.designsystem.components.SettingsSection
-import com.otus.designsystem.components.Subpage
-import com.otus.designsystem.elements.RowButton
+import com.otus.designsystem.shared.pages.components.PageNote
+import com.otus.designsystem.shared.pages.components.Subpage
+import com.otus.designsystem.shared.rows.elements.RowButton
+import com.otus.designsystem.shared.settings.components.SettingRow
+import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.mail.feature.inbox.domain.withoutSender
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 

@@ -4,7 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import com.otus.designsystem.elements.RichText
+import com.otus.designsystem.mail.compose.elements.RichText
 import com.otus.mail.feature.inbox.domain.AttachmentFiles
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.DraftAttachment

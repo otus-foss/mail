@@ -7,11 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.Dropdown
-import com.otus.designsystem.components.DropdownRow
-import com.otus.designsystem.components.ListCaption
-import com.otus.designsystem.components.PersonAvatar
-import com.otus.designsystem.components.PickerSearch
+import com.otus.designsystem.shared.people.components.PersonAvatar
+import com.otus.designsystem.shared.selection.components.Dropdown
+import com.otus.designsystem.shared.selection.components.DropdownRow
+import com.otus.designsystem.shared.selection.components.ListCaption
+import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.ComposeTokens
 import com.otus.designsystem.theme.MenuTokens
 import com.otus.mail.feature.inbox.domain.MailSender

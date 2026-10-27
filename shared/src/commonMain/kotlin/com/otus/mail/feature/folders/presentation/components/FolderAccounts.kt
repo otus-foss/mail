@@ -8,14 +8,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.avatar.generatedAvatar
-import com.otus.designsystem.components.AccountGroupRow
-import com.otus.designsystem.components.ChipAvatar
-import com.otus.designsystem.components.ChoiceOptions
-import com.otus.designsystem.components.ChoiceRow
-import com.otus.designsystem.components.ChoiceSheet
-import com.otus.designsystem.components.Collapsible
-import com.otus.designsystem.components.ContextPanelScope
-import com.otus.designsystem.components.PickerChip
+import com.otus.designsystem.shared.panels.components.ContextPanelScope
+import com.otus.designsystem.shared.people.components.ChipAvatar
+import com.otus.designsystem.shared.rows.components.AccountGroupRow
+import com.otus.designsystem.shared.rows.components.Collapsible
+import com.otus.designsystem.shared.selection.components.ChoiceOptions
+import com.otus.designsystem.shared.selection.components.ChoiceRow
+import com.otus.designsystem.shared.selection.components.ChoiceSheet
+import com.otus.designsystem.shared.selection.components.PickerChip
 import com.otus.mail.feature.folders.domain.AccountFolders
 
 /**

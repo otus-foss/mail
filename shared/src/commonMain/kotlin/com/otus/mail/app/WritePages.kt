@@ -7,8 +7,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.components.ToastMessage
-import com.otus.designsystem.elements.ToastAction
+import com.otus.designsystem.shared.feedback.components.ToastMessage
+import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.screens.FoldersScreen
 import com.otus.mail.feature.inbox.domain.ComposeRequest

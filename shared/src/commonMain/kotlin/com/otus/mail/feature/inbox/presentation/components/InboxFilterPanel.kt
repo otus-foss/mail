@@ -12,8 +12,8 @@ import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.components.FilterPanel
-import com.otus.designsystem.components.FilterPanelFooter
+import com.otus.designsystem.shared.filters.components.FilterPanel
+import com.otus.designsystem.shared.filters.components.FilterPanelFooter
 import com.otus.designsystem.theme.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage

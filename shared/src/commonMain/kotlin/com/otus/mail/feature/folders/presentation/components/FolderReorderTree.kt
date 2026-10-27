@@ -2,7 +2,7 @@ package com.otus.mail.feature.folders.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.ReorderableTree
+import com.otus.designsystem.shared.reorder.components.ReorderableTree
 import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.hasChildren
 import com.otus.mail.feature.folders.presentation.treeDrop

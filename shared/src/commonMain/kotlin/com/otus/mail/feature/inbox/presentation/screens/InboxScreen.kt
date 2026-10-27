@@ -18,9 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.components.ActionBarHost
-import com.otus.designsystem.components.PullToRefresh
-import com.otus.designsystem.components.SlidingOverlay
+import com.otus.designsystem.shared.actionbar.components.ActionBarHost
+import com.otus.designsystem.shared.feedback.components.PullToRefresh
+import com.otus.designsystem.shared.pages.components.SlidingOverlay
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.panelTextStyle

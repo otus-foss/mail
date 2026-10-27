@@ -13,9 +13,9 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.elements.IconButton
-import com.otus.designsystem.elements.SearchPrompt
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.IconButton
+import com.otus.designsystem.shared.input.elements.SearchPrompt
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusTheme
 import org.junit.Assert.assertEquals

@@ -2,11 +2,11 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.Collapsible
-import com.otus.designsystem.components.ScopeChildRow
-import com.otus.designsystem.components.ScopeOption
-import com.otus.designsystem.components.ScopeRow
-import com.otus.designsystem.elements.SectionCaption
+import com.otus.designsystem.shared.rows.components.Collapsible
+import com.otus.designsystem.shared.rows.elements.SectionCaption
+import com.otus.designsystem.shared.selection.components.ScopeChildRow
+import com.otus.designsystem.shared.selection.components.ScopeOption
+import com.otus.designsystem.shared.selection.components.ScopeRow
 import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.DomainGroup
 import com.otus.mail.feature.inbox.domain.MailScopeChoice

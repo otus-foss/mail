@@ -16,9 +16,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.otus.designsystem.components.ChipPlacement
-import com.otus.designsystem.components.ContextPanel
-import com.otus.designsystem.elements.Chip
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.panels.components.ChipPlacement
+import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusTheme
 import org.junit.Assert.assertEquals

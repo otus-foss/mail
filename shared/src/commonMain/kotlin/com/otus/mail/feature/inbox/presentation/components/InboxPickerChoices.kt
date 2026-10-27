@@ -11,8 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import com.otus.designsystem.components.PersonAvatar
-import com.otus.designsystem.elements.SelectionRow
+import com.otus.designsystem.shared.people.components.PersonAvatar
+import com.otus.designsystem.shared.selection.elements.SelectionRow
 import com.otus.designsystem.theme.AvatarTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens

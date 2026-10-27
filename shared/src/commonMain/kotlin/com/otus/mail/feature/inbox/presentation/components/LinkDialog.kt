@@ -8,10 +8,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.DialogFrame
-import com.otus.designsystem.elements.ActionButton
-import com.otus.designsystem.elements.InputField
-import com.otus.designsystem.elements.InputKind
+import com.otus.designsystem.shared.controls.elements.ActionButton
+import com.otus.designsystem.shared.input.elements.InputField
+import com.otus.designsystem.shared.input.elements.InputKind
+import com.otus.designsystem.shared.overlays.components.DialogFrame
 import com.otus.designsystem.theme.PageTokens
 
 /** Asks for the web address of a link; Add runs [onAdd] with it, with https:// when it has no scheme. */

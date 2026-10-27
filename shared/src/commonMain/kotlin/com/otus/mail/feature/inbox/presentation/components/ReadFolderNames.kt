@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.designsystem.components.FolderName
+import com.otus.designsystem.mail.folders.components.FolderName
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_delete

@@ -1,19 +1,19 @@
 package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.ActionBar
-import com.otus.designsystem.components.BarAction
-import com.otus.designsystem.components.BarContext
-import com.otus.designsystem.components.BarMinimized
-import com.otus.designsystem.components.BarToken
-import com.otus.designsystem.components.MenuAction
-import com.otus.designsystem.elements.isKeyboardUp
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_check
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_download
 import com.otus.designsystem.resources.symbol_more_horiz
 import com.otus.designsystem.resources.symbol_person_add
+import com.otus.designsystem.shared.actionbar.components.ActionBar
+import com.otus.designsystem.shared.actionbar.components.BarAction
+import com.otus.designsystem.shared.actionbar.components.BarContext
+import com.otus.designsystem.shared.actionbar.components.BarMinimized
+import com.otus.designsystem.shared.actionbar.components.BarToken
+import com.otus.designsystem.shared.input.elements.isKeyboardUp
+import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactDraft

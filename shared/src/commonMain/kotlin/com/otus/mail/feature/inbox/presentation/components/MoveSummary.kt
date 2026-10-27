@@ -3,8 +3,8 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otus.dateformat.currentLocalDate
-import com.otus.designsystem.components.NamedAvatar
-import com.otus.designsystem.components.SummaryCard
+import com.otus.designsystem.shared.people.components.NamedAvatar
+import com.otus.designsystem.shared.rows.components.SummaryCard
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.read.shortLabel

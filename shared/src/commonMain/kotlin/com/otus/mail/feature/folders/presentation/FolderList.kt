@@ -1,6 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.designsystem.components.TreeDropTarget
+import com.otus.designsystem.shared.reorder.components.TreeDropTarget
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.domain.MailFolder

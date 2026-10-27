@@ -1,7 +1,7 @@
 package com.otus.mail.feature.folders.presentation.components
 
-import com.otus.designsystem.components.MenuAction
-import com.otus.designsystem.components.RuleChipLine
+import com.otus.designsystem.shared.filters.components.RuleChipLine
+import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.presentation.FolderDrop
 

@@ -1,6 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_block
 import com.otus.designsystem.resources.symbol_delete
@@ -19,6 +18,7 @@ import com.otus.designsystem.resources.symbol_reply
 import com.otus.designsystem.resources.symbol_reply_all
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_verified_user
+import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.presentation.read.ReadMenuEntry
 import com.otus.mail.feature.inbox.presentation.read.ReadMenuSection

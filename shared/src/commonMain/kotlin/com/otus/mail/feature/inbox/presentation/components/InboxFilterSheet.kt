@@ -8,9 +8,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.currentLocalDate
-import com.otus.designsystem.components.DateRangePicker
-import com.otus.designsystem.components.PickerSearch
-import com.otus.designsystem.components.SelectionSheet
+import com.otus.designsystem.shared.dates.components.DateRangePicker
+import com.otus.designsystem.shared.overlays.components.SelectionSheet
+import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch

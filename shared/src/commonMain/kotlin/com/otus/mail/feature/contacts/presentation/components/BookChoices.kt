@@ -6,11 +6,11 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import com.otus.designsystem.components.PickMark
-import com.otus.designsystem.components.PickRow
-import com.otus.designsystem.components.PickRowLayout
-import com.otus.designsystem.components.RowDensity
-import com.otus.designsystem.components.RowGroup
+import com.otus.designsystem.shared.rows.components.RowDensity
+import com.otus.designsystem.shared.rows.components.RowGroup
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickRowLayout
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.SheetTokens

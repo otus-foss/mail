@@ -12,10 +12,15 @@ uses:
 | `com.otus:designsystem` | `libs.otus.designsystem` |
 | `com.otus:settings` | `libs.otus.settings` |
 | `com.otus:accounts` | `libs.otus.accounts` |
+| `com.otus:push` | `libs.otus.push` |
+| `com.otus:jscontact` | `libs.otus.jscontact` |
+| `com.otus:jmap-contacts` | `libs.otus.jmap.contacts` |
 
-Mail pins Meta 0.7.0 for all six libraries. Local source substitution is optional development
-configuration; normal builds download the pinned GitHub Packages artifacts. Calendar adoption
-is deferred. See [the component inventory](component-inventory.md) for ownership and release state.
+This branch pins the Meta 0.10.0 candidate for all Otus libraries. It includes the design-system
+package restructure from [issue #174](https://github.com/reazndev/otus-mail/issues/174).
+Validate it through source substitution or the candidate repository below until Meta publishes
+the release. The version pin alone does not make artifacts available on GitHub Packages.
+See [the component inventory](component-inventory.md) for historical ownership decisions.
 
 All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.toml`.
 
@@ -37,10 +42,26 @@ SSH Git credentials do not authenticate Maven downloads.
 
 ## Package status
 
-Meta's tag workflow publishes all six modules and their Android, iOS device, and iOS simulator
-variants to GitHub Packages. Versions 0.3.1 to 0.5.0 are not on GitHub
-Packages. iOS linking against the artifacts is unverified while the macOS `ios` job is paused.
+Meta publishing is paused. Tags do not upload packages, and manual publisher runs validate without
+uploading. The release flow needs to resume before this candidate becomes a downloadable version.
+Mail's quality workflow uses a Meta branch with the same name as this branch when one exists,
+otherwise Meta main. Versions 0.3.1 to 0.5.0 are not on GitHub Packages.
+iOS linking against the artifacts is unverified while the macOS `ios` job is paused.
 See [hosting and CI](hosting.md).
+
+## Design-system package migration
+
+Meta keeps one `designsystem` artifact. Its UI now lives in
+`com.otus.designsystem.shared.<group>.<elements|components>` and
+`com.otus.designsystem.mail.<feature>.<elements|components>`. Update the imports using
+[Meta's declaration map](https://github.com/reazndev/otus-meta/blob/main/docs/ui-package-migration.md).
+Theme tokens, resource identifiers, and the app's own feature layers are unchanged.
+
+Mail's nightly must stay on a compatible Meta revision while the two repositories change
+packages. Merge the temporary nightly-pin preparation first. This consumer PR restores the
+nightly's Meta checkout to main in the same change as the migrated imports. Keep the package
+migration PR in draft until Meta publishes 0.10.0, then merge both parts of the consumer change
+together.
 
 ## Changing shared code
 

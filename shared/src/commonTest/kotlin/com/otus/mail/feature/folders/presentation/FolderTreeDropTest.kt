@@ -1,8 +1,8 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.designsystem.components.TreeDropTarget
-import com.otus.designsystem.components.TreeDropTarget.Before
-import com.otus.designsystem.components.TreeDropTarget.Into
+import com.otus.designsystem.shared.reorder.components.TreeDropTarget
+import com.otus.designsystem.shared.reorder.components.TreeDropTarget.Before
+import com.otus.designsystem.shared.reorder.components.TreeDropTarget.Into
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder

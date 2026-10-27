@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.designsystem.components.BarContext
-import com.otus.designsystem.components.BarToken
+import com.otus.designsystem.shared.actionbar.components.BarContext
+import com.otus.designsystem.shared.actionbar.components.BarToken
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.FolderRole

@@ -14,11 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.otus.designsystem.components.ActionBar
-import com.otus.designsystem.components.BarAction
-import com.otus.designsystem.elements.Avatar
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_calendar_add_on
 import com.otus.designsystem.resources.symbol_edit
@@ -26,6 +21,11 @@ import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_search
+import com.otus.designsystem.shared.actionbar.components.ActionBar
+import com.otus.designsystem.shared.actionbar.components.BarAction
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.people.elements.Avatar
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.designsystem.theme.ThemeTokens

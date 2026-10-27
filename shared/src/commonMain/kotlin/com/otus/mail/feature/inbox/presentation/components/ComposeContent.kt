@@ -22,8 +22,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.otus.designsystem.components.RichTextBody
-import com.otus.designsystem.elements.QuoteChip
+import com.otus.designsystem.mail.compose.components.RichTextBody
+import com.otus.designsystem.mail.compose.elements.QuoteChip
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.mail.feature.inbox.domain.ComposeRequest

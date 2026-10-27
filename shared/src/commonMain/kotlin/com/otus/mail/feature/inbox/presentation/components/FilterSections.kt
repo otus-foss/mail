@@ -9,11 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.components.FilterSection
-import com.otus.designsystem.components.SegmentedToggle
-import com.otus.designsystem.components.onPressDown
-import com.otus.designsystem.elements.FilterChip
-import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.shared.controls.components.SegmentedToggle
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.filters.components.FilterSection
+import com.otus.designsystem.shared.filters.elements.FilterChip
+import com.otus.designsystem.shared.overlays.components.onPressDown
 import com.otus.designsystem.theme.FilterTokens
 import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.FilterSort

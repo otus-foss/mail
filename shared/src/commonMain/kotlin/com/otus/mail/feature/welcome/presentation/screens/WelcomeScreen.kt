@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import com.otus.designsystem.elements.Chip
+import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.mail.feature.welcome.presentation.components.DemoFilters
 import com.otus.mail.feature.welcome.presentation.components.DemoModePicker
 import com.otus.mail.feature.welcome.presentation.components.DemoScaffold

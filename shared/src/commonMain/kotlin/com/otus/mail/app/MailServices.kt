@@ -14,7 +14,7 @@ import com.otus.avatar.HttpAvatarImageLoader
 import com.otus.avatar.JmapContactAvatarSource
 import com.otus.avatar.JmapOwnAvatars
 import com.otus.avatar.PublicSuffixDomainResolver
-import com.otus.designsystem.components.ToastState
+import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
