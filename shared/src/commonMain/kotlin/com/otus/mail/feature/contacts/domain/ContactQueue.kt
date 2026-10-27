@@ -32,7 +32,9 @@ fun applyEdits(
             }
 
             is ContactEdit.Delete -> {
-                if (sync is CardSync.Refused) {
+                if (edit.isHeld(refused)) {
+                    shown
+                } else if (sync is CardSync.Refused) {
                     shown.map { if (it.key == edit.key) it.copy(sync = sync) else it }
                 } else {
                     shown.filterNot { it.key == edit.key }

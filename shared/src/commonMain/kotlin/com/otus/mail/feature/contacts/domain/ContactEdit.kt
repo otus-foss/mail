@@ -37,11 +37,16 @@ sealed interface ContactEdit {
         val after: Card,
     ) : ContactEdit
 
+    /**
+     * Removes the card. [waitsFor] names a change this one depends on, such as the merged card a
+     * merge saves: while the server refuses that change, the card is not removed.
+     */
     @Serializable
     @SerialName("delete")
     data class Delete(
         override val id: String,
         override val key: CardKey,
+        val waitsFor: String? = null,
     ) : ContactEdit
 
     companion object {
@@ -61,6 +66,13 @@ sealed interface ContactEdit {
         private const val LOCAL_PREFIX = "local:"
     }
 }
+
+/**
+ * Whether this is a delete waiting for a change the server refused. It waits for the user to save
+ * or drop that change, not for a connection, so its card still shows.
+ */
+fun ContactEdit.isHeld(refused: Map<String, ContactWriteFailure>): Boolean =
+    this is ContactEdit.Delete && waitsFor?.let { it in refused } == true
 
 /**
  * The device's own contact data: changes waiting for the server, cards shown as one person, and

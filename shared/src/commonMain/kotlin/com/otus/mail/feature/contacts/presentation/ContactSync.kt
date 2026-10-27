@@ -14,12 +14,18 @@ import com.otus.mail.feature.contacts.domain.ContactsSnapshot
 import com.otus.mail.feature.contacts.domain.KeySets
 import com.otus.mail.feature.contacts.domain.afterSent
 import com.otus.mail.feature.contacts.domain.enqueue
+import com.otus.mail.feature.contacts.domain.isHeld
 import com.otus.mail.feature.contacts.domain.rekey
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+
+private val ContactEdit.dependsOn: String? get() = (this as? ContactEdit.Delete)?.waitsFor
+
+/** Whether the server has refused neither this change nor the one it waits for. */
+private fun ContactEdit.isReady(refused: Map<String, ContactWriteFailure>): Boolean = id !in refused && !isHeld(refused)
 
 /** How [ContactSync] tells the contact list about a change the server accepted. */
 internal typealias SentChange = ((ContactsSnapshot) -> ContactsSnapshot) -> Unit
@@ -28,7 +34,7 @@ internal typealias SentChange = ((ContactsSnapshot) -> ContactsSnapshot) -> Unit
  * The device's contact data, kept in [store]: changes waiting for the server, cards shown as one,
  * and duplicate pairs dismissed. Changes go to [repository] one at a time, in order. Offline, the
  * rest wait for the next [flush]; a change the server refuses stays in [refused] until the user
- * saves it elsewhere or drops it.
+ * saves it elsewhere or drops it, and so does each delete that waits for it.
  */
 internal class ContactSync(
     private val repository: ContactRepository,
@@ -80,8 +86,8 @@ internal class ContactSync(
     suspend fun flush(sent: SentChange) {
         if (sending.isLocked) return
         sending.withLock {
-            var next = edits.firstOrNull { it.id !in refused }
-            while (next != null && sendOne(next, sent)) next = edits.firstOrNull { it.id !in refused }
+            var next = edits.firstOrNull { it.isReady(refused) }
+            while (next != null && sendOne(next, sent)) next = edits.firstOrNull { it.isReady(refused) }
         }
     }
 
@@ -118,9 +124,10 @@ internal class ContactSync(
             inFlight = null
         }
 
-    /** Drops every waiting change of [key], refused or not. */
+    /** Drops every waiting change of [key], refused or not, and the deletes that wait for them. */
     fun drop(key: CardKey) {
-        val gone = edits.filter { it.key == key }.map { it.id }.toSet()
+        val dropped = edits.filter { it.key == key }.map { it.id }.toSet()
+        val gone = dropped + edits.filter { it.dependsOn in dropped }.map { it.id }
         edits = edits.filterNot { it.id in gone }
         refused = refused - gone
         save()

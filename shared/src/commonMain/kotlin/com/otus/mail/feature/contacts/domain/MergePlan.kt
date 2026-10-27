@@ -1,6 +1,7 @@
 package com.otus.mail.feature.contacts.domain
 
 import com.otus.jscontact.Card
+import com.otus.jscontact.Relation
 
 /**
  * What a merge of [cards] keeps: the [name] of one of them, the [addresses] ticked, and the
@@ -22,8 +23,8 @@ data class MergePlan(
 
     /**
      * The merged card. It starts from [target], or the card the name comes from, and takes the
-     * ticked addresses, every number, and each property the base lacks from the others, so no
-     * value is lost unless the user unticked it.
+     * ticked addresses, every number, and every other value of the others it lacks, so no value is
+     * lost unless the user unticked it.
      */
     fun merged(): Card {
         val nameCard = cards.first { it.key == name }
@@ -49,13 +50,15 @@ data class MergePlan(
                 }.distinctBy { it.number.filter(Char::isDigit) }
                 .mapIndexed { index, phone -> "p${index + 1}" to phone }
                 .toMap()
-        return others.fold(base.card) { card, other -> card.filledFrom(other.card) }.copy(
-            name = nameCard.card.name,
-            emails = emails.takeIf { it.isNotEmpty() },
-            phones = phones.takeIf { it.isNotEmpty() },
-            addressBookIds = mapOf(book.bookId to true),
-            id = target?.key?.cardId,
-        )
+        val merged =
+            others.fold(base.card) { card, other -> card.unitedWith(other.card) }.copy(
+                name = nameCard.card.name,
+                emails = emails.takeIf { it.isNotEmpty() },
+                phones = phones.takeIf { it.isNotEmpty() },
+                addressBookIds = target?.card?.addressBookIds.orEmpty() + (book.bookId to true),
+                id = target?.key?.cardId,
+            )
+        return merged.copy(localizations = localizationsFor(merged, (listOf(base) + others).map { it.card }))
     }
 
     companion object {
@@ -94,3 +97,61 @@ internal fun Card.filledFrom(other: Card): Card =
         links = links ?: other.links,
         onlineServices = onlineServices ?: other.onlineServices,
     )
+
+/**
+ * This card with every value of [other] it lacks. Its own values and their keys stay; a value of
+ * [other] whose key it already uses gets a free key. Sets and the relations keyed by uid join by
+ * key instead, since their keys are the values. Single values come from [other] only where this
+ * card has none, and the merge sets the name, addresses, numbers, books and localizations itself.
+ */
+private fun Card.unitedWith(other: Card): Card =
+    copy(
+        relatedTo = relatedTo.joinedWith(other.relatedTo) { own, theirs -> own.joinedWith(theirs) },
+        members = members.joinedWith(other.members),
+        nicknames = nicknames.unitedWith(other.nicknames),
+        organizations = organizations.unitedWith(other.organizations),
+        speakToAs = speakToAs ?: other.speakToAs,
+        titles = titles.unitedWith(other.titles),
+        onlineServices = onlineServices.unitedWith(other.onlineServices),
+        preferredLanguages = preferredLanguages.unitedWith(other.preferredLanguages),
+        calendars = calendars.unitedWith(other.calendars),
+        schedulingAddresses = schedulingAddresses.unitedWith(other.schedulingAddresses),
+        addresses = addresses.unitedWith(other.addresses),
+        cryptoKeys = cryptoKeys.unitedWith(other.cryptoKeys),
+        directories = directories.unitedWith(other.directories),
+        links = links.unitedWith(other.links),
+        media = media.unitedWith(other.media),
+        anniversaries = anniversaries.unitedWith(other.anniversaries),
+        keywords = keywords.joinedWith(other.keywords),
+        notes = notes.unitedWith(other.notes),
+        personalInfo = personalInfo.unitedWith(other.personalInfo),
+        language = language ?: other.language,
+        extra = other.extra + extra,
+    )
+
+/** Both relations to one card: every relation type either names. */
+private fun Relation.joinedWith(other: Relation): Relation =
+    copy(relation = relation.joinedWith(other.relation), extra = other.extra + extra)
+
+/** Every key of both maps; where both have a key, [join] combines the values, this map's first. */
+private fun <K, V> Map<K, V>?.joinedWith(
+    other: Map<K, V>?,
+    join: (V, V) -> V = { own, _ -> own },
+): Map<K, V>? =
+    if (this == null) {
+        other
+    } else {
+        other.orEmpty().entries.fold(this) { joined, (key, value) ->
+            joined + (key to (joined[key]?.let { join(it, value) } ?: value))
+        }
+    }
+
+private fun <T> Map<String, T>?.unitedWith(other: Map<String, T>?): Map<String, T>? =
+    other
+        .orEmpty()
+        .entries
+        .filterNot { (_, value) -> this?.containsValue(value) == true }
+        .fold(this ?: other?.let { emptyMap() }) { united, (key, value) ->
+            val taken = united.orEmpty().keys
+            united.orEmpty() + ((key.takeUnless { it in taken } ?: freeKeys("$key-", taken).first()) to value)
+        }
