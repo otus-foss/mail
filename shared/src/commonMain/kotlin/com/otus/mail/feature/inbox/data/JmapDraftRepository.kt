@@ -13,6 +13,7 @@ import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
@@ -32,7 +33,7 @@ class JmapDraftRepository(
     private val logins: LoginStore,
 ) : DraftRepository {
     override suspend fun identities(accountId: String): List<SendIdentity> =
-        try {
+        mailCallOr(emptyList()) {
             mailAccount(connections, logins, accountId)
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
                 ?.let { account ->
@@ -48,10 +49,6 @@ class JmapDraftRepository(
                             )
                         }
                 }.orEmpty()
-        } catch (expected: JmapException) {
-            emptyList()
-        } catch (expected: LoginStoreException) {
-            emptyList()
         }
 
     override suspend fun save(draft: Draft): Result<String> =
