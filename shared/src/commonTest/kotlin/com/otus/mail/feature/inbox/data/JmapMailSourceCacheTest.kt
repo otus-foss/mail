@@ -4,8 +4,11 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.ReadStatus
+import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonArray
@@ -51,6 +54,18 @@ class JmapMailSourceCacheTest {
             val restarted = server.source(store, cache).cached(MailScope.Inbox, query)
             assertEquals(shown, restarted.messages)
             assertEquals(calls, server.calls.size, "Nothing is asked of the server")
+        }
+
+    @Test
+    fun aNewFilterShowsTheCachedMatchesWithoutTheServer() =
+        runTest {
+            server.update("m2") { JsonObject(it + ("keywords" to JsonObject(mapOf(SEEN to JsonPrimitive(true))))) }
+            loaded()
+            server.down = true
+            val unread = MailQuery(filters = InboxFilters(status = ReadStatus.Unread))
+            assertEquals(listOf("m1"), source.cached(MailScope.Inbox, unread).messages.map { it.emailId })
+            val large = MailQuery(filters = InboxFilters(size = SizeFilter.Over1Mb))
+            assertTrue(source.cached(MailScope.Inbox, large).messages.isEmpty(), "The device keeps no sizes")
         }
 
     @Test

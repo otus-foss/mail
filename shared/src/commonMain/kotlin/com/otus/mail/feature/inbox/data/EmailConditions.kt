@@ -6,6 +6,7 @@ import com.otus.mail.core.mail.condition
 import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.core.mail.operator
 import com.otus.mail.feature.inbox.domain.FilterSort
+import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.ReadStatus
@@ -67,34 +68,45 @@ private fun QuickFacet.condition(
         QuickFacet.NeedsMyReply, QuickFacet.AwaitingReply, QuickFacet.Conversations -> null
     }
 
-/**
- * Mail to the chosen recipients in the chosen fields: the login's own chosen addresses and every
- * other chosen recipient. When only the fields differ from the default, the login's own
- * addresses stand for the recipients. Null when neither is chosen. No field chosen reads as all.
- */
+/** Mail to the [recipientAddresses] in the [recipientFields]; null when no recipient is chosen. */
 private fun recipientCondition(
     query: MailQuery,
     loginId: String,
 ): JsonObject? {
-    val filters = query.filters
-    val chosen = filters.sentTo.filter { it.accountId == loginId }.map { it.address } + filters.to.sorted()
-    val addresses =
-        when {
-            chosen.isNotEmpty() -> {
-                chosen
-            }
-
-            filters.sentTo.isEmpty() && filters.receivedIn != RecipientField.Default -> {
-                query.addresses[loginId].orEmpty().toList()
-            }
-
-            else -> {
-                return null
-            }
-        }
-    val fields = filters.receivedIn.ifEmpty { RecipientField.entries.toSet() }.sortedBy { it.ordinal }
+    val addresses = recipientAddresses(query, loginId) ?: return null
+    val fields = query.filters.recipientFields.sortedBy { it.ordinal }
     return anyOf(addresses.flatMap { address -> fields.map { condition(it.jmapName, JsonPrimitive(address)) } })
 }
+
+/**
+ * The recipients [query] asks for in [loginId]'s mail: the login's own chosen addresses and every
+ * other chosen recipient. When only the fields differ from the default, the login's own
+ * addresses stand for the recipients. Null when neither is chosen.
+ */
+internal fun recipientAddresses(
+    query: MailQuery,
+    loginId: String,
+): List<String>? {
+    val filters = query.filters
+    val chosen = filters.sentTo.filter { it.accountId == loginId }.map { it.address } + filters.to.sorted()
+    return when {
+        chosen.isNotEmpty() -> {
+            chosen
+        }
+
+        filters.sentTo.isEmpty() && filters.receivedIn != RecipientField.Default -> {
+            query.addresses[loginId].orEmpty().toList()
+        }
+
+        else -> {
+            null
+        }
+    }
+}
+
+/** The fields recipients are looked up in; no field chosen reads as all. */
+internal val InboxFilters.recipientFields: Set<RecipientField>
+    get() = receivedIn.ifEmpty { RecipientField.entries.toSet() }
 
 /** The mail in any of [mailboxIds] that meets every one of [conditions]. */
 internal fun mailFilter(

@@ -147,7 +147,8 @@ class JmapMailSource(
             selected.flatMap { login ->
                 emailConditions(query, login.id, now, local)
                     ?.let { conditions ->
-                        cache.withAccount(login.id) { it.cachedPages(login, scope, query, conditions, local) }
+                        val check = localCheck(query, login.id, now, local)
+                        cache.withAccount(login.id) { it.cachedPages(login, scope, query, conditions, local, check) }
                     }.orEmpty()
             }
         val merged = pages.merged(query.filters.sort) { it.receivedAt }
