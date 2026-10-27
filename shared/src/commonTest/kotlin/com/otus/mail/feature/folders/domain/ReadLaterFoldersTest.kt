@@ -73,8 +73,8 @@ class ReadLaterFoldersTest {
     ) : ReadLaterStore {
         override fun read() = saved
 
-        override fun write(folders: Map<String, String>) {
-            saved = folders
+        override fun write(values: Map<String, String>) {
+            saved = values
         }
     }
 

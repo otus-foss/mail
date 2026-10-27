@@ -1,5 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.preferences.StringMapStore
+
 /**
  * The folders the color nudge has already offered a color for, whether the user picked one or
  * closed it. The nudge never offers these again.
@@ -19,11 +21,7 @@ data class FolderNudges(
  * App-private storage for [FolderNudges]: each account's mailbox ids, one per line, under its
  * login id. Login ids may hold spaces and colons, and JMAP ids never hold a line break.
  */
-interface FolderNudgeStore {
-    fun read(): Map<String, String>
-
-    fun write(nudges: Map<String, String>)
-}
+interface FolderNudgeStore : StringMapStore
 
 fun FolderNudgeStore.readNudges(): FolderNudges =
     FolderNudges(

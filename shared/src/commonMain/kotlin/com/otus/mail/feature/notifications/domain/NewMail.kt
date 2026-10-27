@@ -1,5 +1,6 @@
 package com.otus.mail.feature.notifications.domain
 
+import com.otus.mail.core.preferences.StringMapStore
 import kotlin.time.Instant
 
 /** A message that arrived unread in an inbox since the last check. */
@@ -19,11 +20,7 @@ data class NewMail(
 )
 
 /** Each login's Email state from the last check, keyed by login id. */
-interface MailStateStore {
-    fun read(): Map<String, String>
-
-    fun write(states: Map<String, String>)
-}
+interface MailStateStore : StringMapStore
 
 /** Finds mail that arrived since the last check. */
 fun interface NewMailChecker {
