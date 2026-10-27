@@ -66,12 +66,12 @@ internal sealed interface PreviewTarget {
         override val title = address
         override val same = "Same as $account"
 
-        override fun current(choices: PreviewChoices) = choices.addresses[address.lowercase()]
+        override fun current(choices: PreviewChoices) = choices.forAddress(loginId, address)
 
         override fun apply(
             choices: PreviewChoices,
             choice: NotificationPreviews?,
-        ) = choices.withAddress(address, choice)
+        ) = choices.withAddress(loginId, address, choice)
     }
 }
 
@@ -85,7 +85,7 @@ internal val ConnectedAccount.addresses: List<String>
  */
 internal fun PreviewChoices.overrideSummary(accounts: List<ConnectedAccount>): String? {
     val ownLogins = accounts.count { it.id in logins }
-    val ownAddresses = accounts.flatMap { it.addresses }.count { it.lowercase() in addresses }
+    val ownAddresses = accounts.sumOf { account -> account.addresses.count { forAddress(account.id, it) != null } }
     val parts =
         listOfNotNull(
             (if (ownLogins == 1) "1 account" else "$ownLogins accounts").takeIf { ownLogins > 0 },
@@ -104,7 +104,8 @@ internal val PreviewsInfo =
             "Use device setting shows the sender and subject. On the lock screen, your phone's own " +
                 "notification setting decides whether they show, only \"New mail\" shows, or nothing does.",
             "New mail only never shows the sender, subject, or account, locked or unlocked.",
-            "Accounts and addresses can each have their own setting. An address's setting wins over " +
-                "its account's, and mail sent to several of your addresses follows the more private one.",
+            "Accounts and addresses can each have their own setting. An address's setting covers mail " +
+                "its own account gets for it. Mail to several people follows the more private setting, " +
+                "and people without a setting of their own count with the account's.",
         ),
     )

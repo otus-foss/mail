@@ -77,7 +77,7 @@ private val KIND_RULES =
             listOf("wordprocessing", "msword", "opendocument.text", "text/plain", "rtf", "markdown"),
             setOf("doc", "docx", "odt", "txt", "rtf", "pages", "md"),
         ),
-        KindRule(AttachmentKindName.Calendar, listOf("text/calendar"), setOf("ics")),
+        KindRule(AttachmentKindName.Calendar, listOf("text/calendar", "application/ics"), setOf("ics", "ifb")),
         KindRule(AttachmentKindName.Contact, listOf("vcard"), setOf("vcf")),
         KindRule(
             AttachmentKindName.Archive,

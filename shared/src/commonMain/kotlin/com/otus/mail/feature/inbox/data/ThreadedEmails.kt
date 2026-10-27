@@ -130,6 +130,7 @@ internal val MEMBER_PROPERTIES =
         "keywords",
         "mailboxIds",
         "hasAttachment",
+        "attachments",
         LIST_ID_PROPERTY,
         LIST_UNSUBSCRIBE_PROPERTY,
     )
