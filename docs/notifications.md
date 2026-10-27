@@ -82,15 +82,25 @@ saved by `AndroidNotificationPreviewStore`:
   preview, or account.
 
 **Accounts and addresses** opens a page that overrides the choice for one login's mail, or for
-mail sent to one of its addresses. Mail counts as sent to an address when To or Cc names it, or
-when the topmost `Delivered-To` or `X-Original-To` header does, which covers Bcc and list mail. A
-wildcard identity such as `*@example.org` covers every address of its domain that has no choice
-of its own. Its row on the Notifications page says how many have a setting
-of their own, and says nothing while none do. An address's choice wins over its account's, which wins
-over the choice for all mail. Mail sent to several of the user's addresses with choices follows the
-more private one, and an account's summary says only "New mail" when any of its alerts does. The
-earlier choices carry over: Always and When unlocked become Use device setting, Never becomes New
-mail only.
+that login's mail sent to one of its addresses. Mail counts as sent to an address when To or Cc
+names it, or when the topmost `Delivered-To` or `X-Original-To` header does, which covers Bcc and
+list mail. A wildcard identity such as `*@example.org` covers every address of its domain that has
+no choice of its own. Its row on the Notifications page says how many have a setting of their own,
+and says nothing while none do.
+
+`PreviewChoices` keys an address's choice by login id and address, and only that login's mail
+reads it. The sender writes To and Cc, so a choice for one account's address must not reach mail
+another account receives, and one address under two accounts has a choice in each. Each recipient
+of a message counts with its login's choice for that address, or else the login's choice, which
+falls back to the choice for all mail. The more private one wins, so naming a "Use device setting"
+address cannot reveal mail of an account set to "New mail only". An account's summary says only
+"New mail" when any of its alerts does.
+
+The earlier choices carry over: Always and When unlocked become Use device setting, Never becomes
+New mail only. Address choices saved before they were kept per login stay under their old
+`address:` keys. Until the app has loaded the accounts, they count only when they say New mail
+only. Once the accounts load, each moves to every login that lists the address, and choices no
+login lists are dropped.
 
 Apple alerts never show message content, so iOS has no Previews setting.
 A tap opens the app; opening the message itself is not built yet.

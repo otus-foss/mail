@@ -43,11 +43,12 @@ fun NotificationOverridesScreen(
                     description = previews.forLogin(account.id).short,
                 ) { ValueButton(previews.logins[account.id]?.short ?: "Same") }
                 account.addresses.forEach { address ->
+                    val own = previews.forAddress(account.id, address)
                     SettingRow(
                         address,
                         { editing = PreviewTarget.Address(address, account.id, account.name) },
-                        description = (previews.addresses[address.lowercase()] ?: previews.forLogin(account.id)).short,
-                    ) { ValueButton(previews.addresses[address.lowercase()]?.short ?: "Same") }
+                        description = (own ?: previews.forLogin(account.id)).short,
+                    ) { ValueButton(own?.short ?: "Same") }
                 }
             }
         }

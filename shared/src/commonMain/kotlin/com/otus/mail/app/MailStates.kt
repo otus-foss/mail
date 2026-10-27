@@ -112,10 +112,6 @@ internal class MailStates(
     /** The screen and keyboard protections Settings › Privacy offers on this platform. */
     val devicePrivacy: DevicePrivacy get() = services.devicePrivacy
 
-    /** Null where the platform has no instant pushes, which hides the Notifications page. */
-    val notifications =
-        services.instantPush?.let { NotificationSettingsState(it, scope, services.stores.notificationPreviews) }
-
     /** Rules keep only addresses, so senders take their names from the inbox's loaded mail. */
     val folderSenders =
         FolderSenders(services.avatars, ::avatarOptions) { address ->
@@ -138,6 +134,12 @@ internal class MailStates(
             rules.refresh()
             folderColors.reload()
             addressPins.reload()
+        }
+
+    /** Null where the platform has no instant pushes, which hides the Notifications page. */
+    val notifications =
+        services.instantPush?.let {
+            NotificationSettingsState(it, scope, services.stores.notificationPreviews) { accounts.accounts }
         }
 
     /**
