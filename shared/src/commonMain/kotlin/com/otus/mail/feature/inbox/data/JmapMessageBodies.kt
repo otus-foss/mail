@@ -6,7 +6,6 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
-import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
@@ -19,6 +18,7 @@ import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.LIST_ID_PROPERTY
 import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mail.putObject
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -43,7 +43,7 @@ class JmapMessageBodies(
     private val cache: MailCache = InMemoryMailCache(),
 ) : MessageBodies {
     override suspend fun content(message: MailMessage): MessageContent? =
-        try {
+        mailCallOr(null) {
             val loginId = message.location.accountId
             cache.withAccount(loginId) { accountCache ->
                 val email = accountCache.cached(loginId, message.emailId) ?: accountCache.fetched(loginId, message)
@@ -52,10 +52,6 @@ class JmapMessageBodies(
                     withImages(loginId, content, found.inlineParts(content.html?.html))
                 }
             }
-        } catch (expected: JmapException) {
-            null
-        } catch (expected: LoginStoreException) {
-            null
         }
 
     /** Offline, the message still opens; only its `cid:` images are missing. */

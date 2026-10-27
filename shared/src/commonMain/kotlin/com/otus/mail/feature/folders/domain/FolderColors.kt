@@ -1,5 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.preferences.StringMapStore
+
 /**
  * One account's folder: the login [accountId] and the server's [mailboxId]. Colors are keyed by it,
  * never by name or path, so a rename or move keeps the color and a folder made again with a new id
@@ -72,11 +74,7 @@ data class FolderColors(
  * App-private storage for [FolderColors]: color names by [FolderKey.storageValue]. Implementations
  * skip entries that [read] cannot parse, so unknown or blank values read as the default.
  */
-interface FolderColorStore {
-    fun read(): Map<String, String>
-
-    fun write(names: Map<String, String>)
-}
+interface FolderColorStore : StringMapStore
 
 fun FolderColorStore.readColors(): FolderColors =
     FolderColors(

@@ -45,19 +45,18 @@ data class ConversationRowModel(
     val badge: ResolvedAvatar?,
 )
 
-/** Each of [messages]' rows by message id, with the badge only when they came to several of the user's addresses. */
+/**
+ * Each of [messages]' rows by message id, with the badge of the address each came to when
+ * [mixed], by default when they came to several of the user's addresses.
+ */
 fun conversationRows(
     messages: List<MailMessage>,
     look: RowLook,
     dateFormatter: DateFormatter,
     today: LocalDate,
+    mixed: Boolean = mixesAddresses(messages, look.own),
 ): Map<String, ConversationRowModel> {
     val receivedOn = messages.associate { it.id to it.receivedOn(look.own) }
-    val mixed =
-        receivedOn.values
-            .filterNotNull()
-            .distinctBy(String::lowercase)
-            .size > 1
     return messages.associate { message ->
         val address = receivedOn[message.id]?.takeIf { mixed }
         message.id to
@@ -68,6 +67,16 @@ fun conversationRows(
             )
     }
 }
+
+/** Whether [messages] came to more than one of the user's addresses, so their rows say which. */
+fun mixesAddresses(
+    messages: List<MailMessage>,
+    own: OwnAddresses,
+): Boolean =
+    messages
+        .mapNotNull { it.receivedOn(own)?.lowercase() }
+        .distinct()
+        .size > 1
 
 private fun MailMessage.rowModel(
     look: RowLook,
