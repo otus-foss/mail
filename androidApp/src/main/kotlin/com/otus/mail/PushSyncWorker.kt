@@ -12,8 +12,8 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.otus.jmap.PushKeys
 import com.otus.jmap.PushMessage
+import com.otus.jmap.push.PushEndpoint
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
-import com.otus.push.PushEndpoint
 
 /**
  * Applies one change from the UnifiedPush app, if any, then brings every account's push

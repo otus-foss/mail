@@ -12,7 +12,7 @@ uses:
 | `com.otus:designsystem` | `libs.otus.designsystem` |
 | `com.otus:settings` | `libs.otus.settings` |
 | `com.otus:accounts` | `libs.otus.accounts` |
-| `com.otus:push` | `libs.otus.push` |
+| `com.otus:jmap-push` | `libs.otus.jmap.push` |
 | `com.otus:jscontact` | `libs.otus.jscontact` |
 | `com.otus:jmap-contacts` | `libs.otus.jmap.contacts` |
 
