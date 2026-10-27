@@ -115,7 +115,9 @@ jobs:
               git -C "$checkout" log -n 20 --format='- %s'
             fi
           }
-          history . "$PREVIOUS_MAIL" > notes.md
-          history otus-meta "$PREVIOUS_META" >> notes.md
+          {
+            history . "$PREVIOUS_MAIL"
+            history otus-meta "$PREVIOUS_META"
+          } | sed -nE '/^- (feat|fix|perf)(\([^)]*\))?!?: .+/p' > notes.md
           gh release create "nightly-$NUMBER" "$apk" provenance.json -R "$NIGHTLY_REPO" \
             --title "Otus Mail nightly $(date -u +%-d.%-m.%y)" --notes-file notes.md
