@@ -1,6 +1,6 @@
 package com.otus.mail.app
 
-import com.otus.designsystem.components.ToastState
+import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlin.test.Test

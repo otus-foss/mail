@@ -2,8 +2,8 @@ package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.FeaturedAvatar
-import com.otus.designsystem.components.FeaturedAvatars
+import com.otus.designsystem.shared.people.components.FeaturedAvatar
+import com.otus.designsystem.shared.people.components.FeaturedAvatars
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.presentation.avatar

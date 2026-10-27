@@ -5,9 +5,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.ClosableSheet
-import com.otus.designsystem.components.ContactRow
-import com.otus.designsystem.elements.SectionCaption
+import com.otus.designsystem.shared.contacts.components.ContactRow
+import com.otus.designsystem.shared.overlays.components.ClosableSheet
+import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.Participant
 import com.otus.mail.feature.inbox.domain.ParticipantRole

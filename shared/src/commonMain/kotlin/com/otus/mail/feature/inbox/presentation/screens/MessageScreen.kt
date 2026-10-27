@@ -29,10 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import com.otus.designsystem.components.ActionBarHost
-import com.otus.designsystem.components.LocalSheetPull
-import com.otus.designsystem.components.OptionsItem
-import com.otus.designsystem.elements.holdsSpace
+import com.otus.designsystem.shared.actionbar.components.ActionBarHost
+import com.otus.designsystem.shared.overlays.components.LocalSheetPull
+import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.theme.InboxTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens

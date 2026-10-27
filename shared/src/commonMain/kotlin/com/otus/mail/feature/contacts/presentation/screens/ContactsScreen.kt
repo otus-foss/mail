@@ -12,10 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import com.otus.designsystem.components.ActionBarHost
-import com.otus.designsystem.components.LetterIndex
-import com.otus.designsystem.components.LetterIndexState
-import com.otus.designsystem.components.rememberLetterIndexState
+import com.otus.designsystem.shared.actionbar.components.ActionBarHost
+import com.otus.designsystem.shared.contacts.components.LetterIndex
+import com.otus.designsystem.shared.contacts.components.LetterIndexState
+import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey

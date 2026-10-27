@@ -5,8 +5,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import com.otus.designsystem.elements.Avatar
-import com.otus.designsystem.elements.decodeAvatarImage
+import com.otus.designsystem.shared.people.elements.Avatar
+import com.otus.designsystem.shared.people.elements.decodeAvatarImage
 import com.otus.designsystem.theme.OtusTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

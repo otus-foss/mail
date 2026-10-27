@@ -10,7 +10,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import com.otus.designsystem.components.MonthYearPicker
+import com.otus.designsystem.shared.dates.components.MonthYearPicker
 import com.otus.designsystem.theme.OtusTheme
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.YearMonth

@@ -10,12 +10,12 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import com.otus.designsystem.components.AttachmentChip
-import com.otus.designsystem.components.EditableImage
-import com.otus.designsystem.components.MenuAction
-import com.otus.designsystem.elements.rememberImage
+import com.otus.designsystem.mail.attachments.components.AttachmentChip
+import com.otus.designsystem.mail.compose.components.EditableImage
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add_photo_alternate
+import com.otus.designsystem.shared.overlays.components.MenuAction
+import com.otus.designsystem.shared.people.elements.rememberImage
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.mail.core.text.sizeText

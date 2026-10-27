@@ -18,8 +18,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.otus.designsystem.components.AlsoInStrip
-import com.otus.designsystem.components.rememberUnfold
+import com.otus.designsystem.mail.read.components.AlsoInStrip
+import com.otus.designsystem.shared.rows.components.rememberUnfold
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.ReadTokens
 import com.otus.mail.feature.inbox.domain.MailAttachment

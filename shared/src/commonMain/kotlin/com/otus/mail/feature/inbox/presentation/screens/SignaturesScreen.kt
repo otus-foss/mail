@@ -5,11 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import com.otus.designsystem.components.ListCaption
-import com.otus.designsystem.components.PersonAvatar
-import com.otus.designsystem.components.PersonRow
-import com.otus.designsystem.components.SettingToggleRow
-import com.otus.designsystem.components.Subpage
+import com.otus.designsystem.shared.pages.components.Subpage
+import com.otus.designsystem.shared.people.components.PersonAvatar
+import com.otus.designsystem.shared.people.components.PersonRow
+import com.otus.designsystem.shared.selection.components.ListCaption
+import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.theme.ComposeTokens
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens

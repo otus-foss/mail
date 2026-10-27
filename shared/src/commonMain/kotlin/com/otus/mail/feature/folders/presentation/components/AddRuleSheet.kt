@@ -12,9 +12,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.PickerSearch
-import com.otus.designsystem.components.SheetFrame
-import com.otus.designsystem.components.SheetHeaderAction
+import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.components.SheetHeaderAction
+import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.SheetTokens
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.RuleCondition

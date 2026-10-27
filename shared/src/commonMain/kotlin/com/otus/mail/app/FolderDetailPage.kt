@@ -3,7 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import com.otus.designsystem.components.Subpage
+import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.presentation.KnownAddress
 import com.otus.mail.feature.folders.presentation.screens.FolderDetailScreen

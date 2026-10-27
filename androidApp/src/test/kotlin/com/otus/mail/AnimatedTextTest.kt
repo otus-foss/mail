@@ -13,7 +13,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
-import com.otus.designsystem.elements.AnimatedText
+import com.otus.designsystem.shared.controls.elements.AnimatedText
 import com.otus.designsystem.theme.OtusTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

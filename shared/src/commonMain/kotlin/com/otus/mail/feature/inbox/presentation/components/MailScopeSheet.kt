@@ -5,11 +5,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.otus.designsystem.components.PickerSearch
-import com.otus.designsystem.components.ScopeOption
-import com.otus.designsystem.components.ScopeRow
-import com.otus.designsystem.components.ScopeSheet
-import com.otus.designsystem.elements.SectionCaption
+import com.otus.designsystem.shared.rows.elements.SectionCaption
+import com.otus.designsystem.shared.selection.components.PickerSearch
+import com.otus.designsystem.shared.selection.components.ScopeOption
+import com.otus.designsystem.shared.selection.components.ScopeRow
+import com.otus.designsystem.shared.selection.components.ScopeSheet
 import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.AddressPins
 import com.otus.mail.feature.inbox.domain.MailScopeChoice

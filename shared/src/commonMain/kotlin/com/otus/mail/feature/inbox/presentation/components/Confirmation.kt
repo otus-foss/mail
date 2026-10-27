@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.otus.designsystem.components.ConfirmDialog
+import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 
 /** The confirm dialog of a bar or menu, for actions that cannot be undone, such as deleting for good. */
 internal class Confirmation {

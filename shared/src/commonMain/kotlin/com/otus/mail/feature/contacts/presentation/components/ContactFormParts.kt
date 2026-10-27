@@ -3,12 +3,6 @@ package com.otus.mail.feature.contacts.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.InfoText
-import com.otus.designsystem.components.OptionsItem
-import com.otus.designsystem.components.YearlyDate
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.elements.FieldLabel
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.resources.symbol_label
@@ -16,6 +10,12 @@ import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_settings
 import com.otus.designsystem.resources.symbol_short_text
 import com.otus.designsystem.resources.symbol_work
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.dates.components.YearlyDate
+import com.otus.designsystem.shared.feedback.components.InfoText
+import com.otus.designsystem.shared.input.elements.FieldLabel
+import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.PanelTokens
 import com.otus.jscontact.PartialDate

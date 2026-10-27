@@ -8,7 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import com.otus.designsystem.components.MailLaunch
+import com.otus.designsystem.mail.launch.components.MailLaunch
 import com.otus.designsystem.theme.AppIconStyle
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import kotlinx.coroutines.flow.dropWhile

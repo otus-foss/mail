@@ -16,10 +16,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.otus.designsystem.components.ThreadEntry
-import com.otus.designsystem.components.ThreadList
-import com.otus.designsystem.components.Unfold
-import com.otus.designsystem.components.UnfoldingStripCard
+import com.otus.designsystem.mail.read.components.ThreadEntry
+import com.otus.designsystem.mail.read.components.ThreadList
+import com.otus.designsystem.shared.rows.components.Unfold
+import com.otus.designsystem.shared.rows.components.UnfoldingStripCard
 import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.ReadTokens

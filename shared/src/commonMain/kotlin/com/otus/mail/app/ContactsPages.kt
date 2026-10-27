@@ -2,7 +2,7 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import com.otus.designsystem.components.ToastMessage
+import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.presentation.ContactNavigation
 import com.otus.mail.feature.contacts.presentation.ContactsNavigation

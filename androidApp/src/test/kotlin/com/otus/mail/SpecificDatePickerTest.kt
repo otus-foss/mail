@@ -18,7 +18,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.Density
-import com.otus.designsystem.components.SpecificDatePicker
+import com.otus.designsystem.shared.dates.components.SpecificDatePicker
 import com.otus.designsystem.theme.OtusTheme
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.YearMonth

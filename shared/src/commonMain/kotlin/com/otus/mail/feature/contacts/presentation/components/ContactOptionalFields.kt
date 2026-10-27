@@ -6,14 +6,14 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.BirthdayPicker
-import com.otus.designsystem.components.ContactInputField
-import com.otus.designsystem.components.ContactPickerField
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_badge
 import com.otus.designsystem.resources.symbol_cake
 import com.otus.designsystem.resources.symbol_notes
 import com.otus.designsystem.resources.symbol_work
+import com.otus.designsystem.shared.contacts.components.ContactInputField
+import com.otus.designsystem.shared.contacts.components.ContactPickerField
+import com.otus.designsystem.shared.dates.components.BirthdayPicker
 import com.otus.designsystem.theme.PageTokens
 import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.ContactDraft

@@ -1,19 +1,19 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.InfoText
-import com.otus.designsystem.components.PickMark
-import com.otus.designsystem.components.PickRow
-import com.otus.designsystem.components.PickRowLayout
-import com.otus.designsystem.components.SettingPageRow
-import com.otus.designsystem.components.SettingToggleRow
-import com.otus.designsystem.components.SettingsSection
-import com.otus.designsystem.components.Subpage
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.resources.symbol_visibility_off
+import com.otus.designsystem.shared.feedback.components.InfoText
+import com.otus.designsystem.shared.pages.components.Subpage
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickRowLayout
+import com.otus.designsystem.shared.settings.components.SettingPageRow
+import com.otus.designsystem.shared.settings.components.SettingToggleRow
+import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.RemoteImages

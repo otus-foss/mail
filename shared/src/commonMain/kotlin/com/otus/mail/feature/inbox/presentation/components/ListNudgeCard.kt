@@ -3,7 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.FolderColorNudge
+import com.otus.designsystem.mail.folders.components.FolderColorNudge
 import com.otus.designsystem.theme.NudgeTokens
 import com.otus.mail.feature.inbox.presentation.ListNudge
 

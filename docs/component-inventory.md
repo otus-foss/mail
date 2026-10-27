@@ -1,5 +1,9 @@
 # Mail component inventory
 
+This records the earlier Meta 0.4.0 extraction. For the 0.10.0 package locations, use
+[Meta's UI migration guide](https://github.com/reazndev/otus-meta/blob/main/docs/ui-package-migration.md).
+The versioned links below remain historical references.
+
 This inventory covers every production Otus composable source file in Mail or its shared UI libraries, plus selected supporting files. It includes public components, private UI helpers, UI state/value types, and the Mail playground. Compose framework widgets, generated resources, and test-only fixtures are excluded. Platform implementations of shared avatar decoding remain in otus-meta and implement the same common API.
 
 "Shared now" means added in Meta 0.3.0 or 0.4.0 and consumed by Mail. "Already shared" means present since Meta 0.2.1 and still consumed through 0.4.0. "Mail adapter" means the rendering is shared while Mail maps feature data into it. "Mail" means the app still owns the composition or behavior. Calendar is unchanged.
