@@ -2,6 +2,9 @@ package com.otus.mail.app
 
 import com.otus.jmap.PushKeys
 import com.otus.jmap.PushMessage
+import com.otus.jmap.push.PushEndpoint
+import com.otus.jmap.push.PushStatus
+import com.otus.jmap.push.PushSubscriptions
 import com.otus.mail.feature.notifications.data.ApplePushBridge
 import com.otus.mail.feature.notifications.data.ApplePushPlatform
 import com.otus.mail.feature.notifications.data.ApplePushRouteExpired
@@ -10,9 +13,6 @@ import com.otus.mail.feature.notifications.data.AppleRegistration
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
-import com.otus.push.PushEndpoint
-import com.otus.push.PushStatus
-import com.otus.push.PushSubscriptions
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex

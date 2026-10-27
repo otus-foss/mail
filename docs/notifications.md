@@ -36,7 +36,7 @@ Choosing a service registers each account as its own instance, keyed by login id
 
 1. The selected service hands `MailPushService` an endpoint URL and Web Push keys.
 2. `PushSyncWorker` saves them and asks the account's server to push `EmailDelivery` changes
-   there, through `PushSubscriptions` from `com.otus:push`.
+   there, through `PushSubscriptions` from `com.otus:jmap-push`.
 3. The server sends a verification push; the worker sends its code back, and the account shows
    "Instant".
 4. Each delivery push requests expedited `NewMailWorker` work. Android can still delay it when

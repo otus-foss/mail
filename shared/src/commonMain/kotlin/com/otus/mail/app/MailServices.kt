@@ -21,6 +21,8 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.jmap.push.PushStateStore
+import com.otus.jmap.push.PushSubscriptions
 import com.otus.mail.core.cache.AccountMailCache
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.CacheStorageException
@@ -86,8 +88,6 @@ import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMailChecker
-import com.otus.push.PushStateStore
-import com.otus.push.PushSubscriptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

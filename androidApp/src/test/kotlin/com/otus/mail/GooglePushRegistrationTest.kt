@@ -8,10 +8,10 @@ import androidx.test.core.app.ApplicationProvider
 import com.otus.jmap.JmapException
 import com.otus.jmap.PushKeys
 import com.otus.jmap.login.JmapLogin
+import com.otus.jmap.push.PushEndpoint
+import com.otus.jmap.push.PushStateStore
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
-import com.otus.push.PushEndpoint
-import com.otus.push.PushStateStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -119,7 +119,7 @@ class GooglePushRegistrationTest {
             registration.register(login, app.packageName, retry = false)
             assertNotEquals(token, requests().last().getStringExtra("token"))
             assertEquals(OTHER_KEY, requests().last().getStringExtra("vapid"))
-            assertEquals(com.otus.push.PushStatus.Off, subscriptions.status()[login.id])
+            assertEquals(com.otus.jmap.push.PushStatus.Off, subscriptions.status()[login.id])
         }
 
     @Test
