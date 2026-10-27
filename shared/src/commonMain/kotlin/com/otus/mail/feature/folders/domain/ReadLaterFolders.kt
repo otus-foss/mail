@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.preferences.StringMapStore
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -11,11 +12,7 @@ import kotlinx.coroutines.withContext
 const val READ_LATER_NAME = "Read later"
 
 /** App-private record of each account's Read later folder: mailbox ids by login id. */
-interface ReadLaterStore {
-    fun read(): Map<String, String>
-
-    fun write(folders: Map<String, String>)
-}
+interface ReadLaterStore : StringMapStore
 
 /**
  * Each account's Read later folder. It is one of the user's own folders, because JMAP has no role

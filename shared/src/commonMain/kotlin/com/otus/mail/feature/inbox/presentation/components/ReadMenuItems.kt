@@ -15,11 +15,8 @@ import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_notifications_off
 import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.resources.symbol_print
-import com.otus.designsystem.resources.symbol_reply
-import com.otus.designsystem.resources.symbol_reply_all
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_verified_user
-import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.presentation.read.ReadMenuEntry
 import com.otus.mail.feature.inbox.presentation.read.ReadMenuSection
 import com.otus.mail.feature.inbox.presentation.read.detail
@@ -76,63 +73,19 @@ private fun ReadMenuEntry.item(
 private val ReadMenuEntry.icon: DrawableResource
     get() =
         when (this) {
-            is ReadMenuEntry.OtherReply -> {
-                if (action == MailAction.ReplyAll) Res.drawable.symbol_reply_all else Res.drawable.symbol_reply
-            }
-
-            ReadMenuEntry.Forward -> {
-                Res.drawable.symbol_forward
-            }
-
-            ReadMenuEntry.MarkUnread -> {
-                Res.drawable.symbol_mark_email_unread
-            }
-
-            is ReadMenuEntry.Flag -> {
-                Res.drawable.symbol_flag
-            }
-
-            ReadMenuEntry.ViewDetails -> {
-                Res.drawable.symbol_info
-            }
-
-            ReadMenuEntry.Print -> {
-                Res.drawable.symbol_print
-            }
-
-            ReadMenuEntry.DeleteThisMessage -> {
-                Res.drawable.symbol_delete
-            }
-
-            is ReadMenuEntry.AlwaysShowImages -> {
-                Res.drawable.symbol_verified_user
-            }
-
-            ReadMenuEntry.BlockSender -> {
-                Res.drawable.symbol_block
-            }
-
-            ReadMenuEntry.ReportSpam -> {
-                Res.drawable.symbol_report
-            }
-
-            is ReadMenuEntry.MoveTo -> {
-                Res.drawable.symbol_drive_file_move
-            }
-
-            is ReadMenuEntry.Mute -> {
-                Res.drawable.symbol_notifications_off
-            }
-
-            ReadMenuEntry.SenderContact -> {
-                Res.drawable.symbol_person_add
-            }
-
-            is ReadMenuEntry.People -> {
-                Res.drawable.symbol_group
-            }
-
-            ReadMenuEntry.DeleteConversation -> {
-                Res.drawable.symbol_delete_sweep
-            }
+            is ReadMenuEntry.OtherReply -> action.symbol
+            ReadMenuEntry.Forward -> Res.drawable.symbol_forward
+            ReadMenuEntry.MarkUnread -> Res.drawable.symbol_mark_email_unread
+            is ReadMenuEntry.Flag -> Res.drawable.symbol_flag
+            ReadMenuEntry.ViewDetails -> Res.drawable.symbol_info
+            ReadMenuEntry.Print -> Res.drawable.symbol_print
+            ReadMenuEntry.DeleteThisMessage -> Res.drawable.symbol_delete
+            is ReadMenuEntry.AlwaysShowImages -> Res.drawable.symbol_verified_user
+            ReadMenuEntry.BlockSender -> Res.drawable.symbol_block
+            ReadMenuEntry.ReportSpam -> Res.drawable.symbol_report
+            is ReadMenuEntry.MoveTo -> Res.drawable.symbol_drive_file_move
+            is ReadMenuEntry.Mute -> Res.drawable.symbol_notifications_off
+            ReadMenuEntry.SenderContact -> Res.drawable.symbol_person_add
+            is ReadMenuEntry.People -> Res.drawable.symbol_group
+            ReadMenuEntry.DeleteConversation -> Res.drawable.symbol_delete_sweep
         }
