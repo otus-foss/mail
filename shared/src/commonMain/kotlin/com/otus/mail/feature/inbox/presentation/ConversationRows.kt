@@ -121,7 +121,8 @@ private fun MailMessage.rowModel(
 private fun MailMessage.marks(people: SenderLine): List<RowMark> =
     listOfNotNull(
         RowMark.Answered.takeIf { (conversation?.answered ?: attributes.answered) && people !is SenderLine.YouTo },
-        RowMark.Attachment.takeIf { attributes.hasAttachment || attributes.attachments.isNotEmpty() },
+        RowMark.Attachment.takeIf { attributes.hasAttachment },
+        RowMark.Invite.takeIf { conversation?.invite ?: attributes.invite },
         RowMark.Flagged.takeIf { attributes.flagged },
         RowMark.ReadLater.takeIf { labels.any { it.readLater } },
     )
@@ -181,7 +182,8 @@ private fun MailMessage.description(
         people.spoken(),
         date,
         "Answered".takeIf { (conversation?.answered ?: attributes.answered) && people !is SenderLine.YouTo },
-        "Attachment".takeIf { attributes.hasAttachment || attributes.attachments.isNotEmpty() },
+        "Attachment".takeIf { attributes.hasAttachment },
+        "Invitation".takeIf { conversation?.invite ?: attributes.invite },
         "Flagged".takeIf { attributes.flagged },
         "Read later".takeIf { labels.any { it.readLater } },
         folders.takeIf { it.isNotEmpty() }?.joinToString(prefix = "Folders: ") { it.name },

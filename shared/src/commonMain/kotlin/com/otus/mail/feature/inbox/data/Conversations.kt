@@ -24,7 +24,8 @@ internal fun MailMessage.inConversation(
     view: ThreadView,
     zone: TimeZone,
 ): MailMessage {
-    val newestFirst = (thread + row).distinctBy { it.id }.sortedByDescending { Instant.parse(it.receivedAt) }
+    // The row's own copy comes first: it has every row property, a thread member's copy fewer.
+    val newestFirst = (listOf(row) + thread).distinctBy { it.id }.sortedByDescending { Instant.parse(it.receivedAt) }
     val listed = listOf(row) + newestFirst.filter { it.id != row.id && mailboxId in it.boxes }
     val listedIds = listed.map { it.id }.toSet()
     val counted = newestFirst.filter { view.counts(it) || it.id in listedIds }
@@ -46,6 +47,7 @@ internal fun MailMessage.inConversation(
                     .filter { it.address.isNotBlank() }
                     .distinctBy { it.address.lowercase() },
             answered = counted.any { it.keywords[ANSWERED_KEYWORD] == true },
+            invite = counted.any { it.hasInvite },
             members = listed.map { ThreadMember(it.id, it.boxes, mailboxId) },
             exchanged = counted.any(view::isSent) && counted.any { !view.isSent(it) },
             reply =
@@ -62,7 +64,7 @@ internal fun MailMessage.inConversation(
             attributes.copy(
                 unread = listed.any { it.keywords[SEEN_KEYWORD] != true },
                 flagged = counted.any { it.keywords[FLAGGED_KEYWORD] == true },
-                hasAttachment = counted.any { it.hasAttachment },
+                hasAttachment = counted.any { it.hasFile },
             ),
         location = location.copy(mailboxIds = newestFirst.flatMap { it.boxes }.toSet()),
     )
@@ -93,6 +95,7 @@ private fun merge(
             conversation.copy(
                 members = members,
                 exchanged = conversation.exchanged || other.conversation?.exchanged == true,
+                invite = conversation.invite || other.conversation?.invite == true,
                 last = latest.last,
                 reply =
                     latest.reply.copy(
