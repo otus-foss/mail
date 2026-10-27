@@ -30,8 +30,9 @@ internal fun MailScope.listingQueries(
 
 /**
  * [login]'s lists of [scope] as the cache holds them, one page per mailbox, mapped like loaded
- * rows. A mailbox without a saved list adds nothing, and a row whose email has left the mailbox
- * since, such as after a move, is left out. A row that no longer reads leaves the login out.
+ * rows. A mailbox without a saved list for [query] shows the rows of its unfiltered list that
+ * pass [check], or nothing without one. A row whose email has left the mailbox since, such as
+ * after a move, is left out. A row that no longer reads leaves the login out.
  */
 internal suspend fun MailCache.cachedPages(
     login: JmapLogin,
@@ -39,11 +40,13 @@ internal suspend fun MailCache.cachedPages(
     query: MailQuery,
     conditions: List<JsonObject>,
     zone: TimeZone,
+    check: ((ListedRow) -> Boolean)? = null,
 ): List<ListingPage<ListedRow>> {
     val mailboxes = mailboxes(login.id)
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
-    val listings = listings(login.id, queries)
+    val unfiltered = chosen.map { ListingQuery(it.id, mailFilter(listOf(it.id), emptyList()), query.filters.sort) }
+    val listings = listings(login.id, if (check == null) queries else queries + unfiltered)
     val held = heldMail(login.id, listings.values.flatMap { it.ids }.toSet())
     val view =
         ThreadView(
@@ -54,10 +57,24 @@ internal suspend fun MailCache.cachedPages(
         )
     return try {
         jmapDecoding {
-            chosen.zip(queries).mapNotNull { (mailbox, listingQuery) ->
-                listings[listingQuery.key]?.let { listing ->
-                    val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone)
-                    ListingPage(listing.ids.mapNotNull { held.row(it, list) }, listing.hasMore)
+            chosen.indices.mapNotNull { index ->
+                val mailbox = chosen[index]
+                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone)
+                val listing = listings[queries[index].key]
+                when {
+                    listing != null -> {
+                        ListingPage(listing.ids.mapNotNull { held.row(it, list) }, listing.hasMore)
+                    }
+
+                    check != null -> {
+                        listings[unfiltered[index].key]?.let { all ->
+                            ListingPage(all.ids.mapNotNull { held.row(it, list) }.filter(check), all.hasMore)
+                        }
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
             }
         }

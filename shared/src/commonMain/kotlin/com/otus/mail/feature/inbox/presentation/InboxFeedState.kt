@@ -43,13 +43,15 @@ class InboxFeedState(
             if (showingOwn) show(null)
         }
 
-    /** The applied filters, which the server runs; a new value loads again from the start. */
+    /**
+     * The applied filters, which the server runs; a new value loads again from the start. The
+     * list stays until the device's matches replace it, so a filter never blanks it first.
+     */
     var query: MailQuery = MailQuery()
         set(value) {
             if (value == field) return
             field = value
-            messages = emptyList()
-            refresh()
+            refresh(cachedFirst = true)
         }
 
     /** What the list loads: the page's own messages, or what a search or folder pill shows in their place. */
@@ -135,12 +137,11 @@ class InboxFeedState(
     }
 
     /**
-     * Loads the scope's messages from the server again, with as many pages as are shown. A list
-     * left empty by a new scope or query first shows what the device kept, while [loading] stays
-     * true, unless the server answers first.
+     * Loads the scope's messages from the server again, with as many pages as are shown. With
+     * [cachedFirst], as for a list left empty by a new scope or a new query, it first shows what
+     * the device kept, while [loading] stays true, unless the server answers first.
      */
-    fun refresh() {
-        val cachedFirst = messages.isEmpty()
+    fun refresh(cachedFirst: Boolean = messages.isEmpty()) {
         loading = true
         loadingMore = false
         reportedNotice = null
