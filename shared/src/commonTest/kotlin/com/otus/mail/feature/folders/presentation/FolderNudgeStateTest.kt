@@ -17,8 +17,8 @@ class FolderNudgeStateTest {
 
         override fun read() = saved
 
-        override fun write(nudges: Map<String, String>) {
-            saved = nudges
+        override fun write(values: Map<String, String>) {
+            saved = values
         }
     }
 

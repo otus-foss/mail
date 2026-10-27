@@ -11,8 +11,8 @@ class AddressPinsTest {
 
         override fun read() = saved
 
-        override fun write(pins: Map<String, String>) {
-            saved = pins
+        override fun write(values: Map<String, String>) {
+            saved = values
         }
     }
 

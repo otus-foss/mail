@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.preferences.StringMapStore
+
 /** The addresses the user pinned to the top of "Show mail from". */
 data class AddressPins(
     val pins: List<MailScopeChoice.Address> = emptyList(),
@@ -20,11 +22,7 @@ data class AddressPins(
  * App-private storage for [AddressPins]: each account's pinned addresses, one per line, under its
  * login id. Login ids may hold spaces and colons, and addresses never hold a line break.
  */
-interface AddressPinStore {
-    fun read(): Map<String, String>
-
-    fun write(pins: Map<String, String>)
-}
+interface AddressPinStore : StringMapStore
 
 fun AddressPinStore.readPins(): AddressPins =
     AddressPins(

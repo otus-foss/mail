@@ -2,6 +2,7 @@ package com.otus.mail.feature.contacts.domain
 
 import com.otus.jscontact.Card
 import com.otus.jscontact.JsContactJson
+import com.otus.mail.core.preferences.StringMapStore
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -78,11 +79,7 @@ fun ContactEdit.isHeld(refused: Map<String, ContactWriteFailure>): Boolean =
  * The device's own contact data: changes waiting for the server, cards shown as one person, and
  * duplicate pairs the user said are different people. Values are text under fixed keys.
  */
-interface ContactStore {
-    fun read(): Map<String, String>
-
-    fun write(values: Map<String, String>)
-
+interface ContactStore : StringMapStore {
     companion object {
         const val EDITS = "edits"
         const val LINKS = "links"
