@@ -1,7 +1,7 @@
 name: nightly
 
 # Builds a signed nightly APK of main and publishes it as a release of the public nightly
-# repository, where the app's update check finds it. Changes to either selected revision trigger a build.
+# repository, where the app's update check finds it. Changes in Mail or Meta trigger a build.
 # Both source revisions are resolved together and recorded in the release provenance.
 # See docs/nightly.md for the secrets this needs.
 on:

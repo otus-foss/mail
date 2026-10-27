@@ -1,7 +1,7 @@
 # Nightly builds
 
 `.github/workflows/nightly.yml` runs at 00:00 UTC, which is 01:00 in Berlin in winter and 02:00 in
-summer. It can also be started by hand. Changes to Mail main or the selected Meta revision trigger a signed
+summer. It can also be started by hand. Changes to either Mail main or Meta main trigger a signed
 APK release in [otus-mail-nightly](https://github.com/reazndev/otus-mail-nightly). The source stays
 private. Each release is tagged `nightly-<number>`, with a version code one higher than the previous
 release. The first release starts at Mail's commit count. Draft releases reserve their version codes,
