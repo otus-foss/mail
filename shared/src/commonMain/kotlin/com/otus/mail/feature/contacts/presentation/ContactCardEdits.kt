@@ -39,12 +39,19 @@ internal fun ContactsState.save(
     return edit.key
 }
 
-internal fun ContactsState.delete(keys: Collection<CardKey>) {
-    keys.forEach { key -> send(ContactEdit.Delete(newId(), key)) }
+/** Removes the cards of [keys]; with [waitsFor], only once the server accepts that change. */
+internal fun ContactsState.delete(
+    keys: Collection<CardKey>,
+    waitsFor: String? = null,
+) {
+    keys.forEach { key -> send(ContactEdit.Delete(newId(), key, waitsFor)) }
     sync.unlink(keys)
 }
 
-/** Saves [plan]'s merged card, then removes the others if the plan says so. */
+/**
+ * Saves [plan]'s merged card, then removes the others if the plan says so. The removals wait for
+ * the merged card, so a refused merge leaves the cards as they were.
+ */
 internal fun ContactsState.merge(plan: MergePlan): CardKey {
     val merged = plan.merged()
     val target = plan.target
@@ -55,7 +62,8 @@ internal fun ContactsState.merge(plan: MergePlan): CardKey {
             send(ContactEdit.Update(newId(), target.key, target.card, merged))
             target.key
         }
-    delete(plan.removed.map { it.key })
+    // The queue may fold the merge into a change of the target that was already waiting.
+    delete(plan.removed.map { it.key }, sync.edits.lastOrNull { it.key == key }?.id)
     sync.dismiss(plan.cards.map { it.key }.toSet())
     return key
 }
