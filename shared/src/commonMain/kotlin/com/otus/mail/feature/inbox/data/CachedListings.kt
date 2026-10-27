@@ -46,7 +46,11 @@ internal suspend fun MailCache.cachedPages(
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
     val unfiltered = chosen.map { ListingQuery(it.id, mailFilter(listOf(it.id), emptyList()), query.filters.sort) }
-    val listings = listings(login.id, if (check == null) queries else queries + unfiltered)
+    val saved = listings(login.id, queries)
+    // Each read waits its turn with a running sync, so only mailboxes without a list of their own
+    // read the unfiltered one.
+    val missing = unfiltered.filterIndexed { index, _ -> check != null && queries[index].key !in saved }
+    val listings = saved + listings(login.id, missing)
     val held = heldMail(login.id, listings.values.flatMap { it.ids }.toSet())
     val view =
         ThreadView(

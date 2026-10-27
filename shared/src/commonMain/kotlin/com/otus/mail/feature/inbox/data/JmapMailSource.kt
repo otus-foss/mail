@@ -144,12 +144,20 @@ class JmapMailSource(
     ): InboxSnapshot {
         val local = zone()
         val pages =
-            selected.flatMap { login ->
-                emailConditions(query, login.id, now, local)
-                    ?.let { conditions ->
-                        val check = localCheck(query, login.id, now, local)
-                        cache.withAccount(login.id) { it.cachedPages(login, scope, query, conditions, local, check) }
-                    }.orEmpty()
+            coroutineScope {
+                selected
+                    .map { login ->
+                        async {
+                            emailConditions(query, login.id, now, local)
+                                ?.let { conditions ->
+                                    val check = localCheck(query, login.id, now, local)
+                                    cache.withAccount(login.id) {
+                                        it.cachedPages(login, scope, query, conditions, local, check)
+                                    }
+                                }.orEmpty()
+                        }
+                    }.awaitAll()
+                    .flatten()
             }
         val merged = pages.merged(query.filters.sort) { it.receivedAt }
         val messages =
