@@ -1,13 +1,10 @@
 package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.ConfirmDialog
+import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.mail.feature.contacts.domain.MergePlan
 import com.otus.mail.feature.contacts.presentation.ContactPage
 import com.otus.mail.feature.contacts.presentation.ContactsState
-import com.otus.mail.feature.contacts.presentation.components.GroupEdit
-import com.otus.mail.feature.contacts.presentation.components.GroupEditSheet
-import com.otus.mail.feature.contacts.presentation.components.MergeSheet
 import com.otus.mail.feature.contacts.presentation.delete
 import com.otus.mail.feature.contacts.presentation.merge
 import com.otus.mail.feature.contacts.presentation.showSeparately

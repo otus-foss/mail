@@ -1,11 +1,6 @@
 package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.ActionBar
-import com.otus.designsystem.components.BarAction
-import com.otus.designsystem.components.BarContext
-import com.otus.designsystem.components.BarToken
-import com.otus.designsystem.components.MenuAction
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_call_merge
 import com.otus.designsystem.resources.symbol_delete
@@ -17,6 +12,11 @@ import com.otus.designsystem.resources.symbol_more_horiz
 import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.resources.symbol_person_search
 import com.otus.designsystem.resources.symbol_upload
+import com.otus.designsystem.shared.actionbar.components.ActionBar
+import com.otus.designsystem.shared.actionbar.components.BarAction
+import com.otus.designsystem.shared.actionbar.components.BarContext
+import com.otus.designsystem.shared.actionbar.components.BarToken
+import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.presentation.avatar

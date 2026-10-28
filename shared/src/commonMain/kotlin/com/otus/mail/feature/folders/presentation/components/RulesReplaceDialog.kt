@@ -1,7 +1,7 @@
 package com.otus.mail.feature.folders.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.ConfirmDialog
+import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.mail.feature.folders.presentation.FolderRulesState
 
 /** Asks whether a rules change may replace edits made in another app, while [rules] waits for that answer. */

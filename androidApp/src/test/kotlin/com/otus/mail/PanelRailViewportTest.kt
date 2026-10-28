@@ -23,12 +23,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.otus.designsystem.components.ChipPlacement
-import com.otus.designsystem.components.ContextPanel
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.elements.IconButton
-import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.IconButton
+import com.otus.designsystem.shared.panels.components.ChipPlacement
+import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.colors.OtusColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Rule

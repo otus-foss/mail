@@ -24,7 +24,7 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.designsystem.theme.panelTextStyle
+import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.presentation.InboxContext

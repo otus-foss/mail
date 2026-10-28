@@ -21,8 +21,8 @@ readiness. Preserve portable Kotlin boundaries and the iOS target; iOS remains a
 
 All UI follows **elements → components → screens**.
 
-- `designsystem/elements`: small branded primitives, such as buttons, fields, and avatars.
-- `designsystem/components`: reusable compositions without feature knowledge.
+- Meta's `designsystem/<shared|mail>/<group>/elements`: small branded controls, fields, and avatars.
+- Meta's `designsystem/<shared|mail>/<group>/components`: value-driven visual compositions.
 - Shared elements, components, and tokens come from otus-meta's `com.otus.designsystem`. Add new
   elements, reusable components, visual tokens, and symbol resources there, even if only Mail
   currently uses them. Mail keeps feature adapters and screens. See decision 0008 in Meta.

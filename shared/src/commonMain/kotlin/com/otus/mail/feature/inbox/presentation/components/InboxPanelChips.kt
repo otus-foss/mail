@@ -2,7 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.components.ContextPanelScope
+import com.otus.designsystem.shared.panels.components.ContextPanelScope
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
 

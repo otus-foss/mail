@@ -1,15 +1,15 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.AvatarStackChip
-import com.otus.designsystem.components.FolderStackChip
-import com.otus.designsystem.components.StackedFolder
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.elements.ChipLabel
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
-import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.filters.components.FolderStackChip
+import com.otus.designsystem.shared.filters.components.StackedFolder
+import com.otus.designsystem.shared.filters.elements.ChipLabel
+import com.otus.designsystem.shared.people.components.AvatarStackChip
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailSender

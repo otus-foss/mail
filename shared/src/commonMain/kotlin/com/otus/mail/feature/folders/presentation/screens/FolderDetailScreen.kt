@@ -6,10 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.otus.designsystem.components.ActionDialog
-import com.otus.designsystem.components.DialogAction
-import com.otus.designsystem.components.PageNote
-import com.otus.designsystem.components.Subpage
+import com.otus.designsystem.shared.overlays.components.ActionDialog
+import com.otus.designsystem.shared.overlays.components.DialogAction
+import com.otus.designsystem.shared.pages.components.PageNote
+import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.scopeOf

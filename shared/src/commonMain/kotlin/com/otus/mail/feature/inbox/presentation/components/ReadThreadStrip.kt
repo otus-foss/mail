@@ -8,18 +8,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import com.otus.designsystem.components.FolderHint
-import com.otus.designsystem.components.NamedAvatar
-import com.otus.designsystem.components.PositionPage
-import com.otus.designsystem.components.SlidingPositionStrip
-import com.otus.designsystem.elements.FirstFit
-import com.otus.designsystem.elements.FolderStack
-import com.otus.designsystem.elements.Symbol
+import com.otus.designsystem.mail.folders.components.FolderHint
+import com.otus.designsystem.mail.read.components.PositionPage
+import com.otus.designsystem.mail.read.components.SlidingPositionStrip
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_flag
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.ReadTokens
-import com.otus.designsystem.theme.panelTextStyle
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.folders.elements.FolderStack
+import com.otus.designsystem.shared.people.components.NamedAvatar
+import com.otus.designsystem.shared.rows.elements.FirstFit
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.content.ReadTokens
+import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.ShownFolders
 
 /**

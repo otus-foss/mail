@@ -1,6 +1,6 @@
 package com.otus.mail.feature.notifications.data
 
-import com.otus.push.PushStateStore
+import com.otus.jmap.push.PushStateStore
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 

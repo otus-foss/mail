@@ -1,7 +1,7 @@
 package com.otus.mail
 
 import android.content.Context
-import com.otus.push.PushStateStore
+import com.otus.jmap.push.PushStateStore
 
 /** Each login's push record, stored under the login id. */
 class AndroidPushStateStore(

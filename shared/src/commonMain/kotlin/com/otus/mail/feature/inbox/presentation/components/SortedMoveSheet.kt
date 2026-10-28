@@ -12,14 +12,14 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.PersonText
-import com.otus.designsystem.components.SheetFrame
-import com.otus.designsystem.components.SummaryCard
-import com.otus.designsystem.elements.ActionButton
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_inbox
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.shared.controls.elements.ActionButton
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.people.components.PersonText
+import com.otus.designsystem.shared.rows.components.SummaryCard
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.presentation.OlderMail
 import com.otus.mail.feature.inbox.presentation.SortedMove
 

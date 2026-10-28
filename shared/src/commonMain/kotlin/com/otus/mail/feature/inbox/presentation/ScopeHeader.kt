@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.designsystem.components.ChipAvatar
+import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.DomainGroup
 import com.otus.mail.feature.inbox.domain.MailScopeChoice

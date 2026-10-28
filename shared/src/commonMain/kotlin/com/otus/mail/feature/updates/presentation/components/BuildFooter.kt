@@ -5,11 +5,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.otus.designsystem.components.ChangeLogHistorySheet
-import com.otus.designsystem.components.ChangeLogRelease
-import com.otus.designsystem.components.ChangeLogSection
-import com.otus.designsystem.components.ChangeLogSheet
-import com.otus.designsystem.components.SidebarFooter
+import com.otus.designsystem.shared.settings.components.ChangeLogHistorySheet
+import com.otus.designsystem.shared.settings.components.ChangeLogRelease
+import com.otus.designsystem.shared.settings.components.ChangeLogSection
+import com.otus.designsystem.shared.settings.components.ChangeLogSheet
+import com.otus.designsystem.shared.sidebar.components.SidebarFooter
 import com.otus.mail.feature.updates.domain.ChangeGroup
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel

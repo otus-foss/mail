@@ -5,14 +5,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.otus.designsystem.components.SettingRow
-import com.otus.designsystem.elements.ValueButton
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_swap_vert
 import com.otus.designsystem.resources.symbol_tune
+import com.otus.designsystem.shared.settings.components.SettingRow
+import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState

@@ -3,14 +3,14 @@ package com.otus.mail.feature.contacts.presentation.components
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.InfoStrip
-import com.otus.designsystem.components.StripAction
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_call_merge
 import com.otus.designsystem.resources.symbol_cloud_off
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_lock
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.shared.feedback.components.InfoStrip
+import com.otus.designsystem.shared.feedback.components.StripAction
+import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.PossibleDuplicate
 

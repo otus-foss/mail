@@ -15,13 +15,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import com.otus.designsystem.components.BannerAction
-import com.otus.designsystem.components.ImageBanner
-import com.otus.designsystem.components.SwipeToDismiss
-import com.otus.designsystem.elements.holdsSpace
+import com.otus.designsystem.mail.read.components.BannerAction
+import com.otus.designsystem.mail.read.components.ImageBanner
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_hide_image
 import com.otus.designsystem.resources.symbol_image
+import com.otus.designsystem.shared.pages.elements.holdsSpace
+import com.otus.designsystem.shared.swipe.components.SwipeToDismiss
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder

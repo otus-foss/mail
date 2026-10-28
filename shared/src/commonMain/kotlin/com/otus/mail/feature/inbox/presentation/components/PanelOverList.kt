@@ -14,8 +14,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.otus.designsystem.components.PullToRefresh
-import com.otus.designsystem.theme.InboxTokens
+import com.otus.designsystem.shared.feedback.components.PullToRefresh
+import com.otus.designsystem.theme.tokens.rows.InboxTokens
 
 /**
  * A [panel] drawn over a pull-to-refresh [list], so the list shows behind the panel's pills. The

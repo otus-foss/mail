@@ -5,7 +5,7 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.elements.Chip
+import com.otus.designsystem.shared.controls.elements.Chip
 
 /** Demonstrates controlled filter choices without implying server-side search exists. */
 @Composable

@@ -1,10 +1,10 @@
 package com.otus.mail.feature.folders.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.ChoiceOptions
-import com.otus.designsystem.components.ChoiceRow
-import com.otus.designsystem.components.ChoiceSheet
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.shared.selection.components.ChoiceOptions
+import com.otus.designsystem.shared.selection.components.ChoiceRow
+import com.otus.designsystem.shared.selection.components.ChoiceSheet
+import com.otus.designsystem.theme.colors.FolderColor
 
 /**
  * Picks a folder's icon color, [current] being the stored name. Default comes first, apart from

@@ -18,9 +18,9 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.Density
 import com.otus.dateformat.DateFormatPreference
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.components.MonthNavigation
-import com.otus.designsystem.components.MonthNavigationLabel
-import com.otus.designsystem.components.MonthYearPicker
+import com.otus.designsystem.shared.dates.components.MonthNavigation
+import com.otus.designsystem.shared.dates.components.MonthNavigationLabel
+import com.otus.designsystem.shared.dates.components.MonthYearPicker
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals

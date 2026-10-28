@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.Subpage
+import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.InboxBehaviorSettings
