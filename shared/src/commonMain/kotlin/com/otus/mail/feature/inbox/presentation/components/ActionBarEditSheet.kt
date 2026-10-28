@@ -16,7 +16,7 @@ import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.settings.components.PreviewCard
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton

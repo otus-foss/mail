@@ -33,9 +33,9 @@ import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.overlays.components.LocalSheetPull
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.pages.elements.holdsSpace
-import com.otus.designsystem.theme.InboxTokens
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.feature.inbox.presentation.InboxContext

@@ -17,9 +17,9 @@ import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
-import com.otus.designsystem.theme.ComposeTokens
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.SendIdentityKey
 import com.otus.mail.feature.inbox.domain.signature

@@ -24,8 +24,8 @@ import com.otus.designsystem.shared.overlays.components.OptionsMenu
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.people.components.PersonAvatar
-import com.otus.designsystem.theme.ComposeTokens
-import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.presentation.ComposeState
 

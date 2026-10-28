@@ -20,9 +20,9 @@ import com.otus.designsystem.mail.compose.components.RichTextBody
 import com.otus.designsystem.mail.compose.elements.RichText
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
-import com.otus.designsystem.theme.ActionBarTokens
-import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -13,8 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.theme.InboxTokens
-import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus

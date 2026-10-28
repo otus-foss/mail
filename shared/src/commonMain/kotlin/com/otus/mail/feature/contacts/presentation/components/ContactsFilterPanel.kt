@@ -24,8 +24,8 @@ import com.otus.designsystem.shared.filters.components.FilterPanelFooter
 import com.otus.designsystem.shared.filters.components.FilterSection
 import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.filters.elements.FilterChipRole
-import com.otus.designsystem.theme.FilterTokens
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.presentation.icon

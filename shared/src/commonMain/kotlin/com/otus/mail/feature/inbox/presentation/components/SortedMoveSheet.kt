@@ -19,7 +19,7 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonText
 import com.otus.designsystem.shared.rows.components.SummaryCard
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.presentation.OlderMail
 import com.otus.mail.feature.inbox.presentation.SortedMove
 

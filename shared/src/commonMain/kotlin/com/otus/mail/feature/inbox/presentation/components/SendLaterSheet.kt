@@ -20,7 +20,7 @@ import com.otus.designsystem.shared.dates.components.TimeWheelPicker
 import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.rows.components.GroupRow
 import com.otus.designsystem.shared.rows.components.RowGroup
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.SendLaterChoice
 import com.otus.mail.feature.inbox.domain.earliestPick
 import com.otus.mail.feature.inbox.domain.pickableTimes

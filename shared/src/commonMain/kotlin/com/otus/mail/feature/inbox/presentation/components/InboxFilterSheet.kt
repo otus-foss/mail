@@ -11,8 +11,8 @@ import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.overlays.components.SelectionSheet
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxContext

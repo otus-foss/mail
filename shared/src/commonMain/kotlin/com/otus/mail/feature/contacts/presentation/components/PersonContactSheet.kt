@@ -22,9 +22,9 @@ import com.otus.designsystem.shared.controls.elements.PlainAction
 import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactCard

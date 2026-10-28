@@ -16,8 +16,8 @@ import androidx.compose.ui.test.performTouchInput
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.input.elements.SearchPrompt
-import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.colors.OtusColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

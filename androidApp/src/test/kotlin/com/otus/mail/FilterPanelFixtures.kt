@@ -6,7 +6,7 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.shared.people.components.ChipAvatar
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage

@@ -20,7 +20,7 @@ import com.otus.designsystem.shared.feedback.components.InfoTip
 import com.otus.designsystem.shared.input.elements.InputField
 import com.otus.designsystem.shared.input.elements.InputKind
 import com.otus.designsystem.shared.overlays.components.OptionsItem
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.ContactLabel
 import com.otus.mail.feature.contacts.domain.DraftValue

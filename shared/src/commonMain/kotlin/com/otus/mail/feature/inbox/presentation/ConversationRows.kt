@@ -12,7 +12,7 @@ import com.otus.designsystem.mail.inbox.components.RowTextPart
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_reply
 import com.otus.designsystem.shared.folders.elements.FolderGlyphKind
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.inbox.domain.FolderKind
 import com.otus.mail.feature.inbox.domain.ListOrder
 import com.otus.mail.feature.inbox.domain.MailListLayout

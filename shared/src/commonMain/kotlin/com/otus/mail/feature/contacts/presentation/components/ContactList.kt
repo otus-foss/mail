@@ -24,8 +24,8 @@ import com.otus.designsystem.shared.rows.components.EntryTaps
 import com.otus.designsystem.shared.rows.components.RowSelection
 import com.otus.designsystem.shared.rows.components.rowSelection
 import com.otus.designsystem.shared.rows.elements.SectionCaption
-import com.otus.designsystem.theme.EntryTokens
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.CardSync
 import com.otus.mail.feature.contacts.domain.ContactBook

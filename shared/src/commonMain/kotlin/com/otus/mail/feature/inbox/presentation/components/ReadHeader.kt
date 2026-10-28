@@ -41,10 +41,10 @@ import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.DropdownRow
-import com.otus.designsystem.theme.ComposeTokens
-import com.otus.designsystem.theme.PanelTokens
-import com.otus.designsystem.theme.motionTween
-import com.otus.designsystem.theme.panelTextStyle
+import com.otus.designsystem.theme.motion.motionTween
+import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 

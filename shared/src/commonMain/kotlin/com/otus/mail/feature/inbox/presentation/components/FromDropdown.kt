@@ -12,8 +12,8 @@ import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.DropdownRow
 import com.otus.designsystem.shared.selection.components.ListCaption
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.theme.ComposeTokens
-import com.otus.designsystem.theme.MenuTokens
+import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.theme.tokens.overlays.MenuTokens
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.presentation.ComposeAccount

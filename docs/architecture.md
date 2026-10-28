@@ -81,8 +81,9 @@ The checker rejects local production design-system code and drawable resources.
 Meta 0.10.0 groups rendering beneath `com.otus.designsystem.shared.<group>` and
 `com.otus.designsystem.mail.<feature>`, each with `elements` and `components` where needed.
 For example, contact rows come from `shared.contacts.components` and message HTML from
-`mail.read.elements`. Theme tokens and `resources.Res` retain their packages. These groups contain
-UI, not Mail business-domain code; the feature layers above keep their responsibilities.
+`mail.read.elements`. Theme declarations use `theme.colors`, `theme.motion`, `theme.brand`,
+`theme.typography`, and `theme.tokens.<family>`. `theme.OtusTheme` and `resources.Res` retain
+their packages. These groups contain UI; the feature layers above keep their responsibilities.
 See [Meta's migration guide](https://github.com/reazndev/otus-meta/blob/main/docs/ui-package-migration.md).
 
 See [the component inventory](component-inventory.md) for every Otus UI declaration and its owner.

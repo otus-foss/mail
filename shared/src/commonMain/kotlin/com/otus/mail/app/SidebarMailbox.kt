@@ -13,7 +13,7 @@ import com.otus.designsystem.shared.sidebar.elements.SidebarCount
 import com.otus.designsystem.shared.sidebar.elements.SidebarEntry
 import com.otus.designsystem.shared.sidebar.elements.SidebarInboxEntry
 import com.otus.designsystem.shared.sidebar.elements.SidebarMailboxTile
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder

@@ -10,10 +10,10 @@ import com.otus.designsystem.shared.filters.components.RuleChip
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.elements.SelectionRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
-import com.otus.designsystem.theme.AvatarTokens
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PanelTokens
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.presentation.RuleKind
 import com.otus.mail.feature.folders.presentation.RuleSuggestion

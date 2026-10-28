@@ -20,8 +20,8 @@ import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.rows.elements.RowButton
 import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 
 /**
  * Adds custom labels and lists the ones in use with how many saved cards use each, including labels

@@ -9,7 +9,7 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_send
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.displayPaths
 import org.jetbrains.compose.resources.DrawableResource

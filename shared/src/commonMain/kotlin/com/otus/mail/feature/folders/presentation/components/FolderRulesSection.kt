@@ -14,7 +14,7 @@ import com.otus.designsystem.shared.filters.components.RuleChipGroup
 import com.otus.designsystem.shared.filters.components.mutedRule
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.presentation.ParentRules

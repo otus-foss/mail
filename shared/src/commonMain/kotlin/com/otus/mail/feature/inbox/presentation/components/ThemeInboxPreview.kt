@@ -26,9 +26,9 @@ import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.people.elements.Avatar
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PanelTokens
-import com.otus.designsystem.theme.ThemeTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.settings.ThemeTokens
 
 /**
  * The inbox in the current theme for the theme page: pills, three messages with the first

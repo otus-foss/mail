@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 
 /**
  * The folder color nudge above a list's first row. [folderName] has no color yet; [onPick] gives it

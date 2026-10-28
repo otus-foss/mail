@@ -53,7 +53,9 @@ Meta keeps one `designsystem` artifact. Its UI now lives in
 `com.otus.designsystem.shared.<group>.<elements|components>` and
 `com.otus.designsystem.mail.<feature>.<elements|components>`. Update the imports using
 [Meta's declaration map](https://github.com/reazndev/otus-meta/blob/main/docs/ui-package-migration.md).
-Theme tokens, resource identifiers, and the app's own feature layers are unchanged.
+Theme imports also move by responsibility, for example to `theme.colors.OtusColors`,
+`theme.motion.Motion`, and `theme.tokens.rows.InboxTokens`. `theme.OtusTheme` and generated
+resource identifiers keep their packages. Token values and the app's feature layers are unchanged.
 
 The nightly builds Mail main against Meta main, so merge a Meta package move and Mail's import
 update one after the other, away from the nightly's 00:00 UTC run.

@@ -10,7 +10,7 @@ import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_lock
 import com.otus.designsystem.shared.feedback.components.InfoStrip
 import com.otus.designsystem.shared.feedback.components.StripAction
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.PossibleDuplicate
 

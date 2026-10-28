@@ -25,9 +25,9 @@ import com.otus.designsystem.shared.pages.components.LocalBottomClearance
 import com.otus.designsystem.shared.pages.components.SlidingPages
 import com.otus.designsystem.shared.sidebar.components.SidebarSwipeArea
 import com.otus.designsystem.shared.sidebar.components.rememberSidebarState
-import com.otus.designsystem.theme.AppIconStyle
-import com.otus.designsystem.theme.LocalMotionScale
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.brand.AppIconStyle
+import com.otus.designsystem.theme.motion.LocalMotionScale
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.BackHandler

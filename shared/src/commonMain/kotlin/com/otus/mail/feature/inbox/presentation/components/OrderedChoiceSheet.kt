@@ -17,9 +17,9 @@ import com.otus.designsystem.shared.overlays.components.SelectionSheet
 import com.otus.designsystem.shared.reorder.components.ReorderableColumn
 import com.otus.designsystem.shared.rows.elements.nestIndent
 import com.otus.designsystem.shared.selection.elements.SelectionRow
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.presentation.nestedByPath
 
 /**

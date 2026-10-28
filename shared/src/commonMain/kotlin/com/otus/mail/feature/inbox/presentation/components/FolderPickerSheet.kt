@@ -15,7 +15,7 @@ import com.otus.designsystem.shared.folders.elements.FolderGlyph
 import com.otus.designsystem.shared.rows.components.AccountGroupRow
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.shared.selection.components.ScopeSheet
-import com.otus.designsystem.theme.FilterTokens
+import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterFolder

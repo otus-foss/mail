@@ -16,8 +16,8 @@ import com.otus.designsystem.shared.dates.components.YearlyDate
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.input.elements.FieldLabel
 import com.otus.designsystem.shared.overlays.components.OptionsItem
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.ContactLabel
 import com.otus.mail.feature.contacts.domain.DraftValue

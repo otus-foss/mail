@@ -20,7 +20,7 @@ import com.otus.designsystem.shared.filters.components.RuleChipLine
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.shared.reorder.components.ReorderableScope
 import com.otus.designsystem.shared.sidebar.elements.SidebarFolder
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.folderIcon
 

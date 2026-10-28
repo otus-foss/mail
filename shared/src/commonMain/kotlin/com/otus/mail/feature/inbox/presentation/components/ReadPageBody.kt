@@ -24,9 +24,9 @@ import com.otus.designsystem.mail.read.elements.HtmlQuote
 import com.otus.designsystem.mail.read.elements.HtmlQuoteLevel
 import com.otus.designsystem.mail.read.elements.HtmlView
 import com.otus.designsystem.shared.people.components.NamedAvatar
-import com.otus.designsystem.theme.InboxTokens
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.presentation.PageBody

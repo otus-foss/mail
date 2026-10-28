@@ -20,8 +20,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.otus.designsystem.shared.dates.elements.calendarMonthBackground
-import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.colors.OtusColors
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

@@ -7,7 +7,7 @@ import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.shared.people.components.AvatarStackChip
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.shared.people.components.NamedAvatar
-import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailSender
 

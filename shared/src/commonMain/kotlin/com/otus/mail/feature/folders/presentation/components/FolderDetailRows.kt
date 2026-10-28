@@ -8,7 +8,7 @@ import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 
 /** The folder's name; [onRename] is null when the server does not allow renaming it. */
 @Composable
