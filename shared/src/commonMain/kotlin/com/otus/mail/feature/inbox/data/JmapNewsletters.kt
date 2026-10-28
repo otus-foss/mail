@@ -21,7 +21,9 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.condition
 import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.operator
 import com.otus.mail.core.mail.pointer
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
@@ -117,31 +119,15 @@ class JmapNewsletters(
         val address = email.from?.firstOrNull()?.email
         val same =
             when {
-                listId != null -> {
-                    buildJsonObject {
-                        put(
-                            "header",
-                            JsonArray(listOf("List-Id", listId).map(::JsonPrimitive)),
-                        )
-                    }
-                }
-
-                !address.isNullOrBlank() -> {
-                    buildJsonObject { put("from", JsonPrimitive(address)) }
-                }
-
-                else -> {
-                    return emptyList()
-                }
+                listId != null -> condition("header", JsonArray(listOf("List-Id", listId).map(::JsonPrimitive)))
+                !address.isNullOrBlank() -> condition("from", JsonPrimitive(address))
+                else -> return emptyList()
             }
         val filter =
-            buildJsonObject {
-                put("operator", JsonPrimitive("AND"))
-                put(
-                    "conditions",
-                    JsonArray(listOf(same, buildJsonObject { put("before", JsonPrimitive(email.receivedAt)) })),
-                )
-            }
+            operator(
+                "AND",
+                listOf(same, condition("before", JsonPrimitive(email.receivedAt))),
+            )
         return connection
             .request {
                 val query = call(QueryMethod(EmailType, id, filter, NEWEST_FIRST, SCAN))

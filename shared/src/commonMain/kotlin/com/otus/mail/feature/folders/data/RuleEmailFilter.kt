@@ -1,5 +1,9 @@
 package com.otus.mail.feature.folders.data
 
+import com.otus.mail.core.mail.anyOf
+import com.otus.mail.core.mail.condition
+import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.core.mail.operator
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.HeaderOperator
@@ -7,10 +11,8 @@ import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.TextField
 import com.otus.mail.feature.folders.domain.TextOperator
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 /**
  * An `Email/query` filter (RFC 8621, section 4.4.1) for the mail in [mailboxIds] that [rule]
@@ -23,8 +25,7 @@ internal fun emailFilter(
     mailboxIds: List<String>,
 ): JsonObject? {
     val conditions = rule.conditions.map { it.filter() ?: return null }
-    val places = mailboxIds.map { id -> buildJsonObject { put("inMailbox", JsonPrimitive(id)) } }
-    val place = places.singleOrNull() ?: operator("OR", places)
+    val place = anyOf(mailboxIds.map(::inMailbox))
     return operator("AND", listOf(place) + conditions)
 }
 
@@ -48,34 +49,21 @@ private fun RuleCondition.Address.addressFilter(): JsonObject? {
             is AddressMatch.Domain -> "@" + match.domain
             is AddressMatch.LocalPart -> return null
         }
-    return property(field.header, JsonPrimitive(text))
+    return condition(field.header, JsonPrimitive(text))
 }
 
 private fun RuleCondition.Text.textFilter(): JsonObject? =
     when {
         operator != TextOperator.Contains -> null
-        field == TextField.Subject -> property("subject", JsonPrimitive(value))
-        else -> property("body", JsonPrimitive(value))
+        field == TextField.Subject -> condition("subject", JsonPrimitive(value))
+        else -> condition("body", JsonPrimitive(value))
     }
 
 /** Sieve's `:over` is strictly larger and `:under` strictly smaller; JMAP's `minSize` includes its value. */
 private fun RuleCondition.Size.sizeFilter(): JsonObject =
-    if (over) property("minSize", JsonPrimitive(bytes + 1)) else property("maxSize", JsonPrimitive(bytes))
+    if (over) condition("minSize", JsonPrimitive(bytes + 1)) else condition("maxSize", JsonPrimitive(bytes))
 
 private fun header(
     name: String,
     value: String,
-) = property("header", JsonArray(listOf(JsonPrimitive(name), JsonPrimitive(value))))
-
-private fun property(
-    name: String,
-    value: JsonElement,
-) = buildJsonObject { put(name, value) }
-
-private fun operator(
-    name: String,
-    conditions: List<JsonObject>,
-) = buildJsonObject {
-    put("operator", JsonPrimitive(name))
-    put("conditions", JsonArray(conditions))
-}
+) = condition("header", JsonArray(listOf(JsonPrimitive(name), JsonPrimitive(value))))
