@@ -7,9 +7,7 @@ import com.otus.mail.feature.notifications.data.ApplePushPlatform
 import com.otus.mail.feature.notifications.data.ApplePushRouteExpired
 import com.otus.mail.feature.notifications.data.ApplePushStorage
 import com.otus.mail.feature.notifications.data.AppleRegistration
-import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
-import com.otus.mail.feature.notifications.domain.PushDistributor
 import com.otus.push.PushEndpoint
 import com.otus.push.PushStatus
 import com.otus.push.PushSubscriptions

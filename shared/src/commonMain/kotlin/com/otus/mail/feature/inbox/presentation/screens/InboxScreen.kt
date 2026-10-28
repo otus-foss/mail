@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -19,13 +18,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.components.ActionBarHost
-import com.otus.designsystem.components.PullToRefresh
 import com.otus.designsystem.components.SlidingOverlay
 import com.otus.designsystem.theme.InboxTokens
-import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.panelTextStyle
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.scopeToLoad
 import com.otus.mail.feature.inbox.presentation.InboxContext
@@ -34,8 +30,6 @@ import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.BackHandler
-import com.otus.mail.feature.inbox.presentation.components.FilterAnchor
-import com.otus.mail.feature.inbox.presentation.components.InboxBody
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxFilter
 import com.otus.mail.feature.inbox.presentation.components.InboxFilterLayer
