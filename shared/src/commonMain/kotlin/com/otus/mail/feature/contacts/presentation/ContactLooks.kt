@@ -5,14 +5,14 @@ import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.avatarStyle
 import com.otus.avatar.generatedAvatar
 import com.otus.avatar.isAvatarCard
-import com.otus.designsystem.components.ChipAvatar
-import com.otus.designsystem.components.ContactRowLabel
-import com.otus.designsystem.components.Recipient
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_badge
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_work
+import com.otus.designsystem.shared.contacts.components.ContactRowLabel
+import com.otus.designsystem.shared.people.components.ChipAvatar
+import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard

@@ -1,15 +1,15 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.ContextPanelScope
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.elements.CountBadge
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_mark_email_unread
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.CountBadge
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.panels.components.ContextPanelScope
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.presentation.FolderPillOption

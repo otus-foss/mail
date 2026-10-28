@@ -11,10 +11,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.PreviewCard
-import com.otus.designsystem.components.SheetFrame
-import com.otus.designsystem.elements.SelectionRow
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.selection.elements.SelectionRow
+import com.otus.designsystem.shared.settings.components.PreviewCard
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace

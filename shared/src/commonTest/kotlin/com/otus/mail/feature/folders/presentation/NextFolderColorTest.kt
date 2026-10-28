@@ -1,6 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

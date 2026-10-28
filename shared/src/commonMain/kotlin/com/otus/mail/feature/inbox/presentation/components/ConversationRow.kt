@@ -3,11 +3,11 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.otus.accounts.presentation.toChipAvatar
-import com.otus.designsystem.components.CompactContentRow
-import com.otus.designsystem.components.PersonBadge
-import com.otus.designsystem.components.RowSelection
-import com.otus.designsystem.elements.BadgedAvatar
-import com.otus.designsystem.theme.InboxTokens
+import com.otus.designsystem.mail.inbox.components.CompactContentRow
+import com.otus.designsystem.shared.people.components.PersonBadge
+import com.otus.designsystem.shared.people.elements.BadgedAvatar
+import com.otus.designsystem.shared.rows.components.RowSelection
+import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.ConversationRowModel
 

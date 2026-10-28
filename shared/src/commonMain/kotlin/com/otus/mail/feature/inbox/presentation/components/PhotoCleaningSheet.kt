@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.ChoiceOptions
-import com.otus.designsystem.components.ChoiceRow
-import com.otus.designsystem.components.ChoiceSheet
+import com.otus.designsystem.shared.selection.components.ChoiceOptions
+import com.otus.designsystem.shared.selection.components.ChoiceRow
+import com.otus.designsystem.shared.selection.components.ChoiceSheet
 
 /**
  * Asks whether [photos] picked photos attach without their metadata and under random names, with

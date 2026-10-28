@@ -6,12 +6,12 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.otus.designsystem.components.ContentRow
-import com.otus.designsystem.components.ContentRowText
-import com.otus.designsystem.components.DetailRow
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.rows.components.ContentRow
+import com.otus.designsystem.shared.rows.components.ContentRowText
+import com.otus.designsystem.shared.rows.components.DetailRow
 import com.otus.designsystem.theme.OtusTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule

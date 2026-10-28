@@ -19,10 +19,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.otus.designsystem.components.ToastHost
-import com.otus.designsystem.components.ToastState
+import com.otus.designsystem.shared.feedback.components.ToastHost
+import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.designsystem.theme.panelTextStyle
+import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag

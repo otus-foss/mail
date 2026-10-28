@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.accounts.presentation.ownAddresses
-import com.otus.designsystem.components.ToastMessage
-import com.otus.designsystem.elements.ToastAction
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.shared.feedback.components.ToastMessage
+import com.otus.designsystem.shared.feedback.elements.ToastAction
+import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.key

@@ -11,11 +11,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import com.otus.designsystem.theme.AccentPreset
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.OtusPalette
-import com.otus.designsystem.theme.ThemeBase
-import com.otus.designsystem.theme.ThemeChoice
+import com.otus.designsystem.theme.colors.AccentPreset
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.colors.OtusPalette
+import com.otus.designsystem.theme.colors.ThemeBase
+import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.settings.presentation.themeTitle
 import org.junit.Assert.assertEquals
 import org.junit.Rule

@@ -1,10 +1,10 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.ui.graphics.ImageBitmap
-import com.otus.designsystem.components.AttachmentActions
-import com.otus.designsystem.components.ToastMessage
-import com.otus.designsystem.elements.ToastAction
-import com.otus.designsystem.elements.decodeImage
+import com.otus.designsystem.mail.attachments.components.AttachmentActions
+import com.otus.designsystem.shared.feedback.components.ToastMessage
+import com.otus.designsystem.shared.feedback.elements.ToastAction
+import com.otus.designsystem.shared.people.elements.decodeImage
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailingList

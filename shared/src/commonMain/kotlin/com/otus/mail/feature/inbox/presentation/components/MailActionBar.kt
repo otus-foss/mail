@@ -2,11 +2,11 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.ActionBar
-import com.otus.designsystem.components.BarAction
-import com.otus.designsystem.components.BarContext
-import com.otus.designsystem.components.BarMinimized
-import com.otus.designsystem.components.MenuAction
+import com.otus.designsystem.shared.actionbar.components.ActionBar
+import com.otus.designsystem.shared.actionbar.components.BarAction
+import com.otus.designsystem.shared.actionbar.components.BarContext
+import com.otus.designsystem.shared.actionbar.components.BarMinimized
+import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton

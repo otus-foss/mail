@@ -1,11 +1,11 @@
 package com.otus.mail
 
 import android.content.pm.PackageManager
+import com.otus.jmap.push.PushEndpoint
+import com.otus.jmap.push.PushStatus
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
-import com.otus.push.PushEndpoint
-import com.otus.push.PushStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

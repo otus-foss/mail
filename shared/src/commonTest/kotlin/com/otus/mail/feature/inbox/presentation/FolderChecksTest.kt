@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.designsystem.components.ChipAvatar
-import com.otus.designsystem.components.FolderCheck
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.shared.filters.components.FolderCheck
+import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import kotlin.test.Test

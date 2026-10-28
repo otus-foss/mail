@@ -5,6 +5,7 @@ import androidx.work.Configuration
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.AndroidLoginStore
+import com.otus.jmap.push.PushSubscriptions
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailPickers
 import com.otus.mail.app.MailPlatform
@@ -13,7 +14,6 @@ import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
-import com.otus.push.PushSubscriptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

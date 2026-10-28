@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
-import com.otus.designsystem.components.ToastMessage
-import com.otus.designsystem.components.ToastState
-import com.otus.designsystem.elements.ToastAction
+import com.otus.designsystem.shared.feedback.components.ToastMessage
+import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.ScheduledSends

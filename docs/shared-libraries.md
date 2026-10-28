@@ -12,10 +12,13 @@ uses:
 | `com.otus:designsystem` | `libs.otus.designsystem` |
 | `com.otus:settings` | `libs.otus.settings` |
 | `com.otus:accounts` | `libs.otus.accounts` |
+| `com.otus:jmap-push` | `libs.otus.jmap.push` |
+| `com.otus:jscontact` | `libs.otus.jscontact` |
+| `com.otus:jmap-contacts` | `libs.otus.jmap.contacts` |
 
-Mail pins Meta 0.7.0 for all six libraries. Local source substitution is optional development
-configuration; normal builds download the pinned GitHub Packages artifacts. Calendar adoption
-is deferred. See [the component inventory](component-inventory.md) for ownership and release state.
+Mail pins Meta 0.10.0 for all Otus libraries. While Meta publishing is paused, builds use Meta's
+source through `otus.meta.path`, as [Changing shared code](#changing-shared-code) describes.
+See [the component inventory](component-inventory.md) for historical ownership decisions.
 
 All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.toml`.
 
@@ -37,10 +40,25 @@ SSH Git credentials do not authenticate Maven downloads.
 
 ## Package status
 
-Meta's tag workflow publishes all six modules and their Android, iOS device, and iOS simulator
-variants to GitHub Packages. Versions 0.3.1 to 0.5.0 are not on GitHub
-Packages. iOS linking against the artifacts is unverified while the macOS `ios` job is paused.
+Meta publishing is paused. Tags do not upload packages, and manual publisher runs validate without
+uploading. The release flow needs to resume before 0.10.0 becomes a downloadable version.
+Mail's quality workflow uses a Meta branch with the same name as the branch it checks when one exists,
+otherwise Meta main. Versions 0.3.1 to 0.5.0 are not on GitHub Packages.
+iOS linking against the artifacts is unverified while the macOS `ios` job is paused.
 See [hosting and CI](hosting.md).
+
+## Design-system package migration
+
+Meta keeps one `designsystem` artifact. Its UI now lives in
+`com.otus.designsystem.shared.<group>.<elements|components>` and
+`com.otus.designsystem.mail.<feature>.<elements|components>`. Update the imports using
+[Meta's declaration map](https://github.com/reazndev/otus-meta/blob/main/docs/ui-package-migration.md).
+Theme imports also move by responsibility, for example to `theme.colors.OtusColors`,
+`theme.motion.Motion`, and `theme.tokens.rows.InboxTokens`. `theme.OtusTheme` and generated
+resource identifiers keep their packages. Token values and the app's feature layers are unchanged.
+
+The nightly builds Mail main against Meta main, so merge a Meta package move and Mail's import
+update one after the other, away from the nightly's 00:00 UTC run.
 
 ## Changing shared code
 

@@ -21,8 +21,8 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import com.otus.designsystem.components.SheetPull
-import com.otus.designsystem.components.Unfold
+import com.otus.designsystem.shared.overlays.components.SheetPull
+import com.otus.designsystem.shared.rows.components.Unfold
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign

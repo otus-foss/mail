@@ -12,14 +12,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.ReorderableColumn
-import com.otus.designsystem.components.SelectionSheet
-import com.otus.designsystem.elements.SelectionRow
-import com.otus.designsystem.elements.Symbol
-import com.otus.designsystem.elements.nestIndent
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.overlays.components.SelectionSheet
+import com.otus.designsystem.shared.reorder.components.ReorderableColumn
+import com.otus.designsystem.shared.rows.elements.nestIndent
+import com.otus.designsystem.shared.selection.elements.SelectionRow
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.presentation.nestedByPath
 
 /**

@@ -1,7 +1,7 @@
 package com.otus.mail.feature.notifications.presentation
 
 import com.otus.accounts.domain.ConnectedAccount
-import com.otus.designsystem.components.InfoText
+import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
 

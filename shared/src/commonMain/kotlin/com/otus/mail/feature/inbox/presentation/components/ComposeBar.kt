@@ -1,10 +1,10 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.components.BarContext
-import com.otus.designsystem.components.BarToken
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_schedule_send
+import com.otus.designsystem.shared.actionbar.components.BarContext
+import com.otus.designsystem.shared.actionbar.components.BarToken
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.Draft

@@ -16,9 +16,9 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
-import com.otus.designsystem.components.ContextPanel
-import com.otus.designsystem.elements.IconButton
-import com.otus.designsystem.elements.SearchField
+import com.otus.designsystem.shared.controls.elements.IconButton
+import com.otus.designsystem.shared.input.elements.SearchField
+import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals

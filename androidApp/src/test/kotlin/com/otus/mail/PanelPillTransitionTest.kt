@@ -12,11 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import com.otus.designsystem.components.ChipPlacement
-import com.otus.designsystem.components.ContextPanel
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.theme.OtusColors
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.panels.components.ChipPlacement
+import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.designsystem.theme.colors.OtusColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue

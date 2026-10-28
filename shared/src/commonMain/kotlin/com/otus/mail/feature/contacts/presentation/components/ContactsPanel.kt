@@ -6,19 +6,19 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.components.ChipPlacement
-import com.otus.designsystem.components.ContextPanel
-import com.otus.designsystem.elements.Chip
-import com.otus.designsystem.elements.IconButton
-import com.otus.designsystem.elements.IconButtonLook
-import com.otus.designsystem.elements.SearchField
-import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_contacts
 import com.otus.designsystem.resources.symbol_filter_list
-import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.IconButton
+import com.otus.designsystem.shared.controls.elements.IconButtonLook
+import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.input.elements.SearchField
+import com.otus.designsystem.shared.panels.components.ChipPlacement
+import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.contacts.presentation.icon
 
 /**

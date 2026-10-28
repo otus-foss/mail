@@ -1,11 +1,11 @@
 package com.otus.mail.feature.folders.presentation.components
 
-import com.otus.designsystem.components.MenuAction
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_palette
+import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.presentation.FolderDialog

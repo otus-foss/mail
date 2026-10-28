@@ -5,9 +5,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.otus.designsystem.components.SheetPull
-import com.otus.designsystem.components.Unfold
-import com.otus.designsystem.components.rememberUnfold
+import com.otus.designsystem.shared.overlays.components.SheetPull
+import com.otus.designsystem.shared.rows.components.Unfold
+import com.otus.designsystem.shared.rows.components.rememberUnfold
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
 

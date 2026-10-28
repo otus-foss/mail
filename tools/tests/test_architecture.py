@@ -150,7 +150,7 @@ class ArchitectureTests(unittest.TestCase):
             violations(
                 path,
                 "package com.otus.mail.feature.inbox.presentation.components\n"
-                "import com.otus.designsystem.components.ContentRow",
+                "import com.otus.designsystem.shared.rows.components.ContentRow",
                 "com.otus.mail",
                 central_ui=True,
             )
