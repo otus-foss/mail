@@ -46,17 +46,14 @@ class SignaturesState(
 
     fun identity(key: SendIdentityKey): SendIdentity? = identities.firstOrNull { it.key == key }
 
-    fun save(
-        identity: SendIdentity,
-        signature: Signature,
-        onSaved: (Boolean) -> Unit = {},
-    ) = saveOne(identity, signature, onSaved)
-
     /** Gives [targets] the signature of [source], replacing theirs. */
     fun copy(
         source: SendIdentity,
         targets: List<SendIdentity>,
-    ) = saveAll(targets, source.signature)
+    ) {
+        val signature = source.signature
+        targets.forEach { save(it, signature) }
+    }
 
     /** Picks an image, or shows a [notice] when the picked one can't be used. Null when there is none. */
     suspend fun pickImage(): SignatureImage? {
@@ -73,22 +70,15 @@ class SignaturesState(
 
     internal fun savedSignature(identity: SendIdentity): Signature? = acknowledged[identity.key]
 
-    private fun saveAll(
-        targets: List<SendIdentity>,
-        signature: Signature,
-    ) {
-        targets.forEach { saveOne(it, signature) {} }
-    }
-
     private val locks = mutableMapOf<SendIdentityKey, Mutex>()
     private val versions = mutableMapOf<SendIdentityKey, Long>()
     private val acknowledged = mutableMapOf<SendIdentityKey, Signature>()
     private var failed = emptySet<SendIdentityKey>()
 
-    private fun saveOne(
+    fun save(
         identity: SendIdentity,
         signature: Signature,
-        onSaved: (Boolean) -> Unit,
+        onSaved: (Boolean) -> Unit = {},
     ) {
         val key = identity.key
         val version = (versions[key] ?: 0L) + 1
