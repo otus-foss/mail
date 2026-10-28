@@ -28,7 +28,6 @@ import com.otus.designsystem.components.ChipPlacement
 import com.otus.designsystem.components.ContextPanel
 import com.otus.designsystem.components.Dropdown
 import com.otus.designsystem.components.DropdownRow
-import com.otus.designsystem.components.OptionsItem
 import com.otus.designsystem.components.PersonAvatar
 import com.otus.designsystem.elements.AddressPill
 import com.otus.designsystem.elements.DatePill

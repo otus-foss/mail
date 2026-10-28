@@ -1,56 +1,26 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Dp
 import com.otus.designsystem.components.FolderHint
 import com.otus.designsystem.components.NamedAvatar
 import com.otus.designsystem.components.PositionPage
 import com.otus.designsystem.components.SlidingPositionStrip
-import com.otus.designsystem.components.StripCard
-import com.otus.designsystem.components.ThreadEntry
-import com.otus.designsystem.components.ThreadList
 import com.otus.designsystem.elements.FirstFit
 import com.otus.designsystem.elements.FolderStack
 import com.otus.designsystem.elements.Symbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PageTokens
 import com.otus.designsystem.theme.ReadTokens
-import com.otus.designsystem.theme.SheetTokens
-import com.otus.designsystem.theme.motionTween
 import com.otus.designsystem.theme.panelTextStyle
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.ShownFolders
-import com.otus.mail.feature.inbox.domain.isOwn
-import com.otus.mail.feature.inbox.presentation.ReadState
-import com.otus.mail.feature.inbox.presentation.read.shortLabel
-import kotlinx.datetime.LocalDate
 
 /**
  * The thread strip, newest first: "Latest" on the newest page, else the sender, with the position

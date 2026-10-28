@@ -34,10 +34,8 @@ import com.otus.jscontact.AnniversaryKind
 import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.CardSync
-import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
-import com.otus.mail.feature.contacts.domain.ContactValue
 import com.otus.mail.feature.contacts.domain.ContactWriteFailure
 import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.formatPhone
