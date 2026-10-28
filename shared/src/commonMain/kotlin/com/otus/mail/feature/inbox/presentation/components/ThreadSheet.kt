@@ -12,7 +12,7 @@ import com.otus.designsystem.shared.controls.components.SegmentedToggle
 import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.ListCaption
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.QuoteMode
 import com.otus.mail.feature.inbox.domain.ThreadMessage
 import com.otus.mail.feature.inbox.presentation.ReplyThread

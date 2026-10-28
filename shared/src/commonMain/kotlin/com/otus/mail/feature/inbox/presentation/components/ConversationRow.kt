@@ -7,7 +7,7 @@ import com.otus.designsystem.mail.inbox.components.CompactContentRow
 import com.otus.designsystem.shared.people.components.PersonBadge
 import com.otus.designsystem.shared.people.elements.BadgedAvatar
 import com.otus.designsystem.shared.rows.components.RowSelection
-import com.otus.designsystem.theme.InboxTokens
+import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.ConversationRowModel
 

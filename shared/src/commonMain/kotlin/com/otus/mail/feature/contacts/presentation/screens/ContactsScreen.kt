@@ -16,8 +16,8 @@ import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.contacts.components.LetterIndex
 import com.otus.designsystem.shared.contacts.components.LetterIndexState
 import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.panelTextStyle
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.presentation.ContactsNavigation

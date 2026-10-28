@@ -19,7 +19,7 @@ import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionTarget
 import com.otus.mail.feature.inbox.domain.BarButton

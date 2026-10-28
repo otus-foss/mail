@@ -9,7 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.otus.designsystem.mail.launch.components.MailLaunch
-import com.otus.designsystem.theme.AppIconStyle
+import com.otus.designsystem.theme.brand.AppIconStyle
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first

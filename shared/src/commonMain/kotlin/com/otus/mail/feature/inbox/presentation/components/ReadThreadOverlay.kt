@@ -20,10 +20,10 @@ import com.otus.designsystem.mail.read.components.ThreadEntry
 import com.otus.designsystem.mail.read.components.ThreadList
 import com.otus.designsystem.shared.rows.components.Unfold
 import com.otus.designsystem.shared.rows.components.UnfoldingStripCard
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.ReadTokens
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.content.ReadTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.isOwn

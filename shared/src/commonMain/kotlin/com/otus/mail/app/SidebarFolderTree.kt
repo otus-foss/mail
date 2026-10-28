@@ -7,7 +7,7 @@ import com.otus.designsystem.shared.controls.elements.LocalIconTint
 import com.otus.designsystem.shared.rows.components.Collapsible
 import com.otus.designsystem.shared.sidebar.elements.SidebarFolder
 import com.otus.designsystem.shared.sidebar.elements.SidebarFolderEntry
-import com.otus.designsystem.theme.FolderColor
+import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.folders.domain.SharedFolder
 
 /**

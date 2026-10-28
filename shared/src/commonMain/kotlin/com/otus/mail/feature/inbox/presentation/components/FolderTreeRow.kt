@@ -12,8 +12,8 @@ import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.rows.elements.nestIndent
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.sidebar.elements.SidebarExpandButton
-import com.otus.designsystem.theme.FolderColor
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.designsystem.theme.tokens.layout.PageTokens
 
 /**
  * A row of a sheet's folder tree, as the Move to and Folders sheets show it: indented by depth,

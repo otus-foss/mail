@@ -16,8 +16,8 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add_photo_alternate
 import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.designsystem.shared.people.elements.rememberImage
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.core.text.sizeText
 import com.otus.mail.feature.inbox.domain.DraftAttachment
 import com.otus.mail.feature.inbox.domain.UploadFailure

@@ -21,9 +21,9 @@ import com.otus.designsystem.shared.controls.elements.IconPill
 import com.otus.designsystem.shared.folders.elements.DestinationPill
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.theme.MoveTokens
-import com.otus.designsystem.theme.PanelTokens
-import com.otus.designsystem.theme.SheetTokens
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.designsystem.theme.tokens.selection.MoveTokens
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFolder

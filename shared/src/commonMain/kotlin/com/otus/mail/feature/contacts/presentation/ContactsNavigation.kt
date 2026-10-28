@@ -22,8 +22,8 @@ import com.otus.designsystem.shared.contacts.components.LetterIndex
 import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
 import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.overlays.components.InputSheet
-import com.otus.designsystem.theme.PageTokens
-import com.otus.designsystem.theme.panelTextStyle
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactAddress

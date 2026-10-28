@@ -14,7 +14,7 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FilterSection
 import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.overlays.components.onPressDown
-import com.otus.designsystem.theme.FilterTokens
+import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.InboxFilters

@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
-import com.otus.designsystem.theme.OtusColors
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.designsystem.theme.motionTween
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.motion.motionTween
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

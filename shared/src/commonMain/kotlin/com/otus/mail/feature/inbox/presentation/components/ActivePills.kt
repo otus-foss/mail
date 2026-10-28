@@ -9,7 +9,7 @@ import com.otus.designsystem.shared.filters.components.FolderStackChip
 import com.otus.designsystem.shared.filters.components.StackedFolder
 import com.otus.designsystem.shared.filters.elements.ChipLabel
 import com.otus.designsystem.shared.people.components.AvatarStackChip
-import com.otus.designsystem.theme.PanelTokens
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailSender

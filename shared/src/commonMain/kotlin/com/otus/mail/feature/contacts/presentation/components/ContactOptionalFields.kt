@@ -14,7 +14,7 @@ import com.otus.designsystem.resources.symbol_work
 import com.otus.designsystem.shared.contacts.components.ContactInputField
 import com.otus.designsystem.shared.contacts.components.ContactPickerField
 import com.otus.designsystem.shared.dates.components.BirthdayPicker
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.DraftValue

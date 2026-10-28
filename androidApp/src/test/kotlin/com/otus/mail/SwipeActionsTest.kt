@@ -17,8 +17,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
-import com.otus.designsystem.theme.Motion
-import com.otus.designsystem.theme.MotionSpeed
+import com.otus.designsystem.theme.motion.Motion
+import com.otus.designsystem.theme.motion.MotionSpeed
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior

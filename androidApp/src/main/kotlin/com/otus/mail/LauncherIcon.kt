@@ -4,8 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.ui.graphics.Color
-import com.otus.designsystem.theme.AccentPreset
-import com.otus.designsystem.theme.AppIconStyle
+import com.otus.designsystem.theme.brand.AppIconStyle
+import com.otus.designsystem.theme.colors.AccentPreset
 
 private const val MONOCHROME = "Monochrome"
 

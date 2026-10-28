@@ -28,8 +28,8 @@ import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.rows.components.EntryTaps
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.rows.elements.SectionCaption
-import com.otus.designsystem.theme.EntryTokens
-import com.otus.designsystem.theme.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.jscontact.AnniversaryKind
 import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.CardKey

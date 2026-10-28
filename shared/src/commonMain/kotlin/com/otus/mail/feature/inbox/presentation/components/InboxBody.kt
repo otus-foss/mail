@@ -27,10 +27,10 @@ import com.otus.designsystem.shared.feedback.components.EmptyState
 import com.otus.designsystem.shared.feedback.elements.RefreshIndicator
 import com.otus.designsystem.shared.rows.components.rowSelection
 import com.otus.designsystem.shared.swipe.components.SwipeActions
-import com.otus.designsystem.theme.EntryTokens
-import com.otus.designsystem.theme.InboxTokens
-import com.otus.designsystem.theme.OtusColors
-import com.otus.designsystem.theme.motionTween
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.motion.motionTween
+import com.otus.designsystem.theme.tokens.rows.EntryTokens
+import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.ConversationRowModel
 import com.otus.mail.feature.inbox.presentation.InboxStatus
