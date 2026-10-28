@@ -35,7 +35,6 @@ import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.IconPill
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.dates.elements.DatePill
-import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.people.components.PersonAvatar

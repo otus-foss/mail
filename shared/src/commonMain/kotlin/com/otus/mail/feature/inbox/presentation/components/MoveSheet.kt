@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,18 +25,13 @@ import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_auto_filter
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_delete
-import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.shared.controls.elements.IconPill
-import com.otus.designsystem.shared.controls.elements.LocalIconTint
 import com.otus.designsystem.shared.folders.elements.DestinationPill
 import com.otus.designsystem.shared.overlays.components.SheetFrame
-import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.shared.people.components.Recipient
-import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens

@@ -1,48 +1,9 @@
 package com.otus.mail.feature.contacts.presentation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
-import com.otus.designsystem.shared.actionbar.components.ActionBarHost
-import com.otus.designsystem.shared.contacts.components.LetterIndex
-import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
-import com.otus.designsystem.shared.overlays.components.ConfirmDialog
-import com.otus.designsystem.shared.overlays.components.InputSheet
-import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactAddress
-import com.otus.mail.feature.contacts.domain.ContactCard
-import com.otus.mail.feature.contacts.domain.ContactPerson
-import com.otus.mail.feature.contacts.domain.MergePlan
-import com.otus.mail.feature.contacts.presentation.components.ContactList
-import com.otus.mail.feature.contacts.presentation.components.ContactListActions
-import com.otus.mail.feature.contacts.presentation.components.ContactListContent
-import com.otus.mail.feature.contacts.presentation.components.ContactsEmpty
-import com.otus.mail.feature.contacts.presentation.components.ContactsFilterPanel
-import com.otus.mail.feature.contacts.presentation.components.ContactsListBar
-import com.otus.mail.feature.contacts.presentation.components.ContactsPanel
-import com.otus.mail.feature.contacts.presentation.components.ContactsSelectionBar
-import com.otus.mail.feature.contacts.presentation.components.ImportSheet
-import com.otus.mail.feature.contacts.presentation.components.ListBarActions
-import com.otus.mail.feature.contacts.presentation.components.MergeSheet
-import com.otus.mail.feature.contacts.presentation.components.SelectionBarActions
-import com.otus.mail.feature.contacts.presentation.components.emptyKind
 
 /** Where the Contacts page leads. */
 internal class ContactsNavigation(
