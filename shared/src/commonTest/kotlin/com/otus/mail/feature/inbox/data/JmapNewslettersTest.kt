@@ -18,6 +18,8 @@ import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class JmapNewslettersTest {
@@ -71,18 +73,72 @@ class JmapNewslettersTest {
             assertEquals("Sentry weekly digest", list?.name)
             assertEquals(listOf("n4", "n3"), list?.olderIds, "Mail in Trash does not count")
             assertEquals(1.0, list?.perWeek)
+            assertEquals(2, requests.size)
             val query = requests.last()
-            assertTrue("\"header\":[\"List-Id\",\"weekly.sentry.io\"]" in query, query)
-            assertTrue("\"before\":\"2026-10-15T08:00:00Z\"" in query && "\"limit\":100" in query, query)
+            val filter =
+                """{"operator":"AND","conditions":[{"header":["List-Id","weekly.sentry.io"]},""" +
+                    """{"before":"2026-10-15T08:00:00Z"}]}"""
+            assertTrue("\"filter\":$filter" in query, query)
+            assertTrue("\"limit\":100" in query, query)
+        }
+
+    @Test
+    fun withoutAListIdOlderMailUsesTheFirstSenderAndOriginalTimestamp() =
+        runTest {
+            val first =
+                WITHOUT_LIST_ID
+                    .replace(
+                        "\"email\": \"weekly@sentry.io\"}",
+                        "\"email\": \"Weekly@Sentry.io\"}, {\"email\": \"other@example.org\"}",
+                    ).replace("2026-10-15T08:00:00Z", "2026-10-15T08:00:00.000Z")
+            val list =
+                newsletters { body ->
+                    if ("Email/query" in body) OLDER else first
+                }.list(newsletter)
+            assertEquals("Sentry", list?.name)
+            assertEquals(listOf("n4", "n3"), list?.olderIds)
+            assertEquals(1.0, list?.perWeek)
+            assertEquals(2, requests.size)
+            val query = requests.last()
+            val filter =
+                """{"operator":"AND","conditions":[{"from":"Weekly@Sentry.io"},""" +
+                    """{"before":"2026-10-15T08:00:00.000Z"}]}"""
+            assertTrue("\"filter\":$filter" in query, query)
+            assertTrue("\"limit\":100" in query, query)
+        }
+
+    @Test
+    fun withoutAListIdOrUsableFirstSenderNoOlderMailIsQueried() =
+        runTest {
+            listOf(
+                "null",
+                "[]",
+                """[{"email":""}]""",
+                """[{"email":" "}]""",
+                """[{"email":" "},{"email":"other@example.org"}]""",
+            ).forEach { from ->
+                requests.clear()
+                val first =
+                    WITHOUT_LIST_ID.replace(
+                        """[{"name": "Sentry", "email": "weekly@sentry.io"}]""",
+                        from,
+                    )
+                val list = assertNotNull(newsletters { first }.list(newsletter), from)
+                assertEquals("Sentry", list.name, from)
+                assertTrue(list.olderIds.isEmpty(), from)
+                assertNull(list.perWeek, from)
+                assertEquals(1, requests.size, from)
+            }
         }
 
     @Test
     fun mailWithoutListHeadersIsNoList() =
         runTest {
             val plain =
-                FIRST
-                    .replace(", \"header:List-Id:asText\": \"Sentry weekly digest <weekly.sentry.io>\"", "")
-                    .replace("\"header:List-Unsubscribe:asURLs\": [\"https://sentry.io/u/1\"]", "\"subject\": \"Hi\"")
+                WITHOUT_LIST_ID.replace(
+                    "\"header:List-Unsubscribe:asURLs\": [\"https://sentry.io/u/1\"]",
+                    "\"subject\": \"Hi\"",
+                )
             assertEquals(null, newsletters { plain }.list(newsletter))
             assertEquals(1, requests.size)
         }
@@ -165,6 +221,8 @@ class JmapNewslettersTest {
               "from": [{"name": "Sentry", "email": "weekly@sentry.io"}],
               "header:List-Unsubscribe:asURLs": ["https://sentry.io/u/1"], "header:List-Id:asText": "Sentry weekly digest <weekly.sentry.io>"}]}, "c0"],
             ["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"}, {"id": "t", "role": "trash"}]}, "c1"]]}"""
+        val WITHOUT_LIST_ID =
+            FIRST.replace(", \"header:List-Id:asText\": \"Sentry weekly digest <weekly.sentry.io>\"", "")
         const val OLDER = """{"methodResponses": [
             ["Email/query", {"queryState": "q", "ids": ["n4", "x", "n3"]}, "c0"],
             ["Email/get", {"state": "e", "list": [

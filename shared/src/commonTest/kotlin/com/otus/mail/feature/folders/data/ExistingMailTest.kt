@@ -53,11 +53,23 @@ class ExistingMailTest {
                 RuleCondition.Header("X-Project", HeaderOperator.Contains, "web") to
                     """{"header":["X-Project","web"]}""",
                 RuleCondition.Size(over = false, bytes = 500) to """{"maxSize":500}""",
+                RuleCondition.Size(over = true, bytes = 0) to """{"minSize":1}""",
+                RuleCondition.Size(over = false, bytes = 0) to """{"maxSize":0}""",
+                RuleCondition.Size(over = true, bytes = Long.MAX_VALUE - 1) to
+                    """{"minSize":9223372036854775807}""",
             )
         more.forEach { (condition, filter) ->
             val expected = """{"operator":"AND","conditions":[{"inMailbox":"I"},$filter]}"""
             assertEquals(expected, emailFilter(FolderRule(condition), listOf("I")).toString())
         }
+    }
+
+    @Test
+    fun anEmptyMailboxScopeKeepsItsEmptyOrCondition() {
+        assertEquals(
+            """{"operator":"AND","conditions":[{"operator":"OR","conditions":[]},{"from":"@agency.example"}]}""",
+            emailFilter(FolderRule(agency), emptyList()).toString(),
+        )
     }
 
     @Test
@@ -69,6 +81,7 @@ class ExistingMailTest {
             RuleCondition.Text(TextField.Subject, TextOperator.StartsWith, "[Acme]"),
             RuleCondition.Text(TextField.Subject, TextOperator.Matches, "Invoice #*"),
             RuleCondition.Header("X-Project", HeaderOperator.Is, "website"),
+            RuleCondition.Text(TextField.Subject, TextOperator.StartsWith, "[Acme]", negated = true),
         ).forEach { assertNull(emailFilter(FolderRule(listOf(agency, it)), listOf("I")), "$it") }
     }
 

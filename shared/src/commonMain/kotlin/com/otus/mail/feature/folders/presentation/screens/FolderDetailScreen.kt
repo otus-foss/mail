@@ -22,8 +22,6 @@ import com.otus.mail.feature.folders.presentation.RuleSheetDraft
 import com.otus.mail.feature.folders.presentation.canMove
 import com.otus.mail.feature.folders.presentation.components.AddRuleSheet
 import com.otus.mail.feature.folders.presentation.components.DeleteFolderRow
-import com.otus.mail.feature.folders.presentation.components.FolderActions
-import com.otus.mail.feature.folders.presentation.components.FolderColorChoice
 import com.otus.mail.feature.folders.presentation.components.FolderColorRow
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.folders.presentation.components.FolderNameRow
