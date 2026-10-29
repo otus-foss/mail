@@ -27,6 +27,7 @@ import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.isOwn
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ReadState
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import kotlinx.datetime.LocalDate
@@ -91,7 +92,7 @@ private fun threadEntry(
     own: OwnAddresses,
     today: LocalDate,
 ): ThreadEntry {
-    val name = if (page.isOwn(own, page.sender)) "You" else page.sender.name.ifBlank { page.sender.address }
+    val name = if (page.isOwn(own, page.sender)) "You" else page.sender.shownName
     return ThreadEntry(
         name,
         page.sender.chipAvatar,

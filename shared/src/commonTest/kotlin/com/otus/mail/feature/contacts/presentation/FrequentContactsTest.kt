@@ -4,6 +4,7 @@ import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.contacts.domain.MailTrace
 import com.otus.mail.feature.contacts.domain.MailTraceSource
 import com.otus.mail.feature.contacts.domain.MailTraces
+import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -30,7 +31,7 @@ class FrequentContactsTest {
 
             val again = frequent()
             assertEquals(10.0, again.scores["jana@example.org"])
-            assertTrue(store.values.getValue(ContactStore.FREQUENT).isNotEmpty())
+            assertTrue(store.saved.getValue(ContactStore.FREQUENT).isNotEmpty())
         }
 
     @Test
@@ -65,7 +66,7 @@ class FrequentContactsTest {
             frequent().refresh()
             advanceUntilIdle()
 
-            assertEquals("[]", store.values[ContactStore.EDITS])
+            assertEquals("[]", store.saved[ContactStore.EDITS])
         }
 
     private inner class CountingSource : MailTraceSource {
@@ -82,13 +83,7 @@ class FrequentContactsTest {
         }
     }
 
-    private class MemoryStore : ContactStore {
-        var values: Map<String, String> = emptyMap()
-
-        override fun read(): Map<String, String> = values
-
-        override fun write(values: Map<String, String>) {
-            this.values = values
-        }
-    }
+    private class MemoryStore :
+        MemoryMapStore(),
+        ContactStore
 }

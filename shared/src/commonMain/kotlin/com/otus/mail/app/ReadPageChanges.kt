@@ -62,16 +62,9 @@ internal class ReadPageChanges(
             feed.change(row.id, { it.without(email.emailId) }, undo = { it.copy(conversation = row.conversation) })
         var moved = false
         val move =
-            scope.launch {
+            scope.saveChange(change, feed, folders, "Couldn't delete the message. Try again.", onRefused = onBack) {
                 moved = services.mover.move(email, target.folderId, leaving)
-                if (moved) {
-                    change.confirm()
-                    folders.refresh()
-                } else {
-                    change.rollBack()
-                    onBack()
-                    feed.report("Couldn't delete the message. Try again.")
-                }
+                moved
             }
         toasts.moved(target) {
             scope.launch {

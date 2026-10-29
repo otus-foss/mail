@@ -46,9 +46,6 @@ internal fun MailMessage.isOwn(
 private val MailSender.key: String
     get() = address.trim().lowercase().ifBlank { name }
 
-private val MailSender.shownName: String
-    get() = name.ifBlank { address }
-
 /** Names the recipient of a note the user wrote only to themselves. */
 const val SELF_NAME = "yourself"
 

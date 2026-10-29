@@ -12,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.barLayout
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.recipients
 
 /**
@@ -38,14 +39,7 @@ internal fun ComposeBar(
                 MailAction.Discard -> onDiscard
                 else -> null
             }
-        val symbol =
-            if (action == MailAction.Send &&
-                scheduled
-            ) {
-                Res.drawable.symbol_schedule_send
-            } else {
-                action.symbol
-            }
+        val symbol = if (action == MailAction.Send && scheduled) Res.drawable.symbol_schedule_send else action.symbol
         run?.let { OfferedAction(action.buttonLabel(), symbol, leaves = true, run = it) }
     }
     MailActionBar(
@@ -61,12 +55,10 @@ internal fun ComposeBar(
 /** [lead], "Send to" or "Sends to", above "Grace" with her avatar; the first two avatars and a count for several. */
 private fun List<MailSender>.barContext(lead: String): BarContext? {
     val first = firstOrNull() ?: return null
-    val avatar = chipAvatar(first.avatar, first.name, first.address)
-    val name = first.name.ifBlank { first.address }
+    val name = first.shownName
     return if (size == 1) {
-        BarContext(name.substringBefore(' '), BarToken.Person(avatar), "to $name", lead = lead)
+        BarContext(name.substringBefore(' '), BarToken.Person(first.chipAvatar), "to $name", lead = lead)
     } else {
-        val second = this[1].let { chipAvatar(it.avatar, it.name, it.address) }
-        BarContext("$size people", BarToken.People(avatar, size, second), "to $size people", lead = lead)
+        groupContext(this, lead)
     }
 }

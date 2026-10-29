@@ -1,7 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -22,7 +20,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
-import com.otus.dateformat.DateFormatter
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -31,8 +28,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowDialog
-import java.io.File
 import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
@@ -254,14 +249,5 @@ class CalendarDragTest {
         compose.onNodeWithText(relativeIsoRange(minOf(start, end), maxOf(start, end))).assertIsDisplayed()
     }
 
-    private fun saveScreenshot(name: String) {
-        val bitmap =
-            compose.runOnIdle {
-                val view = requireNotNull(ShadowDialog.getLatestDialog().window).decorView
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-            }
-        val file = File("build/reports/pickers/$name.png")
-        requireNotNull(file.parentFile).mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
+    private fun saveScreenshot(name: String) = compose.dialogBitmap().savePng("build/reports/pickers/$name.png")
 }

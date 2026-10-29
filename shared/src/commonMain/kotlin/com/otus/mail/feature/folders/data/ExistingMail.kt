@@ -4,18 +4,16 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapException
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
+import com.otus.jmap.jmapPatch
+import com.otus.mail.core.mail.ARCHIVE_ROLE
 import com.otus.mail.core.mail.EmailFoldersType
+import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxType
-import com.otus.mail.core.mail.pointer
-import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderStorageException
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Mail already in the Inbox and Archive that a new rule matches. Sieve only sees mail as it
@@ -67,9 +65,9 @@ internal class ExistingMail(
         val filter = emailFilter(rule, listOf(source)) ?: return 0
         val batch = (account.session.maxObjectsInSet ?: MAX_BATCH).coerceIn(1, MAX_BATCH).toInt()
         val patch =
-            buildJsonObject {
-                put("mailboxIds/${pointer(source)}", JsonNull)
-                put("mailboxIds/${pointer(target)}", JsonPrimitive(true))
+            jmapPatch {
+                remove("mailboxIds", source)
+                set(JsonPrimitive(true), "mailboxIds", target)
             }
         var moved = 0
         var rounds = 0

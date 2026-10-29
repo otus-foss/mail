@@ -80,7 +80,7 @@ private fun IdentitySection(
                     sender.address.equals(selected.address, ignoreCase = true),
             onClick = { onSelect(identity) },
             detail = sender.address.takeIf { named },
-        ) { PersonAvatar(chipAvatar(sender.avatar, sender.name, sender.address), ComposeTokens.dropdownAvatarSize) }
+        ) { PersonAvatar(sender.chipAvatar, ComposeTokens.dropdownAvatarSize) }
     }
 }
 

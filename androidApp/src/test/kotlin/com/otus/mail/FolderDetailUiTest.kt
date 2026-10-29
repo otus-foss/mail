@@ -10,7 +10,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.mail.app.App
-import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.readColors
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
@@ -29,16 +28,7 @@ import org.robolectric.annotation.GraphicsMode
 class FolderDetailUiTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer()
-    private val store =
-        object : FolderColorStore {
-            var saved = emptyMap<String, String>()
-
-            override fun read() = saved
-
-            override fun write(values: Map<String, String>) {
-                saved = values
-            }
-        }
+    private val store = InMemoryFolderColorStore()
 
     private fun openFolder(name: String) {
         compose.runOnUiThread {
@@ -50,12 +40,10 @@ class FolderDetailUiTest {
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Folders & rules").performClick()
         val row = hasText(name) and hasClickAction() and !isSelectable()
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(row)
         compose.onNode(row).performClick()
-        waitFor("Delete folder")
+        compose.waitForText("Delete folder")
     }
-
-    private fun waitFor(text: String) = compose.waitUntil(TIMEOUT) { count(text) > 0 }
 
     private fun count(text: String) = compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().size
 
@@ -65,7 +53,7 @@ class FolderDetailUiTest {
         compose.onNodeWithText("3 messages · 2 unread · 1 folder inside").assertExists()
         compose.onNode(hasText("Name") and hasText("Receipts") and hasClickAction()).assertExists()
         compose.onNodeWithText("Only changes the folder icon").assertExists()
-        waitFor("New mail that matches any of these goes here")
+        compose.waitForText("New mail that matches any of these goes here")
         compose.onNodeWithText("Add rule").assertExists()
         compose.onNodeWithText("Empty its messages and subfolders first").assertExists()
         compose.onNode(hasText("Delete folder") and hasClickAction()).assertDoesNotExist()
@@ -80,7 +68,7 @@ class FolderDetailUiTest {
         compose.onNodeWithText("Delete Travel?").assertExists()
         compose.onNodeWithText("Delete").performClick()
         compose.waitUntil(TIMEOUT) { server.calls.any { "Mailbox/set" in it && "\"destroy\":[\"t\"]" in it } }
-        waitFor("Tap a folder to edit it, drag to reorder.")
+        compose.waitForText("Tap a folder to edit it, drag to reorder.")
         compose.waitUntil(TIMEOUT) { count("Travel") == 0 }
     }
 
@@ -109,7 +97,7 @@ class FolderDetailUiTest {
     fun aSharedMailboxHasNoColorOrRules() {
         server.sharedFolders += """{"id": "d", "name": "Design reviews", "myRights": {"mayAddItems": false}}"""
         openFolder("Design reviews")
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.waitForCall(server, "SieveScript/get")
         compose.waitForIdle()
         compose.onNodeWithText("Only changes the folder icon").assertDoesNotExist()
         compose.onNodeWithText("Rules").assertDoesNotExist()

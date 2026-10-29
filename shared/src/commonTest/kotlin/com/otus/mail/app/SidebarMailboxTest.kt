@@ -1,9 +1,9 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.SENT_ROLE
 import com.otus.mail.feature.inbox.domain.SidebarPin
 import kotlin.test.Test
 import kotlin.test.assertEquals

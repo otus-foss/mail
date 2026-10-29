@@ -11,6 +11,8 @@ import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EmailFolders
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailObject
@@ -24,7 +26,7 @@ import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.condition
 import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.core.mail.operator
-import com.otus.mail.core.mail.pointer
+import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -33,10 +35,8 @@ import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
@@ -69,18 +69,10 @@ class JmapNewsletters(
         emailIds: List<String>,
     ): Boolean {
         return cache.withAccount(accountId) { accountCache ->
+            if (emailIds.isEmpty()) return@withAccount true
             val patches =
-                mailCallOr(null) {
-                    if (emailIds.isEmpty()) {
-                        emptyMap()
-                    } else {
-                        mailAccount(
-                            connections,
-                            logins,
-                            accountId,
-                        )?.archivePatches(emailIds)
-                    }
-                } ?: return@withAccount false
+                mailCallOr(null) { mailAccount(connections, logins, accountId)?.archivePatches(emailIds) }
+                    ?: return@withAccount false
             patches.isEmpty() ||
                 updateAccountEmails(connections, logins, accountId, patches, accountCache).containsAll(patches.keys)
         }
@@ -100,7 +92,7 @@ class JmapNewsletters(
         val skipped =
             first[boxes]
                 .list
-                .filter { it.role in SKIPPED_ROLES }
+                .filter { it.role in BIN_ROLES }
                 .map { it.id }
                 .toSet()
         val older =
@@ -145,21 +137,11 @@ class JmapNewsletters(
                 folders = call(GetMethod(EmailFoldersType, id, JmapIds.Of(emailIds), listOf("id", "mailboxIds")))
             }
         val target = response[archive].ids.firstOrNull() ?: return null
-        return response[folders].list.associate { email ->
-            email.id to
-                buildJsonObject {
-                    email.mailboxIds.keys
-                        .filter { it != target }
-                        .forEach { put("mailboxIds/${pointer(it)}", JsonNull) }
-                    put("mailboxIds/${pointer(target)}", JsonPrimitive(true))
-                }
-        }
+        return response[folders].list.associate { email -> email.id to movePatch(email.mailboxIds.keys, target) }
     }
 
     private companion object {
         const val SCAN = 100
-        const val ARCHIVE_ROLE = "archive"
-        val SKIPPED_ROLES = setOf("trash", "junk")
         val LIST_PROPERTIES =
             listOf("id", "receivedAt", "from", LIST_ID_PROPERTY, LIST_UNSUBSCRIBE_PROPERTY)
         val OLDER_PROPERTIES = listOf("id", "receivedAt", "mailboxIds")

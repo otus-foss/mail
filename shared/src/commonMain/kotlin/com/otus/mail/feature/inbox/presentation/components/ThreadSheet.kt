@@ -15,6 +15,7 @@ import com.otus.designsystem.shared.selection.components.ListCaption
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.QuoteMode
 import com.otus.mail.feature.inbox.domain.ThreadMessage
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ReplyThread
 
 /** The earlier messages of a reply's thread above its bar; tapping it runs [onOpen]. */
@@ -28,7 +29,7 @@ internal fun ReplyThreadStrip(
     ThreadStrip(
         entries,
         summary = "${entries.size} earlier messages",
-        detail = "Latest: ${latest.sender.name.ifBlank { latest.sender.address }}, ${latest.date.dayAndMonth}",
+        detail = "Latest: ${latest.sender.shownName}, ${latest.date.dayAndMonth}",
         onOpen = onOpen,
     )
 }
@@ -56,7 +57,7 @@ internal fun ThreadSheet(
 }
 
 private fun ThreadMessage.entry(): ThreadEntry =
-    ThreadEntry(sender.name.ifBlank { sender.address }, sender.chipAvatar(), date.dayAndMonth, preview)
+    ThreadEntry(sender.shownName, sender.chipAvatar, date.dayAndMonth, preview)
 
 private val QuoteMode.label: String
     get() =

@@ -1,5 +1,7 @@
 package com.otus.mail.app
 
+import com.otus.accounts.presentation.toChipAvatar
+import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.colors.FolderColor
@@ -73,4 +75,4 @@ private fun AccountFolders.filterAccount(color: (MailFolder) -> FolderColor): Fi
 private fun avatar(
     name: String,
     address: String,
-): ChipAvatar = generatedAvatar(name, address).let { ChipAvatar(it.initials, it.colorIndex) }
+): ChipAvatar = ResolvedAvatar(generatedAvatar(name, address)).toChipAvatar()

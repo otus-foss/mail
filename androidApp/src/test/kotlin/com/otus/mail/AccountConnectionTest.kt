@@ -123,16 +123,12 @@ class AccountConnectionTest {
         compose.onNodeWithContentDescription("Username").performTextInput("ada@example.org")
         compose.onNodeWithContentDescription("Password").performTextInput("wrong")
         compose.onNodeWithText("Connect").performClick()
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("rejected", substring = true)).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitForNode(hasText("rejected", substring = true))
         assertEquals("Nothing is saved when sign-in fails", 0, store.logins().size)
 
         compose.onNodeWithContentDescription("Password").performTextReplacement("secret")
         compose.onNodeWithText("Connect").performClick()
-        compose.waitUntil(
-            TIMEOUT,
-        ) { compose.onAllNodes(hasText("ada@other.example")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(hasText("ada@other.example"))
         compose.onNodeWithContentDescription("Server").assertDoesNotExist()
         // The account's addresses are avatar pills now, so the detail below its name keeps only the server.
         compose.onNodeWithText("mail.example.org").performScrollTo().assertIsDisplayed()
@@ -143,11 +139,10 @@ class AccountConnectionTest {
 
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNode(hasText("Inbox") and isSelectable()).performClick()
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Engine notes")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(hasText("Engine notes"))
     }
 
     private companion object {
-        const val TIMEOUT = 5_000L
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {}, "urn:ietf:params:jmap:mail": {},
             "urn:ietf:params:jmap:submission": {}},
             "accounts": {"d1": {"name": "Ada Lovelace", "accountCapabilities": {"urn:ietf:params:jmap:mail": {},

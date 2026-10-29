@@ -46,25 +46,15 @@ private fun restored(lines: List<String>): InboxFilters {
 
     fun values(kind: String) = parts.filter { it.first() == kind }.map { it.drop(1) }
     val legacy = values(LEGACY_SHOW).mapNotNull { (name) -> legacyShow(name) }
-    val legacyFields = values(LEGACY_AS).mapNotNull { (name) -> enumOf<RecipientField>(name) }.toSet()
+    val legacyFields = values(LEGACY_AS).enums<RecipientField>().toSet()
     val senders = values(SENDER).filter { it.size > 1 }.map { SenderKey(it.first(), it.drop(1).toSet()) }
     return InboxFilters(
         status =
-            values(STATUS).firstNotNullOfOrNull { (name) -> enumOf<ReadStatus>(name) }
+            values(STATUS).enums<ReadStatus>().firstOrNull()
                 ?: legacy.firstNotNullOfOrNull { it as? ReadStatus }
                 ?: ReadStatus.All,
-        quick =
-            (
-                values(QUICK).mapNotNull { (name) ->
-                    enumOf<QuickFacet>(name)
-                } + legacy.filterIsInstance<QuickFacet>()
-            ).toSet(),
-        types =
-            (
-                values(TYPE).mapNotNull { (name) ->
-                    enumOf<TypeFacet>(name)
-                } + legacy.filterIsInstance<TypeFacet>()
-            ).toSet(),
+        quick = (values(QUICK).enums<QuickFacet>() + legacy.filterIsInstance<QuickFacet>()).toSet(),
+        types = (values(TYPE).enums<TypeFacet>() + legacy.filterIsInstance<TypeFacet>()).toSet(),
         from = (senders + values(LEGACY_FROM).map { (address) -> SenderKey.of(address) }).toSet(),
         sentTo = values(SENT_TO).filter { it.size == 2 }.map { (id, address) -> OwnAddress(id, address) }.toSet(),
         to = values(RECIPIENT).map { it.single() }.toSet(),
@@ -95,6 +85,9 @@ private fun legacyShow(name: String): Any? =
     }
 
 private inline fun <reified T : Enum<T>> enumOf(name: String?): T? = enumValues<T>().firstOrNull { it.name == name }
+
+/** The choices these lines name by their first value, without those this version does not know. */
+private inline fun <reified T : Enum<T>> List<List<String>>.enums(): List<T> = mapNotNull { (name) -> enumOf<T>(name) }
 
 private fun line(vararg values: String): String = values.joinToString(SEPARATOR)
 

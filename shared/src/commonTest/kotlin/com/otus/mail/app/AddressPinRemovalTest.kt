@@ -7,20 +7,15 @@ import com.otus.mail.feature.inbox.domain.AddressPins
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.readPins
 import com.otus.mail.feature.inbox.domain.writePins
+import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class AddressPinRemovalTest {
-    private class MemoryStore : AddressPinStore {
-        var saved = emptyMap<String, String>()
-
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
+    private class MemoryStore :
+        MemoryMapStore(),
+        AddressPinStore
 
     @Test
     fun removingAnAccountForgetsOnlyItsPins() =

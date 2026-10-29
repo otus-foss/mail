@@ -13,12 +13,8 @@ internal fun LocalDateTime.sendLaterLabel(now: LocalDateTime): String {
     val day =
         when {
             date == now.date -> "Today"
-
             date == now.date.plus(DatePeriod(days = 1)) -> weekday
-
-            else -> "$weekday ${date.day} ${month.name.take(
-                ABBREVIATION,
-            ).lowercase().replaceFirstChar(Char::uppercase)}"
+            else -> "$weekday $dayAndMonth"
         }
     return "$day, $clock"
 }
@@ -31,16 +27,15 @@ private val LocalDateTime.dayAndMonth: String
 
 /** A date as the day and the short month, such as "11 Oct". */
 internal val LocalDate.dayAndMonth: String
-    get() = "$day ${month.name.take(ABBREVIATION).lowercase().replaceFirstChar(Char::uppercase)}"
+    get() = "$day ${month.name.abbreviated()}"
 
 private val LocalDateTime.weekday: String
-    get() =
-        date.dayOfWeek.name
-            .take(ABBREVIATION)
-            .lowercase()
-            .replaceFirstChar(Char::uppercase)
+    get() = date.dayOfWeek.name.abbreviated()
 
 private val LocalDateTime.clock: String
     get() = "$hour:${minute.toString().padStart(2, '0')}"
+
+/** An enum's name, such as MONDAY, as its first three letters: "Mon". */
+private fun String.abbreviated(): String = take(ABBREVIATION).lowercase().replaceFirstChar(Char::uppercase)
 
 private const val ABBREVIATION = 3

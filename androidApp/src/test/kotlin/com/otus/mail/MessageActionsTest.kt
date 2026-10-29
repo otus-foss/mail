@@ -39,10 +39,10 @@ class MessageActionsTest {
                 App(services = server.services(), behaviorState = MailBehaviorState(initial = behavior))
             }
         }
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         compose.onNodeWithText("Welcome").performClick()
         // Folder actions appear once folders and rules have loaded.
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.waitForCall(server, "SieveScript/get")
         compose.waitForIdle()
     }
 
@@ -62,14 +62,8 @@ class MessageActionsTest {
         compose.onNodeWithText(label).performClick()
     }
 
-    private fun waitFor(text: String) {
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
-        }
-    }
-
     private fun lastUpdate(): String {
-        compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it } }
+        compose.waitForCall(server, "Email/set")
         return server.calls.last { "Email/set" in it }
     }
 
@@ -171,7 +165,7 @@ class MessageActionsTest {
         server.refuseUpdates = true
         openMessage(MailBehavior(markReadOnOpen = false))
         chooseFromMenu("Flag")
-        waitFor("Couldn't change the message")
+        compose.waitForText("Couldn't change the message")
         assertTrue(menuOffers("Flag"))
         assertFalse(menuOffers("Unflag"))
     }
@@ -192,7 +186,7 @@ class MessageActionsTest {
         server.alsoIn += "r"
         openMessage(MailBehavior(markReadOnOpen = false))
         // The inbox is the folder the message was opened from, so the strip names only Receipts.
-        waitFor("Also in")
+        compose.waitForText("Also in")
         compose.onNodeWithText("Also in").performClick()
         compose.onNode(hasText("Amazon") and hasClickAction()).performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()

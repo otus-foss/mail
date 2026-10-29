@@ -1,5 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.testing.MemoryMapStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -9,14 +11,9 @@ import kotlin.test.assertTrue
 class FolderColorsTest {
     /** Keeps names as a platform store would, by storage value. */
     private class MemoryStore(
-        var saved: Map<String, String> = emptyMap(),
-    ) : FolderColorStore {
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
+        saved: Map<String, String> = emptyMap(),
+    ) : MemoryMapStore(saved),
+        FolderColorStore
 
     private val adaClients = MailFolder("ada login", "M1", "Clients")
     private val bobClients = MailFolder("bob login", "M1", "Clients")

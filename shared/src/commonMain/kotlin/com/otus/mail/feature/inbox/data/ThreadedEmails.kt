@@ -2,7 +2,6 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnection
-import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.JmapRequestBuilder
 import com.otus.jmap.JmapResponse
@@ -88,7 +87,7 @@ private fun memberGroup(
     CallGroup(size = 1) {
         val members = call(GetMethod(EmailType, accountId, JmapIds.Of(ids), MEMBER_PROPERTIES))
         return@CallGroup { response: JmapResponse ->
-            FetchedMail(members = refusable { response[members].list }.orEmpty())
+            FetchedMail(members = unlessRefused { response[members].list }.orEmpty())
         }
     }
 
@@ -102,20 +101,14 @@ private fun JmapRequestBuilder.threadCalls(
         call(GetMethod(EmailType, accountId, JmapIds.Result(found.resultOf("/list/*/emailIds")), MEMBER_PROPERTIES))
     return { response ->
         // A thread without its members is no use, so a refused member call drops both.
-        refusable { FetchedMail(threads = response[found].list, members = response[members].list) } ?: FetchedMail()
+        unlessRefused { FetchedMail(threads = response[found].list, members = response[members].list) } ?: FetchedMail()
     }
 }
 
 private fun FetchedMail.withRows(rows: List<EmailObject>) = FetchedMail(rows, threads, members)
 
-private inline fun <T> refusable(read: () -> T): T? =
-    try {
-        read()
-    } catch (expected: JmapException.MethodError) {
-        null
-    }
-
-private val EmailObject.receivedMillis: Long?
+/** When the email arrived, in epoch milliseconds, for the cache to trim old mail by. */
+internal val EmailObject.receivedMillis: Long?
     get() = Instant.parseOrNull(receivedAt)?.toEpochMilliseconds()
 
 /** What a conversation row reads from each email of its thread. */

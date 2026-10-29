@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.mail.JUNK_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
@@ -55,5 +56,3 @@ private fun List<AccountFolders>.junkFolderId(accountId: String): String? =
         ?.folders
         ?.firstOrNull { it.role == JUNK_ROLE }
         ?.id
-
-private const val JUNK_ROLE = "junk"

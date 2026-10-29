@@ -96,10 +96,12 @@ internal fun PersonContactSheet(
                         Modifier.fillMaxWidth(),
                     )
                     if (writable.isNotEmpty()) {
-                        PlainAction("Add to another contact…", Res.drawable.symbol_group_add, {
-                            picking =
-                                true
-                        }, Modifier.fillMaxWidth())
+                        PlainAction(
+                            "Add to another contact…",
+                            Res.drawable.symbol_group_add,
+                            { picking = true },
+                            Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }

@@ -43,6 +43,7 @@ import com.otus.mail.feature.contacts.presentation.ContactNavigation
 import com.otus.mail.feature.contacts.presentation.ContactPage
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.book
+import com.otus.mail.feature.contacts.presentation.canWrite
 import com.otus.mail.feature.contacts.presentation.card
 import com.otus.mail.feature.contacts.presentation.components.ContactAvatarSheet
 import com.otus.mail.feature.contacts.presentation.components.ContactDetails
@@ -188,7 +189,7 @@ private fun PersonBody(
     val refusedIn = person.cards.firstOrNull { it.sync is CardSync.Refused }
     val saveTo = state.writableBooks.firstOrNull { b -> refusedIn?.books?.contains(b.key) == false }
     val main = person.main
-    val writable = main.books.all { state.book(it)?.canWrite == true }
+    val writable = state.canWrite(main)
     var editing by remember { mutableStateOf(false) }
     if (editing) {
         val address = main.emails.firstOrNull()?.value

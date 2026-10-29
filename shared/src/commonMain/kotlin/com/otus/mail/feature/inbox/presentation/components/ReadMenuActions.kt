@@ -6,6 +6,7 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.feature.inbox.domain.withFlag
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
@@ -150,7 +151,7 @@ internal class ReadMenuActions(
 
     private fun block(page: MailMessage) {
         val blocks = read.services.blocks ?: return
-        val name = page.sender.name.ifBlank { page.sender.address }
+        val name = page.sender.shownName
         read.effects.launch {
             val blocked = blocks.block(page)
             val text = if (blocked) "Mail from $name now goes to Spam" else "Couldn't block $name. Try again."

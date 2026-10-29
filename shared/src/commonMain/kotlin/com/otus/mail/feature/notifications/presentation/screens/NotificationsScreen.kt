@@ -169,8 +169,8 @@ private fun PushDeliveryStatus?.label(periodicChecks: Boolean): String {
 
 private fun NotificationSettingsState.deliveryNote(): String =
     when {
-        !this.periodicChecks -> {
-            if (this.distributors.isEmpty()) {
+        !periodicChecks -> {
+            if (distributors.isEmpty()) {
                 "Apple push is not configured in this build."
             } else {
                 "Apple delivers encrypted change notices. Alerts show no message content. " +
@@ -187,7 +187,7 @@ private fun NotificationSettingsState.deliveryNote(): String =
             "The push app sees only encrypted notices that something changed, never your mail."
         }
 
-        this.distributors.any { it.isGoogle } -> {
+        distributors.any { it.isGoogle } -> {
             "Choose Google Play services for instant delivery without an extra app."
         }
 

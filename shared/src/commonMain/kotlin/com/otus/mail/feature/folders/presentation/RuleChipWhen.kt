@@ -43,9 +43,10 @@ private fun daysText(days: Set<DayOfWeek>): String =
 
         else -> {
             days.sorted().joinToString(", ") { day ->
-                day.name.take(SHORT_DAY).lowercase().replaceFirstChar {
-                    it.uppercase()
-                }
+                day.name
+                    .take(SHORT_DAY)
+                    .lowercase()
+                    .replaceFirstChar { it.uppercase() }
             }
         }
     }

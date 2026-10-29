@@ -10,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -17,7 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JmapMailSourceTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
     private val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")
 
     private val inbox =

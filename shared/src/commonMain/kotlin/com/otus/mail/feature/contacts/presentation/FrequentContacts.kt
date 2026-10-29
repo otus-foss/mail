@@ -48,14 +48,13 @@ internal class FrequentContacts(
                 val logins = source.logins()
                 val due =
                     logins.filter { id ->
-                        scans[id]?.let { now().toEpochMilliseconds() - it.atMillis >= MAX_AGE }
-                            ?: true
+                        val scan = scans[id]
+                        scan == null || now().toEpochMilliseconds() - scan.atMillis >= MAX_AGE
                     }
                 val fresh =
                     due.mapNotNull { id ->
                         source.traces(id)?.let { traces ->
-                            id to
-                                FrequentScan(now().toEpochMilliseconds(), frequencyScores(traces, now()))
+                            id to FrequentScan(now().toEpochMilliseconds(), frequencyScores(traces, now()))
                         }
                     }
                 scans = (scans + fresh).filterKeys { it in logins }

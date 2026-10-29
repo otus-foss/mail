@@ -83,9 +83,8 @@ fun SignatureEditorScreen(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(
-                        PageTokens.pageInset,
-                    ).verticalScroll(rememberScrollState())
+                    .padding(PageTokens.pageInset)
+                    .verticalScroll(rememberScrollState())
                     .padding(padding),
             ) {
                 SignaturePanel(

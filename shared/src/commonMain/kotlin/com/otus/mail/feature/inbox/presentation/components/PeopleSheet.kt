@@ -11,6 +11,7 @@ import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.Participant
 import com.otus.mail.feature.inbox.domain.ParticipantRole
+import com.otus.mail.feature.inbox.domain.shownName
 
 /**
  * Everyone a conversation names besides the user, under who wrote, who it went to, and who was
@@ -30,7 +31,7 @@ internal fun PeopleSheet(
                 item(role) { SectionCaption(role.title) }
                 items(group, key = { it.person.address.lowercase() }) { participant ->
                     val person = participant.person
-                    val name = person.name.ifBlank { person.address }
+                    val name = person.shownName
                     ContactRow(name, person.address, chipAvatar(null, name, person.address), { onPick(person) })
                 }
             }

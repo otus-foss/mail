@@ -15,8 +15,6 @@ import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.MergePlan
 import com.otus.mail.feature.contacts.domain.PossibleDuplicate
 import com.otus.mail.feature.contacts.presentation.ContactsState
-import com.otus.mail.feature.contacts.presentation.book
-import com.otus.mail.feature.contacts.presentation.components.toggled
 
 /**
  * What the Contacts page itself tracks: the search, the books it shows, the selection, and which
@@ -83,10 +81,6 @@ internal fun ContactsState.mergePlan(cards: List<ContactCard>): MergePlan? = Mer
 /** How the two cards of [duplicate] would merge. */
 internal fun ContactsState.mergePlan(duplicate: PossibleDuplicate): MergePlan? =
     mergePlan(listOf(duplicate.first, duplicate.second))
-
-/** Whether the user can change every book that holds one of [cards]. */
-internal fun ContactsState.canWriteAll(cards: List<ContactCard>): Boolean =
-    cards.all { card -> card.books.all { book(it)?.canWrite == true } }
 
 /** Opens the file picker for an import, or null when there is nowhere to import to. */
 internal fun ContactsState.importAction(): (() -> Unit)? =

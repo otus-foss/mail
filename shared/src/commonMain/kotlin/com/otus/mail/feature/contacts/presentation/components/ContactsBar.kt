@@ -20,7 +20,6 @@ import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.presentation.avatar
-import com.otus.mail.feature.contacts.presentation.peopleCount
 
 /** What the list's bar offers while nothing is selected. Null actions are left out of the ⋯ menu. */
 internal class ListBarActions(
@@ -108,7 +107,7 @@ internal fun ContactsSelectionBar(
             }
 
             else -> {
-                BarContext(peopleCount(chosen.size), BarToken.Count(chosen.size), "to ${peopleCount(chosen.size)}")
+                peopleContext(chosen.size)
             }
         }
     val mergeItem =

@@ -8,7 +8,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -51,7 +50,7 @@ class SwipeActionsTest {
 
     /** Rows offer their swipes to accessibility services too, so this waits until folders have loaded. */
     private fun waitForSwipe(label: String) {
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(offers(label)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(offers(label))
     }
 
     private fun offers(label: String) =
@@ -122,8 +121,8 @@ class SwipeActionsTest {
     fun aSwipeSetToNothingOrWithoutAFolderLeavesTheRowStill() {
         // No folder has the archive role, and the other side is turned off.
         start(MailBehavior(startToEnd = null, endToStart = MailAction.Archive))
-        waitFor("Welcome")
-        compose.waitUntil(TIMEOUT) { server.calls.any { "Mailbox/get" in it } }
+        compose.waitForText("Welcome")
+        compose.waitForCall(server, "Mailbox/get")
         compose.waitForIdle()
         compose.onNodeWithText("Welcome").performTouchInput { swipeLeft() }
         compose.onNodeWithText("Welcome").performTouchInput { swipeRight() }
@@ -148,12 +147,6 @@ class SwipeActionsTest {
         assertEquals(MailAction.Archive, saved.endToStart)
         assertEquals(MailAction.Read, saved.startToEnd)
         assertFalse(saved.markReadOnOpen)
-    }
-
-    private fun waitFor(text: String) {
-        compose.waitUntil(
-            TIMEOUT,
-        ) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty() }
     }
 
     private companion object {

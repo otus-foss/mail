@@ -39,7 +39,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.ByteArrayOutputStream
 import kotlin.io.encoding.Base64
 
 /** Settings › Signatures, the signature editor, and copying signatures, against fake identities. */
@@ -165,8 +164,7 @@ class SignatureScreensTest {
             drawRoundRect(RectF(0f, 0f, 300f, 100f), 16f, 16f, Paint().apply { color = 0xFFE9EAEB.toInt() })
             drawRoundRect(RectF(30f, 25f, 80f, 75f), 10f, 10f, Paint().apply { color = 0xFF4F6F93.toInt() })
         }
-        val bytes = ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
-        return SignatureImage("image/png", Base64.encode(bytes), 150)
+        return SignatureImage("image/png", Base64.encode(bitmap.pngBytes()), 150)
     }
 
     private companion object {

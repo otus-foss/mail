@@ -39,6 +39,7 @@ import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
@@ -166,7 +167,7 @@ private fun MoveSuggestion(
     onMove: (MoveTarget) -> Unit,
 ) {
     SheetCaption("Suggested", RowTextInset)
-    val name = sender.name.ifBlank { sender.address }
+    val name = sender.shownName
     SuggestedFolderRow(
         Recipient(name, sender.chipAvatar, sender.address),
         FolderName(target.path ?: target.label.split(" / "), target.color?.let(FolderColor::named), system = false),

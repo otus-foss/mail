@@ -103,7 +103,7 @@ class FolderRulesState(
                 else -> null
             }
         if (refusal != null || account == null) {
-            refusal?.let { onFailed?.invoke(it) ?: run { notice = it } }
+            if (onFailed != null) refusal?.let(onFailed) else notice = refusal
             return
         }
         if (account.changedElsewhere && !replacing) {

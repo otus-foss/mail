@@ -79,7 +79,7 @@ private fun AddressChoice(
             "Signature of ${sender.address}. Change",
             { choosing = true },
             labelMaxWidth = SignatureTokens.addressLabelMaxWidth,
-        ) { PersonAvatar(sender.chipAvatar(), ComposeTokens.fromAvatarSize) }
+        ) { PersonAvatar(sender.chipAvatar, ComposeTokens.fromAvatarSize) }
         if (choosing) {
             FromDropdown(
                 signatures.identities,

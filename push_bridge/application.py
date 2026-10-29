@@ -9,6 +9,14 @@ import httpx
 
 from push_bridge.store import digest
 
+MAX_BODY = 4096
+# An aes128gcm body (RFC 8188) starts with a 16-byte salt, a 4-byte record size, and the key-id
+# length, which RFC 8291 fixes at 65 for the sender's P-256 key. The record that follows holds at
+# least its 1-byte padding delimiter and 16-byte authentication tag.
+KEY_ID_LENGTH_OFFSET = 20
+SENDER_KEY_LENGTH = 65
+MIN_PUSH_BODY = KEY_ID_LENGTH_OFFSET + 1 + SENDER_KEY_LENGTH + 1 + 16
+
 
 class Problem(Exception):
     def __init__(self, status):
@@ -49,11 +57,12 @@ class Application:
                 raise Problem(400)
             return self.reply(201, self.store.create(token, key_id))
         if method in ("GET", "DELETE") and path.startswith("/v1/messages/"):
-            message = self.store.message(path.removeprefix("/v1/messages/"))
+            message_id = path.removeprefix("/v1/messages/")
+            message = self.store.message(message_id)
             if message is None:
                 raise Problem(404)
             if method == "DELETE":
-                self.store.remove_message(path.removeprefix("/v1/messages/"))
+                self.store.remove_message(message_id)
                 return self.reply(204)
             return 200, message["payload"], "application/octet-stream"
         if method == "POST" and path.startswith("/v1/push/"):
@@ -95,7 +104,7 @@ class Application:
         if ttl < 0:
             raise Problem(400)
         payload = self.body(env)
-        if len(payload) < 103 or payload[20] != 65:
+        if len(payload) < MIN_PUSH_BODY or payload[KEY_ID_LENGTH_OFFSET] != SENDER_KEY_LENGTH:
             raise Problem(400)
         message = self.store.save(route_id, payload, max(1, ttl))
         if route["active"]:
@@ -112,7 +121,7 @@ class Application:
     @staticmethod
     def body(env):
         length = int(env.get("CONTENT_LENGTH") or "0")
-        if length > 4096:
+        if length > MAX_BODY:
             raise Problem(413)
         if length <= 0:
             raise Problem(400)

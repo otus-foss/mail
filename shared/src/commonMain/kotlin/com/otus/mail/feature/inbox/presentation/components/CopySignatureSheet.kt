@@ -50,13 +50,14 @@ internal fun CopySignatureSheet(
         onCopied()
     }
     ClosableSheet("Copy signature", onDismiss, SheetConfirm("Copy", copy, ready, Res.drawable.symbol_content_copy)) {
-        SegmentedToggle(listOf("Copy from", "Copy to"), direction, {
-            direction = it
-        }, Modifier.padding(horizontal = SheetTokens.inset))
+        SegmentedToggle(
+            listOf("Copy from", "Copy to"),
+            direction,
+            { direction = it },
+            Modifier.padding(horizontal = SheetTokens.inset),
+        )
         Text(
-            if (direction ==
-                FROM
-            ) {
+            if (direction == FROM) {
                 "Replaces the signature of ${current.sender.address}."
             } else {
                 "Their signatures are replaced with this one."
@@ -68,7 +69,7 @@ internal fun CopySignatureSheet(
             val chosen = if (direction == FROM) source?.key == identity.key else identity.key in targets
             SignatureCopyRow(identity, chosen, multiple = direction == TO) {
                 if (direction == TO) {
-                    targets = if (identity.key in targets) targets - identity.key else targets + identity.key
+                    targets = targets.toggled(identity.key)
                 } else {
                     source = identity
                 }
@@ -91,7 +92,7 @@ private fun SignatureCopyRow(
         preview.ifEmpty { "No signature" },
         PickMark(chosen, multiple = multiple),
         onClick = onSelect.takeIf { multiple || preview.isNotEmpty() },
-    ) { PersonAvatar(sender.chipAvatar(), ComposeTokens.dropdownAvatarSize) }
+    ) { PersonAvatar(sender.chipAvatar, ComposeTokens.dropdownAvatarSize) }
 }
 
 private const val FROM = 0

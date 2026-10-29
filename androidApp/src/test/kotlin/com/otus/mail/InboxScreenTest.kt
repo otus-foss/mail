@@ -1,7 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
@@ -35,7 +33,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
@@ -174,14 +171,5 @@ class InboxScreenTest {
         compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(messages) } } }
     }
 
-    private fun screenshot(name: String) {
-        val bitmap =
-            compose.runOnIdle {
-                val view = compose.activity.window.decorView
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-            }
-        val file = File("build/reports/inbox/$name.png")
-        requireNotNull(file.parentFile).mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
+    private fun screenshot(name: String) = compose.windowBitmap().savePng("build/reports/inbox/$name.png")
 }

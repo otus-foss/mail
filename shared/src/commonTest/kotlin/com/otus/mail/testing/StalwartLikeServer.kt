@@ -1,11 +1,15 @@
 package com.otus.mail.testing
 
+import com.otus.jmap.login.JmapLogin
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+
+/** Ada's login at the mock server, which accepts her with the password `secret`. */
+val ADA_LOGIN = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
 
 /** Basic auth for ada@example.org with the password "secret". */
 const val ADA_SECRET_HEADER = "Basic YWRhQGV4YW1wbGUub3JnOnNlY3JldA=="

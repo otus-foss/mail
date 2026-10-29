@@ -8,6 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import com.otus.accounts.presentation.toChipAvatar
+import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.mail.folders.components.FolderOwnerLine
 import com.otus.designsystem.mail.folders.components.FolderRuleSummary
@@ -86,4 +88,4 @@ private fun FolderListRow.sharingLine(): Pair<ChipAvatar, String>? =
     }
 
 private fun String.avatar(): ChipAvatar =
-    generatedAvatar(this, takeIf { '@' in it }.orEmpty()).let { ChipAvatar(it.initials, it.colorIndex) }
+    ResolvedAvatar(generatedAvatar(this, takeIf { '@' in it }.orEmpty())).toChipAvatar()

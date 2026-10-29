@@ -21,6 +21,7 @@ import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.PreviewLines
 import com.otus.mail.feature.inbox.domain.RowFolder
 import com.otus.mail.feature.inbox.domain.SenderLine
+import com.otus.mail.feature.inbox.domain.lastReceived
 import com.otus.mail.feature.inbox.domain.receivedOn
 import com.otus.mail.feature.inbox.domain.senderLine
 import com.otus.mail.feature.inbox.domain.threadSubject
@@ -91,6 +92,7 @@ private fun MailMessage.rowModel(
     val subjectLine = RowLine(listOf(RowTextPart(subject)))
     val peopleLine = people.toLine()
     val previewText = preview.ifBlank { body }
+    val rowMarks = marks(people)
     val text =
         CompactRowText(
             first = if (layout.order == ListOrder.SenderFirst && layout.showSender) peopleLine else subjectLine,
@@ -108,12 +110,12 @@ private fun MailMessage.rowModel(
                     layout.order == ListOrder.SenderFirst -> CountPlacement.AfterSecond
                     else -> CountPlacement.AfterFirst
                 },
-            marks = marks(people),
+            marks = rowMarks,
             folders = shownFolders.take(MAX_FOLDERS).map { it.icon() },
             moreFolders = (shownFolders.size - MAX_FOLDERS).coerceAtLeast(0),
             preview = previewText,
             previewLines = if (layout.showSender) layout.preview.lines else 0,
-            description = description(subject, count, people, date, shownFolders, receivedOn),
+            description = description(subject, count, people, date, rowMarks, shownFolders, receivedOn),
             stateLabel = if (attributes.unread) "Unread" else "Read",
         )
     return ConversationRowModel(
@@ -151,13 +153,7 @@ private fun SenderLine.toLine(): RowLine =
     }
 
 private fun Int.morePart(): List<RowTextPart> =
-    if (this >
-        0
-    ) {
-        listOf(RowTextPart(" +$this", quiet = true))
-    } else {
-        emptyList()
-    }
+    if (this > 0) listOf(RowTextPart(" +$this", quiet = true)) else emptyList()
 
 private fun RowFolder.icon(): RowFolderIcon =
     when (kind) {
@@ -166,13 +162,7 @@ private fun RowFolder.icon(): RowFolderIcon =
         }
 
         FolderKind.Folder -> {
-            RowFolderIcon(
-                FolderGlyphKind.Folder,
-                FolderColor.named(color).takeIf {
-                    it !=
-                        FolderColor.Default
-                },
-            )
+            RowFolderIcon(FolderGlyphKind.Folder, FolderColor.named(color).takeIf { it != FolderColor.Default })
         }
     }
 
@@ -182,22 +172,29 @@ private fun MailMessage.description(
     count: Int?,
     people: SenderLine,
     date: String,
+    marks: List<RowMark>,
     folders: List<RowFolder>,
     receivedOn: String?,
 ): String =
-    listOfNotNull(
-        if (attributes.unread) "Unread" else "Read",
-        subject + (count?.let { ", $it messages" } ?: ""),
-        people.spoken(),
-        date,
-        "Answered".takeIf { (conversation?.answered ?: attributes.answered) && people !is SenderLine.YouTo },
-        "Attachment".takeIf { attributes.hasAttachment },
-        "Invitation".takeIf { conversation?.invite ?: attributes.invite },
-        "Flagged".takeIf { attributes.flagged },
-        "Read later".takeIf { labels.any { it.readLater } },
-        folders.takeIf { it.isNotEmpty() }?.joinToString(prefix = "Folders: ") { it.name },
-        receivedOn?.let { "Received on $it" },
-    ).joinToString(". ", postfix = ".")
+    buildList {
+        add(if (attributes.unread) "Unread" else "Read")
+        add(subject + (count?.let { ", $it messages" } ?: ""))
+        add(people.spoken())
+        add(date)
+        addAll(marks.map { it.spoken })
+        if (folders.isNotEmpty()) add(folders.joinToString(prefix = "Folders: ") { it.name })
+        receivedOn?.let { add("Received on $it") }
+    }.joinToString(". ", postfix = ".")
+
+private val RowMark.spoken: String
+    get() =
+        when (this) {
+            RowMark.Answered -> "Answered"
+            RowMark.Attachment -> "Attachment"
+            RowMark.Invite -> "Invitation"
+            RowMark.Flagged -> "Flagged"
+            RowMark.ReadLater -> "Read later"
+        }
 
 private fun SenderLine.spoken(): String =
     when (this) {
@@ -219,9 +216,6 @@ private val PreviewLines.lines: Int
             PreviewLines.One -> 1
             PreviewLines.Two -> 2
         }
-
-/** The newest email of the conversation dates the row, so a reply the user just sent counts. */
-private val MailMessage.lastReceived get() = conversation?.last?.received ?: received
 
 private const val MAX_FOLDERS = 2
 private const val NO_SUBJECT = "(No subject)"

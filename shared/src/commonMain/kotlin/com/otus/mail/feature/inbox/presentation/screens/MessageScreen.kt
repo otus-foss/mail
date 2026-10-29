@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +34,6 @@ import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.feature.inbox.presentation.InboxContext
@@ -43,6 +41,7 @@ import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.ReadState
+import com.otus.mail.feature.inbox.presentation.components.PageNotice
 import com.otus.mail.feature.inbox.presentation.components.ReadActionBar
 import com.otus.mail.feature.inbox.presentation.components.ReadBottomStack
 import com.otus.mail.feature.inbox.presentation.components.ReadHeader
@@ -114,17 +113,17 @@ fun MessageScreen(
     var barPadding by remember { mutableStateOf(PaddingValues()) }
     val scope = rememberCoroutineScope()
     val folds = rememberStripFolds(state)
+    val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar = bar.layout?.let { { ReadActionBar(bar, page, parts::perform) } },
             Modifier.safeDrawingPadding(),
         ) { padding ->
             SideEffect { barPadding = padding }
-            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds), notice, cameFrom, padding)
+            ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds, source), notice, padding)
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
         if (!read.display.zen()) {
-            val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
             ReadThreadOverlay(state, index, source, context.rowLook.own, barPadding, folds.thread) {
                 scope.launch { pager.animateScrollToPage(it) }
             }
@@ -137,7 +136,8 @@ fun MessageScreen(
 
 /**
  * Where the Read view's layout stands: the [pager] on the page at [index], how pages [look], the ⋯
- * [menu], the [today] dates are shown against, and how the bottom strips [folds] open.
+ * [menu], the [today] dates are shown against, how the bottom strips [folds] open, and what they
+ * show from [source].
  */
 private class ReadLayoutState(
     val pager: PagerState,
@@ -146,6 +146,7 @@ private class ReadLayoutState(
     val menu: List<OptionsItem>,
     val today: LocalDate,
     val folds: StripFolds,
+    val source: ReadStripSource,
 )
 
 /**
@@ -158,12 +159,10 @@ private fun ReadLayout(
     parts: ReadParts,
     layout: ReadLayoutState,
     notice: String?,
-    cameFrom: Set<String>,
     padding: PaddingValues,
 ) {
     val state = parts.state
     val read = parts.read
-    val row = parts.row
     val page = state.pages[layout.index]
     val uriHandler = LocalUriHandler.current
     val strips = remember(read) { ReadStripActions(read) { openLink(uriHandler::openUri, it) } }
@@ -191,21 +190,23 @@ private fun ReadLayout(
                 if (height > headerHeight) headerHeight = height
             },
         ) {
-            ReadHeader(row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
-            notice?.let { MessageNotice(it) }
+            ReadHeader(parts.row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
+            notice?.let { PageNotice(it) }
         }
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
         val threadSwipe =
             stripSwipe.then(rememberFoldSwipe(rememberUnfoldDrag(layout.folds.thread) { state.threadOpen = it }))
         val slide =
-            StripGestures(threadSwipe, {
-                pager.currentPage + pager.currentPageOffsetFraction
-            }, rememberFoldSwipe(layout.folds.folders))
+            StripGestures(
+                threadSwipe,
+                { pager.currentPage + pager.currentPageOffsetFraction },
+                rememberFoldSwipe(layout.folds.folders),
+            )
         ReadBottomStack(
             state,
             layout.index,
-            ReadStripSource(row, layout.look.folders, cameFrom, layout.today),
+            layout.source,
             strips,
             slide,
             Modifier
@@ -228,7 +229,6 @@ private fun headerActions(
         onBack = parts::close,
         senderOpen = parts.state.details,
         onSender = { parts.state.details = !parts.state.details },
-        // A change that takes the message off this list closes the page first, as filing does.
         zen = read.display.zen(),
         onZen = {
             val on = !read.display.zen()
@@ -239,28 +239,18 @@ private fun headerActions(
             }
             read.display.setZen(on)
         },
+        // A change that takes the message off this list closes the page first, as filing does.
         readLater =
             actions?.readLater(parts.row)?.takeIf { actions.behavior().readLater }?.let { change ->
-                if (!change.leaves) {
-                    change
-                } else {
+                if (change.leaves) {
                     ReadLaterChange(change.saves, leaves = true) {
                         parts.close()
                         change.apply()
                     }
+                } else {
+                    change
                 }
             },
         menu = menu,
-    )
-}
-
-/** A notice, such as a refused mark, under the header. */
-@Composable
-private fun MessageNotice(text: String) {
-    Text(
-        text,
-        Modifier.padding(horizontal = PageTokens.textInset),
-        color = OtusColors.text2,
-        fontSize = InboxTokens.metadataSize,
     )
 }

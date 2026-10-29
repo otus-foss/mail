@@ -90,7 +90,7 @@ class ReadPageActionsTest {
 
     private fun strip(description: String): SemanticsNodeInteraction {
         val strip = hasContentDescription(description, substring = true)
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(strip).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(strip)
         return compose.onNode(strip)
     }
 

@@ -128,6 +128,10 @@ data class ContactDraft(
         )
     }
 
+    /** The draft with the custom [label] gone from every address and number, which then keep no label. */
+    fun withoutLabel(label: String): ContactDraft =
+        copy(emails = emails.withoutCustomLabel(label), phones = phones.withoutCustomLabel(label))
+
     companion object {
         /** The editor's values for [card]: its first organization, title and note, and its birthday. */
         fun of(card: ContactCard): ContactDraft =
@@ -136,26 +140,10 @@ data class ContactDraft(
                 surname = card.card.surname,
                 emails = card.emails.map { DraftValue(it.id, it.value, it.label, it.preferred) },
                 phones = card.phones.map { DraftValue(it.id, it.value, it.label) },
-                organization =
-                    card.card.organizations
-                        ?.values
-                        ?.firstOrNull()
-                        ?.name,
-                title =
-                    card.card.titles
-                        ?.values
-                        ?.firstOrNull()
-                        ?.name,
-                birthday =
-                    card.card.anniversaries
-                        ?.values
-                        ?.firstOrNull { it.kind == AnniversaryKind.Birth }
-                        ?.date as? PartialDate,
-                note =
-                    card.card.notes
-                        ?.values
-                        ?.firstOrNull()
-                        ?.note,
+                organization = card.card.organizationName,
+                title = card.card.titleName,
+                birthday = card.card.birthday,
+                note = card.card.firstNote,
                 photo = card.card.photo,
                 style = card.card.avatarStyle,
             )
@@ -209,6 +197,9 @@ data class DraftValue(
     /** Filled in but not an address a server accepts, such as "ada" without a domain. */
     val isInvalidEmail: Boolean get() = value.isNotBlank() && !isEmailAddress(value.trim())
 }
+
+private fun List<DraftValue>.withoutCustomLabel(label: String): List<DraftValue> =
+    map { if (it.label.custom.equals(label, ignoreCase = true)) it.copy(label = ContactLabel.Other) else it }
 
 /**
  * The card key for each of [values]: its own, else the next key such as `e2n` that neither the

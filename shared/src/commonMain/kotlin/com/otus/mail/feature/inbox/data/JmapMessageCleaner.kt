@@ -1,13 +1,13 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
-import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.JmapSession
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
+import com.otus.jmap.jmapPatch
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EMAIL_FOLDERS_PROPERTIES
@@ -15,15 +15,10 @@ import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.inMailbox
-import com.otus.mail.core.mail.pointer
 import com.otus.mail.feature.inbox.domain.Deletion
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageCleaner
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 
 /**
  * Not spam is an `Email/set` patch of `mailboxIds` and `keywords` (RFC 8621, sections 4.1.1 and
@@ -47,12 +42,11 @@ class JmapMessageCleaner(
         val patches =
             message.listedMembers().associate { member ->
                 member.emailId to
-                    buildJsonObject {
-                        if (member.folderId != inboxId) put("mailboxIds/${pointer(member.folderId)}", JsonNull)
-                        put("mailboxIds/${pointer(inboxId)}", JsonPrimitive(true))
+                    jmapPatch {
+                        include(movePatch(listOf(member.folderId), inboxId))
                         if (keywords) {
-                            put("keywords/$JUNK_KEYWORD", JsonNull)
-                            put("keywords/$NOT_JUNK_KEYWORD", JsonPrimitive(true))
+                            remove("keywords", JUNK_KEYWORD)
+                            set(JsonPrimitive(true), "keywords", NOT_JUNK_KEYWORD)
                         }
                     }
             }
@@ -115,8 +109,7 @@ class JmapMessageCleaner(
                     id,
                     update =
                         elsewhere.associate {
-                            it.emailId to
-                                buildJsonObject { put("mailboxIds/${pointer(it.folderId)}", JsonNull) }
+                            it.emailId to membershipPatch("mailboxIds", it.folderId, member = false)
                         },
                     destroy = onlyHere.map { it.emailId },
                     ifInState = fresh.state,
@@ -187,7 +180,7 @@ internal val JmapSession.setBatch: Int
 
 /** Objects per `/get` call, which also sizes each page of a query. */
 private val JmapSession.getBatch: Int
-    get() = limit(capabilityObjects[JmapCapability.CORE]?.get("maxObjectsInGet")?.jsonPrimitive?.longOrNull)
+    get() = limit(maxObjectsInGet)
 
 private fun limit(advertised: Long?): Int = advertised?.coerceIn(1L, DEFAULT_BATCH.toLong())?.toInt() ?: DEFAULT_BATCH
 

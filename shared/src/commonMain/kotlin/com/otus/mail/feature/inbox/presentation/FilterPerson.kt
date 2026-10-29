@@ -6,6 +6,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.SenderKey
+import com.otus.mail.feature.inbox.domain.lastReceived
 
 /**
  * One person the filter panel's From or To line matches: a person with every address they use, the most
@@ -155,6 +156,6 @@ private fun String.matches(query: String): Boolean = query.isBlank() || contains
 
 /** When the row's conversation last had mail, as a sortable ISO date and time. */
 private val MailMessage.lastSeen: String
-    get() = (conversation?.last?.received ?: received).let { "${it.date}T${it.time}" }
+    get() = lastReceived.let { "${it.date}T${it.time}" }
 
 private const val MAX_PEOPLE = 30

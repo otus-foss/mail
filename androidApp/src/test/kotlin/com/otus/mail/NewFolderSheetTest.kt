@@ -13,7 +13,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.otus.mail.app.App
-import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -31,16 +30,7 @@ import org.robolectric.annotation.GraphicsMode
 class NewFolderSheetTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer()
-    private val colors =
-        object : FolderColorStore {
-            var saved = emptyMap<String, String>()
-
-            override fun read() = saved
-
-            override fun write(values: Map<String, String>) {
-                saved = values
-            }
-        }
+    private val colors = InMemoryFolderColorStore()
 
     private fun openNewFolder() {
         compose.runOnUiThread {
@@ -49,20 +39,15 @@ class NewFolderSheetTest {
             }
         }
         // Suggestions come from loaded mail, and Add rule from the loaded script.
-        waitFor("Welcome")
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.waitForText("Welcome")
+        compose.waitForCall(server, "SieveScript/get")
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Folders & rules").performClick()
-        waitFor("Receipts")
+        compose.waitForText("Receipts")
         compose.onNode(hasContentDescription("New folder") and hasClickAction()).performClick()
         compose.onNodeWithContentDescription("Name").performTextInput("Travel")
     }
-
-    private fun waitFor(text: String) =
-        compose.waitUntil(
-            TIMEOUT,
-        ) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty() }
 
     @Test
     fun aNewFolderStartsWithTheRulesAndColorChosenBeforeCreate() {
@@ -72,7 +57,7 @@ class NewFolderSheetTest {
         compose.onAllNodes(hasSetTextAction()).onLast().performTextInput("grace")
         compose.onNode(hasText("grace@example.org") and isSelectable()).performClick()
         compose.onNodeWithText("Add").performClick()
-        waitFor("grace@example.org")
+        compose.waitForText("grace@example.org")
 
         // No folder has a color yet, so the first one is preselected.
         compose.onNodeWithText("Red").performClick()
@@ -82,7 +67,7 @@ class NewFolderSheetTest {
         compose.onNodeWithText("Blue").assertExists()
 
         compose.onNodeWithText("Create").performClick()
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/set" in it } }
+        compose.waitForCall(server, "SieveScript/set")
         assertTrue(server.script.orEmpty(), "grace@example.org" in server.script.orEmpty())
         assertEquals(listOf("Blue"), colors.saved.values.toList())
     }

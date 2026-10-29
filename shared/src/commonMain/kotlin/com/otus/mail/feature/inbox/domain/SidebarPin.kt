@@ -1,5 +1,11 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.DRAFTS_ROLE
+import com.otus.mail.core.mail.JUNK_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
+
 /**
  * A mailbox pinned to the sidebar's Pinned section, below the Inbox. A pin whose folder no account
  * has, such as Read later while it is off, stays saved and shows once the folder exists.
@@ -39,7 +45,8 @@ sealed interface SidebarPin {
     companion object {
         /** Read later and Conversations, then the system folders in the order the sidebar always listed them. */
         val defaults: List<SidebarPin> =
-            listOf(ReadLater, Conversations) + listOf("drafts", "sent", "archive", "junk", "trash").map(::Role) +
+            listOf(ReadLater, Conversations) +
+                listOf(DRAFTS_ROLE, SENT_ROLE, ARCHIVE_ROLE, JUNK_ROLE, TRASH_ROLE).map(::Role) +
                 Contacts
 
         /**

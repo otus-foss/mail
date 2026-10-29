@@ -10,6 +10,7 @@ import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.shownName
 
 @Composable
 internal fun PeopleFilterChip(
@@ -20,7 +21,7 @@ internal fun PeopleFilterChip(
     AvatarFilterChip(
         senders.map { it.chipAvatar },
         single?.let(::shortName),
-        single?.let { "From ${it.name.ifBlank { it.address }}" } ?: "From ${senders.size} people",
+        single?.let { "From ${it.shownName}" } ?: "From ${senders.size} people",
         onClick,
     )
 }
@@ -44,7 +45,10 @@ internal fun AccountsFilterChip(
     )
 }
 
-/** One selection shows its avatar and [singleLabel]; several show overlapping avatars only. */
+/**
+ * One selection shows its avatar and [singleLabel]; several show overlapping avatars, and a count of
+ * those that do not fit.
+ */
 @Composable
 internal fun AvatarFilterChip(
     avatars: List<ChipAvatar>,
@@ -52,9 +56,17 @@ internal fun AvatarFilterChip(
     description: String,
     onClick: () -> Unit,
     detail: String? = null,
+    prefix: String? = null,
 ) {
     val hidden = avatars.size - PanelTokens.CHIP_AVATAR_LIMIT
-    AvatarStackChip(avatars, singleLabel ?: "+$hidden".takeIf { hidden > 0 }, description, onClick, detail = detail)
+    AvatarStackChip(
+        avatars,
+        singleLabel ?: "+$hidden".takeIf { hidden > 0 },
+        description,
+        onClick,
+        detail = detail,
+        prefix = prefix,
+    )
 }
 
 /** The sender's avatar for a chip or an action bar token. */

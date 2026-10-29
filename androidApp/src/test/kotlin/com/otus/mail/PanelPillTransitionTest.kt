@@ -1,7 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -161,9 +159,7 @@ class PanelPillTransitionTest {
         y: Int,
     ): Int =
         compose.runOnIdle {
-            val view = compose.activity.window.decorView
-            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-            view.draw(Canvas(bitmap))
+            val bitmap = compose.drawnWindow()
             bitmap.getPixel(x, y).also { bitmap.recycle() }
         }
 }

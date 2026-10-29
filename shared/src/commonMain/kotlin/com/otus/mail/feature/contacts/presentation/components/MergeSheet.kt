@@ -122,8 +122,7 @@ private fun NameRow(
                         card.displayName,
                         Res.drawable.symbol_person,
                         { onChange(plan.copy(name = card.key)) },
-                        current =
-                            card.key == plan.name,
+                        current = card.key == plan.name,
                     )
                 },
             ) { open = false }
@@ -140,30 +139,17 @@ private fun AddressRow(
 ) {
     val addresses =
         plan.cards
-            .flatMap { card ->
-                card.emails.map { card to it.value }
-            }.distinctBy { it.second.lowercase() }
+            .flatMap { card -> card.emails.map { card to it.value } }
+            .distinctBy { it.second.lowercase() }
     FlowRow(
         Modifier.padding(horizontal = SheetTokens.inset - PanelTokens.iconGap),
         horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
     ) {
         addresses.forEach { (card, address) ->
             val on = address in plan.addresses
-            val pill = card.pill(address)
-            Chip(address, {
-                onChange(
-                    plan.copy(
-                        addresses =
-                            if (on) {
-                                plan.addresses - address
-                            } else {
-                                plan.addresses +
-                                    address
-                            },
-                    ),
-                )
-            }, selected = on) {
-                PersonAvatar(pill.avatar, FilterTokens.chipAvatarSize)
+            val toggled = if (on) plan.addresses - address else plan.addresses + address
+            Chip(address, { onChange(plan.copy(addresses = toggled)) }, selected = on) {
+                PersonAvatar(card.pill(address).avatar, FilterTokens.chipAvatarSize)
             }
         }
     }
@@ -183,11 +169,7 @@ private fun BookRow(
             book.name,
             "Saved in · ${book.owner()}",
             icon = book.icon,
-            onClick =
-                { open = true }.takeIf {
-                    books.size >
-                        1
-                },
+            onClick = { open = true }.takeIf { books.size > 1 },
         )
         if (open) {
             OptionsMenu(
@@ -198,8 +180,7 @@ private fun BookRow(
                                 it.name,
                                 it.icon,
                                 { onChange(plan.copy(book = it.key)) },
-                                current =
-                                    it.key == plan.book,
+                                current = it.key == plan.book,
                             )
                         }
                 },

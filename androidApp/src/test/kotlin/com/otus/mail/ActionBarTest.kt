@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -52,7 +51,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.File
 import kotlin.math.abs
 
 /** The bottom action bar's states, geometry, motion, and semantics, as its spec describes them. */
@@ -244,18 +242,11 @@ class ActionBarTest {
         assertTrue("$message: pixel $moved differs", moved == null)
     }
 
-    private fun capture(): Bitmap {
-        val view = compose.activity.window.decorView
-        return Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-    }
+    /** The window as drawn now, without waiting for idle, so paused frames stay paused. */
+    private fun capture(): Bitmap = compose.drawnWindow()
 
-    private fun saveScreenshot(name: String): Bitmap {
-        val bitmap = compose.runOnIdle { capture() }
-        val file = File("build/reports/action-bar/$name.png")
-        requireNotNull(file.parentFile).mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        return bitmap
-    }
+    private fun saveScreenshot(name: String): Bitmap =
+        compose.windowBitmap().also { it.savePng("build/reports/action-bar/$name.png") }
 
     private companion object {
         const val CHANNEL_TOLERANCE = 2

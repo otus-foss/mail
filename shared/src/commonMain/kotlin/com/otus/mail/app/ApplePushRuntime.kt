@@ -76,13 +76,7 @@ open class ApplePushRuntime(
     }
 
     override suspend fun distributors(): List<PushDistributor> =
-        if (session.bridge ==
-            null
-        ) {
-            emptyList()
-        } else {
-            listOf(APPLE)
-        }
+        if (session.bridge == null) emptyList() else listOf(APPLE)
 
     override suspend fun current(): PushDistributor? = APPLE.takeIf { session.enabled && session.bridge != null }
 

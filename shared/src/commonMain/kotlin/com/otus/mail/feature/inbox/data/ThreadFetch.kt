@@ -1,11 +1,15 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
+import com.otus.jmap.GetResult
+import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapIds
+import com.otus.jmap.JmapRequestBuilder
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailThreadType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.ThreadType
 
 /**
@@ -19,8 +23,7 @@ internal suspend fun MailAccount.threadEmails(
 ): List<EmailObject> =
     connection
         .request {
-            val original = call(GetMethod(EmailThreadType, id, JmapIds.Of(listOf(emailId)), THREAD_ID_PROPERTIES))
-            val thread = call(GetMethod(ThreadType, id, JmapIds.Result(original.resultOf("/list/*/threadId"))))
+            val thread = threadOf(id, emailId)
             call(GetMethod(EmailType, id, JmapIds.Result(thread.resultOf("/list/*/emailIds")), properties))
         }.list
 
@@ -30,10 +33,17 @@ internal suspend fun MailAccount.threadEmails(
  */
 internal suspend fun MailAccount.threadEmailIds(emailId: String): List<String> =
     connection
-        .request {
-            val original = call(GetMethod(EmailThreadType, id, JmapIds.Of(listOf(emailId)), THREAD_ID_PROPERTIES))
-            call(GetMethod(ThreadType, id, JmapIds.Result(original.resultOf("/list/*/threadId"))))
-        }.list
+        .request { threadOf(id, emailId) }
+        .list
         .flatMap { it.emailIds }
+
+/** `Email/get` of [emailId]'s `threadId`, and `Thread/get` of that thread by back-reference. */
+private fun JmapRequestBuilder.threadOf(
+    accountId: String,
+    emailId: String,
+): JmapCall<GetResult<ThreadObject>> {
+    val original = call(GetMethod(EmailThreadType, accountId, JmapIds.Of(listOf(emailId)), THREAD_ID_PROPERTIES))
+    return call(GetMethod(ThreadType, accountId, JmapIds.Result(original.resultOf("/list/*/threadId"))))
+}
 
 private val THREAD_ID_PROPERTIES = listOf("id", "threadId")

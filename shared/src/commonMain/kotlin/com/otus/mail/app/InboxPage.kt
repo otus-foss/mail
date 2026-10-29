@@ -72,9 +72,7 @@ internal fun InboxPage(
  * names, and the user's own folders when chosen.
  */
 internal fun InboxContents.mailScope(): MailScope =
-    if (roles.size == 1 &&
-        !ownFolders
-    ) {
+    if (roles.size == 1 && !ownFolders) {
         MailScope.Inbox
     } else {
         MailScope.Roles(roles.associateWith(::roleName), ownFolders)

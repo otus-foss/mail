@@ -16,9 +16,6 @@ import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.core.mail.objects
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.MailMessage
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Mutes a conversation by setting [MUTED_KEYWORD] on every email of its thread with `Email/set`
@@ -47,7 +44,7 @@ class JmapConversationMute(
     ): Boolean {
         return cache.withAccount(message.location.accountId) { accountCache ->
             val ids = fromServer(message) { _, ids -> ids } ?: return@withAccount false
-            val patch = buildJsonObject { put("keywords/$MUTED_KEYWORD", if (muted) JsonPrimitive(true) else JsonNull) }
+            val patch = membershipPatch("keywords", MUTED_KEYWORD, muted)
             val updated =
                 updateAccountEmails(
                     connections,

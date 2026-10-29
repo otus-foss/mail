@@ -5,7 +5,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -44,13 +43,7 @@ class AccountRemovalTest {
 
         compose.onNodeWithContentDescription("Remove Ada").performClick()
         compose.onNode(hasText("Remove") and hasAnyAncestor(isDialog())).performClick()
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("No accounts connected yet.")).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitForNode(hasText("No accounts connected yet."))
         compose.onNodeWithContentDescription("Remove Ada").assertDoesNotExist()
-    }
-
-    private companion object {
-        const val TIMEOUT = 5_000L
     }
 }

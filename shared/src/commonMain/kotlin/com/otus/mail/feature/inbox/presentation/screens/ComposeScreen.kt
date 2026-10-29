@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,7 +28,6 @@ import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailBehavior
@@ -39,6 +37,7 @@ import com.otus.mail.feature.inbox.presentation.RecipientField
 import com.otus.mail.feature.inbox.presentation.components.ComposeBottom
 import com.otus.mail.feature.inbox.presentation.components.ComposeContent
 import com.otus.mail.feature.inbox.presentation.components.ComposePanel
+import com.otus.mail.feature.inbox.presentation.components.PageNotice
 import com.otus.mail.feature.inbox.presentation.components.SendLaterSheet
 import com.otus.mail.feature.inbox.presentation.recipients
 import kotlinx.datetime.LocalDateTime
@@ -112,11 +111,7 @@ fun ComposeScreen(
     }
     if (askingSubject) SubjectPrompt({ sendNow(state.sendAt) }) { askingSubject = false }
     if (schedulingAt) {
-        SendLaterPrompt(
-            state.maxDelaySeconds,
-            state.sendAt,
-            { state.sendAt = it },
-        ) { schedulingAt = false }
+        SendLaterPrompt(state.maxDelaySeconds, state.sendAt, { state.sendAt = it }) { schedulingAt = false }
     }
 }
 
@@ -140,14 +135,7 @@ private fun ComposePage(
             onAddCc = onAddCc,
             options = options,
         )
-        state.notice?.let {
-            Text(
-                it,
-                Modifier.padding(horizontal = PageTokens.textInset),
-                color = OtusColors.text2,
-                fontSize = InboxTokens.metadataSize,
-            )
-        }
+        state.notice?.let { PageNotice(it) }
         ComposeContent(state, shown, Modifier.weight(1f), padding)
     }
 }
@@ -209,10 +197,7 @@ private fun options(
 
 /** The copy lines a draft opens with: those that already hold people. */
 private fun Draft.copyLines(): Set<RecipientField> =
-    RecipientField.entries
-        .filter {
-            recipients(it).isNotEmpty()
-        }.toSet()
+    RecipientField.entries.filter { recipients(it).isNotEmpty() }.toSet()
 
 /** Shows [field], or hides it and drops its people from the draft. */
 private fun Set<RecipientField>.toggled(

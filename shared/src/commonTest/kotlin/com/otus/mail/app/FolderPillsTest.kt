@@ -1,9 +1,9 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailScope
 import kotlin.test.Test

@@ -20,13 +20,11 @@ fun applyEdits(
             }
 
             is ContactEdit.Update -> {
-                shown.map {
-                    if (it.key ==
-                        edit.key
-                    ) {
-                        it.copy(card = edit.after, books = it.booksAfter(edit.after), sync = sync)
+                shown.map { card ->
+                    if (card.key == edit.key) {
+                        card.copy(card = edit.after, books = card.booksAfter(edit.after), sync = sync)
                     } else {
-                        it
+                        card
                     }
                 }
             }

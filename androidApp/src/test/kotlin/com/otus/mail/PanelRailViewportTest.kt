@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -37,7 +36,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w320dp-h800dp-mdpi")
@@ -106,13 +104,7 @@ class PanelRailViewportTest {
     }
 
     private fun snapshot(direction: LayoutDirection): Bitmap =
-        compose.runOnIdle {
-            val view = compose.activity.window.decorView
-            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-            view.draw(Canvas(bitmap))
-            val file = File("build/reports/context-panel/scroll-edge-${direction.name.lowercase()}.png")
-            requireNotNull(file.parentFile).mkdirs()
-            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-            bitmap
+        compose.windowBitmap().also {
+            it.savePng("build/reports/context-panel/scroll-edge-${direction.name.lowercase()}.png")
         }
 }

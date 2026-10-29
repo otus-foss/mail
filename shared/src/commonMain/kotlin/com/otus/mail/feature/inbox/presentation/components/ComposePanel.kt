@@ -71,7 +71,7 @@ private fun FromPill(
     var choosing by remember { mutableStateOf(false) }
     Box {
         AddressPill(from.address, "Send from ${from.address}. Change", { choosing = true }) {
-            PersonAvatar(chipAvatar(from.avatar, from.name, from.address), ComposeTokens.fromAvatarSize)
+            PersonAvatar(from.chipAvatar, ComposeTokens.fromAvatarSize)
         }
         if (choosing && state.identities.size > 1) {
             FromDropdown(

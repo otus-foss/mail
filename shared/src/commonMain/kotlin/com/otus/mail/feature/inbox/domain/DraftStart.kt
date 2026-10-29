@@ -115,7 +115,7 @@ private fun OriginalMessage.replyBody(): String = quoted(body)
 /** [text] of this message quoted line by line under "On <date>, <name> wrote:". */
 internal fun OriginalMessage.quoted(text: String): String =
     buildList {
-        add("On $sentLabel, ${from.displayName} wrote:")
+        add("On $sentLabel, ${from.shownName} wrote:")
         addAll(text.lines().map { if (it.isEmpty()) QUOTE else "$QUOTE $it" })
         if (bodyTruncated && text == body) add("$QUOTE $TRUNCATED_NOTE")
     }.joinToString("\n")
@@ -132,9 +132,6 @@ private fun OriginalMessage.forwardBody(): String =
         add(body)
         if (bodyTruncated) add(TRUNCATED_NOTE)
     }.joinToString("\n")
-
-private val MailSender.displayName: String
-    get() = name.ifBlank { address }
 
 /** Adds [prefix] unless the subject already starts with one that [existing] matches. */
 private fun String.prefixed(

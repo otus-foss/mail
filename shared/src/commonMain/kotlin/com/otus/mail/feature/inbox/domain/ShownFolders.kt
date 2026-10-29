@@ -1,5 +1,11 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.DRAFTS_ROLE
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.JUNK_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
+
 /**
  * The folders a Read view strip names. [also] when the user came from a folder, so the strip says
  * "also" before the others. No [folders] means the strip has nothing to say.
@@ -59,8 +65,5 @@ fun List<MessageFolder>.displayPaths(full: Boolean): List<List<String>> {
 private val MessageFolder.sortKey: String
     get() = path.joinToString("/") { it.lowercase() }
 
-private const val JUNK_ROLE = "junk"
-
 /** Folders the strips never name: where drafts, sent, and deleted mail and spam live. */
-private val UNHINTED = setOf("drafts", "sent", "trash", JUNK_ROLE)
-private const val INBOX_ROLE = "inbox"
+private val UNHINTED = setOf(DRAFTS_ROLE, SENT_ROLE, TRASH_ROLE, JUNK_ROLE)

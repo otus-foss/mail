@@ -21,6 +21,7 @@ import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.content.ReadTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.ShownFolders
+import com.otus.mail.feature.inbox.domain.shownName
 
 /**
  * The thread strip, newest first: "Latest" on the newest page, else the sender, with the position
@@ -48,7 +49,7 @@ internal fun ReadThreadStrip(
         { index ->
             val position = pageAt(index)
             val page = position.page
-            val sender = page.sender.name.ifBlank { page.sender.address }
+            val sender = page.sender.shownName
             PositionPage(
                 NamedAvatar(if (position.current == 0) "Latest" else sender, page.sender.chipAvatar),
                 "${position.current + 1}/${position.count} · ${position.date}",

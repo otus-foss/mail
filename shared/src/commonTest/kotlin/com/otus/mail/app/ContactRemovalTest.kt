@@ -5,20 +5,15 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactEdit
 import com.otus.mail.feature.contacts.domain.ContactStore
+import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ContactRemovalTest {
-    private class MemoryStore : ContactStore {
-        var saved = emptyMap<String, String>()
-
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
+    private class MemoryStore :
+        MemoryMapStore(),
+        ContactStore
 
     @Test
     fun removingAnAccountForgetsOnlyItsWaitingContactChanges() =

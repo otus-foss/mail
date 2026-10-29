@@ -19,7 +19,6 @@ import com.otus.mail.feature.contacts.domain.ImportMode
 import com.otus.mail.feature.contacts.domain.ImportPlan
 import com.otus.mail.feature.contacts.domain.applyEdits
 import com.otus.mail.feature.contacts.domain.duplicates
-import com.otus.mail.feature.contacts.domain.isHeld
 import com.otus.mail.feature.contacts.domain.people
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -98,8 +97,8 @@ internal class ContactsState(
     }
     val duplicates by derivedStateOf { duplicates(cards, sync.links, sync.dismissed) }
 
-    /** Whether some change has not reached the server yet. */
-    val waiting: Int get() = sync.edits.count { it.id !in sync.refused && !it.isHeld(sync.refused) }
+    /** How many changes are waiting to reach the server, not counting refused ones. */
+    val waiting: Int get() = sync.edits.count { it.isReady(sync.refused) }
 
     /** Loads the cards and the most frequent people again. */
     fun refresh() {

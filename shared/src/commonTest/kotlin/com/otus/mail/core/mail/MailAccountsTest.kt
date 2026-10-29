@@ -9,6 +9,7 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginSecret
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
@@ -20,7 +21,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class MailAccountsTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
 
     private fun accounts(
         session: String = STALWART_SESSION,

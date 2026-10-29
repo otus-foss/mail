@@ -10,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.ThreadMember
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -18,7 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JmapMessageMarkerTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
 
     /** A second login on another server, with the same credentials so the mock server accepts it. */
     private val work = JmapLogin("work", "https://work.example.org/.well-known/jmap", "ada@example.org", "Work")
