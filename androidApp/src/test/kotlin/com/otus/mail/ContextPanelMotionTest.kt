@@ -80,54 +80,32 @@ class ContextPanelMotionTest {
     fun surfaceResizesWhileBothPillGroupsKeepTheSameVerticalAnchor() {
         showPanel()
         val closed = surfaceBottom()
-        val originalPill =
-            compose
-                .onNodeWithText("Unread")
-                .fetchSemanticsNode()
-                .positionInRoot.y
+        val originalPill = pillTop("Unread")
         compose.mainClock.autoAdvance = false
         changeMode(true)
         compose.mainClock.advanceTimeBy(64)
         val growing = surfaceBottom()
-        val enteringPill =
-            compose
-                .onNodeWithText("People")
-                .fetchSemanticsNode()
-                .positionInRoot.y
+        val enteringPill = pillTop("People")
         assertEquals(
             originalPill,
-            compose
-                .onNodeWithText("Unread")
-                .fetchSemanticsNode()
-                .positionInRoot.y,
+            pillTop("Unread"),
             0.5f,
         )
         compose.mainClock.advanceTimeBy(400)
         val open = surfaceBottom()
-        val restingPill =
-            compose
-                .onNodeWithText("People")
-                .fetchSemanticsNode()
-                .positionInRoot.y
+        val restingPill = pillTop("People")
         assertTrue("The surface grows through intermediate heights", growing > closed && growing < open)
         assertEquals("Incoming pills share the resting rail anchor", restingPill, enteringPill, 0.5f)
         changeMode(false)
         compose.mainClock.advanceTimeBy(64)
         val shrinking = surfaceBottom()
-        val returningPill =
-            compose
-                .onNodeWithText("Unread")
-                .fetchSemanticsNode()
-                .positionInRoot.y
+        val returningPill = pillTop("Unread")
         compose.mainClock.advanceTimeBy(400)
         assertTrue("The surface shrinks through intermediate heights", shrinking > closed && shrinking < open)
         assertEquals(closed, surfaceBottom())
         assertEquals(
             returningPill,
-            compose
-                .onNodeWithText("Unread")
-                .fetchSemanticsNode()
-                .positionInRoot.y,
+            pillTop("Unread"),
             0.5f,
         )
     }
@@ -173,9 +151,7 @@ class ContextPanelMotionTest {
                             chips = {
                                 transition(expanded.value) { mode ->
                                     // Reuse the item key to check that disposing one group preserves the other.
-                                    item(
-                                        "filter",
-                                    ) {
+                                    item("filter") {
                                         Chip(
                                             if (mode) "People" else "Unread",
                                             { taps++ },
@@ -190,6 +166,12 @@ class ContextPanelMotionTest {
             }
         }
     }
+
+    private fun pillTop(label: String) =
+        compose
+            .onNodeWithText(label)
+            .fetchSemanticsNode()
+            .positionInRoot.y
 
     private fun surfaceBottom(): Int {
         val bitmap = snapshot()

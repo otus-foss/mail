@@ -26,7 +26,7 @@ internal fun jmapReply(
             val (name, arguments, id) = call.jsonArray
             val method = name.jsonPrimitive.content
             val result = resolved(arguments.jsonObject, results)?.let { respond(method, it) }
-            result?.let { results[id.jsonPrimitive.content] = it }
+            if (result != null) results[id.jsonPrimitive.content] = result
             JsonArray(listOf(JsonPrimitive(if (result == null) "error" else method), result ?: refusal(method), id))
         }
     return buildJsonObject { put("methodResponses", JsonArray(responses)) }.toString()
@@ -62,12 +62,8 @@ private fun resolved(
     results: Map<String, JsonObject>,
 ): JsonObject? {
     val reference = arguments["#ids"]?.jsonObject ?: return arguments
-    val path =
-        reference
-            .getValue("path")
-            .jsonPrimitive.content
-            .trim('/')
-            .split('/')
+    val referencePath = reference.getValue("path").jsonPrimitive.content
+    val path = referencePath.trim('/').split('/')
     return results[reference.getValue("resultOf").jsonPrimitive.content]?.let { source ->
         val found =
             path.fold(listOf<JsonElement>(source)) { elements, step ->

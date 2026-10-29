@@ -64,10 +64,9 @@ class ComposeScreenTest {
     private val sent = mutableListOf<Draft>()
     private val sender =
         DraftSender { draft, _, _ ->
-            Result.success(SentMessage(draft.accountId, "e1", "s1")).also {
-                sent +=
-                    draft
-            }
+            val result = Result.success(SentMessage(draft.accountId, "e1", "s1"))
+            sent += draft
+            result
         }
     private var closed = false
     private var scheduledAt: LocalDateTime? = null
@@ -256,17 +255,16 @@ class ComposeScreenTest {
         // The wheel opens on 08:00 when that is still ahead, so scroll it to its first hour first.
         val earliest = earliestPick(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()))
         compose.onNodeWithContentDescription("Hour choices").performScrollToIndex(0)
+        val hourNodes = compose.onAllNodes(hasParent(hasContentDescription("Hour choices"))).fetchSemanticsNodes()
         val hours =
-            compose
-                .onAllNodes(hasParent(hasContentDescription("Hour choices")))
-                .fetchSemanticsNodes()
-                .mapNotNull {
-                    it.config
+            hourNodes.mapNotNull { node ->
+                val text =
+                    node.config
                         .getOrNull(SemanticsProperties.Text)
                         ?.firstOrNull()
                         ?.text
-                        ?.toIntOrNull()
-                }
+                text?.toIntOrNull()
+            }
         assertTrue("Hours from ${earliest.hour}: $hours", hours.isNotEmpty() && hours.min() >= earliest.hour)
     }
 
