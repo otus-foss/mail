@@ -152,32 +152,31 @@ internal class ContactSync(
     /** Returns the new card's key for a creation, else null. */
     private suspend fun send(edit: ContactEdit): CardKey? =
         when (edit) {
-            is ContactEdit.Create -> {
-                repository.create(edit.book, edit.card)
-            }
-
-            is ContactEdit.Update -> {
-                repository.update(edit.key, edit.before, edit.after)
-                null
-            }
-
-            is ContactEdit.Delete -> {
-                repository.delete(listOf(edit.key))
-                null
-            }
+            is ContactEdit.Create -> repository.create(edit.book, edit.card)
+            is ContactEdit.Update -> repository.sendUpdate(edit)
+            is ContactEdit.Delete -> repository.sendDelete(edit)
         }
 
     private fun save() {
         // A write replaces every saved value, so the others, such as the frequent scores, are kept.
-        store?.let {
-            it.write(
-                it.read() +
-                    mapOf(
-                        ContactStore.EDITS to ContactEdit.encode(edits),
-                        ContactStore.LINKS to KeySets.encode(links.sets),
-                        ContactStore.DISMISSED to KeySets.encode(dismissed.toList()),
-                    ),
-            )
-        }
+        val storage = store ?: return
+        storage.write(
+            storage.read() +
+                mapOf(
+                    ContactStore.EDITS to ContactEdit.encode(edits),
+                    ContactStore.LINKS to KeySets.encode(links.sets),
+                    ContactStore.DISMISSED to KeySets.encode(dismissed.toList()),
+                ),
+        )
     }
+}
+
+private suspend fun ContactRepository.sendUpdate(edit: ContactEdit.Update): CardKey? {
+    update(edit.key, edit.before, edit.after)
+    return null
+}
+
+private suspend fun ContactRepository.sendDelete(edit: ContactEdit.Delete): CardKey? {
+    delete(listOf(edit.key))
+    return null
 }
