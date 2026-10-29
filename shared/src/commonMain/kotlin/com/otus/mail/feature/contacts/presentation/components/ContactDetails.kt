@@ -130,12 +130,12 @@ private fun detailRows(
                 )
             }
         }
-        birthday?.let { add { ContactValueRow(it.text(), null, icon = Res.drawable.symbol_cake) } }
+        if (birthday != null) add { ContactValueRow(birthday.text(), null, icon = Res.drawable.symbol_cake) }
         if (facts.groups.isNotEmpty()) {
             val names = facts.groups.joinToString(", ") { it.displayName }
             add { ContactValueRow(names, null, icon = Res.drawable.symbol_group) }
         }
-        note?.let { add { ContactValueRow(it, null, icon = Res.drawable.symbol_notes) } }
+        if (note != null) add { ContactValueRow(note, null, icon = Res.drawable.symbol_notes) }
     }
 }
 
@@ -191,28 +191,28 @@ internal fun GroupMembers(
             PageNote("No one in this group yet. Add people to write to all of them at once.")
         }
         Column(verticalArrangement = Arrangement.spacedBy(EntryTokens.gap)) {
-            members.forEach { person ->
-                var open by remember { mutableStateOf(false) }
-                Box {
-                    ContactEntry(
-                        person.name,
-                        person.emails.firstOrNull()?.value ?: "No address",
-                        person.avatar,
-                        EntryTaps({ onOpen(person.main.key) }, onRemove?.let { { open = true } }),
-                    )
-                    if (open && onRemove != null) {
-                        OptionsMenu(
-                            listOf(
-                                OptionsItem.Action(
-                                    "Remove from group",
-                                    Res.drawable.symbol_group_remove,
-                                    { onRemove(person) },
-                                ),
-                            ),
-                        ) { open = false }
-                    }
-                }
-            }
+            members.forEach { person -> GroupMember(person, onOpen, onRemove) }
+        }
+    }
+}
+
+@Composable
+private fun GroupMember(
+    person: ContactPerson,
+    onOpen: (CardKey) -> Unit,
+    onRemove: ((ContactPerson) -> Unit)?,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        ContactEntry(
+            person.name,
+            person.emails.firstOrNull()?.value ?: "No address",
+            person.avatar,
+            EntryTaps({ onOpen(person.main.key) }, onRemove?.let { { open = true } }),
+        )
+        if (open && onRemove != null) {
+            val remove = OptionsItem.Action("Remove from group", Res.drawable.symbol_group_remove, { onRemove(person) })
+            OptionsMenu(listOf(remove)) { open = false }
         }
     }
 }

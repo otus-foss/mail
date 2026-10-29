@@ -58,7 +58,7 @@ internal class FrequentContacts(
                         }
                     }
                 scans = (scans + fresh).filterKeys { it in logins }
-                store?.let { it.write(it.read() + (ContactStore.FREQUENT to encode(scans))) }
+                if (store != null) store.write(store.read() + (ContactStore.FREQUENT to encode(scans)))
             } finally {
                 scanning = false
             }

@@ -64,8 +64,8 @@ internal fun List<DraftValue>.replaced(
 
 /** A birthday as the picker takes it; null without a month and day. */
 internal fun PartialDate.yearly(): YearlyDate? {
-    val month = month ?: return null
-    return day?.let { YearlyDate(month.toInt(), it.toInt(), year?.toInt()) }
+    val monthNumber = month ?: return null
+    return day?.let { YearlyDate(monthNumber.toInt(), it.toInt(), year?.toInt()) }
 }
 
 /** The tip that explains the star by the primary address. */
