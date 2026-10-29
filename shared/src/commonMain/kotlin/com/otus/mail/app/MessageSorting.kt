@@ -57,11 +57,8 @@ internal class MessageSorting(
     ): FutureSorting? {
         val account = rules.account(message.location.accountId)
         if (account?.support == null) return null
-        val recipient =
-            message.to
-                .firstOrNull()
-                ?.address
-                .orEmpty()
+        val firstRecipient = message.to.firstOrNull()
+        val recipient = firstRecipient?.address.orEmpty()
         val choices =
             sortConditions(message.sender.address, recipient, message.subject).map { sort ->
                 val person = message.personFor(sort.kind)

@@ -78,14 +78,10 @@ internal fun MailSidebar(
         // An account without folders would leave a divider over nothing.
         layout.shown.filterNot { it == SidebarSection.Folders && shared.isEmpty() }.forEach { section ->
             SidebarDivider()
+            val style = layout.mailboxes
             when (section) {
-                SidebarSection.Mailboxes -> {
-                    SidebarMailboxList(mailboxes, layout.mailboxes, current, counter, colorOf, onSelect)
-                }
-
-                SidebarSection.Folders -> {
-                    tree.Rows(shared)
-                }
+                SidebarSection.Mailboxes -> SidebarMailboxList(mailboxes, style, current, counter, colorOf, onSelect)
+                SidebarSection.Folders -> tree.Rows(shared)
             }
         }
     }
