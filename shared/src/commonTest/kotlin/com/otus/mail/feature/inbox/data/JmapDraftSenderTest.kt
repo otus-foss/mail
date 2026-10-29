@@ -3,7 +3,6 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -24,7 +23,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JmapDraftSenderTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
     private val calls = mutableListOf<String>()
 
     /**

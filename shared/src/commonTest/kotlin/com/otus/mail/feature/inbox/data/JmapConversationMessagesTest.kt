@@ -3,7 +3,6 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.mail.EmailObject
@@ -26,7 +25,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class JmapConversationMessagesTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
     private val store = InMemoryLoginStore().apply { save(login, "secret") }
     private val server = FakeMailServer(MAILBOXES, THREAD)
     private val cache = InMemoryMailCache()

@@ -74,7 +74,6 @@ class JmapKnownPeople(
 
         /** Read when the server names no `maxObjectsInGet`; small enough for any server. */
         const val GET_BATCH = 200
-        const val SENT_ROLE = "sent"
         val PROPERTIES = listOf("id", "receivedAt", "to", "cc", "bcc")
     }
 }

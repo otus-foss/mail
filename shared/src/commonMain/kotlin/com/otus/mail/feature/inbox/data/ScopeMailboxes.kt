@@ -89,5 +89,3 @@ internal fun MailScope.nameOf(mailbox: MailboxObject): String =
         is MailScope.Roles -> names[mailbox.role] ?: mailboxName(mailbox.name, mailbox.role)
         else -> mailboxName(mailbox.name, mailbox.role)
     }
-
-private const val SENT_ROLE = "sent"

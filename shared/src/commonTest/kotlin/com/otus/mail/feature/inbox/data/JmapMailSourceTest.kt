@@ -17,7 +17,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JmapMailSourceTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
     private val other = login.copy(id = "grace", name = "Grace", username = "grace@example.org")
 
     private val inbox =

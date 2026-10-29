@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -10,7 +9,7 @@ import kotlin.test.assertTrue
 
 /** Conversation rows as the list loads them. */
 class JmapMailSourceThreadsTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
     private val server = FakeMailServer(MAILBOXES, THREAD)
     private val source = server.source(InMemoryLoginStore().apply { save(login, "secret") })
 

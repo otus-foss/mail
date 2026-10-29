@@ -62,7 +62,9 @@ internal class ListUnsubscriber(
         val identities = drafts.identities(message.location.accountId).map { it.sender }
         return (deliveredTo + (message.to + message.cc).map { it.address })
             .map { it.trim() }
-            .firstNotNullOfOrNull { address -> identities.sendingAs(address)?.copy(address = address.lowercase()) }
+            .firstNotNullOfOrNull { address ->
+                identities.sendingAs(address) { it.address }?.copy(address = address.lowercase())
+            }
     }
 }
 
@@ -98,11 +100,3 @@ private const val MAILTO = "mailto:"
 
 /** The subject when the `mailto:` address names none; list servers act on the address alone. */
 private const val DEFAULT_SUBJECT = "unsubscribe"
-
-/** The identity with exactly [address], else a wildcard identity for its domain. */
-private fun List<MailSender>.sendingAs(address: String): MailSender? {
-    val wanted = address.lowercase()
-    val domain = wanted.substringAfterLast('@', missingDelimiterValue = "")
-    return firstOrNull { it.address.lowercase() == wanted }
-        ?: firstOrNull { domain.isNotEmpty() && it.address.lowercase() == "*@$domain" }
-}

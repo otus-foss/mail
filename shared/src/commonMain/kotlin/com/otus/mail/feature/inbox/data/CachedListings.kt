@@ -55,7 +55,7 @@ internal suspend fun MailCache.cachedPages(
     val view =
         ThreadView(
             shown = chosen.map { it.id }.toSet(),
-            trashAndJunk = mailboxes.filter { it.role in HIDDEN_ROLES }.map { it.id }.toSet(),
+            trashAndJunk = mailboxes.filter { it.role in BIN_ROLES }.map { it.id }.toSet(),
             sent = mailboxes.filter { it.role == SENT_ROLE }.map { it.id }.toSet(),
             own = query.addresses[login.id].orEmpty() + login.username,
         )
@@ -140,8 +140,3 @@ private suspend fun MailCache.heldMail(
     val rowMembers = objects(loginId, CacheKind.Email, EmailObject.serializer(), memberIds - members.keys)
     return HeldMail(rows, threads, rowMembers + members)
 }
-
-/** Roles whose emails a conversation counts only when the list shows them. */
-private val HIDDEN_ROLES = setOf("trash", "junk")
-
-private const val SENT_ROLE = "sent"

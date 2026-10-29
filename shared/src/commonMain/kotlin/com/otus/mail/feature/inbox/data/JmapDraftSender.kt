@@ -73,7 +73,7 @@ class JmapDraftSender(
                 sent = call(roleQuery(SENT_ROLE))
             }
         return SendRoute(
-            identityId = response[identities].list.sendingAs(from)?.id ?: failSend(SendFailure.NoIdentity),
+            identityId = response[identities].list.sendingAs(from) { it.email }?.id ?: failSend(SendFailure.NoIdentity),
             drafts = response[drafts].ids.firstOrNull(),
             sent = response[sent].ids.firstOrNull(),
         )
@@ -192,7 +192,7 @@ class JmapDraftSender(
                     SetMethod(
                         EmailType,
                         id,
-                        update = mapOf(emailId to buildJsonObject { put("keywords/$DRAFT_KEYWORD", true) }),
+                        update = mapOf(emailId to membershipPatch("keywords", DRAFT_KEYWORD, member = true)),
                     ),
                 )
             if (emailId !in restored.updated || emailId in restored.notUpdated) throw DraftRestoreException()
@@ -206,7 +206,7 @@ class JmapDraftSender(
         draftId: String?,
         answered: AnsweredMessage?,
     ) {
-        val update = answered?.let { mapOf(it.emailId to buildJsonObject { put("keywords/${it.keyword}", true) }) }
+        val update = answered?.let { mapOf(it.emailId to membershipPatch("keywords", it.keyword, member = true)) }
         if (draftId == null && update == null) return
         // The message is already sent, so a leftover draft or a missing mark is not a failure.
         bestEffort {
@@ -217,8 +217,6 @@ class JmapDraftSender(
     private companion object {
         const val EMAIL = "draft"
         const val SUBMISSION = "send"
-        const val DRAFTS_ROLE = "drafts"
-        const val SENT_ROLE = "sent"
     }
 }
 

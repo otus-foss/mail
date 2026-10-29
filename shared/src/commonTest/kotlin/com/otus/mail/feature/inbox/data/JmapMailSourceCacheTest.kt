@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.feature.inbox.domain.InboxFailure
 import com.otus.mail.feature.inbox.domain.InboxFilters
@@ -21,7 +20,7 @@ import kotlin.test.assertTrue
 
 /** The inbox list kept on the device, synced by changes, and loaded a page at a time. */
 class JmapMailSourceCacheTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
     private val store = InMemoryLoginStore().apply { save(login, "secret") }
     private val cache = InMemoryMailCache()
     private val server = FakeMailServer(INBOX, email("m1", 10) + ", " + email("m2", 9))

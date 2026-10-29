@@ -36,7 +36,7 @@ class JmapConversationMessages(
         val mailboxes = cache.mailboxes(loginId)
         val names = mailboxes.associate { it.id to mailboxName(it.name, it.role) }
         // Deleted and spam mail stay out of the pages, as in the list, unless the row itself is there.
-        val binned = mailboxes.filter { it.role in BINS }.map { it.id }.toSet()
+        val binned = mailboxes.filter { it.role in BIN_ROLES }.map { it.id }.toSet()
         val hidden = binned.takeUnless { message.location.mailboxId in it }.orEmpty()
         return emails
             .filter { it.keywords[DRAFT_KEYWORD] != true }
@@ -95,5 +95,3 @@ class JmapConversationMessages(
         return page.copy(sender = sender, location = page.location.copy(accountAvatar = row.location.accountAvatar))
     }
 }
-
-private val BINS = setOf("trash", "junk")

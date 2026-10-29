@@ -4,7 +4,6 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetError
 import com.otus.jmap.SetMethod
 import com.otus.jmap.login.LoginStore
@@ -12,7 +11,6 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
@@ -20,8 +18,6 @@ import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 /**
  * Drafts as Email objects in the mailbox with role `drafts` (RFC 8621, sections 2 and 4.6), and
@@ -96,7 +92,7 @@ class JmapDraftRepository(
 
     private suspend fun draftsFolder(account: MailAccount): String? =
         account.connection
-            .call(QueryMethod(MailboxType, account.id, buildJsonObject { put("role", DRAFTS_ROLE) }))
+            .call(account.roleQuery(DRAFTS_ROLE))
             .ids
             .firstOrNull()
 
@@ -118,7 +114,6 @@ class JmapDraftRepository(
     private companion object {
         val IDENTITY_PROPERTIES = listOf("id", "name", "email", "textSignature", "htmlSignature")
         const val CREATION_ID = "draft"
-        const val DRAFTS_ROLE = "drafts"
     }
 }
 
@@ -126,30 +121,15 @@ class JmapDraftRepository(
 internal fun MailAccount.mayUse(capability: String): Boolean =
     capability in session.capabilities && session.accounts[id]?.capabilities?.contains(capability) == true
 
-private fun SetError.toDraftFailure(): DraftFailure =
-    if (type == "forbidden") DraftFailure.NotPermitted else DraftFailure.ServerProblem
+private fun SetError.toDraftFailure(): DraftFailure = draftFailure(type)
 
 private fun JmapException.toDraftFailure(): DraftFailure =
     when (this) {
-        is JmapException.Forbidden -> {
-            DraftFailure.NotPermitted
-        }
-
-        is JmapException.MethodError -> {
-            if (type ==
-                "forbidden"
-            ) {
-                DraftFailure.NotPermitted
-            } else {
-                DraftFailure.ServerProblem
-            }
-        }
-
-        is JmapException.Unreachable -> {
-            DraftFailure.Unreachable
-        }
-
-        else -> {
-            DraftFailure.ServerProblem
-        }
+        is JmapException.Forbidden -> DraftFailure.NotPermitted
+        is JmapException.MethodError -> draftFailure(type)
+        is JmapException.Unreachable -> DraftFailure.Unreachable
+        else -> DraftFailure.ServerProblem
     }
+
+private fun draftFailure(type: String): DraftFailure =
+    if (type == "forbidden") DraftFailure.NotPermitted else DraftFailure.ServerProblem

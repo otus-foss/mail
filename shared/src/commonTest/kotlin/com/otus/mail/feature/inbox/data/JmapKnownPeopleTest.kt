@@ -3,7 +3,6 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -12,7 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JmapKnownPeopleTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
     private val requests = mutableListOf<String>()
 
     /** The mail account also holds address books. */

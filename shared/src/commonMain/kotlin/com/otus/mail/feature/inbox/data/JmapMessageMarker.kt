@@ -7,9 +7,6 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MessageMarker
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Sets or clears one keyword with an `Email/set` patch (RFC 8621, sections 4.1.1 and 4.6). Other
@@ -27,8 +24,7 @@ class JmapMessageMarker(
         flag: MessageFlag,
         on: Boolean,
     ): Set<String> {
-        val patch = buildJsonObject { put("keywords/${flag.keyword}", if (on) JsonPrimitive(true) else JsonNull) }
-        return updateEmails(connections, logins, messages, patch, cache)
+        return updateEmails(connections, logins, messages, membershipPatch("keywords", flag.keyword, on), cache)
     }
 }
 

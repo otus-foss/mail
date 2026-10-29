@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.SetMethod
+import com.otus.jmap.jmapPatch
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheStorageException
@@ -16,6 +17,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Applies [patch] to [message], and to every email of its conversation, with `Email/set` updates
@@ -65,6 +67,26 @@ internal suspend fun updateEmails(
             }.awaitAll()
             .flatten()
             .toSet()
+    }
+
+/**
+ * The patch that puts [key] into the set-like [property], such as `keywords` or `mailboxIds`
+ * (RFC 8621, section 4.1.1), or takes it out when it is no [member]. Other keys stay as they are.
+ */
+internal fun membershipPatch(
+    property: String,
+    key: String,
+    member: Boolean,
+): JsonObject = jmapPatch { if (member) set(JsonPrimitive(true), property, key) else remove(property, key) }
+
+/** The patch that takes an email out of the mailboxes [from] and files it in [to]. */
+internal fun movePatch(
+    from: Collection<String>,
+    to: String,
+): JsonObject =
+    jmapPatch {
+        from.filter { it != to }.forEach { remove("mailboxIds", it) }
+        set(JsonPrimitive(true), "mailboxIds", to)
     }
 
 /**

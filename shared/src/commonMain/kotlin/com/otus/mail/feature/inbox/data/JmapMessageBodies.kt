@@ -26,7 +26,6 @@ import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageContent
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
-import kotlin.time.Instant
 
 /**
  * Loads one message's `textBody` and `htmlBody` parts and their values with `Email/get` (RFC 8621,
@@ -87,14 +86,14 @@ class JmapMessageBodies(
         val ids = JmapIds.Of(listOf(message.emailId))
         val email =
             account.connection
-                .call(
-                    GetMethod(EmailType, account.id, ids, PROPERTIES, ARGUMENTS),
-                ).list
+                .call(GetMethod(EmailType, account.id, ids, PROPERTIES, ARGUMENTS))
+                .list
                 .firstOrNull()
         if (email != null) {
-            val received = runCatching { Instant.parse(email.receivedAt).toEpochMilliseconds() }.getOrNull()
             try {
-                write(loginId) { putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, received) }
+                write(loginId) {
+                    putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, email.receivedMillis)
+                }
             } catch (expected: CacheStorageException) {
                 // The fetched body can still be opened without a persistent copy.
             }

@@ -1,13 +1,12 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
+import com.otus.jmap.jmapPatch
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
-import com.otus.mail.core.mail.pointer
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageMover
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -28,12 +27,7 @@ class JmapMessageMover(
         leaving: Set<String>,
     ): Boolean {
         val left = leaving - folderId - ""
-        val patch =
-            buildJsonObject {
-                left.forEach { put("mailboxIds/${pointer(it)}", JsonNull) }
-                put("mailboxIds/${pointer(folderId)}", JsonPrimitive(true))
-            }
-        return left.isNotEmpty() && updateEmail(connections, logins, message, patch, cache)
+        return left.isNotEmpty() && updateEmail(connections, logins, message, movePatch(left, folderId), cache)
     }
 
     override suspend fun moveBack(
@@ -43,9 +37,9 @@ class JmapMessageMover(
     ): Boolean {
         val back = returning - folderId - ""
         val patch =
-            buildJsonObject {
-                if (folderId !in message.location.mailboxIds) put("mailboxIds/${pointer(folderId)}", JsonNull)
-                back.forEach { put("mailboxIds/${pointer(it)}", JsonPrimitive(true)) }
+            jmapPatch {
+                if (folderId !in message.location.mailboxIds) remove("mailboxIds", folderId)
+                back.forEach { set(JsonPrimitive(true), "mailboxIds", it) }
             }
         return back.isNotEmpty() && updateEmail(connections, logins, message, patch, cache)
     }
@@ -55,9 +49,7 @@ class JmapMessageMover(
         folderId: String,
         inFolder: Boolean,
     ): Boolean {
-        val patch =
-            buildJsonObject { put("mailboxIds/${pointer(folderId)}", if (inFolder) JsonPrimitive(true) else JsonNull) }
-        return updateEmail(connections, logins, message, patch, cache)
+        return updateEmail(connections, logins, message, membershipPatch("mailboxIds", folderId, inFolder), cache)
     }
 
     /** Sends each email's whole `mailboxIds`, so one call files a conversation whose emails differ. */

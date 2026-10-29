@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 
 /** Marks and moves that reach the cache at once, and lists of two accounts loaded a page at a time. */
 class MailCacheWritesTest {
-    private val ada = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val ada = ADA_LOGIN
     private val work = JmapLogin("work", "https://work.example.org/.well-known/jmap", "ada@example.org", "Work")
     private val store =
         InMemoryLoginStore().apply {
