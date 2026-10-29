@@ -34,12 +34,17 @@ fun ruleSuggestions(
     val field = kind.field ?: return emptyList()
     val needle = query.trim().removePrefix("@")
     val seen = known.filter { it.field == field && '@' in it.address }
-    val matches = { mail: KnownAddress -> mail.address.contains(needle, true) || mail.name.contains(needle, true) }
+    val matches = { mail: KnownAddress ->
+        mail.address.contains(needle, ignoreCase = true) ||
+            mail.name.contains(needle, ignoreCase = true)
+    }
     val domains =
         seen
             .groupBy { it.address.substringAfterLast('@').lowercase() }
             .filter { (_, mail) -> mail.any(matches) }
-            .map { (domain, mail) -> Counted(domainSuggestion(field, domain, messages(mail.size)), mail.size, 0) }
+            .map { (domain, mail) ->
+                Counted(domainSuggestion(field, domain, messages(mail.size)), mail.size, order = 0)
+            }
     val addresses =
         seen
             .groupBy { it.address.lowercase() }
@@ -48,14 +53,14 @@ fun ruleSuggestions(
                 val name = mail.firstNotNullOfOrNull { it.name.takeIf(String::isNotBlank) }
                 val subtitle = listOfNotNull(name, messages(mail.size)).joinToString(" · ")
                 val condition = RuleCondition.Address(field, AddressMatch.Exact(mail.first().address))
-                Counted(RuleSuggestion(mail.first().address, subtitle, condition), mail.size, 1)
+                Counted(RuleSuggestion(mail.first().address, subtitle, condition), mail.size, order = 1)
             }
     val found =
         (domains + addresses)
             .sortedWith(compareByDescending<Counted> { it.count }.thenBy { it.order }.thenBy { it.suggestion.title })
             .map { it.suggestion }
             .take(MAX_SUGGESTIONS)
-    val typed = typedAddress(field, query)?.takeIf { typed -> found.none { it.condition == typed.condition } }
+    val typed = typedAddress(field, query)?.takeIf { proposed -> found.none { it.condition == proposed.condition } }
     return listOfNotNull(typed) + found
 }
 
@@ -94,25 +99,11 @@ private fun typedAddress(
     val local = text.substringBefore('@')
     val domain = text.substringAfter('@', "")
     return when {
-        text.count { it == '@' } != 1 || ' ' in text -> {
-            null
-        }
-
-        local.isEmpty() && '.' in domain -> {
-            domainSuggestion(field, domain.lowercase(), null)
-        }
-
-        domain.isEmpty() && local.isNotEmpty() -> {
-            RuleSuggestion("$local@ any domain", null, RuleCondition.Address(field, AddressMatch.LocalPart(local)))
-        }
-
-        local.isNotEmpty() && '.' in domain -> {
-            RuleSuggestion(text, null, RuleCondition.Address(field, AddressMatch.Exact(text)))
-        }
-
-        else -> {
-            null
-        }
+        text.count { it == '@' } != 1 || ' ' in text -> null
+        local.isEmpty() && '.' in domain -> domainSuggestion(field, domain.lowercase(), subtitle = null)
+        domain.isEmpty() && local.isNotEmpty() -> localPartSuggestion(field, local)
+        local.isNotEmpty() && '.' in domain -> exactSuggestion(field, text)
+        else -> null
     }
 }
 
@@ -120,3 +111,14 @@ private fun messages(count: Int): String = if (count == 1) "1 message" else "$co
 
 /** Long lists push the preview and the switch out of sight. */
 private const val MAX_SUGGESTIONS = 6
+
+private fun localPartSuggestion(
+    field: AddressField,
+    local: String,
+): RuleSuggestion =
+    RuleSuggestion("$local@ any domain", subtitle = null, RuleCondition.Address(field, AddressMatch.LocalPart(local)))
+
+private fun exactSuggestion(
+    field: AddressField,
+    address: String,
+): RuleSuggestion = RuleSuggestion(address, subtitle = null, RuleCondition.Address(field, AddressMatch.Exact(address)))

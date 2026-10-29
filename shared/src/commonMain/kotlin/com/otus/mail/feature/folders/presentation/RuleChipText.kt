@@ -46,54 +46,26 @@ fun RuleCondition.chipText(): RuleChipText = chipParts().let { it.copy(segments 
 
 private fun RuleCondition.chipParts(): RuleChipText =
     when (this) {
-        is RuleCondition.Address -> {
-            addressChip()
-        }
-
-        is RuleCondition.Text -> {
-            textChip()
-        }
-
-        is RuleCondition.Header -> {
-            headerChip()
-        }
-
-        is RuleCondition.MailingList -> {
-            RuleChipText(
-                "List",
-                ChipSlot.Icon(RuleIcon.Forum),
-                negation("isn't ") + bright(listId),
-            )
-        }
-
-        is RuleCondition.Size -> {
-            sizeChip()
-        }
-
-        is RuleCondition.When -> {
-            whenChip()
-        }
-
-        is RuleCondition.Spam -> {
-            spamChip()
-        }
+        is RuleCondition.Address -> addressChip()
+        is RuleCondition.Text -> textChip()
+        is RuleCondition.Header -> headerChip()
+        is RuleCondition.MailingList -> mailingListChip()
+        is RuleCondition.Size -> sizeChip()
+        is RuleCondition.When -> whenChip()
+        is RuleCondition.Spam -> spamChip()
     }
+
+private fun RuleCondition.MailingList.mailingListChip(): RuleChipText =
+    RuleChipText("List", ChipSlot.Icon(RuleIcon.Forum), negation("isn't ") + bright(listId))
 
 private fun RuleCondition.Address.addressChip(): RuleChipText {
     val notWord = if (field == AddressField.From) "isn't from " else "isn't "
+    val localPartIcon = ChipSlot.Icon(RuleIcon.AlternateEmail)
     val (slot, value) =
         when (match) {
-            is AddressMatch.Exact -> {
-                ChipSlot.Avatar(match.address, match.address) to bright(match.address)
-            }
-
-            is AddressMatch.Domain -> {
-                ChipSlot.Avatar(match.domain, null) to bright("@" + match.domain)
-            }
-
-            is AddressMatch.LocalPart -> {
-                ChipSlot.Icon(RuleIcon.AlternateEmail) to bright(match.local + "@") + dim(" any domain")
-            }
+            is AddressMatch.Exact -> ChipSlot.Avatar(match.address, match.address) to bright(match.address)
+            is AddressMatch.Domain -> ChipSlot.Avatar(match.domain, address = null) to bright("@" + match.domain)
+            is AddressMatch.LocalPart -> localPartIcon to bright(match.local + "@") + dim(" any domain")
         }
     return RuleChipText(field.name, slot, negation(notWord) + value)
 }

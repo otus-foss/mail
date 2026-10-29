@@ -107,22 +107,15 @@ class FoldersState(
         notice = null
         scope.launch {
             try {
-                when (val outcome = action()) {
-                    is FolderOutcome.Done -> {
-                        // Waits for the newest load, even a later refresh's, so the list has the change.
-                        refresh()
-                        loads.awaitLatest()
-                        onDone(outcome.folderId)
-                    }
-
-                    is FolderOutcome.Failed -> {
-                        onFailed()
-                        notice = outcome.reason.message()
-                        // A missing folder means the list is stale.
-                        refresh()
-                        loads.awaitLatest()
-                    }
+                val outcome = action()
+                if (outcome is FolderOutcome.Failed) {
+                    onFailed()
+                    notice = outcome.reason.message()
                 }
+                // Wait for the newest load, including refreshes started during this change.
+                refresh()
+                loads.awaitLatest()
+                if (outcome is FolderOutcome.Done) onDone(outcome.folderId)
             } catch (expected: FolderStorageException) {
                 onFailed()
                 notice = STORAGE_NOTICE
