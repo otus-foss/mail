@@ -25,19 +25,14 @@ fun scopeHeader(
 ): ScopeHeader {
     val account = accounts.firstOrNull { it.accountId == choice.accountId }
     return when {
-        choice is MailScopeChoice.Address && account != null -> {
-            ScopeHeader(choice.address, account.name, listOf(account.avatar(choice.address)))
-        }
-
-        account != null -> {
-            ScopeHeader(account.name, addressCount(account.addresses.size), listOf(account.avatar))
-        }
-
-        else -> {
-            ScopeHeader(ALL_MAIL, "No accounts yet".takeIf { accounts.isEmpty() }, allMailAvatars(accounts))
-        }
+        choice is MailScopeChoice.Address && account != null -> account.addressHeader(choice.address)
+        account != null -> ScopeHeader(account.name, addressCount(account.addresses.size), listOf(account.avatar))
+        else -> ScopeHeader(ALL_MAIL, "No accounts yet".takeIf { accounts.isEmpty() }, allMailAvatars(accounts))
     }
 }
+
+private fun AccountAddresses.addressHeader(address: String): ScopeHeader =
+    ScopeHeader(address, name, listOf(avatar(address)))
 
 /** "3 addresses" for one account, or "2 accounts · 5 addresses" for several. */
 fun allMailSummary(accounts: List<AccountAddresses>): String {

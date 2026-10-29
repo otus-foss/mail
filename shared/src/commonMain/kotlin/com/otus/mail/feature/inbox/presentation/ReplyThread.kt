@@ -30,9 +30,9 @@ class ReplyThread(
         private set
 
     fun load() {
-        val history = history ?: return
+        val source = history ?: return
         scope.launch {
-            val found = history.earlier(original.accountId, original.emailId)
+            val found = source.earlier(original.accountId, original.emailId)
             if (found.isNotEmpty()) messages = found
         }
     }

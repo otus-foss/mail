@@ -40,15 +40,17 @@ fun DateFormatter.listDateLabel(
     style: DateStyle,
 ): String =
     when (style) {
-        DateStyle.Relative -> {
-            receivedLabel(received, today)
-        }
-
-        DateStyle.Full -> {
-            val date = LocalDate.parse(received.date)
-            if (date == today) "${format(date)} ${received.time}" else format(date)
-        }
+        DateStyle.Relative -> receivedLabel(received, today)
+        DateStyle.Full -> fullListDate(received, today)
     }
+
+private fun DateFormatter.fullListDate(
+    received: ReceivedAt,
+    today: LocalDate,
+): String {
+    val date = LocalDate.parse(received.date)
+    return if (date == today) "${format(date)} ${received.time}" else format(date)
+}
 
 private const val WEEK = 7
 private const val SHORT_DAY = 3

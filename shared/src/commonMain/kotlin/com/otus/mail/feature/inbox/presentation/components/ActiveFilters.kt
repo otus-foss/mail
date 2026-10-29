@@ -43,7 +43,8 @@ class ActiveFilters(
     internal val active: List<ActiveFacet>
         get() =
             buildList {
-                applied.status.takeIf { it != ReadStatus.All }?.let { status ->
+                val status = applied.status
+                if (status != ReadStatus.All) {
                     add(removing(status, symbolPill(status.label, status.icon)) { it.copy(status = ReadStatus.All) })
                 }
                 applied.quick.sortedBy { it.ordinal }.forEach { facet ->
@@ -56,18 +57,10 @@ class ActiveFilters(
                 val noRecipients = { filters: InboxFilters ->
                     filters.copy(sentTo = emptySet(), to = emptySet(), receivedIn = RecipientField.Default)
                 }
-                when {
-                    applied.sentTo.isNotEmpty() || applied.to.isNotEmpty() -> {
-                        add(removing(InboxFilters::to, toPill(applied, options, people), noRecipients))
-                    }
-
-                    applied.receivedIn != RecipientField.Default -> {
-                        val label = "In " + applied.receivedIn.sortedBy { it.ordinal }.joinToString(", ") { it.label }
-                        val pill = symbolPill(label, Res.drawable.symbol_alternate_email)
-                        add(removing(InboxFilters::to, pill, noRecipients))
-                    }
-                }
-                applied.account?.let { id ->
+                val recipients = recipientPill()
+                if (recipients != null) add(removing(InboxFilters::to, recipients, noRecipients))
+                val id = applied.account
+                if (id != null) {
                     // An account this page no longer offers still filters, so its pill stays to show it.
                     val pill =
                         options.account(id)?.let(::accountPill) ?: symbolPill(id, Res.drawable.symbol_account_circle)
@@ -93,6 +86,18 @@ class ActiveFilters(
                     add(removing(FilterSort.OldestFirst, pill) { it.copy(sort = FilterSort.NewestFirst) })
                 }
             }
+
+    private fun recipientPill(): ActivePill? =
+        when {
+            applied.sentTo.isNotEmpty() || applied.to.isNotEmpty() -> toPill(applied, options, people)
+            applied.receivedIn != RecipientField.Default -> receivedInPill()
+            else -> null
+        }
+
+    private fun receivedInPill(): ActivePill {
+        val label = "In " + applied.receivedIn.sortedBy { it.ordinal }.joinToString(", ") { it.label }
+        return symbolPill(label, Res.drawable.symbol_alternate_email)
+    }
 
     private fun removing(
         key: Any,
