@@ -47,6 +47,10 @@ internal sealed interface MailPage {
         override val parent = Appearance
     }
 
+    data object PinnedSettings : MailPage {
+        override val parent = SidebarSettings
+    }
+
     data object ThemeSettings : MailPage {
         override val parent = Appearance
     }
@@ -156,6 +160,7 @@ internal sealed interface MailPage {
                 Conversations,
                 Contacts,
                 SidebarSettings,
+                PinnedSettings,
                 ThemeSettings,
                 MailListSettings,
                 Privacy,
