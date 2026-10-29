@@ -68,15 +68,19 @@ fun List<FolderListRow>.treeDrop(
     val anchor = getOrNull(target.index.coerceAtMost(lastIndex))?.folder
     if (dragged == null || anchor == null || !dragged.sameScope(anchor)) return null
     return when (target) {
-        is TreeDropTarget.Into -> {
-            FolderDrop(dragged, anchor.id, 0)
-        }
-
-        is TreeDropTarget.Before -> {
-            val siblings = placeable(dragged, anchor.parentId).filter { it.id != dragged.id }
-            FolderDrop(dragged, anchor.parentId, take(target.index).count { it.folder in siblings })
-        }
+        is TreeDropTarget.Into -> FolderDrop(dragged, anchor.id, index = 0)
+        is TreeDropTarget.Before -> dropBefore(dragged, anchor, target.index, placeable)
     }
+}
+
+private fun List<FolderListRow>.dropBefore(
+    dragged: MailFolder,
+    anchor: MailFolder,
+    index: Int,
+    placeable: (MailFolder, parentId: String?) -> List<MailFolder>,
+): FolderDrop {
+    val siblings = placeable(dragged, anchor.parentId).filter { it.id != dragged.id }
+    return FolderDrop(dragged, anchor.parentId, take(index).count { it.folder in siblings })
 }
 
 /** Folders of one login and one JMAP account, which a drop can move between. */

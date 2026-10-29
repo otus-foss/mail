@@ -30,11 +30,10 @@ class FolderColorsState(
     fun colorOf(folder: MailFolder): String? = if (tinted(folder)) colors.of(folder) else null
 
     /** The color name the shared folder's row shows; null for the default icon color. */
-    fun groupColorOf(shared: SharedFolder): String? =
-        shared.folders
-            .firstOrNull()
-            ?.takeIf(::tinted)
-            ?.let { colors.of(shared) }
+    fun groupColorOf(shared: SharedFolder): String? {
+        val first = shared.folders.firstOrNull() ?: return null
+        return if (tinted(first)) colors.of(shared) else null
+    }
 
     /** Whether the user may choose a color for [folder]; true even while the switch is off. */
     fun colorable(folder: MailFolder): Boolean = accountOf(folder)?.colorable(folder) ?: folder.isCustom
