@@ -1,24 +1,13 @@
 package com.otus.mail
 
-import androidx.activity.compose.setContent
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.github.takahirom.roborazzi.captureRoboImage
-import com.otus.accounts.domain.ConnectedAccount
-import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.ThemeBase
-import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
-import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
-import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,24 +71,8 @@ class AppleNotificationsScreenTest {
                 chosen = apple.takeIf { configured }
                 this.status = status
             }
-        compose.runOnUiThread {
-            compose.activity.setContent {
-                val scope = rememberCoroutineScope()
-                val state = remember(push) { NotificationSettingsState(push, scope) }
-                OtusTheme(ThemeChoice(base = theme).palette) {
-                    NotificationsScreen(
-                        state,
-                        listOf(ConnectedAccount("ada", "Ada", "ada@example.org", "example.org")),
-                        onBack = {},
-                        onOpenOverrides = {},
-                    )
-                }
-            }
-        }
-        compose.waitForIdle()
+        compose.showNotifications(push, theme)
     }
 
-    private fun capture(name: String) {
-        compose.onAllNodes(isRoot()).onLast().captureRoboImage("src/test/screenshots/notifications/$name.png")
-    }
+    private fun capture(name: String) = compose.captureNotifications(name)
 }

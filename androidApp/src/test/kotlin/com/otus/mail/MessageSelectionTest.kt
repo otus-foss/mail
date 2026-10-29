@@ -1,6 +1,5 @@
 package com.otus.mail
 
-import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -12,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertTrue
@@ -35,17 +33,7 @@ class MessageSelectionTest {
 
     /** Opens the inbox once folders and rules have loaded, then long-presses the one message. */
     private fun selectWelcome(behavior: MailBehavior = MailBehavior(markReadOnOpen = false)) {
-        compose.runOnUiThread {
-            compose.activity.setContent {
-                App(
-                    services = server.services(),
-                    behaviorState = MailBehaviorState(initial = behavior),
-                )
-            }
-        }
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Welcome")).fetchSemanticsNodes().isNotEmpty() }
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
-        compose.waitForIdle()
+        compose.showInbox(server, MailBehaviorState(initial = behavior))
         compose.onNodeWithText("Welcome").performTouchInput { longClick() }
     }
 
@@ -70,7 +58,7 @@ class MessageSelectionTest {
         server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
         selectWelcome()
         compose.onNode(hasContentDescription("Delete") and hasClickAction()).performClick()
-        compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it } }
+        compose.waitForCall(server, "Email/set")
         val trash = server.calls.last { "Email/set" in it }
         assertTrue(trash, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/t\":true}}" in trash)
         selectionBar.assertDoesNotExist()
@@ -97,13 +85,12 @@ class MessageSelectionTest {
         compose.onNode(hasContentDescription("Delete") and hasClickAction()).assertDoesNotExist()
         compose.onNodeWithContentDescription("More actions").performClick()
         compose.onNode(hasText("Delete") and hasClickAction()).performClick()
-        compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it } }
+        compose.waitForCall(server, "Email/set")
         assertTrue(server.calls.last { "Email/set" in it }.contains("\"mailboxIds/t\":true"))
         selectionBar.assertDoesNotExist()
     }
 
     private companion object {
-        const val TIMEOUT = 5_000L
         const val SHELL = "Move, 1 message"
     }
 }

@@ -107,6 +107,11 @@ def drawable_violations(root: Path) -> list[str]:
     ]
 
 
+def uses_api(code: str, apis: tuple[str, ...]) -> bool:
+    """Whether [code] names any package in [apis], not as part of a longer name."""
+    return any(re.search(r"(?<![\w.])" + re.escape(api), code) for api in apis)
+
+
 def color_names(code: str) -> str:
     """`Color` and any name it is imported as, for spotting literal colors."""
     aliases = re.findall(r"^import\s+[\w.]*\.Color\s+as\s+(\w+)", code, re.MULTILINE)
@@ -138,7 +143,7 @@ def violations(path: Path, text: str, base: str, *, central_ui: bool = False) ->
     if "shared" in parts and "commonMain" in parts:
         if not location or location[0] not in LAYERS:
             errors.append("common production code belongs in app/core/designsystem/feature")
-        if any(re.search(r"(?<![\w.])" + re.escape(api), code) for api in PLATFORM_APIS):
+        if uses_api(code, PLATFORM_APIS):
             errors.append("platform-only API in commonMain")
     if any(part in {"utils", "helpers", "manager"} for part in location):
         errors.append("use responsibility-specific packages instead of catch-all packages")
@@ -154,9 +159,8 @@ def violations(path: Path, text: str, base: str, *, central_ui: bool = False) ->
         errors.append("visual elements, components, and tokens belong in otus-meta")
     # Includes fully qualified code references as well as imported types.
     references = re.findall(r"\b" + re.escape(base) + r"\.([A-Za-z_][\w.]*)", code)
-    current_package = suffix
     for reference in references:
-        if reference == current_package:
+        if reference == suffix:
             continue
         target = reference.split(".")
         if location[:1] == ["core"] and target[0] in {"app", "feature", "designsystem"}:
@@ -191,11 +195,10 @@ def violations(path: Path, text: str, base: str, *, central_ui: bool = False) ->
             "androidx.lifecycle.",
             "org.jetbrains.compose.",
         )
-        if any(re.search(r"(?<![\w.])" + re.escape(api), code) for api in forbidden):
+        if uses_api(code, forbidden):
             errors.append("domain contains UI/platform/network/database dependencies")
-    if ("presentation" in location or location[:1] == ["designsystem"]) and any(
-        re.search(r"(?<![\w.])" + re.escape(api), code) for api in DATA_APIS
-    ):
+    ui = "presentation" in location or location[:1] == ["designsystem"]
+    if ui and uses_api(code, DATA_APIS):
         errors.append("UI must not access network or database APIs")
     if ("elements" in location or "components" in location) and re.search(
         r"\b\w*(?:ViewModel|Repository|NavController)\b|\b(?:viewModel|koinInject|hiltViewModel)\s*[(<]",

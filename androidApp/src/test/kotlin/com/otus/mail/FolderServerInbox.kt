@@ -1,0 +1,21 @@
+package com.otus.mail
+
+import androidx.activity.compose.setContent
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import com.otus.mail.app.App
+import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+
+/**
+ * Shows the app signed in to [server], waiting until its inbox, folders, and rules have loaded, so
+ * folder actions are offered.
+ */
+internal fun AndroidComposeTestRule<*, MainActivity>.showInbox(
+    server: FakeFolderServer,
+    behaviorState: MailBehaviorState = MailBehaviorState(initial = MailBehavior(markReadOnOpen = false)),
+) {
+    runOnUiThread { activity.setContent { App(services = server.services(), behaviorState = behaviorState) } }
+    waitForText("Welcome")
+    waitForCall(server, "SieveScript/get")
+    waitForIdle()
+}

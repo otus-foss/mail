@@ -47,7 +47,7 @@ class ActionBarSettingsTest {
                 )
             }
         }
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Welcome")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(hasText("Welcome"))
     }
 
     private fun openBehavior() {

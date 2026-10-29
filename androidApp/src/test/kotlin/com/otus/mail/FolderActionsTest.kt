@@ -1,12 +1,8 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.view.View
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -21,8 +17,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowDialog
-import java.io.File
 
 /** Spam and Trash pages show their own bars, against a server that answers like Stalwart. */
 @RunWith(RobolectricTestRunner::class)
@@ -45,28 +39,22 @@ class FolderActionsTest {
                 )
             }
         }
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
         val entry = hasContentDescription(folder, substring = true)
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(entry).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(entry)
         compose.onNode(entry).performClick()
-        waitFor(subject)
+        compose.waitForText(subject)
         compose.onNodeWithText(subject).performClick()
         // Folder actions appear once folders and rules have loaded.
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.waitForCall(server, "SieveScript/get")
         compose.waitForIdle()
     }
 
     private fun button(label: String) = compose.onNode(hasContentDescription(label) and hasClickAction())
 
-    private fun waitFor(text: String) {
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
-        }
-    }
-
     private fun lastUpdate(): String {
-        compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it } }
+        compose.waitForCall(server, "Email/set")
         return server.calls.last { "Email/set" in it }
     }
 
@@ -109,29 +97,10 @@ class FolderActionsTest {
     }
 
     /** Saves the screen to build/reports/inbox for review. */
-    private fun screenshot(name: String) = save(name) { compose.activity.window.decorView }
+    private fun screenshot(name: String) = compose.windowBitmap().savePng(reportPath(name))
 
     /** Saves the dialog on top, which has its own window. */
-    private fun dialogScreenshot(name: String) =
-        save(name) { requireNotNull(ShadowDialog.getLatestDialog().window).decorView }
+    private fun dialogScreenshot(name: String) = compose.dialogBitmap().savePng(reportPath(name))
 
-    private fun save(
-        name: String,
-        window: () -> View,
-    ) {
-        val bitmap =
-            compose.runOnIdle {
-                val view = window()
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-            }
-        val directory = File("build/reports/inbox").apply { mkdirs() }
-        File(
-            directory,
-            "folder-actions-$name.png",
-        ).outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
-
-    private companion object {
-        const val TIMEOUT = 5_000L
-    }
+    private fun reportPath(name: String) = "build/reports/inbox/folder-actions-$name.png"
 }

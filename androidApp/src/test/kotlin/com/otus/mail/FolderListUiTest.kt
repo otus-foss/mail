@@ -1,7 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasClickAction
@@ -25,7 +23,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.File
 
 /** Settings › Folders & rules: the account picker, folding, shared mailboxes, and dragging folders. */
 @RunWith(RobolectricTestRunner::class)
@@ -168,18 +165,7 @@ class FolderListUiTest {
     }
 
     /** Saves the screen to build/reports/folders for review. */
-    private fun screenshot(name: String) {
-        val bitmap =
-            compose.runOnIdle {
-                val view = compose.activity.window.decorView
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-            }
-        val directory = File("build/reports/folders").apply { mkdirs() }
-        File(
-            directory,
-            "folder-list-$name.png",
-        ).outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
+    private fun screenshot(name: String) = compose.windowBitmap().savePng("build/reports/folders/folder-list-$name.png")
 
     private companion object {
         const val TIMEOUT = 5_000L

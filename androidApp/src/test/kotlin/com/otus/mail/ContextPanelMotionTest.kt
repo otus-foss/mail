@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -200,9 +199,5 @@ class ContextPanelMotionTest {
         return bottom
     }
 
-    private fun snapshot(): Bitmap =
-        compose.runOnIdle {
-            val view = compose.activity.window.decorView
-            Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-        }
+    private fun snapshot(): Bitmap = compose.windowBitmap()
 }

@@ -42,12 +42,6 @@ class FoldersAndRulesTest {
         }
     }
 
-    private fun waitFor(text: String) {
-        compose.waitUntil(
-            TIMEOUT,
-        ) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty() }
-    }
-
     private fun openSettingsPage(title: String) {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
@@ -58,11 +52,9 @@ class FoldersAndRulesTest {
     fun sidebarNestsFoldersAndOpensOneAsAPage() {
         server.folders += """{"id": "y", "name": "Books", "parentId": "r", "unreadEmails": 4}"""
         start()
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("Amazon") and isSelectable()).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitForNode(hasText("Amazon") and isSelectable())
         compose.onNode(hasText("Inbox") and hasText("1") and isSelectable()).assertIsDisplayed()
         // A collapsed folder hides its subfolders and counts their mail with its own.
         compose.onNodeWithContentDescription("Collapse Receipts").performClick()
@@ -71,7 +63,7 @@ class FoldersAndRulesTest {
         compose.onNodeWithContentDescription("Expand Receipts").performClick()
         compose.onNode(hasText("Receipts") and hasText("2") and isSelectable()).performClick()
         compose.onNodeWithText("Search Receipts").assertIsDisplayed()
-        waitFor("Order shipped")
+        compose.waitForText("Order shipped")
         assertTrue(server.calls.any { "\"inMailbox\":\"r\"" in it })
     }
 
@@ -79,7 +71,7 @@ class FoldersAndRulesTest {
     fun rowsNameTheOtherFoldersAMessageIsIn() {
         server.alsoIn += "r"
         start()
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         compose.waitUntil(TIMEOUT) {
             compose
                 .onAllNodes(hasText("Welcome") and hasContentDescription("Folders: Receipts", substring = true))
@@ -90,7 +82,7 @@ class FoldersAndRulesTest {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         // Message rows are selectable too, so this picks the sidebar's folder.
         compose.onNode(hasText("Receipts") and isSelectable() and !hasText("Welcome")).performClick()
-        waitFor("Order shipped")
+        compose.waitForText("Order shipped")
         compose.onNodeWithText("Order shipped").assertIsDisplayed()
     }
 
@@ -98,7 +90,7 @@ class FoldersAndRulesTest {
     fun aNewFolderIsCreatedOnTheServerAndListed() {
         start()
         openSettingsPage("Folders & rules")
-        waitFor("Receipts")
+        compose.waitForText("Receipts")
         compose.onNode(hasContentDescription("New folder") and hasClickAction()).performClick()
         compose.onNodeWithContentDescription("Name").performTextInput("Travel")
         compose.onNodeWithText("Create").performClick()
@@ -123,7 +115,7 @@ class FoldersAndRulesTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         val tile = hasContentDescription("Read later")
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(tile).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(tile)
         val inbox = compose.onNode(hasText("Inbox") and isSelectable()).fetchSemanticsNode().boundsInRoot
         val readLater = compose.onNode(tile).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
@@ -137,10 +129,10 @@ class FoldersAndRulesTest {
         server.folders += """{"id": "l", "name": "Read later"}"""
         server.folders += """{"id": "x", "name": "Articles", "parentId": "l"}"""
         start(MailBehavior(readLater = true))
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
         val articles = hasText("Articles") and isSelectable()
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(articles).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(articles)
         val folder = compose.onNodeWithText("Articles", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNodeWithText("Receipts", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertEquals(receipts.left, folder.left)
@@ -151,10 +143,10 @@ class FoldersAndRulesTest {
         server.folders += """{"id": "j", "name": "Junk Mail", "role": "junk", "unreadEmails": 3}"""
         server.folders += """{"id": "t", "name": "Deleted Items", "role": "trash"}"""
         start()
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
         val spam = hasContentDescription("Spam, 3")
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(spam).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(spam)
         // The app names each role in place of the server's names, above the user's own folders.
         assertTrue(compose.onAllNodes(hasText("Junk Mail")).fetchSemanticsNodes().isEmpty())
         val trash = compose.onNode(hasContentDescription("Trash")).fetchSemanticsNode().boundsInRoot
@@ -162,7 +154,7 @@ class FoldersAndRulesTest {
         assertTrue(trash.bottom <= receipts.top)
         compose.onNode(spam).performClick()
         compose.onNodeWithText("Search Spam").assertIsDisplayed()
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         assertTrue(server.calls.any { "\"inMailbox\":\"j\"" in it })
     }
 
@@ -175,15 +167,15 @@ class FoldersAndRulesTest {
         server.scriptActive = true
         start()
         openSettingsPage("Folders & rules")
-        waitFor("grace@example.org")
+        compose.waitForText("grace@example.org")
         compose.onNodeWithText("grace@example.org", substring = true).assertIsDisplayed()
     }
 
     private fun openWelcome() {
         start()
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         // Both actions appear once folders and rules have loaded.
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.waitForCall(server, "SieveScript/get")
         compose.waitForIdle()
         compose.onNodeWithText("Welcome").performClick()
     }

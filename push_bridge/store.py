@@ -6,6 +6,13 @@ import sqlite3
 import time
 from contextlib import closing, contextmanager
 
+# A route not renewed within this time is deleted, so abandoned devices do not pile up.
+ROUTE_LIFETIME = 8 * 86400
+MAX_ROUTES = 10000
+MAX_ROUTES_PER_DEVICE = 32
+MAX_MESSAGES_PER_ROUTE = 32
+MAX_MESSAGE_LIFETIME = 3600
+
 
 class Store:
     def __init__(self, path):
@@ -33,8 +40,9 @@ class Store:
                 yield database
 
     def prune(self, database):
-        database.execute("DELETE FROM messages WHERE expires < ?", (time.time(),))
-        database.execute("DELETE FROM routes WHERE expires < ?", (time.time(),))
+        now = time.time()
+        database.execute("DELETE FROM messages WHERE expires < ?", (now,))
+        database.execute("DELETE FROM routes WHERE expires < ?", (now,))
 
     def create(self, token, key_id):
         route, secret = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
@@ -45,11 +53,11 @@ class Store:
             device = database.execute(
                 "SELECT count(*) FROM routes WHERE token=?", (token,)
             ).fetchone()[0]
-            if total >= 10000 or device >= 32:
+            if total >= MAX_ROUTES or device >= MAX_ROUTES_PER_DEVICE:
                 raise OverflowError("Route quota reached")
             database.execute(
                 "INSERT INTO routes VALUES (?, ?, ?, ?, 0, ?)",
-                (route, digest(secret), token, key_id, int(time.time()) + 86400 * 8),
+                (route, digest(secret), token, key_id, int(time.time()) + ROUTE_LIFETIME),
             )
         return {"id": route, "secret": secret}
 
@@ -62,7 +70,7 @@ class Store:
         with self.connect() as database:
             database.execute(
                 "UPDATE routes SET active=?, expires=? WHERE id=?",
-                (active, int(time.time()) + 86400 * 8, route),
+                (active, int(time.time()) + ROUTE_LIFETIME, route),
             )
 
     def delete(self, route):
@@ -77,11 +85,11 @@ class Store:
             count = database.execute(
                 "SELECT count(*) FROM messages WHERE route=?", (route,)
             ).fetchone()[0]
-            if count >= 32:
+            if count >= MAX_MESSAGES_PER_ROUTE:
                 raise OverflowError("Message quota reached")
             database.execute(
                 "INSERT INTO messages VALUES (?, ?, ?, ?)",
-                (message, route, payload, int(time.time()) + min(ttl, 3600)),
+                (message, route, payload, int(time.time()) + min(ttl, MAX_MESSAGE_LIFETIME)),
             )
         return message
 

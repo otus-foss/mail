@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
@@ -34,7 +33,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
@@ -138,15 +136,6 @@ class ContextPanelTest {
         saveScreenshot("search-large-text")
     }
 
-    private fun saveScreenshot(name: String): Bitmap {
-        val bitmap =
-            compose.runOnIdle {
-                val view = compose.activity.window.decorView
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-            }
-        val file = File("build/reports/context-panel/$name.png")
-        requireNotNull(file.parentFile).mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        return bitmap
-    }
+    private fun saveScreenshot(name: String): Bitmap =
+        compose.windowBitmap().also { it.savePng("build/reports/context-panel/$name.png") }
 }

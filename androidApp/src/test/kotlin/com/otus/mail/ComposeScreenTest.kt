@@ -24,13 +24,11 @@ import androidx.compose.ui.test.performTextInput
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.domain.ScheduledSends
-import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.earliestPick
 import com.otus.mail.feature.inbox.presentation.ComposeAccount

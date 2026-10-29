@@ -43,9 +43,7 @@ class SidebarEditTest {
             compose.activity.setContent { App(services = server.services(withBob = withBob), behaviorState = behavior) }
         }
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("Receipts") and isSelectable()).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitForNode(hasText("Receipts") and isSelectable())
     }
 
     private fun openScopeSheet() {
@@ -90,7 +88,7 @@ class SidebarEditTest {
         row("All mail").performClick()
         closeChoice()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Welcome")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(hasText("Welcome"))
     }
 
     @Test

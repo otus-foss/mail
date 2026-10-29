@@ -42,7 +42,6 @@ import com.otus.mail.feature.inbox.presentation.ReadPrivacy
 import com.otus.mail.feature.inbox.presentation.ReadServices
 import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
 import kotlinx.datetime.LocalDate
-import java.io.ByteArrayOutputStream
 
 /** Demo mail for the Read view: the Q4 launch thread, an invoice, and a Sentry digest. Alex reads it. */
 internal object ReadViewFixtures {
@@ -211,7 +210,7 @@ internal object ReadViewFixtures {
                 },
             )
         }
-        return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+        return bitmap.pngBytes()
     }
 
     fun actions(

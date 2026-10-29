@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
@@ -44,8 +43,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowDialog
-import java.io.File
 import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
@@ -234,34 +231,18 @@ class InboxPickerTest {
         name: String,
     ) {
         val bounds = compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInWindow
-        val bitmap =
-            compose.runOnIdle {
-                val view = compose.activity.window.decorView
-                val full = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-                view.draw(Canvas(full))
-                Bitmap.createBitmap(
-                    full,
-                    bounds.left.toInt(),
-                    bounds.top.toInt(),
-                    bounds.width.toInt(),
-                    bounds.height.toInt(),
-                )
-            }
-        val file = File("build/reports/pickers/$name.png")
-        requireNotNull(file.parentFile).mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val chip =
+            Bitmap.createBitmap(
+                compose.windowBitmap(),
+                bounds.left.toInt(),
+                bounds.top.toInt(),
+                bounds.width.toInt(),
+                bounds.height.toInt(),
+            )
+        chip.savePng("build/reports/pickers/$name.png")
     }
 
-    private fun screenshot(name: String) {
-        val bitmap =
-            compose.runOnIdle {
-                val view = requireNotNull(ShadowDialog.getLatestDialog().window).decorView
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-            }
-        val file = File("build/reports/pickers/$name.png")
-        requireNotNull(file.parentFile).mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
+    private fun screenshot(name: String) = compose.dialogBitmap().savePng("build/reports/pickers/$name.png")
 
     private val dateFormatter = DateFormatter(DateFormatPreference.YearMonthDayDashes)
 

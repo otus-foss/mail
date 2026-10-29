@@ -1,8 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import androidx.activity.compose.setContent
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -14,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton.MoveTo
@@ -30,7 +26,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowDialog
-import java.io.File
 
 /** Move to buttons: picked for slots in the bar editor, each with its own folder, and moving the open message. */
 @RunWith(RobolectricTestRunner::class)
@@ -39,15 +34,6 @@ import java.io.File
 class MoveToButtonsTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer().apply { folders += """{"id": "t", "name": "Travel"}""" }
-
-    private fun start(behaviorState: MailBehaviorState) {
-        compose.runOnUiThread {
-            compose.activity.setContent { App(services = server.services(), behaviorState = behaviorState) }
-        }
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Welcome")).fetchSemanticsNodes().isNotEmpty() }
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
-        compose.waitForIdle()
-    }
 
     private fun button(label: String) = compose.onNode(hasContentDescription(label) and hasClickAction())
 
@@ -65,7 +51,7 @@ class MoveToButtonsTest {
 
     @Test
     fun twoMoveToButtonsKeepTheirOwnFoldersAndOneMovesTheMessage() {
-        start(MailBehaviorState(AndroidMailBehaviorStore(compose.activity)))
+        compose.showInbox(server, MailBehaviorState(AndroidMailBehaviorStore(compose.activity)))
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Mail behavior").performClick()
@@ -110,11 +96,9 @@ class MoveToButtonsTest {
     fun theMainButtonNamesItsFolderAndMovesTheMessage() {
         val bar = ActionBarLayout(listOf(MailAction.Archive, MoveTo(listOf("receipts"))), MoveTo(listOf("Travel")))
         val behavior = MailBehavior(markReadOnOpen = false, actionBar = mapOf(ActionBarPlace.Message to bar))
-        start(MailBehaviorState(initial = behavior))
+        compose.showInbox(server, MailBehaviorState(initial = behavior))
         compose.onNodeWithText("Welcome").performClick()
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasContentDescription("Travel") and hasClickAction()).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitForNode(hasContentDescription("Travel") and hasClickAction())
         button("Move to Receipts").assertExists()
         screenshot("message-bar")
         button("Travel").performClick()
@@ -127,15 +111,14 @@ class MoveToButtonsTest {
     }
 
     /** Saves the sheet on top, or the page without one, to build/reports/action-targets for review. */
+    /** The open sheet, or the page when none is open. */
     private fun screenshot(name: String) {
         val bitmap =
             compose.runOnIdle {
                 val sheet = ShadowDialog.getShownDialogs().lastOrNull { it.isShowing }
-                val view = sheet?.window?.decorView ?: compose.activity.window.decorView
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
+                (sheet?.window?.decorView ?: compose.activity.window.decorView).drawnBitmap()
             }
-        val directory = File("build/reports/action-targets").apply { mkdirs() }
-        File(directory, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        bitmap.savePng("build/reports/action-targets/$name.png")
     }
 
     private companion object {
