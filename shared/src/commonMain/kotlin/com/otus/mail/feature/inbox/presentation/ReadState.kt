@@ -132,8 +132,8 @@ class ReadState(
         pages =
             pages.map { page ->
                 val seen = !row.attributes.unread && page.emailId in listed
-                val read = if (seen) page.withFlag(MessageFlag.Read, true) else page
-                if (row.attributes.flagged) read else read.withFlag(MessageFlag.Flagged, false)
+                val read = if (seen) page.withFlag(MessageFlag.Read, on = true) else page
+                if (row.attributes.flagged) read else read.withFlag(MessageFlag.Flagged, on = false)
             }
     }
 

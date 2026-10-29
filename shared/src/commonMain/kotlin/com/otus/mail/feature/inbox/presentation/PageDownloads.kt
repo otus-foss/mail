@@ -21,8 +21,11 @@ class PageDownloads(
         file: MailAttachment,
     ): ByteArray? {
         val key = "${message.id}/${file.blobId}"
-        return kept.firstOrNull { it.first == key }?.second
-            ?: downloads?.download(message, file)?.also { keep(key, it) }
+        val cached = kept.firstOrNull { it.first == key }?.second
+        if (cached != null) return cached
+        val downloaded = downloads?.download(message, file)
+        if (downloaded != null) keep(key, downloaded)
+        return downloaded
     }
 
     private fun keep(
