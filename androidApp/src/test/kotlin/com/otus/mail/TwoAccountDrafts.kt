@@ -11,17 +11,15 @@ internal class TwoAccountDrafts : DraftRepository {
 
     override suspend fun identities(accountId: String) =
         when (accountId) {
-            "a1" -> {
-                listOf(
-                    identity("Alex Rivera", "this@companya.com", "a1"),
-                    identity("Company A Sales", "sales@companya.com", "a1"),
-                )
-            }
-
-            else -> {
-                listOf(identity("Alex Rivera", "otus@rubylabs.design", "a2"))
-            }
+            "a1" -> companyIdentities()
+            else -> listOf(identity("Alex Rivera", "otus@rubylabs.design", "a2"))
         }
+
+    private fun companyIdentities() =
+        listOf(
+            identity("Alex Rivera", "this@companya.com", "a1"),
+            identity("Company A Sales", "sales@companya.com", "a1"),
+        )
 
     override suspend fun save(draft: Draft): Result<String> {
         saved += draft
