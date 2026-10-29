@@ -82,7 +82,12 @@ private sealed class ConditionDto {
         val match: String,
         val value: String,
         val not: Boolean = false,
-    ) : ConditionDto()
+    ) : ConditionDto() {
+        fun condition(): RuleCondition.Address? {
+            val parsedField = AddressField.entries.wired(field) ?: return null
+            return addressMatch(match, value)?.let { RuleCondition.Address(parsedField, it, not) }
+        }
+    }
 
     @Serializable
     @SerialName("text")
@@ -91,7 +96,12 @@ private sealed class ConditionDto {
         val op: String,
         val value: String,
         val not: Boolean = false,
-    ) : ConditionDto()
+    ) : ConditionDto() {
+        fun condition(): RuleCondition.Text? {
+            val parsedField = TextField.entries.wired(field) ?: return null
+            return TextOperator.entries.wired(op)?.let { RuleCondition.Text(parsedField, it, value, not) }
+        }
+    }
 
     @Serializable
     @SerialName("header")
@@ -124,7 +134,14 @@ private sealed class ConditionDto {
         val start: String? = null,
         val end: String? = null,
         val outside: Boolean = false,
-    ) : ConditionDto()
+    ) : ConditionDto() {
+        constructor(condition: RuleCondition.When) : this(
+            condition.days.map { it.ordinal + 1 }.sorted(),
+            condition.range?.start?.toString(),
+            condition.range?.end?.toString(),
+            condition.outside,
+        )
+    }
 
     @Serializable
     @SerialName("spam")
@@ -137,74 +154,25 @@ private fun FolderRule.toDto(): List<ConditionDto> = conditions.map { it.toDto()
 
 private fun RuleCondition.toDto(): ConditionDto =
     when (this) {
-        is RuleCondition.Address -> {
-            ConditionDto.Address(field.wire, match.wire, match.value, negated)
-        }
-
-        is RuleCondition.Text -> {
-            ConditionDto.Text(field.wire, operator.wire, value, negated)
-        }
-
-        is RuleCondition.Header -> {
-            ConditionDto.Header(name, operator.wire, value, negated)
-        }
-
-        is RuleCondition.MailingList -> {
-            ConditionDto.MailingList(listId, negated)
-        }
-
-        is RuleCondition.Size -> {
-            ConditionDto.Size(over, bytes)
-        }
-
-        is RuleCondition.When -> {
-            ConditionDto.When(
-                days.map { it.ordinal + 1 }.sorted(),
-                range?.start?.toString(),
-                range?.end?.toString(),
-                outside,
-            )
-        }
-
-        is RuleCondition.Spam -> {
-            ConditionDto.Spam(minScore)
-        }
+        is RuleCondition.Address -> ConditionDto.Address(field.wire, match.wire, match.value, negated)
+        is RuleCondition.Text -> ConditionDto.Text(field.wire, operator.wire, value, negated)
+        is RuleCondition.Header -> ConditionDto.Header(name, operator.wire, value, negated)
+        is RuleCondition.MailingList -> ConditionDto.MailingList(listId, negated)
+        is RuleCondition.Size -> ConditionDto.Size(over, bytes)
+        is RuleCondition.When -> ConditionDto.When(this)
+        is RuleCondition.Spam -> ConditionDto.Spam(minScore)
     }
 
 /** Null for a value this version does not know. */
 private fun ConditionDto.toCondition(): RuleCondition? =
     when (this) {
-        is ConditionDto.Address -> {
-            AddressField.entries.wired(field)?.let { field ->
-                addressMatch(match, value)?.let { RuleCondition.Address(field, it, not) }
-            }
-        }
-
-        is ConditionDto.Text -> {
-            TextField.entries.wired(field)?.let { field ->
-                TextOperator.entries.wired(op)?.let { RuleCondition.Text(field, it, value, not) }
-            }
-        }
-
-        is ConditionDto.Header -> {
-            HeaderOperator.entries.wired(op)?.let { RuleCondition.Header(name, it, value, not) }
-        }
-
-        is ConditionDto.MailingList -> {
-            RuleCondition.MailingList(id, not)
-        }
-
-        is ConditionDto.Size -> {
-            RuleCondition.Size(over, bytes)
-        }
-
-        is ConditionDto.When -> {
-            toWhen()
-        }
-
-        is ConditionDto.Spam -> {
-            RuleCondition.Spam(score)
-        }
+        is ConditionDto.Address -> condition()
+        is ConditionDto.Text -> condition()
+        is ConditionDto.Header -> HeaderOperator.entries.wired(op)?.let { RuleCondition.Header(name, it, value, not) }
+        is ConditionDto.MailingList -> RuleCondition.MailingList(id, not)
+        is ConditionDto.Size -> RuleCondition.Size(over, bytes)
+        is ConditionDto.When -> toWhen()
+        is ConditionDto.Spam -> RuleCondition.Spam(score)
     }
 
 private fun ConditionDto.When.toWhen(): RuleCondition.When? {

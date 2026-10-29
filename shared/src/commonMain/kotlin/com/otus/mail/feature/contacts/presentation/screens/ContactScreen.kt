@@ -115,6 +115,10 @@ private fun ContactPanel(
     onMerge: (MergePlan) -> Unit,
 ) {
     val cards = page.person?.cards.orEmpty()
+    val mergeCards = {
+        val plan = MergePlan.of(cards, state.writableBooks)
+        if (plan != null) onMerge(plan)
+    }
     ContextPanel(
         Modifier.padding(top = PageTokens.pageInset),
         placement = if (cards.size > 1) ChipPlacement.Overlapping else ChipPlacement.None,
@@ -126,7 +130,7 @@ private fun ContactPanel(
         chips = {
             if (cards.size > 1) {
                 item("cards") {
-                    Chip("Merge ${cards.size} cards", { MergePlan.of(cards, state.writableBooks)?.let(onMerge) }) {
+                    Chip("Merge ${cards.size} cards", mergeCards) {
                         Symbol(Res.drawable.symbol_call_merge)
                     }
                 }
@@ -167,8 +171,7 @@ private fun GroupBody(
     )
     if (editing) {
         ContactAvatarSheet(card.displayName, null, card.look, state.photoPicker, { state.setAvatar(card, it) }) {
-            editing =
-                false
+            editing = false
         }
     }
 }

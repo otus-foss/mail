@@ -112,7 +112,10 @@ private fun ContactsBody(
                 view.selected,
                 onOpen,
                 onToggle = view::toggle,
-                onReviewDuplicate = { content.notices.duplicate?.let { view.merging = state.mergePlan(it) } },
+                onReviewDuplicate = {
+                    val duplicate = content.notices.duplicate
+                    if (duplicate != null) view.merging = state.mergePlan(duplicate)
+                },
             ),
             barPadding,
             letterIndex,

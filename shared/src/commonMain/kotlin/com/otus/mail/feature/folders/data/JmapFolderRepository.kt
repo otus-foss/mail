@@ -65,9 +65,7 @@ class JmapFolderRepository(
                     val shared =
                         account.sharedAccountIds().map {
                             async {
-                                account.loadShared(
-                                    it,
-                                ) { id -> accountCache.folders(account, id) }
+                                account.loadShared(it) { id -> accountCache.folders(account, id) }
                             }
                         }
                     AccountFolders(
@@ -75,10 +73,7 @@ class JmapFolderRepository(
                         login.name,
                         accountCache.folders(account, account.id),
                         limits(account.mailCapability(account.id)),
-                        mailboxOwner =
-                            account.session.accounts[account.id]
-                                ?.name
-                                .orEmpty(),
+                        mailboxOwner = account.ownerName(account.id),
                         shared = shared.awaitAll().filterNotNull(),
                     )
                 }
@@ -203,12 +198,15 @@ private suspend fun MailAccount.loadShared(
     try {
         SharedMailboxes(
             jmapAccountId,
-            session.accounts[jmapAccountId]
-                ?.name
-                .orEmpty(),
+            ownerName(jmapAccountId),
             folders(jmapAccountId),
             limits(mailCapability(jmapAccountId)),
         )
     } catch (expected: JmapException) {
         null
     }
+
+private fun MailAccount.ownerName(jmapAccountId: String): String {
+    val account = session.accounts[jmapAccountId]
+    return account?.name.orEmpty()
+}

@@ -151,10 +151,8 @@ class JmapFolderRuleRepository(
         support: RuleSupport,
     ): String {
         val limit = (support.maxScriptBytes ?: MAX_SCRIPT_BYTES).coerceIn(1, MAX_SCRIPT_BYTES)
-        return account.connection
-            .download(account.id, script.blobId, SIEVE_MEDIA_TYPE, limit)
-            .bytes
-            .decodeToString()
+        val downloaded = account.connection.download(account.id, script.blobId, SIEVE_MEDIA_TYPE, limit)
+        return downloaded.bytes.decodeToString()
     }
 
     override suspend fun existingCount(
@@ -191,9 +189,7 @@ private fun availability(account: MailAccount): RuleAvailability {
     val sieve = capabilities[JmapCapability.SIEVE] ?: return RuleAvailability.RulesUnavailable
     val capability = runCatching { JmapJson.decodeFromJsonElement(SieveCapability.serializer(), sieve) }.getOrNull()
     val support = RuleSupport(capability?.sieveExtensions.orEmpty().toSet(), capability?.maxSizeScript)
-    return if ("fileinto" in
-        support.extensions
-    ) {
+    return if ("fileinto" in support.extensions) {
         RuleAvailability.Available(support)
     } else {
         RuleAvailability.RulesUnavailable
@@ -202,11 +198,8 @@ private fun availability(account: MailAccount): RuleAvailability {
 
 /** The device's current UTC offset as Sieve's `:zone` takes it (RFC 5260, section 4.1), such as `+0200`. */
 internal fun deviceZone(): String {
-    val seconds =
-        TimeZone
-            .currentSystemDefault()
-            .offsetAt(Clock.System.now())
-            .totalSeconds
+    val zone = TimeZone.currentSystemDefault()
+    val seconds = zone.offsetAt(Clock.System.now()).totalSeconds
     val minutes = kotlin.math.abs(seconds) / SECONDS_PER_MINUTE
     val sign = if (seconds < 0) "-" else "+"
     val hours = (minutes / MINUTES_PER_HOUR).toString().padStart(2, '0')

@@ -102,11 +102,8 @@ private fun NameRow(
     onChange: (MergePlan) -> Unit,
 ) {
     val named = plan.cards.filter { it.hasName }.distinctBy { it.displayName }
-    val name =
-        plan.cards
-            .firstOrNull { it.key == plan.name }
-            ?.takeIf { it.hasName }
-            ?.displayName ?: "No name"
+    val selected = plan.cards.firstOrNull { it.key == plan.name }
+    val name = selected?.takeIf { it.hasName }?.displayName ?: "No name"
     var open by remember { mutableStateOf(false) }
     Box {
         ContactValueRow(
@@ -196,13 +193,9 @@ private fun DeleteRow(
     bookOf: (BookKey) -> ContactBook?,
     onChange: (MergePlan) -> Unit,
 ) {
-    val name =
-        plan.cards
-            .filterNot { it == plan.target }
-            .singleOrNull()
-            ?.books
-            ?.firstNotNullOfOrNull(bookOf)
-            ?.name
+    val removed = plan.cards.filterNot { it == plan.target }.singleOrNull()
+    val book = removed?.books?.firstNotNullOfOrNull(bookOf)
+    val name = book?.name
     PickRow(
         if (name != null) "Delete the $name card" else "Delete the other cards",
         null,

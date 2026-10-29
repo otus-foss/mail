@@ -88,54 +88,29 @@ private fun LegacyRuleDto.toFolderRules(): List<FolderRule> {
     val combinations =
         converted.fold(1) { count, options -> (count * options.size).coerceAtMost(MAX_SPLIT_RULES + 1) }
     return when {
-        !matchAll -> {
-            converted.flatten().map(::FolderRule)
-        }
-
-        combinations == 0 || combinations > MAX_SPLIT_RULES -> {
-            emptyList()
-        }
-
-        else -> {
-            converted
-                .fold(listOf(emptyList<RuleCondition>())) { rules, options ->
-                    rules.flatMap { rule -> options.map { rule + it } }
-                }.map(::FolderRule)
-        }
+        !matchAll -> converted.flatten().map(::FolderRule)
+        combinations == 0 || combinations > MAX_SPLIT_RULES -> emptyList()
+        else -> combinedRules(converted)
     }
 }
+
+private fun combinedRules(converted: List<List<List<RuleCondition>>>): List<FolderRule> =
+    converted
+        .fold(listOf(emptyList<RuleCondition>())) { rules, options ->
+            rules.flatMap { rule -> options.map { rule + it } }
+        }.map(::FolderRule)
 
 /** Groups of conditions that together replace this one, any of which may match; empty when it has no equivalent. */
 private fun LegacyConditionDto.alternatives(): List<List<RuleCondition>> {
     val negated = operator == "doesNotContain" || operator == "isNot"
     val single =
         when (field) {
-            "from" -> {
-                address(AddressField.From, negated)
-            }
-
-            "to" -> {
-                address(AddressField.To, negated)
-            }
-
-            "cc" -> {
-                address(AddressField.Cc, negated)
-            }
-
-            "subject" -> {
-                subject(negated)
-            }
-
-            "body" -> {
-                RuleCondition.Text(TextField.Body, TextOperator.Contains, value, negated).takeIf {
-                    operator !=
-                        "matchesRegex"
-                }
-            }
-
-            else -> {
-                null
-            }
+            "from" -> address(AddressField.From, negated)
+            "to" -> address(AddressField.To, negated)
+            "cc" -> address(AddressField.Cc, negated)
+            "subject" -> subject(negated)
+            "body" -> body(negated)
+            else -> null
         }
     if (field != "recipient") return listOfNotNull(single).map(::listOf)
     val both = listOfNotNull(address(AddressField.To, negated), address(AddressField.Cc, negated))
@@ -165,22 +140,17 @@ private fun LegacyConditionDto.address(
 
 private fun LegacyConditionDto.addressMatch(): AddressMatch? =
     when {
-        operator == "is" || operator == "isNot" -> {
-            if (value.startsWith('@')) AddressMatch.Domain(value.drop(1)) else AddressMatch.Exact(value)
-        }
-
-        operator == "endsWith" && value.startsWith('@') -> {
-            AddressMatch.Domain(value.drop(1))
-        }
-
-        operator == "startsWith" && value.endsWith('@') -> {
-            AddressMatch.LocalPart(value.dropLast(1))
-        }
-
-        else -> {
-            null
-        }
+        operator == "is" || operator == "isNot" -> exactAddress()
+        operator == "endsWith" && value.startsWith('@') -> AddressMatch.Domain(value.drop(1))
+        operator == "startsWith" && value.endsWith('@') -> AddressMatch.LocalPart(value.dropLast(1))
+        else -> null
     }
+
+private fun LegacyConditionDto.exactAddress(): AddressMatch =
+    if (value.startsWith('@')) AddressMatch.Domain(value.drop(1)) else AddressMatch.Exact(value)
+
+private fun LegacyConditionDto.body(negated: Boolean): RuleCondition? =
+    RuleCondition.Text(TextField.Body, TextOperator.Contains, value, negated).takeIf { operator != "matchesRegex" }
 
 private fun LegacyConditionDto.subject(negated: Boolean): RuleCondition? =
     when (operator) {

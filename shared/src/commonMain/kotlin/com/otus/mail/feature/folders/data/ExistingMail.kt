@@ -34,10 +34,8 @@ internal class ExistingMail(
             val filter = emailFilter(rule, sources) ?: return@withAccount null
             if (sources.isEmpty()) return@withAccount 0
             val query = QueryMethod(EmailFoldersType, account.id, filter, limit = 1, extra = CALCULATE_TOTAL)
-            account.connection
-                .call(query)
-                .total
-                ?.toInt()
+            val result = account.connection.call(query)
+            result.total?.toInt()
         }
 
     /** Moves the matches into [folderId] and returns how many moved; null on failure. */
@@ -93,12 +91,10 @@ internal class ExistingMail(
     private suspend fun sources(
         account: MailAccount,
         folderId: String,
-    ): List<String> =
-        account.connection
-            .call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
-            .list
-            .filter { it.role?.lowercase() in SOURCE_ROLES && it.id != folderId }
-            .map { it.id }
+    ): List<String> {
+        val result = account.connection.call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
+        return result.list.filter { it.role?.lowercase() in SOURCE_ROLES && it.id != folderId }.map { it.id }
+    }
 
     private suspend fun <T> withAccount(
         accountId: String,
