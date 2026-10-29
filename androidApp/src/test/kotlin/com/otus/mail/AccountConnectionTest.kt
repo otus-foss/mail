@@ -2,6 +2,7 @@ package com.otus.mail
 
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -138,7 +139,7 @@ class AccountConnectionTest {
         compose.onNodeWithText("1 account connected").assertIsDisplayed()
 
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
+        compose.onNode(hasContentDescription("Inbox", substring = true) and isSelectable()).performClick()
         compose.waitForNode(hasText("Engine notes"))
     }
 

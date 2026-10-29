@@ -50,7 +50,8 @@ internal fun MailPageContent(
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
         MailPage.NotificationOverrides,
-        MailPage.SidebarSettings, MailPage.ThemeSettings, MailPage.MailListSettings, MailPage.ActionBarSettings,
+        MailPage.SidebarSettings, MailPage.PinnedSettings, MailPage.ThemeSettings, MailPage.MailListSettings,
+        MailPage.ActionBarSettings,
         MailPage.Folders, is MailPage.FolderDetail,
         -> {
             SettingsPageContent(page, states, settings, dateFormatter, navigation, back)
@@ -121,8 +122,8 @@ private fun SettingsPageContent(
             NotificationPages(page, states, navigation, back)
         }
 
-        MailPage.SidebarSettings -> {
-            SidebarSettingsPage(states, back)
+        MailPage.SidebarSettings, MailPage.PinnedSettings -> {
+            SidebarSettingsPage(page, states, navigation, back)
         }
 
         MailPage.ThemeSettings -> {

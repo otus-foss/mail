@@ -7,11 +7,16 @@ import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.TRASH_ROLE
 
 /**
- * A mailbox pinned to the sidebar's Pinned section, below the Inbox. A pin whose folder no account
- * has, such as Read later while it is off, stays saved and shows once the folder exists.
+ * A mailbox pinned to the sidebar's Pinned section. A pin whose folder no account has, such as
+ * Read later while it is off, stays saved and shows once the folder exists.
  */
 sealed interface SidebarPin {
     val storageValue: String
+
+    /** Each account's inbox, with the other folders chosen for it. */
+    data object Inbox : SidebarPin {
+        override val storageValue = "inbox"
+    }
 
     /** Each account's Read later folder. */
     data object ReadLater : SidebarPin {
@@ -43,17 +48,17 @@ sealed interface SidebarPin {
     }
 
     companion object {
-        /** Read later and Conversations, then the system folders in the order the sidebar always listed them. */
+        /** Inbox, Read later and Conversations, then the system folders in the order the sidebar always listed them. */
         val defaults: List<SidebarPin> =
-            listOf(ReadLater, Conversations) +
+            listOf(Inbox, ReadLater, Conversations) +
                 listOf(DRAFTS_ROLE, SENT_ROLE, ARCHIVE_ROLE, JUNK_ROLE, TRASH_ROLE).map(::Role) +
                 Contacts
 
         /**
          * Pins added to [defaults] after layouts were saved. A layout saved before one of them pins it
-         * once; after that the user's choice stays.
+         * once; after that the user's choice stays. The Inbox was always shown before it became a pin.
          */
-        val introduced: List<SidebarPin> = listOf(Contacts)
+        val introduced: List<SidebarPin> = listOf(Contacts, Inbox)
 
         /** [pins] saved as one value without commas or line breaks, so it fits one layout line. */
         fun encode(pins: List<SidebarPin>): String = pins.joinToString(SEPARATOR) { it.storageValue }
@@ -68,6 +73,7 @@ sealed interface SidebarPin {
         /** Null for a value this version does not know. */
         fun fromStorageValue(value: String): SidebarPin? =
             when {
+                value == Inbox.storageValue -> Inbox
                 value == ReadLater.storageValue -> ReadLater
                 value == Conversations.storageValue -> Conversations
                 value == Contacts.storageValue -> Contacts

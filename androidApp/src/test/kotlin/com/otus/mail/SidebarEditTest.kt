@@ -129,22 +129,25 @@ class SidebarEditTest {
     }
 
     @Test
-    fun aPinnedFolderShowsBelowTheInboxAndStaysInFolders() {
+    fun aPinnedFolderShowsInTheSidebarAndStaysInFolders() {
         openSidebar()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Appearance").performClick()
         compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
-        compose.onNode(hasText("Shown below the Inbox")).performClick()
-        // Contacts is pinned by default and needs no folder, so it is the only pin shown at first.
-        compose.onNode(hasText("Contacts")).assertIsDisplayed()
-        row("Receipts").performClick()
-        closeChoice()
+        compose.onNode(hasText("Mailboxes and folders")).performClick()
+        // The Inbox and Contacts need no folder of their own, so they are the pins shown at first.
+        compose.onNode(hasContentDescription("Remove Contacts")).assertIsDisplayed()
+        row("Receipts").performScrollTo().performClick()
         assertEquals(SidebarPin.defaults + SidebarPin.Folder(listOf("receipts")), behavior.behavior.sidebar.pinned)
+        compose.onNode(hasContentDescription("Remove Inbox")).performClick()
+        assertEquals(false, SidebarPin.Inbox in behavior.behavior.sidebar.pinned)
+        compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onAllNodes(hasText("Receipts") and isSelectable()).assertCountEquals(1)
         compose.onAllNodes(hasContentDescription("Receipts, 2") and isSelectable()).assertCountEquals(1)
+        compose.onAllNodes(hasContentDescription("Inbox", substring = true) and isSelectable()).assertCountEquals(0)
     }
 
     private fun closeChoice() {
