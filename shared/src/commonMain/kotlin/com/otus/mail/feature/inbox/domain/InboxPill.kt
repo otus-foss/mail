@@ -57,23 +57,16 @@ sealed interface InboxPill {
         /** Null for a value this version does not know. Server ids never contain "/" (RFC 8620, section 1.2). */
         fun fromStorageValue(value: String): InboxPill? =
             when {
-                value == ReadLater.storageValue -> {
-                    ReadLater
-                }
-
-                value.startsWith(ROLE_PREFIX) -> {
-                    Role(value.removePrefix(ROLE_PREFIX)).takeIf { it.role.isNotEmpty() }
-                }
-
-                value.startsWith(FOLDER_PREFIX) -> {
-                    val ids = value.removePrefix(FOLDER_PREFIX)
-                    Folder(ids.substringBeforeLast("/"), ids.substringAfterLast("/"))
-                        .takeIf { "/" in ids && it.accountId.isNotEmpty() && it.folderId.isNotEmpty() }
-                }
-
-                else -> {
-                    Filter.entries.firstOrNull { it.storageValue == value }
-                }
+                value == ReadLater.storageValue -> ReadLater
+                value.startsWith(ROLE_PREFIX) -> Role(value.removePrefix(ROLE_PREFIX)).takeIf { it.role.isNotEmpty() }
+                value.startsWith(FOLDER_PREFIX) -> folderFrom(value)
+                else -> Filter.entries.firstOrNull { it.storageValue == value }
             }
+
+        private fun folderFrom(value: String): Folder? {
+            val ids = value.removePrefix(FOLDER_PREFIX)
+            return Folder(ids.substringBeforeLast("/"), ids.substringAfterLast("/"))
+                .takeIf { "/" in ids && it.accountId.isNotEmpty() && it.folderId.isNotEmpty() }
+        }
     }
 }

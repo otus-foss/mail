@@ -9,10 +9,10 @@ package com.otus.mail.feature.inbox.domain
  * as a round button. A null swipe does nothing. [websiteIcons] lets sender avatars load images
  * from outside the user's servers, such as sender websites, and [duckDuckGoIcons] also asks
  * DuckDuckGo's icon cache for a site without an icon. [allAccountPhotos] lets mail to one account
- * show the photo of a contact saved in another. [recentFrom] holds the
- * addresses the user last sent from, newest first, which compose offers first and a new message
- * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
- * forwards too; new messages always get it. [undoSendSeconds] holds each sent message on the device
+ * show the photo of a contact saved in another. [recentFrom] holds the addresses the user last
+ * sent from, newest first, which compose offers first and a new message from all accounts sends
+ * from. [signatureInReplies] adds the identity's signature to replies and forwards too; new
+ * messages always get it. [undoSendSeconds] holds each sent message on the device
  * that long so Undo can stop it; 0 sends at once. [filters] arranges the filter panel. [list] sets
  * how the mail list's rows read. [remoteImages] decides when a message loads images from other
  * servers, and [allowedSenders] are the lowercase addresses whose images always load.
@@ -51,16 +51,10 @@ data class MailBehavior(
     val photoCleaning: PhotoCleaning = PhotoCleaning.Ask,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
-    fun sentFrom(address: String): MailBehavior =
-        copy(
-            recentFrom =
-                (
-                    listOf(address) +
-                        recentFrom.filterNot {
-                            it.equals(address, ignoreCase = true)
-                        }
-                ).take(RECENT_FROM_LIMIT),
-        )
+    fun sentFrom(address: String): MailBehavior {
+        val others = recentFrom.filterNot { it.equals(address, ignoreCase = true) }
+        return copy(recentFrom = (listOf(address) + others).take(RECENT_FROM_LIMIT))
+    }
 
     /** What a swipe can be set to besides nothing; Read later only while it is on. */
     val swipeChoices: List<MailAction>
@@ -101,14 +95,7 @@ data class MailBehavior(
     fun withReadLater(on: Boolean): MailBehavior {
         val defaults = MailBehavior()
 
-        fun MailAction?.orDefault(default: MailAction?) =
-            if (!on &&
-                this == MailAction.ReadLater
-            ) {
-                default
-            } else {
-                this
-            }
+        fun MailAction?.orDefault(default: MailAction?) = if (!on && this == MailAction.ReadLater) default else this
         return copy(
             readLater = on,
             startToEnd = startToEnd.orDefault(defaults.startToEnd),

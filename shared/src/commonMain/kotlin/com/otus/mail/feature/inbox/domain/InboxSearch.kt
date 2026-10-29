@@ -19,11 +19,8 @@ fun searchMessages(
     search: InboxSearch,
     filters: InboxFilters = InboxFilters(),
 ): List<MailMessage> {
-    val terms =
-        search.query
-            .trim()
-            .split(Regex("\\s+"))
-            .filter(String::isNotEmpty)
+    val query = search.query.trim()
+    val terms = query.split(Regex("\\s+")).filter(String::isNotEmpty)
     val newestFirst =
         compareByDescending<MailMessage> { it.lastReceived.date }.thenByDescending { it.lastReceived.time }
     return messages
