@@ -32,7 +32,7 @@ internal fun ComposeBar(
     scheduled: Boolean = false,
 ) {
     val offer = { action: BarButton ->
-        val run =
+        val callback =
             when (action) {
                 MailAction.Send -> onSend
                 MailAction.Attach -> onAttach
@@ -40,7 +40,7 @@ internal fun ComposeBar(
                 else -> null
             }
         val symbol = if (action == MailAction.Send && scheduled) Res.drawable.symbol_schedule_send else action.symbol
-        run?.let { OfferedAction(action.buttonLabel(), symbol, leaves = true, run = it) }
+        callback?.let { OfferedAction(action.buttonLabel(), symbol, leaves = true, run = it) }
     }
     MailActionBar(
         behavior.barLayout(ActionBarPlace.Compose),

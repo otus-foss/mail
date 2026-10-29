@@ -83,9 +83,7 @@ internal fun chipAvatar(
     address: String,
 ): ChipAvatar = (avatar ?: ResolvedAvatar(generatedAvatar(name, address))).toChipAvatar()
 
-private fun shortName(sender: MailSender): String =
-    sender.name
-        .trim()
-        .split(Regex("\\s+"))
-        .firstOrNull { it.isNotBlank() && '@' !in it }
-        ?: sender.address.substringBefore('@')
+private fun shortName(sender: MailSender): String {
+    val words = sender.name.trim().split(Regex("\\s+"))
+    return words.firstOrNull { it.isNotBlank() && '@' !in it } ?: sender.address.substringBefore('@')
+}

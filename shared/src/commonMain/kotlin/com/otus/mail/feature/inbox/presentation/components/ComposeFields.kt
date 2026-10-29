@@ -67,24 +67,29 @@ private fun RecipientRow(
             modifier = modifier,
             collapsedAfter = FOLDED_RECIPIENTS,
         )
-        val suggested =
-            recipients.suggestions
-                .takeIf { it.field == field }
-                ?.people
-                .orEmpty()
+        val suggestions = recipients.suggestions
+        val suggested = suggestions.takeIf { it.field == field }?.people.orEmpty()
         if (suggested.isNotEmpty()) {
             Dropdown(recipients::dismissSuggestions, focusable = false) {
                 suggested.forEach { person ->
-                    DropdownRow(
-                        person.shownName,
-                        selected = false,
-                        onClick = { recipients.choose(field, person) },
-                        detail = person.address.takeIf { person.name.isNotBlank() },
-                    ) { PersonAvatar(person.chipAvatar, ComposeTokens.dropdownAvatarSize) }
+                    SuggestedRecipient(person) { recipients.choose(field, person) }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SuggestedRecipient(
+    person: MailSender,
+    onSelect: () -> Unit,
+) {
+    DropdownRow(
+        person.shownName,
+        selected = false,
+        onClick = onSelect,
+        detail = person.address.takeIf { person.name.isNotBlank() },
+    ) { PersonAvatar(person.chipAvatar, ComposeTokens.dropdownAvatarSize) }
 }
 
 private fun MailSender.recipient(): Recipient =

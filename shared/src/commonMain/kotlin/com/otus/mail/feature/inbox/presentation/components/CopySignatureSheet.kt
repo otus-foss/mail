@@ -43,7 +43,8 @@ internal fun CopySignatureSheet(
     val ready = if (direction == FROM) source != null else targets.isNotEmpty()
     val copy = {
         if (direction == FROM) {
-            source?.let { signatures.copy(it, listOf(current)) }
+            val chosen = source
+            if (chosen != null) signatures.copy(chosen, listOf(current))
         } else {
             signatures.copy(current, others.filter { it.key in targets })
         }

@@ -53,8 +53,8 @@ internal fun ComposePanel(
         trailingAction = { OptionsButton(options) },
         chips = {
             item(FROM_PILL) { FromPill(state, recentFrom) }
-            onAddCc?.let { add ->
-                item(CC_PILL) { ButtonPill("Cc", add, description = "Add Cc") { Symbol(Res.drawable.symbol_add) } }
+            if (onAddCc != null) {
+                item(CC_PILL) { ButtonPill("Cc", onAddCc, description = "Add Cc") { Symbol(Res.drawable.symbol_add) } }
             }
         },
     ) {
