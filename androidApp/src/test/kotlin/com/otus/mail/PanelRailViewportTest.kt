@@ -103,8 +103,9 @@ class PanelRailViewportTest {
         }
     }
 
-    private fun snapshot(direction: LayoutDirection): Bitmap =
-        compose.windowBitmap().also {
-            it.savePng("build/reports/context-panel/scroll-edge-${direction.name.lowercase()}.png")
-        }
+    private fun snapshot(direction: LayoutDirection): Bitmap {
+        val bitmap = compose.windowBitmap()
+        bitmap.savePng("build/reports/context-panel/scroll-edge-${direction.name.lowercase()}.png")
+        return bitmap
+    }
 }

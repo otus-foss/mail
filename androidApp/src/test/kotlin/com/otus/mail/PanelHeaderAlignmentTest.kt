@@ -119,11 +119,8 @@ class PanelHeaderAlignmentTest {
             assertEquals("Text baseline moved in returning frame $frame", originalBaseline, baseline(prompt()), 0.5f)
         }
         compose.mainClock.autoAdvance = true
-        val height =
-            compose
-                .onNodeWithContentDescription("Search mailbox")
-                .fetchSemanticsNode()
-                .boundsInRoot.height
+        val search = compose.onNodeWithContentDescription("Search mailbox").fetchSemanticsNode()
+        val height = search.boundsInRoot.height
         assertTrue(
             "The prompt keeps its accessible touch target",
             height >= 48 * compose.activity.resources.displayMetrics.density,

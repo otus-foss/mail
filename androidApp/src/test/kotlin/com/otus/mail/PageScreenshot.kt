@@ -13,16 +13,17 @@ internal fun AndroidComposeTestRule<*, out ComponentActivity>.screenshot(name: S
     val bitmap =
         runOnIdle {
             val decor = activity.window.decorView
-            decor.drawnBitmap().also { bitmap ->
-                val canvas = Canvas(bitmap)
-                windowViews().filter { it !== decor && it.isShown }.forEach { view ->
-                    val at = IntArray(2).also(view::getLocationOnScreen)
-                    canvas.save()
-                    canvas.translate(at[0].toFloat(), at[1].toFloat())
-                    view.draw(canvas)
-                    canvas.restore()
-                }
+            val snapshot = decor.drawnBitmap()
+            val canvas = Canvas(snapshot)
+            windowViews().filter { it !== decor && it.isShown }.forEach { view ->
+                val position = IntArray(2)
+                view.getLocationOnScreen(position)
+                canvas.save()
+                canvas.translate(position[0].toFloat(), position[1].toFloat())
+                view.draw(canvas)
+                canvas.restore()
             }
+            snapshot
         }
     bitmap.savePng("build/reports/compose/$name.png")
 }

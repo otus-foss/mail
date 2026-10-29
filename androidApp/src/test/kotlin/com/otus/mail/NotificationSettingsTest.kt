@@ -59,10 +59,8 @@ class NotificationSettingsTest {
         open(push)
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithContentDescription("About Instant delivery").performClick()
-        compose
-            .onNodeWithText(
-                "Choose Google Play services for instant delivery without an extra app.",
-            ).assertIsDisplayed()
+        val explanation = "Choose Google Play services for instant delivery without an extra app."
+        compose.onNodeWithText(explanation).assertIsDisplayed()
         compose.onNodeWithContentDescription("Close").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Instant delivery").performClick()
@@ -87,10 +85,7 @@ class NotificationSettingsTest {
         compose.onNodeWithText("Delivery through Google Play services").assertIsDisplayed()
         compose.onRoot().captureRoboImage("src/test/screenshots/notifications/google-settings.png")
         compose.onNodeWithText("Notifications").performClick()
-        compose
-            .onNodeWithText(
-                "The server doesn't support Google delivery.",
-            ).assertIsDisplayed()
+        compose.onNodeWithText("The server doesn't support Google delivery.").assertIsDisplayed()
         compose.onAllNodesWithText("Connecting").assertCountEquals(0)
     }
 
@@ -99,10 +94,8 @@ class NotificationSettingsTest {
         open(FakeNotificationPush(emptyList()))
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithContentDescription("About Instant delivery").performClick()
-        compose
-            .onNodeWithText(
-                "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy.",
-            ).assertIsDisplayed()
+        val explanation = "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy."
+        compose.onNodeWithText(explanation).assertIsDisplayed()
         compose.onAllNodesWithText("Accounts").assertCountEquals(0)
         compose.onRoot().captureRoboImage("src/test/screenshots/notifications/google-unavailable.png")
     }

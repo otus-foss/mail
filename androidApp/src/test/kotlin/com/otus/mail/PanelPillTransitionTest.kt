@@ -41,7 +41,7 @@ class PanelPillTransitionTest {
         val x = (outgoing.right - outgoing.height / 2).toInt()
         val y = (outgoing.center.y - (36f / 2 + 1) * density).toInt()
         compose.mainClock.autoAdvance = false
-        changeMode(true)
+        changeMode(value = true)
         // The descending edge has passed the sample row; from here it must stay solid surface.
         advanceDrawing(112)
         val incoming = compose.onNodeWithText("People").fetchSemanticsNode().boundsInRoot
@@ -64,7 +64,7 @@ class PanelPillTransitionTest {
         showPanel(collapsed = listOf("Unread"), wide = listOf("People", "Date"))
         val outgoing = compose.onNodeWithText("Unread").fetchSemanticsNode().boundsInRoot
         compose.mainClock.autoAdvance = false
-        changeMode(true)
+        changeMode(value = true)
         advanceDrawing(112)
         val incoming = compose.onNodeWithText("Date").fetchSemanticsNode().boundsInRoot
         val density = compose.activity.resources.displayMetrics.density
@@ -82,7 +82,7 @@ class PanelPillTransitionTest {
         showPanel(collapsed = listOf("Unread", "Attachments"), wide = listOf("People"))
         val outgoing = compose.onNodeWithText("People").fetchSemanticsNode().boundsInRoot
         compose.mainClock.autoAdvance = false
-        changeMode(false)
+        changeMode(value = false)
         advanceDrawing(16)
         val incoming = compose.onNodeWithText("Attachments").fetchSemanticsNode().boundsInRoot
         val density = compose.activity.resources.displayMetrics.density
@@ -109,7 +109,7 @@ class PanelPillTransitionTest {
         val x = (last.right - 12 * density).toInt()
         val y = (last.center.y + 14 * density).toInt()
         compose.mainClock.autoAdvance = false
-        changeMode(false)
+        changeMode(value = false)
         // The group is now narrower than this pill's right end, while the pill is still visible.
         advanceDrawing(112)
         assertNotEquals(
@@ -160,6 +160,8 @@ class PanelPillTransitionTest {
     ): Int =
         compose.runOnIdle {
             val bitmap = compose.drawnWindow()
-            bitmap.getPixel(x, y).also { bitmap.recycle() }
+            val color = bitmap.getPixel(x, y)
+            bitmap.recycle()
+            color
         }
 }
