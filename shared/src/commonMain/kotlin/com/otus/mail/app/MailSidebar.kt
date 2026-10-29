@@ -44,7 +44,7 @@ internal fun MailSidebar(
     var picking by rememberSaveable { mutableStateOf(false) }
     var collapsedFolders by rememberSaveable(stateSaver = KeysSaver) { mutableStateOf(emptySet<List<String>>()) }
     val inbox = states.behavior.behavior.inbox
-    val mailboxes = remember(folders, inbox, layout.pinned) { sidebarMailboxes(folders, inbox, layout.pinned) }
+    val mailboxes = remember(folders, inbox, layout) { sidebarMailboxes(folders, inbox, layout) }
     val shared = remember(folders) { sharedFolders(folders) }
     val actions = rememberFolderActions(states)
     val colorOf = states.folderColors::groupColorOf
@@ -75,8 +75,13 @@ internal fun MailSidebar(
         },
         footer = footer,
     ) {
-        // An account without folders would leave a divider over nothing.
-        layout.shown.filterNot { it == SidebarSection.Folders && shared.isEmpty() }.forEach { section ->
+        // An account without folders, or nothing pinned, would leave a divider over nothing.
+        val empty =
+            setOfNotNull(
+                SidebarSection.Folders.takeIf { shared.isEmpty() },
+                SidebarSection.Mailboxes.takeIf { mailboxes.isEmpty() },
+            )
+        (layout.shown - empty).forEach { section ->
             SidebarDivider()
             when (section) {
                 SidebarSection.Mailboxes -> {
