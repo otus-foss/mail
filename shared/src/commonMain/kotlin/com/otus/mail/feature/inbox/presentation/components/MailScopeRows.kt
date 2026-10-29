@@ -96,24 +96,27 @@ internal class MailScopeRows(
         Collapsible(open) {
             Column {
                 addresses.forEach { address ->
-                    ScopeChildRow(
-                        addressOption(address, accounts, count(address), pinned = false),
-                        chosen = chosen == address,
-                        onClick = { onChoose(address) },
-                        onLongClick = { onTogglePin(address) },
-                    )
+                    ChildAddress(address)
                 }
             }
         }
     }
 
+    @Composable
+    private fun ChildAddress(address: MailScopeChoice.Address) {
+        ScopeChildRow(
+            addressOption(address, accounts, count(address), pinned = false),
+            chosen = chosen == address,
+            onClick = { onChoose(address) },
+            onLongClick = { onTogglePin(address) },
+        )
+    }
+
     /** The domain's addresses' counts added up; null when none of them has one. */
-    private fun domainCount(group: DomainGroup): String? =
-        group.addresses
-            .mapNotNull { count(it)?.toLongOrNull() }
-            .takeIf { it.isNotEmpty() }
-            ?.sum()
-            ?.toString()
+    private fun domainCount(group: DomainGroup): String? {
+        val counts = group.addresses.mapNotNull { count(it)?.toLongOrNull() }
+        return if (counts.isEmpty()) null else counts.sum().toString()
+    }
 }
 
 /** The key of the group that holds [chosen], so the sheet opens with it expanded. */

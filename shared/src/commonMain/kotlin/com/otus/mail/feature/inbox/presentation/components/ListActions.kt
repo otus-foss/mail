@@ -37,7 +37,9 @@ internal fun ListActions.offer(action: BarButton): OfferedAction? =
 private fun ListActions.offerMarkAllRead(): OfferedAction? {
     val actions = messageActions ?: return null
     val unread = results.filter { it.attributes.unread && actions.canMark(it, MessageFlag.Read) }
-    return unread.takeIf { it.isNotEmpty() }?.let {
+    return if (unread.isEmpty()) {
+        null
+    } else {
         plainOffer(MailAction.MarkAllRead) { actions.onMark(unread, MessageFlag.Read, true) }
     }
 }
