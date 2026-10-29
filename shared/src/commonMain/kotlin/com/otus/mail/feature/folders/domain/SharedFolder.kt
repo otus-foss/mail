@@ -1,5 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.BIN_ROLES
+
 /**
  * The user's own folders of every account, merged by path. Folders whose names match from the top
  * level down, ignoring case, are one shared folder, so Clients / Acme in two accounts is one row
@@ -42,10 +44,7 @@ private class FolderPath(
 private fun AccountFolders.ownFolderPaths(): List<FolderPath> {
     val kept =
         folders.filterNot { folder ->
-            (listOf(folder) + ancestors(folders, folder)).any {
-                it.role in
-                    DISCARD_ROLES
-            }
+            (listOf(folder) + ancestors(folders, folder)).any { it.role in BIN_ROLES }
         }
     val nodes = folderTree(kept, readLaterId) { !it.isCustom || it.id == readLaterId }
     // Parents come first, so a folder's path is the open path cut to its depth, plus its name.

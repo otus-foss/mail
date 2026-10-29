@@ -2,7 +2,6 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
-import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
@@ -13,9 +12,6 @@ import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.testing.stalwartLike
 import kotlinx.datetime.TimeZone
-
-/** Ada's login at the mock server, which accepts her with the password `secret`. */
-internal val ADA_LOGIN = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
 
 /** A mail source that reads this server for the saved logins of [store], in UTC. */
 internal fun FakeMailServer.source(

@@ -11,12 +11,15 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.SetResult
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.mail.DRAFTS_ROLE
 import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityObject
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftRestoreException

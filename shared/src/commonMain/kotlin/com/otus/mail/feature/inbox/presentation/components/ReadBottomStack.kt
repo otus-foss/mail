@@ -28,6 +28,7 @@ import com.otus.mail.feature.inbox.domain.MailingList
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.folderHint
 import com.otus.mail.feature.inbox.domain.inJunk
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.PageBody
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState

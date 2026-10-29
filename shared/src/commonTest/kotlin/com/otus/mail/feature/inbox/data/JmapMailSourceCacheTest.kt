@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
+import com.otus.mail.testing.ADA_LOGIN
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject

@@ -12,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.barLayout
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.recipients
 
 /**

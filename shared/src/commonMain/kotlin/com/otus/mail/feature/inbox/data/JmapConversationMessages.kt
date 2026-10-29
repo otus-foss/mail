@@ -7,6 +7,7 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.ThreadObject

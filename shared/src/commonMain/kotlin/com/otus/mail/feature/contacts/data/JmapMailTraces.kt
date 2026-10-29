@@ -8,17 +8,17 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
-import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.contacts.domain.MailTrace
 import com.otus.mail.feature.contacts.domain.MailTraceSource
 import com.otus.mail.feature.contacts.domain.MailTraces
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import kotlin.time.Instant
 
 /**
@@ -47,9 +47,7 @@ internal class JmapMailTraces(
         }
 
     private suspend fun MailAccount.newest(role: String): List<MailTrace> {
-        val mailbox =
-            connection.call(QueryMethod(MailboxType, id, buildJsonObject { put("role", role) })).ids.firstOrNull()
-                ?: return emptyList()
+        val mailbox = connection.call(roleQuery(role)).ids.firstOrNull() ?: return emptyList()
         val ids = connection.call(QueryMethod(EmailType, id, inMailbox(mailbox), NEWEST_FIRST, SCAN)).ids
         val batch = (session.maxObjectsInGet ?: GET_BATCH.toLong()).toInt().coerceIn(1, GET_BATCH)
         return ids
@@ -73,8 +71,6 @@ internal class JmapMailTraces(
 
         /** Read when the server names no `maxObjectsInGet`; small enough for any server. */
         const val GET_BATCH = 200
-        const val SENT_ROLE = "sent"
-        const val INBOX_ROLE = "inbox"
         val PROPERTIES = listOf("id", "receivedAt", "from", "to", "cc", "bcc")
     }
 }

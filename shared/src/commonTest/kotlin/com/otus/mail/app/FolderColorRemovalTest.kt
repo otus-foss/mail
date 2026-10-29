@@ -7,20 +7,13 @@ import com.otus.mail.feature.folders.domain.FolderColors
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.readColors
 import com.otus.mail.feature.folders.domain.writeColors
+import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FolderColorRemovalTest {
-    private class MemoryStore : FolderColorStore {
-        var saved = emptyMap<String, String>()
-
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
+    private class MemoryStore : MemoryMapStore(), FolderColorStore
 
     @Test
     fun removingAnAccountForgetsOnlyItsFolderColors() =

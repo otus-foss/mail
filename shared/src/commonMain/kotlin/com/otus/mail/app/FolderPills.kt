@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderNode
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.folderIcon
 import com.otus.mail.feature.inbox.domain.InboxPill

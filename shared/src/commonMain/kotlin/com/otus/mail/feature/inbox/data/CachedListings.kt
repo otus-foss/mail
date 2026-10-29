@@ -5,8 +5,10 @@ import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.MailboxObject
+import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.objects

@@ -2,7 +2,7 @@ package com.otus.mail.app
 
 import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
+import com.otus.mail.testing.ADA_LOGIN
 import io.ktor.client.engine.HttpClientEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 
 /** Services signed in to Ada's account alone, on the server that [engine] mocks. */
 internal fun adaServices(engine: HttpClientEngine): MailServices {
-    val logins = InMemoryLoginStore().apply { save(JmapLogin("ada", ADA_URL, "ada@example.org", "Ada"), "secret") }
+    val logins = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
     return MailServices(logins = logins, createClient = { JmapClient(engine) })
 }
 
@@ -27,5 +27,4 @@ internal suspend fun TestScope.settle(done: () -> Boolean) {
     }
 }
 
-private const val ADA_URL = "https://mail.example.org/.well-known/jmap"
 private const val SETTLE_STEPS = 50

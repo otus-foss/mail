@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +34,6 @@ import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.feature.inbox.presentation.InboxContext
@@ -43,6 +41,7 @@ import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.ReadState
+import com.otus.mail.feature.inbox.presentation.components.PageNotice
 import com.otus.mail.feature.inbox.presentation.components.ReadActionBar
 import com.otus.mail.feature.inbox.presentation.components.ReadBottomStack
 import com.otus.mail.feature.inbox.presentation.components.ReadHeader
@@ -192,7 +191,7 @@ private fun ReadLayout(
             },
         ) {
             ReadHeader(parts.row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
-            notice?.let { MessageNotice(it) }
+            notice?.let { PageNotice(it) }
         }
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
@@ -253,16 +252,5 @@ private fun headerActions(
                 }
             },
         menu = menu,
-    )
-}
-
-/** A notice, such as a refused mark, under the header. */
-@Composable
-private fun MessageNotice(text: String) {
-    Text(
-        text,
-        Modifier.padding(horizontal = PageTokens.textInset),
-        color = OtusColors.text2,
-        fontSize = InboxTokens.metadataSize,
     )
 }

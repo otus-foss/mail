@@ -6,6 +6,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.SenderKey
+import com.otus.mail.feature.inbox.domain.lastReceived
 
 /**
  * One person the filter panel's From or To line matches: a person with every address they use, the most

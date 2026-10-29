@@ -1,18 +1,11 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.testing.MemoryMapStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FolderNudgesTest {
-    private class MemoryStore : FolderNudgeStore {
-        var saved = emptyMap<String, String>()
-
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
+    private class MemoryStore : MemoryMapStore(), FolderNudgeStore
 
     // Login ids hold a space and the session URL's colons.
     private val ada = "ada https://mail.example.org/jmap/session"

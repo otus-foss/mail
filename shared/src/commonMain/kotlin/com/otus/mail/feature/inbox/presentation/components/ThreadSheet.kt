@@ -15,6 +15,7 @@ import com.otus.designsystem.shared.selection.components.ListCaption
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.QuoteMode
 import com.otus.mail.feature.inbox.domain.ThreadMessage
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ReplyThread
 
 /** The earlier messages of a reply's thread above its bar; tapping it runs [onOpen]. */

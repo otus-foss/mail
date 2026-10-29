@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.lastReceived
 
 /**
  * This server answer, which has more to load, followed by the rows of [shown] past its last row

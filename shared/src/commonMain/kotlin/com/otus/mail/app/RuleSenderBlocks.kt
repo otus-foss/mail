@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.mail.JUNK_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
@@ -7,7 +8,6 @@ import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.FolderStorageException
-import com.otus.mail.feature.folders.domain.JUNK_ROLE
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.RuleOutcome
 import com.otus.mail.feature.folders.domain.withAdded

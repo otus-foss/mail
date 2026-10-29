@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.ThreadMember
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike

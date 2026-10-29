@@ -11,6 +11,8 @@ import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EmailFolders
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailObject
@@ -24,6 +26,7 @@ import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.condition
 import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.core.mail.operator
+import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailMessage

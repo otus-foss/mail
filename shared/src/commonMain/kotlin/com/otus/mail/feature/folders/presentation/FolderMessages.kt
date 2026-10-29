@@ -9,15 +9,15 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_send
-import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
-import com.otus.mail.feature.folders.domain.DRAFTS_ROLE
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.DRAFTS_ROLE
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.JUNK_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderNameProblem
 import com.otus.mail.feature.folders.domain.FolderNode
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
-import com.otus.mail.feature.folders.domain.JUNK_ROLE
-import com.otus.mail.feature.folders.domain.SENT_ROLE
-import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import org.jetbrains.compose.resources.DrawableResource
 
 fun FolderFailure.message(): String =

@@ -1,5 +1,12 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.DRAFTS_ROLE
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.JUNK_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
+
 /** The account's folders in display order, with its Read later folder right after the inbox. */
 fun AccountFolders.folderTree(hidden: (MailFolder) -> Boolean = { false }): List<FolderNode> =
     folderTree(folders, readLaterId, hidden)

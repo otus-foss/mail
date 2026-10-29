@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.original
+import com.otus.mail.feature.inbox.domain.shownName
 
 /**
  * Reply, Reply all, Forward, and New mail for an open [message], and Follow up when its folder

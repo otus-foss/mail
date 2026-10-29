@@ -7,6 +7,7 @@ import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.ReplyState
 import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
+import com.otus.mail.feature.inbox.domain.lastReceived
 import kotlinx.datetime.TimeZone
 import kotlin.time.Instant
 
@@ -80,7 +81,7 @@ internal fun List<MailMessage>.mergedByThread(): List<MailMessage> =
     groupBy { it.conversation?.threadId ?: "email:${it.id}" }
         .values
         .map { rows -> rows.reduce(::merge) }
-        .sortedByDescending { (it.conversation?.last?.received ?: it.received).sortKey }
+        .sortedByDescending { it.lastReceived.sortKey }
 
 private fun merge(
     first: MailMessage,

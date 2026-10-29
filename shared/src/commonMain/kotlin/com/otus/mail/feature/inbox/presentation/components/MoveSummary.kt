@@ -6,6 +6,7 @@ import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.shared.rows.components.SummaryCard
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
 
 /**

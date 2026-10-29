@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.avatar.ResolvedAvatar
+import com.otus.mail.core.mail.INBOX_ROLE
 
 /** Portable, supplied message data. No account connection or persistence is implied. */
 data class MailMessage(
@@ -33,6 +34,13 @@ data class MailMessage(
 )
 
 /**
+ * When the conversation's newest email arrived, a reply the user just sent among them. It dates and
+ * sorts the row, so a reply moves the conversation to the top.
+ */
+internal val MailMessage.lastReceived: ReceivedAt
+    get() = conversation?.last?.received ?: received
+
+/**
  * A folder shown on a message's row. [color] is the saved folder color's name, null while it has
  * none or Folder colors is off. [readLater] marks the Read later folder, which the row shows as a
  * bookmark instead of a folder.
@@ -54,6 +62,10 @@ data class MailSender(
     val avatar: ResolvedAvatar? = null,
 )
 
+/** The sender's name, or the address when the name is blank. */
+internal val MailSender.shownName: String
+    get() = name.ifBlank { address }
+
 /** ISO calendar date (YYYY-MM-DD) and 24-hour time (HH:mm), supplied by the data source. */
 data class ReceivedAt(
     val date: String,
@@ -67,7 +79,7 @@ const val INBOX_MAILBOX = "Inbox"
 fun mailboxName(
     name: String,
     role: String?,
-): String = if (role == "inbox") INBOX_MAILBOX else name
+): String = if (role == INBOX_ROLE) INBOX_MAILBOX else name
 
 data class MailLocation(
     val mailbox: String,

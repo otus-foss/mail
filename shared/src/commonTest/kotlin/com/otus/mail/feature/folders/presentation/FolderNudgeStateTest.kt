@@ -1,26 +1,19 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.core.mail.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.READ_LATER_NAME
-import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.key
+import com.otus.mail.testing.MemoryMapStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class FolderNudgeStateTest {
-    private class MemoryStore : FolderNudgeStore {
-        var saved = emptyMap<String, String>()
-
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
+    private class MemoryStore : MemoryMapStore(), FolderNudgeStore
 
     private val trash = MailFolder("ada", "M0", "Trash", role = TRASH_ROLE)
     private val clients = MailFolder("ada", "M1", "Clients")

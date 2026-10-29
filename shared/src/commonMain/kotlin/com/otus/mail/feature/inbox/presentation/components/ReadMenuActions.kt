@@ -6,6 +6,7 @@ import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.feature.inbox.domain.withFlag
 import com.otus.mail.feature.inbox.presentation.FolderShortcut

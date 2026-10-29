@@ -10,6 +10,7 @@ import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.shownName
 
 @Composable
 internal fun PeopleFilterChip(
@@ -71,10 +72,6 @@ internal fun AvatarFilterChip(
 /** The sender's avatar for a chip or an action bar token. */
 internal val MailSender.chipAvatar: ChipAvatar
     get() = chipAvatar(avatar, name, address)
-
-/** The sender's name, or the address when the sender has no other name. */
-internal val MailSender.shownName: String
-    get() = name.ifBlank { address }
 
 /** The avatar, named by address, for text that shows the address rather than the name. */
 internal val MailSender.namedByAddress: NamedAvatar

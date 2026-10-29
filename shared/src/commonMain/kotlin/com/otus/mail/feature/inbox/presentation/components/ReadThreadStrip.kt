@@ -21,6 +21,7 @@ import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.content.ReadTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.ShownFolders
+import com.otus.mail.feature.inbox.domain.shownName
 
 /**
  * The thread strip, newest first: "Latest" on the newest page, else the sender, with the position

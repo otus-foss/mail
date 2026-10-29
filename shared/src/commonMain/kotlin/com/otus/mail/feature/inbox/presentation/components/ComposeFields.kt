@@ -15,6 +15,7 @@ import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.DropdownRow
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.RecipientField
 import com.otus.mail.feature.inbox.presentation.recipients

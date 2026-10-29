@@ -1,12 +1,12 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.folders.domain.ARCHIVE_ROLE
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.JUNK_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.FolderRights
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
-import com.otus.mail.feature.folders.domain.JUNK_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStep
-import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep

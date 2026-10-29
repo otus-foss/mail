@@ -19,9 +19,9 @@ import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.PreviewLines
-import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.RowFolder
 import com.otus.mail.feature.inbox.domain.SenderLine
+import com.otus.mail.feature.inbox.domain.lastReceived
 import com.otus.mail.feature.inbox.domain.receivedOn
 import com.otus.mail.feature.inbox.domain.senderLine
 import com.otus.mail.feature.inbox.domain.threadSubject
@@ -216,9 +216,6 @@ private val PreviewLines.lines: Int
             PreviewLines.One -> 1
             PreviewLines.Two -> 2
         }
-
-/** When the conversation's newest email arrived; it dates and sorts the row, so a reply the user just sent counts. */
-internal val MailMessage.lastReceived: ReceivedAt get() = conversation?.last?.received ?: received
 
 private const val MAX_FOLDERS = 2
 private const val NO_SUBJECT = "(No subject)"

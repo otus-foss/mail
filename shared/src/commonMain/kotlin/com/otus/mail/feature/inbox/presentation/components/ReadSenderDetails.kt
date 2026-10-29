@@ -28,6 +28,7 @@ import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageFolder
+import com.otus.mail.feature.inbox.domain.shownName
 import org.jetbrains.compose.resources.DrawableResource
 
 /**

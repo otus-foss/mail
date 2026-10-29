@@ -1,5 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.INBOX_ROLE
+
 /**
  * The folders of an account's tree that a message in [folderIds] names on its row when shown in
  * [shownId]: the inbox and the user's own folders, Read later among them, in tree order. Sent,

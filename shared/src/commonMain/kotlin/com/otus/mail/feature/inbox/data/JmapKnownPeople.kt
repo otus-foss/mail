@@ -8,8 +8,10 @@ import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
+import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

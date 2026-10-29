@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.SUBMISSION_SESSION

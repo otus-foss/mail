@@ -14,10 +14,10 @@ import com.otus.designsystem.shared.sidebar.elements.SidebarEntry
 import com.otus.designsystem.shared.sidebar.elements.SidebarInboxEntry
 import com.otus.designsystem.shared.sidebar.elements.SidebarMailboxTile
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.SENT_ROLE
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.combinedFolders
 import com.otus.mail.feature.folders.domain.sharedFolders

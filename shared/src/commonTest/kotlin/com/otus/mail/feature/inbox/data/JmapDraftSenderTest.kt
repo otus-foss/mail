@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SentMessage
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike

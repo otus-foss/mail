@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.INBOX_ROLE
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

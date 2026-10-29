@@ -31,6 +31,3 @@ internal fun operator(
 
 /** One condition as itself; several under `OR`. */
 internal fun anyOf(conditions: List<JsonObject>): JsonObject = conditions.singleOrNull() ?: operator("OR", conditions)
-
-/** A JSON Pointer token (RFC 6901), as patch paths use (RFC 8620, section 5.3). */
-internal fun pointer(id: String): String = id.replace("~", "~0").replace("/", "~1")

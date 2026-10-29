@@ -8,6 +8,7 @@ import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest

@@ -14,6 +14,7 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DELIVERED_TO_PROPERTY
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MUTED_KEYWORD
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
@@ -169,7 +170,6 @@ class JmapNewMailChecker(
 
     private companion object {
         const val CANNOT_CALCULATE_CHANGES = "cannotCalculateChanges"
-        const val INBOX_ROLE = "inbox"
         const val MAX_CHANGES = 100
         const val MAX_PAGES = 5
 
