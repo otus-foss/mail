@@ -4,29 +4,48 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.CombinedFolder
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.inbox.domain.INBOX_MAILBOX
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
+import com.otus.mail.feature.inbox.presentation.screens.PinnedSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.SidebarSettingsScreen
 
+/** Sidebar settings, or its Pinned page. */
 @Composable
 internal fun SidebarSettingsPage(
+    page: MailPage,
     states: MailStates,
+    navigation: MailNavigation,
     onBack: () -> Unit,
 ) {
     val accounts = states.folders.accounts
-    val options = remember(accounts) { sidebarPinOptions(accounts) }
-    SidebarSettingsScreen(states.behavior, options, onBack)
+    // Not remembered: folder colors change apart from the accounts.
+    val options = sidebarPinOptions(accounts, states.folderColors::groupColorOf)
+    if (page == MailPage.PinnedSettings) {
+        PinnedSettingsScreen(states.behavior, options, onBack)
+    } else {
+        SidebarSettingsScreen(
+            states.behavior,
+            options,
+            onPinned = { navigation.go(MailPage.PinnedSettings) },
+            onBack = onBack,
+        )
+    }
 }
 
-private fun sidebarPinOptions(accounts: List<AccountFolders>): List<SidebarPinOption> =
+private fun sidebarPinOptions(
+    accounts: List<AccountFolders>,
+    colorOf: (SharedFolder) -> String?,
+): List<SidebarPinOption> =
     pinnableMailboxes(accounts).map { (pin, mailbox) ->
         val folder = mailbox.shared
         SidebarPinOption(
@@ -35,6 +54,7 @@ private fun sidebarPinOptions(accounts: List<AccountFolders>): List<SidebarPinOp
             mailbox.icon,
             group = if (folder == null) "Mailboxes" else "Folders",
             path = folder?.path?.joinToString(" / ") ?: mailbox.title,
+            tint = folder?.let { FolderColor.named(colorOf(it)).tint },
         )
     }
 

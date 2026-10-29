@@ -86,7 +86,7 @@ class MoveToButtonsTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
+        compose.onNode(hasContentDescription("Inbox", substring = true) and isSelectable()).performClick()
         compose.onNodeWithText("Welcome").performClick()
         button("Move to Travel").performClick()
         assertTrue(moveUpdate(), "\"mailboxIds/t\":true" in moveUpdate())

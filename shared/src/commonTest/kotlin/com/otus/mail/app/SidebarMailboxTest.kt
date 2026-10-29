@@ -4,6 +4,8 @@ import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.feature.inbox.domain.PinSize
+import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.SidebarPin
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,23 +24,33 @@ class SidebarMailboxTest {
         )
 
     @Test
-    fun theInboxLeadsThenPinsShowInOrderAndMissingOnesAreSkipped() {
+    fun pinsShowInOrderAtTheirSizesAndMissingOnesAreSkipped() {
         val pinned =
             listOf(
+                SidebarPin.Inbox,
                 SidebarPin.Folder(listOf("work", "clients")),
                 SidebarPin.ReadLater,
                 SidebarPin.Role("sent"),
                 SidebarPin.Folder(listOf("gone")),
             )
-        val mailboxes = sidebarMailboxes(listOf(ada), pinned = pinned)
+        val layout = SidebarLayout(pinned = pinned, sizes = mapOf(SidebarPin.Role("sent") to PinSize.Wide))
+        val mailboxes = sidebarMailboxes(listOf(ada), layout = layout)
         assertEquals(listOf("Inbox", "Clients", "Sent"), mailboxes.map { it.title })
         assertEquals(MailPage.Shared(listOf("work", "clients")), mailboxes[1].page)
+        assertEquals(listOf(PinSize.Full, PinSize.Small, PinSize.Wide), mailboxes.map { it.size })
     }
 
     @Test
-    fun everyFolderCanBePinnedAfterConversationsAndTheSystemFolders() {
+    fun anUnpinnedInboxLeavesTheSidebar() {
+        val mailboxes = sidebarMailboxes(listOf(ada), layout = SidebarLayout(pinned = listOf(SidebarPin.Role("sent"))))
+        assertEquals(listOf("Sent"), mailboxes.map { it.title })
+    }
+
+    @Test
+    fun everyFolderCanBePinnedAfterTheInboxConversationsAndTheSystemFolders() {
         assertEquals(
             listOf(
+                SidebarPin.Inbox,
                 SidebarPin.Conversations,
                 SidebarPin.Contacts,
                 SidebarPin.Role("sent"),

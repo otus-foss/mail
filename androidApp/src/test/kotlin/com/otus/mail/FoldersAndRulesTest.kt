@@ -55,7 +55,7 @@ class FoldersAndRulesTest {
         compose.waitForText("Welcome")
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.waitForNode(hasText("Amazon") and isSelectable())
-        compose.onNode(hasText("Inbox") and hasText("1") and isSelectable()).assertIsDisplayed()
+        compose.onNode(hasContentDescription("Inbox, 1") and isSelectable()).assertIsDisplayed()
         // A collapsed folder hides its subfolders and counts their mail with its own.
         compose.onNodeWithContentDescription("Collapse Receipts").performClick()
         compose.onNode(hasText("Amazon") and isSelectable()).assertDoesNotExist()
@@ -116,7 +116,12 @@ class FoldersAndRulesTest {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         val tile = hasContentDescription("Read later")
         compose.waitForNode(tile)
-        val inbox = compose.onNode(hasText("Inbox") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        val inbox =
+            compose
+                .onNode(
+                    hasContentDescription("Inbox", substring = true) and isSelectable(),
+                ).fetchSemanticsNode()
+                .boundsInRoot
         val readLater = compose.onNode(tile).fetchSemanticsNode().boundsInRoot
         val receipts = compose.onNode(hasText("Receipts") and isSelectable()).fetchSemanticsNode().boundsInRoot
         assertTrue(inbox.bottom <= readLater.top && readLater.bottom <= receipts.top)
