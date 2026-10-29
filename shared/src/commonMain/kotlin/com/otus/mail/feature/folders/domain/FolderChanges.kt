@@ -14,25 +14,18 @@ fun folderNameProblem(
     val trimmed = name.trim()
     val limit = account.limits.maxNameBytes
     return when {
-        trimmed.isEmpty() -> {
-            FolderNameProblem.Empty
-        }
-
-        limit != null && trimmed.encodeToByteArray().size > limit -> {
-            FolderNameProblem.TooLong
-        }
-
-        account.folders.any {
-            it.parentId == parentId && it.id != renaming?.id && it.name.equals(trimmed, ignoreCase = true)
-        } -> {
-            FolderNameProblem.Taken
-        }
-
-        else -> {
-            null
-        }
+        trimmed.isEmpty() -> FolderNameProblem.Empty
+        limit != null && trimmed.encodeToByteArray().size > limit -> FolderNameProblem.TooLong
+        account.nameTaken(trimmed, parentId, renaming) -> FolderNameProblem.Taken
+        else -> null
     }
 }
+
+private fun AccountFolders.nameTaken(
+    name: String,
+    parentId: String?,
+    renaming: MailFolder?,
+): Boolean = folders.any { it.parentId == parentId && it.id != renaming?.id && it.name.equals(name, ignoreCase = true) }
 
 /** Whether a new folder can go under [parent], or at the top level when [parent] is null. */
 fun canCreateIn(

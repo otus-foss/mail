@@ -126,12 +126,12 @@ internal val AddressField.header: String
     get() = name.lowercase()
 
 private fun RuleCondition.Text.textTest(): String {
-    val value = oneLine(value)
+    val text = oneLine(value)
     val (match, key) =
         when (operator) {
-            TextOperator.Contains -> ":contains" to value
-            TextOperator.StartsWith -> ":matches" to literalWildcards(value) + "*"
-            TextOperator.Matches -> ":matches" to value
+            TextOperator.Contains -> ":contains" to text
+            TextOperator.StartsWith -> ":matches" to literalWildcards(text) + "*"
+            TextOperator.Matches -> ":matches" to text
         }
     return when (field) {
         TextField.Subject -> "header $match \"subject\" ${sieveString(key)}"

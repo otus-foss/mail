@@ -16,7 +16,7 @@ internal fun RuleCondition.When.whenTest(zone: String): String {
                 val numbers = days.map { it.sieveWeekday }.sorted().map { it.toString() }
                 add("$date :is \"weekday\" ${sieveList(numbers)}")
             }
-            range?.let { add(rangeTest(date, it, outside)) }
+            if (range != null) add(rangeTest(date, range, outside))
         }
     // Every day at any time.
     return if (tests.isEmpty()) "true" else tests.singleOrNull() ?: allOf(tests)

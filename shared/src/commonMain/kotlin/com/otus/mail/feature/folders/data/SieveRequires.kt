@@ -6,7 +6,7 @@ package com.otus.mail.feature.folders.data
  * script does not start with one.
  */
 internal fun afterLeadingRequires(script: String): Int =
-    generateSequence(Step(0, 0)) { script.step(it.next) }
+    generateSequence(Step(next = 0, afterRequire = 0)) { script.step(it.next) }
         .mapNotNull { it.afterRequire }
         .last()
 
@@ -20,9 +20,9 @@ private class Step(
 private fun String.step(at: Int): Step? =
     when {
         at >= length -> null
-        this[at].isWhitespace() -> Step(at + 1, null)
-        this[at] == '#' -> Step(lineEnd(at), null)
-        startsWith("/*", at) -> Step(indexOf("*/", at + 2).let { if (it < 0) length else it + 2 }, null)
+        this[at].isWhitespace() -> Step(at + 1, afterRequire = null)
+        this[at] == '#' -> Step(lineEnd(at), afterRequire = null)
+        startsWith("/*", at) -> afterComment(at)
         isRequireAt(at) -> statementEnd(at)?.let { Step(it, afterStatement(it)) }
         else -> null
     }
@@ -51,10 +51,15 @@ private fun String.statementEnd(at: Int): Int? {
 
 /** The end of the line after a command, unless more commands follow on that line. */
 private fun String.afterStatement(end: Int): Int {
-    val lineEnd = lineEnd(end)
-    val rest = substring(end, lineEnd).trim()
-    return if (rest.isEmpty() || rest.startsWith('#')) lineEnd else end
+    val endOfLine = lineEnd(end)
+    val rest = substring(end, endOfLine).trim()
+    return if (rest.isEmpty() || rest.startsWith('#')) endOfLine else end
 }
 
 /** The index after the line end at or after [at], or the text's length. */
 private fun String.lineEnd(at: Int): Int = indexOf('\n', at).let { if (it < 0) length else it + 1 }
+
+private fun String.afterComment(at: Int): Step {
+    val end = indexOf("*/", at + 2)
+    return Step(if (end < 0) length else end + 2, afterRequire = null)
+}

@@ -60,9 +60,7 @@ data class FolderColors(
         name: String?,
     ): FolderColors {
         val keys = folders.map { it.key }
-        return FolderColors(
-            if (name == null) names - keys.toSet() else names + keys.associateWith { name },
-        )
+        return FolderColors(if (name == null) names - keys.toSet() else names + keys.associateWith { name })
     }
 
     fun without(folder: MailFolder): FolderColors = FolderColors(names - folder.key)
