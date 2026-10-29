@@ -30,15 +30,18 @@ internal suspend fun updateEmail(
     message: MailMessage,
     patch: JsonObject,
     cache: MailCache? = null,
-): Boolean =
-    message.emailId.isNotEmpty() &&
+): Boolean {
+    if (message.emailId.isEmpty()) return false
+    val updated =
         updateAccountEmails(
             connections,
             logins,
             message.location.accountId,
             message.memberIds.associateWith { patch },
             cache,
-        ).containsAll(message.memberIds)
+        )
+    return updated.containsAll(message.memberIds)
+}
 
 /**
  * Applies [patch] to each of [messages] and the emails of their conversations with `Email/set`

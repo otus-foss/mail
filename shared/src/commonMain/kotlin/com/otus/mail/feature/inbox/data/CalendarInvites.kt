@@ -10,12 +10,8 @@ import com.otus.mail.core.mail.EmailObject
  * the file `application/ics` or only name it, which the other checks catch.
  */
 internal fun EmailBodyPart.isInvite(): Boolean {
-    val mediaType =
-        type
-            .orEmpty()
-            .substringBefore(';')
-            .trim()
-            .lowercase()
+    val contentType = type.orEmpty().substringBefore(';')
+    val mediaType = contentType.trim().lowercase()
     val extension = name.orEmpty().substringAfterLast('.', "").lowercase()
     return mediaType in INVITE_TYPES || extension in INVITE_EXTENSIONS
 }

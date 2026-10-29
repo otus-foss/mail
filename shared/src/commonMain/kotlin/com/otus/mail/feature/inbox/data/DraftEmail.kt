@@ -5,6 +5,7 @@ import com.otus.mail.feature.inbox.domain.DraftAttachment
 import com.otus.mail.feature.inbox.domain.MailSender
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -29,7 +30,7 @@ internal fun Draft.toEmail(
             put(DRAFT_KEYWORD, true)
             put(SEEN_KEYWORD, true)
         }
-        from?.let { put("from", addresses(listOf(it))) }
+        if (from != null) put("from", addresses(listOf(from)))
         mapOf("to" to to, "cc" to cc, "bcc" to bcc)
             .filterValues { it.isNotEmpty() }
             .forEach { (header, senders) -> put(header, addresses(senders)) }
@@ -39,7 +40,7 @@ internal fun Draft.toEmail(
             .forEach { (header, ids) -> put(header, JsonArray(ids.map(::JsonPrimitive))) }
         putJsonObject("bodyValues") {
             putJsonObject(TEXT_PART) { put("value", textContent()) }
-            html?.let { putJsonObject(HTML_PART) { put("value", it.html) } }
+            if (html != null) putJsonObject(HTML_PART) { put("value", html.html) }
         }
         val uploaded = attachments.filter { it.uploadedTo(accountId) }
         val (shownInline, files) = uploaded.partition { it.inline }
@@ -47,25 +48,29 @@ internal fun Draft.toEmail(
             html?.let { body ->
                 EmailHtml(body.html, body.images + shownInline.mapNotNull { it.inlineImage() })
             }
-        when {
-            files.isNotEmpty() -> {
-                put("bodyStructure", multipart("multipart/mixed", listOf(body(shown)) + files.map { it.part() }))
-            }
-
-            shown == null -> {
-                put("textBody", JsonArray(listOf(bodyPart(TEXT_PART, "text/plain"))))
-            }
-
-            shown.images.isEmpty() -> {
-                put("textBody", JsonArray(listOf(bodyPart(TEXT_PART, "text/plain"))))
-                put("htmlBody", JsonArray(listOf(bodyPart(HTML_PART, "text/html"))))
-            }
-
-            else -> {
-                put("bodyStructure", body(shown))
-            }
-        }
+        writeBody(shown, files)
     }
+
+private fun JsonObjectBuilder.writeBody(
+    html: EmailHtml?,
+    files: List<DraftAttachment>,
+) {
+    if (files.isNotEmpty()) {
+        val parts = listOf(body(html)) + files.map { it.part() }
+        put("bodyStructure", multipart("multipart/mixed", parts))
+        return
+    }
+    when {
+        html == null -> put("textBody", JsonArray(listOf(bodyPart(TEXT_PART, "text/plain"))))
+        html.images.isEmpty() -> writeAlternatives()
+        else -> put("bodyStructure", body(html))
+    }
+}
+
+private fun JsonObjectBuilder.writeAlternatives() {
+    put("textBody", JsonArray(listOf(bodyPart(TEXT_PART, "text/plain"))))
+    put("htmlBody", JsonArray(listOf(bodyPart(HTML_PART, "text/html"))))
+}
 
 /**
  * The body as one part: the text alone, or text and [html] as alternatives, the HTML beside its
@@ -141,7 +146,8 @@ private fun addresses(senders: List<MailSender>): JsonArray =
     JsonArray(
         senders.map { sender ->
             buildJsonObject {
-                sender.name.takeIf { it.isNotBlank() && it != sender.address }?.let { put("name", it) }
+                val name = sender.name
+                if (name.isNotBlank() && name != sender.address) put("name", name)
                 put("email", sender.address)
             }
         },

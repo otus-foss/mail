@@ -30,11 +30,8 @@ private fun String.quoteHtml(): String =
         .chunkedBy { it.startsWith(QUOTE_MARK) }
         .joinToString("", prefix = "<br>") { (quoted, lines) ->
             if (quoted) {
-                lines.joinToString(
-                    "<br>",
-                    "<blockquote>",
-                    "</blockquote>",
-                ) { it.removePrefix(QUOTE_MARK).trimStart().escapeHtml() }
+                val text = lines.map { it.removePrefix(QUOTE_MARK).trimStart().escapeHtml() }
+                text.joinToString("<br>", "<blockquote>", "</blockquote>")
             } else {
                 lines.joinToString("<br>", postfix = "<br>") { it.escapeHtml() }
             }
@@ -45,9 +42,7 @@ private fun List<String>.chunkedBy(key: (String) -> Boolean): List<Pair<Boolean,
     fold(emptyList<Pair<Boolean, List<String>>>()) { runs, line ->
         val quoted = key(line)
         val last = runs.lastOrNull()
-        if (last?.first ==
-            quoted
-        ) {
+        if (last?.first == quoted) {
             runs.dropLast(1) + (quoted to last.second + line)
         } else {
             runs + (quoted to listOf(line))

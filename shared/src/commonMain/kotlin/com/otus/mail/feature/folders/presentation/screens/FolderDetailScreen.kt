@@ -91,31 +91,47 @@ fun FolderDetailScreen(
             FolderColorRow(colors.colors.of(folder)) { dialog = FolderDialog.Color(id, folder.id) }
         }
         if (own) {
-            when (val availability = rules.account(id)?.availability) {
-                is RuleAvailability.Available -> {
-                    val folderRules = rules.rules(folder)
-                    FolderRulesSection(
-                        folderRules,
-                        parentRules(folders.account(id)?.folders.orEmpty(), folder, rules::rules),
-                        onOpenParent = onOpenFolder,
-                        onOpen = { index ->
-                            val draft = folderRules[index].sheetDraft(index)
-                            popup = if (draft != null) RulePopup(sheet = draft) else RulePopup(locked = index)
-                        },
-                        onAdd = { popup = RulePopup(sheet = RuleSheetDraft()) },
-                    )
-                }
-
-                is RuleAvailability.Failed -> {
-                    PageNote(availability.reason.message())
-                }
-
-                RuleAvailability.RulesUnavailable, null -> {}
-            }
+            FolderRules(folder, folders, rules, onOpenFolder) { popup = it }
         }
         DeleteFolderRow({ dialog = FolderDialog.Delete(id, folder.id) }.takeIf { folder.deletable(subfolders) })
     }
     FolderDetailDialogs(folder, states, known, dialog, popup, onDialog = { dialog = it }, onPopup = { popup = it })
+}
+
+@Composable
+private fun FolderRules(
+    folder: MailFolder,
+    folders: FoldersState,
+    rules: FolderRulesState,
+    onOpenFolder: (MailFolder) -> Unit,
+    onPopup: (RulePopup) -> Unit,
+) {
+    when (val availability = rules.account(folder.accountId)?.availability) {
+        is RuleAvailability.Available -> AvailableRules(folder, folders, rules, onOpenFolder, onPopup)
+        is RuleAvailability.Failed -> PageNote(availability.reason.message())
+        RuleAvailability.RulesUnavailable, null -> Unit
+    }
+}
+
+@Composable
+private fun AvailableRules(
+    folder: MailFolder,
+    folders: FoldersState,
+    rules: FolderRulesState,
+    onOpenFolder: (MailFolder) -> Unit,
+    onPopup: (RulePopup) -> Unit,
+) {
+    val folderRules = rules.rules(folder)
+    FolderRulesSection(
+        folderRules,
+        parentRules(folders.account(folder.accountId)?.folders.orEmpty(), folder, rules::rules),
+        onOpenParent = onOpenFolder,
+        onOpen = { index ->
+            val draft = folderRules[index].sheetDraft(index)
+            onPopup(if (draft != null) RulePopup(sheet = draft) else RulePopup(locked = index))
+        },
+        onAdd = { onPopup(RulePopup(sheet = RuleSheetDraft())) },
+    )
 }
 
 /** The folder popups, the Add rule sheet, the delete-only menu, and the replace confirmation. */
