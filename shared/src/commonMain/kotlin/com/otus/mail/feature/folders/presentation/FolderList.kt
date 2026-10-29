@@ -88,7 +88,8 @@ fun List<FolderListRow>.visible(collapsed: Set<String>): List<FolderListRow> {
     var hiddenBelow: Int? = null
     return filter { row ->
         val depth = row.node.depth
-        val hidden = hiddenBelow?.let { depth > it } ?: false
+        val below = hiddenBelow
+        val hidden = below != null && depth > below
         if (!hidden) hiddenBelow = depth.takeIf { row.key in collapsed && hasChildren(row) }
         !hidden
     }

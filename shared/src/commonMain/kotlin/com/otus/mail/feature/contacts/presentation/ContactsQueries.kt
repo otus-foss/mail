@@ -1,29 +1,27 @@
 package com.otus.mail.feature.contacts.presentation
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
-import com.otus.mail.feature.contacts.domain.people
 
 internal fun ContactsState.book(key: BookKey): ContactBook? = books.firstOrNull { it.key == key }
 
 internal fun ContactsState.card(key: CardKey): ContactCard? = cards.firstOrNull { it.key == key }
+
+/** Whether the user can change [card]: every book that holds it allows changes. */
+internal fun ContactsState.canWrite(card: ContactCard): Boolean = card.books.all { book(it)?.canWrite == true }
+
+/** Whether the user can change every one of [cards]. */
+internal fun ContactsState.canWriteAll(cards: List<ContactCard>): Boolean = cards.all { canWrite(it) }
 
 /** [key], or the server's key once a card made on the device has one, so its page stays open. */
 internal fun ContactsState.current(key: CardKey): CardKey = sync.renamed[key] ?: key
 
 /** The person [key]'s card belongs to, joined with any card shown as one with it. */
 internal fun ContactsState.person(key: CardKey): ContactPerson? =
-    people.firstOrNull { person ->
-        person.cards.any {
-            it.key ==
-                key
-        }
-    }
+    people.firstOrNull { person -> person.cards.any { it.key == key } }
 
 /** Group cards whose members include [card]. */
 internal fun ContactsState.groupsOf(card: ContactCard): List<ContactCard> =

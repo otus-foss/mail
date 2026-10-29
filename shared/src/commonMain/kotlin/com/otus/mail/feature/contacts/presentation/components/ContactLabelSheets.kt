@@ -8,7 +8,6 @@ import androidx.compose.runtime.setValue
 import com.otus.designsystem.shared.overlays.components.InputSheet
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.ContactLabel
-import com.otus.mail.feature.contacts.domain.DraftValue
 
 /**
  * The form's label sheets. While [managing] is set, the labels sheet is open for the field it
@@ -60,12 +59,4 @@ private fun CustomLabelSheet(
         onDismiss = onDone,
         problem = { text -> if (text.isBlank()) "" else null },
     )
-}
-
-/** The draft with the custom [label] gone from every address and number, which then keep no label. */
-private fun ContactDraft.withoutLabel(label: String): ContactDraft {
-    val cleared = { values: List<DraftValue> ->
-        values.map { if (it.label.custom.equals(label, ignoreCase = true)) it.copy(label = ContactLabel.Other) else it }
-    }
-    return copy(emails = cleared(emails), phones = cleared(phones))
 }

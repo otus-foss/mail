@@ -44,7 +44,7 @@ internal fun ContactPageBar(
                     personActions(page, state, navigation, onOverlay)
                 },
             ),
-        context = if (page.card.isGroup) groupContext(recipients.size) else personContext(page, navigation.onWrite),
+        context = if (page.card.isGroup) peopleContext(recipients.size) else personContext(page, navigation.onWrite),
     )
 }
 
@@ -79,8 +79,8 @@ private fun personActions(
         }.takeIf { page.writable },
     )
 
-/** How many members Write reaches. */
-private fun groupContext(count: Int): BarContext =
+/** How many people Write reaches. */
+internal fun peopleContext(count: Int): BarContext =
     BarContext(peopleCount(count), BarToken.Count(count), "to ${peopleCount(count)}")
 
 /** The preferred address, with the others as choices; none when the person has no address. */

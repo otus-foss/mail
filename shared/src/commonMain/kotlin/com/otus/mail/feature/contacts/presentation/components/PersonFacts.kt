@@ -1,11 +1,8 @@
 package com.otus.mail.feature.contacts.presentation.components
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
-import com.otus.mail.feature.contacts.presentation.avatar
 
 /** What one person's page shows besides the header: their books, groups, and a refused change. */
 internal class PersonFacts(

@@ -21,6 +21,7 @@ import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.presentation.avatar
+import com.otus.mail.feature.contacts.presentation.peopleCount
 
 /**
  * Picks people to add to a group: everyone in [people] who is not in it yet, searchable by name
@@ -38,24 +39,12 @@ internal fun AddPeopleSheet(
     ClosableSheet(
         "Add people",
         onDismiss,
-        SheetConfirm(
-            if (chosen.size ==
-                1
-            ) {
-                "Add 1 person"
-            } else {
-                "Add ${chosen.size} people"
-            },
-            { onAdd(chosen) },
-            enabled = chosen.isNotEmpty(),
-        ),
+        SheetConfirm("Add ${peopleCount(chosen.size)}", { onAdd(chosen) }, enabled = chosen.isNotEmpty()),
     ) {
         PickerSearch(query, { query = it }, "Search people…", Modifier.padding(horizontal = SheetTokens.inset))
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
-            items(people.filter { query.isBlank() || it.matches(query) }, key = {
-                it.main.key.cardId +
-                    it.main.key.accountId
-            }) { person ->
+            val shown = people.filter { query.isBlank() || it.matches(query) }
+            items(shown, key = { it.main.key.cardId + it.main.key.accountId }) { person ->
                 val key = person.main.key
                 PickRow(
                     person.name,

@@ -24,7 +24,6 @@ import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.ContactLabel
 import com.otus.mail.feature.contacts.domain.DraftValue
-import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.inlineBytes
 import com.otus.mail.feature.contacts.presentation.look
 import com.otus.mail.feature.contacts.presentation.text

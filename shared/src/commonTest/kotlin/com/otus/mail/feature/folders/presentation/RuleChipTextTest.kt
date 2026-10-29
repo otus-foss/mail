@@ -1,5 +1,7 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.designsystem.shared.filters.components.RuleSegment
+import com.otus.designsystem.shared.filters.components.RuleSegmentStyle
 import com.otus.mail.core.text.sizeText
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
@@ -17,11 +19,11 @@ import kotlin.test.assertEquals
 
 /** Every example on the "Every kind of rule" board. */
 class RuleChipTextTest {
-    private fun dim(text: String) = ChipSegment(text, SegmentStyle.Dim)
+    private fun dim(text: String) = RuleSegment(text, RuleSegmentStyle.Dim)
 
-    private fun bright(text: String) = ChipSegment(text, SegmentStyle.Bright)
+    private fun bright(text: String) = RuleSegment(text, RuleSegmentStyle.Bright)
 
-    private fun accent(text: String) = ChipSegment(text, SegmentStyle.Accent)
+    private fun accent(text: String) = RuleSegment(text, RuleSegmentStyle.Accent)
 
     private fun icon(icon: RuleIcon) = ChipSlot.Icon(icon)
 
@@ -29,7 +31,7 @@ class RuleChipTextTest {
         condition: RuleCondition,
         label: String,
         slot: ChipSlot,
-        vararg segments: ChipSegment,
+        vararg segments: RuleSegment,
     ) = assertEquals(RuleChipText(label, slot, segments.toList()), condition.chipText())
 
     private fun address(

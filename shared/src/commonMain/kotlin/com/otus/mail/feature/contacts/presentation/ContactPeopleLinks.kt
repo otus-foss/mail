@@ -1,9 +1,6 @@
 package com.otus.mail.feature.contacts.presentation
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import com.otus.mail.feature.contacts.domain.CardKey
-import com.otus.mail.feature.contacts.domain.people
 
 /** Shows [keys] as one person without changing the cards. */
 internal fun ContactsState.showAsOne(keys: Set<CardKey>) = sync.link(keys)

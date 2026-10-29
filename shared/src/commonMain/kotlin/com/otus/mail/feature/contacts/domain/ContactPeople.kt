@@ -14,6 +14,9 @@ data class ContactPerson(
     val emails: List<ContactValue>
         get() = cards.flatMap { it.emails }.distinctBy { it.value.lowercase() }
 
+    /** The person's name with their preferred address, to write to; null without an address. */
+    val preferredAddress: ContactAddress? get() = emails.firstOrNull()?.let { ContactAddress(name, it.value) }
+
     /** The letter the list files the person under, or `#`. */
     val letter: String
         get() = name.firstOrNull()?.takeIf { it.isLetter() }?.uppercase() ?: "#"

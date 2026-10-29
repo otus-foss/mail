@@ -30,18 +30,19 @@ import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
-import com.otus.jscontact.AnniversaryKind
-import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.CardSync
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.ContactWriteFailure
+import com.otus.mail.feature.contacts.domain.birthday
+import com.otus.mail.feature.contacts.domain.firstNote
 import com.otus.mail.feature.contacts.presentation.avatar
 import com.otus.mail.feature.contacts.presentation.formatPhone
 import com.otus.mail.feature.contacts.presentation.groupAvatar
 import com.otus.mail.feature.contacts.presentation.icon
 import com.otus.mail.feature.contacts.presentation.owner
+import com.otus.mail.feature.contacts.presentation.peopleCount
 import com.otus.mail.feature.contacts.presentation.text
 
 /**
@@ -114,9 +115,11 @@ private fun detailRows(
     facts: PersonFacts,
     onCopyNumber: (String) -> Unit,
 ): List<@Composable () -> Unit> {
-    val person = facts.person
+    val cards = facts.person.cards.map { it.card }
+    val birthday = cards.firstNotNullOfOrNull { it.birthday }
+    val note = cards.firstNotNullOfOrNull { it.firstNote }
     return buildList {
-        person.cards.flatMap { it.phones }.distinctBy { it.value }.forEach { phone ->
+        facts.person.cards.flatMap { it.phones }.distinctBy { it.value }.forEach { phone ->
             add {
                 ContactValueRow(
                     formatPhone(phone.value),
@@ -127,12 +130,12 @@ private fun detailRows(
                 )
             }
         }
-        person.birthday?.let { add { ContactValueRow(it.text(), null, icon = Res.drawable.symbol_cake) } }
+        birthday?.let { add { ContactValueRow(it.text(), null, icon = Res.drawable.symbol_cake) } }
         if (facts.groups.isNotEmpty()) {
             val names = facts.groups.joinToString(", ") { it.displayName }
             add { ContactValueRow(names, null, icon = Res.drawable.symbol_group) }
         }
-        person.note?.let { add { ContactValueRow(it, null, icon = Res.drawable.symbol_notes) } }
+        note?.let { add { ContactValueRow(it, null, icon = Res.drawable.symbol_notes) } }
     }
 }
 
@@ -165,24 +168,6 @@ private fun Section(
     RowGroup(rows, raised = true)
 }
 
-private val ContactPerson.birthday: PartialDate?
-    get() =
-        cards.firstNotNullOfOrNull { card ->
-            card.card.anniversaries
-                ?.values
-                ?.firstOrNull { it.kind == AnniversaryKind.Birth }
-                ?.date as? PartialDate
-        }
-
-private val ContactPerson.note: String?
-    get() =
-        cards.firstNotNullOfOrNull {
-            it.card.notes
-                ?.values
-                ?.firstOrNull()
-                ?.note
-        }
-
 /**
  * A group's members, each opening their own page. Holding one offers to take them out of the
  * group, through [onRemove], when the group can change. An empty group says how to fill it.
@@ -199,7 +184,7 @@ internal fun GroupMembers(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) {
         ContactHeader(
             group.groupAvatar,
-            listOf(if (members.size == 1) "1 person" else "${members.size} people"),
+            listOf(peopleCount(members.size)),
             onEdit = onEditAvatar,
         )
         if (members.isEmpty()) {

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.designsystem.shared.filters.components.RuleSegment
 import com.otus.mail.core.text.sizeText
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
@@ -13,20 +14,12 @@ import com.otus.mail.feature.folders.domain.TextOperator
 data class RuleChipText(
     val label: String,
     val slot: ChipSlot,
-    val segments: List<ChipSegment>,
+    val segments: List<RuleSegment>,
 ) {
     /** The value as plain text, for content descriptions. */
     val value: String
         get() = segments.joinToString("") { it.text }
 }
-
-/** Dim says how it matches, bright what it matches; accent marks a wildcard. */
-enum class SegmentStyle { Dim, Bright, Accent }
-
-data class ChipSegment(
-    val text: String,
-    val style: SegmentStyle,
-)
 
 sealed interface ChipSlot {
     /**
@@ -137,7 +130,7 @@ private fun RuleCondition.Spam.spamChip(): RuleChipText =
     RuleChipText("Spam", ChipSlot.Icon(RuleIcon.Report), bright("Likely spam") + dim(" · score $minScore+"))
 
 /** The words before the value when [RuleCondition.negated], dim. */
-private fun RuleCondition.negation(words: String): List<ChipSegment> = if (negated) dim(words) else emptyList()
+private fun RuleCondition.negation(words: String): List<RuleSegment> = if (negated) dim(words) else emptyList()
 
 private const val OPEN_QUOTE = "“"
 private const val CLOSE_QUOTE = "”"
