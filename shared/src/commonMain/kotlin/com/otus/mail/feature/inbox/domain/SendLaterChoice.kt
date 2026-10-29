@@ -27,9 +27,7 @@ fun sendLaterChoices(now: LocalDateTime): List<Pair<SendLaterChoice, LocalDateTi
     return buildList {
         if (now.time < EVENING_CUTOFF) add(SendLaterChoice.ThisEvening to today.atTime(EVENING))
         add(SendLaterChoice.TomorrowMorning to tomorrow.atTime(MORNING))
-        if (today.dayOfWeek in
-            WEEKEND_AHEAD
-        ) {
+        if (today.dayOfWeek in WEEKEND_AHEAD) {
             add(SendLaterChoice.MondayMorning to today.plus(DatePeriod(days = untilMonday)).atTime(MORNING))
         }
     }
@@ -52,7 +50,7 @@ fun pickableTimes(
     earliest: LocalDateTime,
     latest: LocalDateTime,
 ): ClosedRange<LocalTime> {
-    val start = if (date == earliest.date) earliest.time else LocalTime(0, 0)
+    val start = if (date == earliest.date) earliest.time else LocalTime(hour = 0, minute = 0)
     val end = if (date == latest.date) latest.time else LocalTime(LAST_HOUR, LAST_MINUTE)
     return start..end
 }
@@ -64,8 +62,8 @@ private const val LAST_MINUTE = 59
 private const val EVENING_HOUR = 18
 private const val EVENING_CUTOFF_HOUR = 17
 private const val MORNING_HOUR = 8
-private val EVENING = LocalTime(EVENING_HOUR, 0)
-private val EVENING_CUTOFF = LocalTime(EVENING_CUTOFF_HOUR, 0)
-private val MORNING = LocalTime(MORNING_HOUR, 0)
+private val EVENING = LocalTime(EVENING_HOUR, minute = 0)
+private val EVENING_CUTOFF = LocalTime(EVENING_CUTOFF_HOUR, minute = 0)
+private val MORNING = LocalTime(MORNING_HOUR, minute = 0)
 private val WEEKEND_AHEAD = setOf(DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
 private const val DAYS_IN_WEEK = 7

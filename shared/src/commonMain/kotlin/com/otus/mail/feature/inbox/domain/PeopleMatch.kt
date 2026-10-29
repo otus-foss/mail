@@ -16,13 +16,13 @@ fun List<MailSender>.matching(query: String): List<MailSender> {
 }
 
 private fun MailSender.score(needle: String): Int {
-    val name = name.lowercase()
-    val address = address.lowercase()
+    val normalizedName = name.lowercase()
+    val normalizedAddress = address.lowercase()
     return when {
-        name.startsWith(needle) -> NAME_START
-        name.split(' ').any { it.startsWith(needle) } -> NAME_WORD
-        address.startsWith(needle) -> ADDRESS_START
-        address.containsHalves(needle) -> ADDRESS_ANYWHERE
+        normalizedName.startsWith(needle) -> NAME_START
+        normalizedName.split(' ').any { it.startsWith(needle) } -> NAME_WORD
+        normalizedAddress.startsWith(needle) -> ADDRESS_START
+        normalizedAddress.containsHalves(needle) -> ADDRESS_ANYWHERE
         else -> 0
     }
 }

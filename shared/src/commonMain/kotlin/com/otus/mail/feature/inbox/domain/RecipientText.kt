@@ -25,19 +25,12 @@ private fun parseRecipient(part: String): MailSender? {
     val close = part.lastIndexOf('>')
     if (open >= 0 && close > open) {
         val address = part.substring(open + 1, close).trim()
-        val name =
-            part
-                .substring(0, open)
-                .trim()
-                .trim('"')
-                .trim()
+        val display = part.substring(0, open).trim()
+        val name = display.trim('"').trim()
         return address.takeIf { it.isNotEmpty() }?.let { MailSender(name, it) }
     }
-    return part
-        .trim()
-        .trim('"')
-        .takeIf { it.isNotEmpty() }
-        ?.let { MailSender("", it) }
+    val address = part.trim().trim('"')
+    return address.takeIf { it.isNotEmpty() }?.let { MailSender("", it) }
 }
 
 private fun splitRecipients(text: String): List<String> {
@@ -45,24 +38,17 @@ private fun splitRecipients(text: String): List<String> {
     var start = 0
     var quoted = false
     var bracketed = false
+
+    fun finishPart(index: Int) {
+        parts += text.substring(start, index)
+        start = index + 1
+    }
     text.forEachIndexed { index, char ->
         when {
-            char == '"' -> {
-                quoted = !quoted
-            }
-
-            char == '<' && !quoted -> {
-                bracketed = true
-            }
-
-            char == '>' && !quoted -> {
-                bracketed = false
-            }
-
-            char in SEPARATORS && !quoted && !bracketed -> {
-                parts += text.substring(start, index)
-                start = index + 1
-            }
+            char == '"' -> quoted = !quoted
+            char == '<' && !quoted -> bracketed = true
+            char == '>' && !quoted -> bracketed = false
+            char in SEPARATORS && !quoted && !bracketed -> finishPart(index)
         }
     }
     parts += text.substring(start)
