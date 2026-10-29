@@ -37,8 +37,8 @@ internal fun Modifier.dragToSelect(
                 val drag = RowDrag(listState, anchor, { DragSelection(ids(), anchor, selectedIds()) }, onSelect)
                 var scroll: Job? = null
                 while (true) {
-                    val change =
-                        awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id }
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    val change = event.changes.firstOrNull { it.id == down.id }
                     if (change == null || !change.pressed) break
                     drag.moveTo(change.position.y, listState.edgeStep(change.position.y, edge, maxStep))
                     if (drag.step != 0f && scroll?.isActive != true) scroll = launch { drag.scroll() }
@@ -82,7 +82,12 @@ private class RowDrag(
         val index = listState.rowAt(y, clamp = true) ?: return
         // The row's long press toggles the anchor, so read the selection once the finger leaves it.
         if (selection == null && index == anchor) return
-        onSelect((selection ?: start().also { selection = it }).through(index))
+        var active = selection
+        if (active == null) {
+            active = start()
+            selection = active
+        }
+        onSelect(active.through(index))
     }
 }
 

@@ -45,31 +45,11 @@ internal fun PeopleSection(
     onEdit: FilterEdit,
     modifier: Modifier = Modifier,
 ) {
-    val people = searches.people
     FilterSection("People", modifier) {
         FilterRowCard(
             listOf {
                 // One row: each line draws its own hairline below, so the card adds no divider.
-                Column {
-                    FilterPeopleLine(
-                        "From",
-                        pickedSenders(draft, people.senders),
-                        searches.senders,
-                        people.senders,
-                        draft::hasSender,
-                        { person -> onEdit { it.withSender(person, true) } },
-                        onEdit,
-                    )
-                    FilterPeopleLine(
-                        "To",
-                        pickedRecipients(draft, options, people.recipients),
-                        searches.recipients,
-                        people.recipients,
-                        draft::hasRecipient,
-                        { person -> onEdit { it.withRecipient(person, true) } },
-                        onEdit,
-                    )
-                }
+                PeopleInputs(draft, options, searches, onEdit)
             },
         )
     }
@@ -80,6 +60,36 @@ internal fun PeopleSection(
                 FilterChip(field.label, on, { onEdit { it.withField(field, !on) } })
             }
         }
+    }
+}
+
+@Composable
+private fun PeopleInputs(
+    draft: InboxFilters,
+    options: FilterOptions,
+    searches: PeopleSearches,
+    onEdit: FilterEdit,
+) {
+    val people = searches.people
+    Column {
+        FilterPeopleLine(
+            "From",
+            pickedSenders(draft, people.senders),
+            searches.senders,
+            people.senders,
+            draft::hasSender,
+            { person -> onEdit { it.withSender(person, true) } },
+            onEdit,
+        )
+        FilterPeopleLine(
+            "To",
+            pickedRecipients(draft, options, people.recipients),
+            searches.recipients,
+            people.recipients,
+            draft::hasRecipient,
+            { person -> onEdit { it.withRecipient(person, true) } },
+            onEdit,
+        )
     }
 }
 
@@ -110,8 +120,14 @@ private fun FilterPeopleLine(
             AddressInput(
                 search.text,
                 onTextChange = search::search,
-                onCommit = { people.typed(search.text)?.let(pick) ?: search.dismiss() },
-                onRemoveLast = { picked.lastOrNull()?.let { onEdit(it.remove) } },
+                onCommit = {
+                    val person = people.typed(search.text)
+                    if (person == null) search.dismiss() else pick(person)
+                },
+                onRemoveLast = {
+                    val last = picked.lastOrNull()
+                    if (last != null) onEdit(last.remove)
+                },
             ),
             onChipClick = { index ->
                 val chip = picked[index]
@@ -124,18 +140,26 @@ private fun FilterPeopleLine(
         if (matches.isNotEmpty()) {
             Dropdown(search::dismiss, focusable = false) {
                 matches.forEach { person ->
-                    DropdownRow(
-                        person.own?.address ?: person.label,
-                        selected = false,
-                        onClick = { pick(person) },
-                        subtitle = person.subline,
-                    ) {
-                        val avatar = chipAvatar(person.avatar, person.name, person.addresses.first())
-                        PersonAvatar(avatar, ComposeTokens.dropdownAvatarSize)
-                    }
+                    FilterPersonChoice(person) { pick(person) }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun FilterPersonChoice(
+    person: FilterPerson,
+    onPick: () -> Unit,
+) {
+    DropdownRow(
+        person.own?.address ?: person.label,
+        selected = false,
+        onClick = onPick,
+        subtitle = person.subline,
+    ) {
+        val avatar = chipAvatar(person.avatar, person.name, person.addresses.first())
+        PersonAvatar(avatar, ComposeTokens.dropdownAvatarSize)
     }
 }
 
@@ -149,8 +173,9 @@ internal class PeopleCardArea {
 
     /** Whether [offset], from the page's corner, lands on the card. */
     fun holds(offset: Offset): Boolean {
-        val page = page?.takeIf { it.isAttached }
-        val card = card?.takeIf { it.isAttached }
-        return page != null && card != null && page.localBoundingBoxOf(card).contains(offset)
+        val pageCoordinates = page?.takeIf { it.isAttached }
+        val cardCoordinates = card?.takeIf { it.isAttached }
+        val attached = pageCoordinates != null && cardCoordinates != null
+        return attached && pageCoordinates.localBoundingBoxOf(cardCoordinates).contains(offset)
     }
 }

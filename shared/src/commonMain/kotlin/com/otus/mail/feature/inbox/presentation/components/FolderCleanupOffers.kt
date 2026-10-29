@@ -38,29 +38,28 @@ private fun MessageActions.offerToInbox(
         messages
             .filter { cleanup?.role?.invoke(it) == role }
             .mapNotNull { message -> shortcutTarget(message, FolderShortcut.Inbox)?.let { message to it } }
-    return moving.takeIf { it.isNotEmpty() }?.let {
-        OfferedAction(action.label, action.symbol, leaves = true) {
-            moving.forEach { (message, inbox) ->
-                move(message, inbox)
-            }
-        }
+    if (moving.isEmpty()) return null
+    return OfferedAction(action.label, action.symbol, leaves = true) {
+        moving.forEach { (message, inbox) -> move(message, inbox) }
     }
 }
 
 /** Deletes the messages in Spam or Trash for good, once the user confirms it. */
 private fun MessageActions.offerDeleteForever(messages: List<MailMessage>): OfferedAction? {
-    val cleanup = cleanup ?: return null
-    val deleting = messages.filter(cleanup.canDelete)
+    val actions = cleanup ?: return null
+    val deleting = messages.filter(actions.canDelete)
     val title = if (deleting.size == 1) "Delete this message forever?" else "Delete ${deleting.size} messages forever?"
     val question = ConfirmQuestion(title, "You can't undo this.", "Delete")
-    return deleting.takeIf { it.isNotEmpty() }?.let {
+    return if (deleting.isEmpty()) {
+        null
+    } else {
         OfferedAction(
             MailAction.DeleteForever.label,
             MailAction.DeleteForever.symbol,
             leaves = true,
             confirm = question,
         ) {
-            cleanup.onDelete(deleting)
+            actions.onDelete(deleting)
         }
     }
 }

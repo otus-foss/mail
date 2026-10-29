@@ -39,7 +39,7 @@ internal fun FolderTreeRow(
             density = RowDensity.Compact,
             trailing = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    expanded?.let { SidebarExpandButton(folder.name, it, onExpandedChange) }
+                    if (expanded != null) SidebarExpandButton(folder.name, expanded, onExpandedChange)
                     end()
                 }
             },
