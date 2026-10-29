@@ -35,7 +35,8 @@ internal fun EmailObject.toMessageContent(): MessageContent {
  */
 private fun EmailObject.textBodyValues(): List<EmailBodyValue> =
     textBody.orEmpty().mapNotNull { part ->
-        part.partId?.let { bodyValues[it] }?.let { if (part.isHtml) it.copy(value = it.value.htmlToText()) else it }
+        val value = part.partId?.let { bodyValues[it] } ?: return@mapNotNull null
+        if (part.isHtml) value.copy(value = value.value.htmlToText()) else value
     }
 
 /** Marks where a cut-off part stops when more of the body follows it. */

@@ -62,10 +62,8 @@ private fun String.escaped(): String = map { ESCAPES[it] ?: it.toString() }.join
 
 private fun String.unescaped(): String =
     ESCAPE.replace(this) {
-        it.groupValues[1]
-            .toInt(HEX)
-            .toChar()
-            .toString()
+        val code = it.groupValues[1].toInt(HEX)
+        code.toChar().toString()
     }
 
 private const val HEX = 16

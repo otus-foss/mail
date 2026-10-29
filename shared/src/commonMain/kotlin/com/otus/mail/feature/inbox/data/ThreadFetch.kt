@@ -31,11 +31,10 @@ internal suspend fun MailAccount.threadEmails(
  * The Email ids of the thread of [emailId], oldest first, from `Email/get` of its `threadId` and
  * `Thread/get` chained in one request. Empty when the server has no such email.
  */
-internal suspend fun MailAccount.threadEmailIds(emailId: String): List<String> =
-    connection
-        .request { threadOf(id, emailId) }
-        .list
-        .flatMap { it.emailIds }
+internal suspend fun MailAccount.threadEmailIds(emailId: String): List<String> {
+    val threads = connection.request { threadOf(id, emailId) }
+    return threads.list.flatMap { it.emailIds }
+}
 
 /** `Email/get` of [emailId]'s `threadId`, and `Thread/get` of that thread by back-reference. */
 private fun JmapRequestBuilder.threadOf(

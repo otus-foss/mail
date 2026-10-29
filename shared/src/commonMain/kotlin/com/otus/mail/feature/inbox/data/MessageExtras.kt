@@ -43,21 +43,16 @@ internal fun EmailObject.unsubscribe(): Unsubscribe? {
 }
 
 /** The list's name from a `List-Id` such as `"Weekly digest" <weekly.example.org>`; null when it has none. */
-internal fun listName(listId: String?): String? =
-    listId
-        ?.substringBefore('<')
-        ?.trim()
-        ?.trim('"')
-        ?.displayLine()
-        ?.ifBlank { null }
+internal fun listName(listId: String?): String? {
+    val name = listId?.substringBefore('<')?.trim() ?: return null
+    return name.trim('"').displayLine().ifBlank { null }
+}
 
 /** The id inside a `List-Id`'s angle brackets (RFC 2919), such as `weekly.example.org`. */
-internal fun listIdentifier(listId: String?): String? =
-    listId
-        ?.substringAfter('<', missingDelimiterValue = "")
-        ?.substringBefore('>')
-        ?.trim()
-        ?.ifBlank { null }
+internal fun listIdentifier(listId: String?): String? {
+    val enclosed = listId?.substringAfter('<', missingDelimiterValue = "") ?: return null
+    return enclosed.substringBefore('>').trim().ifBlank { null }
+}
 
 /** The lowercase Content-Ids [html] refers to as `cid:` URIs (RFC 2392). */
 internal fun cidReferences(html: String?): Set<String> =
