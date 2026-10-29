@@ -87,12 +87,12 @@ internal fun NewFolderSheet(
         }
         // Opened from inside this sheet, they start at least as tall as it.
         ruleSheet?.let { draft ->
-            val actions =
+            val ruleActions =
                 draftRuleActions(draft, setup) {
                     setup = it
                     ruleSheet = null
                 }
-            AddRuleSheet(name.ifBlank { "the new folder" }, draft, known.orEmpty(), actions)
+            AddRuleSheet(name.ifBlank { "the new folder" }, draft, known.orEmpty(), ruleActions)
         }
         if (coloring) {
             FolderColorSheet(setup.color, { setup = setup.copy(color = it) }, onDismiss = { coloring = false })

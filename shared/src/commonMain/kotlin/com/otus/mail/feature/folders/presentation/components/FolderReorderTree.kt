@@ -25,7 +25,10 @@ fun FolderReorderTree(
         visible,
         key = { it.key },
         depth = { it.node.depth },
-        onDrop = { from, target -> visible.treeDrop(from, target, actions.placeable)?.let(actions.onDrop) },
+        onDrop = { from, target ->
+            val drop = visible.treeDrop(from, target, actions.placeable)
+            if (drop != null) actions.onDrop(drop)
+        },
         canDrop = { from, target -> visible.treeDrop(from, target, actions.placeable)?.let(actions.canDrop) == true },
     ) { row ->
         FolderRow(
