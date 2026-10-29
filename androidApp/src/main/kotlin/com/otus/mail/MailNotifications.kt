@@ -1,6 +1,7 @@
 package com.otus.mail
 
 import android.Manifest
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -77,41 +78,41 @@ class MailNotifications(
     private fun message(
         mail: NewMail,
         shown: NotificationPreviews,
-    ) = when (shown) {
-        NotificationPreviews.Hidden -> {
-            newMail(mail).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-        }
+    ): Notification {
+        val notification =
+            when (shown) {
+                NotificationPreviews.Hidden -> newMail(mail).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                NotificationPreviews.Device -> detailedMessage(mail)
+            }
+        return notification.setWhen(mail.receivedAt.toEpochMilliseconds()).setShowWhen(true).build()
+    }
 
-        NotificationPreviews.Device -> {
-            base(mail)
-                .setContentTitle(mail.sender)
-                .setContentText(subject(mail))
-                .setSubText(mail.accountName)
-                .setStyle(NotificationCompat.BigTextStyle().bigText("${subject(mail)}\n${mail.preview}"))
-                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-                .setPublicVersion(newMail(mail).build())
-        }
-    }.setWhen(mail.receivedAt.toEpochMilliseconds())
-        .setShowWhen(true)
-        .build()
+    private fun detailedMessage(mail: NewMail) =
+        base(mail)
+            .setContentTitle(mail.sender)
+            .setContentText(mail.subject(context))
+            .setSubText(mail.accountName)
+            .setStyle(NotificationCompat.BigTextStyle().bigText("${mail.subject(context)}\n${mail.preview}"))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(newMail(mail).build())
 
     private fun summary(
         latest: NewMail,
         shown: NotificationPreviews,
-    ) = when (shown) {
-        NotificationPreviews.Hidden -> {
-            newMail(latest).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-        }
+    ): Notification {
+        val notification =
+            when (shown) {
+                NotificationPreviews.Hidden -> newMail(latest).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                NotificationPreviews.Device -> accountSummary(latest)
+            }
+        return notification.setGroupSummary(true).setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN).build()
+    }
 
-        NotificationPreviews.Device -> {
-            base(latest)
-                .setContentTitle(latest.accountName)
-                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-                .setPublicVersion(newMail(latest).build())
-        }
-    }.setGroupSummary(true)
-        .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
-        .build()
+    private fun accountSummary(latest: NewMail) =
+        base(latest)
+            .setContentTitle(latest.accountName)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(newMail(latest).build())
 
     /** "New mail" alone: a hidden alert, and what a locked device shows when it hides details. */
     private fun newMail(mail: NewMail) = base(mail).setContentTitle(context.getString(R.string.notification_new_mail))
@@ -125,8 +126,6 @@ class MailNotifications(
             .setContentIntent(openApp())
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
-
-    private fun subject(mail: NewMail) = mail.subject.ifBlank { context.getString(R.string.notification_no_subject) }
 
     private fun openApp() =
         PendingIntent.getActivity(
@@ -145,3 +144,5 @@ class MailNotifications(
         const val SUMMARY_ID = 2
     }
 }
+
+private fun NewMail.subject(context: Context) = subject.ifBlank { context.getString(R.string.notification_no_subject) }

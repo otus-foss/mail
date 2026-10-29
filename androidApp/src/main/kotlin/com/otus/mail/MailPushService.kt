@@ -31,11 +31,18 @@ class MailPushService : PushService() {
             }
 
             is JmapPush.Verification -> {
-                PushSyncWorker.enqueue(this, PushSyncWorker.verification(instance, push))
+                verify(instance, push)
             }
 
             null -> {}
         }
+    }
+
+    private fun verify(
+        instance: String,
+        push: JmapPush.Verification,
+    ) {
+        PushSyncWorker.enqueue(this, PushSyncWorker.verification(instance, push))
     }
 
     override fun onUnregistered(instance: String) {

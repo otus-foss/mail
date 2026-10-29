@@ -47,22 +47,13 @@ class AccountConnectionTest {
             val json = headersOf(HttpHeaders.ContentType, "application/json")
             val authorized = request.headers[HttpHeaders.Authorization] == "Basic YWRhQGV4YW1wbGUub3JnOnNlY3JldA=="
             val body = (request.body as? TextContent)?.text.orEmpty()
+            val redirect = headersOf(HttpHeaders.Location, "/jmap/session")
+            val path = request.url.encodedPath
             when {
-                !authorized -> {
-                    respond("", HttpStatusCode.Unauthorized)
-                }
-
-                request.url.encodedPath == "/.well-known/jmap" -> {
-                    respond("", HttpStatusCode.TemporaryRedirect, headersOf(HttpHeaders.Location, "/jmap/session"))
-                }
-
-                request.url.encodedPath == "/jmap/session" -> {
-                    respond(SESSION, HttpStatusCode.OK, json)
-                }
-
-                else -> {
-                    respond(jmapReply(body, ::answer), HttpStatusCode.OK, json)
-                }
+                !authorized -> respond("", HttpStatusCode.Unauthorized)
+                path == "/.well-known/jmap" -> respond("", HttpStatusCode.TemporaryRedirect, redirect)
+                path == "/jmap/session" -> respond(SESSION, HttpStatusCode.OK, json)
+                else -> respond(jmapReply(body, ::answer), HttpStatusCode.OK, json)
             }
         }
 
@@ -72,32 +63,18 @@ class AccountConnectionTest {
         arguments: JsonObject,
     ): JsonObject? =
         when (method) {
-            "Mailbox/get" -> {
-                listResult("m", listOf(parsed(MAILBOX)))
-            }
+            "Mailbox/get" -> listResult("m", listOf(parsed(MAILBOX)))
+            "Identity/get" -> listResult("i", parsed(IDENTITIES).jsonArray)
+            "Email/query" -> queryResult()
+            "Email/get" -> listResult("e", arguments.found("m1", EMAIL))
+            "Thread/get" -> listResult("t", arguments.found("T1", THREAD))
+            else -> null
+        }
 
-            "Identity/get" -> {
-                listResult("i", parsed(IDENTITIES).jsonArray)
-            }
-
-            "Email/query" -> {
-                buildJsonObject {
-                    put("ids", listOf("m1").toJsonArray())
-                    put("total", JsonPrimitive(1))
-                }
-            }
-
-            "Email/get" -> {
-                listResult("e", arguments.found("m1", EMAIL))
-            }
-
-            "Thread/get" -> {
-                listResult("t", arguments.found("T1", THREAD))
-            }
-
-            else -> {
-                null
-            }
+    private fun queryResult() =
+        buildJsonObject {
+            put("ids", listOf("m1").toJsonArray())
+            put("total", JsonPrimitive(1))
         }
 
     private fun parsed(json: String) = Json.parseToJsonElement(json)

@@ -91,8 +91,11 @@ class OtusMailApplication :
      */
     private fun deviceClientId(): String {
         val stored = PreferenceMap(this, "otus_mail_device")
-        return stored.read()[DEVICE_ID]
-            ?: "otus-mail-${UUID.randomUUID()}".also { stored.write(mapOf(DEVICE_ID to it)) }
+        val existing = stored.read()[DEVICE_ID]
+        if (existing != null) return existing
+        val created = "otus-mail-${UUID.randomUUID()}"
+        stored.write(mapOf(DEVICE_ID to created))
+        return created
     }
 
     private companion object {

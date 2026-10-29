@@ -18,7 +18,7 @@ class UpdateStatusReceiver : BroadcastReceiver() {
     ) {
         when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
-                confirmation(intent)?.let { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                openConfirmation(context, intent)
             }
 
             PackageInstaller.STATUS_SUCCESS, PackageInstaller.STATUS_FAILURE_ABORTED -> {}
@@ -29,6 +29,11 @@ class UpdateStatusReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun confirmation(intent: Intent): Intent? =
-        IntentCompat.getParcelableExtra(intent, Intent.EXTRA_INTENT, Intent::class.java)
+    private fun openConfirmation(
+        context: Context,
+        intent: Intent,
+    ) {
+        val confirmation = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_INTENT, Intent::class.java) ?: return
+        context.startActivity(confirmation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
 }
