@@ -87,12 +87,7 @@ internal object ReadViewFixtures {
         MailLocation("Inbox", "Alex", "acc", "alex@otus.example", mailboxId = "in", mailboxIds = folders),
         emailId = id,
         to = team.filter { it != from },
-        preview =
-            body
-                .lineSequence()
-                .filter { it.isNotBlank() && it != "Hi all," }
-                .firstOrNull()
-                .orEmpty(),
+        preview = body.lineSequence().firstOrNull { it.isNotBlank() && it != "Hi all," }.orEmpty(),
     )
 
     val thread =
@@ -137,24 +132,19 @@ internal object ReadViewFixtures {
     /** Each message's body: the digest is HTML with a remote image and a list to leave. */
     fun content(message: MailMessage): MessageContent =
         when (message.id) {
-            "s" -> {
-                MessageContent(
-                    DIGEST,
-                    truncated = false,
-                    html = MessageHtml(DIGEST_HTML, true),
-                    unsubscribe = Unsubscribe(mail = "mailto:unsubscribe@sentry.example"),
-                    listName = "Sentry weekly digest",
-                )
-            }
-
-            "g" -> {
-                MessageContent(message.body, truncated = false, html = null, attachments = attachments)
-            }
-
-            else -> {
-                MessageContent(message.body, truncated = false, html = null)
-            }
+            "s" -> digestContent()
+            "g" -> MessageContent(message.body, truncated = false, html = null, attachments = attachments)
+            else -> MessageContent(message.body, truncated = false, html = null)
         }
+
+    private fun digestContent() =
+        MessageContent(
+            DIGEST,
+            truncated = false,
+            html = MessageHtml(DIGEST_HTML, remoteContent = true),
+            unsubscribe = Unsubscribe(mail = "mailto:unsubscribe@sentry.example"),
+            listName = "Sentry weekly digest",
+        )
 
     fun read(
         pages: List<MailMessage>,
@@ -205,8 +195,7 @@ internal object ReadViewFixtures {
                 PHOTO_SIZE * 0.4f,
                 PHOTO_SIZE * 0.25f,
                 Paint().apply {
-                    color =
-                        Color.rgb(0xe8, 0xc4, 0x6a)
+                    color = Color.rgb(0xe8, 0xc4, 0x6a)
                 },
             )
         }

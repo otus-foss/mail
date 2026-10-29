@@ -70,7 +70,11 @@ class SignatureImageDecodeTest {
     private fun Bitmap.size(
         format: Bitmap.CompressFormat,
         quality: Int,
-    ): Int = ByteArrayOutputStream().also { compress(format, quality, it) }.size()
+    ): Int {
+        val output = ByteArrayOutputStream()
+        compress(format, quality, output)
+        return output.size()
+    }
 
     private companion object {
         const val SEED = 117

@@ -120,10 +120,8 @@ class SettingsPagesTest {
         compose.onNodeWithText("Connects to https://mail.example.com/.well-known/jmap").assertIsDisplayed()
         compose.onNodeWithContentDescription("Username").performTextInput("me@example.com")
         compose.onNodeWithContentDescription("Password").performTextInput("app-password")
-        compose
-            .onNodeWithContentDescription(
-                "Password",
-            ).assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
+        val password = compose.onNodeWithContentDescription("Password")
+        password.assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
         compose.onNodeWithText("Connect").assertIsEnabled()
     }
 

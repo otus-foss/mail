@@ -56,15 +56,8 @@ class ReadViewTest {
         newFolder: NewFolderSheet? = null,
         showQuotes: Boolean = false,
     ) {
-        val read =
-            fixtures
-                .read(
-                    pages,
-                    cameFrom,
-                    { applied = it.added to it.removed },
-                    { unsubscribed++ },
-                    newFolder,
-                ).let { if (showQuotes) with(fixtures) { it.showingQuotes() } else it }
+        val base = fixtures.read(pages, cameFrom, { applied = it.added to it.removed }, { unsubscribed++ }, newFolder)
+        val read = if (showQuotes) with(fixtures) { base.showingQuotes() } else base
         val context =
             InboxContext(
                 loadContent = { fixtures.content(it) },
@@ -84,16 +77,9 @@ class ReadViewTest {
     }
 
     private fun strip(description: String): SemanticsNodeInteraction {
-        compose.waitUntil(
-            TIMEOUT,
-        ) {
-            compose
-                .onAllNodes(
-                    hasContentDescription(description, substring = true),
-                ).fetchSemanticsNodes()
-                .isNotEmpty()
-        }
-        return compose.onNode(hasContentDescription(description, substring = true))
+        val strip = hasContentDescription(description, substring = true)
+        compose.waitForNode(strip)
+        return compose.onNode(strip)
     }
 
     private fun exists(text: String) =
