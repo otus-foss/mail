@@ -18,20 +18,29 @@ enum class PreviewLines(
     Two("two", 2),
 }
 
-/** How a row names the day a message arrived. */
+/** How a row names the day a message arrived, and whether its dates name the month, as "Oct 8". */
 enum class DateStyle(
     val storageValue: String,
+    val relative: Boolean,
+    val monthNames: Boolean,
 ) {
     /** The time today, then "Yesterday", the weekday within a week, and the date before that. */
-    Relative("relative"),
+    Relative("relative", relative = true, monthNames = false),
+
+    /** [Relative], with the month named in older dates. */
+    RelativeMonths("relative-months", relative = true, monthNames = true),
 
     /** Always the date, with the time added for today. */
-    Full("full"),
+    Full("full", relative = false, monthNames = false),
+
+    /** [Full], with the month named. */
+    FullMonths("full-months", relative = false, monthNames = true),
 }
 
 /**
  * How the mail list's rows read. Without [showSender], the second line shows the message text
  * instead, so [order] and [preview] do not apply. [folderIcons] also allows the folder color nudge.
+ * Without [showThisYear], this year's dates leave out the year.
  */
 data class MailListLayout(
     val order: ListOrder = ListOrder.SubjectFirst,
@@ -39,6 +48,7 @@ data class MailListLayout(
     val showSender: Boolean = true,
     val folderIcons: Boolean = true,
     val dateStyle: DateStyle = DateStyle.Relative,
+    val showThisYear: Boolean = true,
 ) {
     companion object {
         /** One `name=value` line per setting, so a new setting cannot break an older saved value. */
@@ -49,6 +59,7 @@ data class MailListLayout(
                 SHOW_SENDER to layout.showSender.toString(),
                 FOLDER_ICONS to layout.folderIcons.toString(),
                 DATE_STYLE to layout.dateStyle.storageValue,
+                SHOW_THIS_YEAR to layout.showThisYear.toString(),
             ).joinToString("\n") { (name, value) -> "$name=$value" }
 
         /** Missing or unknown values read as the defaults. */
@@ -62,6 +73,7 @@ data class MailListLayout(
                 folderIcons = values[FOLDER_ICONS]?.toBooleanStrictOrNull() ?: defaults.folderIcons,
                 dateStyle =
                     DateStyle.entries.firstOrNull { it.storageValue == values[DATE_STYLE] } ?: defaults.dateStyle,
+                showThisYear = values[SHOW_THIS_YEAR]?.toBooleanStrictOrNull() ?: defaults.showThisYear,
             )
         }
 
@@ -70,5 +82,6 @@ data class MailListLayout(
         private const val SHOW_SENDER = "showSender"
         private const val FOLDER_ICONS = "folderIcons"
         private const val DATE_STYLE = "dateStyle"
+        private const val SHOW_THIS_YEAR = "showThisYear"
     }
 }

@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.otus.dateformat.DateFormatter
+import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
@@ -18,17 +20,18 @@ import com.otus.mail.feature.inbox.domain.ListOrder
 import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.PreviewLines
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.detail
+import com.otus.mail.feature.inbox.presentation.dateStyleExample
 import com.otus.mail.feature.inbox.presentation.label
 
 /**
  * How the mail list's rows read, with [preview] showing a row in the current layout at the top.
  * Order and Preview apply only while the sender shows, so they hide while Show sender is off.
- * Each change is saved at once.
+ * Date styles show a sample date in [dateFormatter]'s format. Each change is saved at once.
  */
 @Composable
 fun MailListSettingsScreen(
     state: MailBehaviorState,
+    dateFormatter: DateFormatter,
     preview: @Composable (MailListLayout) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -37,6 +40,7 @@ fun MailListSettingsScreen(
         state.update { it.copy(list = update(it.list)) }
     }
     var choosing by rememberSaveable { mutableStateOf<ListChoice?>(null) }
+    val example = { layout: MailListLayout -> dateFormatter.dateStyleExample(layout, currentLocalDate()) }
     Subpage("Mail list", onBack) {
         preview(list)
         SettingsSection("Rows") {
@@ -58,16 +62,25 @@ fun MailListSettingsScreen(
                 onCheckedChange = { on -> change { it.copy(folderIcons = on) } },
                 description = "Show which folder each mail is in",
             )
-            SettingRow("Date", { choosing = ListChoice.Date }) { ValueButton(list.dateStyle.label) }
+        }
+        SettingsSection("Dates") {
+            SettingRow("Style", { choosing = ListChoice.Date }) { ValueButton(list.dateStyle.label) }
+            SettingToggleRow(
+                "Show this year",
+                checked = list.showThisYear,
+                onCheckedChange = { on -> change { it.copy(showThisYear = on) } },
+                description = "When off, only older dates show the year",
+            )
         }
     }
-    choosing?.let { ListChoiceSheet(it, list, change) { choosing = null } }
+    choosing?.let { ListChoiceSheet(it, list, example, change) { choosing = null } }
 }
 
 @Composable
 private fun ListChoiceSheet(
     choice: ListChoice,
     list: MailListLayout,
+    example: (MailListLayout) -> String,
     change: ((MailListLayout) -> MailListLayout) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -95,9 +108,9 @@ private fun ListChoiceSheet(
 
         ListChoice.Date -> {
             ChoiceSheet(
-                title = "Date",
+                title = "Date style",
                 choices = ChoiceOptions(DateStyle.entries, selected = list.dateStyle, default = defaults.dateStyle),
-                row = { ChoiceRow(it.label, it.detail) },
+                row = { ChoiceRow(it.label, example(list.copy(dateStyle = it))) },
                 onSelect = { style -> change { it.copy(dateStyle = style) } },
                 onDismiss = onDismiss,
             )

@@ -24,14 +24,9 @@ val DateStyle.label: String
     get() =
         when (this) {
             DateStyle.Relative -> "Relative"
+            DateStyle.RelativeMonths -> "Relative with months"
             DateStyle.Full -> "Full date"
-        }
-
-val DateStyle.detail: String
-    get() =
-        when (this) {
-            DateStyle.Relative -> "09:14 today, Yesterday, weekday, then the date"
-            DateStyle.Full -> "Always the date, with the time for today"
+            DateStyle.FullMonths -> "Full with months"
         }
 
 /** The Mail list row's summary on the appearance page. */
