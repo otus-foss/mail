@@ -44,7 +44,7 @@ internal fun ImportSheet(
     ClosableSheet(
         "Import contacts",
         onDismiss,
-        SheetConfirm("Import $count", { plan?.let { onImport(it, mode) } }, enabled = count > 0),
+        SheetConfirm("Import $count", { if (plan != null) onImport(plan, mode) }, enabled = count > 0),
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -54,7 +54,8 @@ internal fun ImportSheet(
             Text("${file.name} · $cards", Inset, color = OtusColors.text2)
             ChoiceHeading("Import into")
             BookChoices(books, book?.key) { book = it }
-            book?.let { chosen -> plan?.let { MatchedPeople(it, chosen, mode) { picked -> mode = picked } } }
+            val chosen = book
+            if (chosen != null && plan != null) MatchedPeople(plan, chosen, mode) { mode = it }
             Failures(file.failures)
             Preview(file.cards, plan, mode)
         }
@@ -98,11 +99,8 @@ private fun Preview(
     if (cards.isEmpty()) return
     ChoiceHeading("Preview")
     cards.take(PREVIEW).forEach { card ->
-        val address =
-            card.emails
-                ?.values
-                ?.firstOrNull()
-                ?.address
+        val firstEmail = card.emails?.values?.firstOrNull()
+        val address = firstEmail?.address
         val name = card.name?.full ?: address ?: "No name"
         val tag = mode.label.takeIf { plan?.match(card) != null }
         Text(listOfNotNull(name, address, tag).joinToString(" · "), Inset, maxLines = 1)

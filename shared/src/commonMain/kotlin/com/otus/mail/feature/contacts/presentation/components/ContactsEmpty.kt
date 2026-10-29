@@ -31,30 +31,34 @@ internal fun ContactsEmpty(
     onImport: (() -> Unit)?,
 ) {
     when (kind) {
-        ContactsEmptyKind.Loading -> {
-            return
-        }
-
-        ContactsEmptyKind.NoContacts -> {
-            EmptyState(
-                "Contacts aren’t available",
-                "Your server doesn’t offer JMAP Contacts. Mail still suggests people you’ve written to.",
-                Res.drawable.symbol_contacts,
-            )
-        }
-
-        ContactsEmptyKind.Empty -> {
-            EmptyState(
-                "No contacts yet",
-                "Add someone, or bring your contacts over from a vCard file.",
-                Res.drawable.symbol_person_add,
-                actionLabel = "Import a file".takeIf { onImport != null },
-                onAction = onImport ?: {},
-            )
-        }
-
-        ContactsEmptyKind.NoMatches -> {
-            EmptyState("No matching people", "Try another name or address.", Res.drawable.symbol_person_search)
-        }
+        ContactsEmptyKind.Loading -> return
+        ContactsEmptyKind.NoContacts -> UnavailableContacts()
+        ContactsEmptyKind.Empty -> NoContacts(onImport)
+        ContactsEmptyKind.NoMatches -> NoMatches()
     }
+}
+
+@Composable
+private fun UnavailableContacts() {
+    EmptyState(
+        "Contacts aren’t available",
+        "Your server doesn’t offer JMAP Contacts. Mail still suggests people you’ve written to.",
+        Res.drawable.symbol_contacts,
+    )
+}
+
+@Composable
+private fun NoContacts(onImport: (() -> Unit)?) {
+    EmptyState(
+        "No contacts yet",
+        "Add someone, or bring your contacts over from a vCard file.",
+        Res.drawable.symbol_person_add,
+        actionLabel = "Import a file".takeIf { onImport != null },
+        onAction = onImport ?: {},
+    )
+}
+
+@Composable
+private fun NoMatches() {
+    EmptyState("No matching people", "Try another name or address.", Res.drawable.symbol_person_search)
 }

@@ -41,7 +41,8 @@ internal fun ContactsSheets(
             label = "Name",
             confirmLabel = "Create",
             onConfirm = { name ->
-                state.defaultBook?.let { state.createGroup(name, it.key, chosenCards) }
+                val book = state.defaultBook
+                if (book != null) state.createGroup(name, book.key, chosenCards)
                 view.naming = false
                 view.clearSelection()
             },
@@ -64,15 +65,23 @@ private fun ContactsMergeSheet(
     view: ContactsView,
     plan: MergePlan,
 ) {
-    MergeSheet(plan, state.writableBooks, onChange = { view.merging = it }, "Show as one", onAlternative = {
-        state.showAsOne(plan.cards.map { it.key }.toSet())
-        view.merging = null
-        view.clearSelection()
-    }, onMerge = {
-        state.merge(it)
-        view.merging = null
-        view.clearSelection()
-    }, onDismiss = { view.merging = null })
+    MergeSheet(
+        plan,
+        state.writableBooks,
+        onChange = { view.merging = it },
+        "Show as one",
+        onAlternative = {
+            state.showAsOne(plan.cards.map { it.key }.toSet())
+            view.merging = null
+            view.clearSelection()
+        },
+        onMerge = {
+            state.merge(it)
+            view.merging = null
+            view.clearSelection()
+        },
+        onDismiss = { view.merging = null },
+    )
 }
 
 /** Asks before deleting the [chosen] people from the server. */

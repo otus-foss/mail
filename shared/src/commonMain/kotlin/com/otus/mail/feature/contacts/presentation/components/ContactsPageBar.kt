@@ -48,16 +48,14 @@ private fun ContactsState.selectionBarActions(
 ): SelectionBarActions {
     val chosenCards = chosen.flatMap { it.cards }
     val pair = chosenCards.takeIf { it.size == 2 }?.map { it.key }?.toSet()
+    val mergeable = chosenCards.takeIf { it.size >= 2 && chosen.size == view.selected.size }
+    val plan = mergeable?.let { mergePlan(it) }
     return SelectionBarActions(
         onWrite = {
             navigation.onWrite(chosen.mapNotNull { it.preferredAddress })
             view.clearSelection()
         },
-        onMerge =
-            chosenCards
-                .takeIf { it.size >= 2 && chosen.size == view.selected.size }
-                ?.let { mergePlan(it) }
-                ?.let { plan -> { view.merging = plan } },
+        onMerge = plan?.let { { view.merging = it } },
         sharedAddress = pair != null && duplicates.any { setOf(it.first.key, it.second.key) == pair },
         grouping =
             GroupChoices(
