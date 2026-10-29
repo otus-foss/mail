@@ -1,6 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,8 +10,6 @@ import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.overlays.components.SelectionSheet
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxContext
@@ -55,11 +52,7 @@ fun InboxFilterSheet(
             }
 
             InboxFilter.People, InboxFilter.Accounts -> {
-                Text(
-                    "${draft.selectionCount(filter)} selected",
-                    color = OtusColors.text2,
-                    fontSize = SheetTokens.detailSize,
-                )
+                SheetCaption("${draft.selectionCount(filter)} selected", heading = false)
                 InboxPickerChoices(
                     filter,
                     messages,

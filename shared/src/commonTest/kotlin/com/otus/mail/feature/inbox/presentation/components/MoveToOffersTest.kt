@@ -2,13 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.mail.feature.inbox.domain.BarButton.MoveTo
 import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.MessageMoves
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,19 +26,9 @@ class MoveToOffersTest {
         )
 
     private val actions =
-        MessageActions(
-            moves =
-                MessageMoves(
-                    targets = { targets[it.location.accountId].orEmpty() },
-                    onMove = { message, target -> moved += message.id to target.folderId },
-                    suggested = { null },
-                    futureSorting = { null },
-                ),
-            canMark = { _, _ -> true },
-            onMark = { _, _, _ -> },
-            ruleForSender = { null },
-            readLater = { null },
-            behavior = { MailBehavior() },
+        offerActions(
+            targets = { targets[it.location.accountId].orEmpty() },
+            onMove = { message, target -> moved += message.id to target.folderId },
         )
 
     private fun offer(
@@ -54,8 +38,7 @@ class MoveToOffersTest {
 
     @Test
     fun aMoveToButtonMovesEachMessageWithinItsOwnAccount() {
-        val offered =
-            assertNotNull(offer(listOf(message("1", "ada"), message("2", "grace")), MoveTo(listOf("receipts"))))
+        val offered = assertNotNull(offer(fromBoth, MoveTo(listOf("receipts"))))
         assertEquals("Move to Receipts", offered.label)
         assertEquals("Receipts", offered.primaryLabel)
         assertTrue(offered.leaves)
@@ -65,7 +48,7 @@ class MoveToOffersTest {
 
     @Test
     fun aMessageWhoseAccountLacksTheFolderIsSkipped() {
-        val offered = assertNotNull(offer(listOf(message("1", "ada"), message("2", "grace")), acme))
+        val offered = assertNotNull(offer(fromBoth, acme))
         assertEquals("Acme", offered.primaryLabel)
         offered.run()
         assertEquals(listOf("1" to "ada-a"), moved)
@@ -73,15 +56,15 @@ class MoveToOffersTest {
 
     @Test
     fun noFolderAtThePathDisablesTheButton() {
-        assertNull(offer(listOf(message("2", "grace")), acme))
-        assertNull(offer(listOf(message("1", "ada")), MoveTo(listOf("Travel"))))
+        assertNull(offer(listOf(offerMessage("2", "grace")), acme))
+        assertNull(offer(listOf(offerMessage("1", "ada")), MoveTo(listOf("Travel"))))
         // System folders have no path, so a user's folder named Trash elsewhere does not match them.
-        assertNull(offer(listOf(message("1", "ada")), MoveTo(listOf("Trash"))))
+        assertNull(offer(listOf(offerMessage("1", "ada")), MoveTo(listOf("Trash"))))
     }
 
     @Test
     fun suggestedMoveGoesToTheSuggestedFolderAndIsOffOtherwise() {
-        val messages = listOf(message("1", "ada"))
+        val messages = listOf(offerMessage("1", "ada"))
         assertNull(actions.offer(messages, MailAction.SuggestedMove, { _, _ -> }))
         val offered =
             assertNotNull(actions.offer(messages, MailAction.SuggestedMove, { _, _ -> }, targets.getValue("ada")[1]))
@@ -93,16 +76,6 @@ class MoveToOffersTest {
 
     private val acme = MoveTo(listOf("Clients", "Acme"))
 
-    private fun message(
-        id: String,
-        accountId: String,
-    ) = MailMessage(
-        id,
-        MailSender("Ada", "ada@example.org"),
-        "Subject",
-        "Body",
-        ReceivedAt("2026-10-01", "12:00"),
-        MailLocation("Inbox", accountId, accountId, mailboxId = "inbox"),
-        emailId = "m$id",
-    )
+    /** One message in each account. */
+    private val fromBoth = listOf(offerMessage("1", "ada"), offerMessage("2", "grace"))
 }

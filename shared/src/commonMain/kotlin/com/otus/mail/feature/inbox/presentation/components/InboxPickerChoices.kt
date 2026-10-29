@@ -9,8 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.elements.SelectionRow
 import com.otus.designsystem.theme.colors.OtusColors
@@ -64,7 +62,7 @@ private fun LazyListScope.peopleChoices(
     }
     items(matches, key = { it.address }) { person ->
         SelectionRow(
-            person.name.ifBlank { person.address },
+            person.shownName,
             person.address in draft.senders,
             { onChange(draft.copy(senders = draft.senders.toggled(person.address))) },
             subtitle = person.address,
@@ -115,7 +113,7 @@ private fun LazyListScope.mailboxChoices(
     onChange: (InboxSearch) -> Unit,
 ) {
     if (names.isEmpty()) return
-    item { SectionCaption("Inboxes") }
+    item { SheetCaption("Inboxes", Modifier.padding(top = SheetTokens.inset)) }
     items(names, key = { "mailbox/$it" }) { name ->
         SelectionRow(
             name,
@@ -125,20 +123,8 @@ private fun LazyListScope.mailboxChoices(
     }
 }
 
-private fun <T> Set<T>.toggled(value: T): Set<T> = if (value in this) this - value else this + value
-
 private fun Set<MailboxScope>.toggledName(name: String): Set<MailboxScope> =
     if (any { it.name == name }) filterNot { it.name == name }.toSet() else this + MailboxScope(null, name)
-
-@Composable
-private fun SectionCaption(text: String) {
-    Text(
-        text,
-        Modifier.padding(top = SheetTokens.inset).semantics { heading() },
-        color = OtusColors.text2,
-        fontSize = SheetTokens.detailSize,
-    )
-}
 
 @Composable
 private fun AccountAvatar(location: MailLocation) {

@@ -166,7 +166,7 @@ private fun MoveSuggestion(
     onMove: (MoveTarget) -> Unit,
 ) {
     SheetCaption("Suggested", RowTextInset)
-    val name = sender.name.ifBlank { sender.address }
+    val name = sender.shownName
     SuggestedFolderRow(
         Recipient(name, sender.chipAvatar, sender.address),
         FolderName(target.path ?: target.label.split(" / "), target.color?.let(FolderColor::named), system = false),

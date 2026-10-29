@@ -67,7 +67,8 @@ internal fun FilterPanelSettings(state: MailBehaviorState) {
 
 private enum class FilterSetting { Sections, Quick }
 
-private fun shownCount(count: Int): String = if (count == 0) "None" else "$count shown"
+/** How many of a list's choices show, as a settings row's value. */
+internal fun shownCount(count: Int): String = if (count == 0) "None" else "$count shown"
 
 private val FilterSection.title: String
     get() =

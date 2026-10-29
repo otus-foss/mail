@@ -67,7 +67,7 @@ private fun People(
         verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
     ) {
         people.forEach { person ->
-            val name = person.name.ifBlank { person.address }
+            val name = person.shownName
             PersonChip(
                 Recipient(name, person.chipAvatar, "$name, ${person.address}"),
                 onClick = onPerson?.let { { it(person) } },

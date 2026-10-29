@@ -94,7 +94,7 @@ private fun ContextStrip(
 
         unsubscribe != null -> {
             val list by produceState<MailingList?>(null, page.id) { value = actions.list(page) }
-            val title = content.listName ?: list?.name ?: page.sender.name.ifBlank { page.sender.address }
+            val title = content.listName ?: list?.name ?: page.sender.shownName
             ReadNewsletterStrip(
                 title,
                 list?.subtitle() ?: "Mailing list",
@@ -138,12 +138,7 @@ private fun FilesStrip(
 
 /** How many messages [row]'s Read view pages through; until the pages load, the row's count says. */
 private fun ReadState.messageCount(row: MailMessage): Int =
-    if (loaded) {
-        pages.size
-    } else {
-        row.conversation?.messageCount
-            ?: 1
-    }
+    if (loaded) pages.size else row.conversation?.messageCount ?: 1
 
 /**
  * The thread strip for the conversation at [current] of [source]'s row, its end naming the

@@ -6,7 +6,6 @@ import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.shared.rows.components.SummaryCard
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
 
 /**
@@ -35,7 +34,3 @@ internal fun MoveSummary(
         SummaryCard(title, people.map { NamedAvatar(it.name, it.chipAvatar) })
     }
 }
-
-/** The sender's name, or the address when the sender has no other name. */
-private val MailSender.shownName: String
-    get() = name.ifBlank { address }

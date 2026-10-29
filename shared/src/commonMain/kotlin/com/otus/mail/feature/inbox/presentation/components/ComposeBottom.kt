@@ -139,11 +139,5 @@ private fun sendDescription(
     val people = state.draft.recipients
     val send = at?.let { "Send $it," } ?: "Send"
     val first = people.firstOrNull() ?: return send
-    return if (people.size ==
-        1
-    ) {
-        "$send to ${first.name.ifBlank { first.address }}"
-    } else {
-        "$send to ${people.size} people"
-    }
+    return if (people.size == 1) "$send to ${first.shownName}" else "$send to ${people.size} people"
 }

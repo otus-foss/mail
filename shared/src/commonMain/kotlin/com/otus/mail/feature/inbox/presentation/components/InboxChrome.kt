@@ -62,4 +62,8 @@ internal fun rowGestures(
         onOpen(message)
     }
 
-internal fun List<String>.toggled(id: String): List<String> = if (id in this) this - id else this + id
+/** Without [item] when it is in, else with it added at the end. */
+internal fun <T> List<T>.toggled(item: T): List<T> = if (item in this) this - item else this + item
+
+/** Without [item] when it is in, else with it added. */
+internal fun <T> Set<T>.toggled(item: T): Set<T> = if (item in this) this - item else this + item

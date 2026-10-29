@@ -117,7 +117,7 @@ private fun SenderPill(
     open: Boolean,
     onClick: () -> Unit,
 ) {
-    val name = page.sender.name.ifBlank { page.sender.address }
+    val name = page.sender.shownName
     val description = if (open) "From $name. Hide details" else "From $name. Show details"
     AddressPill(name, description, onClick, labelMaxWidth = labelMax, expanded = open) {
         PersonAvatar(page.sender.chipAvatar, ComposeTokens.fromAvatarSize)

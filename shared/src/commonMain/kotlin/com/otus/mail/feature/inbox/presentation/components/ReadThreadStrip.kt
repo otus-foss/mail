@@ -48,7 +48,7 @@ internal fun ReadThreadStrip(
         { index ->
             val position = pageAt(index)
             val page = position.page
-            val sender = page.sender.name.ifBlank { page.sender.address }
+            val sender = page.sender.shownName
             PositionPage(
                 NamedAvatar(if (position.current == 0) "Latest" else sender, page.sender.chipAvatar),
                 "${position.current + 1}/${position.count} · ${position.date}",

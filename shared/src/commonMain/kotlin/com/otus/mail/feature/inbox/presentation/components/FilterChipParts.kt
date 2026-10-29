@@ -14,6 +14,7 @@ import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_newspaper
 import com.otus.designsystem.resources.symbol_reply
 import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.RecipientField
@@ -85,6 +86,13 @@ internal val SizeFilter.label: String
             SizeFilter.Over1Mb -> "1 MB+"
             SizeFilter.Over5Mb -> "5 MB+"
             SizeFilter.Over10Mb -> "10 MB+"
+        }
+
+internal val FilterSort.label: String
+    get() =
+        when (this) {
+            FilterSort.NewestFirst -> "Newest first"
+            FilterSort.OldestFirst -> "Oldest first"
         }
 
 /** A preset's name; a range has its own label, from [rangeLabel]. */

@@ -75,11 +75,11 @@ private fun RecipientRow(
             Dropdown(recipients::dismissSuggestions, focusable = false) {
                 suggested.forEach { person ->
                     DropdownRow(
-                        person.name.ifBlank { person.address },
+                        person.shownName,
                         selected = false,
                         onClick = { recipients.choose(field, person) },
                         detail = person.address.takeIf { person.name.isNotBlank() },
-                    ) { PersonAvatar(person.chipAvatar(), ComposeTokens.dropdownAvatarSize) }
+                    ) { PersonAvatar(person.chipAvatar, ComposeTokens.dropdownAvatarSize) }
                 }
             }
         }
@@ -87,9 +87,7 @@ private fun RecipientRow(
 }
 
 private fun MailSender.recipient(): Recipient =
-    Recipient(name.ifBlank { address }, chipAvatar(), if (name.isBlank()) address else "$name, $address")
-
-internal fun MailSender.chipAvatar() = chipAvatar(avatar, name, address)
+    Recipient(shownName, chipAvatar, if (name.isBlank()) address else "$name, $address")
 
 /** How many people a long recipient line shows before "+3 more". */
 private const val FOLDED_RECIPIENTS = 2

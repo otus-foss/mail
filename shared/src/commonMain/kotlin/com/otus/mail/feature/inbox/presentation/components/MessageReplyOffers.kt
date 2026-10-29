@@ -61,16 +61,22 @@ private fun peopleContext(people: List<MailSender>): BarContext? =
         }
 
         else -> {
-            BarContext(
-                "${people.size} people",
-                BarToken.People(people.first().chipAvatar, people.size, people[1].chipAvatar),
-                "to ${people.size} people",
-            )
+            groupContext(people)
         }
     }
 
+/** Several [people], as the first two avatars and how many there are, under [lead] when given. */
+internal fun groupContext(
+    people: List<MailSender>,
+    lead: String? = null,
+): BarContext {
+    val count = "${people.size} people"
+    val avatars = BarToken.People(people[0].chipAvatar, people.size, people[1].chipAvatar)
+    return BarContext(count, avatars, "to $count", lead = lead)
+}
+
 private fun personContext(person: MailSender): BarContext {
-    val name = person.name.ifBlank { person.address }
+    val name = person.shownName
     return BarContext(name, BarToken.Person(person.chipAvatar), "to $name")
 }
 

@@ -91,7 +91,7 @@ private fun threadEntry(
     own: OwnAddresses,
     today: LocalDate,
 ): ThreadEntry {
-    val name = if (page.isOwn(own, page.sender)) "You" else page.sender.name.ifBlank { page.sender.address }
+    val name = if (page.isOwn(own, page.sender)) "You" else page.sender.shownName
     return ThreadEntry(
         name,
         page.sender.chipAvatar,

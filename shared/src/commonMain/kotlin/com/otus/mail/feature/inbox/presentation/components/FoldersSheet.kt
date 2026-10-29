@@ -51,7 +51,7 @@ fun FoldersSheet(
     var checked by remember(message.id) { mutableStateOf(start) }
     var query by rememberSaveable { mutableStateOf("") }
     val choices = remember(folders) { folderSheetChoices(folders) }
-    val toggle = { id: String -> checked = if (id in checked) checked - id else checked + id }
+    val toggle = { id: String -> checked = checked.toggled(id) }
     val change = FolderChange(message, mailboxes, added = checked - start, removed = start - checked)
     SheetFrame(
         "Folders",
@@ -104,14 +104,10 @@ private fun SystemFolderPills(
         verticalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
     ) {
         folders.forEach { folder ->
+            val icon = if (folder.readLater) Res.drawable.symbol_bookmark else folderName(folder).icon
             DestinationPill(
                 folder.pillLabel,
-                if (folder.readLater) {
-                    Res.drawable.symbol_bookmark
-                } else {
-                    folderName(folder).icon
-                        ?: Res.drawable.symbol_folder
-                },
+                icon ?: Res.drawable.symbol_folder,
                 { onToggle(folder.id) },
                 selected = folder.id in checked,
             )

@@ -63,21 +63,18 @@ internal fun ComposeContent(
                 images = { state.attachments.image(state.draft.attachments, it) },
             )
             ComposeAttachmentList(state.draft.attachments, state.attachments)
-            if (quote.isNotEmpty()) QuotedOriginal(quote, FORWARD_LABEL)
+            if (quote.isNotEmpty()) QuotedOriginal(quote)
         }
     }
 }
 
 @Composable
-private fun QuotedOriginal(
-    quote: String,
-    label: String,
-) {
+private fun QuotedOriginal(quote: String) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     if (expanded) {
         Text(quote, Modifier.padding(horizontal = PageTokens.textInset), color = OtusColors.text2)
     } else {
-        QuoteChip(label, { expanded = true })
+        QuoteChip(FORWARD_LABEL, { expanded = true })
     }
 }
 

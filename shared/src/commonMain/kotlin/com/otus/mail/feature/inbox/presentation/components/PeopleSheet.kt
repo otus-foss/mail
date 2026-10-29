@@ -30,7 +30,7 @@ internal fun PeopleSheet(
                 item(role) { SectionCaption(role.title) }
                 items(group, key = { it.person.address.lowercase() }) { participant ->
                     val person = participant.person
-                    val name = person.name.ifBlank { person.address }
+                    val name = person.shownName
                     ContactRow(name, person.address, chipAvatar(null, name, person.address), { onPick(person) })
                 }
             }

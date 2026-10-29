@@ -44,10 +44,6 @@ fun InboxPanel(
 ) {
     val compact = look.compact
     val filters = look.filters
-    val onChange = actions.onChange
-    val onSearchingChange = actions.onSearchingChange
-    val onSubmit = actions.onSubmit
-    val onOpenNavigation = actions.onOpenNavigation
     ContextPanel(
         // Without pills, the filter button moves into the header and the list gets the row's space.
         placement =
@@ -56,7 +52,7 @@ fun InboxPanel(
                 context.pills.shown.isEmpty() -> ChipPlacement.None
                 else -> ChipPlacement.Below
             },
-        navigation = { InboxNavigation(searching, onOpenNavigation) { onSearchingChange(false) } },
+        navigation = { InboxNavigation(searching, actions.onOpenNavigation) { actions.onSearchingChange(false) } },
         trailingAction = {
             val count = filters.applied.activeCount
             IconButton(
@@ -83,9 +79,14 @@ fun InboxPanel(
             label = "Inbox search mode",
         ) { mode ->
             if (mode) {
-                InboxSearchInput(search.query, { onChange(search.copy(query = it)) }, onSubmit, active = searching)
+                InboxSearchInput(
+                    search.query,
+                    { actions.onChange(search.copy(query = it)) },
+                    actions.onSubmit,
+                    active = searching,
+                )
             } else {
-                SearchPrompt(context.searchPrompt, onClick = { onSearchingChange(true) })
+                SearchPrompt(context.searchPrompt, onClick = { actions.onSearchingChange(true) })
             }
         }
     }
@@ -97,15 +98,11 @@ private fun InboxNavigation(
     onOpenNavigation: () -> Unit,
     onCloseSearch: () -> Unit,
 ) {
-    if (searching) {
-        IconButton("Back to inbox", onCloseSearch, look = IconButtonLook.Plain) {
-            Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
-        }
-    } else {
-        IconButton("Open navigation", onOpenNavigation, look = IconButtonLook.Plain) {
-            Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
-        }
-    }
+    IconButton(
+        if (searching) "Back to inbox" else "Open navigation",
+        if (searching) onCloseSearch else onOpenNavigation,
+        look = IconButtonLook.Plain,
+    ) { Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize) }
 }
 
 @Composable
