@@ -17,9 +17,8 @@ class JmapAttachmentDownloads(
         file: MailAttachment,
     ): ByteArray? =
         mailCallOr(null) {
-            mailAccount(connections, logins, message.location.accountId)?.let { account ->
-                account.connection.download(account.id, file.blobId, file.type, MAX_FILE_BYTES, file.name).bytes
-            }
+            val account = mailAccount(connections, logins, message.location.accountId) ?: return@mailCallOr null
+            account.connection.download(account.id, file.blobId, file.type, MAX_FILE_BYTES, file.name).bytes
         }
 
     private companion object {

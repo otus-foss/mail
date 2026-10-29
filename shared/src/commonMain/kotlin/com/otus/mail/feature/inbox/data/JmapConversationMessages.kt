@@ -65,11 +65,8 @@ class JmapConversationMessages(
             message.conversation?.threadId?.let {
                 cache.objects(loginId, CacheKind.Thread, ThreadObject.serializer(), listOf(it))[it]
             } ?: return null
-        return cache
-            .objects(loginId, CacheKind.Email, EmailObject.serializer(), thread.emailIds)
-            .values
-            .toList()
-            .ifEmpty { null }
+        val emails = cache.objects(loginId, CacheKind.Email, EmailObject.serializer(), thread.emailIds)
+        return emails.values.toList().ifEmpty { null }
     }
 
     /**

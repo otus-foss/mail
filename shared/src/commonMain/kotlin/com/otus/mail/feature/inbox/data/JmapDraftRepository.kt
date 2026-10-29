@@ -32,21 +32,19 @@ class JmapDraftRepository(
 ) : DraftRepository {
     override suspend fun identities(accountId: String): List<SendIdentity> =
         mailCallOr(emptyList()) {
-            mailAccount(connections, logins, accountId)
-                ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
-                ?.let { account ->
-                    account.connection
-                        .call(GetMethod(IdentityType, account.id, properties = IDENTITY_PROPERTIES))
-                        .list
-                        .map {
-                            SendIdentity(
-                                it.id,
-                                MailSender(it.name.ifBlank { it.email }, it.email, accountId),
-                                it.textSignature,
-                                it.htmlSignature,
-                            )
-                        }
-                }.orEmpty()
+            val account =
+                mailAccount(connections, logins, accountId)
+                    ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) } ?: return@mailCallOr emptyList()
+            val request = GetMethod(IdentityType, account.id, properties = IDENTITY_PROPERTIES)
+            val identities = account.connection.call(request)
+            identities.list.map {
+                SendIdentity(
+                    it.id,
+                    MailSender(it.name.ifBlank { it.email }, it.email, accountId),
+                    it.textSignature,
+                    it.htmlSignature,
+                )
+            }
         }
 
     override suspend fun save(draft: Draft): Result<String> =
@@ -60,11 +58,13 @@ class JmapDraftRepository(
                         mapOf(CREATION_ID to draft.toEmail(drafts, account.inlineImages(draft.htmlContent()))),
                 )
             val result = account.connection.call(create)
-            result.notCreated[CREATION_ID]?.let { throw DraftException(it.toDraftFailure()) }
+            val failure = result.notCreated[CREATION_ID]
+            if (failure != null) throw DraftException(failure.toDraftFailure())
             val id = result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.ServerProblem)
             // Each operation of one call succeeds or fails alone (RFC 8620, section 5.3), so the old
             // copy is destroyed only once the server has stored the new one.
-            draft.emailId?.let { account.destroyReplaced(it) }
+            val previous = draft.emailId
+            if (previous != null) account.destroyReplaced(previous)
             id
         }
 
@@ -74,9 +74,8 @@ class JmapDraftRepository(
     ): Result<Unit> =
         attempt(accountId) { account ->
             val result = account.connection.call(SetMethod(EmailType, account.id, destroy = listOf(emailId)))
-            result.notDestroyed[emailId]
-                ?.takeUnless { it.type == "notFound" }
-                ?.let { throw DraftException(it.toDraftFailure()) }
+            val failure = result.notDestroyed[emailId]
+            if (failure != null && failure.type != "notFound") throw DraftException(failure.toDraftFailure())
         }
 
     /**
@@ -92,11 +91,10 @@ class JmapDraftRepository(
         }
     }
 
-    private suspend fun draftsFolder(account: MailAccount): String? =
-        account.connection
-            .call(account.roleQuery(DRAFTS_ROLE))
-            .ids
-            .firstOrNull()
+    private suspend fun draftsFolder(account: MailAccount): String? {
+        val folders = account.connection.call(account.roleQuery(DRAFTS_ROLE))
+        return folders.ids.firstOrNull()
+    }
 
     private suspend fun <T> attempt(
         loginId: String,
