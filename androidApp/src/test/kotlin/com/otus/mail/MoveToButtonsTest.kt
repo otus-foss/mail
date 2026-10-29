@@ -111,7 +111,6 @@ class MoveToButtonsTest {
     }
 
     /** Saves the sheet on top, or the page without one, to build/reports/action-targets for review. */
-    /** The open sheet, or the page when none is open. */
     private fun screenshot(name: String) {
         val bitmap =
             compose.runOnIdle {

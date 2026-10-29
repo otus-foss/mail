@@ -1,6 +1,7 @@
 package com.otus.mail
 
 import androidx.activity.compose.setContent
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import com.otus.mail.app.App
 import com.otus.mail.feature.inbox.domain.MailBehavior
@@ -15,7 +16,7 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showInbox(
     behaviorState: MailBehaviorState = MailBehaviorState(initial = MailBehavior(markReadOnOpen = false)),
 ) {
     runOnUiThread { activity.setContent { App(services = server.services(), behaviorState = behaviorState) } }
-    waitForText("Welcome")
+    waitForNode(hasText("Welcome"))
     waitForCall(server, "SieveScript/get")
     waitForIdle()
 }
