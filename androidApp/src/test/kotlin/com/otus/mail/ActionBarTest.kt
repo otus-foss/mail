@@ -243,7 +243,7 @@ class ActionBarTest {
     }
 
     /** The window as drawn now, without waiting for idle, so paused frames stay paused. */
-    private fun capture(): Bitmap = compose.activity.window.decorView.drawnBitmap()
+    private fun capture(): Bitmap = compose.drawnWindow()
 
     private fun saveScreenshot(name: String): Bitmap =
         compose.windowBitmap().also { it.savePng("build/reports/action-bar/$name.png") }

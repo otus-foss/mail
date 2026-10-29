@@ -13,7 +13,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class FolderNudgeStateTest {
-    private class MemoryStore : MemoryMapStore(), FolderNudgeStore
+    private class MemoryStore :
+        MemoryMapStore(),
+        FolderNudgeStore
 
     private val trash = MailFolder("ada", "M0", "Trash", role = TRASH_ROLE)
     private val clients = MailFolder("ada", "M1", "Clients")

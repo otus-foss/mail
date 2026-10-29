@@ -13,7 +13,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class AddressPinRemovalTest {
-    private class MemoryStore : MemoryMapStore(), AddressPinStore
+    private class MemoryStore :
+        MemoryMapStore(),
+        AddressPinStore
 
     @Test
     fun removingAnAccountForgetsOnlyItsPins() =

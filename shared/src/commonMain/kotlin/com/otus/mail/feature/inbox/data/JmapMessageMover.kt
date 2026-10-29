@@ -48,9 +48,7 @@ class JmapMessageMover(
         message: MailMessage,
         folderId: String,
         inFolder: Boolean,
-    ): Boolean {
-        return updateEmail(connections, logins, message, membershipPatch("mailboxIds", folderId, inFolder), cache)
-    }
+    ): Boolean = updateEmail(connections, logins, message, membershipPatch("mailboxIds", folderId, inFolder), cache)
 
     /** Sends each email's whole `mailboxIds`, so one call files a conversation whose emails differ. */
     override suspend fun setMailboxes(

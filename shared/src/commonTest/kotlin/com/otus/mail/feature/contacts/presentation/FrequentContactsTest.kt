@@ -83,5 +83,7 @@ class FrequentContactsTest {
         }
     }
 
-    private class MemoryStore : MemoryMapStore(), ContactStore
+    private class MemoryStore :
+        MemoryMapStore(),
+        ContactStore
 }

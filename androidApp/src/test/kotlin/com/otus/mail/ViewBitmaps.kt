@@ -12,9 +12,12 @@ import java.io.File
 internal fun View.drawnBitmap(): Bitmap =
     Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { draw(Canvas(it)) }
 
-/** The activity's window once the UI is idle, without menus or sheets, which have windows of their own. */
-internal fun AndroidComposeTestRule<*, out ComponentActivity>.windowBitmap(): Bitmap =
-    runOnIdle { activity.window.decorView.drawnBitmap() }
+/** The activity's window as drawn now, without menus or sheets, which have windows of their own. */
+internal fun AndroidComposeTestRule<*, out ComponentActivity>.drawnWindow(): Bitmap =
+    activity.window.decorView.drawnBitmap()
+
+/** The activity's window once the UI is idle, as [drawnWindow] draws it. */
+internal fun AndroidComposeTestRule<*, out ComponentActivity>.windowBitmap(): Bitmap = runOnIdle { drawnWindow() }
 
 /** The window of the dialog shown last, such as a sheet or a picker, once the UI is idle. */
 internal fun AndroidComposeTestRule<*, *>.dialogBitmap(): Bitmap =

@@ -7,7 +7,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AddressPinsTest {
-    private class MemoryStore : MemoryMapStore(), AddressPinStore
+    private class MemoryStore :
+        MemoryMapStore(),
+        AddressPinStore
 
     // Login ids hold a space and the session URL's colons.
     private val ada = "ada https://mail.example.org/jmap/session"

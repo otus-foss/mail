@@ -84,7 +84,7 @@ class CalendarMonthBackgroundTest {
         val bounds = compose.onNodeWithContentDescription("Month outline").fetchSemanticsNode().boundsInRoot
         return compose.runOnIdle {
             Bitmap.createBitmap(
-                compose.activity.window.decorView.drawnBitmap(),
+                compose.drawnWindow(),
                 bounds.left.toInt(),
                 bounds.top.toInt(),
                 bounds.width.toInt(),

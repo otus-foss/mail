@@ -13,7 +13,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FolderColorRemovalTest {
-    private class MemoryStore : MemoryMapStore(), FolderColorStore
+    private class MemoryStore :
+        MemoryMapStore(),
+        FolderColorStore
 
     @Test
     fun removingAnAccountForgetsOnlyItsFolderColors() =

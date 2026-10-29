@@ -159,7 +159,7 @@ class PanelPillTransitionTest {
         y: Int,
     ): Int =
         compose.runOnIdle {
-            val bitmap = compose.activity.window.decorView.drawnBitmap()
+            val bitmap = compose.drawnWindow()
             bitmap.getPixel(x, y).also { bitmap.recycle() }
         }
 }

@@ -23,9 +23,7 @@ class JmapMessageMarker(
         messages: List<MailMessage>,
         flag: MessageFlag,
         on: Boolean,
-    ): Set<String> {
-        return updateEmails(connections, logins, messages, membershipPatch("keywords", flag.keyword, on), cache)
-    }
+    ): Set<String> = updateEmails(connections, logins, messages, membershipPatch("keywords", flag.keyword, on), cache)
 }
 
 internal val MessageFlag.keyword: String

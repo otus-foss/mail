@@ -20,7 +20,9 @@ import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FolderColorsStateTest {
-    private class MemoryStore : MemoryMapStore(), FolderColorStore
+    private class MemoryStore :
+        MemoryMapStore(),
+        FolderColorStore
 
     /** Deletes every folder unless [refuse] is set. */
     private class Deletes(

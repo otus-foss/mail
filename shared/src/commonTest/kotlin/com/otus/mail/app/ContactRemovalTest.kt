@@ -11,7 +11,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ContactRemovalTest {
-    private class MemoryStore : MemoryMapStore(), ContactStore
+    private class MemoryStore :
+        MemoryMapStore(),
+        ContactStore
 
     @Test
     fun removingAnAccountForgetsOnlyItsWaitingContactChanges() =

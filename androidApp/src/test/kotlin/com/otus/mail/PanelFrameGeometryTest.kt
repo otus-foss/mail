@@ -106,5 +106,5 @@ class PanelFrameGeometryTest {
         }
     }
 
-    private fun snapshot(): Bitmap = compose.activity.window.decorView.drawnBitmap()
+    private fun snapshot(): Bitmap = compose.drawnWindow()
 }
