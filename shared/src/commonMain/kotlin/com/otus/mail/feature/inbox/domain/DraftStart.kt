@@ -20,30 +20,20 @@ fun ComposeRequest.startDraft(
     ownAddresses: Collection<String>,
 ): Draft =
     when (this) {
-        is ComposeRequest.New -> {
-            Draft(accountId, to = to)
-        }
-
-        is ComposeRequest.Reply -> {
-            original.reply(accountId, all, ownAddresses.map(String::lowercase).toSet())
-        }
-
-        is ComposeRequest.FollowUp -> {
-            original.reply(accountId, all = true, ownAddresses.map(String::lowercase).toSet(), fromSelf = true)
-        }
-
-        is ComposeRequest.Forward -> {
-            Draft(
-                accountId,
-                subject = original.subject.prefixed(FORWARD_PREFIX, forwardPattern),
-                quote = original.forwardBody(),
-            )
-        }
-
-        is ComposeRequest.Resume -> {
-            draft
-        }
+        is ComposeRequest.New -> Draft(accountId, to = to)
+        is ComposeRequest.Reply -> original.reply(accountId, all, ownAddresses.map(String::lowercase).toSet())
+        is ComposeRequest.FollowUp -> original.followUp(accountId, ownAddresses)
+        is ComposeRequest.Forward -> original.forward(accountId)
+        is ComposeRequest.Resume -> draft
     }
+
+private fun OriginalMessage.followUp(
+    accountId: String,
+    ownAddresses: Collection<String>,
+): Draft = reply(accountId, all = true, ownAddresses.map(String::lowercase).toSet(), fromSelf = true)
+
+private fun OriginalMessage.forward(accountId: String): Draft =
+    Draft(accountId, subject = subject.prefixed(FORWARD_PREFIX, forwardPattern), quote = forwardBody())
 
 /**
  * The identity to send from, among every account's [identities]. A reply or forward comes from the
@@ -92,13 +82,10 @@ private fun OriginalMessage.reply(
     fromSelf: Boolean = from.address.lowercase() in own,
 ): Draft {
     val primary = if (fromSelf) to else replyTo.ifEmpty { listOf(from) }
-    val to = if (all && !fromSelf) primary + to else primary
-    val kept =
-        (to + if (all) cc else emptyList()).distinctBy { it.address.lowercase() }.filterNot {
-            it.address.lowercase() in
-                own
-        }
-    val toAddresses = to.map { it.address.lowercase() }.toSet()
+    val recipients = if (all && !fromSelf) primary + to else primary
+    val addressed = recipients + if (all) cc else emptyList()
+    val kept = addressed.distinctBy { it.address.lowercase() }.filterNot { it.address.lowercase() in own }
+    val toAddresses = recipients.map { it.address.lowercase() }.toSet()
     return Draft(
         accountId,
         to = kept.filter { it.address.lowercase() in toAddresses },

@@ -20,11 +20,12 @@ fun participants(
 ): List<Participant> =
     messages
         .flatMap { message ->
-            (
-                (listOf(message.sender) + message.replyTo).map { it to ParticipantRole.Sender } +
-                    message.to.map { it to ParticipantRole.Recipient } +
-                    message.cc.map { it to ParticipantRole.Copied }
-            ).filterNot { (person, _) -> person.address.isBlank() || message.isOwn(own, person) }
+            val senders = (listOf(message.sender) + message.replyTo).map { it to ParticipantRole.Sender }
+            val recipients = message.to.map { it to ParticipantRole.Recipient }
+            val copied = message.cc.map { it to ParticipantRole.Copied }
+            (senders + recipients + copied).filterNot { (person, _) ->
+                person.address.isBlank() || message.isOwn(own, person)
+            }
         }.groupBy { (person, _) -> person.address.trim().lowercase() }
         .map { (_, named) ->
             val person = named.firstOrNull { it.first.name.isNotBlank() }?.first ?: named.first().first
