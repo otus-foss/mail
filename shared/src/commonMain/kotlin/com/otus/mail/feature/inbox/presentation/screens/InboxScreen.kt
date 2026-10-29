@@ -70,8 +70,6 @@ fun InboxScreen(
     val anchor = rememberFilterAnchor(filters, context.filterOptions, messages, dateFormatter)
     val page = shownPage(state, context)
     val headerActions = InboxHeaderActions(searchCloser(state), onOpenNavigation, { filter = it }, filters::open)
-    // An open message or the filter panel covers the list, so accessibility services skip it too.
-    val covered = rows.opened != null || filters.isOpen
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
             rows.opened,
@@ -83,7 +81,7 @@ fun InboxScreen(
                         .fillMaxSize()
                         .safeDrawingPadding()
                         .imePadding()
-                        .then(if (covered) Modifier.clearAndSetSemantics {} else Modifier),
+                        .hiddenWhenCovered(rows.opened != null || filters.isOpen),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
@@ -119,6 +117,9 @@ fun InboxScreen(
         }
     }
 }
+
+/** An open message or the filter panel covers the list, so accessibility services skip it too. */
+private fun Modifier.hiddenWhenCovered(covered: Boolean): Modifier = if (covered) clearAndSetSemantics {} else this
 
 /**
  * The folders this page shows [message] from. Search, folder pills, and the filter panel's folder
