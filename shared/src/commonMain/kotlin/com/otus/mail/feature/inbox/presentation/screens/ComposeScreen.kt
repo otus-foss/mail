@@ -112,11 +112,7 @@ fun ComposeScreen(
     }
     if (askingSubject) SubjectPrompt({ sendNow(state.sendAt) }) { askingSubject = false }
     if (schedulingAt) {
-        SendLaterPrompt(
-            state.maxDelaySeconds,
-            state.sendAt,
-            { state.sendAt = it },
-        ) { schedulingAt = false }
+        SendLaterPrompt(state.maxDelaySeconds, state.sendAt, { state.sendAt = it }) { schedulingAt = false }
     }
 }
 
@@ -209,10 +205,7 @@ private fun options(
 
 /** The copy lines a draft opens with: those that already hold people. */
 private fun Draft.copyLines(): Set<RecipientField> =
-    RecipientField.entries
-        .filter {
-            recipients(it).isNotEmpty()
-        }.toSet()
+    RecipientField.entries.filter { recipients(it).isNotEmpty() }.toSet()
 
 /** Shows [field], or hides it and drops its people from the draft. */
 private fun Set<RecipientField>.toggled(

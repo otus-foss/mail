@@ -7,11 +7,11 @@ package com.otus.mail.feature.inbox.presentation.read
  */
 internal fun outlookQuote(html: String): HtmlQuoteSplit? {
     val start =
-        (OUTLOOK_WEB.find(html) ?: OUTLOOK_DESKTOP.findAll(html).firstOrNull { isFieldsBlock(html, it.range.first) })
+        (OUTLOOK_WEB.find(html) ?: OUTLOOK_DESKTOP.findAll(html).firstOrNull { fieldsAt(html, it.range.first) != null })
             ?.range
             ?.first ?: return null
-    val (closeStart, end) = elementEnd(html, start, "div")
-    val header = fieldsHeader(markupText(innerHtml(html, start, closeStart)).lines())
+    val (_, end) = elementEnd(html, start, "div")
+    val header = fieldsAt(html, start)
     val cut = HR_BEFORE.find(html.substring(0, start))?.range?.first ?: start
     return HtmlQuoteSplit(html.substring(0, cut), withoutWrapperEnds(html.substring(end)), header)
 }
@@ -26,12 +26,13 @@ private fun withoutWrapperEnds(quote: String): String {
     }
 }
 
-private fun isFieldsBlock(
+/** The header in the From and Sent lines of the div opening at [start]; null when it holds none. */
+private fun fieldsAt(
     html: String,
     start: Int,
-): Boolean {
+): QuoteHeader? {
     val (closeStart, _) = elementEnd(html, start, "div")
-    return fieldsHeader(markupText(innerHtml(html, start, closeStart)).lines()) != null
+    return fieldsHeader(markupText(innerHtml(html, start, closeStart)).lines())
 }
 
 private val OUTLOOK_WEB = Regex("""<div\b[^>]*\bid\s*=\s*["']?divRplyFwdMsg""", RegexOption.IGNORE_CASE)

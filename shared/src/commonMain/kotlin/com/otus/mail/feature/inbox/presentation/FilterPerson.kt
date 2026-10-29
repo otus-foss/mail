@@ -155,6 +155,6 @@ private fun String.matches(query: String): Boolean = query.isBlank() || contains
 
 /** When the row's conversation last had mail, as a sortable ISO date and time. */
 private val MailMessage.lastSeen: String
-    get() = (conversation?.last?.received ?: received).let { "${it.date}T${it.time}" }
+    get() = lastReceived.let { "${it.date}T${it.time}" }
 
 private const val MAX_PEOPLE = 30

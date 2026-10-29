@@ -86,20 +86,22 @@ fun InboxScreen(
                         .then(if (covered) Modifier.clearAndSetSemantics {} else Modifier),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
-                    PanelOverList(status.loading, rowsShown = messages.isNotEmpty(), onRefresh, panel = {
-                        compact,
-                        modifier,
-                        ->
-                        InboxHeader(
-                            messages,
-                            state,
-                            page,
-                            dateFormatter,
-                            headerActions,
-                            PanelLook(compact && !state.searching, unreadCount, anchor.filters),
-                            anchor.measure.then(modifier),
-                        )
-                    }) { topInset, onCompactChange ->
+                    PanelOverList(
+                        status.loading,
+                        rowsShown = messages.isNotEmpty(),
+                        onRefresh,
+                        panel = { compact, modifier ->
+                            InboxHeader(
+                                messages,
+                                state,
+                                page,
+                                dateFormatter,
+                                headerActions,
+                                PanelLook(compact && !state.searching, unreadCount, anchor.filters),
+                                anchor.measure.then(modifier),
+                            )
+                        },
+                    ) { topInset, onCompactChange ->
                         val frame = context.listFrame(state.searching, topInset, barPadding, onCompactChange)
                         InboxResults(listed, status, state, dateFormatter, rows.gestures, frame) {
                             InboxEmptyContent(messages, status, state, page, filters, onRefresh)

@@ -58,15 +58,7 @@ internal class PendingChanges {
         return changes
             .filter { it.scope == null || it.scope == scope }
             .fold(messages) { list, change ->
-                list.mapNotNull {
-                    if (it.id ==
-                        change.messageId
-                    ) {
-                        change.edit(it)
-                    } else {
-                        it
-                    }
-                }
+                list.mapNotNull { if (it.id == change.messageId) change.edit(it) else it }
             }
     }
 }

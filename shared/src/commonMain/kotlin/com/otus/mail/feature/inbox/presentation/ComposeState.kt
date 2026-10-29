@@ -88,12 +88,8 @@ class ComposeState(
 
     /** The thread a reply or follow-up answers; null for a new message or a forward. */
     val thread: ReplyThread? =
-        request.answeredOriginal?.let {
-            ReplyThread(it, services.threads, scope) { quote ->
-                edit { d ->
-                    d.copy(quote = quote)
-                }
-            }
+        request.answeredOriginal?.let { original ->
+            ReplyThread(original, services.threads, scope) { quote -> edit { it.copy(quote = quote) } }
         }
 
     /** Addresses every account may send from, in account order. */
@@ -177,8 +173,7 @@ class ComposeState(
      * in that account's Drafts before the copy in the old one is deleted.
      */
     fun chooseFrom(identity: SendIdentity) {
-        val kept = stored?.takeIf { it.accountId == identity.accountId }?.emailId
-        edit { it.copy(from = identity.sender, accountId = identity.accountId, emailId = kept) }
+        edit { it.copy(from = identity.sender, accountId = identity.accountId, emailId = storedId(identity.accountId)) }
     }
 
     /** Adds or removes the signature in this draft only. */
@@ -219,13 +214,15 @@ class ComposeState(
         return { at ->
             saving
                 .withLock {
-                    val copy = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId
-                    sender.send(outgoing.copy(emailId = copy), answered, at).onSuccess {
+                    sender.send(outgoing.copy(emailId = storedId(outgoing.accountId)), answered, at).onSuccess {
                         stored?.takeIf { it.accountId != outgoing.accountId }?.discardCopy(drafts)
                     }
                 }.onSuccess { outgoing.from?.let(onSent) }
         }
     }
+
+    /** The id of the stored copy when it is in [accountId], so the next save or send replaces it. */
+    private fun storedId(accountId: String): String? = stored?.takeIf { it.accountId == accountId }?.emailId
 
     private fun scheduleSave() {
         pending?.cancel()
@@ -240,8 +237,7 @@ class ComposeState(
 
     private suspend fun save() =
         saving.withLock {
-            val copy = stored?.takeIf { it.accountId == draft.accountId }?.emailId
-            val current = draft.copy(emailId = copy, signature = signature)
+            val current = draft.copy(emailId = storedId(draft.accountId), signature = signature)
             val unchanged =
                 if (stored == null) {
                     !edited

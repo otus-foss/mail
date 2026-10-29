@@ -28,14 +28,8 @@ fun splitHtmlQuote(html: String): HtmlQuoteSplit? =
  */
 private fun withoutTrailingSeparator(main: String): String {
     val separator = SEPARATOR.findAll(main).lastOrNull() ?: return main
-    return if (markupText(
-            main.substring(separator.range.last + 1),
-        ).isBlank()
-    ) {
-        main.removeRange(separator.range)
-    } else {
-        main
-    }
+    val after = main.substring(separator.range.last + 1)
+    return if (markupText(after).isBlank()) main.removeRange(separator.range) else main
 }
 
 /** Gmail: the attribution line and the blockquote sit together in one `gmail_quote` div. */
@@ -44,7 +38,7 @@ private fun gmailQuote(html: String): HtmlQuoteSplit? {
     val (closeStart, end) = elementEnd(html, start, "div")
     val inner = innerHtml(html, start, closeStart)
     val blockquote = BLOCKQUOTE.find(inner)?.range?.first
-    val header = blockquote?.let { attributionHeader(markupText(inner.substring(0, it)).replace('\n', ' ')) }
+    val header = blockquote?.let { attributionIn(inner.substring(0, it)) }
     val quote = blockquote?.let { innerBlockquote(inner, it) } ?: inner
     return HtmlQuoteSplit(html.substring(0, start) + html.substring(end), quote, header)
 }
@@ -55,7 +49,7 @@ private fun gmailQuote(html: String): HtmlQuoteSplit? {
  */
 private fun citeQuote(html: String): HtmlQuoteSplit? {
     val start = CITE.find(html)?.range?.first ?: return null
-    val header = attributionHeader(markupText(innerBlockquote(html, start)).replace('\n', ' '))
+    val header = attributionIn(innerBlockquote(html, start))
     val next = header?.let { CITE.find(html, elementEnd(html, start, "blockquote").second) }?.range?.first
     return if (next == null) {
         blockquoteSplit(html, start)
@@ -84,9 +78,12 @@ private fun blockquoteSplit(
             .findAll(before)
             .lastOrNull { markupText(before.substring(it.range.last + 1)).isBlank() }
     val cut = attribution?.let { openingTagBefore(before, it.range.first) } ?: start
-    val header = attribution?.let { attributionHeader(markupText(it.value).replace('\n', ' ')) }
+    val header = attribution?.let { attributionIn(it.value) }
     return HtmlQuoteSplit(html.substring(0, cut) + html.substring(end), innerBlockquote(html, start), header)
 }
+
+/** The header in the attribution line [html] shows, read as one line. */
+private fun attributionIn(html: String): QuoteHeader? = attributionHeader(markupText(html).replace('\n', ' '))
 
 private fun innerBlockquote(
     html: String,
@@ -110,5 +107,4 @@ private val ATTRIBUTION =
         """\b(?:On|Am)\s(?:(?!</?(?:div|p|blockquote|br)\b)[\s\S]){1,500}?""" +
             """(?:wrote|schrieb[^<:]{0,200})(?:<[^>]*>)*:""",
     )
-private val SEPARATOR =
-    Regex("""-{2,}\s*(?:Original Message|Ursprüngliche Nachricht)\s*-{2,}""", RegexOption.IGNORE_CASE)
+private val SEPARATOR = Regex(ORIGINAL_MESSAGE, RegexOption.IGNORE_CASE)

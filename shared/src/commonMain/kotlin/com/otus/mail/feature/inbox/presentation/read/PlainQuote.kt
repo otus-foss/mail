@@ -99,8 +99,10 @@ private fun List<String>.originalAt(index: Int): QuoteStart {
 private fun isMarkedOrBlank(line: String): Boolean = line.isBlank() || line.trimStart().startsWith('>')
 
 private val MARK = Regex("""^\s?>\s?""")
-private val ORIGINAL =
-    Regex("""^-{2,}\s*(?:Original Message|Ursprüngliche Nachricht)\s*-{2,}$""", RegexOption.IGNORE_CASE)
+private val ORIGINAL = Regex("^$ORIGINAL_MESSAGE$", RegexOption.IGNORE_CASE)
+
+/** The separator line Outlook and Proton Mail write above a quoted message, in English or German. */
+internal const val ORIGINAL_MESSAGE = """-{2,}\s*(?:Original Message|Ursprüngliche Nachricht)\s*-{2,}"""
 
 /** How many quote levels a reply shows apart; deeper ones stay in the text of the last. */
 private const val MAX_LEVELS = 8

@@ -14,15 +14,13 @@ internal fun List<MailMessage>.withShownBeyond(
     sort: FilterSort,
 ): List<MailMessage> {
     val ids = map { it.id }.toSet()
-    val boundary = lastOrNull()?.sortKey
-    return this +
-        shown.filter { message ->
-            message.id !in ids &&
-                boundary?.let { if (sort == FilterSort.NewestFirst) message.sortKey < it else message.sortKey > it } !=
-                false
-        }
+    val boundary = lastOrNull()?.sortKey ?: return this + shown.filterNot { it.id in ids }
+    val beyond = { message: MailMessage ->
+        if (sort == FilterSort.NewestFirst) message.sortKey < boundary else message.sortKey > boundary
+    }
+    return this + shown.filter { it.id !in ids && beyond(it) }
 }
 
-// A conversation sorts by its newest email; local date and time strings sort as text.
+// Local date and time strings sort as text.
 private val MailMessage.sortKey: String
-    get() = (conversation?.last?.received ?: received).let { "${it.date} ${it.time}" }
+    get() = lastReceived.let { "${it.date} ${it.time}" }

@@ -108,10 +108,7 @@ class SignaturesState(
         identity: SendIdentity,
         signature: Signature,
     ) {
-        identities =
-            identities.map {
-                if (it.key == identity.key) it.withSignature(signature) else it
-            }
+        identities = identities.map { if (it.key == identity.key) it.withSignature(signature) else it }
     }
 }
 
