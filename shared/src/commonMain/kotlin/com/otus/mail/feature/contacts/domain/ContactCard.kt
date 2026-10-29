@@ -22,19 +22,12 @@ data class ContactCard(
     /** Whether the card names the person; without a name it goes by its address. */
     val hasName: Boolean
         get() {
-            val name =
-                card.name
-                    ?.full
-                    ?.trim()
-                    .orEmpty()
-                    .ifEmpty { "${card.givenName} ${card.surname}".trim() }
+            val full = card.name?.full?.trim()
+            val name = full.orEmpty().ifEmpty { "${card.givenName} ${card.surname}".trim() }
             // Some apps save the card's own address as its name; that is no name. Another address
             // as the name is still what the card is called, so it stays.
-            return name.isNotEmpty() &&
-                card.emails
-                    .orEmpty()
-                    .values
-                    .none { it.address.equals(name, ignoreCase = true) }
+            val addresses = card.emails.orEmpty().values
+            return name.isNotEmpty() && addresses.none { it.address.equals(name, ignoreCase = true) }
         }
 
     /** The full name, or the joined name parts, or else the preferred address. */
@@ -73,7 +66,7 @@ data class ContactCard(
                 .orEmpty()
                 .sortedByPref { it.pref }
                 .map { (id, phone) ->
-                    ContactValue(id, phone.number, ContactLabel.of(phone.contexts, phone.label), false)
+                    ContactValue(id, phone.number, ContactLabel.of(phone.contexts, phone.label), preferred = false)
                 }
 
     /** Title and organization, each once, such as "Rear admiral · US Navy". */
@@ -94,11 +87,10 @@ data class ContactCard(
         }
 
     /** The member uids of a group card. */
-    val members: Set<String> get() =
-        card.members
-            .orEmpty()
-            .filterValues { it }
-            .keys
+    val members: Set<String> get() {
+        val enabled = card.members.orEmpty().filterValues { it }
+        return enabled.keys
+    }
 }
 
 /** Whether a card's latest change reached the server. */
@@ -144,19 +136,17 @@ internal val Card.surname: String
 
 /** The name of the card's first organization. */
 internal val Card.organizationName: String?
-    get() =
-        organizations
-            ?.values
-            ?.firstOrNull()
-            ?.name
+    get() {
+        val first = organizations?.values?.firstOrNull()
+        return first?.name
+    }
 
 /** The name of the card's first title. */
 internal val Card.titleName: String?
-    get() =
-        titles
-            ?.values
-            ?.firstOrNull()
-            ?.name
+    get() {
+        val first = titles?.values?.firstOrNull()
+        return first?.name
+    }
 
 /** The card's birthday, when it has a date that is not a timestamp. */
 internal val Card.birthday: PartialDate?
@@ -168,8 +158,7 @@ internal val Card.birthday: PartialDate?
 
 /** The text of the card's first note. */
 internal val Card.firstNote: String?
-    get() =
-        notes
-            ?.values
-            ?.firstOrNull()
-            ?.note
+    get() {
+        val first = notes?.values?.firstOrNull()
+        return first?.note
+    }

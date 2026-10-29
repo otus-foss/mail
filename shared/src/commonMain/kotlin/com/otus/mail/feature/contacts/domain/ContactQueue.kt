@@ -15,30 +15,30 @@ fun applyEdits(
     edits.fold(cards) { shown, edit ->
         val sync = refused[edit.id]?.let(CardSync::Refused) ?: CardSync.Waiting
         when (edit) {
-            is ContactEdit.Create -> {
-                shown + ContactCard(edit.key, edit.card, listOf(edit.book), sync)
-            }
-
-            is ContactEdit.Update -> {
-                shown.map { card ->
-                    if (card.key == edit.key) {
-                        card.copy(card = edit.after, books = card.booksAfter(edit.after), sync = sync)
-                    } else {
-                        card
-                    }
-                }
-            }
-
-            is ContactEdit.Delete -> {
-                if (edit.isHeld(refused)) {
-                    shown
-                } else if (sync is CardSync.Refused) {
-                    shown.map { if (it.key == edit.key) it.copy(sync = sync) else it }
-                } else {
-                    shown.filterNot { it.key == edit.key }
-                }
-            }
+            is ContactEdit.Create -> shown + ContactCard(edit.key, edit.card, listOf(edit.book), sync)
+            is ContactEdit.Update -> shown.updated(edit, sync)
+            is ContactEdit.Delete -> shown.deleted(edit, sync, refused)
         }
+    }
+
+private fun List<ContactCard>.updated(
+    edit: ContactEdit.Update,
+    sync: CardSync,
+): List<ContactCard> =
+    map { card ->
+        if (card.key != edit.key) return@map card
+        card.copy(card = edit.after, books = card.booksAfter(edit.after), sync = sync)
+    }
+
+private fun List<ContactCard>.deleted(
+    edit: ContactEdit.Delete,
+    sync: CardSync,
+    refused: Map<String, ContactWriteFailure>,
+): List<ContactCard> =
+    when {
+        edit.isHeld(refused) -> this
+        sync is CardSync.Refused -> map { if (it.key == edit.key) it.copy(sync = sync) else it }
+        else -> filterNot { it.key == edit.key }
     }
 
 /**
@@ -53,26 +53,15 @@ fun enqueue(
     sending: String? = null,
 ): List<ContactEdit> {
     val earlier = edits.lastOrNull { it.key == edit.key }?.takeIf { it.id != sending }
+    val created = earlier as? ContactEdit.Create
+    val revised = earlier as? ContactEdit.Update
+    val update = edit as? ContactEdit.Update
     return when {
-        earlier is ContactEdit.Create && edit is ContactEdit.Update -> {
-            edits.map { if (it == earlier) earlier.copy(card = edit.after) else it }
-        }
-
-        earlier is ContactEdit.Create && edit is ContactEdit.Delete -> {
-            edits.filterNot { it.key == edit.key }
-        }
-
-        earlier is ContactEdit.Update && edit is ContactEdit.Update -> {
-            edits.map { if (it == earlier) earlier.copy(after = edit.after) else it }
-        }
-
-        earlier is ContactEdit.Update && edit is ContactEdit.Delete -> {
-            edits.filterNot { it == earlier } + edit
-        }
-
-        else -> {
-            edits + edit
-        }
+        created != null && update != null -> edits.map { if (it == created) created.copy(card = update.after) else it }
+        earlier is ContactEdit.Create && edit is ContactEdit.Delete -> edits.filterNot { it.key == edit.key }
+        revised != null && update != null -> edits.map { if (it == revised) revised.copy(after = update.after) else it }
+        earlier is ContactEdit.Update && edit is ContactEdit.Delete -> edits.filterNot { it == earlier } + edit
+        else -> edits + edit
     }
 }
 
@@ -98,18 +87,18 @@ fun afterSent(
     created: CardKey?,
 ): List<ContactCard> =
     when (edit) {
-        is ContactEdit.Create -> {
-            cards + ContactCard(requireNotNull(created), edit.card.copy(id = created.cardId), listOf(edit.book))
-        }
-
-        is ContactEdit.Update -> {
-            cards.map { if (it.key == edit.key) it.copy(card = edit.after, books = it.booksAfter(edit.after)) else it }
-        }
-
-        is ContactEdit.Delete -> {
-            cards.filterNot { it.key == edit.key }
-        }
+        is ContactEdit.Create -> cards + edit.sentCard(created)
+        is ContactEdit.Update -> cards.afterUpdate(edit)
+        is ContactEdit.Delete -> cards.filterNot { it.key == edit.key }
     }
+
+private fun ContactEdit.Create.sentCard(created: CardKey?): ContactCard {
+    val key = requireNotNull(created)
+    return ContactCard(key, card.copy(id = key.cardId), listOf(book))
+}
+
+private fun List<ContactCard>.afterUpdate(edit: ContactEdit.Update): List<ContactCard> =
+    map { if (it.key == edit.key) it.copy(card = edit.after, books = it.booksAfter(edit.after)) else it }
 
 /** The books [after] puts this card in, in the same account; its own books when [after] does not say. */
 private fun ContactCard.booksAfter(after: Card): List<BookKey> =
