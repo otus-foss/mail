@@ -53,52 +53,70 @@ internal fun InboxBody(
             Modifier.padding(start = InboxTokens.pageInset, top = frame.topInset, end = InboxTokens.pageInset),
         ) { emptyContent() }
     } else {
-        val today = currentLocalDate()
-        val rows =
-            remember(
-                messages,
-                frame.look,
-                dateFormatter,
-                today,
-                mixed,
-            ) { conversationRows(messages, frame.look, dateFormatter, today, mixed) }
-        val ids = remember(messages) { messages.map { it.id } }
-        val currentMessages by rememberUpdatedState(messages)
-        val currentGestures by rememberUpdatedState(gestures)
-        LazyColumn(
-            Modifier.fillMaxSize().dragToSelect(
-                listState,
-                ids = { currentMessages.map { it.id } },
-                selectedIds = { currentGestures.selectedIds },
-            ) { currentGestures.onSelect(it) },
-            state = listState,
-            contentPadding =
-                PaddingValues(
-                    top = InboxTokens.pageInset + frame.topInset,
-                    bottom = InboxTokens.pageInset + frame.bottomInset,
-                ),
-            verticalArrangement = Arrangement.spacedBy(EntryTokens.gap),
-        ) {
-            status.notice?.let {
-                item(key = NOTICE_KEY) {
-                    Text(
-                        it,
-                        Modifier.padding(horizontal = InboxTokens.pageInset + InboxTokens.rowPadding),
-                        color = OtusColors.text2,
-                        fontSize = InboxTokens.metadataSize,
-                    )
-                }
-            }
-            frame.nudge?.let { shown ->
-                item(key = NUDGE_KEY) {
-                    ListNudgeCard(shown, Modifier.animateItem(motionTween(), motionTween(), motionTween()))
-                }
-            }
-            itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
-                val model = rows[message.id] ?: return@itemsIndexed
-                ConversationItem(message, model, ids, index, gestures)
-            }
-            if (status.loadingMore) loadingMoreFooter()
+        ConversationList(messages, listState, dateFormatter, gestures, frame, status, mixed)
+    }
+}
+
+@Composable
+private fun ConversationList(
+    messages: List<MailMessage>,
+    listState: LazyListState,
+    dateFormatter: DateFormatter,
+    gestures: RowGestures,
+    frame: ListFrame,
+    status: InboxStatus,
+    mixed: Boolean,
+) {
+    val today = currentLocalDate()
+    val rows =
+        remember(messages, frame.look, dateFormatter, today, mixed) {
+            conversationRows(messages, frame.look, dateFormatter, today, mixed)
+        }
+    val ids = remember(messages) { messages.map { it.id } }
+    val currentMessages by rememberUpdatedState(messages)
+    val currentGestures by rememberUpdatedState(gestures)
+    LazyColumn(
+        Modifier.fillMaxSize().dragToSelect(
+            listState,
+            ids = { currentMessages.map { it.id } },
+            selectedIds = { currentGestures.selectedIds },
+        ) { currentGestures.onSelect(it) },
+        state = listState,
+        contentPadding =
+            PaddingValues(
+                top = InboxTokens.pageInset + frame.topInset,
+                bottom = InboxTokens.pageInset + frame.bottomInset,
+            ),
+        verticalArrangement = Arrangement.spacedBy(EntryTokens.gap),
+    ) {
+        listNotices(status, frame)
+        itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
+            val model = rows[message.id] ?: return@itemsIndexed
+            ConversationItem(message, model, ids, index, gestures)
+        }
+        if (status.loadingMore) loadingMoreFooter()
+    }
+}
+
+private fun LazyListScope.listNotices(
+    status: InboxStatus,
+    frame: ListFrame,
+) {
+    val notice = status.notice
+    if (notice != null) {
+        item(key = NOTICE_KEY) {
+            Text(
+                notice,
+                Modifier.padding(horizontal = InboxTokens.pageInset + InboxTokens.rowPadding),
+                color = OtusColors.text2,
+                fontSize = InboxTokens.metadataSize,
+            )
+        }
+    }
+    val nudge = frame.nudge
+    if (nudge != null) {
+        item(key = NUDGE_KEY) {
+            ListNudgeCard(nudge, Modifier.animateItem(motionTween(), motionTween(), motionTween()))
         }
     }
 }

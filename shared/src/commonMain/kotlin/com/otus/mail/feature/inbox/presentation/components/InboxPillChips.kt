@@ -64,24 +64,36 @@ internal fun ContextPanelScope.InboxRowPills(
     }
     pills.pills.forEach { pill ->
         when (pill) {
-            is InboxPill.Filter -> {
-                if (!filters.applied.has(pill)) {
-                    item(pill) {
-                        val count = unreadBadge.takeIf { pill == InboxPill.Filter.Unread }
-                        Chip(pill.label, { filters.onChange(filters.applied.with(pill, true)) }) {
-                            if (count != null) CountBadge(count) else Symbol(pill.icon)
-                        }
-                    }
-                }
-            }
-
-            is InboxPill.FolderPill -> {
-                pills.option(pill)?.let { option ->
-                    item(pill) { FolderPillChip(option, selected = pill == folderPill, onFolder) }
-                }
-            }
+            is InboxPill.Filter -> FilterPill(pill, filters, unreadBadge)
+            is InboxPill.FolderPill -> FolderPill(pills, pill, folderPill, onFolder)
         }
     }
+}
+
+@Composable
+private fun ContextPanelScope.FilterPill(
+    pill: InboxPill.Filter,
+    filters: ActiveFilters,
+    unreadBadge: String?,
+) {
+    if (filters.applied.has(pill)) return
+    item(pill) {
+        val count = unreadBadge.takeIf { pill == InboxPill.Filter.Unread }
+        Chip(pill.label, { filters.onChange(filters.applied.with(pill, on = true)) }) {
+            if (count != null) CountBadge(count) else Symbol(pill.icon)
+        }
+    }
+}
+
+@Composable
+private fun ContextPanelScope.FolderPill(
+    pills: InboxPills,
+    pill: InboxPill.FolderPill,
+    selected: InboxPill.FolderPill?,
+    onFolder: (InboxPill.FolderPill?) -> Unit,
+) {
+    val option = pills.option(pill) ?: return
+    item(pill) { FolderPillChip(option, selected = pill == selected, onFolder) }
 }
 
 @Composable

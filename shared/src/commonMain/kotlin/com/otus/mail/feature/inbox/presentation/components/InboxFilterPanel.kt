@@ -38,7 +38,8 @@ fun InboxFilterPanel(
 ) {
     // The last draft stays on screen while the panel closes.
     var shown by remember { mutableStateOf(InboxFilters()) }
-    state.draft?.let { shown = it }
+    val draft = state.draft
+    if (draft != null) shown = draft
     val people = rememberFilterPeople(state, options, messages)
     FilterPanel(
         open = state.isOpen,
