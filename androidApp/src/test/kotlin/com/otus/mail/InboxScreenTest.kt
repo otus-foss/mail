@@ -80,11 +80,8 @@ class InboxScreenTest {
     fun liveSearchFiltersFixturesAndResetRestoresList() {
         showFixtures()
         // The saved message's row marks its attachment and Read later, which its description says.
-        compose
-            .onNode(
-                hasText("Design review") and
-                    hasContentDescription("Attachment. Read later.", substring = true),
-            ).assertIsDisplayed()
+        val saved = hasText("Design review") and hasContentDescription("Attachment. Read later.", substring = true)
+        compose.onNode(saved).assertIsDisplayed()
         compose.onNode(hasText("Weekend plans")).assertIsDisplayed()
         screenshot("inbox-fixtures")
         compose.onNodeWithContentDescription("Search mailbox").performClick()
@@ -156,7 +153,7 @@ class InboxScreenTest {
                     "The prototype is ready",
                     ReceivedAt("2026-10-03", "10:30"),
                     MailLocation("Inbox", "Work"),
-                    MailAttributes(true, listOf("draft.pdf")),
+                    MailAttributes(unread = true, attachments = listOf("draft.pdf")),
                     labels = listOf(RowFolder("later", "Read later", readLater = true)),
                 ),
                 MailMessage(

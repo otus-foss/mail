@@ -153,11 +153,8 @@ class InboxPickerTest {
 
     @Test
     fun accountPickerSearchesAccountsAndRestrictsMessages() {
-        compose
-            .onNodeWithText("All accounts")
-            .performScrollTo()
-            .assertIsOff()
-            .performClick()
+        val accounts = compose.onNodeWithText("All accounts")
+        accounts.performScrollTo().assertIsOff().performClick()
         compose.onNodeWithText("1 selected").assertIsDisplayed()
         compose.onNodeWithContentDescription("Search accounts…").performTextInput("Personal")
         compose.onNode(hasText("Personal") and isToggleable()).performClick()
