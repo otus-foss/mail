@@ -126,11 +126,8 @@ class AndroidSavedFiles(
      */
     private fun pruneOpened(opened: File) {
         val cutoff = System.currentTimeMillis() - OPENED_KEEP_MILLIS
-        opened
-            .listFiles()
-            .orEmpty()
-            .filter { it.lastModified() < cutoff }
-            .forEach { it.deleteRecursively() }
+        val files = opened.listFiles().orEmpty()
+        files.filter { it.lastModified() < cutoff }.forEach { it.deleteRecursively() }
     }
 
     private companion object {

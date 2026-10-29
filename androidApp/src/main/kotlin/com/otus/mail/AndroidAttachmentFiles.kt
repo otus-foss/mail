@@ -32,18 +32,20 @@ class AndroidAttachmentFiles(
 
     override suspend fun pick(): List<PickedFile> {
         val picker = launcher ?: return emptyList()
-        val result = CompletableDeferred<List<Uri>>().also { pending = it }
+        val result = CompletableDeferred<List<Uri>>()
+        pending = result
         picker.launch(arrayOf("*/*"))
         return withContext(Dispatchers.IO) { result.await().mapNotNull(::picked) }
     }
 
     private fun picked(uri: Uri): PickedFile? {
         val resolver = context.contentResolver
-        val (name, size) =
-            resolver
-                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
-                ?.use { row -> row.takeIf { it.moveToFirst() }?.let { it.getString(0).orEmpty() to it.getLong(1) } }
-                ?: return null
+        val columns = arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
+        val details =
+            resolver.query(uri, columns, null, null, null)?.use { row ->
+                if (row.moveToFirst()) row.getString(0).orEmpty() to row.getLong(1) else null
+            }
+        val (name, size) = details ?: return null
         return PickedFile(
             name.ifBlank { uri.lastPathSegment ?: "file" },
             resolver.getType(uri) ?: GENERIC_TYPE,

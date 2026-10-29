@@ -29,7 +29,8 @@ class AndroidPhotoPicker(
 
     suspend fun pick(): (() -> InputStream?)? {
         val picker = launcher ?: return null
-        val result = CompletableDeferred<Uri?>().also { pending = it }
+        val result = CompletableDeferred<Uri?>()
+        pending = result
         picker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
         return result.await()?.let { uri -> { context.contentResolver.openInputStream(uri) } }
     }
@@ -63,4 +64,8 @@ internal fun sampleSize(
 fun Bitmap.encoded(
     format: Bitmap.CompressFormat,
     quality: Int,
-): ByteArray = ByteArrayOutputStream().also { compress(format, quality, it) }.toByteArray()
+): ByteArray {
+    val output = ByteArrayOutputStream()
+    compress(format, quality, output)
+    return output.toByteArray()
+}
