@@ -73,8 +73,12 @@ class JmapNewsletters(
             val patches =
                 mailCallOr(null) { mailAccount(connections, logins, accountId)?.archivePatches(emailIds) }
                     ?: return@withAccount false
-            patches.isEmpty() ||
-                updateAccountEmails(connections, logins, accountId, patches, accountCache).containsAll(patches.keys)
+            if (patches.isEmpty()) {
+                true
+            } else {
+                val updated = updateAccountEmails(connections, logins, accountId, patches, accountCache)
+                updated.containsAll(patches.keys)
+            }
         }
     }
 
@@ -115,11 +119,7 @@ class JmapNewsletters(
                 !address.isNullOrBlank() -> condition("from", JsonPrimitive(address))
                 else -> return emptyList()
             }
-        val filter =
-            operator(
-                "AND",
-                listOf(same, condition("before", JsonPrimitive(email.receivedAt))),
-            )
+        val filter = operator("AND", listOf(same, condition("before", JsonPrimitive(email.receivedAt))))
         return connection
             .request {
                 val query = call(QueryMethod(EmailType, id, filter, NEWEST_FIRST, SCAN))

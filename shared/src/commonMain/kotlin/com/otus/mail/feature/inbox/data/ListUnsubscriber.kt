@@ -21,12 +21,15 @@ internal class ListUnsubscriber(
     suspend fun unsubscribe(
         message: MailMessage,
         how: Unsubscribe,
-    ): UnsubscribeResult =
-        when {
-            how.mail?.let { mail(message, it, how.deliveredTo) } == true -> UnsubscribeResult.Done
+    ): UnsubscribeResult {
+        val address = how.mail
+        val sent = if (address == null) false else mail(message, address, how.deliveredTo)
+        return when {
+            sent -> UnsubscribeResult.Done
             how.web != null -> UnsubscribeResult.OpenLink(how.web)
             else -> UnsubscribeResult.Failed
         }
+    }
 
     /** Sends the mail a `mailto:` address asks for, from the identity the message was sent to. */
     private suspend fun mail(
