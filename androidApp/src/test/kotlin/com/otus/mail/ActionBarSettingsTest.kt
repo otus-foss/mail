@@ -125,10 +125,7 @@ class ActionBarSettingsTest {
     fun aMinimizedBarShowsOnlyTheMainButton() {
         start()
         openActionBarSettings()
-        compose
-            .onNode(hasText("Minimize") and isToggleable())
-            .performClick()
-            .assertIsOn()
+        compose.onNode(hasText("Minimize") and isToggleable()).performClick().assertIsOn()
         assertEquals(true, AndroidMailBehaviorStore(compose.activity).read().minimizedBar)
 
         // Back leads to Mail behavior, then Settings.

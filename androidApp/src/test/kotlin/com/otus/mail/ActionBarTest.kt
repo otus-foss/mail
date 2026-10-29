@@ -205,11 +205,10 @@ class ActionBarTest {
         assertEquals(shell.center.y, group.center.y, 1f)
     }
 
-    private fun shellBounds(description: String): Rect =
-        compose
-            .onNode(hasContentDescription(description) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Role))
-            .fetchSemanticsNode()
-            .boundsInRoot
+    private fun shellBounds(description: String): Rect {
+        val shell = hasContentDescription(description) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Role)
+        return compose.onNode(shell).fetchSemanticsNode().boundsInRoot
+    }
 
     private fun boundsOf(label: String): Rect =
         compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot
@@ -224,7 +223,9 @@ class ActionBarTest {
         val left = (shell.right - endRegion.value * density).toInt()
         val width = shell.right.toInt() - left
         val height = shell.height.toInt()
-        return IntArray(width * height).also { bitmap.getPixels(it, 0, width, left, shell.top.toInt(), width, height) }
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, left, shell.top.toInt(), width, height)
+        return pixels
     }
 
     /** Equal within [CHANNEL_TOLERANCE] per channel: compositing a fading layer can shift a color by one step. */
@@ -245,8 +246,11 @@ class ActionBarTest {
     /** The window as drawn now, without waiting for idle, so paused frames stay paused. */
     private fun capture(): Bitmap = compose.drawnWindow()
 
-    private fun saveScreenshot(name: String): Bitmap =
-        compose.windowBitmap().also { it.savePng("build/reports/action-bar/$name.png") }
+    private fun saveScreenshot(name: String): Bitmap {
+        val bitmap = compose.windowBitmap()
+        bitmap.savePng("build/reports/action-bar/$name.png")
+        return bitmap
+    }
 
     private companion object {
         const val CHANNEL_TOLERANCE = 2

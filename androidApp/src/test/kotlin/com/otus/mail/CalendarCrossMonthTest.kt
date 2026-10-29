@@ -86,14 +86,10 @@ class CalendarCrossMonthTest {
         }
     }
 
-    private fun rangeSummary(part: String): String =
-        compose
-            .onNode(
-                hasText(part, substring = true),
-            ).fetchSemanticsNode()
-            .config[SemanticsProperties.Text]
-            .single()
-            .text
+    private fun rangeSummary(part: String): String {
+        val node = compose.onNode(hasText(part, substring = true)).fetchSemanticsNode()
+        return node.config[SemanticsProperties.Text].single().text
+    }
 
     private fun bottomDateAtSunday(): String {
         val viewport = compose.onNodeWithContentDescription("Calendar months").fetchSemanticsNode().boundsInRoot

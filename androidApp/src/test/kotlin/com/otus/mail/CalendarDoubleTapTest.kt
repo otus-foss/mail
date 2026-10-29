@@ -40,11 +40,8 @@ class CalendarDoubleTapTest {
         compose.onNodeWithContentDescription(date.toString()).performScrollTo().performTouchInput { doubleClick() }
         compose.onNodeWithText(relativeIsoRange(date.toString(), today.toString())).assertIsDisplayed()
         compose.onNodeWithText("Done").assertIsEnabled().performClick()
-        compose
-            .onNodeWithText(
-                relativeIsoRange(date.toString(), today.toString(), "–"),
-            ).performScrollTo()
-            .assertIsDisplayed()
+        val range = relativeIsoRange(date.toString(), today.toString(), "–")
+        compose.onNodeWithText(range).performScrollTo().assertIsDisplayed()
     }
 
     @Test
