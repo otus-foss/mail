@@ -32,9 +32,8 @@ internal class ApplePushSession(
         val deviceId = saved ?: host.newIdentifier()
         if (saved == null) check(host.write("device", deviceId))
         mailServices.pushSubscriptions(storage, "ios-$deviceId") { login ->
-            storage.registrations()[login]?.let { registration ->
-                checkNotNull(bridge).active(registration.route, false)
-            }
+            val registration = storage.registrations()[login]
+            if (registration != null) checkNotNull(bridge).active(registration.route, value = false)
         }
     }
     private val lock = Mutex()
@@ -53,14 +52,14 @@ internal class ApplePushSession(
 
     private suspend fun remove(loginId: String) {
         val registration = storage.registrations()[loginId]
-        registration?.let {
+        if (registration != null) {
             // Revocation must succeed before deleting the local capability used to stop alerts.
             try {
-                bridge?.delete(it.route)
+                bridge?.delete(registration.route)
             } catch (_: ApplePushRouteExpired) {
                 // Already revoked.
             }
-            host.removeKey(it.keyId)
+            host.removeKey(registration.keyId)
             storage.save(storage.registrations() - loginId)
         }
         subscriptions.forget(loginId)
@@ -84,11 +83,8 @@ internal class ApplePushSession(
         val push = subscriptions
         val client = bridge ?: return
         val logins = mailServices.notificationLogins().map { it.id }
-        storage
-            .registrations()
-            .keys
-            .filter { !enabled || it !in logins }
-            .forEach { remove(it) }
+        val registered = storage.registrations().keys
+        registered.filter { !enabled || it !in logins }.forEach { remove(it) }
         if (!enabled || registrationError) return
         val deviceToken = token ?: host.read("token")
         if (deviceToken != null) syncLogins(logins, deviceToken, client, push)
@@ -165,19 +161,15 @@ internal class ApplePushSession(
             val payload = client.message(messageId) ?: return@forEach
             val text = host.decrypt(registration.keyId, Base64.encode(payload))
             when (val message = text?.let(PushMessage::decode)) {
-                is PushMessage.Verification -> {
-                    push.receive(login, message)
-                }
-
-                is PushMessage.StateChange -> {
-                    if (message.changed.values.any { "EmailDelivery" in it }) host.showNewMail()
-                }
-
-                else -> {
-                    // Ignore unrecognized push types.
-                }
+                is PushMessage.Verification -> push.receive(login, message)
+                is PushMessage.StateChange -> host.showDelivery(message)
+                else -> Unit
             }
             client.acknowledge(registration.route, messageId)
         }
     }
+}
+
+private fun ApplePushPlatform.showDelivery(message: PushMessage.StateChange) {
+    if (message.changed.values.any { "EmailDelivery" in it }) showNewMail()
 }

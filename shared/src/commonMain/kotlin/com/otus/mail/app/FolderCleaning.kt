@@ -89,12 +89,8 @@ internal class FolderCleaning(
     private fun emptying(feed: InboxFeedState): FolderEmptying? {
         val role = listRole(feed)?.takeIf { it != FolderRole.Sent } ?: return null
         val emptied = shownFolders(feed.mailScope).filter { it.rights.mayRemoveItems }
-        return emptied.takeIf { it.isNotEmpty() }?.let {
-            FolderEmptying(
-                role,
-                it.sumOf(MailFolder::total),
-            ) { empty(feed, it) }
-        }
+        val total = emptied.sumOf(MailFolder::total)
+        return if (emptied.isEmpty()) null else FolderEmptying(role, total) { empty(feed, emptied) }
     }
 
     /** Takes the loaded messages off the list, and puts back those the server kept. */
