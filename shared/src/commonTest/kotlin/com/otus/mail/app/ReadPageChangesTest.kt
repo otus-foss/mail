@@ -1,9 +1,6 @@
 package com.otus.mail.app
 
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.jmap.JmapClient
-import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.inbox.data.FakeMailServer
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
@@ -21,13 +18,10 @@ import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.testing.stalwartLike
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -75,8 +69,7 @@ class ReadPageChangesTest {
 
     /** The changes for a feed that lists [row]; each load of the feed counts. */
     private fun TestScope.changes(): Pair<ReadPageChanges, InboxFeedState> {
-        val store = InMemoryLoginStore().apply { save(JmapLogin("ada", URL, "ada@example.org", "Ada"), "secret") }
-        val services = MailServices(logins = store, createClient = { JmapClient(stalwartLike(api = server::answer)) })
+        val services = adaServices(stalwartLike(api = server::answer))
         val source =
             object : MailSource {
                 override suspend fun messages(scope: MailScope): InboxSnapshot {
@@ -171,20 +164,9 @@ class ReadPageChangesTest {
             assertTrue(feed.messages.isNotEmpty())
         }
 
-    /** Lets the JMAP calls, which read logins off the test thread, finish until [done], or for a short while. */
-    private suspend fun TestScope.settle(done: () -> Boolean) {
-        repeat(SETTLE_STEPS) {
-            runCurrent()
-            if (done()) return
-            withContext(Dispatchers.Default) { delay(10) }
-        }
-    }
-
     private fun json(text: String): JsonObject = Json.parseToJsonElement(text).jsonObject
 
     private companion object {
-        const val URL = "https://mail.example.org/.well-known/jmap"
-        const val SETTLE_STEPS = 50
         val GRACE = MailSender("Grace", "grace@example.org")
         val TRASH = MoveTarget("tr", "Trash", FolderShortcut.Trash)
 

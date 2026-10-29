@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.core.mail.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderFailure
@@ -8,8 +9,8 @@ import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.READ_LATER_NAME
-import com.otus.mail.feature.folders.domain.TRASH_ROLE
 import com.otus.mail.feature.folders.domain.sharedFolders
+import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -19,15 +20,9 @@ import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FolderColorsStateTest {
-    private class MemoryStore : FolderColorStore {
-        var saved = emptyMap<String, String>()
-
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
+    private class MemoryStore :
+        MemoryMapStore(),
+        FolderColorStore
 
     /** Deletes every folder unless [refuse] is set. */
     private class Deletes(

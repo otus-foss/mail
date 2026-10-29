@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.preferences.StringMapStore
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
@@ -105,18 +106,15 @@ class ReadLaterFolders(
     }
 }
 
-// Mail in Trash or Junk can be purged with it, and Thunderbird, for one, deletes a folder by moving
-// it into Trash.
-internal val DISCARD_ROLES = setOf(TRASH_ROLE, JUNK_ROLE)
-
 /**
  * The saved folder while it is still one of the user's own and outside Trash and Junk, or else a
- * top-level folder of the user's named Read later, in any case.
+ * top-level folder of the user's named Read later, in any case. Mail in Trash or Junk can be purged
+ * with it, and Thunderbird, for one, deletes a folder by moving it into Trash.
  */
 private fun AccountFolders.readLaterIn(saved: Map<String, String>): MailFolder? =
     saved[accountId]
         ?.let(::folder)
-        ?.takeIf { folder -> folder.isCustom && ancestors(folders, folder).none { it.role in DISCARD_ROLES } }
+        ?.takeIf { folder -> folder.isCustom && ancestors(folders, folder).none { it.role in BIN_ROLES } }
         ?: folders.firstOrNull {
             it.isCustom && it.parentId == null &&
                 it.name.equals(READ_LATER_NAME, ignoreCase = true)

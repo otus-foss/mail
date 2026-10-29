@@ -8,6 +8,7 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -16,7 +17,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class JmapNewMailCheckerTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
 
     private class States(
         var saved: Map<String, String> = emptyMap(),

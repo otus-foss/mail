@@ -1,8 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import androidx.activity.compose.setContent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
@@ -22,9 +19,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
-import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -32,8 +26,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowDialog
-import java.io.File
 
 /** The Move to sheet of an open message and of a selection, against a server that answers like Stalwart. */
 @RunWith(RobolectricTestRunner::class)
@@ -44,31 +36,10 @@ class MoveSheetTest {
     private val server = FakeFolderServer()
 
     private fun openMoveSheet() {
-        showInbox()
+        compose.showInbox(server)
         compose.onNodeWithText("Welcome").performClick()
         compose.onNodeWithContentDescription("Move").performClick()
-        waitFor("Move to")
-    }
-
-    /** The inbox once folders and rules have loaded, so folder actions are offered. */
-    private fun showInbox() {
-        compose.runOnUiThread {
-            compose.activity.setContent {
-                App(
-                    services = server.services(),
-                    behaviorState = MailBehaviorState(initial = MailBehavior(markReadOnOpen = false)),
-                )
-            }
-        }
-        waitFor("Welcome")
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
-        compose.waitForIdle()
-    }
-
-    private fun waitFor(text: String) {
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitForText("Move to")
     }
 
     private fun moveUpdate(): String {
@@ -91,10 +62,10 @@ class MoveSheetTest {
 
     @Test
     fun theSelectionBarMovesTheSelectionThroughTheSameSheet() {
-        showInbox()
+        compose.showInbox(server)
         compose.onNodeWithText("Welcome").performTouchInput { longClick() }
         compose.onNode(hasContentDescription("Move, 1 message") and hasClickAction()).performClick()
-        waitFor("Move to")
+        compose.waitForText("Move to")
         compose.onNodeWithText("Amazon").performClick()
         val move = moveUpdate()
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/z\":true}}" in move)
@@ -117,14 +88,14 @@ class MoveSheetTest {
 
     @Test
     fun theFolderTheMessageIsInIsMarkedAndDoesNotMoveIt() {
-        showInbox()
+        compose.showInbox(server)
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNode(hasText("Receipts") and isSelectable() and !hasText("Welcome")).performClick()
-        waitFor("Order shipped")
+        compose.waitForText("Order shipped")
         compose.onNodeWithText("Order shipped").performClick()
         compose.onNodeWithContentDescription("Move").performClick()
         val current = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Current folder")
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(current).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(current)
         screenshot("move-sheet-current-folder")
         compose.onNode(current).assertIsDisplayed()
         compose.onNodeWithText("Amazon").assertIsDisplayed()
@@ -168,7 +139,7 @@ class MoveSheetTest {
         openMoveSheet()
         compose.onNodeWithContentDescription("Also sort future mail").performClick()
         compose.onNodeWithText("Amazon").performClick()
-        waitFor("Moved to Amazon")
+        compose.waitForText("Moved to Amazon")
     }
 
     @Test
@@ -198,7 +169,7 @@ class MoveSheetTest {
     fun aSavedRuleOffersToMoveOlderMailItMatches() {
         server.olderMail += listOf("o1", "o2")
         moveAndSort()
-        waitFor("2 older messages match")
+        compose.waitForText("2 older messages match")
         compose.onNodeWithText("New mail from grace@example.org will go there too.").assertIsDisplayed()
         screenshot("sorted-move")
         compose.onNodeWithText("Move 2 too").performClick()
@@ -211,7 +182,7 @@ class MoveSheetTest {
     @Test
     fun undoMovesTheMessageBackAndDeletesTheRule() {
         moveAndSort()
-        waitFor("No older mail in Inbox or Archive matches.")
+        compose.waitForText("No older mail in Inbox or Archive matches.")
         compose.onNodeWithText("Undo").performClick()
         val back = "\"update\":{\"m1\":{\"mailboxIds/z\":null,\"mailboxIds/a\":true}}"
         compose.waitUntil(TIMEOUT) { server.calls.any { back in it } }
@@ -220,15 +191,7 @@ class MoveSheetTest {
     }
 
     /** Saves the sheet on top to build/reports/inbox for review. */
-    private fun screenshot(name: String) {
-        val bitmap =
-            compose.runOnIdle {
-                val view = requireNotNull(ShadowDialog.getLatestDialog().window).decorView
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-            }
-        val directory = File("build/reports/inbox").apply { mkdirs() }
-        File(directory, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
+    private fun screenshot(name: String) = compose.dialogBitmap().savePng("build/reports/inbox/$name.png")
 
     private companion object {
         const val TIMEOUT = 5_000L

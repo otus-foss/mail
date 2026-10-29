@@ -1,5 +1,10 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.JUNK_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
+
 /**
  * What the Inbox page lists besides the inbox itself: Archive, the user's own folders, Spam, and
  * Trash. With [ownFolders] on, mail the user filed away stays on the page. Mail stays in its own
@@ -49,9 +54,5 @@ data class InboxContents(
         private const val TRASH = "trash"
         private const val ARCHIVE = "archive"
         private const val OWN_FOLDERS = "ownFolders"
-        private const val ARCHIVE_ROLE = "archive"
-        private const val INBOX_ROLE = "inbox"
-        private const val JUNK_ROLE = "junk"
-        private const val TRASH_ROLE = "trash"
     }
 }

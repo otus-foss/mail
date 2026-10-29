@@ -41,8 +41,8 @@ class FolderRulesUiTest {
             compose.activity.setContent { App(services = server.services(), behaviorState = MailBehaviorState()) }
         }
         // Suggestions come from loaded mail, and the Rules row from the loaded script.
-        waitFor("Welcome")
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/get" in it } }
+        compose.waitForText("Welcome")
+        compose.waitForCall(server, "SieveScript/get")
     }
 
     private fun openReceipts() = openFolder("Receipts")
@@ -53,9 +53,9 @@ class FolderRulesUiTest {
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Folders & rules").performClick()
         val row = hasText(name) and hasClickAction() and !isSelectable()
-        compose.waitUntil(TIMEOUT) { compose.onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(row)
         compose.onNode(row).performClick()
-        waitFor("Add rule")
+        compose.waitForText("Add rule")
     }
 
     /** Starts with the old "Otus Mail" script holding one rule for Receipts. */
@@ -64,14 +64,12 @@ class FolderRulesUiTest {
         server.scriptActive = true
     }
 
-    private fun waitFor(text: String) = compose.waitUntil(TIMEOUT) { count(text) > 0 }
-
     private fun count(text: String) = compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().size
 
     private fun chip(value: String) = compose.onNode(hasText(value) and hasClickAction() and !isSelectable())
 
     private fun savedScript(): String {
-        compose.waitUntil(TIMEOUT) { server.calls.any { "SieveScript/set" in it } }
+        compose.waitForCall(server, "SieveScript/set")
         compose.waitForIdle()
         return server.script.orEmpty()
     }
@@ -93,7 +91,7 @@ class FolderRulesUiTest {
         compose.onNodeWithText("New mail that matches goes to Receipts").assertExists()
         compose.onNode(hasText("From") and hasText("grace@example.org") and !isSelectable()).assertExists()
 
-        waitFor("Move the 1 that are already here")
+        compose.waitForText("Move the 1 that are already here")
         compose.onNode(hasText("From Inbox and Archive") and isToggleable()).performScrollTo().assertIsOn()
         compose.onNodeWithText("Add").assertIsEnabled().performClick()
 
@@ -124,9 +122,7 @@ class FolderRulesUiTest {
         val changed = savedScript()
         assertTrue(changed, "example.org" in changed)
         assertFalse(changed, "grace@example.org" in changed)
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("@example.org") and hasClickAction()).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitForNode(hasText("@example.org") and hasClickAction())
 
         server.calls.clear()
         chip("@example.org").performClick()
@@ -139,7 +135,7 @@ class FolderRulesUiTest {
     fun aRuleTheSheetCannotShowOffersOnlyDelete() {
         seedRule("""{"field":"subject","operator":"startsWith","value":"[Acme]"}""")
         openReceipts()
-        waitFor("[Acme]")
+        compose.waitForText("[Acme]")
         compose.onNode(hasText("starts with “[Acme]”", substring = true) and hasClickAction()).performClick()
         compose.onNodeWithText("Can't edit this rule here").assertExists()
         compose.onNodeWithText("Delete rule").performClick()

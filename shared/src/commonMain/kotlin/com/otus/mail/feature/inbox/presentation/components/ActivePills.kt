@@ -8,8 +8,6 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FolderStackChip
 import com.otus.designsystem.shared.filters.components.StackedFolder
 import com.otus.designsystem.shared.filters.elements.ChipLabel
-import com.otus.designsystem.shared.people.components.AvatarStackChip
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -50,10 +48,8 @@ internal fun toPill(
 ): ActivePill {
     val picked = pickedRecipients(filters, options, people.recipients).map { it.recipient }
     val single = picked.singleOrNull()?.name
-    val hidden = picked.size - PanelTokens.CHIP_AVATAR_LIMIT
-    val label = single ?: "+$hidden".takeIf { hidden > 0 }
     val description = single?.let { "To $it" } ?: "To ${picked.size} people"
-    return { AvatarStackChip(picked.map { it.avatar }, label, description, it, prefix = "To") }
+    return { AvatarFilterChip(picked.map { it.avatar }, single, description, it, prefix = "To") }
 }
 
 /** The chosen account's avatar and name. */

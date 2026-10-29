@@ -68,12 +68,7 @@ internal fun FolderRuleChip(
     val lines = rule.chipTexts().map { it.chipLine() }
     val wide = modifier.fillMaxWidth()
     if (rule.isGroup) {
-        RuleChipGroup(
-            "ALL OF",
-            lines,
-            wide,
-            onClick,
-        )
+        RuleChipGroup("ALL OF", lines, wide, onClick)
     } else {
         RuleChip(lines.single(), wide, onClick = onClick)
     }

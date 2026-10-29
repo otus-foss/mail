@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mail.DRAFTS_ROLE
+import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.feature.inbox.domain.MessageFolder
 
 /**
@@ -17,9 +19,9 @@ data class FolderSheetChoices(
  * Drafts stay out, since mail is not added to them.
  */
 fun folderSheetChoices(folders: List<MessageFolder>): FolderSheetChoices {
-    val listed = folders.filter { it.role != DRAFTS }
+    val listed = folders.filter { it.role != DRAFTS_ROLE }
     val (system, own) = listed.partition { it.role != null || it.readLater }
-    val (inbox, rest) = system.partition { it.role == INBOX }
+    val (inbox, rest) = system.partition { it.role == INBOX_ROLE }
     val (readLater, others) = rest.partition { it.readLater }
     return FolderSheetChoices(inbox + readLater + others, own)
 }
@@ -54,6 +56,3 @@ fun sheetTree(folders: List<MessageFolder>): List<SheetTreeFolder> {
 
 /** Whether the folder's path contains [query], ignoring case; a blank query matches. */
 fun MessageFolder.matchesSearch(query: String): Boolean = path.joinToString(" / ").containsSearch(query)
-
-private const val DRAFTS = "drafts"
-private const val INBOX = "inbox"

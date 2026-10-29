@@ -36,7 +36,7 @@ fun PrivacyScreen(
     Subpage("Privacy", onBack) {
         SettingsSection("Load remote images", info = ImagesInfo) {
             RemoteImages.entries.forEach { choice ->
-                ImagesChoiceRow(choice, selected = choice == behavior.remoteImages) {
+                PrivacyChoiceRow(choice.title, choice.description, selected = choice == behavior.remoteImages) {
                     state.update { it.copy(remoteImages = choice) }
                 }
             }
@@ -50,13 +50,9 @@ fun PrivacyScreen(
         }
         SettingsSection("Photos you attach", info = PhotosInfo) {
             PhotoCleaning.entries.forEach { choice ->
-                PickRow(
-                    choice.title,
-                    choice.description,
-                    PickMark(choice == behavior.photoCleaning, atStart = true),
-                    { state.update { it.copy(photoCleaning = choice) } },
-                    layout = PickRowLayout(subtitleLines = DESCRIPTION_LINES),
-                )
+                PrivacyChoiceRow(choice.title, choice.description, selected = choice == behavior.photoCleaning) {
+                    state.update { it.copy(photoCleaning = choice) }
+                }
             }
         }
         AvatarsSection(state)
@@ -141,16 +137,17 @@ private fun DeviceSection(
     }
 }
 
-/** One of the three image choices: a radio first, then its name and what it means. */
+/** One of a section's choices: a radio first, then its [title] and what it means. */
 @Composable
-private fun ImagesChoiceRow(
-    choice: RemoteImages,
+private fun PrivacyChoiceRow(
+    title: String,
+    description: String,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
     PickRow(
-        choice.title,
-        choice.description,
+        title,
+        description,
         PickMark(selected, atStart = true),
         onClick,
         layout = PickRowLayout(subtitleLines = DESCRIPTION_LINES),
@@ -171,17 +168,9 @@ private val RemoteImages.title: String
 private val RemoteImages.description: String
     get() =
         when (this) {
-            RemoteImages.Always -> {
-                "Senders can see when you open their mail"
-            }
-
-            RemoteImages.Known -> {
-                "Contacts and senders you allowed"
-            }
-
-            RemoteImages.Never -> {
-                "Always ask"
-            }
+            RemoteImages.Always -> "Senders can see when you open their mail"
+            RemoteImages.Known -> "Contacts and senders you allowed"
+            RemoteImages.Never -> "Always ask"
         }
 
 private val PhotoCleaning.title: String
@@ -195,17 +184,9 @@ private val PhotoCleaning.title: String
 private val PhotoCleaning.description: String
     get() =
         when (this) {
-            PhotoCleaning.Ask -> {
-                "Choose for each photo"
-            }
-
-            PhotoCleaning.Always -> {
-                "Removes location, time, and camera"
-            }
-
-            PhotoCleaning.Never -> {
-                "Photos go out as they are"
-            }
+            PhotoCleaning.Ask -> "Choose for each photo"
+            PhotoCleaning.Always -> "Removes location, time, and camera"
+            PhotoCleaning.Never -> "Photos go out as they are"
         }
 
 private val ImagesInfo =

@@ -63,13 +63,7 @@ internal class FakeFolderMail(
 
     /** The inbox mail a rule finds: [FakeFolderServer.olderMail], which the moved message already left. */
     private fun ruleMatches(boxes: Set<String>): List<String> =
-        if (INBOX in
-            boxes
-        ) {
-            server.olderMail.toList()
-        } else {
-            emptyList()
-        }
+        if (INBOX in boxes) server.olderMail.toList() else emptyList()
 
     private fun emails(arguments: JsonObject): JsonObject {
         val ids = arguments.ids().orEmpty()

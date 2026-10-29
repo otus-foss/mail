@@ -19,6 +19,7 @@ import com.otus.designsystem.shared.actionbar.components.BarMorph
 import com.otus.designsystem.shared.actionbar.components.BarNotice
 import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
 import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.recipients
 import kotlinx.datetime.TimeZone
@@ -139,11 +140,5 @@ private fun sendDescription(
     val people = state.draft.recipients
     val send = at?.let { "Send $it," } ?: "Send"
     val first = people.firstOrNull() ?: return send
-    return if (people.size ==
-        1
-    ) {
-        "$send to ${first.name.ifBlank { first.address }}"
-    } else {
-        "$send to ${people.size} people"
-    }
+    return if (people.size == 1) "$send to ${first.shownName}" else "$send to ${people.size} people"
 }

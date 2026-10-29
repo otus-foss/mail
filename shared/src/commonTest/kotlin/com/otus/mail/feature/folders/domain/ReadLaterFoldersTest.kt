@@ -1,5 +1,9 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -69,14 +73,9 @@ class ReadLaterFoldersTest {
     }
 
     private class MemoryStore(
-        var saved: Map<String, String> = emptyMap(),
-    ) : ReadLaterStore {
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
+        saved: Map<String, String> = emptyMap(),
+    ) : MemoryMapStore(saved),
+        ReadLaterStore
 
     private fun ada(vararg folders: MailFolder) = AccountFolders("ada", "Ada", listOf(inbox, *folders))
 

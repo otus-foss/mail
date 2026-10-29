@@ -1,17 +1,14 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapException
-import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetError
-import com.otus.mail.core.mail.IdentityObject
-import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailboxType
+import com.otus.jmap.jmapPatch
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -30,17 +27,17 @@ internal data class SendRoute(
      * `$draft`. Without a Sent folder the copy stays where it is.
      */
     fun sentPatch(folder: String): JsonObject =
-        buildJsonObject {
+        jmapPatch {
             if (sent != null && sent != folder) {
-                put("mailboxIds/$folder", JsonNull)
-                put("mailboxIds/$sent", true)
+                remove("mailboxIds", folder)
+                set(JsonPrimitive(true), "mailboxIds", sent)
             }
-            put("keywords/$DRAFT_KEYWORD", JsonNull)
+            remove("keywords", DRAFT_KEYWORD)
         }
 }
 
 /** The patch for a held copy: it stays where it was stored and only loses `$draft`. */
-internal fun SendRoute.heldPatch(): JsonObject = buildJsonObject { put("keywords/$DRAFT_KEYWORD", JsonNull) }
+internal fun SendRoute.heldPatch(): JsonObject = jmapPatch { remove("keywords", DRAFT_KEYWORD) }
 
 /**
  * The envelope that holds a draft until [at] (RFC 4865 HOLDUNTIL), from its From address to every
@@ -50,26 +47,26 @@ internal fun Draft.heldEnvelope(at: Instant): JsonObject =
     buildJsonObject {
         putJsonObject("mailFrom") {
             put("email", from?.address.orEmpty())
-            putJsonObject(
-                "parameters",
-            ) { put("HOLDUNTIL", Instant.fromEpochSeconds(at.epochSeconds).toString()) }
+            putJsonObject("parameters") { put("HOLDUNTIL", at.utcDate()) }
         }
         putJsonArray("rcptTo") {
             (to + cc + bcc).distinctBy { it.address.lowercase() }.forEach { addJsonObject { put("email", it.address) } }
         }
     }
 
-/** The identity for [address]: one with that exact address, else a wildcard such as `*@example.org`. */
-internal fun List<IdentityObject>.sendingAs(address: String): IdentityObject? {
+/**
+ * The identity for [address], whose own address [addressOf] gives: one with that exact address,
+ * else a wildcard such as `*@example.org`.
+ */
+internal fun <T> List<T>.sendingAs(
+    address: String,
+    addressOf: (T) -> String,
+): T? {
     val wanted = address.lowercase()
     val domain = wanted.substringAfterLast('@', missingDelimiterValue = "")
-    return firstOrNull { it.email.lowercase() == wanted }
-        ?: firstOrNull { domain.isNotEmpty() && it.email.lowercase() == "*@$domain" }
+    return firstOrNull { addressOf(it).lowercase() == wanted }
+        ?: firstOrNull { domain.isNotEmpty() && addressOf(it).lowercase() == "*@$domain" }
 }
-
-/** The mailbox with [role], such as `drafts` or `sent` (RFC 8621, section 2). */
-internal fun MailAccount.roleQuery(role: String): QueryMethod =
-    QueryMethod(MailboxType, id, buildJsonObject { put("role", role) })
 
 internal val AnsweredMessage.keyword: String
     get() = if (forwarded) FORWARDED_KEYWORD else ANSWERED_KEYWORD

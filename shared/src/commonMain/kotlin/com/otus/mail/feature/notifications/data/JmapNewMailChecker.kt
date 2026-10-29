@@ -14,6 +14,7 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DELIVERED_TO_PROPERTY
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MUTED_KEYWORD
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailAccounts
@@ -21,6 +22,7 @@ import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.ThreadType
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NewMailChecker
@@ -68,13 +70,9 @@ class JmapNewMailChecker(
         login: JmapLogin,
         since: String?,
     ): LoginCheck =
-        try {
+        mailCallOr(LoginCheck(login.id, state = null, mail = emptyList())) {
             val account = accounts.open(login)
             since?.let { changesSince(account, it) } ?: startFromNow(account)
-        } catch (_: JmapException) {
-            LoginCheck(login.id, state = null, mail = emptyList())
-        } catch (_: LoginStoreException) {
-            LoginCheck(login.id, state = null, mail = emptyList())
         }
 
     private suspend fun startFromNow(account: MailAccount): LoginCheck {
@@ -172,7 +170,6 @@ class JmapNewMailChecker(
 
     private companion object {
         const val CANNOT_CALCULATE_CHANGES = "cannotCalculateChanges"
-        const val INBOX_ROLE = "inbox"
         const val MAX_CHANGES = 100
         const val MAX_PAGES = 5
 

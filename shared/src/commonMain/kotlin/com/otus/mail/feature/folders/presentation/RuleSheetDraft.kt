@@ -52,12 +52,9 @@ fun FolderRule.sheetDraft(index: Int): RuleSheetDraft? {
     val start =
         when (condition) {
             is RuleCondition.Address -> {
-                RuleKind.entries.firstOrNull { it.field == condition.field }?.let {
-                    RuleSheetDraft(
-                        it,
-                        condition.match.typed(),
-                    )
-                }
+                RuleKind.entries
+                    .firstOrNull { it.field == condition.field }
+                    ?.let { RuleSheetDraft(it, condition.match.typed()) }
             }
 
             is RuleCondition.Text -> {

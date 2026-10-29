@@ -56,27 +56,20 @@ class MailNotifications(
         )
 
     fun show(mail: List<NewMail>) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            return
+        // From Android 13 on, posting needs the user's permission.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            if (permission != PackageManager.PERMISSION_GRANTED) return
         }
         val choices = previews()
         mail.groupBy { it.loginId }.forEach { (loginId, messages) ->
             val shown = messages.map { choices.forMail(loginId, it.recipients) }
-            messages.zip(shown).forEach { (it, preview) ->
-                manager.notify("$loginId/${it.emailId}", MESSAGE_ID, message(it, preview))
+            messages.zip(shown).forEach { (arrival, preview) ->
+                manager.notify("$loginId/${arrival.emailId}", MESSAGE_ID, message(arrival, preview))
             }
             // The account's name shows only if every message in the group may show its details.
-            val summary =
-                if (NotificationPreviews.Hidden in
-                    shown
-                ) {
-                    NotificationPreviews.Hidden
-                } else {
-                    NotificationPreviews.Device
-                }
+            val anyHidden = NotificationPreviews.Hidden in shown
+            val summary = if (anyHidden) NotificationPreviews.Hidden else NotificationPreviews.Device
             manager.notify(loginId, SUMMARY_ID, summary(messages.last(), summary))
         }
     }
@@ -139,10 +132,8 @@ class MailNotifications(
         PendingIntent.getActivity(
             context,
             0,
-            Intent(
-                context,
-                MainActivity::class.java,
-            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE,
         )
 

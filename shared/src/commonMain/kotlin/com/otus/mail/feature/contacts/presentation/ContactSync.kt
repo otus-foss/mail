@@ -25,7 +25,8 @@ import kotlinx.coroutines.sync.withLock
 private val ContactEdit.dependsOn: String? get() = (this as? ContactEdit.Delete)?.waitsFor
 
 /** Whether the server has refused neither this change nor the one it waits for. */
-private fun ContactEdit.isReady(refused: Map<String, ContactWriteFailure>): Boolean = id !in refused && !isHeld(refused)
+internal fun ContactEdit.isReady(refused: Map<String, ContactWriteFailure>): Boolean =
+    id !in refused && !isHeld(refused)
 
 /** How [ContactSync] tells the contact list about a change the server accepted. */
 internal typealias SentChange = ((ContactsSnapshot) -> ContactsSnapshot) -> Unit

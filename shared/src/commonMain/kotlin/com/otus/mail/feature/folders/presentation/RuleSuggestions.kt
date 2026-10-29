@@ -103,15 +103,11 @@ private fun typedAddress(
         }
 
         domain.isEmpty() && local.isNotEmpty() -> {
-            RuleSuggestion(
-                "$local@ any domain",
-                null,
-                address(field, AddressMatch.LocalPart(local)),
-            )
+            RuleSuggestion("$local@ any domain", null, RuleCondition.Address(field, AddressMatch.LocalPart(local)))
         }
 
         local.isNotEmpty() && '.' in domain -> {
-            RuleSuggestion(text, null, address(field, AddressMatch.Exact(text)))
+            RuleSuggestion(text, null, RuleCondition.Address(field, AddressMatch.Exact(text)))
         }
 
         else -> {
@@ -119,11 +115,6 @@ private fun typedAddress(
         }
     }
 }
-
-private fun address(
-    field: AddressField,
-    match: AddressMatch,
-) = RuleCondition.Address(field, match)
 
 private fun messages(count: Int): String = if (count == 1) "1 message" else "$count messages"
 

@@ -1,9 +1,9 @@
 package com.otus.mail.feature.folders.data
 
 import com.otus.jmap.SetMethod
+import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.feature.folders.domain.FolderRule
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.folderTree
 import kotlinx.serialization.json.JsonElement

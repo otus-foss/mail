@@ -51,8 +51,8 @@ internal fun emailConditions(
 private fun ReadStatus.condition(): JsonObject? =
     when (this) {
         ReadStatus.All -> null
-        ReadStatus.Unread -> keyword("notKeyword", SEEN)
-        ReadStatus.Read -> keyword("hasKeyword", SEEN)
+        ReadStatus.Unread -> keyword("notKeyword", SEEN_KEYWORD)
+        ReadStatus.Read -> keyword("hasKeyword", SEEN_KEYWORD)
     }
 
 /** This choice's condition for [loginId]; null for the choices the caller checks on loaded threads. */
@@ -61,10 +61,10 @@ private fun QuickFacet.condition(
     loginId: String,
 ): JsonObject? =
     when (this) {
-        QuickFacet.Flagged -> keyword("hasKeyword", FLAGGED)
+        QuickFacet.Flagged -> keyword("hasKeyword", FLAGGED_KEYWORD)
         QuickFacet.ReadLater -> inMailbox(query.readLaterIds.getValue(loginId))
         QuickFacet.Attachments -> condition("hasAttachment", JsonPrimitive(true))
-        QuickFacet.Forwarded -> keyword("hasKeyword", FORWARDED)
+        QuickFacet.Forwarded -> keyword("hasKeyword", FORWARDED_KEYWORD)
         QuickFacet.NeedsMyReply, QuickFacet.AwaitingReply, QuickFacet.Conversations -> null
     }
 
@@ -130,11 +130,7 @@ private fun keyword(
 ): JsonObject = condition(name, JsonPrimitive(keyword))
 
 /** A `UTCDate` (RFC 8620, section 1.4): whole seconds and a `Z`. */
-private fun Instant.utcDate(): String = Instant.fromEpochSeconds(epochSeconds).toString()
-
-private const val SEEN = "\$seen"
-private const val FLAGGED = "\$flagged"
-private const val FORWARDED = "\$forwarded"
+internal fun Instant.utcDate(): String = Instant.fromEpochSeconds(epochSeconds).toString()
 
 /** Headers lists and newsletters add (RFC 2919, RFC 2369); `header` with only a name asks whether it is there. */
 private val LIST_HEADERS = listOf("List-Id", "List-Unsubscribe")

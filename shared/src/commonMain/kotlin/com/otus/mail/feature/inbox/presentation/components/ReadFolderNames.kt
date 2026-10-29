@@ -10,6 +10,12 @@ import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.DRAFTS_ROLE
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.JUNK_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
 import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.displayPaths
 import org.jetbrains.compose.resources.DrawableResource
@@ -34,11 +40,11 @@ internal fun folderNames(
 
 private fun roleIcon(role: String): DrawableResource =
     when (role) {
-        "inbox" -> Res.drawable.symbol_inbox
-        "sent" -> Res.drawable.symbol_send
-        "archive" -> Res.drawable.symbol_archive
-        "junk" -> Res.drawable.symbol_report
-        "trash" -> Res.drawable.symbol_delete
-        "drafts" -> Res.drawable.symbol_draft
+        INBOX_ROLE -> Res.drawable.symbol_inbox
+        SENT_ROLE -> Res.drawable.symbol_send
+        ARCHIVE_ROLE -> Res.drawable.symbol_archive
+        JUNK_ROLE -> Res.drawable.symbol_report
+        TRASH_ROLE -> Res.drawable.symbol_delete
+        DRAFTS_ROLE -> Res.drawable.symbol_draft
         else -> Res.drawable.symbol_folder
     }

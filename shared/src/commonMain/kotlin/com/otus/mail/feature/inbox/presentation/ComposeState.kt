@@ -88,12 +88,8 @@ class ComposeState(
 
     /** The thread a reply or follow-up answers; null for a new message or a forward. */
     val thread: ReplyThread? =
-        request.answeredOriginal?.let {
-            ReplyThread(it, services.threads, scope) { quote ->
-                edit { d ->
-                    d.copy(quote = quote)
-                }
-            }
+        request.answeredOriginal?.let { original ->
+            ReplyThread(original, services.threads, scope) { quote -> edit { it.copy(quote = quote) } }
         }
 
     /** Addresses every account may send from, in account order. */

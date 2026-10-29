@@ -3,12 +3,12 @@ package com.otus.mail.feature.folders.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderLimits
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class JmapFolderRepositoryTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
     private val sent = mutableListOf<String>()
 
     private fun repository(reply: (String) -> String): JmapFolderRepository {

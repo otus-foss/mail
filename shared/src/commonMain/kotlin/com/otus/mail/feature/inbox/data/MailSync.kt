@@ -101,6 +101,11 @@ internal fun CacheWrite.saveChanges(changes: MailChanges) {
     putValue(THREAD_STATE, changes.threads.state)
 }
 
+/**
+ * The changes of [type] from the [first] `/changes` page on, or a reset to the state of [now]
+ * without one. Any refusal of a `/changes` call, `cannotCalculateChanges` or not, means the cache
+ * cannot be patched, so it starts over.
+ */
 private suspend fun JmapConnection.objectChanges(
     type: JmapType<*>,
     accountId: String,
@@ -109,9 +114,9 @@ private suspend fun JmapConnection.objectChanges(
     first: JmapCall<ChangesResult>?,
 ): ObjectChanges =
     first
-        ?.let { call -> methodResult { response[call] } }
+        ?.let { call -> unlessRefused { response[call] } }
         ?.let { page -> followChanges(type, accountId, page) }
-        ?: ObjectChanges(state = methodResult { response[now] }?.state?.ifEmpty { null }, reset = true)
+        ?: ObjectChanges(state = unlessRefused { response[now] }?.state?.ifEmpty { null }, reset = true)
 
 /** Every page of changes from [first] on; null when the server stops answering or has too many. */
 private suspend fun JmapConnection.followChanges(
@@ -123,18 +128,15 @@ private suspend fun JmapConnection.followChanges(
     var changes = ObjectChanges(state = null).then(page)
     var pages = 1
     while (page.hasMoreChanges && pages < MAX_PAGES) {
-        page = methodResult { call(ChangesMethod(type, accountId, page.newState, MAX_CHANGES)) } ?: return null
+        page = unlessRefused { call(ChangesMethod(type, accountId, page.newState, MAX_CHANGES)) } ?: return null
         changes = changes.then(page)
         pages++
     }
     return changes.takeUnless { page.hasMoreChanges }
 }
 
-/**
- * [read]'s result, or null when the server refused that call. Any refusal of a `/changes` call,
- * `cannotCalculateChanges` or not, means the cache cannot be patched, so it starts over.
- */
-private inline fun <T> methodResult(read: () -> T): T? =
+/** [read]'s result, or null when the server refused that call. */
+internal inline fun <T> unlessRefused(read: () -> T): T? =
     try {
         read()
     } catch (expected: JmapException.MethodError) {

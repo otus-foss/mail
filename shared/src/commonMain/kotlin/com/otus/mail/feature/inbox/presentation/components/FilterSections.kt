@@ -52,7 +52,9 @@ internal fun FilterSections(
         options.layout.sections.forEach { section ->
             when (section) {
                 FilterSection.Status -> {
-                    StatusSection(draft.status, onEdit)
+                    SegmentSection("Status", ReadStatus.entries, draft.status, { it.label }) { status ->
+                        onEdit { it.copy(status = status) }
+                    }
                 }
 
                 FilterSection.Quick -> {
@@ -66,27 +68,35 @@ internal fun FilterSections(
 
                 FilterSection.Rows -> {
                     PopupRows(draft, options, dateFormatter, onEdit)
-                    SizeSection(draft.size, onEdit)
+                    SegmentSection("Size", SizeFilter.entries, draft.size, { it.label }) { size ->
+                        onEdit { it.copy(size = size) }
+                    }
                 }
 
                 FilterSection.Sort -> {
-                    SortSection(draft.sort, onEdit)
+                    SegmentSection("Sort", FilterSort.entries, draft.sort, { it.label }) { sort ->
+                        onEdit { it.copy(sort = sort) }
+                    }
                 }
             }
         }
     }
 }
 
+/** A section whose [choices] are the segments of one toggle, [selected] lit. */
 @Composable
-private fun StatusSection(
-    status: ReadStatus,
-    onEdit: FilterEdit,
+private fun <T> SegmentSection(
+    title: String,
+    choices: List<T>,
+    selected: T,
+    label: (T) -> String,
+    onSelect: (T) -> Unit,
 ) {
-    FilterSection("Status") {
+    FilterSection(title) {
         SegmentedToggle(
-            ReadStatus.entries.map { it.label },
-            ReadStatus.entries.indexOf(status),
-            { index -> onEdit { it.copy(status = ReadStatus.entries[index]) } },
+            choices.map(label),
+            choices.indexOf(selected),
+            { onSelect(choices[it]) },
             height = FilterTokens.segmentHeight,
         )
     }
@@ -98,7 +108,6 @@ private fun QuickSection(
     options: FilterOptions,
     onEdit: FilterEdit,
 ) {
-    // Each group keeps the user's order; a group whose chips are all hidden leaves no caption.
     // Each group keeps the user's order; a group whose chips are all hidden leaves no caption.
     // The mail types close the Mail group.
     QuickGroup.entries.forEach { group ->
@@ -127,34 +136,4 @@ private fun QuickChip(
     onClick: () -> Unit,
 ) {
     FilterChip(label, on, onClick) { Symbol(icon, size = FilterTokens.chipIconSize) }
-}
-
-@Composable
-private fun SizeSection(
-    size: SizeFilter,
-    onEdit: FilterEdit,
-) {
-    FilterSection("Size") {
-        SegmentedToggle(
-            SizeFilter.entries.map { it.label },
-            SizeFilter.entries.indexOf(size),
-            { index -> onEdit { it.copy(size = SizeFilter.entries[index]) } },
-            height = FilterTokens.segmentHeight,
-        )
-    }
-}
-
-@Composable
-private fun SortSection(
-    sort: FilterSort,
-    onEdit: FilterEdit,
-) {
-    FilterSection("Sort") {
-        SegmentedToggle(
-            listOf("Newest first", "Oldest first"),
-            FilterSort.entries.indexOf(sort),
-            { index -> onEdit { it.copy(sort = FilterSort.entries[index]) } },
-            height = FilterTokens.segmentHeight,
-        )
-    }
 }

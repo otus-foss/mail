@@ -47,12 +47,6 @@ class InboxPillsTest {
         }
     }
 
-    private fun waitFor(text: String) {
-        compose.waitUntil(
-            TIMEOUT,
-        ) { compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty() }
-    }
-
     private fun pill(text: String) = compose.onNode(hasText(text) and isToggleable())
 
     @Test
@@ -60,19 +54,17 @@ class InboxPillsTest {
         server.folders += """{"id": "l", "name": "Read later"}"""
         server.subjects["l"] = "Saved article"
         start(MailBehavior().withReadLater(true))
-        waitFor("Welcome")
-        compose.waitUntil(TIMEOUT) {
-            compose.onAllNodes(hasText("Read later") and isToggleable()).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitForText("Welcome")
+        compose.waitForNode(hasText("Read later") and isToggleable())
         pill("Read later").performClick()
-        waitFor("Saved article")
+        compose.waitForText("Saved article")
         pill("Read later").assertIsOn()
         compose.onNodeWithText("Search Read later").assertIsDisplayed()
         assertTrue(compose.onAllNodes(hasText("Welcome")).fetchSemanticsNodes().isEmpty())
         assertTrue(server.calls.any { "\"inMailbox\":\"l\"" in it })
         // Pressing it again returns to the inbox.
         pill("Read later").performClick()
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
     }
 
     private fun openPillsSheet() {
@@ -80,7 +72,7 @@ class InboxPillsTest {
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Mail behavior").performClick()
         compose.onNodeWithText("Pills").performScrollTo().performClick()
-        waitFor("Shown")
+        compose.waitForText("Shown")
     }
 
     @Test
@@ -111,7 +103,7 @@ class InboxPillsTest {
         start()
         openPillsSheet()
         // Nested folders list by name under their parent.
-        waitFor("Amazon")
+        compose.waitForText("Amazon")
         compose.onNode(hasText("Receipts / Amazon") and isToggleable()).assertDoesNotExist()
         compose.onNode(hasText("Receipts") and isToggleable()).performClick()
         // Without its parent in the list, a folder names the parent again.
@@ -125,13 +117,9 @@ class InboxPillsTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNode(hasText("Inbox") and isSelectable()).performClick()
-        waitFor("Welcome")
+        compose.waitForText("Welcome")
         pill("Receipts").performClick()
-        waitFor("Order shipped")
+        compose.waitForText("Order shipped")
         compose.onNodeWithText("Search Receipts").assertIsDisplayed()
-    }
-
-    private companion object {
-        const val TIMEOUT = 5_000L
     }
 }

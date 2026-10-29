@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -84,11 +83,8 @@ class CalendarMonthBackgroundTest {
         }
         val bounds = compose.onNodeWithContentDescription("Month outline").fetchSemanticsNode().boundsInRoot
         return compose.runOnIdle {
-            val view = compose.activity.window.decorView
-            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-            view.draw(Canvas(bitmap))
             Bitmap.createBitmap(
-                bitmap,
+                compose.drawnWindow(),
                 bounds.left.toInt(),
                 bounds.top.toInt(),
                 bounds.width.toInt(),

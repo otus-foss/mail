@@ -81,10 +81,9 @@ internal class ApplePushSession(
         }
 
     private suspend fun sync() {
-        val mail = mailServices
         val push = subscriptions
         val client = bridge ?: return
-        val logins = mail.notificationLogins().map { it.id }
+        val logins = mailServices.notificationLogins().map { it.id }
         storage
             .registrations()
             .keys
@@ -171,10 +170,7 @@ internal class ApplePushSession(
                 }
 
                 is PushMessage.StateChange -> {
-                    if (message.changed.values.any { "EmailDelivery" in it }) {
-                        host
-                            .showNewMail()
-                    }
+                    if (message.changed.values.any { "EmailDelivery" in it }) host.showNewMail()
                 }
 
                 else -> {

@@ -63,10 +63,7 @@ class InMemoryMailCache : MailCache {
             logins =
                 logins.mapValues { (_, login) ->
                     val kept =
-                        login.objects[kind].orEmpty().filterValues {
-                            (it.receivedMillis ?: epochMillis) >=
-                                epochMillis
-                        }
+                        login.objects[kind].orEmpty().filterValues { (it.receivedMillis ?: epochMillis) >= epochMillis }
                     login.copy(objects = login.objects + (kind to kept))
                 }
         }

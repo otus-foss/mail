@@ -1,8 +1,10 @@
 package com.otus.mail.feature.contacts.domain
 
+import com.otus.jscontact.AnniversaryKind
 import com.otus.jscontact.Card
 import com.otus.jscontact.CardKind
 import com.otus.jscontact.NameComponentKind
+import com.otus.jscontact.PartialDate
 
 /**
  * One contact card as the server holds it, kept whole so an edit changes only what the user
@@ -42,10 +44,7 @@ data class ContactCard(
                 ?.full
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
-                ?: listOf(
-                    card.givenName,
-                    card.surname,
-                ).filter { it.isNotEmpty() }.joinToString(" ").takeIf { it.isNotEmpty() }
+                ?: listOf(card.givenName, card.surname).filter { it.isNotEmpty() }.joinToString(" ").ifEmpty { null }
                 ?: emails.firstOrNull()?.value
                 ?: "No name"
 
@@ -56,8 +55,8 @@ data class ContactCard(
     val emails: List<ContactValue>
         get() {
             val all = card.emails.orEmpty()
-            return all.entries
-                .sortedWith(compareBy({ it.value.pref ?: Int.MAX_VALUE }, { it.key }))
+            return all
+                .sortedByPref { it.pref }
                 .mapIndexed { index, (id, email) ->
                     ContactValue(
                         id,
@@ -72,8 +71,7 @@ data class ContactCard(
         get() =
             card.phones
                 .orEmpty()
-                .entries
-                .sortedWith(compareBy({ it.value.pref ?: Int.MAX_VALUE }, { it.key }))
+                .sortedByPref { it.pref }
                 .map { (id, phone) ->
                     ContactValue(id, phone.number, ContactLabel.of(phone.contexts, phone.label), false)
                 }
@@ -81,16 +79,8 @@ data class ContactCard(
     /** Title and organization, each once, such as "Rear admiral · US Navy". */
     val role: String?
         get() =
-            listOfNotNull(
-                card.titles
-                    ?.values
-                    ?.firstOrNull()
-                    ?.name,
-                card.organizations
-                    ?.values
-                    ?.firstOrNull()
-                    ?.name,
-            ).filter { it.isNotBlank() }
+            listOfNotNull(card.titleName, card.organizationName)
+                .filter { it.isNotBlank() }
                 .joinToString(" · ")
                 .takeIf { it.isNotEmpty() }
 
@@ -99,13 +89,7 @@ data class ContactCard(
         get() {
             val words = displayName.replace(".", "").split(' ').filter { it.isNotEmpty() }
             val letters =
-                if (words.size >
-                    1
-                ) {
-                    "${words.first().first()}${words.last().first()}"
-                } else {
-                    words.firstOrNull()?.take(1)
-                }
+                if (words.size > 1) "${words.first().first()}${words.last().first()}" else words.firstOrNull()?.take(1)
             return letters.orEmpty().uppercase()
         }
 
@@ -138,6 +122,10 @@ data class ContactValue(
     val preferred: Boolean,
 )
 
+/** The entries in [pref] order (RFC 9553, section 1.5.3: lower wins, none last), then by key. */
+private fun <T> Map<String, T>.sortedByPref(pref: (T) -> Int?): List<Map.Entry<String, T>> =
+    entries.sortedWith(compareBy({ pref(it.value) ?: Int.MAX_VALUE }, { it.key }))
+
 internal val Card.givenName: String
     get() =
         name
@@ -153,3 +141,35 @@ internal val Card.surname: String
             .orEmpty()
             .filter { it.kind == NameComponentKind.Surname }
             .joinToString(" ") { it.value }
+
+/** The name of the card's first organization. */
+internal val Card.organizationName: String?
+    get() =
+        organizations
+            ?.values
+            ?.firstOrNull()
+            ?.name
+
+/** The name of the card's first title. */
+internal val Card.titleName: String?
+    get() =
+        titles
+            ?.values
+            ?.firstOrNull()
+            ?.name
+
+/** The card's birthday, when it has a date that is not a timestamp. */
+internal val Card.birthday: PartialDate?
+    get() =
+        anniversaries
+            ?.values
+            ?.firstOrNull { it.kind == AnniversaryKind.Birth }
+            ?.date as? PartialDate
+
+/** The text of the card's first note. */
+internal val Card.firstNote: String?
+    get() =
+        notes
+            ?.values
+            ?.firstOrNull()
+            ?.note

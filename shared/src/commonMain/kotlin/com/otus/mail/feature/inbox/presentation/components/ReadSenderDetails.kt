@@ -28,6 +28,7 @@ import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageFolder
+import com.otus.mail.feature.inbox.domain.shownName
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
@@ -67,7 +68,7 @@ private fun People(
         verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
     ) {
         people.forEach { person ->
-            val name = person.name.ifBlank { person.address }
+            val name = person.shownName
             PersonChip(
                 Recipient(name, person.chipAvatar, "$name, ${person.address}"),
                 onClick = onPerson?.let { { it(person) } },

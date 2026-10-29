@@ -5,10 +5,6 @@ import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.ContactValue
-import com.otus.mail.feature.contacts.presentation.ContactsState
-import com.otus.mail.feature.contacts.presentation.book
-import com.otus.mail.feature.contacts.presentation.members
-import com.otus.mail.feature.contacts.presentation.person
 
 /**
  * What one contact page shows: the [card] it opened, the [person] that card belongs to, or a
@@ -31,11 +27,7 @@ internal class ContactPage(
 
     /** Who Write addresses: each member's first address for a group, else the preferred one. */
     val recipients: List<ContactAddress> =
-        if (card.isGroup) {
-            members.mapNotNull { p -> p.emails.firstOrNull()?.let { ContactAddress(p.name, it.value) } }
-        } else {
-            emails.take(1).map { ContactAddress(name, it.value) }
-        }
+        if (card.isGroup) members.mapNotNull { it.preferredAddress } else listOfNotNull(person?.preferredAddress)
 }
 
 /** The page for [card], opened by [key]; it can change only when every book holding it allows it. */
@@ -44,11 +36,10 @@ internal fun ContactsState.contactPage(
     card: ContactCard,
 ): ContactPage {
     val person = person(key)
-    val cards = person?.cards ?: listOf(card)
     return ContactPage(
         card = card,
         person = person,
         members = if (card.isGroup) members(card) else emptyList(),
-        writable = cards.all { c -> c.books.all { book(it)?.canWrite == true } },
+        writable = canWriteAll(person?.cards ?: listOf(card)),
     )
 }

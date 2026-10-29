@@ -23,15 +23,10 @@ internal class PageFilters {
     private val applied = mutableMapOf<MailPage, InboxFilters>()
 
     /** The filters [page] last applied, or the ones it starts with: Conversations keeps only conversations. */
-    fun of(page: MailPage): InboxFilters =
-        applied[page]
-            ?: if (page ==
-                MailPage.Conversations
-            ) {
-                InboxFilters(quick = setOf(QuickFacet.Conversations))
-            } else {
-                InboxFilters()
-            }
+    fun of(page: MailPage): InboxFilters = applied[page] ?: startingFilters(page)
+
+    private fun startingFilters(page: MailPage): InboxFilters =
+        if (page == MailPage.Conversations) InboxFilters(quick = setOf(QuickFacet.Conversations)) else InboxFilters()
 
     fun keep(
         page: MailPage,

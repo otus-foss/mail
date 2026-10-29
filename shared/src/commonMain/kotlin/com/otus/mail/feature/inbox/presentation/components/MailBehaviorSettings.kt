@@ -84,7 +84,7 @@ fun InboxBehaviorSettings(
             { choosingPills = true },
             description = "Filters and folders above your mail",
             icon = Res.drawable.symbol_filter_list,
-        ) { ValueButton(if (shown == 0) "None" else "$shown shown") }
+        ) { ValueButton(shownCount(shown)) }
         FilterPanelSettings(state)
         SettingToggleRow(
             "Read later",

@@ -29,9 +29,7 @@ internal fun InboxContext.listFrame(
 ): ListFrame =
     ListFrame(
         rowLook,
-        nudge.takeIf {
-            !searching
-        },
+        nudge.takeIf { !searching },
         topInset,
         barPadding.calculateBottomPadding(),
         onCompactChange,

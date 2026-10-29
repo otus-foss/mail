@@ -61,10 +61,8 @@ class FolderColorsState(
 
     private fun tinted(folder: MailFolder): Boolean = shown() && colorable(folder)
 
-    private fun accountOf(folder: MailFolder): AccountFolders? {
-        val accountId = folder.accountId
-        return accounts().firstOrNull { it.accountId == accountId }
-    }
+    private fun accountOf(folder: MailFolder): AccountFolders? =
+        accounts().firstOrNull { it.accountId == folder.accountId }
 
     /** Starts from the stored colors, so it never writes back an account removed since the last read. */
     private fun update(change: (FolderColors) -> FolderColors) {

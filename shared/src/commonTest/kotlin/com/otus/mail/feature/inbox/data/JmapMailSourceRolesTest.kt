@@ -1,15 +1,15 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.testing.ADA_LOGIN
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /** The Inbox with Spam and Trash, as the Inbox settings choose. */
 class JmapMailSourceRolesTest {
-    private val login = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
+    private val login = ADA_LOGIN
 
     private val server =
         FakeMailServer(

@@ -97,10 +97,10 @@ fun ContactStore.forgetAccount(loginId: String) {
 
     fun others(name: String) =
         KeySets.encode(
-            KeySets.decode(saved[name]).map { set -> set.filterNot { it.loginId == loginId }.toSet() }.filter {
-                it.size >
-                    1
-            },
+            KeySets
+                .decode(saved[name])
+                .map { set -> set.filterNot { it.loginId == loginId }.toSet() }
+                .filter { it.size > 1 },
         )
     val edits = ContactEdit.decode(saved[ContactStore.EDITS]).filterNot { it.key.loginId == loginId }
     write(

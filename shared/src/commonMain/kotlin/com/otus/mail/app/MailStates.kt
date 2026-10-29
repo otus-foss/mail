@@ -40,6 +40,7 @@ import com.otus.mail.feature.inbox.presentation.MessageMoves
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import kotlinx.coroutines.CoroutineScope
+import kotlin.time.Duration.Companion.seconds
 
 /** State holders that outlive a single page. One per composition of [App]. */
 internal class MailStates(
@@ -233,8 +234,7 @@ internal class MailStates(
     /** Sends drafts after their page closes, with Undo and the outcome in a toast. */
     val outgoing =
         OutgoingMail(scope, moveToasts.toasts, services.scheduled) {
-            behavior.behavior.undoSendSeconds *
-                MILLIS_PER_SECOND
+            behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
         }
     private val cleaning = FolderCleaning(services, folders, scope)
     private val marking = MessageMarking(services, folders, scope)
@@ -288,5 +288,3 @@ private fun FolderRights.allow(flag: MessageFlag): Boolean =
         MessageFlag.Read -> maySetSeen
         MessageFlag.Flagged -> maySetKeywords
     }
-
-private const val MILLIS_PER_SECOND = 1_000L

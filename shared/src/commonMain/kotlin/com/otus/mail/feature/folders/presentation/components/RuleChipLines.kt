@@ -13,31 +13,20 @@ import com.otus.designsystem.resources.symbol_schedule
 import com.otus.designsystem.resources.symbol_short_text
 import com.otus.designsystem.shared.filters.components.RuleChipLine
 import com.otus.designsystem.shared.filters.components.RuleChipValue
-import com.otus.designsystem.shared.filters.components.RuleSegment
-import com.otus.designsystem.shared.filters.components.RuleSegmentStyle
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.mail.feature.folders.presentation.ChipSlot
 import com.otus.mail.feature.folders.presentation.RuleChipText
 import com.otus.mail.feature.folders.presentation.RuleIcon
-import com.otus.mail.feature.folders.presentation.SegmentStyle
 import org.jetbrains.compose.resources.DrawableResource
 
 /** The design system's chip line for [this] condition; people and domains get generated initials. */
 fun RuleChipText.chipLine(): RuleChipLine =
     RuleChipLine(
         label,
-        RuleChipValue(segments.map { RuleSegment(it.text, it.style.segmentStyle) }),
+        RuleChipValue(segments),
         avatar = (slot as? ChipSlot.Avatar)?.chipAvatar,
         icon = (slot as? ChipSlot.Icon)?.icon?.drawable,
     )
-
-private val SegmentStyle.segmentStyle: RuleSegmentStyle
-    get() =
-        when (this) {
-            SegmentStyle.Dim -> RuleSegmentStyle.Dim
-            SegmentStyle.Bright -> RuleSegmentStyle.Bright
-            SegmentStyle.Accent -> RuleSegmentStyle.Accent
-        }
 
 /** A whole domain is no single person, so it gets its letter on grey rather than a person's color. */
 private val ChipSlot.Avatar.chipAvatar: ChipAvatar

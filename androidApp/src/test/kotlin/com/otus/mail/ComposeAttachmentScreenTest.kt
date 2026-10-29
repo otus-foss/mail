@@ -39,7 +39,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.ByteArrayOutputStream
 import kotlin.time.Instant
 
 /**
@@ -178,13 +177,10 @@ class ComposeAttachmentScreenTest {
         width: Int,
         height: Int,
     ): ByteArray =
-        ByteArrayOutputStream()
-            .also { out ->
-                Bitmap
-                    .createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                    .apply { eraseColor(PHOTO_COLOR) }
-                    .compress(Bitmap.CompressFormat.PNG, 100, out)
-            }.toByteArray()
+        Bitmap
+            .createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            .apply { eraseColor(PHOTO_COLOR) }
+            .pngBytes()
 
     private companion object {
         const val PHOTO_WIDTH = 640

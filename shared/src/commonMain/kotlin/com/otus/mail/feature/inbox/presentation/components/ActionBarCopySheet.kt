@@ -57,7 +57,7 @@ internal fun ActionBarCopySheet(
                 SelectionRow(
                     place.title,
                     selected = place in ticked,
-                    onClick = { ticked = if (place in ticked) ticked - place else ticked + place },
+                    onClick = { ticked = ticked.toggled(place) },
                     subtitle = behavior.copySummary(from, place),
                 )
             }

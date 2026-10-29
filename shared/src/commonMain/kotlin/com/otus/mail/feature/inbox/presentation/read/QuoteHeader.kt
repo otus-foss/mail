@@ -70,7 +70,7 @@ private fun person(
             .replace(MAILTO, "")
             .trim(' ', ',', '"', '\'')
     val bare = name.takeIf { '@' in it }
-    val written =
+    val writtenDate =
         date
             ?.trim(' ', ',')
             ?.removeSuffix(" at")
@@ -78,8 +78,8 @@ private fun person(
     return QuoteHeader(
         name = name.ifBlank { address.orEmpty() },
         address = address ?: bare,
-        date = written?.let(::dateLabel),
-        fullDate = written?.let(::fullDateLabel),
+        date = writtenDate?.let(::dateLabel),
+        fullDate = writtenDate?.let(::fullDateLabel),
     )
 }
 

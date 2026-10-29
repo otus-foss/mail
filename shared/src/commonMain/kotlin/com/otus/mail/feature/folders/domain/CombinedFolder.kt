@@ -1,5 +1,11 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.ARCHIVE_ROLE
+import com.otus.mail.core.mail.DRAFTS_ROLE
+import com.otus.mail.core.mail.JUNK_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
+import com.otus.mail.core.mail.TRASH_ROLE
+
 /**
  * A system folder the sidebar shows once for every account, in sidebar order. [title] replaces
  * each server's own name, which differs between servers, such as Stalwart's "Junk Mail" for [Spam].

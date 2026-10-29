@@ -17,7 +17,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -30,10 +29,9 @@ class AvatarTest {
     @Test
     fun decodedPhotoReplacesInitialsAndIsDownsampled() {
         val bitmap = Bitmap.createBitmap(1024, 512, Bitmap.Config.ARGB_8888)
-        val output = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+        val png = bitmap.pngBytes()
         bitmap.recycle()
-        val image = decodeAvatarImage(output.toByteArray())
+        val image = decodeAvatarImage(png)
         assertNotNull(image)
         assertEquals(256, image?.width)
         assertEquals(128, image?.height)
@@ -47,10 +45,8 @@ class AvatarTest {
     fun pngEncodedFaviconIsDecoded() {
         val bitmap = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(android.graphics.Color.BLUE)
-        val output = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+        val png = bitmap.pngBytes()
         bitmap.recycle()
-        val png = output.toByteArray()
         val ico =
             ByteBuffer
                 .allocate(22 + png.size)

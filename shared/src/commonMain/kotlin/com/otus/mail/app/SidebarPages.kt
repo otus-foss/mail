@@ -4,11 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.CombinedFolder
-import com.otus.mail.feature.folders.domain.INBOX_ROLE
 import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.SENT_ROLE
 import com.otus.mail.feature.folders.domain.sharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.inbox.domain.INBOX_MAILBOX
@@ -61,14 +61,7 @@ internal fun ConversationsPage(
     navigation: MailNavigation,
 ) {
     val scope = MailScope.Roles(mapOf(INBOX_ROLE to INBOX_MAILBOX, SENT_ROLE to CombinedFolder.Sent.title))
-    FeedPage(
-        MailPage.Conversations,
-        scope,
-        "Convos",
-        states,
-        dateFormatter,
-        navigation,
-    )
+    FeedPage(MailPage.Conversations, scope, "Convos", states, dateFormatter, navigation)
 }
 
 /** One of the user's folders, holding each account's folder at its path. */

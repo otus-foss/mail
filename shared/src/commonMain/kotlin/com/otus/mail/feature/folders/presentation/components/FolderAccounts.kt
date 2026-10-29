@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.otus.accounts.presentation.toChipAvatar
+import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
 import com.otus.designsystem.shared.panels.components.ContextPanelScope
 import com.otus.designsystem.shared.people.components.ChipAvatar
@@ -71,7 +73,6 @@ fun AccountFolderGroup(
     Collapsible(expanded) { Column { content() } }
 }
 
-private fun AccountFolders.avatar(): ChipAvatar =
-    generatedAvatar(accountName, "").let { ChipAvatar(it.initials, it.colorIndex) }
+private fun AccountFolders.avatar(): ChipAvatar = ResolvedAvatar(generatedAvatar(accountName, "")).toChipAvatar()
 
 private const val ALL_ACCOUNTS = "All accounts"

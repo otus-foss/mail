@@ -25,10 +25,7 @@ fun relativeIsoRange(
     end: String,
     separator: String = " → ",
 ): String =
-    if (start == end &&
-        separator == "–"
-    ) {
-        relativeIsoDate(start)
-    } else {
-        relativeIsoDate(start) + separator + relativeIsoDate(end)
+    when {
+        start == end && separator == "–" -> relativeIsoDate(start)
+        else -> relativeIsoDate(start) + separator + relativeIsoDate(end)
     }

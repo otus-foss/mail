@@ -50,9 +50,9 @@ internal fun pickedSenders(
     listed: List<FilterPerson>,
 ): List<PickedPerson> =
     draft.from.map { key ->
-        val address = key.addresses.sorted().first()
-        val avatar = chipAvatar(listed.personOf(key)?.avatar, key.name, address)
-        PickedPerson(Recipient(key.label, avatar, key.addresses.sorted().joinToString()), address) {
+        val addresses = key.addresses.sorted()
+        val avatar = chipAvatar(listed.personOf(key)?.avatar, key.name, addresses.first())
+        PickedPerson(Recipient(key.label, avatar, addresses.joinToString()), addresses.first()) {
             it.copy(from = it.from - key)
         }
     }

@@ -8,7 +8,6 @@ import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.ContactEdit
-import com.otus.mail.feature.contacts.domain.ContactLabel
 import com.otus.mail.feature.contacts.domain.DraftValue
 import com.otus.mail.feature.contacts.domain.MergePlan
 import com.otus.mail.feature.contacts.domain.withAvatar
@@ -108,26 +107,8 @@ internal fun ContactsState.addAddress(
  */
 internal fun ContactsState.deleteLabel(label: String) {
     withLabel(label)
-        .filter { card -> card.books.all { book(it)?.canWrite == true } }
+        .filter { canWrite(it) }
         .forEach { card ->
-            val draft = ContactDraft.of(card)
-            val cleared = { values: List<DraftValue> ->
-                values.map {
-                    if (it.label.custom.equals(
-                            label,
-                            ignoreCase = true,
-                        )
-                    ) {
-                        it.copy(label = ContactLabel.Other)
-                    } else {
-                        it
-                    }
-                }
-            }
-            save(
-                draft.copy(emails = cleared(draft.emails), phones = cleared(draft.phones)),
-                card,
-                card.books.first(),
-            )
+            save(ContactDraft.of(card).withoutLabel(label), card, card.books.first())
         }
 }

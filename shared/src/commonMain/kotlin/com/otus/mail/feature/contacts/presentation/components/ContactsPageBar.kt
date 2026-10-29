@@ -1,21 +1,12 @@
 package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.presentation.ContactsNavigation
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.addToGroup
 import com.otus.mail.feature.contacts.presentation.book
-import com.otus.mail.feature.contacts.presentation.components.ContactsListBar
-import com.otus.mail.feature.contacts.presentation.components.ContactsSelectionBar
-import com.otus.mail.feature.contacts.presentation.components.ContactsView
-import com.otus.mail.feature.contacts.presentation.components.GroupChoices
-import com.otus.mail.feature.contacts.presentation.components.ListBarActions
-import com.otus.mail.feature.contacts.presentation.components.SelectionBarActions
-import com.otus.mail.feature.contacts.presentation.components.canWriteAll
-import com.otus.mail.feature.contacts.presentation.components.importAction
-import com.otus.mail.feature.contacts.presentation.components.mergePlan
+import com.otus.mail.feature.contacts.presentation.canWriteAll
 
 /** The Contacts bar: New contact and the list's actions, or what to do with the [chosen] people. */
 @Composable
@@ -59,11 +50,7 @@ private fun ContactsState.selectionBarActions(
     val pair = chosenCards.takeIf { it.size == 2 }?.map { it.key }?.toSet()
     return SelectionBarActions(
         onWrite = {
-            navigation.onWrite(
-                chosen.mapNotNull { p ->
-                    p.emails.firstOrNull()?.let { ContactAddress(p.name, it.value) }
-                },
-            )
+            navigation.onWrite(chosen.mapNotNull { it.preferredAddress })
             view.clearSelection()
         },
         onMerge =

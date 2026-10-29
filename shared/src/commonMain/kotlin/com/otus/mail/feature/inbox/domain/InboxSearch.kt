@@ -37,10 +37,6 @@ fun searchMessages(
         }.sortedWith(if (filters.sort == FilterSort.NewestFirst) newestFirst else newestFirst.reversed())
 }
 
-/** A conversation sorts by its newest email, so a reply moves it to the top. */
-private val MailMessage.lastReceived: ReceivedAt
-    get() = conversation?.last?.received ?: received
-
 private fun matchesFilters(
     message: MailMessage,
     search: InboxSearch,

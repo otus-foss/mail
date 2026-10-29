@@ -46,9 +46,9 @@ fun SidebarSettingsScreen(
     onBack: () -> Unit,
 ) {
     val layout = state.behavior.sidebar
-    val change: (
-        (SidebarLayout) -> SidebarLayout,
-    ) -> Unit = { update -> state.update { it.copy(sidebar = update(it.sidebar)) } }
+    val change: ((SidebarLayout) -> SidebarLayout) -> Unit = { update ->
+        state.update { it.copy(sidebar = update(it.sidebar)) }
+    }
     var choosing by rememberSaveable { mutableStateOf<LayoutChoice?>(null) }
     val pinned = layout.pinned.mapNotNull { pin -> pins.firstOrNull { it.pin == pin } }
     Subpage("Sidebar", onBack) {
@@ -121,12 +121,7 @@ private fun LayoutChoiceSheet(
         LayoutChoice.Mailboxes -> {
             ChoiceSheet(
                 title = "Show pinned as",
-                choices =
-                    ChoiceOptions(
-                        MailboxStyle.entries,
-                        selected = layout.mailboxes,
-                        default = MailboxStyle.Grid,
-                    ),
+                choices = ChoiceOptions(MailboxStyle.entries, selected = layout.mailboxes, default = MailboxStyle.Grid),
                 row = { ChoiceRow(it.label) },
                 onSelect = { style -> change { it.copy(mailboxes = style) } },
                 onDismiss = onDismiss,

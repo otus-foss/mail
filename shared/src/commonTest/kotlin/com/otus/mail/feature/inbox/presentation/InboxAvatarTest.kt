@@ -231,12 +231,7 @@ class InboxAvatarTest {
             val image = AvatarImage(byteArrayOf(2))
             val avatars =
                 AvatarService(
-                    photoSource { request, _ ->
-                        image.takeIf {
-                            request.email ==
-                                "me@work.example"
-                        }
-                    },
+                    photoSource { request, _ -> image.takeIf { request.email == "me@work.example" } },
                 )
             val location = MailLocation("Inbox", "Work", accountAddress = "me@work.example")
             val source =

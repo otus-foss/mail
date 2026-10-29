@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -107,8 +106,5 @@ class PanelFrameGeometryTest {
         }
     }
 
-    private fun snapshot(): Bitmap {
-        val view = compose.activity.window.decorView
-        return Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
-    }
+    private fun snapshot(): Bitmap = compose.drawnWindow()
 }

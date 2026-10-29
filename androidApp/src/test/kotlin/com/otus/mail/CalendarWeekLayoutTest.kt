@@ -1,7 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
@@ -34,7 +32,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowDialog
-import java.io.File
 import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
@@ -142,11 +139,8 @@ class CalendarWeekLayoutTest {
         val bitmap =
             compose.runOnIdle {
                 val dialog = ShadowDialog.getShownDialogs().last { it.isShowing }
-                val view = requireNotNull(dialog.window).decorView
-                Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
+                requireNotNull(dialog.window).decorView.drawnBitmap()
             }
-        val file = File("build/reports/pickers/calendar-continuous-week.png")
-        requireNotNull(file.parentFile).mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        bitmap.savePng("build/reports/pickers/calendar-continuous-week.png")
     }
 }

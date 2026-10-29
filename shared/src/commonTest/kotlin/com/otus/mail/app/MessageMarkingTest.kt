@@ -1,8 +1,5 @@
 package com.otus.mail.app
 
-import com.otus.jmap.JmapClient
-import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -14,15 +11,12 @@ import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.stalwartLike
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -50,13 +44,12 @@ class MessageMarkingTest {
     /** Marking for a feed holding [messages], and the feed. Each folder refresh counts a load. */
     private fun TestScope.marking(vararg messages: MailMessage): Pair<MessageMarking, InboxFeedState> {
         serverMessages.value = messages.toList()
-        val store = InMemoryLoginStore().apply { save(JmapLogin("ada", URL, "ada@example.org", "Ada"), "secret") }
         val engine =
             stalwartLike { body ->
                 sent.update { it + body }
                 setReply(body)
             }
-        val services = MailServices(logins = store, createClient = { JmapClient(engine) })
+        val services = adaServices(engine)
         val folders =
             testFolders(services) {
                 folderLoads++
@@ -133,18 +126,7 @@ class MessageMarkingTest {
             assertEquals(2, messageLoads)
         }
 
-    /** Lets the JMAP calls, which read logins off the test thread, finish until [done], or for a short while. */
-    private suspend fun TestScope.settle(done: () -> Boolean) {
-        repeat(SETTLE_STEPS) {
-            runCurrent()
-            if (done()) return
-            withContext(Dispatchers.Default) { delay(10) }
-        }
-    }
-
     private companion object {
-        const val URL = "https://mail.example.org/.well-known/jmap"
-        const val SETTLE_STEPS = 50
         val UPDATE = Regex("\"(m\\d)\":\\{\"keywords/")
     }
 }

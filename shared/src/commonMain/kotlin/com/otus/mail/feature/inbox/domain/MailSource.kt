@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.INBOX_ROLE
+
 enum class InboxFailure { SignInRejected, NotPermitted, CredentialsUnavailable, NoMail, Unreachable, ServerProblem }
 
 data class UnavailableAccount(
@@ -56,7 +58,7 @@ sealed interface MailScope {
 
     companion object {
         /** Every account's inbox. */
-        val Inbox: MailScope = Role("inbox", "Inbox")
+        val Inbox: MailScope = Role(INBOX_ROLE, "Inbox")
     }
 }
 
