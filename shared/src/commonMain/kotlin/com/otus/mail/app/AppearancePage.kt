@@ -47,7 +47,12 @@ internal fun MailListSettingsPage(
     dateFormatter: DateFormatter,
     back: () -> Unit,
 ) {
-    MailListSettingsScreen(states.behavior, preview = { MailListPreview(it, dateFormatter) }, onBack = back)
+    MailListSettingsScreen(
+        states.behavior,
+        dateFormatter,
+        preview = { MailListPreview(it, dateFormatter) },
+        onBack = back,
+    )
 }
 
 /** Mail behavior, whose Action bar row opens its own page. */

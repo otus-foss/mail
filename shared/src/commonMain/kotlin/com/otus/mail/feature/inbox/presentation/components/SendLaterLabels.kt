@@ -29,6 +29,10 @@ private val LocalDateTime.dayAndMonth: String
 internal val LocalDate.dayAndMonth: String
     get() = "$day ${month.name.abbreviated()}"
 
+/** A date as the short month and the day, such as "Oct 11", as the mail list's month names show it. */
+internal val LocalDate.monthAndDay: String
+    get() = "${month.name.abbreviated()} $day"
+
 private val LocalDateTime.weekday: String
     get() = date.dayOfWeek.name.abbreviated()
 
