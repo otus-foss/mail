@@ -99,6 +99,52 @@ failure-tolerant CI to make a change pass. Fix violations. A rule change needs a
 in `docs/decisions/` and a corresponding check/test update; do not silently weaken policy. Tool
 versions must be pinned.
 
+## Readable code
+
+Write for the person who reads the code next. A file passing ktlint does not make it readable:
+ktlint adds braces and line breaks, but it never takes them out again once the code gets shorter.
+After formatting, read the diff and fix shapes like these.
+
+- Give every `when` entry one line. ktlint_official braces every entry once one entry needs
+  several lines, and it leaves the braces after that entry shrinks. Remove leftover braces, or move
+  a long entry's body into a named function so all entries fit on one line.
+
+  ```kotlin
+  // Avoid
+  when {
+      created < 0 -> {
+          null
+      }
+
+      kind == MISS_RECORD && bytes.isEmpty() -> {
+          StoredAvatar(null, created)
+      }
+  }
+
+  // Prefer
+  when {
+      created < 0 -> null
+      kind == MISS_RECORD && bytes.isEmpty() -> StoredAvatar(null, created)
+  }
+  ```
+
+- Keep nesting to two or three levels. Return early with `?: return` instead of wrapping a body in
+  `if (x != null) { ... }` or `?.let { ... }`, and give a lambda nested several levels deep its
+  own named function or composable, such as `decodedRecord(...)` or `StarButton(star)`.
+- Join a call that fits in 120 columns back onto one line. When it does not fit, name a part of it
+  first, such as `val fitted = ...` or `val header = ...`, rather than splitting
+  `foo(\n    x,\n)?.let { ... }` over several lines.
+- Write `Modifier.then(if (x) Modifier else Modifier.a().b())` as a named private extension, such
+  as `Modifier.updateButton(...)` or `Modifier.progressRing(...)`.
+- Name arguments that are bare literals: `ChipFrame(selected = null, enabled = true)`, not
+  `ChipFrame(null, true)`.
+- Never hide a side effect in `(...).also { if (it) save() }` or `x?.let { destroy(it) }`. Write a
+  plain `if`.
+- Rewrap KDoc so each paragraph reads as prose. Do not leave a sentence broken after a long link.
+- Name values by what they hold. Do not shadow a parameter or a standard function such as `run`.
+
+Do not churn code to meet these rules. Fix the shapes in code you touch.
+
 ## Commit messages
 
 Use this format for authored commits and squash commit messages:
