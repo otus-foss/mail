@@ -33,11 +33,8 @@ class InMemoryMailCache : MailCache {
         kind: CacheKind,
     ): Map<String, String> =
         lock.withLock {
-            logins[loginId]
-                ?.objects
-                ?.get(kind)
-                .orEmpty()
-                .mapValues { it.value.json }
+            val objects = logins[loginId]?.objects?.get(kind)
+            objects.orEmpty().mapValues { it.value.json }
         }
 
     override suspend fun value(
