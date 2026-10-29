@@ -55,7 +55,10 @@ internal fun ComposeBar(
 /** [lead], "Send to" or "Sends to", above "Grace" with her avatar; the first two avatars and a count for several. */
 private fun List<MailSender>.barContext(lead: String): BarContext? {
     val first = firstOrNull() ?: return null
-    if (size > 1) return groupContext(this, lead)
     val name = first.shownName
-    return BarContext(name.substringBefore(' '), BarToken.Person(first.chipAvatar), "to $name", lead = lead)
+    return if (size == 1) {
+        BarContext(name.substringBefore(' '), BarToken.Person(first.chipAvatar), "to $name", lead = lead)
+    } else {
+        groupContext(this, lead)
+    }
 }

@@ -68,8 +68,8 @@ class JmapNewsletters(
         accountId: String,
         emailIds: List<String>,
     ): Boolean {
-        if (emailIds.isEmpty()) return true
         return cache.withAccount(accountId) { accountCache ->
+            if (emailIds.isEmpty()) return@withAccount true
             val patches =
                 mailCallOr(null) { mailAccount(connections, logins, accountId)?.archivePatches(emailIds) }
                     ?: return@withAccount false

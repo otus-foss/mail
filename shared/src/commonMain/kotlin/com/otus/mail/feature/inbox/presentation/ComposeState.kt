@@ -173,7 +173,8 @@ class ComposeState(
      * in that account's Drafts before the copy in the old one is deleted.
      */
     fun chooseFrom(identity: SendIdentity) {
-        edit { it.copy(from = identity.sender, accountId = identity.accountId, emailId = storedId(identity.accountId)) }
+        val kept = stored?.takeIf { it.accountId == identity.accountId }?.emailId
+        edit { it.copy(from = identity.sender, accountId = identity.accountId, emailId = kept) }
     }
 
     /** Adds or removes the signature in this draft only. */
@@ -214,15 +215,13 @@ class ComposeState(
         return { at ->
             saving
                 .withLock {
-                    sender.send(outgoing.copy(emailId = storedId(outgoing.accountId)), answered, at).onSuccess {
+                    val copy = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId
+                    sender.send(outgoing.copy(emailId = copy), answered, at).onSuccess {
                         stored?.takeIf { it.accountId != outgoing.accountId }?.discardCopy(drafts)
                     }
                 }.onSuccess { outgoing.from?.let(onSent) }
         }
     }
-
-    /** The id of the stored copy when it is in [accountId], so the next save or send replaces it. */
-    private fun storedId(accountId: String): String? = stored?.takeIf { it.accountId == accountId }?.emailId
 
     private fun scheduleSave() {
         pending?.cancel()
@@ -237,7 +236,8 @@ class ComposeState(
 
     private suspend fun save() =
         saving.withLock {
-            val current = draft.copy(emailId = storedId(draft.accountId), signature = signature)
+            val copy = stored?.takeIf { it.accountId == draft.accountId }?.emailId
+            val current = draft.copy(emailId = copy, signature = signature)
             val unchanged =
                 if (stored == null) {
                     !edited

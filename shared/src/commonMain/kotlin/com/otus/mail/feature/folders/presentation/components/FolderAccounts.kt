@@ -73,7 +73,6 @@ fun AccountFolderGroup(
     Collapsible(expanded) { Column { content() } }
 }
 
-private fun AccountFolders.avatar(): ChipAvatar =
-    ResolvedAvatar(generatedAvatar(accountName, "")).toChipAvatar()
+private fun AccountFolders.avatar(): ChipAvatar = ResolvedAvatar(generatedAvatar(accountName, "")).toChipAvatar()
 
 private const val ALL_ACCOUNTS = "All accounts"

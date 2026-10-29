@@ -113,18 +113,27 @@ private fun DateFilter.saved(): String =
 
 private fun dateOf(line: String?): DateFilter =
     when (line) {
-        "today" -> DateFilter.Today
-        "last7" -> DateFilter.Last7
-        "last30" -> DateFilter.Last30
-        "year" -> DateFilter.ThisYear
-        else -> rangeOf(line) ?: DateFilter.Any
-    }
+        "today" -> {
+            DateFilter.Today
+        }
 
-private fun rangeOf(line: String?): DateFilter.Range? =
-    line
-        ?.split(SEPARATOR)
-        ?.takeIf { it.size == 2 }
-        ?.let { (from, to) -> DateFilter.Range(LocalDate.parse(from), LocalDate.parse(to)) }
+        "last7" -> {
+            DateFilter.Last7
+        }
+
+        "last30" -> {
+            DateFilter.Last30
+        }
+
+        "year" -> {
+            DateFilter.ThisYear
+        }
+
+        else -> {
+            val ends = line?.split(SEPARATOR)?.takeIf { it.size == 2 }
+            ends?.let { (from, to) -> DateFilter.Range(LocalDate.parse(from), LocalDate.parse(to)) } ?: DateFilter.Any
+        }
+    }
 
 // Server ids and addresses never contain a NUL.
 private const val SEPARATOR = "\u0000"

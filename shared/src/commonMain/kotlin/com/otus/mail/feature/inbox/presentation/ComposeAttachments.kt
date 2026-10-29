@@ -81,7 +81,9 @@ class ComposeAttachments(
 
     fun remove(id: String) {
         attachments().firstOrNull { it.id == id }?.takeIf { it.inline }?.let { body.images.remove(it.source) }
-        forget(id)
+        jobs.remove(id)?.cancel()
+        picked -= id
+        failures -= id
         change { list -> list.filterNot { it.id == id } }
     }
 
@@ -91,7 +93,7 @@ class ComposeAttachments(
         inline: Boolean,
     ) {
         val attachment = attachments().firstOrNull { it.id == id } ?: return
-        update(id) { it.copy(inline = inline) }
+        change { list -> list.map { if (it.id == id) it.copy(inline = inline) else it } }
         if (inline) body.images.insert(attachment.source) else body.images.remove(attachment.source)
     }
 
@@ -103,9 +105,11 @@ class ComposeAttachments(
             val file = cleaning.cleanedAsChosen(listOf(chosen)).single()
             val old = attachments().firstOrNull { it.id == id } ?: return@launch
             val new = newAttachment(file).copy(inline = true)
-            forget(id)
+            jobs.remove(id)?.cancel()
+            picked -= id
+            failures -= id
             picked[new.id] = file
-            update(id) { new }
+            change { list -> list.map { if (it.id == id) new else it } }
             body.images.replace(old.source, new.source)
             retry(new.id)
         }
@@ -142,18 +146,6 @@ class ComposeAttachments(
             }
         }
 
-    /** Stops [id]'s upload and drops its picked file and failure. */
-    private fun forget(id: String) {
-        jobs.remove(id)?.cancel()
-        picked -= id
-        failures -= id
-    }
-
-    private fun update(
-        id: String,
-        transform: (DraftAttachment) -> DraftAttachment,
-    ) = change { list -> list.map { if (it.id == id) transform(it) else it } }
-
     private fun add(file: PickedFile) {
         val attachment = newAttachment(file)
         val shown = attachment.copy(inline = attachment.image)
@@ -186,7 +178,9 @@ class ComposeAttachments(
                 // A draft moved on during the upload needs the file in its new account instead.
                 if (accountId() != account) return@launch
                 result.fold(
-                    onSuccess = { blob -> update(id) { it.copy(blob = blob) } },
+                    onSuccess = { blob ->
+                        change { list -> list.map { if (it.id == id) it.copy(blob = blob) else it } }
+                    },
                     onFailure = { failures += id to ((it as? UploadException)?.failure ?: UploadFailure.Failed) },
                 )
             }
