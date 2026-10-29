@@ -19,23 +19,21 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
             NSUserDomainMask,
             true,
         ).first() as String
-    val services =
-        MailServices(
-            // Names kept from the first release so saved accounts keep working.
-            IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
-            instantPush = push,
-            avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
-            stores =
-                MailDeviceStores(
-                    IosReadLaterStore(),
-                    IosFolderColorStore(),
-                    IosAddressPinStore(),
-                    IosFolderNudgeStore(),
-                    SqlMailCache(cacheDriver(cacheDirectory)),
-                    contacts = IosContactStore(),
-                ),
-        )
-    return services
+    return MailServices(
+        // Names kept from the first release so saved accounts keep working.
+        IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
+        instantPush = push,
+        avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
+        stores =
+            MailDeviceStores(
+                IosReadLaterStore(),
+                IosFolderColorStore(),
+                IosAddressPinStore(),
+                IosFolderNudgeStore(),
+                SqlMailCache(cacheDriver(cacheDirectory)),
+                contacts = IosContactStore(),
+            ),
+    )
 }
 
 /** In the Caches directory, which iOS leaves out of backups and may empty when space runs low. */

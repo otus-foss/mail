@@ -21,6 +21,7 @@ import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.ThreadType
+import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NewMailChecker
@@ -68,13 +69,9 @@ class JmapNewMailChecker(
         login: JmapLogin,
         since: String?,
     ): LoginCheck =
-        try {
+        mailCallOr(LoginCheck(login.id, state = null, mail = emptyList())) {
             val account = accounts.open(login)
             since?.let { changesSince(account, it) } ?: startFromNow(account)
-        } catch (_: JmapException) {
-            LoginCheck(login.id, state = null, mail = emptyList())
-        } catch (_: LoginStoreException) {
-            LoginCheck(login.id, state = null, mail = emptyList())
         }
 
     private suspend fun startFromNow(account: MailAccount): LoginCheck {

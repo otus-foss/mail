@@ -111,14 +111,8 @@ internal class MessageFiling(
     ): Job {
         val leaving = leaving(message, target.shortcut)
         val change = feed.remove(message.id)
-        return scope.launch {
-            if (services.mover.move(message, target.folderId, leaving)) {
-                change.confirm()
-                folders.refresh()
-            } else {
-                change.rollBack()
-                feed.report("Couldn't move the message to ${target.label}. Try again.")
-            }
+        return scope.saveChange(change, feed, folders, "Couldn't move the message to ${target.label}. Try again.") {
+            services.mover.move(message, target.folderId, leaving)
         }
     }
 
@@ -186,14 +180,8 @@ internal class MessageFiling(
             } else {
                 feed.change(message.id, { it.inFolder(folder.id, saved) }, undo = { it.inFolder(folder.id, !saved) })
             }
-        scope.launch {
-            if (services.mover.setInFolder(message, folder.id, saved)) {
-                change.confirm()
-                folders.refresh()
-            } else {
-                change.rollBack()
-                feed.report("Couldn't change ${folder.name}. Try again.")
-            }
+        scope.saveChange(change, feed, folders, "Couldn't change ${folder.name}. Try again.") {
+            services.mover.setInFolder(message, folder.id, saved)
         }
     }
 

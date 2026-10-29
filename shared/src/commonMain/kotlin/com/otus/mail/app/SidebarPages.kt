@@ -61,14 +61,7 @@ internal fun ConversationsPage(
     navigation: MailNavigation,
 ) {
     val scope = MailScope.Roles(mapOf(INBOX_ROLE to INBOX_MAILBOX, SENT_ROLE to CombinedFolder.Sent.title))
-    FeedPage(
-        MailPage.Conversations,
-        scope,
-        "Convos",
-        states,
-        dateFormatter,
-        navigation,
-    )
+    FeedPage(MailPage.Conversations, scope, "Convos", states, dateFormatter, navigation)
 }
 
 /** One of the user's folders, holding each account's folder at its path. */

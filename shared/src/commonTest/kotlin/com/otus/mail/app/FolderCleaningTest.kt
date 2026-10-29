@@ -1,8 +1,5 @@
 package com.otus.mail.app
 
-import com.otus.jmap.JmapClient
-import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.MailFolder
@@ -19,15 +16,12 @@ import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.feature.inbox.presentation.FolderCleanup
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.stalwartLike
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -75,7 +69,6 @@ class FolderCleaningTest {
         scope: MailScope,
         vararg messages: MailMessage,
     ): Pair<FolderCleanup, InboxFeedState> {
-        val store = InMemoryLoginStore().apply { save(JmapLogin("ada", URL, "ada@example.org", "Ada"), "secret") }
         val engine =
             stalwartLike { body ->
                 sent.update { it + body }
@@ -96,7 +89,7 @@ class FolderCleaningTest {
                 removed.update { it + destroyed }
                 response
             }
-        val services = MailServices(logins = store, createClient = { JmapClient(engine) })
+        val services = adaServices(engine)
         val folders = testFolders(services) { listOf(account) }
         folders.refresh()
         val source =
@@ -231,18 +224,7 @@ class FolderCleaningTest {
     ) = """{"methodResponses": [["Email/query", {"ids": [$ids]}, "c0"],
         ["Email/get", {"state": "e", "list": [$list]}, "c1"]]}"""
 
-    /** Lets the JMAP calls, which read logins off the test thread, finish until [done], or for a short while. */
-    private suspend fun TestScope.settle(done: () -> Boolean) {
-        repeat(SETTLE_STEPS) {
-            runCurrent()
-            if (done()) return
-            withContext(Dispatchers.Default) { delay(10) }
-        }
-    }
-
     private companion object {
-        const val URL = "https://mail.example.org/.well-known/jmap"
-        const val SETTLE_STEPS = 50
         const val DESTROYED_M1 =
             """{"methodResponses": [["Email/set", {"newState": "e2", "destroyed": ["m1"]}, "c0"]]}"""
     }
