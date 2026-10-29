@@ -130,32 +130,49 @@ internal fun SidebarMailboxList(
         inset = style == MailboxStyle.Grid,
     )
     when (style) {
-        MailboxStyle.Grid -> {
-            SidebarMailboxGrid(others) { mailbox ->
-                mailbox.Tinted(colorOf) {
-                    SidebarMailboxTile(
-                        mailbox.title,
-                        mailbox.icon,
-                        selected = current == mailbox.page,
-                        onClick = { onSelect(mailbox.page) },
-                        count = counter.badge(mailbox.folders),
-                    )
-                }
-            }
-        }
+        MailboxStyle.Grid -> MailboxTiles(others, current, counter, colorOf, onSelect)
+        MailboxStyle.Rows -> MailboxRows(others, current, counter, colorOf, onSelect)
+    }
+}
 
-        MailboxStyle.Rows -> {
-            others.forEach { mailbox ->
-                mailbox.Tinted(colorOf) {
-                    SidebarEntry(
-                        mailbox.title,
-                        mailbox.icon,
-                        selected = current == mailbox.page,
-                        onClick = { onSelect(mailbox.page) },
-                        trailing = { counter.of(mailbox.folders)?.let { SidebarCount(it) } },
-                    )
-                }
-            }
+@Composable
+private fun MailboxTiles(
+    mailboxes: List<SidebarMailbox>,
+    current: MailPage,
+    counter: SidebarCounter,
+    colorOf: (SharedFolder) -> String?,
+    onSelect: (MailPage) -> Unit,
+) {
+    SidebarMailboxGrid(mailboxes) { mailbox ->
+        mailbox.Tinted(colorOf) {
+            SidebarMailboxTile(
+                mailbox.title,
+                mailbox.icon,
+                selected = current == mailbox.page,
+                onClick = { onSelect(mailbox.page) },
+                count = counter.badge(mailbox.folders),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MailboxRows(
+    mailboxes: List<SidebarMailbox>,
+    current: MailPage,
+    counter: SidebarCounter,
+    colorOf: (SharedFolder) -> String?,
+    onSelect: (MailPage) -> Unit,
+) {
+    mailboxes.forEach { mailbox ->
+        mailbox.Tinted(colorOf) {
+            SidebarEntry(
+                mailbox.title,
+                mailbox.icon,
+                selected = current == mailbox.page,
+                onClick = { onSelect(mailbox.page) },
+                trailing = { counter.of(mailbox.folders)?.let { SidebarCount(it) } },
+            )
         }
     }
 }
