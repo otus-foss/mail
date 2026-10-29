@@ -86,10 +86,10 @@ private fun MailMessage.rowModel(
 ): ConversationRowModel {
     val layout = look.layout
     val people = senderLine(look.own)
-    val subject = threadSubject(subject).ifBlank { NO_SUBJECT }
+    val shownSubject = threadSubject(subject).ifBlank { NO_SUBJECT }
     val count = conversation?.messageCount?.takeIf { it >= 2 }
     val shownFolders = if (layout.folderIcons) labels.filterNot { it.readLater } else emptyList()
-    val subjectLine = RowLine(listOf(RowTextPart(subject)))
+    val subjectLine = RowLine(listOf(RowTextPart(shownSubject)))
     val peopleLine = people.toLine()
     val previewText = preview.ifBlank { body }
     val rowMarks = marks(people)
@@ -115,7 +115,7 @@ private fun MailMessage.rowModel(
             moreFolders = (shownFolders.size - MAX_FOLDERS).coerceAtLeast(0),
             preview = previewText,
             previewLines = if (layout.showSender) layout.preview.lines else 0,
-            description = description(subject, count, people, date, rowMarks, shownFolders, receivedOn),
+            description = description(shownSubject, count, people, date, rowMarks, shownFolders, receivedOn),
             stateLabel = if (attributes.unread) "Unread" else "Read",
         )
     return ConversationRowModel(
@@ -140,31 +140,26 @@ private fun MailMessage.marks(people: SenderLine): List<RowMark> =
 
 private fun SenderLine.toLine(): RowLine =
     when (this) {
-        is SenderLine.From -> {
-            RowLine(listOf(RowTextPart(name)) + others.morePart())
-        }
+        is SenderLine.From -> RowLine(listOf(RowTextPart(name)) + others.morePart())
+        is SenderLine.YouTo -> repliedLine
+    }
 
-        is SenderLine.YouTo -> {
-            RowLine(
-                listOf(RowTextPart("You"), RowTextPart(" to", quiet = true), RowTextPart(" $name")) + others.morePart(),
-                icon = Res.drawable.symbol_reply,
-            )
-        }
+private val SenderLine.YouTo.repliedLine: RowLine
+    get() {
+        val person = listOf(RowTextPart("You"), RowTextPart(" to", quiet = true), RowTextPart(" $name"))
+        return RowLine(person + others.morePart(), icon = Res.drawable.symbol_reply)
     }
 
 private fun Int.morePart(): List<RowTextPart> =
     if (this > 0) listOf(RowTextPart(" +$this", quiet = true)) else emptyList()
 
-private fun RowFolder.icon(): RowFolderIcon =
-    when (kind) {
-        FolderKind.Inbox -> {
-            RowFolderIcon(FolderGlyphKind.Inbox, null)
-        }
-
-        FolderKind.Folder -> {
-            RowFolderIcon(FolderGlyphKind.Folder, FolderColor.named(color).takeIf { it != FolderColor.Default })
-        }
+private fun RowFolder.icon(): RowFolderIcon {
+    val tint = if (kind == FolderKind.Inbox) null else FolderColor.named(color).takeIf { it != FolderColor.Default }
+    return when (kind) {
+        FolderKind.Inbox -> RowFolderIcon(FolderGlyphKind.Inbox, color = null)
+        FolderKind.Folder -> RowFolderIcon(FolderGlyphKind.Folder, tint)
     }
+}
 
 /** What TalkBack reads for the row, built from what it shows. */
 private fun MailMessage.description(
@@ -183,7 +178,7 @@ private fun MailMessage.description(
         add(date)
         addAll(marks.map { it.spoken })
         if (folders.isNotEmpty()) add(folders.joinToString(prefix = "Folders: ") { it.name })
-        receivedOn?.let { add("Received on $it") }
+        if (receivedOn != null) add("Received on $receivedOn")
     }.joinToString(". ", postfix = ".")
 
 private val RowMark.spoken: String

@@ -35,7 +35,7 @@ internal class FeedAvatars(
         shown: List<MailMessage>,
         options: AvatarOptions,
     ): List<MailMessage> {
-        val service = service ?: return incoming
+        val avatars = service ?: return incoming
         val kept = shown.takeIf { options == shownOptions }.orEmpty()
         val previous = kept.associate { it.sender.key() to it.sender.avatar }
         val accounts = kept.associate { it.location.accountId to it.location.accountAvatar }
@@ -44,7 +44,7 @@ internal class FeedAvatars(
             val sender = message.sender
             val key = sender.key()
             if (key !in restored) {
-                val cached = service.cached(AvatarRequest(sender.accountKey, sender.address), options)
+                val cached = avatars.cached(AvatarRequest(sender.accountKey, sender.address), options)
                 restored[key] = keepIdenticalImage(cached, previous[key])
             }
             val avatar = restored[key]?.copy(fallback = generatedAvatar(sender.name, sender.address))
@@ -63,10 +63,10 @@ internal class FeedAvatars(
         isCurrent: () -> Boolean,
         edit: ((MailMessage) -> MailMessage) -> Unit,
     ) {
-        val service = service ?: return
+        val avatars = service ?: return
         coroutineScope {
-            launch { resolveAccounts(service, messages, options, isCurrent, edit) }
-            resolveSenders(service, messages, options, isCurrent, edit)
+            launch { resolveAccounts(avatars, messages, options, isCurrent, edit) }
+            resolveSenders(avatars, messages, options, isCurrent, edit)
         }
     }
 
@@ -90,13 +90,7 @@ internal class FeedAvatars(
                     val resolved = service.resolve(request, options)
                     if (!isCurrent()) return@launch
                     val avatar = keepIdenticalImage(resolved, account.accountAvatar) ?: resolved
-                    edit { message ->
-                        if (message.location.accountId == account.accountId) {
-                            message.copy(location = message.location.copy(accountAvatar = avatar))
-                        } else {
-                            message
-                        }
-                    }
+                    edit { message -> message.withAccountAvatar(account.accountId, avatar) }
                 }
             }
         }
@@ -113,24 +107,11 @@ internal class FeedAvatars(
         coroutineScope {
             senders.forEach { sender ->
                 launch {
-                    val resolved =
-                        service.resolve(
-                            AvatarRequest(sender.accountKey, sender.address, sender.name),
-                            options,
-                        )
+                    val request = AvatarRequest(sender.accountKey, sender.address, sender.name)
+                    val resolved = service.resolve(request, options)
                     if (!isCurrent()) return@launch
                     val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved
-                    edit { message ->
-                        if (message.sender.key() == sender.key()) {
-                            val updated =
-                                avatar.copy(
-                                    fallback = generatedAvatar(message.sender.name, message.sender.address),
-                                )
-                            message.copy(sender = message.sender.copy(avatar = updated))
-                        } else {
-                            message
-                        }
-                    }
+                    edit { message -> message.withSenderAvatar(sender, avatar) }
                 }
             }
         }
@@ -146,4 +127,18 @@ private fun keepIdenticalImage(
 ): ResolvedAvatar? {
     val image = previous?.image ?: return current
     return if (current?.image?.bytes?.contentEquals(image.bytes) == true) current.copy(image = image) else current
+}
+
+private fun MailMessage.withAccountAvatar(
+    accountId: String,
+    avatar: ResolvedAvatar,
+): MailMessage = if (location.accountId == accountId) copy(location = location.copy(accountAvatar = avatar)) else this
+
+private fun MailMessage.withSenderAvatar(
+    person: MailSender,
+    avatar: ResolvedAvatar,
+): MailMessage {
+    if (sender.key() != person.key()) return this
+    val updated = avatar.copy(fallback = generatedAvatar(sender.name, sender.address))
+    return copy(sender = sender.copy(avatar = updated))
 }
