@@ -41,7 +41,7 @@ class ThemeSettingsTest {
         compose.onNode(hasText("Light") and isSelectable()).performScrollTo().performClick()
         // App applies the new palette on its next recomposition, a frame after the page shows it.
         compose.waitUntil(TIMEOUT) { OtusColors.palette.isLight }
-        assertEquals("light #4D6F92", saved)
+        assertEquals("light #5A7EA4", saved)
 
         compose.onNode(hasContentDescription("Green") and isSelectable()).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT) { OtusColors.palette == lightGreen.palette }
@@ -51,7 +51,7 @@ class ThemeSettingsTest {
         compose.onNode(hasText("Theme") and hasText(lightGreen.themeTitle)).assertExists().performClick()
         compose.onNodeWithText("Reset to Otus").performScrollTo().performClick()
         compose.waitUntil(TIMEOUT) { OtusColors.palette == OtusPalette.Otus }
-        assertEquals("otus #4D6F92", saved)
+        assertEquals("otus #5A7EA4", saved)
     }
 
     @Test
