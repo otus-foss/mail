@@ -63,6 +63,34 @@ class ScheduledCancellationTest {
         }
 
     @Test
+    fun sendingNowCancelsTheHoldThenSubmitsTheSameCopyAgain() =
+        runTest {
+            val calls = mutableListOf<String>()
+            assertTrue(sender(calls).sendNow(message.copy(identityId = "i1")).isSuccess)
+            assertEquals(2, calls.size)
+            assertTrue("canceled" in calls.first() && "create" !in calls.first(), "The hold is canceled first")
+            val create =
+                Json
+                    .parseToJsonElement(calls.last())
+                    .jsonObject
+                    .getValue("methodCalls")
+                    .jsonArray
+                    .single()
+                    .jsonArray[1]
+                    .jsonObject
+                    .getValue("create")
+            assertEquals(Json.parseToJsonElement("""{"send": {"emailId": "e", "identityId": "i1"}}"""), create)
+        }
+
+    @Test
+    fun aHoldTheServerKeepsIsNotSentAgain() =
+        runTest {
+            val calls = mutableListOf<String>()
+            assertTrue(sender(calls, canceled = false).sendNow(message).isSuccess, "It still goes at its time")
+            assertEquals(1, calls.size)
+        }
+
+    @Test
     fun aMissingCancellationAcknowledgementDoesNotRestoreTheDraft() =
         runTest {
             val calls = mutableListOf<String>()
@@ -86,6 +114,7 @@ class ScheduledCancellationTest {
                 val id = if (cancel) "s" else "e"
                 val result =
                     when {
+                        """"create"""" in body -> """, "created": {"send": {"id": "s2"}}"""
                         cancel && !acknowledged -> ""
                         if (cancel) canceled else restored -> """, "updated": {"$id": null}"""
                         else -> """, "notUpdated": {"$id": {"type": "forbidden"}}"""

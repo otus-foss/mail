@@ -74,6 +74,8 @@ class ComposeScreenTest {
             override suspend fun maxDelaySeconds(accountId: String) = THIRTY_DAYS
 
             override suspend fun cancel(message: SentMessage) = Result.success(Unit)
+
+            override suspend fun sendNow(message: SentMessage) = Result.success(Unit)
         }
     private var discarded = false
 

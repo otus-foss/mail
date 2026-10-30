@@ -36,14 +36,16 @@ class SendException(
 ) : Exception("The message could not be sent: $failure", cause)
 
 /**
- * A message the server accepted: its stored copy [emailId] and its submission [submissionId]. A
- * canceled send moves the copy back to [draftsId], the account's Drafts folder when it has one.
+ * A message the server accepted: its stored copy [emailId] and its submission [submissionId], sent
+ * as [identityId]. A canceled send moves the copy back to [draftsId], the account's Drafts folder
+ * when it has one.
  */
 data class SentMessage(
     val accountId: String,
     val emailId: String,
     val submissionId: String,
     val draftsId: String? = null,
+    val identityId: String = "",
 )
 
 /** When the server sends a message, and where its copy waits until then. */
@@ -83,6 +85,12 @@ interface ScheduledSends {
 
     /** Cancels a held or scheduled [message] and makes its copy a draft in Drafts again. */
     suspend fun cancel(message: SentMessage): Result<Unit>
+
+    /**
+     * Sends a held or scheduled [message] at once. It fails only when the message will not go:
+     * the hold was canceled but the new submission refused, which makes the copy a draft again.
+     */
+    suspend fun sendNow(message: SentMessage): Result<Unit>
 }
 
 /** Sending was canceled, but the saved email could not be restored as an editable draft. */
