@@ -69,7 +69,8 @@ Meta publishing is paused, so Mail's `check` job builds against Meta's source: t
 with the pull request's branch name when one exists, and `main` otherwise.
 
 The CI `quality` workflow runs on pull requests that change more than Markdown. Its `check` job runs
-`checkAll`, and its `ios` job runs Swift formatting/lint plus a simulator build. The iOS job runs on macOS 15 with Xcode 26.3; Compose
+`checkAll` as four parallel jobs: `checkTooling`, `checkAndroidBuild`, and `checkTests` in two
+shards that split the test classes by name. Its `ios` job runs Swift formatting/lint plus a simulator build. The iOS job runs on macOS 15 with Xcode 26.3; Compose
 Multiplatform links symbols from the iOS 26 SDK, so Xcode 16 cannot link the app. The simulator
 build verifies compilation without device signing and targets `arm64`, matching the configured Apple Silicon simulator framework.
 JMAP iOS storage tests live in otus-meta as `:jmap:iosSimulatorArm64Test`. Meta's publish job
