@@ -36,7 +36,8 @@ class CalendarDoubleTapTest {
         openCalendar()
         compose.onNodeWithText("Last 30 days").performClick()
         val today = LocalDate.now()
-        val date = today.withDayOfMonth(1)
+        // On the 7th and the 30th, the 1st starts the "This week" or "This month" preset instead of a range.
+        val date = today.withDayOfMonth(if (today.dayOfMonth in setOf(7, 30)) 2 else 1)
         compose.onNodeWithContentDescription(date.toString()).performScrollTo().performTouchInput { doubleClick() }
         compose.onNodeWithText(relativeIsoRange(date.toString(), today.toString())).assertIsDisplayed()
         compose.onNodeWithText("Done").assertIsEnabled().performClick()
