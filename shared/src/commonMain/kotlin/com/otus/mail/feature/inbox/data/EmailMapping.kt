@@ -26,12 +26,12 @@ internal fun EmailObject.toMessage(
     zone: TimeZone,
     accountAddress: String = "",
     mailboxId: String = "",
-    serverHost: String = "",
+    serverSite: String = "",
 ): MailMessage {
     val shortText = preview.displayText()
     return MailMessage(
         id = "$accountId/$id",
-        sender = from?.firstOrNull().toSender(accountId).withBrand(authenticationResults, serverHost),
+        sender = from?.firstOrNull().toSender(accountId).withBrand(authenticationResults, serverSite),
         subject = subject.orEmpty().displayLine(),
         body = shortText,
         received = receivedAt(receivedAt, zone),
@@ -84,8 +84,8 @@ internal fun EmailAddress?.toSender(accountId: String): MailSender {
 
 private fun MailSender.withBrand(
     authenticationResults: List<String>?,
-    serverHost: String,
-) = copy(brandDomain = dmarcPassDomain(authenticationResults, address, serverHost))
+    serverSite: String,
+) = copy(brandDomain = dmarcPassDomain(authenticationResults, address, serverSite))
 
 private fun EmailBodyPart.displayName(): String = name.orEmpty().displayLine().ifBlank { "Attachment" }
 

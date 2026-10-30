@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.avatar.AvatarDomainResolver
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
@@ -33,7 +34,8 @@ import kotlin.time.Instant
  * Loads all or named mailboxes of each login, or chosen folders, through [cache]: a load brings the
  * cache up to date with the server and then reads the lists from it, so [cached] shows the same
  * rows without the server. Logins load in parallel and fail alone; a failed login still shows what
- * the cache holds. Each list loads [limit] conversations at a time.
+ * the cache holds. Each list loads [limit] conversations at a time. [sites] finds each login's
+ * registrable domain, which a sender's DMARC result must come from to show a brand logo.
  */
 class JmapMailSource(
     private val connections: JmapConnections,
@@ -42,6 +44,7 @@ class JmapMailSource(
     private val limit: Int = DEFAULT_LIMIT,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     private val clock: Clock = Clock.System,
+    private val sites: AvatarDomainResolver = AvatarDomainResolver { null },
 ) : MailSource {
     // A refresh and a next page of one login both rewrite its listings, so they take turns.
     private val locks = LoginLocks()
@@ -152,7 +155,7 @@ class JmapMailSource(
                                 ?.let { conditions ->
                                     val check = localCheck(query, login.id, now, local)
                                     cache.withAccount(login.id) {
-                                        it.cachedPages(login, scope, query, conditions, local, check)
+                                        it.cachedPages(login, scope, query, conditions, local, sites, check)
                                     }
                                 }.orEmpty()
                         }

@@ -54,7 +54,7 @@ own page.
   **Load remote images**, the **Load images** row shows the current choice and opens a sheet of
   radio rows: **Always**, **In your contacts** (the default: contacts, people the user wrote
   to, and allowed senders), or **Never**. Done saves the choice; closing the sheet any other way
-  discards it. Every Privacy choice sheet is a `RadioChoiceSheet`. The section's info button explains each choice and says that images inside the mail
+  discards it. Every Privacy choice sheet is a Meta `RadioChoiceSheet`. The section's info button explains each choice and says that images inside the mail
   itself always show and that mail in Spam never loads remote images. Mail in a folder the app has not loaded yet waits as if it were in Spam. **Allowed senders** names how many there are and opens their page
   (`AllowedSendersScreen`), which lists each address with a **Remove** button, or says how to add
   one. The Read view adds a sender with "Always for" on its image banner. Under **Avatars**, the

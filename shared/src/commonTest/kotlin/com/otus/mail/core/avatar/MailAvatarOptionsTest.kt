@@ -92,6 +92,23 @@ class MailAvatarOptionsTest {
         }
 
     @Test
+    fun bulwarkAddressesMustBePublicHttpsWithoutExtraParts() {
+        assertEquals("https://mail.example.net", bulwarkBase(" https://mail.example.net/ "))
+        listOf(
+            "",
+            "http://mail.example.net",
+            "mail.example.net:8443",
+            "mail.example.net?x=1",
+            "mail.example.net#top",
+            "mail.example.net/{domain}",
+            "user@mail.example.net",
+            "localhost",
+            "192.168.1.2",
+            "nas.lan",
+        ).forEach { assertNull(bulwarkBase(it), it) }
+    }
+
+    @Test
     fun websiteIconsFoundBeforeTurningThemOffAreNotShownAfterwards() =
         runTest {
             val on = mailAvatarOptions(websiteIcons = true, IconSource.DuckDuckGo)
