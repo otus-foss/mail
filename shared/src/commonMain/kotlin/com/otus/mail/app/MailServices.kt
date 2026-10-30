@@ -121,11 +121,12 @@ class MailServices(
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
+    private val domains by lazy { PublicSuffixDomainResolver(::avatarSuffixRules) }
     internal val avatars by lazy {
         AvatarService(
             JmapContactAvatarSource(connections, logins, avatarImages),
             avatarImages,
-            domains = PublicSuffixDomainResolver(::avatarSuffixRules),
+            domains = domains,
             cacheConfig = AvatarCacheConfig(store = avatarStore),
         )
     }
@@ -161,7 +162,7 @@ class MailServices(
             )
         CacheAccountRepository(repository, logins, accountCache)
     }
-    internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache) }
+    internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache, sites = domains) }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache) }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
     internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache) }

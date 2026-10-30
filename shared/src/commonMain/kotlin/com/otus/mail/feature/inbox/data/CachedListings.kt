@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.avatar.AvatarDomainResolver
 import com.otus.jmap.JmapException
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
@@ -33,9 +34,10 @@ internal fun MailScope.listingQueries(
 
 /**
  * [login]'s lists of [scope] as the cache holds them, one page per mailbox, mapped like loaded
- * rows. A mailbox without a saved list for [query] shows the rows of its unfiltered list that
- * pass [check], or nothing without one. A row whose email has left the mailbox since, such as
- * after a move, is left out. A row that no longer reads leaves the login out.
+ * rows, with [sites] finding the domain DMARC results must come from. A mailbox without a saved
+ * list for [query] shows the rows of its unfiltered list that pass [check], or nothing without
+ * one. A row whose email has left the mailbox since, such as after a move, is left out. A row that
+ * no longer reads leaves the login out.
  */
 internal suspend fun MailCache.cachedPages(
     login: JmapLogin,
@@ -43,8 +45,11 @@ internal suspend fun MailCache.cachedPages(
     query: MailQuery,
     conditions: List<JsonObject>,
     zone: TimeZone,
+    sites: AvatarDomainResolver,
     check: ((ListedRow) -> Boolean)? = null,
 ): List<ListingPage<ListedRow>> {
+    val host = runCatching { Url(login.sessionUrl).host }.getOrDefault("")
+    val site = sites.resolve(host) ?: host
     val mailboxes = mailboxes(login.id)
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
@@ -66,7 +71,7 @@ internal suspend fun MailCache.cachedPages(
         jmapDecoding {
             chosen.indices.mapNotNull { index ->
                 val mailbox = chosen[index]
-                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone)
+                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone, site)
                 val listing = listings[queries[index].key]
                 when {
                     listing != null -> {
@@ -103,6 +108,7 @@ private class ListedMailbox(
     val name: String,
     val view: ThreadView,
     val zone: TimeZone,
+    val serverSite: String,
 )
 
 /** The cached row emails of some lists, their threads, and those threads' emails. */
@@ -120,7 +126,7 @@ private class HeldMail(
         val login = list.login
         val message =
             row
-                .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId, login.host)
+                .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId, list.serverSite)
                 .inConversation(row, thread, list.mailboxId, list.view, list.zone)
         return ListedRow(message, Instant.parse(row.receivedAt))
     }
@@ -143,7 +149,3 @@ private suspend fun MailCache.heldMail(
     val rowMembers = objects(loginId, CacheKind.Email, EmailObject.serializer(), memberIds - members.keys)
     return HeldMail(rows, threads, rowMembers + members)
 }
-
-/** The host of the login's JMAP server, which DMARC results must come from to count. */
-private val JmapLogin.host: String
-    get() = runCatching { Url(sessionUrl).host }.getOrDefault("")

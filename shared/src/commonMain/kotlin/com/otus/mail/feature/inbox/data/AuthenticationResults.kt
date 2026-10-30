@@ -3,15 +3,17 @@ package com.otus.mail.feature.inbox.data
 /**
  * The domain of [fromAddress] when the topmost `Authentication-Results` field in [fields] (RFC 8601)
  * says the message passed DMARC for it, else null. The receiving server adds the topmost field, and
- * a sender can add fields further down, so only that one counts, and only when its server id names
- * [serverHost], the user's JMAP server, or another host of its domain. A server that adds no field
- * would otherwise leave the sender's own on top. A DMARC result other than a pass, or a pass for
- * another From domain, counts as none.
+ * a sender can add fields further down, so only that one counts, and only when its server id is
+ * [serverSite] or a host under it. [serverSite] is the registrable domain of the user's JMAP server,
+ * or its whole host when it has none, such as an IP address. This trusts the server to add its own
+ * field to all mail it delivers: on a server that adds none, a sender who names a host of the
+ * user's domain is believed. A DMARC result other than a pass, or a pass for another From domain,
+ * counts as none.
  */
 internal fun dmarcPassDomain(
     fields: List<String>?,
     fromAddress: String,
-    serverHost: String,
+    serverSite: String,
 ): String? {
     val domain = fromAddress.substringAfterLast('@', "").trim().lowercase()
     val parts = fields?.firstOrNull()?.let(::fieldParts).orEmpty()
@@ -21,7 +23,7 @@ internal fun dmarcPassDomain(
             ?.let(::words)
             ?.firstOrNull()
             .orEmpty()
-    if (domain.isEmpty() || !isOwnServer(serverId, serverHost)) return null
+    if (domain.isEmpty() || !isOwnServer(serverId, serverSite)) return null
     val dmarc = parts.drop(1).map(::words).filter { it.first().startsWith("dmarc=", ignoreCase = true) }
     val passed =
         dmarc.isNotEmpty() &&
@@ -32,15 +34,14 @@ internal fun dmarcPassDomain(
     return domain.takeIf { passed }
 }
 
-/** Whether [serverId] names [serverHost] or another host of its domain, such as `mx` beside `mail`. */
+/** Whether [serverId] is [serverSite] or a host under it, such as `mx` beside `mail`. */
 private fun isOwnServer(
     serverId: String,
-    serverHost: String,
+    serverSite: String,
 ): Boolean {
     val id = serverId.lowercase().trimEnd('.')
-    val host = serverHost.lowercase()
-    val parent = host.substringAfter('.').takeIf { '.' in it } ?: host
-    return host.isNotEmpty() && (id == host || id == parent || id.endsWith(".$parent"))
+    val site = serverSite.lowercase()
+    return site.isNotEmpty() && (id == site || id.endsWith(".$site"))
 }
 
 /**

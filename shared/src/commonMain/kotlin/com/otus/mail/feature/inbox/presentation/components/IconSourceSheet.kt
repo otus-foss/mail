@@ -11,6 +11,7 @@ import com.otus.designsystem.shared.input.elements.InputField
 import com.otus.designsystem.shared.input.elements.InputKind
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
+import com.otus.designsystem.shared.selection.components.RadioChoiceSheet
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.core.avatar.IconSource
 import com.otus.mail.core.avatar.bulwarkBase
@@ -18,8 +19,8 @@ import com.otus.mail.core.avatar.bulwarkBase
 /**
  * Picks where website icons come from, starting from [source] and [address]. Picking Bulwark shows
  * its address below the choices. Done saves both through [onSave], and only while a Bulwark address
- * is a public HTTPS one, so icons are never asked of a half-typed address. The scrim, Back, or a
- * swipe down discards them.
+ * is a public HTTPS one, so icons are never asked of a half-typed address. Done on another source
+ * keeps the saved address. The scrim, Back, or a swipe down discards both.
  */
 @Composable
 internal fun IconSourceSheet(
@@ -33,7 +34,7 @@ internal fun IconSourceSheet(
         "Load icons from",
         ChoiceOptions(IconSource.entries, source),
         row = { ChoiceRow(it.title, it.description) },
-        onSave = { picked -> onSave(picked, draft.trim()) },
+        onSave = { picked -> onSave(picked, if (picked == IconSource.Bulwark) draft.trim() else address) },
         onDismiss = onDismiss,
         doneEnabled = { it != IconSource.Bulwark || bulwarkBase(draft) != null },
     ) { picked ->

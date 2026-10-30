@@ -6,9 +6,9 @@ import kotlin.test.assertNull
 
 class AuthenticationResultsTest {
     private val server = "mx.example.net; dkim=pass header.d=shop.com; spf=pass smtp.mailfrom=shop.com"
-    private val host = "mail.example.net"
+    private val site = "example.net"
 
-    private fun passOf(vararg fields: String) = dmarcPassDomain(fields.toList(), "news@shop.com", host)
+    private fun passOf(vararg fields: String) = dmarcPassDomain(fields.toList(), "news@shop.com", site)
 
     @Test
     fun aDmarcPassForTheFromDomainFromTheUsersServerCounts() {
@@ -21,6 +21,24 @@ class AuthenticationResultsTest {
         assertNull(passOf("evil.example; dmarc=pass header.from=shop.com"))
         assertNull(passOf("example.net.evil.com; dmarc=pass header.from=shop.com"))
         assertNull(dmarcPassDomain(listOf("$server; dmarc=pass header.from=shop.com"), "news@shop.com", ""))
+    }
+
+    @Test
+    fun aServerUnderAMultiLabelSuffixTrustsOnlyItsOwnDomain() {
+        fun bankPass(id: String) =
+            dmarcPassDomain(listOf("$id; dmarc=pass header.from=bank.co.uk"), "news@bank.co.uk", "example.co.uk")
+        assertEquals("bank.co.uk", bankPass("mx.example.co.uk"))
+        assertEquals("bank.co.uk", bankPass("example.co.uk"))
+        assertNull(bankPass("evil.co.uk"))
+        assertNull(bankPass("co.uk"))
+    }
+
+    @Test
+    fun aServerWithoutADomainTrustsOnlyItsExactHost() {
+        fun pass(id: String) =
+            dmarcPassDomain(listOf("$id; dmarc=pass header.from=shop.com"), "a@shop.com", "192.0.2.7")
+        assertEquals("shop.com", pass("192.0.2.7"))
+        assertNull(pass("2.7"))
     }
 
     @Test

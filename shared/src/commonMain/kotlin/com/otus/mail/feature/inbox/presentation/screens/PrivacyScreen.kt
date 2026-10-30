@@ -15,6 +15,7 @@ import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
+import com.otus.designsystem.shared.selection.components.RadioChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
@@ -25,13 +26,12 @@ import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.AvatarSettings
-import com.otus.mail.feature.inbox.presentation.components.RadioChoiceSheet
 
 /**
- * Settings › Privacy: when mail loads images from other servers, chosen in a sheet, who may always show them
- * ([onOpenAllowed] opens that list), whether avatars load website icons, and the screen and
- * keyboard protections that [device] offers. Each change is saved at once. Website icons are off
- * by default, so avatars reach only the user's servers.
+ * Settings › Privacy: when mail loads images from other servers, chosen in a sheet, who may always
+ * show them ([onOpenAllowed] opens that list), whether avatars load website icons, and the screen
+ * and keyboard protections that [device] offers. Each switch saves at once, and each sheet saves
+ * on Done. Website icons are off by default, so avatars reach only the user's servers.
  */
 @Composable
 fun PrivacyScreen(

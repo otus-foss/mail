@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import com.otus.mail.app.App
 import com.otus.mail.core.avatar.IconSource
@@ -98,5 +99,20 @@ class PrivacySettingsTest {
         assertEquals(IconSource.Bulwark, behavior.behavior.iconSource)
         assertEquals("mail.example.net", behavior.behavior.bulwarkAddress)
         compose.onNodeWithText("No Bulwark address, so no icons load").assertDoesNotExist()
+    }
+
+    @Test
+    fun doneOnAnotherSourceKeepsTheSavedBulwarkAddress() {
+        behavior.update {
+            it.copy(websiteIcons = true, iconSource = IconSource.Bulwark, bulwarkAddress = "mail.example.net")
+        }
+        openPrivacy()
+        compose.onNodeWithText("Icons from").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Bulwark address").performTextClearance()
+        compose.onNodeWithText("DuckDuckGo").performClick()
+        compose.onNodeWithText("Done").performClick()
+        compose.waitForIdle()
+        assertEquals(IconSource.DuckDuckGo, behavior.behavior.iconSource)
+        assertEquals("mail.example.net", behavior.behavior.bulwarkAddress)
     }
 }
