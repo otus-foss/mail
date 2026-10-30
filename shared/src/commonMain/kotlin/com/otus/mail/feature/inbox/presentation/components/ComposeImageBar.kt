@@ -56,7 +56,7 @@ private fun DraftAttachment.options(
         add(
             OptionsItem.Toggle("Send as file", Res.drawable.symbol_attach_file, checked = false) {
                 state.body.images.deselect()
-                attachments.showInline(id, false)
+                attachments.showInline(id, inline = false)
             },
         )
         add(OptionsItem.Action("Description", Res.drawable.symbol_short_text, onDescribe, opens = true))

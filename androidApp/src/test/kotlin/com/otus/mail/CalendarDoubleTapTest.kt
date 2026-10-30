@@ -42,9 +42,8 @@ class CalendarDoubleTapTest {
         compose.onNodeWithText(relativeIsoRange(date.toString(), today.toString())).assertIsDisplayed()
         compose.onNodeWithText("Done").assertIsEnabled().performClick()
         compose
-            .onNodeWithText(
-                relativeIsoRange(date.toString(), today.toString(), "–"),
-            ).performScrollTo()
+            .onNodeWithText(relativeIsoRange(date.toString(), today.toString(), "–"))
+            .performScrollTo()
             .assertIsDisplayed()
     }
 

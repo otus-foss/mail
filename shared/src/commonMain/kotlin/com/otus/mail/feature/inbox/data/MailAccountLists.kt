@@ -62,7 +62,7 @@ internal class MailAccountLists(
         val fetched = connection.fetchMail(accountId, wanted)
         val use = cache.listingUse(loginId)
         cache.write(loginId) {
-            changes?.let { saveChanges(it) }
+            if (changes != null) saveChanges(changes)
             saveMail(fetched)
             putListings(listings, use, now())
         }

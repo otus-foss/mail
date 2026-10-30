@@ -33,19 +33,12 @@ internal fun InboxPickerChoices(
     onChange: (InboxSearch) -> Unit,
 ) {
     val needle = query.trim()
+    val withMailboxes = allowMailboxSelection
     LazyColumn(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(SheetTokens.gap)) {
         when (filter) {
-            InboxFilter.People -> {
-                peopleChoices(messages, needle, draft, onChange)
-            }
-
-            InboxFilter.Accounts -> {
-                accountChoices(messages, mailboxSearch, allowMailboxSelection, needle, draft, onChange)
-            }
-
-            else -> {
-                error("This filter does not have searchable choices")
-            }
+            InboxFilter.People -> peopleChoices(messages, needle, draft, onChange)
+            InboxFilter.Accounts -> accountChoices(messages, mailboxSearch, withMailboxes, needle, draft, onChange)
+            else -> error("This filter does not have searchable choices")
         }
     }
 }
@@ -57,7 +50,11 @@ private fun LazyListScope.peopleChoices(
     onChange: (InboxSearch) -> Unit,
 ) {
     val people = messages.map { it.sender }.distinctBy { it.address }.sortedBy { it.name.lowercase() }
-    val matches = people.filter { it.name.contains(needle, true) || it.address.contains(needle, true) }
+    val matches =
+        people.filter {
+            it.name.contains(needle, ignoreCase = true) ||
+                it.address.contains(needle, ignoreCase = true)
+        }
     if (matches.isEmpty()) {
         item { EmptyChoices(people.isEmpty(), "No senders yet. Your mail contacts will appear here.") }
     }
@@ -87,11 +84,15 @@ private fun LazyListScope.accountChoices(
     val accounts =
         selectedAccounts(messages, known.map { it.accountId }.toSet() + draft.accounts, known)
             .sortedBy { it.account }
-    val matches = accounts.filter { it.account.contains(needle, true) || it.accountAddress.contains(needle, true) }
+    val matches =
+        accounts.filter {
+            it.account.contains(needle, ignoreCase = true) ||
+                it.accountAddress.contains(needle, ignoreCase = true)
+        }
     // Selected names stay listed so they can be cleared, even when the folder list lacks them.
     val names =
         if (allowMailboxSelection) (mailboxSearch.names + draft.mailboxes.map { it.name }).distinct() else emptyList()
-    val nameMatches = names.filter { it.contains(needle, true) }
+    val nameMatches = names.filter { it.contains(needle, ignoreCase = true) }
     if (matches.isEmpty() && nameMatches.isEmpty()) {
         item { EmptyChoices(accounts.isEmpty() && names.isEmpty(), "No accounts connected.") }
     }
@@ -101,7 +102,8 @@ private fun LazyListScope.accountChoices(
             account.accountId in draft.accounts,
             { onChange(draft.copy(accounts = draft.accounts.toggled(account.accountId))) },
             // The account name defaults to its address; show the address only when it adds something.
-            subtitle = account.accountAddress.takeIf { it.isNotBlank() && !it.equals(account.account, true) },
+            subtitle =
+                account.accountAddress.takeIf { it.isNotBlank() && !it.equals(account.account, ignoreCase = true) },
             leading = { AccountAvatar(account) },
         )
     }
@@ -125,7 +127,7 @@ private fun LazyListScope.mailboxChoices(
 }
 
 private fun Set<MailboxScope>.toggledName(name: String): Set<MailboxScope> =
-    if (any { it.name == name }) filterNot { it.name == name }.toSet() else this + MailboxScope(null, name)
+    if (any { it.name == name }) filterNot { it.name == name }.toSet() else this + MailboxScope(account = null, name)
 
 @Composable
 private fun AccountAvatar(location: MailLocation) {

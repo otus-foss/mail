@@ -103,7 +103,11 @@ class FolderRulesState(
                 else -> null
             }
         if (refusal != null || account == null) {
-            if (onFailed != null) refusal?.let(onFailed) else notice = refusal
+            if (onFailed == null) {
+                notice = refusal
+            } else if (refusal != null) {
+                onFailed(refusal)
+            }
             return
         }
         if (account.changedElsewhere && !replacing) {
@@ -128,17 +132,13 @@ class FolderRulesState(
         notice = null
         scope.launch {
             try {
-                when (val outcome = repository.save(account, rules)) {
-                    RuleOutcome.Saved -> {
-                        onSaved()
-                    }
-
-                    is RuleOutcome.Failed -> {
-                        outcome.reason.message(outcome.detail).let { reason ->
-                            notice = reason
-                            onFailed?.invoke(reason)
-                        }
-                    }
+                val outcome = repository.save(account, rules)
+                if (outcome is RuleOutcome.Failed) {
+                    val reason = outcome.reason.message(outcome.detail)
+                    notice = reason
+                    onFailed?.invoke(reason)
+                } else {
+                    onSaved()
                 }
                 refresh()
                 loads.awaitLatest()

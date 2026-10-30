@@ -35,16 +35,20 @@ internal fun emailConditions(
     val filters = query.filters
     val dates = filters.date.bounds(now, zone)
     return buildList {
-        filters.status.condition()?.let(::add)
+        val status = filters.status.condition()
+        if (status != null) add(status)
         filters.quick.sortedBy { it.ordinal }.mapNotNullTo(this) { it.condition(query, loginId) }
         if (TypeFacet.Newsletters in filters.types) add(anyOf(LIST_HEADERS.map { header(it) }))
-        filters.fromAddresses.takeIf { it.isNotEmpty() }?.let { from ->
-            add(anyOf(from.sorted().map { condition("from", JsonPrimitive(it)) }))
-        }
-        recipientCondition(query, loginId)?.let(::add)
-        dates.after?.let { add(condition("after", JsonPrimitive(it.utcDate()))) }
-        dates.before?.let { add(condition("before", JsonPrimitive(it.utcDate()))) }
-        filters.size.minBytes?.let { add(condition("minSize", JsonPrimitive(it))) }
+        val from = filters.fromAddresses
+        if (from.isNotEmpty()) add(anyOf(from.sorted().map { condition("from", JsonPrimitive(it)) }))
+        val recipient = recipientCondition(query, loginId)
+        if (recipient != null) add(recipient)
+        val after = dates.after
+        if (after != null) add(condition("after", JsonPrimitive(after.utcDate())))
+        val before = dates.before
+        if (before != null) add(condition("before", JsonPrimitive(before.utcDate())))
+        val minBytes = filters.size.minBytes
+        if (minBytes != null) add(condition("minSize", JsonPrimitive(minBytes)))
     }
 }
 
@@ -89,18 +93,11 @@ internal fun recipientAddresses(
 ): List<String>? {
     val filters = query.filters
     val chosen = filters.sentTo.filter { it.accountId == loginId }.map { it.address } + filters.to.sorted()
+    val ownAddresses = filters.sentTo.isEmpty() && filters.receivedIn != RecipientField.Default
     return when {
-        chosen.isNotEmpty() -> {
-            chosen
-        }
-
-        filters.sentTo.isEmpty() && filters.receivedIn != RecipientField.Default -> {
-            query.addresses[loginId].orEmpty().toList()
-        }
-
-        else -> {
-            null
-        }
+        chosen.isNotEmpty() -> chosen
+        ownAddresses -> query.addresses[loginId].orEmpty().toList()
+        else -> null
     }
 }
 

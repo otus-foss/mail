@@ -86,7 +86,8 @@ class InboxFilterState(
 
     /** Applies the draft and closes the panel. */
     fun show() {
-        draft?.let(::update)
+        val current = draft
+        if (current != null) update(current)
         close()
     }
 

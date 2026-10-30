@@ -114,19 +114,17 @@ class JmapMailSource(
         return try {
             cache.withAccount(login.id) { accountCache ->
                 val connection = connections.connection(login)
-                val accountId = connection.session().accountFor(JmapCapability.MAIL)
-                if (accountId == null) {
-                    UnavailableAccount(login.name, InboxFailure.NoMail)
-                } else {
-                    val lists =
-                        MailAccountLists(connection, accountId, login.id, accountCache, limit) {
-                            clock.now().toEpochMilliseconds()
-                        }
-                    locks.of(login.id).withLock {
-                        lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
+                val accountId =
+                    connection.session().accountFor(JmapCapability.MAIL)
+                        ?: return@withAccount UnavailableAccount(login.name, InboxFailure.NoMail)
+                val lists =
+                    MailAccountLists(connection, accountId, login.id, accountCache, limit) {
+                        clock.now().toEpochMilliseconds()
                     }
-                    null
+                locks.of(login.id).withLock {
+                    lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
                 }
+                null
             }
         } catch (error: JmapException) {
             UnavailableAccount(login.name, error.toInboxFailure())

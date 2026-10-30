@@ -64,10 +64,8 @@ class ComposeScreenTest {
     private val sent = mutableListOf<Draft>()
     private val sender =
         DraftSender { draft, _, _ ->
-            Result.success(SentMessage(draft.accountId, "e1", "s1")).also {
-                sent +=
-                    draft
-            }
+            sent += draft
+            Result.success(SentMessage(draft.accountId, "e1", "s1"))
         }
     private var closed = false
     private var scheduledAt: LocalDateTime? = null

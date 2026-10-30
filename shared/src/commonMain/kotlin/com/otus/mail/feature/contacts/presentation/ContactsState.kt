@@ -125,8 +125,8 @@ internal class ContactsState(
 
     /** Asks for a vCard file and holds it in [importing] for the import sheet. */
     fun pickImport() {
-        val files = files ?: return
-        scope.launch { importing = files.pick() }
+        val picker = files ?: return
+        scope.launch { importing = picker.pick() }
     }
 
     fun import(
@@ -139,11 +139,11 @@ internal class ContactsState(
 
     /** Saves [cards] as one vCard file in the downloads. */
     fun export(cards: List<ContactCard>) {
-        val files = files ?: return
+        val destination = files ?: return
         scope.launch {
             val name = if (cards.size == 1) "${cards.single().displayName}.vcf" else "Contacts.vcf"
             val what = if (cards.size == 1) "contact file" else "contacts file"
-            notice = if (files.save(name, cards.map { it.card })) "Saved $what" else "Couldn’t save the $what"
+            notice = if (destination.save(name, cards.map { it.card })) "Saved $what" else "Couldn’t save the $what"
         }
     }
 

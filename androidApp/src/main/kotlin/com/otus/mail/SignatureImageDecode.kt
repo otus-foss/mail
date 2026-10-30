@@ -13,16 +13,13 @@ import kotlin.io.encoding.Base64
 /** Decodes the image at a bounded size, then shrinks it to fit the signature limits. */
 internal fun signatureImage(open: () -> InputStream?): SignatureImagePick =
     try {
-        val source = sampledBitmap(open, SignatureImages.MAX_WIDTH)
-        if (source == null) {
-            SignatureImagePick.Unreadable
-        } else {
+        sampledBitmap(open, SignatureImages.MAX_WIDTH)?.let { source ->
             try {
                 source.signature()
             } finally {
                 source.recycle()
             }
-        }
+        } ?: SignatureImagePick.Unreadable
     } catch (expected: IOException) {
         SignatureImagePick.Unreadable
     } catch (expected: SecurityException) {
@@ -34,15 +31,11 @@ internal fun Bitmap.signature(maxBytes: Int = SignatureImages.MAX_BYTES): Signat
     val ratio = minOf(1.0, SignatureImages.MAX_WIDTH.toDouble() / maxOf(width, height))
     val scaled = scale((width * ratio).toInt().coerceAtLeast(1), (height * ratio).toInt().coerceAtLeast(1))
     return try {
-        val png = scaled.encoded(Bitmap.CompressFormat.PNG, FULL_QUALITY, maxBytes)
         val encoded =
-            if (png != null) {
-                "image/png" to png
-            } else {
-                JPEG_QUALITIES.firstNotNullOfOrNull { quality ->
+            scaled.encoded(Bitmap.CompressFormat.PNG, FULL_QUALITY, maxBytes)?.let { "image/png" to it }
+                ?: JPEG_QUALITIES.firstNotNullOfOrNull { quality ->
                     scaled.encoded(Bitmap.CompressFormat.JPEG, quality, maxBytes)?.let { "image/jpeg" to it }
                 }
-            }
         encoded?.let { (type, bytes) ->
             val shownWidth = scaled.width.coerceIn(MIN_SHOWN_WIDTH, MAX_SHOWN_WIDTH)
             SignatureImagePick.Picked(SignatureImage(type, Base64.encode(bytes), shownWidth))

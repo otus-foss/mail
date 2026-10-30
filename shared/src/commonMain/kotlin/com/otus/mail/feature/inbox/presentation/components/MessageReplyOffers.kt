@@ -53,17 +53,9 @@ internal fun replyContext(
 
 private fun peopleContext(people: List<MailSender>): BarContext? =
     when (people.size) {
-        0 -> {
-            null
-        }
-
-        1 -> {
-            personContext(people.single())
-        }
-
-        else -> {
-            groupContext(people)
-        }
+        0 -> null
+        1 -> personContext(people.single())
+        else -> groupContext(people)
     }
 
 /** Several [people], as the first two avatars and how many there are, under [lead] when given. */

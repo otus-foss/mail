@@ -29,7 +29,10 @@ class PageThumbnails {
     ) {
         files
             .filterNot { key(message, it) in images }
-            .forEach { file -> fetch(file)?.let { images[key(message, file)] = it } }
+            .forEach { file ->
+                val image = fetch(file)
+                if (image != null) images[key(message, file)] = image
+            }
     }
 
     private fun key(

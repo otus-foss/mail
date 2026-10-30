@@ -18,7 +18,7 @@ fun <T> List<T>.nestedByPath(path: (T) -> String): List<Nested<T>> =
         val parent = placed.lastOrNull { full.startsWith(path(it.item) + PATH_SEPARATOR) }
         placed +
             if (parent == null) {
-                Nested(item, full, 0)
+                Nested(item, full, depth = 0)
             } else {
                 Nested(item, full.removePrefix(path(parent.item) + PATH_SEPARATOR), parent.depth + 1)
             }

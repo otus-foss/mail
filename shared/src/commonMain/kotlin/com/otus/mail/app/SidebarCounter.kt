@@ -28,10 +28,10 @@ internal class SidebarCounter(
         sum(folders)?.let { if (it > BADGE_MAX) "$BADGE_MAX+" else it.toString() }
 
     private fun sum(folders: List<MailFolder>): Long? {
-        val count = count ?: return null
+        val valueOf = count ?: return null
         return folders
             .filter { accountId == null || it.accountId == accountId }
-            .sumOf(count)
+            .sumOf(valueOf)
             .takeIf { it > 0 }
     }
 

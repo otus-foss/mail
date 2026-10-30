@@ -4,8 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import com.otus.accounts.domain.AccountService
-import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
@@ -14,13 +12,8 @@ import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.status
-import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
-import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
-import com.otus.settings.presentation.screens.SettingsScreen
-import com.otus.settings.presentation.screens.ThemeSettingsScreen
 
 @Composable
 internal fun MailPageContent(
@@ -49,10 +42,8 @@ internal fun MailPageContent(
         }
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
-        MailPage.NotificationOverrides,
-        MailPage.SidebarSettings, MailPage.PinnedSettings, MailPage.ThemeSettings, MailPage.MailListSettings,
-        MailPage.ActionBarSettings,
-        MailPage.Folders, is MailPage.FolderDetail,
+        MailPage.NotificationOverrides, MailPage.SidebarSettings, MailPage.PinnedSettings, MailPage.ThemeSettings,
+        MailPage.MailListSettings, MailPage.ActionBarSettings, MailPage.Folders, is MailPage.FolderDetail,
         -> {
             SettingsPageContent(page, states, settings, dateFormatter, navigation, back)
         }
@@ -66,8 +57,7 @@ internal fun MailPageContent(
         }
 
         is MailPage.Combined -> {
-            val folder = page.folder
-            FeedPage(page, MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
+            CombinedPage(page, states, dateFormatter, navigation)
         }
 
         MailPage.ReadLater -> {
@@ -83,71 +73,25 @@ internal fun MailPageContent(
         }
 
         MailPage.Contacts, is MailPage.Contact, is MailPage.ContactEditor -> {
-            ContactsPages(page, states, navigation, back)
+            ContactsPages(
+                page,
+                states,
+                navigation,
+                back,
+            )
         }
     }
 }
 
-/** Settings and its subpages. */
 @Composable
-private fun SettingsPageContent(
-    page: MailPage,
+private fun CombinedPage(
+    page: MailPage.Combined,
     states: MailStates,
-    settings: SharedSettings,
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
-    back: () -> Unit,
 ) {
-    when (page) {
-        MailPage.Settings -> {
-            SettingsScreen(
-                entries = mailSettingsEntries(states.accounts.accounts.size, states.notifications, navigation),
-                onOpenNavigation = navigation.openSidebar,
-            )
-        }
-
-        MailPage.EmailAccounts -> {
-            AccountSetupScreen(states.accounts, states.ownAvatars, "Email accounts", AccountService.Mail, onBack = back)
-        }
-
-        MailPage.Appearance -> {
-            AppearancePage(states, settings, navigation, back)
-        }
-
-        MailPage.Behavior -> {
-            MailBehaviorPage(states, navigation, back)
-        }
-
-        MailPage.Notifications, MailPage.NotificationOverrides -> {
-            NotificationPages(page, states, navigation, back)
-        }
-
-        MailPage.SidebarSettings, MailPage.PinnedSettings -> {
-            SidebarSettingsPage(page, states, navigation, back)
-        }
-
-        MailPage.ThemeSettings -> {
-            ThemeSettingsScreen(settings.theme, onBack = back) { ThemeInboxPreview() }
-        }
-
-        MailPage.ActionBarSettings -> {
-            ActionBarSettingsPage(states, back)
-        }
-
-        MailPage.MailListSettings -> {
-            MailListSettingsPage(states, dateFormatter, back)
-        }
-
-        MailPage.Folders -> {
-            FoldersPage(states, navigation, back)
-        }
-
-        is MailPage.FolderDetail -> {
-            FolderDetailPage(page, states, navigation, back)
-        }
-
-        else -> {}
-    }
+    val folder = page.folder
+    FeedPage(page, MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
 }
 
 @Composable
@@ -240,23 +184,5 @@ internal fun rememberLabeled(
     val colors = states.folderColors.colors to states.behavior.behavior.sidebar.folderColors
     return remember(feed.messages, states.folders.accounts, scope, colors) {
         states.filing.labeled(feed.messages.within(scope))
-    }
-}
-
-/** Notifications and its page of account and address previews; neither shows where pushes are unavailable. */
-@Composable
-private fun NotificationPages(
-    page: MailPage,
-    states: MailStates,
-    navigation: MailNavigation,
-    back: () -> Unit,
-) {
-    val notifications = states.notifications ?: return
-    if (page == MailPage.NotificationOverrides) {
-        NotificationOverridesScreen(notifications, states.accounts.accounts, onBack = back)
-    } else {
-        NotificationsScreen(notifications, states.accounts.accounts, onBack = back) {
-            navigation.go(MailPage.NotificationOverrides)
-        }
     }
 }

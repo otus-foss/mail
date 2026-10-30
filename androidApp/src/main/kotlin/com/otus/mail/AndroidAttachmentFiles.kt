@@ -32,7 +32,8 @@ class AndroidAttachmentFiles(
 
     override suspend fun pick(): List<PickedFile> {
         val picker = launcher ?: return emptyList()
-        val result = CompletableDeferred<List<Uri>>().also { pending = it }
+        val result = CompletableDeferred<List<Uri>>()
+        pending = result
         picker.launch(arrayOf("*/*"))
         return withContext(Dispatchers.IO) { result.await().mapNotNull(::picked) }
     }

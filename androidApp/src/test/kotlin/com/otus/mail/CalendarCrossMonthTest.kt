@@ -88,9 +88,8 @@ class CalendarCrossMonthTest {
 
     private fun rangeSummary(part: String): String =
         compose
-            .onNode(
-                hasText(part, substring = true),
-            ).fetchSemanticsNode()
+            .onNode(hasText(part, substring = true))
+            .fetchSemanticsNode()
             .config[SemanticsProperties.Text]
             .single()
             .text

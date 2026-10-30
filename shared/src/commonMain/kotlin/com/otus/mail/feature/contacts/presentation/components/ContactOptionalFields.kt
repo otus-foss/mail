@@ -96,15 +96,14 @@ internal fun NoteField(
     draft: ContactDraft,
     onChange: (ContactDraft) -> Unit,
 ) {
-    draft.note?.let {
-        ContactInputField(
-            "Note",
-            it,
-            { value -> onChange(draft.copy(note = value)) },
-            Res.drawable.symbol_notes,
-            { onChange(draft.copy(note = null)) },
-        )
-    }
+    val note = draft.note ?: return
+    ContactInputField(
+        "Note",
+        note,
+        { value -> onChange(draft.copy(note = value)) },
+        Res.drawable.symbol_notes,
+        { onChange(draft.copy(note = null)) },
+    )
 }
 
 /**

@@ -6,6 +6,7 @@ import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.presentation.ContactNavigation
 import com.otus.mail.feature.contacts.presentation.ContactsNavigation
+import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.components.PersonContactSheet
 import com.otus.mail.feature.contacts.presentation.screens.ContactEditorScreen
 import com.otus.mail.feature.contacts.presentation.screens.ContactScreen
@@ -47,7 +48,8 @@ internal fun ContactsPages(
     val contacts = states.contacts
     LaunchedEffect(Unit) { contacts.refresh() }
     LaunchedEffect(contacts.notice) {
-        contacts.notice?.let { states.moveToasts.toasts.show(ToastMessage(it)) }
+        val notice = contacts.notice
+        if (notice != null) states.moveToasts.toasts.show(ToastMessage(notice))
         contacts.notice = null
     }
     val write = { to: List<ContactAddress> ->
@@ -55,35 +57,57 @@ internal fun ContactsPages(
         navigation.go(MailPage.Compose(ComposeRequest.New(to = recipients), parent = page))
     }
     when (page) {
-        is MailPage.Contact -> {
-            ContactScreen(
-                contacts,
-                page.key,
-                ContactNavigation(
-                    onBack = back,
-                    onEdit = { navigation.go(MailPage.ContactEditor(it)) },
-                    onOpen = { navigation.go(MailPage.Contact(it)) },
-                    onWrite = write,
-                ),
-            )
-        }
-
-        is MailPage.ContactEditor -> {
-            ContactEditorScreen(contacts, page.key, onClose = back) { saved ->
-                navigation.go(if (page.key == null) MailPage.Contact(saved) else page.parent)
-            }
-        }
-
-        else -> {
-            ContactsScreen(
-                contacts,
-                ContactsNavigation(
-                    onOpenNavigation = navigation.openSidebar,
-                    onOpen = { navigation.go(MailPage.Contact(it)) },
-                    onNew = { navigation.go(MailPage.ContactEditor()) },
-                    onWrite = write,
-                ),
-            )
-        }
+        is MailPage.Contact -> ContactPage(page, contacts, navigation, back, write)
+        is MailPage.ContactEditor -> ContactEditorPage(page, contacts, navigation, back)
+        else -> ContactListPage(contacts, navigation, write)
     }
+}
+
+@Composable
+private fun ContactPage(
+    page: MailPage.Contact,
+    contacts: ContactsState,
+    navigation: MailNavigation,
+    back: () -> Unit,
+    write: (List<ContactAddress>) -> Unit,
+) {
+    ContactScreen(
+        contacts,
+        page.key,
+        ContactNavigation(
+            onBack = back,
+            onEdit = { navigation.go(MailPage.ContactEditor(it)) },
+            onOpen = { navigation.go(MailPage.Contact(it)) },
+            onWrite = write,
+        ),
+    )
+}
+
+@Composable
+private fun ContactEditorPage(
+    page: MailPage.ContactEditor,
+    contacts: ContactsState,
+    navigation: MailNavigation,
+    back: () -> Unit,
+) {
+    ContactEditorScreen(contacts, page.key, onClose = back) { saved ->
+        navigation.go(if (page.key == null) MailPage.Contact(saved) else page.parent)
+    }
+}
+
+@Composable
+private fun ContactListPage(
+    contacts: ContactsState,
+    navigation: MailNavigation,
+    write: (List<ContactAddress>) -> Unit,
+) {
+    ContactsScreen(
+        contacts,
+        ContactsNavigation(
+            onOpenNavigation = navigation.openSidebar,
+            onOpen = { navigation.go(MailPage.Contact(it)) },
+            onNew = { navigation.go(MailPage.ContactEditor()) },
+            onWrite = write,
+        ),
+    )
 }

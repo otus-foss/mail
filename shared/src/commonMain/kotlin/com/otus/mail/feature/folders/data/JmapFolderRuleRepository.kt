@@ -184,16 +184,14 @@ class JmapFolderRuleRepository(
 
 /** Rules need Sieve with `fileinto`; other extensions only unlock more conditions and filing by id. */
 private fun availability(account: MailAccount): RuleAvailability {
-    val capabilities =
+    val sieve =
         account.session.accounts[account.id]
             ?.capabilityObjects
-            .orEmpty()
-    val sieve = capabilities[JmapCapability.SIEVE] ?: return RuleAvailability.RulesUnavailable
+            ?.get(JmapCapability.SIEVE)
+            ?: return RuleAvailability.RulesUnavailable
     val capability = runCatching { JmapJson.decodeFromJsonElement(SieveCapability.serializer(), sieve) }.getOrNull()
     val support = RuleSupport(capability?.sieveExtensions.orEmpty().toSet(), capability?.maxSizeScript)
-    return if ("fileinto" in
-        support.extensions
-    ) {
+    return if ("fileinto" in support.extensions) {
         RuleAvailability.Available(support)
     } else {
         RuleAvailability.RulesUnavailable

@@ -3,6 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderDialog
@@ -102,31 +103,11 @@ internal class ReadWiring(
         val accountId = message.location.accountId
         val own = folders.account(accountId)?.folders.orEmpty()
         return when (scope) {
-            is MailScope.Folder -> {
-                if (scope.accountId == accountId) setOf(scope.folderId) else emptySet()
-            }
-
-            is MailScope.Folders -> {
-                scope.folders
-                    .filter { it.accountId == accountId }
-                    .map { it.folderId }
-                    .toSet()
-            }
-
-            is MailScope.Role -> {
-                own.filter { it.role == scope.role }.map { it.id }.toSet()
-            }
-
-            is MailScope.Roles -> {
-                own
-                    .filter { it.role in scope.names || (scope.ownFolders && it.role == null) }
-                    .map { it.id }
-                    .toSet()
-            }
-
-            else -> {
-                emptySet()
-            }
+            is MailScope.Folder -> if (scope.accountId == accountId) setOf(scope.folderId) else emptySet()
+            is MailScope.Folders -> scope.folderIds(accountId)
+            is MailScope.Role -> own.filter { it.role == scope.role }.map { it.id }.toSet()
+            is MailScope.Roles -> scope.folderIds(own)
+            else -> emptySet()
         }
     }
 
@@ -152,3 +133,15 @@ internal fun rememberReadContext(
     feed: InboxFeedState,
     navigation: MailNavigation,
 ): ReadContext = remember(states, feed) { states.reading.context(feed, contactSheet(states, navigation)) }
+
+private fun MailScope.Roles.folderIds(folders: List<MailFolder>): Set<String> =
+    folders
+        .filter { it.role in names || (ownFolders && it.role == null) }
+        .map { it.id }
+        .toSet()
+
+private fun MailScope.Folders.folderIds(accountId: String): Set<String> =
+    folders
+        .filter { it.accountId == accountId }
+        .map { it.folderId }
+        .toSet()

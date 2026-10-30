@@ -72,12 +72,7 @@ class FoldersAndRulesTest {
         server.alsoIn += "r"
         start()
         compose.waitForText("Welcome")
-        compose.waitUntil(TIMEOUT) {
-            compose
-                .onAllNodes(hasText("Welcome") and hasContentDescription("Folders: Receipts", substring = true))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
+        compose.waitForNode(hasText("Welcome") and hasContentDescription("Folders: Receipts", substring = true))
         server.alsoIn.clear()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         // Message rows are selectable too, so this picks the sidebar's folder.
@@ -94,13 +89,7 @@ class FoldersAndRulesTest {
         compose.onNode(hasContentDescription("New folder") and hasClickAction()).performClick()
         compose.onNodeWithContentDescription("Name").performTextInput("Travel")
         compose.onNodeWithText("Create").performClick()
-        compose.waitUntil(TIMEOUT) {
-            compose
-                .onAllNodes(
-                    hasText("Travel") and hasClickAction() and !hasSetTextAction(),
-                ).fetchSemanticsNodes()
-                .isNotEmpty()
-        }
+        compose.waitForNode(hasText("Travel") and hasClickAction() and !hasSetTextAction())
         assertTrue(server.calls.any { "\"create\":{\"folder\":{\"name\":\"Travel\"" in it })
     }
 

@@ -41,19 +41,20 @@ internal class MessageFiling(
     fun labeled(messages: List<MailMessage>): List<MailMessage> {
         val trees = folders.accounts.associate { it.accountId to it.folderTree() }
         return messages.map { message ->
-            val labels =
-                trees[message.location.accountId]
-                    ?.labelFolders(message.location.mailboxIds, message.location.mailboxId)
-                    ?.map {
-                        RowFolder(
-                            it.folder.id,
-                            it.folder.name,
-                            if (it.folder.role == INBOX_ROLE) FolderKind.Inbox else FolderKind.Folder,
-                            colors.colorOf(it.folder),
-                            it.readLater,
-                        )
-                    }
-            message.copy(labels = labels.orEmpty())
+            message.copy(
+                labels =
+                    trees[message.location.accountId]
+                        ?.labelFolders(message.location.mailboxIds, message.location.mailboxId)
+                        ?.map {
+                            RowFolder(
+                                it.folder.id,
+                                it.folder.name,
+                                if (it.folder.role == INBOX_ROLE) FolderKind.Inbox else FolderKind.Folder,
+                                colors.colorOf(it.folder),
+                                it.readLater,
+                            )
+                        }.orEmpty(),
+            )
         }
     }
 
@@ -147,23 +148,15 @@ internal class MessageFiling(
         val folder = account?.readLater
         if (folder == null || message.emailId.isEmpty()) return null
         val shown = message.location.mailboxId
+        val target = MoveTarget(folder.id, folder.name)
+        val leaves = shown == folder.id
+        val save = { setReadLater(feed, message, folder, saved = true) }
+        val remove = { setReadLater(feed, message, folder, saved = false, leaves) }
         return when (account.readLaterStep(message.location.mailboxIds.ifEmpty { setOf(shown) }, shown)) {
-            ReadLaterStep.Save -> {
-                ReadLaterChange(saves = true, leaves = false) { setReadLater(feed, message, folder, true) }
-            }
-
-            ReadLaterStep.Move -> {
-                ReadLaterChange(saves = true, leaves = true) { move(feed, message, MoveTarget(folder.id, folder.name)) }
-            }
-
-            ReadLaterStep.Remove -> {
-                val leaves = shown == folder.id
-                ReadLaterChange(saves = false, leaves = leaves) { setReadLater(feed, message, folder, false, leaves) }
-            }
-
-            null -> {
-                null
-            }
+            ReadLaterStep.Save -> ReadLaterChange(saves = true, leaves = false, apply = save)
+            ReadLaterStep.Move -> ReadLaterChange(saves = true, leaves = true) { move(feed, message, target) }
+            ReadLaterStep.Remove -> ReadLaterChange(saves = false, leaves = leaves, apply = remove)
+            null -> null
         }
     }
 

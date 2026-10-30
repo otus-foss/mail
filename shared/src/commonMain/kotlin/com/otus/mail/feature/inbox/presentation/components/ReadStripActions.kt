@@ -50,11 +50,11 @@ internal class ReadStripActions(
     suspend fun thumbnail(
         message: MailMessage,
         file: MailAttachment,
-    ): ImageBitmap? {
-        val small = file.kind() == AttachmentKindName.Image && file.size <= THUMBNAIL_MAX_BYTES
-        val bytes = if (small) downloads.bytes(message, file) else null
-        return bytes?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
-    }
+    ): ImageBitmap? =
+        file
+            .takeIf { it.kind() == AttachmentKindName.Image && it.size <= THUMBNAIL_MAX_BYTES }
+            ?.let { downloads.bytes(message, it) }
+            ?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
 
     private fun open(
         message: MailMessage,

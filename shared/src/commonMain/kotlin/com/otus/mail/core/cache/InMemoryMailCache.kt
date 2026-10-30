@@ -50,8 +50,7 @@ class InMemoryMailCache : MailCache {
         changes: CacheWrite.() -> Unit,
     ) {
         lock.withLock {
-            val batch = Batch(logins[loginId] ?: Login()).apply(changes)
-            logins = logins + (loginId to batch.login)
+            logins = logins + (loginId to Batch(logins[loginId] ?: Login()).apply(changes).login)
         }
     }
 

@@ -36,10 +36,13 @@ class JmapKnownPeople(
     private val lock = Mutex()
     private var known: Map<String, Known> = emptyMap()
 
-    override suspend fun addresses(accountId: String): Set<String> =
-        lock.withLock { known[accountId] }?.takeIf { it.loadedAt.elapsedNow() < maxAge }?.addresses
-            ?: load(accountId)?.also { lock.withLock { known += accountId to Known(it, timeSource.markNow()) } }
-            ?: emptySet()
+    override suspend fun addresses(accountId: String): Set<String> {
+        val cached = lock.withLock { known[accountId] }?.takeIf { it.loadedAt.elapsedNow() < maxAge }
+        if (cached != null) return cached.addresses
+        val loaded = load(accountId)
+        if (loaded != null) lock.withLock { known += accountId to Known(loaded, timeSource.markNow()) }
+        return loaded.orEmpty()
+    }
 
     private suspend fun load(accountId: String): Set<String>? =
         mailCallOr(null) {
@@ -57,8 +60,9 @@ class JmapKnownPeople(
      */
     private suspend fun MailAccount.sentTo(): List<String> {
         val sent = connection.call(roleQuery(SENT_ROLE)).ids.firstOrNull() ?: return emptyList()
-        val ids = connection.call(QueryMethod(EmailType, id, inMailbox(sent), NEWEST_FIRST, SENT_SCAN)).ids
-        return ids
+        return connection
+            .call(QueryMethod(EmailType, id, inMailbox(sent), NEWEST_FIRST, SENT_SCAN))
+            .ids
             .chunked(session.coreLimit("maxObjectsInGet", GET_BATCH))
             .flatMap { batch -> connection.call(GetMethod(EmailType, id, JmapIds.Of(batch), PROPERTIES)).list }
             .flatMap { it.to.orEmpty() + it.cc.orEmpty() + it.bcc.orEmpty() }

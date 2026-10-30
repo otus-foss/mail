@@ -29,11 +29,9 @@ internal fun webpWithoutMetadata(image: ImageBytes): ByteArray {
         // Chunks are padded to an even length; the last one may lack its padding byte.
         val end = minOf(at + WEBP_CHUNK_HEADER + size.toInt() + (size % 2).toInt(), image.size)
         val chunk = image.slice(at, end)
-        when (image.text(at, CHUNK_TYPE_BYTES)) {
-            "EXIF", "XMP " -> Unit
-            "VP8X" -> kept += chunk.also { it[WEBP_CHUNK_HEADER] = it[WEBP_CHUNK_HEADER].withoutMetadataFlags() }
-            else -> kept += chunk
-        }
+        val type = image.text(at, CHUNK_TYPE_BYTES)
+        if (type == "VP8X") chunk[WEBP_CHUNK_HEADER] = chunk[WEBP_CHUNK_HEADER].withoutMetadataFlags()
+        if (type != "EXIF" && type != "XMP ") kept += chunk
         at = end
     }
     val body = joined(kept)

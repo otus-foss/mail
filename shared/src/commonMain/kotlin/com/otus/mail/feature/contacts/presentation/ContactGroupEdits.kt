@@ -22,7 +22,9 @@ internal fun ContactsState.createGroup(
             name = Name(full = name.trim()),
             members = members.mapNotNull { it.card.uid }.associateWith { true }.takeIf { it.isNotEmpty() },
         )
-    return ContactEdit.Create(newId(), book, group).also(::send).key
+    val created = ContactEdit.Create(newId(), book, group)
+    send(created)
+    return created.key
 }
 
 /** Adds [cards] to [group]. Cards without a uid cannot be members, so they stay out. */
@@ -44,7 +46,8 @@ internal fun ContactsState.removeFromGroup(
         group.card.members
             .orEmpty()
             .filterKeys { it !in uids }
-    update(group, group.card.copy(members = members.takeIf { it.isNotEmpty() }))
+            .takeIf { it.isNotEmpty() }
+    update(group, group.card.copy(members = members))
 }
 
 /** Gives [group] a new [name]. */

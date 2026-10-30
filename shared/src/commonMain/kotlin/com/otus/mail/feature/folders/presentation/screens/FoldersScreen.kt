@@ -169,11 +169,11 @@ private fun FoldersState.listActions(
 ) = FolderListActions(
     colorOf = colors::colorOf,
     rulesOf = rulesOf,
-    placeable = {
-        folder,
-        parentId,
-        ->
-        account(folder.accountId)?.scopeOf(folder)?.placeableChildren(parentId).orEmpty()
+    placeable = { folder, parentId ->
+        account(folder.accountId)
+            ?.scopeOf(folder)
+            ?.placeableChildren(parentId)
+            .orEmpty()
     },
     canDrop = { placement(it.folder, it.parentId, it.index) != null },
     onDrop = { place(it.folder, it.parentId, it.index) },

@@ -71,16 +71,15 @@ private fun mailboxPaths(mailboxes: List<MailboxObject>): Map<String, String> {
     val byId = mailboxes.associateBy { it.id }
     return mailboxes.associate { mailbox ->
         val seen = mutableSetOf<String>()
-        val chain =
-            generateSequence(mailbox) { byId[it.parentId] }
-                .takeWhile { seen.add(it.id) }
-                .toList()
-                .reversed()
         val path =
             if (mailbox.role == INBOX_ROLE) {
                 SIEVE_INBOX
             } else {
-                chain.joinToString(FOLDER_PATH_SEPARATOR) { if (it.role == INBOX_ROLE) SIEVE_INBOX else it.name }
+                generateSequence(mailbox) { byId[it.parentId] }
+                    .takeWhile { seen.add(it.id) }
+                    .toList()
+                    .reversed()
+                    .joinToString(FOLDER_PATH_SEPARATOR) { if (it.role == INBOX_ROLE) SIEVE_INBOX else it.name }
             }
         mailbox.id to path
     }

@@ -18,15 +18,17 @@ class AndroidAvatarPhotos(
     override suspend fun pick(): ContactAvatar.Photo? {
         val open = photos.pick() ?: return null
         // An unreadable photo is the same as none: the sheet keeps the current avatar.
-        val source = withContext(Dispatchers.IO) { runCatching { sampledBitmap(open, DECODE_SIDE) }.getOrNull() }
-        return source?.let { withContext(Dispatchers.Default) { it.avatar() } }
+        return withContext(Dispatchers.IO) { runCatching { sampledBitmap(open, DECODE_SIDE) }.getOrNull() }
+            ?.let { withContext(Dispatchers.Default) { it.avatar() } }
     }
 
     private fun Bitmap.avatar(): ContactAvatar.Photo {
         val side = minOf(width, height)
-        val square = Bitmap.createBitmap(this, (width - side) / 2, (height - side) / 2, side, side)
-        val scaled = square.scale(minOf(side, SIZE), minOf(side, SIZE))
-        return ContactAvatar.Photo(AvatarImage(scaled.encoded(Bitmap.CompressFormat.JPEG, QUALITY)), "image/jpeg")
+        return Bitmap
+            .createBitmap(this, (width - side) / 2, (height - side) / 2, side, side)
+            .scale(minOf(side, SIZE), minOf(side, SIZE))
+            .encoded(Bitmap.CompressFormat.JPEG, QUALITY)
+            .let { ContactAvatar.Photo(AvatarImage(it), "image/jpeg") }
     }
 
     private companion object {

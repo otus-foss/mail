@@ -136,11 +136,10 @@ class CalendarWeekLayoutTest {
     }
 
     private fun saveScreenshot() {
-        val bitmap =
-            compose.runOnIdle {
+        compose
+            .runOnIdle {
                 val dialog = ShadowDialog.getShownDialogs().last { it.isShowing }
                 requireNotNull(dialog.window).decorView.drawnBitmap()
-            }
-        bitmap.savePng("build/reports/pickers/calendar-continuous-week.png")
+            }.savePng("build/reports/pickers/calendar-continuous-week.png")
     }
 }

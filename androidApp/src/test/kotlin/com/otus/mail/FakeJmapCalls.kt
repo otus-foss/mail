@@ -26,7 +26,7 @@ internal fun jmapReply(
             val (name, arguments, id) = call.jsonArray
             val method = name.jsonPrimitive.content
             val result = resolved(arguments.jsonObject, results)?.let { respond(method, it) }
-            result?.let { results[id.jsonPrimitive.content] = it }
+            if (result != null) results[id.jsonPrimitive.content] = result
             JsonArray(listOf(JsonPrimitive(if (result == null) "error" else method), result ?: refusal(method), id))
         }
     return buildJsonObject { put("methodResponses", JsonArray(responses)) }.toString()
@@ -51,10 +51,10 @@ internal fun List<String>.toJsonArray(): JsonArray = JsonArray(map(::JsonPrimiti
 
 internal val JsonObject.id: String get() = getValue("id").jsonPrimitive.content
 
-private fun refusal(method: String): JsonObject {
-    val type = if (method.endsWith("/changes")) "cannotCalculateChanges" else "serverFail"
-    return buildJsonObject { put("type", JsonPrimitive(type)) }
-}
+private fun refusal(method: String): JsonObject =
+    buildJsonObject {
+        put("type", JsonPrimitive(if (method.endsWith("/changes")) "cannotCalculateChanges" else "serverFail"))
+    }
 
 /** [arguments] with `#ids` replaced by the result it points to; null when that call failed. */
 private fun resolved(
@@ -69,13 +69,13 @@ private fun resolved(
             .trim('/')
             .split('/')
     return results[reference.getValue("resultOf").jsonPrimitive.content]?.let { source ->
-        val found =
-            path.fold(listOf<JsonElement>(source)) { elements, step ->
-                elements.flatMap {
-                    if (step == "*") it.jsonArray.toList() else listOfNotNull((it as? JsonObject)?.get(step))
-                }
-            }
-        val ids = found.flatMap { if (it is JsonArray) it.toList() else listOf(it) }
+        val ids =
+            path
+                .fold(listOf<JsonElement>(source)) { elements, step ->
+                    elements.flatMap {
+                        if (step == "*") it.jsonArray.toList() else listOfNotNull((it as? JsonObject)?.get(step))
+                    }
+                }.flatMap { if (it is JsonArray) it.toList() else listOf(it) }
         JsonObject(arguments - "#ids" + ("ids" to JsonArray(ids)))
     }
 }

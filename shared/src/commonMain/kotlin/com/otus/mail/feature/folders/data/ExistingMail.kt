@@ -33,9 +33,8 @@ internal class ExistingMail(
             val sources = sources(account, folderId)
             val filter = emailFilter(rule, sources) ?: return@withAccount null
             if (sources.isEmpty()) return@withAccount 0
-            val query = QueryMethod(EmailFoldersType, account.id, filter, limit = 1, extra = CALCULATE_TOTAL)
             account.connection
-                .call(query)
+                .call(QueryMethod(EmailFoldersType, account.id, filter, limit = 1, extra = CALCULATE_TOTAL))
                 .total
                 ?.toInt()
         }

@@ -36,18 +36,23 @@ internal fun inboxBar(
     onFilters: () -> Unit,
 ): (@Composable () -> Unit)? =
     when {
-        actions == null || (state.searching && !actions.behavior().minimizedBar) -> {
-            null
-        }
-
-        rows.selected.isNotEmpty() -> {
-            { SelectionBar(rows.selected, actions, rows.clearSelection) }
-        }
-
-        else -> {
-            { InboxBar(listed.messages, state, listed.filters, actions, onFilters, onCompose) }
-        }
+        actions == null || (state.searching && !actions.behavior().minimizedBar) -> null
+        rows.selected.isNotEmpty() -> selectionBarContent(rows, actions)
+        else -> inboxBarContent(listed, state, actions, onFilters, onCompose)
     }
+
+private fun selectionBarContent(
+    rows: InboxRows,
+    actions: MessageActions,
+): @Composable () -> Unit = { SelectionBar(rows.selected, actions, rows.clearSelection) }
+
+private fun inboxBarContent(
+    listed: ListedMail,
+    state: InboxState,
+    actions: MessageActions,
+    onFilters: () -> Unit,
+    onCompose: (ComposeRequest) -> Unit,
+): @Composable () -> Unit = { InboxBar(listed.messages, state, listed.filters, actions, onFilters, onCompose) }
 
 /** Row taps, long presses, and drags: opening marks a message read as the saved behavior asks. */
 internal fun rowGestures(

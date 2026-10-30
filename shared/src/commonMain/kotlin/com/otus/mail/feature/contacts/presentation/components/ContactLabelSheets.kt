@@ -24,22 +24,22 @@ internal fun ContactLabelSheets(
     onManagingDone: () -> Unit,
 ) {
     var naming by remember { mutableStateOf<((ContactLabel) -> Unit)?>(null) }
-    naming?.let { apply -> CustomLabelSheet(apply) { naming = null } }
-    managing?.let { apply ->
-        // Deleting also clears the label from this form's fields, which are not saved yet.
-        val delete = { label: String ->
-            onChange(draft.withoutLabel(label))
-            knownLabels.delete(label)
-        }
-        LabelsSheet(
-            ContactLabels(labels, knownLabels.uses, delete),
-            onNew = {
-                onManagingDone()
-                naming = apply
-            },
-            onDismiss = onManagingDone,
-        )
+    val onLabel = naming
+    if (onLabel != null) CustomLabelSheet(onLabel) { naming = null }
+    val onManagedLabel = managing ?: return
+    // Deleting also clears the label from this form's fields, which are not saved yet.
+    val delete = { label: String ->
+        onChange(draft.withoutLabel(label))
+        knownLabels.delete(label)
     }
+    LabelsSheet(
+        ContactLabels(labels, knownLabels.uses, delete),
+        onNew = {
+            onManagingDone()
+            naming = onManagedLabel
+        },
+        onDismiss = onManagingDone,
+    )
 }
 
 /** Asks for a custom label's name and hands it to [onLabel]; a blank name cannot be used. */

@@ -65,7 +65,7 @@ private fun DraftAttachment.actions(
     }
 
 private fun DraftAttachment.inMessage(attachments: ComposeAttachments) =
-    MenuAction("Show in message", Res.drawable.symbol_add_photo_alternate) { attachments.showInline(id, true) }
+    MenuAction("Show in message", Res.drawable.symbol_add_photo_alternate) { attachments.showInline(id, inline = true) }
 
 /** Why a file is not ready to send, or null once the draft's account has it. */
 private fun DraftAttachment.status(

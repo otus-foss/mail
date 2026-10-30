@@ -37,7 +37,8 @@ internal typealias ChooseFolder = (messages: List<MailMessage>, targets: List<Mo
 /**
  * [action] for [messages], one or a selection; null when none of them can take it. A mark turns
  * on for all of them while any lacks it, and off otherwise. Moving needs one account, because
- * folders belong to an account. Suggested move goes to [suggestion], when there is one.
+ * folders belong to an account. Suggested move goes to [suggestion], when there is one. Screen
+ * and draft actions are offered by their screens.
  */
 internal fun MessageActions.offer(
     messages: List<MailMessage>,
@@ -47,28 +48,16 @@ internal fun MessageActions.offer(
 ): OfferedAction? =
     when (action) {
         is BarButton.MoveTo -> offerMoveTo(messages, action)
-
         MailAction.Read -> offerMark(messages, MessageFlag.Read)
-
         MailAction.Flag -> offerMark(messages, MessageFlag.Flagged)
-
         MailAction.ReadLater -> offerReadLater(messages)
-
         MailAction.Archive -> offerFiling(messages, FolderShortcut.Archive, action)
-
         MailAction.Trash -> offerFiling(messages, FolderShortcut.Trash, action)
-
         MailAction.Spam -> offerFiling(messages, FolderShortcut.Spam, action)
-
         MailAction.NotSpam, MailAction.Restore, MailAction.DeleteForever -> offerCleanup(messages, action)
-
         MailAction.Move -> offerMove(messages, chooseFolder)
-
         MailAction.SuggestedMove -> suggestion?.let { offerSuggested(messages, it) }
-
         MailAction.RuleForSender -> offerRule(messages)
-
-        // Screen and draft actions are offered by their screens, not for messages.
         else -> null
     }
 

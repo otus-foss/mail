@@ -52,7 +52,7 @@ internal fun MailActionBar(
             offered?.symbol ?: button.symbol,
             enabled = offered != null,
         ) {
-            offered?.let { confirmation.run(it, onAction) }
+            if (offered != null) confirmation.run(offered, onAction)
         }
     }
     ActionBar(

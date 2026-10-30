@@ -45,9 +45,7 @@ private fun List<String>.chunkedBy(key: (String) -> Boolean): List<Pair<Boolean,
     fold(emptyList<Pair<Boolean, List<String>>>()) { runs, line ->
         val quoted = key(line)
         val last = runs.lastOrNull()
-        if (last?.first ==
-            quoted
-        ) {
+        if (last?.first == quoted) {
             runs.dropLast(1) + (quoted to last.second + line)
         } else {
             runs + (quoted to listOf(line))

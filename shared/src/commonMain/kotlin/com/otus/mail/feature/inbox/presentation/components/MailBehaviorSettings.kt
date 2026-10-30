@@ -147,7 +147,8 @@ fun MailBehaviorSettings(
         )
     }
     SendingSettings(state)
-    choosing?.let { side -> SwipeChoice(state, side, side.title(rtl)) { choosing = null } }
+    val side = choosing ?: return
+    SwipeChoice(state, side, side.title(rtl)) { choosing = null }
 }
 
 @Composable

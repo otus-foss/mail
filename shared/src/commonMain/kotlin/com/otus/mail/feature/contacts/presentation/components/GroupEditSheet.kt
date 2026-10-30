@@ -18,30 +18,44 @@ internal fun GroupEditSheet(
     onDone: () -> Unit,
 ) {
     when (edit) {
-        GroupEdit.AddPeople -> {
-            AddPeopleSheet(
-                state.people.filter { person -> person.main.card.uid != null && person !in members },
-                onAdd = {
-                    state.addToGroup(group, it.map { person -> person.main })
-                    onDone()
-                },
-                onDismiss = onDone,
-            )
-        }
-
-        GroupEdit.Rename -> {
-            InputSheet(
-                title = "Rename group",
-                label = "Name",
-                confirmLabel = "Rename",
-                onConfirm = {
-                    state.renameGroup(group, it)
-                    onDone()
-                },
-                onDismiss = onDone,
-                initial = group.displayName,
-                problem = { text -> if (text.isBlank()) "" else null },
-            )
-        }
+        GroupEdit.AddPeople -> AddGroupPeople(state, group, members, onDone)
+        GroupEdit.Rename -> RenameGroup(state, group, onDone)
     }
+}
+
+@Composable
+private fun AddGroupPeople(
+    state: ContactsState,
+    group: ContactCard,
+    members: List<ContactPerson>,
+    onDone: () -> Unit,
+) {
+    AddPeopleSheet(
+        state.people.filter { person -> person.main.card.uid != null && person !in members },
+        onAdd = {
+            state.addToGroup(group, it.map { person -> person.main })
+            onDone()
+        },
+        onDismiss = onDone,
+    )
+}
+
+@Composable
+private fun RenameGroup(
+    state: ContactsState,
+    group: ContactCard,
+    onDone: () -> Unit,
+) {
+    InputSheet(
+        title = "Rename group",
+        label = "Name",
+        confirmLabel = "Rename",
+        onConfirm = {
+            state.renameGroup(group, it)
+            onDone()
+        },
+        onDismiss = onDone,
+        initial = group.displayName,
+        problem = { text -> if (text.isBlank()) "" else null },
+    )
 }

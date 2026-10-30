@@ -9,8 +9,11 @@ import org.robolectric.shadows.ShadowDialog
 import java.io.File
 
 /** This view drawn into a new bitmap of its size. */
-internal fun View.drawnBitmap(): Bitmap =
-    Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { draw(Canvas(it)) }
+internal fun View.drawnBitmap(): Bitmap {
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    draw(Canvas(bitmap))
+    return bitmap
+}
 
 /** The activity's window as drawn now, without menus or sheets, which have windows of their own. */
 internal fun AndroidComposeTestRule<*, out ComponentActivity>.drawnWindow(): Bitmap =

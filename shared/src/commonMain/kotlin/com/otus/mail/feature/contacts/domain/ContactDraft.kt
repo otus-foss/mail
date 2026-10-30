@@ -66,25 +66,14 @@ data class ContactDraft(
                     keptEmails
                         .mapIndexed { index, value ->
                             val old = value.id?.let { id -> card.emails?.get(id) }
-                            emailKeys[index] to
-                                (old ?: EmailAddress(value.value.trim())).copy(
-                                    address = value.value.trim(),
-                                    contexts = value.label.contexts(old?.contexts),
-                                    label = value.label.custom,
-                                    pref = if (value.preferred && keptEmails.size > 1) 1 else null,
-                                )
+                            emailKeys[index] to value.toEmail(old, preferred = value.preferred && keptEmails.size > 1)
                         }.toMap()
                         .takeIf { it.isNotEmpty() },
                 phones =
                     keptPhones
                         .mapIndexed { index, value ->
                             val old = value.id?.let { id -> card.phones?.get(id) }
-                            phoneKeys[index] to
-                                (old ?: Phone(value.value.trim())).copy(
-                                    number = value.value.trim(),
-                                    contexts = value.label.contexts(old?.contexts),
-                                    label = value.label.custom,
-                                )
+                            phoneKeys[index] to value.toPhone(old)
                         }.toMap()
                         .takeIf { it.isNotEmpty() },
                 organizations =
@@ -236,3 +225,21 @@ private fun <T> replaceFirst(
             .orEmpty()
     return (kept + rest).takeIf { it.isNotEmpty() }
 }
+
+private fun DraftValue.toEmail(
+    old: EmailAddress?,
+    preferred: Boolean,
+): EmailAddress =
+    (old ?: EmailAddress(value.trim())).copy(
+        address = value.trim(),
+        contexts = label.contexts(old?.contexts),
+        label = label.custom,
+        pref = if (preferred) 1 else null,
+    )
+
+private fun DraftValue.toPhone(old: Phone?): Phone =
+    (old ?: Phone(value.trim())).copy(
+        number = value.trim(),
+        contexts = label.contexts(old?.contexts),
+        label = label.custom,
+    )

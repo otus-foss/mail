@@ -42,7 +42,7 @@ fun fromPeople(
     query: String = "",
     limit: Int = MAX_PEOPLE,
 ): List<FilterPerson> {
-    val loaded = messages.map { FoundPerson(it.sender, 1, it.lastSeen) }
+    val loaded = messages.map { FoundPerson(it.sender, conversations = 1, it.lastSeen) }
     return ranked(loaded, found, query, avatars(messages.map { it.sender }), limit)
 }
 
@@ -76,7 +76,10 @@ fun toPeople(
                     accountName = account,
                 )
             }
-    val loaded = received.flatMap { (message, people) -> people.map { FoundPerson(it, 1, message.lastSeen) } }
+    val loaded =
+        received.flatMap { (message, people) ->
+            people.map { FoundPerson(it, conversations = 1, message.lastSeen) }
+        }
     val others =
         ranked(
             loaded.filter { it.person.address.lowercase() !in mine },
@@ -114,8 +117,8 @@ private fun ranked(
     avatars: Map<String, ResolvedAvatar>,
     limit: Int,
 ): List<FilterPerson> {
-    val wanted = { found: FoundPerson ->
-        val person = found.person
+    val wanted = { candidate: FoundPerson ->
+        val person = candidate.person
         person.address.isNotBlank() && (person.name.matches(query) || person.address.matches(query))
     }
     val rows = loaded.filter(wanted).groupBy { it.person.address.lowercase() }

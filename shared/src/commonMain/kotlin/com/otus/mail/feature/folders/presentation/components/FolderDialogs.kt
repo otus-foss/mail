@@ -37,44 +37,61 @@ private fun FolderChangeDialog(
     onDialog: (FolderDialog?) -> Unit,
 ) {
     val close = { onDialog(null) }
+    // FolderDialogs handles creation before looking up an existing folder.
     when (dialog) {
-        is FolderDialog.Rename -> {
-            InputSheet(
-                title = "Rename ${folder.name}",
-                label = "Name",
-                confirmLabel = "Rename",
-                onConfirm = { actions.onRename(folder, it) },
-                onDismiss = close,
-                initial = folder.name,
-                problem = { folderNameProblem(it, folder.parentId, account, renaming = folder)?.message() },
-            )
-        }
+        is FolderDialog.Rename -> RenameFolder(folder, account, actions, close)
+        is FolderDialog.Delete -> DeleteFolder(folder, actions, close)
+        is FolderDialog.Move -> FolderParentSheet(folder, account, { actions.onMove(folder, it) }, close)
+        is FolderDialog.Color -> ChangeFolderColor(dialog, folder, actions, close)
+        is FolderDialog.Create -> Unit
+    }
+}
 
-        is FolderDialog.Delete -> {
-            ConfirmDialog(
-                title = "Delete ${folder.name}?",
-                message = "This deletes the folder and any rules that sort mail into it.",
-                confirmLabel = "Delete",
-                onConfirm = { actions.onDelete(folder) },
-                onDismiss = close,
-            )
-        }
+@Composable
+private fun RenameFolder(
+    folder: MailFolder,
+    account: AccountFolders,
+    actions: FolderActions,
+    onDismiss: () -> Unit,
+) {
+    InputSheet(
+        title = "Rename ${folder.name}",
+        label = "Name",
+        confirmLabel = "Rename",
+        onConfirm = { actions.onRename(folder, it) },
+        onDismiss = onDismiss,
+        initial = folder.name,
+        problem = { folderNameProblem(it, folder.parentId, account, renaming = folder)?.message() },
+    )
+}
 
-        is FolderDialog.Move -> {
-            FolderParentSheet(folder, account, onPick = { actions.onMove(folder, it) }, onDismiss = close)
-        }
+@Composable
+private fun DeleteFolder(
+    folder: MailFolder,
+    actions: FolderActions,
+    onDismiss: () -> Unit,
+) {
+    ConfirmDialog(
+        title = "Delete ${folder.name}?",
+        message = "This deletes the folder and any rules that sort mail into it.",
+        confirmLabel = "Delete",
+        onConfirm = { actions.onDelete(folder) },
+        onDismiss = onDismiss,
+    )
+}
 
-        is FolderDialog.Color -> {
-            val color = actions.color(folder)
-            if (color == null) {
-                LaunchedEffect(dialog) { close() }
-            } else {
-                FolderColorSheet(color.current, color.onPick, onDismiss = close)
-            }
-        }
-
-        // Creating needs no existing folder; FolderDialogs shows it before looking one up.
-        is FolderDialog.Create -> {}
+@Composable
+private fun ChangeFolderColor(
+    dialog: FolderDialog.Color,
+    folder: MailFolder,
+    actions: FolderActions,
+    onDismiss: () -> Unit,
+) {
+    val color = actions.color(folder)
+    if (color == null) {
+        LaunchedEffect(dialog) { onDismiss() }
+    } else {
+        FolderColorSheet(color.current, color.onPick, onDismiss = onDismiss)
     }
 }
 

@@ -143,9 +143,6 @@ class PanelHeaderAlignmentTest {
     private fun baseline(node: SemanticsNodeInteraction): Float =
         node.fetchSemanticsNode().positionInRoot.y + textLayouts(node).single().firstBaseline
 
-    private fun textLayouts(node: SemanticsNodeInteraction): List<TextLayoutResult> {
-        val results = mutableListOf<TextLayoutResult>()
-        node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
-        return results
-    }
+    private fun textLayouts(node: SemanticsNodeInteraction): List<TextLayoutResult> =
+        buildList { node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(this) } }
 }

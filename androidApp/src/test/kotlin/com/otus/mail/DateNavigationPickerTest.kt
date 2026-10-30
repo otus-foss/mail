@@ -3,6 +3,7 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -124,23 +125,11 @@ class DateNavigationPickerTest {
                 OtusTheme { MonthNavigation(MonthNavigationLabel(month.value, "2026", 0), {}, {}, {}) }
             }
         }
-        val yearBefore =
-            compose
-                .onNode(
-                    hasText("2026") and hasAnyAncestor(hasText("2026")),
-                    useUnmergedTree = true,
-                ).fetchSemanticsNode()
-                .boundsInRoot
+        val yearBefore = yearBounds()
         val previousBefore = compose.onNodeWithContentDescription("Previous month").fetchSemanticsNode().boundsInRoot
         val nextBefore = compose.onNodeWithContentDescription("Next month").fetchSemanticsNode().boundsInRoot
         compose.runOnIdle { month.value = "September" }
-        val yearAfter =
-            compose
-                .onNode(
-                    hasText("2026") and hasAnyAncestor(hasText("2026")),
-                    useUnmergedTree = true,
-                ).fetchSemanticsNode()
-                .boundsInRoot
+        val yearAfter = yearBounds()
         assertEquals(yearBefore.center.x, yearAfter.center.x, 1f)
         assertEquals(
             previousBefore,
@@ -148,6 +137,12 @@ class DateNavigationPickerTest {
         )
         assertEquals(nextBefore, compose.onNodeWithContentDescription("Next month").fetchSemanticsNode().boundsInRoot)
     }
+
+    private fun yearBounds(): Rect =
+        compose
+            .onNode(hasText("2026") and hasAnyAncestor(hasText("2026")), useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .boundsInRoot
 
     private fun choose(
         column: String,

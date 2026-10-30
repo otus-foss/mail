@@ -27,21 +27,22 @@ class PhotoCleaningQuestion(
     /** [files] with each cleanable photo [PickedFile.cleaned] when the choice, or the answer, says so. */
     suspend fun cleanedAsChosen(files: List<PickedFile>): List<PickedFile> {
         val photos = files.count { it.cleanable }
+        if (photos == 0) return files
         val clean =
-            photos > 0 &&
-                when (choice()) {
-                    PhotoCleaning.Always -> true
-                    PhotoCleaning.Never -> false
-                    PhotoCleaning.Ask -> ask(photos)
-                }
+            when (choice()) {
+                PhotoCleaning.Always -> true
+                PhotoCleaning.Never -> false
+                PhotoCleaning.Ask -> ask(photos)
+            }
         return if (clean) files.map { if (it.cleanable) it.cleaned() else it } else files
     }
 
     private suspend fun ask(photos: Int): Boolean {
-        val answer = CompletableDeferred<Boolean>().also { reply = it }
+        val response = CompletableDeferred<Boolean>()
+        reply = response
         question = photos
         return try {
-            answer.await()
+            response.await()
         } finally {
             question = null
         }

@@ -73,7 +73,7 @@ data class ContactCard(
                 .orEmpty()
                 .sortedByPref { it.pref }
                 .map { (id, phone) ->
-                    ContactValue(id, phone.number, ContactLabel.of(phone.contexts, phone.label), false)
+                    ContactValue(id, phone.number, ContactLabel.of(phone.contexts, phone.label), preferred = false)
                 }
 
     /** Title and organization, each once, such as "Rear admiral · US Navy". */

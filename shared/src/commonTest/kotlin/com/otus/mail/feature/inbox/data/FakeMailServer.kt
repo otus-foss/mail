@@ -84,18 +84,18 @@ internal class FakeMailServer(
                 val (name, arguments, id) = call.jsonArray
                 val method = name.jsonPrimitive.content
                 val resolved = resolved(arguments.jsonObject, results)
-                resolved?.let { calls += method to it }
+                if (resolved != null) calls += method to resolved
                 val result = if (resolved == null || method in refused) null else respond(method, resolved)
-                result?.let { results[id.jsonPrimitive.content] = it }
+                if (result != null) results[id.jsonPrimitive.content] = result
                 JsonArray(listOf(JsonPrimitive(if (result == null) "error" else method), result ?: refusal(method), id))
             }
         return buildJsonObject { put("methodResponses", JsonArray(responses)) }.toString()
     }
 
-    private fun refusal(method: String): JsonObject {
-        val type = if (method.endsWith("/changes")) "cannotCalculateChanges" else "requestTooLarge"
-        return buildJsonObject { put("type", JsonPrimitive(type)) }
-    }
+    private fun refusal(method: String): JsonObject =
+        buildJsonObject {
+            put("type", JsonPrimitive(if (method.endsWith("/changes")) "cannotCalculateChanges" else "requestTooLarge"))
+        }
 
     private fun respond(
         method: String,
@@ -114,28 +114,38 @@ internal class FakeMailServer(
 
     private fun emailGet(arguments: JsonObject): JsonObject {
         val properties = (arguments["properties"] as? JsonArray)?.strings()?.toSet()
-        val found = (arguments.ids() ?: emails.keys.toList()).mapNotNull { emails[it] }
-        val projected = found.map { email -> email.only(properties) }
-        return listResult("e$state", projected)
+        return listResult(
+            "e$state",
+            (arguments.ids() ?: emails.keys.toList())
+                .mapNotNull { emails[it] }
+                .map { email -> email.only(properties) },
+        )
     }
 
     private fun threadsOf(ids: List<String>): List<JsonObject> =
         ids.distinct().mapNotNull { thread ->
-            val members = emails.values.filter { it.threadId == thread }.sortedBy { it.receivedAt }
-            if (members.isEmpty()) {
-                null
-            } else {
-                buildJsonObject {
-                    put("id", JsonPrimitive(thread))
-                    put("emailIds", JsonArray(members.map { JsonPrimitive(it.id) }))
+            emails.values
+                .filter { it.threadId == thread }
+                .sortedBy { it.receivedAt }
+                .takeIf { it.isNotEmpty() }
+                ?.let { members ->
+                    buildJsonObject {
+                        put("id", JsonPrimitive(thread))
+                        put("emailIds", JsonArray(members.map { JsonPrimitive(it.id) }))
+                    }
                 }
-            }
         }
 
     private fun query(arguments: JsonObject): JsonObject {
         val boxes = mailboxesIn(arguments.getValue("filter").jsonObject)
-        val sort = arguments["sort"]?.jsonArray?.firstOrNull()?.jsonObject
-        val ascending = sort?.get("isAscending")?.jsonPrimitive?.boolean
+        val ascending =
+            arguments["sort"]
+                ?.jsonArray
+                ?.firstOrNull()
+                ?.jsonObject
+                ?.get("isAscending")
+                ?.jsonPrimitive
+                ?.boolean
         val inBoxes = emails.values.filter { email -> email.boxes.any { it in boxes } }.sortedBy { it.receivedAt }
         val ordered = if (ascending == true) inBoxes else inBoxes.reversed()
         val collapsed = arguments["collapseThreads"] == JsonPrimitive(true)
@@ -225,13 +235,13 @@ private fun resolved(
             .trim('/')
             .split('/')
     return results[reference.getValue("resultOf").jsonPrimitive.content]?.let { source ->
-        val found =
-            path.fold(listOf<JsonElement>(source)) { elements, step ->
-                elements.flatMap {
-                    if (step == "*") it.jsonArray.toList() else listOfNotNull((it as? JsonObject)?.get(step))
-                }
-            }
-        val ids = found.flatMap { if (it is JsonArray) it.toList() else listOf(it) }
+        val ids =
+            path
+                .fold(listOf<JsonElement>(source)) { elements, step ->
+                    elements.flatMap {
+                        if (step == "*") it.jsonArray.toList() else listOfNotNull((it as? JsonObject)?.get(step))
+                    }
+                }.flatMap { if (it is JsonArray) it.toList() else listOf(it) }
         JsonObject(arguments - "#ids" + ("ids" to JsonArray(ids)))
     }
 }

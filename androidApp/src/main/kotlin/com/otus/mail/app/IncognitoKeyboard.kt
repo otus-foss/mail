@@ -27,17 +27,21 @@ fun IncognitoKeyboard(
         interceptor = { request, next ->
             next.startInputMethod(
                 object : PlatformTextInputMethodRequest {
-                    override fun createInputConnection(outAttributes: EditorInfo): InputConnection =
-                        request.createInputConnection(outAttributes).also {
-                            // The flag exists from Android 8; older keyboards have no way to be asked.
-                            if (incognito && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                outAttributes.imeOptions =
-                                    outAttributes.imeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
-                            }
-                        }
+                    override fun createInputConnection(outAttributes: EditorInfo): InputConnection {
+                        val connection = request.createInputConnection(outAttributes)
+                        outAttributes.setIncognito(incognito)
+                        return connection
+                    }
                 },
             )
         },
         content = content,
     )
+}
+
+private fun EditorInfo.setIncognito(incognito: Boolean) {
+    // The flag exists from Android 8; older keyboards have no way to be asked.
+    if (incognito && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        imeOptions = imeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+    }
 }

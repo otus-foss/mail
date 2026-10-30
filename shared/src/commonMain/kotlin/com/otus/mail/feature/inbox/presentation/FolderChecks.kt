@@ -10,22 +10,17 @@ fun InboxFilters.check(
     options: FilterOptions,
 ): FolderCheck =
     when {
-        folders.any { it.key == folder.key } -> {
-            FolderCheck.On
-        }
-
-        folders.any { ref ->
-            ref.includeSubfolders &&
-                ref.loginId == folder.key.loginId &&
-                options.folder(ref.key)?.descendants?.contains(folder.key.mailboxId) == true
-        } -> {
-            FolderCheck.Included
-        }
-
-        else -> {
-            FolderCheck.Off
-        }
+        folders.any { it.key == folder.key } -> FolderCheck.On
+        folders.any { it.includes(folder, options) } -> FolderCheck.Included
+        else -> FolderCheck.Off
     }
+
+private fun FolderRef.includes(
+    folder: FilterFolder,
+    options: FilterOptions,
+): Boolean =
+    includeSubfolders && loginId == folder.key.loginId &&
+        options.folder(key)?.descendants?.contains(folder.key.mailboxId) == true
 
 /**
  * These filters with [folder] turned off, or on with its subfolders when it has any. Folders it
@@ -43,10 +38,11 @@ fun InboxFilters.toggle(folder: FilterFolder): InboxFilters {
 fun InboxFilters.includeSubfolders(
     folder: FilterFolder,
     include: Boolean,
-): InboxFilters {
-    val chosen = folders.firstOrNull { it.key == folder.key } ?: return this
-    return withFolder(chosen.copy(includeSubfolders = include), on = true)
-}
+): InboxFilters =
+    folders
+        .firstOrNull { it.key == folder.key }
+        ?.let { withFolder(it.copy(includeSubfolders = include), on = true) }
+        ?: this
 
 /**
  * The folders the tree shows: those matching [query] by name while searching, else every folder

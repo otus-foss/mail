@@ -109,11 +109,12 @@ class CidImagesBudgetTest {
             }
         val login = JmapLogin("ada", "https://mail.example.org/session", "ada@example.org", "Ada")
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        val account = MailAccounts(JmapConnections(JmapClient(engine), store), store).open(login)
-        return account.withInlineImages(
-            MessageContent("Keep the text", false, MessageHtml(html, false)),
-            parts,
-        )
+        return MailAccounts(JmapConnections(JmapClient(engine), store), store)
+            .open(login)
+            .withInlineImages(
+                MessageContent("Keep the text", false, MessageHtml(html, false)),
+                parts,
+            )
     }
 
     private fun part(

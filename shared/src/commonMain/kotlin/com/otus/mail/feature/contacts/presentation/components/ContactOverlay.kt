@@ -35,40 +35,51 @@ internal fun ContactOverlaySheet(
     onChange: (ContactOverlay?) -> Unit,
 ) {
     when (overlay) {
-        ContactOverlay.Delete -> {
-            ConfirmDialog(
-                title = "Delete “${page.name}”?",
-                message = "It’s removed from your server, so every app loses it.",
-                confirmLabel = "Delete",
-                onConfirm = {
-                    onChange(null)
-                    state.delete(page.cards.map { it.key })
-                    onBack()
-                },
-                onDismiss = { onChange(null) },
-            )
-        }
-
-        is ContactOverlay.EditGroup -> {
-            GroupEditSheet(overlay.edit, state, page.card, page.members) { onChange(null) }
-        }
-
-        is ContactOverlay.Merge -> {
-            MergeSheet(
-                overlay.plan,
-                state.writableBooks,
-                onChange = { onChange(ContactOverlay.Merge(it)) },
-                "Show separately",
-                onAlternative = {
-                    state.showSeparately(overlay.plan.cards.map { it.key })
-                    onChange(null)
-                },
-                onMerge = {
-                    state.merge(it)
-                    onChange(null)
-                },
-                onDismiss = { onChange(null) },
-            )
-        }
+        ContactOverlay.Delete -> DeleteContactDialog(page, state, onBack, onChange)
+        is ContactOverlay.EditGroup -> GroupEditSheet(overlay.edit, state, page.card, page.members) { onChange(null) }
+        is ContactOverlay.Merge -> MergeContactSheet(overlay.plan, state, onChange)
     }
+}
+
+@Composable
+private fun DeleteContactDialog(
+    page: ContactPage,
+    state: ContactsState,
+    onBack: () -> Unit,
+    onChange: (ContactOverlay?) -> Unit,
+) {
+    ConfirmDialog(
+        title = "Delete “${page.name}”?",
+        message = "It’s removed from your server, so every app loses it.",
+        confirmLabel = "Delete",
+        onConfirm = {
+            onChange(null)
+            state.delete(page.cards.map { it.key })
+            onBack()
+        },
+        onDismiss = { onChange(null) },
+    )
+}
+
+@Composable
+private fun MergeContactSheet(
+    plan: MergePlan,
+    state: ContactsState,
+    onChange: (ContactOverlay?) -> Unit,
+) {
+    MergeSheet(
+        plan,
+        state.writableBooks,
+        onChange = { onChange(ContactOverlay.Merge(it)) },
+        "Show separately",
+        onAlternative = {
+            state.showSeparately(plan.cards.map { it.key })
+            onChange(null)
+        },
+        onMerge = {
+            state.merge(it)
+            onChange(null)
+        },
+        onDismiss = { onChange(null) },
+    )
 }

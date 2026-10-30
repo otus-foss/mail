@@ -33,10 +33,10 @@ internal class MoveChoice(
             messages,
             targets,
             actions,
-            onLeave = { run ->
+            onLeave = { perform ->
                 request = null
                 onChosen()
-                run()
+                perform()
             },
             onDismiss = { request = null },
         )

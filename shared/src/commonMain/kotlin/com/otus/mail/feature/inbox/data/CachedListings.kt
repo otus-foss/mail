@@ -70,19 +70,9 @@ internal suspend fun MailCache.cachedPages(
                 val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone, serverSite)
                 val listing = listings[queries[index].key]
                 when {
-                    listing != null -> {
-                        ListingPage(listing.ids.mapNotNull { held.row(it, list) }, listing.hasMore)
-                    }
-
-                    check != null -> {
-                        listings[unfiltered[index].key]?.let { all ->
-                            ListingPage(all.ids.mapNotNull { held.row(it, list) }.filter(check), all.hasMore)
-                        }
-                    }
-
-                    else -> {
-                        null
-                    }
+                    listing != null -> held.page(listing, list)
+                    check != null -> listings[unfiltered[index].key]?.let { held.page(it, list, check) }
+                    else -> null
                 }
             }
         }
@@ -113,6 +103,18 @@ private class HeldMail(
     val threads: Map<String, ThreadObject>,
     val members: Map<String, EmailObject>,
 ) {
+    fun page(
+        listing: Listing,
+        list: ListedMailbox,
+        check: ((ListedRow) -> Boolean)? = null,
+    ): ListingPage<ListedRow> =
+        ListingPage(
+            listing.ids
+                .mapNotNull { row(it, list) }
+                .filter { check?.invoke(it) ?: true },
+            listing.hasMore,
+        )
+
     fun row(
         id: String,
         list: ListedMailbox,

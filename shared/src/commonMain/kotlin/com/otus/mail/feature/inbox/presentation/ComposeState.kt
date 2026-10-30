@@ -151,7 +151,8 @@ class ComposeState(
             delayLimits = limits.awaitAll().toMap()
             if (draft.from == null) {
                 val preferred = request.preferredIdentity(found.map { it.sender }, origin.recentFrom)
-                found.firstOrNull { it.sender == preferred }?.let(::chooseFrom)
+                val identity = found.firstOrNull { it.sender == preferred }
+                if (identity != null) chooseFrom(identity)
             }
         }
     }
@@ -215,11 +216,14 @@ class ComposeState(
         return { at ->
             saving
                 .withLock {
-                    val copy = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId
-                    sender.send(outgoing.copy(emailId = copy), answered, at).onSuccess {
+                    val savedId = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId
+                    sender.send(outgoing.copy(emailId = savedId), answered, at).onSuccess {
                         stored?.takeIf { it.accountId != outgoing.accountId }?.discardCopy(drafts)
                     }
-                }.onSuccess { outgoing.from?.let(onSent) }
+                }.onSuccess {
+                    val from = outgoing.from
+                    if (from != null) onSent(from)
+                }
         }
     }
 
@@ -236,8 +240,8 @@ class ComposeState(
 
     private suspend fun save() =
         saving.withLock {
-            val copy = stored?.takeIf { it.accountId == draft.accountId }?.emailId
-            val current = draft.copy(emailId = copy, signature = signature)
+            val savedId = stored?.takeIf { it.accountId == draft.accountId }?.emailId
+            val current = draft.copy(emailId = savedId, signature = signature)
             val unchanged =
                 if (stored == null) {
                     !edited
@@ -261,7 +265,8 @@ class ComposeState(
 }
 
 private suspend fun Draft.discardCopy(drafts: DraftRepository) {
-    emailId?.let { drafts.discard(accountId, it) }
+    val savedId = emailId ?: return
+    drafts.discard(accountId, savedId)
 }
 
 private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =

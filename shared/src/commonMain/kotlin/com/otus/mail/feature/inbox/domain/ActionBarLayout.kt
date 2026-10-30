@@ -107,34 +107,17 @@ data class ActionBarLayout(
     ): ActionBarLayout {
         val old = secondary.getOrNull(slot)
         return when {
-            action == null -> {
-                copy(secondary = secondary - listOfNotNull(old))
-            }
-
-            action == primary -> {
-                if (old == null) this else ActionBarLayout(secondary.replace(old, action), old)
-            }
-
-            old == null -> {
-                copy(secondary = secondary - action + action)
-            }
-
-            else -> {
-                copy(
-                    secondary =
-                        secondary.map {
-                            if (it == old) {
-                                action
-                            } else if (it == action) {
-                                old
-                            } else {
-                                it
-                            }
-                        },
-                )
-            }
+            action == null -> copy(secondary = secondary - listOfNotNull(old))
+            action == primary -> swapPrimary(old, action)
+            old == null -> copy(secondary = secondary - action + action)
+            else -> copy(secondary = secondary.swapping(old, action))
         }
     }
+
+    private fun swapPrimary(
+        old: BarButton?,
+        action: BarButton,
+    ): ActionBarLayout = old?.let { ActionBarLayout(secondary.replace(it, action), it) } ?: this
 
     /**
      * Drops [action], such as Read later once it is off. A dropped primary returns to [place]'s
@@ -146,11 +129,11 @@ data class ActionBarLayout(
     ): ActionBarLayout {
         val kept = secondary - action
         if (primary != action) return copy(secondary = kept)
-        val primary =
+        val nextPrimary =
             place.defaultLayout.primary.takeIf { it != action }
                 ?: kept.firstOrNull()
                 ?: place.actions.first { it != action }
-        return ActionBarLayout(kept - primary, primary)
+        return ActionBarLayout(kept - nextPrimary, nextPrimary)
     }
 
     /** The button in [slot], or null for an empty secondary slot. */
@@ -205,3 +188,15 @@ private fun <T> List<T>.replace(
     old: T,
     new: T,
 ): List<T> = map { if (it == old) new else it }
+
+private fun List<BarButton>.swapping(
+    first: BarButton,
+    second: BarButton,
+): List<BarButton> =
+    map {
+        when (it) {
+            first -> second
+            second -> first
+            else -> it
+        }
+    }

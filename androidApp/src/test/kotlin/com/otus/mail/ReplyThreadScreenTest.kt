@@ -70,12 +70,12 @@ class ReplyThreadScreenTest {
                     state =
                         remember {
                             ComposeState(
-                                ComposeServices(TwoAccountDrafts(), sender, { _, _ -> emptyList() }, threads = {
-                                    _,
-                                    _,
-                                    ->
-                                    thread(size)
-                                }),
+                                ComposeServices(
+                                    TwoAccountDrafts(),
+                                    sender,
+                                    { _, _ -> emptyList() },
+                                    threads = { _, _ -> thread(size) },
+                                ),
                                 scope,
                                 request,
                                 ComposeOrigin(

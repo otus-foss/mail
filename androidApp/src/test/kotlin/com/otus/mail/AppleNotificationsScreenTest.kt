@@ -40,8 +40,7 @@ class AppleNotificationsScreenTest {
         compose.onNodeWithText("Instant delivery").performClick()
         compose.onNodeWithText("Built into Otus").assertIsDisplayed()
         capture("apple-choice")
-        compose.onNodeWithText("Off").performClick()
-        compose.onNodeWithText("Off").assertIsDisplayed()
+        compose.onNodeWithText("Off").performClick().assertIsDisplayed()
         compose.onNodeWithText("Off, checks about every 15 minutes").assertDoesNotExist()
         capture("apple-off")
     }

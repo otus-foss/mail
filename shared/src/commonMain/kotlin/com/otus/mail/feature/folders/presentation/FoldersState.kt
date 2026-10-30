@@ -49,8 +49,15 @@ class FoldersState(
         sharedIn: String? = null,
     ): MailFolder? {
         val account = account(accountId)
-        val shared = account?.shared?.firstOrNull { it.jmapAccountId == sharedIn }
-        return if (sharedIn == null) account?.folder(folderId) else shared?.folders?.firstOrNull { it.id == folderId }
+        return if (sharedIn == null) {
+            account?.folder(folderId)
+        } else {
+            account
+                ?.shared
+                ?.firstOrNull { it.jmapAccountId == sharedIn }
+                ?.folders
+                ?.firstOrNull { it.id == folderId }
+        }
     }
 
     fun refresh() {
@@ -107,22 +114,15 @@ class FoldersState(
         notice = null
         scope.launch {
             try {
-                when (val outcome = action()) {
-                    is FolderOutcome.Done -> {
-                        // Waits for the newest load, even a later refresh's, so the list has the change.
-                        refresh()
-                        loads.awaitLatest()
-                        onDone(outcome.folderId)
-                    }
-
-                    is FolderOutcome.Failed -> {
-                        onFailed()
-                        notice = outcome.reason.message()
-                        // A missing folder means the list is stale.
-                        refresh()
-                        loads.awaitLatest()
-                    }
+                val outcome = action()
+                if (outcome is FolderOutcome.Failed) {
+                    onFailed()
+                    notice = outcome.reason.message()
                 }
+                // Wait for the newest load, including refreshes started during this change.
+                refresh()
+                loads.awaitLatest()
+                if (outcome is FolderOutcome.Done) onDone(outcome.folderId)
             } catch (expected: FolderStorageException) {
                 onFailed()
                 notice = STORAGE_NOTICE

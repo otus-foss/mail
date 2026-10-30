@@ -108,7 +108,7 @@ internal object FilterPanelFixtures {
         ancestors.toList(),
         Res.drawable.symbol_folder,
         color,
-        false,
+        system = false,
         parent,
         below,
     )

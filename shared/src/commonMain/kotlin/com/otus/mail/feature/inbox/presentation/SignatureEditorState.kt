@@ -110,14 +110,13 @@ class SignatureEditorState(
         val edited = signatures.identity(identity.key) ?: identity
         val savingSession = session
         pending = signature
-        signatures.save(edited, signature) { saved ->
-            if (session == savingSession) {
-                if (saved) {
-                    stored = signature
-                    baseline = signature
-                }
-                if (pending == signature) pending = null
+        signatures.save(edited, signature) saved@{ saved ->
+            if (session != savingSession) return@saved
+            if (saved) {
+                stored = signature
+                baseline = signature
             }
+            if (pending == signature) pending = null
         }
     }
 

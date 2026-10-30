@@ -17,8 +17,7 @@ class JmapMailSourceThreadsTest {
     @Test
     fun theThreadLoadsWithItsRowsAndCountsSentButNotTrash() =
         runTest {
-            val snapshot = source.messages(MailScope.Inbox)
-            val message = snapshot.messages.single()
+            val message = source.messages(MailScope.Inbox).messages.single()
             val conversation = message.conversation!!
             assertEquals(3, conversation.messageCount)
             assertEquals("ada@example.org", conversation.last.sender.address)
@@ -47,8 +46,7 @@ class JmapMailSourceThreadsTest {
     @Test
     fun aThreadInTwoChosenFoldersIsOneRowUnderItsNewestEmail() =
         runTest {
-            val messages = source.messages(MailScope.Roles(mapOf("inbox" to "Inbox", "sent" to "Sent"))).messages
-            val row = messages.single()
+            val row = source.messages(MailScope.Roles(mapOf("inbox" to "Inbox", "sent" to "Sent"))).messages.single()
             assertEquals("ada/s1", row.id)
             assertEquals("Sent", row.location.mailbox)
             assertEquals(listOf("s1", "r2", "r1"), row.conversation!!.members.map { it.emailId })

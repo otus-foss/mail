@@ -51,27 +51,21 @@ fun FolderRule.sheetDraft(index: Int): RuleSheetDraft? {
     val condition = conditions.singleOrNull()?.takeUnless { it.negated }
     val start =
         when (condition) {
-            is RuleCondition.Address -> {
-                RuleKind.entries
-                    .firstOrNull { it.field == condition.field }
-                    ?.let { RuleSheetDraft(it, condition.match.typed()) }
-            }
-
-            is RuleCondition.Text -> {
-                val contains = condition.field == TextField.Subject && condition.operator == TextOperator.Contains
-                RuleSheetDraft(RuleKind.Subject, condition.value).takeIf { contains }
-            }
-
-            is RuleCondition.MailingList -> {
-                RuleSheetDraft(RuleKind.MailingList, condition.listId)
-            }
-
-            else -> {
-                null
-            }
+            is RuleCondition.Address -> condition.sheetDraft()
+            is RuleCondition.Text -> condition.sheetDraft()
+            is RuleCondition.MailingList -> RuleSheetDraft(RuleKind.MailingList, condition.listId)
+            else -> null
         }
     return start?.copy(chosen = condition, editing = index)
 }
+
+private fun RuleCondition.Address.sheetDraft(): RuleSheetDraft? =
+    RuleKind.entries
+        .firstOrNull { it.field == field }
+        ?.let { RuleSheetDraft(it, match.typed()) }
+
+private fun RuleCondition.Text.sheetDraft(): RuleSheetDraft? =
+    RuleSheetDraft(RuleKind.Subject, value).takeIf { field == TextField.Subject && operator == TextOperator.Contains }
 
 /** The search text that offers [this] match again. */
 private fun AddressMatch.typed(): String =

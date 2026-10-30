@@ -25,20 +25,12 @@ fun AccountFolders.readLaterStep(
     val target = readLater ?: return null
     val roomForMore = limits.maxFoldersPerMessage?.let { folderIds.size < it } ?: true
     return when {
-        target.id in folderIds -> {
-            ReadLaterStep.Remove.takeIf { target.rights.mayRemoveItems && (folderIds - target.id).isNotEmpty() }
-        }
-
-        !target.rights.mayAddItems -> {
-            null
-        }
-
-        roomForMore -> {
-            ReadLaterStep.Save
-        }
-
-        else -> {
-            ReadLaterStep.Move.takeIf { folder(shownId)?.rights?.mayRemoveItems != false }
-        }
+        target.id in folderIds -> target.removalFrom(folderIds)
+        !target.rights.mayAddItems -> null
+        roomForMore -> ReadLaterStep.Save
+        else -> ReadLaterStep.Move.takeIf { folder(shownId)?.rights?.mayRemoveItems != false }
     }
 }
+
+private fun MailFolder.removalFrom(folderIds: Set<String>): ReadLaterStep? =
+    ReadLaterStep.Remove.takeIf { rights.mayRemoveItems && (folderIds - id).isNotEmpty() }

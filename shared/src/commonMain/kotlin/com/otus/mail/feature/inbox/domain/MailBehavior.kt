@@ -57,12 +57,9 @@ data class MailBehavior(
     fun sentFrom(address: String): MailBehavior =
         copy(
             recentFrom =
-                (
-                    listOf(address) +
-                        recentFrom.filterNot {
-                            it.equals(address, ignoreCase = true)
-                        }
-                ).take(RECENT_FROM_LIMIT),
+                listOf(address)
+                    .plus(recentFrom.filterNot { it.equals(address, ignoreCase = true) })
+                    .take(RECENT_FROM_LIMIT),
         )
 
     /** What a swipe can be set to besides nothing; Read later only while it is on. */
@@ -73,10 +70,8 @@ data class MailBehavior(
     fun barChoices(place: ActionBarPlace): List<MailAction> = place.actions.filter(::offers)
 
     /** The layout [place] shows: its own in Adaptive mode, the Everywhere one in Fixed mode. */
-    fun barLayout(place: ActionBarPlace): ActionBarLayout {
-        val shown = if (actionBarMode == ActionBarMode.Fixed) ActionBarPlace.Everywhere else place
-        return savedLayout(shown)
-    }
+    fun barLayout(place: ActionBarPlace): ActionBarLayout =
+        savedLayout(if (actionBarMode == ActionBarMode.Fixed) ActionBarPlace.Everywhere else place)
 
     /** The layout saved for [place], whichever mode is on; settings edit this one. */
     fun savedLayout(place: ActionBarPlace): ActionBarLayout = actionBar[place] ?: place.defaultLayout
@@ -104,14 +99,7 @@ data class MailBehavior(
     fun withReadLater(on: Boolean): MailBehavior {
         val defaults = MailBehavior()
 
-        fun MailAction?.orDefault(default: MailAction?) =
-            if (!on &&
-                this == MailAction.ReadLater
-            ) {
-                default
-            } else {
-                this
-            }
+        fun MailAction?.orDefault(default: MailAction?) = if (!on && this == MailAction.ReadLater) default else this
         return copy(
             readLater = on,
             startToEnd = startToEnd.orDefault(defaults.startToEnd),

@@ -25,12 +25,12 @@ internal class RuleSenderBlocks(
 ) : SenderBlocks {
     override suspend fun block(message: MailMessage): Boolean {
         val address = message.sender.address.trim()
-        return address.isNotEmpty() &&
-            try {
-                block(message.location.accountId, address)
-            } catch (expected: FolderStorageException) {
-                false
-            }
+        if (address.isEmpty()) return false
+        return try {
+            block(message.location.accountId, address)
+        } catch (expected: FolderStorageException) {
+            false
+        }
     }
 
     /** False when the account runs no rules or has no Junk folder. */
@@ -42,8 +42,11 @@ internal class RuleSenderBlocks(
         val junk = account?.let { junkId(accountId) }
         if (account == null || junk == null) return false
         val rule = FolderRule(RuleCondition.Address(AddressField.From, AddressMatch.Exact(address)))
-        return rule in account.rulesFor(junk) ||
+        return if (rule in account.rulesFor(junk)) {
+            true
+        } else {
             rules.save(account, account.rules.withAdded(junk, rule)) == RuleOutcome.Saved
+        }
     }
 
     /** The Junk folder, from the folders the device kept, or the server when it kept none. */

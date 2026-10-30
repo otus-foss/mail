@@ -28,10 +28,12 @@ class InboxPillPersistenceTest {
     @Test
     fun existingReadLaterSettingsGetTheirDefaultPills() {
         val context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit {
-            clear()
-            putBoolean("read_later", true)
-        }
+        context
+            .getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .putBoolean("read_later", true)
+            .apply()
         val restored = AndroidMailBehaviorStore(context).read()
         assertEquals(InboxPill.defaults(readLater = true), restored.pills)
     }
@@ -78,7 +80,11 @@ class InboxPillPersistenceTest {
     @Test
     fun websiteIconsStayOffUntilTurnedOnAndStayOnAfterReopeningTheStore() {
         val context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit { clear() }
+        context
+            .getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
         assertFalse(AndroidMailBehaviorStore(context).read().websiteIcons)
         assertEquals(IconSource.Websites, AndroidMailBehaviorStore(context).read().iconSource)
         val bulwark =
@@ -103,10 +109,12 @@ class InboxPillPersistenceTest {
     @Test
     fun websiteIconsSavedOnUnderTheEarlierKeyReadAsOff() {
         val context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit {
-            clear()
-            putBoolean("website_icons", true)
-        }
+        context
+            .getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .putBoolean("website_icons", true)
+            .apply()
         assertFalse(AndroidMailBehaviorStore(context).read().websiteIcons)
     }
 }

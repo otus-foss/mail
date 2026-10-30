@@ -86,8 +86,7 @@ class FolderRulesUiTest {
         compose.onNode(hasSetTextAction()).performTextInput("grace")
         compose.onNodeWithText("Anyone at @example.org").assertExists()
         compose.onNodeWithText("Grace Hopper · 1 message").assertExists()
-        compose.onNode(hasText("grace@example.org") and isSelectable()).performClick()
-        compose.onNode(hasText("grace@example.org") and isSelectable()).assertIsSelected()
+        compose.onNode(hasText("grace@example.org") and isSelectable()).performClick().assertIsSelected()
         compose.onNodeWithText("New mail that matches goes to Receipts").assertExists()
         compose.onNode(hasText("From") and hasText("grace@example.org") and !isSelectable()).assertExists()
 
@@ -99,12 +98,7 @@ class FolderRulesUiTest {
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "\"mailboxIds/r\":true" in it } }
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Sort into Receipts")).fetchSemanticsNodes().isEmpty() }
         // The save closes the sheet before the rules finish reloading.
-        compose.waitUntil(TIMEOUT) {
-            compose
-                .onAllNodes(hasText("grace@example.org") and hasClickAction() and !isSelectable())
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
+        compose.waitForNode(hasText("grace@example.org") and hasClickAction() and !isSelectable())
         chip("grace@example.org").assertExists()
     }
 

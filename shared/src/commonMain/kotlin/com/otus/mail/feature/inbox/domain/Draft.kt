@@ -3,9 +3,9 @@ package com.otus.mail.feature.inbox.domain
 /**
  * A message being written. [body] is what the user wrote as plain text and [html] the same with
  * its formatting, empty while it has none. [quote] is the original a reply quotes or a forward
- * carries, which follows the body and the [signature]. [emailId] is the server's copy in the Drafts folder once saved;
- * JMAP Email content cannot change, so each save replaces that copy. [inReplyTo] and [references]
- * keep a reply in its thread. [attachments] go after the body as files.
+ * carries, which follows the body and the [signature]. [emailId] is the server's copy in the Drafts
+ * folder once saved; JMAP Email content cannot change, so each save replaces that copy.
+ * [inReplyTo] and [references] keep a reply in its thread. [attachments] go after the body as files.
  */
 data class Draft(
     val accountId: String,

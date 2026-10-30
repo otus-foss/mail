@@ -40,12 +40,7 @@ class MoveToButtonsTest {
     /** The topmost match, such as a button in the editor's preview over the page's cards. */
     private fun top(label: String) = compose.onAllNodes(hasContentDescription(label) and hasClickAction()).onLast()
 
-    private fun pick(text: String) =
-        compose
-            .onAllNodesWithText(text)
-            .onLast()
-            .performScrollTo()
-            .performClick()
+    private fun pick(text: String) = compose.pickLastText(text)
 
     private fun done() = compose.onAllNodesWithText("Done").onLast().performClick()
 
@@ -112,12 +107,11 @@ class MoveToButtonsTest {
 
     /** Saves the sheet on top, or the page without one, to build/reports/action-targets for review. */
     private fun screenshot(name: String) {
-        val bitmap =
-            compose.runOnIdle {
+        compose
+            .runOnIdle {
                 val sheet = ShadowDialog.getShownDialogs().lastOrNull { it.isShowing }
                 (sheet?.window?.decorView ?: compose.activity.window.decorView).drawnBitmap()
-            }
-        bitmap.savePng("build/reports/action-targets/$name.png")
+            }.savePng("build/reports/action-targets/$name.png")
     }
 
     private companion object {

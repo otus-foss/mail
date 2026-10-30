@@ -83,10 +83,9 @@ class JmapMessageBodies(
         message: MailMessage,
     ): EmailObject? {
         val account = mailAccount(connections, logins, loginId) ?: return null
-        val ids = JmapIds.Of(listOf(message.emailId))
         val email =
             account.connection
-                .call(GetMethod(EmailType, account.id, ids, PROPERTIES, ARGUMENTS))
+                .call(GetMethod(EmailType, account.id, JmapIds.Of(listOf(message.emailId)), PROPERTIES, ARGUMENTS))
                 .list
                 .firstOrNull()
         if (email != null) {
