@@ -119,6 +119,7 @@ class JmapDraftSender(
             copy,
             response[submitted].createdId(SUBMISSION) ?: failSend(SendFailure.ServerProblem),
             route.drafts,
+            route.identityId,
         )
     }
 
@@ -175,20 +176,46 @@ class JmapDraftSender(
         }
 
     override suspend fun cancel(message: SentMessage): Result<Unit> =
-        try {
-            val account = mailAccount(connections, logins, message.accountId) ?: failSend(SendFailure.ServerProblem)
-            val undone =
+        submissionCall(message) { account ->
+            val refusal = account.cancelSubmission(message)
+            if (refusal != null) failSend(refusal)
+            account.restoreCanceledDraft(message)
+        }
+
+    /** A held message cannot be sent early, so its submission is canceled and its copy submitted again. */
+    override suspend fun sendNow(message: SentMessage): Result<Unit> =
+        submissionCall(message) { account ->
+            // A submission the server keeps still goes at its time, so there is nothing to resend.
+            if (account.cancelSubmission(message) != null) return@submissionCall
+            val resent =
                 account.connection.call(
                     SetMethod(
                         EmailSubmissionType,
                         account.id,
-                        update = mapOf(message.submissionId to buildJsonObject { put("undoStatus", "canceled") }),
+                        create =
+                            mapOf(
+                                SUBMISSION to
+                                    buildJsonObject {
+                                        put("emailId", message.emailId)
+                                        put("identityId", message.identityId)
+                                    },
+                            ),
                     ),
                 )
-            val failure = undone.notUpdated[message.submissionId]
-            if (failure != null) failSend(failure.toSendFailure())
-            if (message.submissionId !in undone.updated) failSend(SendFailure.ServerProblem)
-            account.restoreCanceledDraft(message)
+            val refusal = resent.notCreated[SUBMISSION]
+            if (refusal != null) {
+                account.restoreCanceledDraft(message)
+                failSend(refusal.toSendFailure())
+            }
+        }
+
+    /** Runs [block] on [message]'s account, and turns what can go wrong into a failed result. */
+    private suspend fun submissionCall(
+        message: SentMessage,
+        block: suspend (MailAccount) -> Unit,
+    ): Result<Unit> =
+        try {
+            block(mailAccount(connections, logins, message.accountId) ?: failSend(SendFailure.ServerProblem))
             Result.success(Unit)
         } catch (error: DraftRestoreException) {
             Result.failure(error)
@@ -233,6 +260,20 @@ class JmapDraftSender(
         const val EMAIL = "draft"
         const val SUBMISSION = "send"
     }
+}
+
+/** Cancels [message]'s submission; why not, when the server did not confirm it. */
+private suspend fun MailAccount.cancelSubmission(message: SentMessage): SendFailure? {
+    val undone =
+        connection.call(
+            SetMethod(
+                EmailSubmissionType,
+                id,
+                update = mapOf(message.submissionId to buildJsonObject { put("undoStatus", "canceled") }),
+            ),
+        )
+    return undone.notUpdated[message.submissionId]?.toSendFailure()
+        ?: SendFailure.ServerProblem.takeIf { message.submissionId !in undone.updated }
 }
 
 private suspend fun bestEffort(block: suspend () -> Unit) {

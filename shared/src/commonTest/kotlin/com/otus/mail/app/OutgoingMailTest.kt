@@ -28,6 +28,8 @@ class OutgoingMailTest {
     private val runs = mutableListOf<SendTime>()
     private val opened = mutableListOf<ComposeRequest>()
     private val cancelled = mutableListOf<SentMessage>()
+    private val sentNow = mutableListOf<SentMessage>()
+    private var sendNowFails = false
     private var failing = false
     private var hold = HOLD
     private var serverDelaySeconds = 0L
@@ -38,9 +40,17 @@ class OutgoingMailTest {
             override suspend fun maxDelaySeconds(accountId: String) = serverDelaySeconds
 
             override suspend fun cancel(message: SentMessage) = Result.success(Unit).also { cancelled += message }
+
+            override suspend fun sendNow(message: SentMessage): Result<Unit> {
+                sentNow += message
+                return if (sendNowFails) Result.failure(SendException(SendFailure.Recipients)) else Result.success(Unit)
+            }
         }
 
-    private fun TestScope.outgoing() = OutgoingMail(backgroundScope, toasts, scheduled, { NOW }) { hold }
+    private fun TestScope.outgoing() =
+        OutgoingMail(backgroundScope, toasts, scheduled, { NOW + testScheduler.currentTime.milliseconds }) { hold }
+
+    private fun swipeAway() = assertNotNull(toasts.messages.single().swipeAction).onAction()
 
     private val message =
         Outgoing(
@@ -172,6 +182,57 @@ class OutgoingMailTest {
             val failed = toasts.messages.single()
             assertEquals("Couldn't send", failed.text)
             assertTrue(failed.sticky)
+        }
+
+    @Test
+    fun swipingTheToastAwaySendsAServerHeldMessageAtOnce() =
+        runTest {
+            serverDelaySeconds = 60
+            outgoing().send(message)
+            runCurrent()
+            assertEquals("Send", assertNotNull(toasts.messages.single().swipeAction).label)
+            swipeAway()
+            runCurrent()
+            assertEquals(listOf(SentMessage("a1", "e9", "s1")), sentNow)
+            assertEquals(listOf("Sent"), toasts.messages.map { it.text })
+        }
+
+    @Test
+    fun aSwipeNearTheEndOfTheWindowLetsTheServerSendOnTime() =
+        runTest {
+            serverDelaySeconds = 60
+            outgoing().send(message)
+            advanceTimeBy(HOLD - 2_000)
+            swipeAway()
+            runCurrent()
+            assertTrue(sentNow.isEmpty(), "Canceling and sending again would gain under 3 seconds")
+            assertEquals(listOf("Sent"), toasts.messages.map { it.text })
+        }
+
+    @Test
+    fun aRefusedEarlySendOffersTheDraftToOpen() =
+        runTest {
+            serverDelaySeconds = 60
+            sendNowFails = true
+            outgoing().send(message)
+            runCurrent()
+            swipeAway()
+            runCurrent()
+            val failed = toasts.messages.single()
+            assertEquals("Couldn't send", failed.text)
+            assertNotNull(failed.action).onAction()
+            assertEquals("e9", (opened.single() as ComposeRequest.Resume).draft.emailId)
+        }
+
+    @Test
+    fun swipingAwayAMessageTheDeviceHoldsSendsItAtOnce() =
+        runTest {
+            outgoing().send(message)
+            runCurrent()
+            swipeAway()
+            runCurrent()
+            assertEquals(listOf<SendTime>(SendTime.Now), runs)
+            assertEquals(listOf("Sent"), toasts.messages.map { it.text })
         }
 
     private companion object {
