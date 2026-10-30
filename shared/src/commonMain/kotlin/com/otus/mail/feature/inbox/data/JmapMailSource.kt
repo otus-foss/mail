@@ -33,7 +33,9 @@ import kotlin.time.Instant
  * Loads all or named mailboxes of each login, or chosen folders, through [cache]: a load brings the
  * cache up to date with the server and then reads the lists from it, so [cached] shows the same
  * rows without the server. Logins load in parallel and fail alone; a failed login still shows what
- * the cache holds. Each list loads [limit] conversations at a time.
+ * the cache holds. Each list loads [limit] conversations at a time. [sites] holds each login's
+ * server domain, which a sender's DMARC result must come from to show a brand logo; a load finds
+ * it, and the cached list reads only what is already known.
  */
 class JmapMailSource(
     private val connections: JmapConnections,
@@ -42,6 +44,7 @@ class JmapMailSource(
     private val limit: Int = DEFAULT_LIMIT,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     private val clock: Clock = Clock.System,
+    private val sites: ServerSites = ServerSites { null },
 ) : MailSource {
     // A refresh and a next page of one login both rewrite its listings, so they take turns.
     private val locks = LoginLocks()
@@ -71,7 +74,7 @@ class JmapMailSource(
         query: MailQuery,
     ): InboxSnapshot =
         cacheErrors {
-            snapshot(selected(scope), scope, query, clock.now(), unavailable = emptyList())
+            snapshot(selected(scope), scope, query, clock.now(), unavailable = emptyList()) { sites.known(it.id) }
         }
 
     private suspend fun selected(scope: MailScope): List<JmapLogin> =
@@ -96,7 +99,7 @@ class JmapMailSource(
                 coroutineScope {
                     selected.map { login -> async { syncLogin(login, scope, query, now, sync) } }.awaitAll()
                 }
-            snapshot(selected, scope, query, now, failures.filterNotNull())
+            snapshot(selected, scope, query, now, failures.filterNotNull(), sites::find)
         }
 
     /** Why [login] could not be brought up to date, or null when it was or the query reads none of it. */
@@ -141,6 +144,7 @@ class JmapMailSource(
         query: MailQuery,
         now: Instant,
         unavailable: List<UnavailableAccount>,
+        siteOf: suspend (JmapLogin) -> String,
     ): InboxSnapshot {
         val local = zone()
         val pages =
@@ -152,7 +156,7 @@ class JmapMailSource(
                                 ?.let { conditions ->
                                     val check = localCheck(query, login.id, now, local)
                                     cache.withAccount(login.id) {
-                                        it.cachedPages(login, scope, query, conditions, local, check)
+                                        it.cachedPages(login, scope, query, conditions, local, siteOf(login), check)
                                     }
                                 }.orEmpty()
                         }

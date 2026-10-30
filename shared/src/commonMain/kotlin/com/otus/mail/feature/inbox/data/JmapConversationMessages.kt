@@ -22,13 +22,15 @@ import kotlin.time.Instant
 /**
  * Reads every email of a message's thread with the row properties (RFC 8621, sections 3 and 4.2),
  * so each becomes a page of the Read view. Offline, it falls back to the thread and emails the
- * list saved in [cache], which may lack some of them.
+ * list saved in [cache], which may lack some of them. A page trusts DMARC results only from the
+ * server domain [sites] already knows for its login.
  */
 class JmapConversationMessages(
     private val connections: JmapConnections,
     private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
+    private val sites: ServerSites = ServerSites { null },
 ) : ConversationMessages {
     override suspend fun messages(message: MailMessage): List<MailMessage>? {
         val loginId = message.location.accountId
@@ -90,6 +92,7 @@ class JmapConversationMessages(
                 zone(),
                 row.location.accountAddress,
                 listed,
+                sites.known(row.location.accountId),
             )
         // The list already found the row sender's photo; pages from the same address reuse it.
         val sender = if (page.sender.address.equals(row.sender.address, ignoreCase = true)) row.sender else page.sender

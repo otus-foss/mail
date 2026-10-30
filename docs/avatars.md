@@ -21,10 +21,41 @@ photos and senders without a contact photo then show images automatically. Linke
 sender websites each see the device's IP address, and a sender's website learns that its mail was
 listed.
 
-While Website icons is on, **Ask DuckDuckGo** (`MailBehavior.duckDuckGoIcons`, off by default)
-also enables `domainIconProxy`. `MailServices` injects a `DomainIconSource` that requests
-`https://icons.duckduckgo.com/ip3/{domain}.ico` for a site without an icon. DuckDuckGo receives the
-website domain and the device's IP address.
+While Website icons is on, **Icons from** (`MailBehavior.iconSource`) picks where website icons
+come from. `mailAvatarOptions` turns the choice into `AvatarOptions.iconProxy`:
+
+- **Sender websites**, the default, asks each sender's registrable domain directly.
+- **DuckDuckGo** asks `https://icons.duckduckgo.com/ip3/{domain}.ico` instead. DuckDuckGo receives
+  the website domain and the device's IP address. Sender websites receive nothing.
+- **Bulwark** asks the user's own [Bulwark](https://github.com/bulwarkmail/webmail) webmail server
+  at `MailBehavior.bulwarkAddress`: `/api/favicon?domain={domain}` for icons and
+  `/api/bimi?domain={domain}` for brand logos. The server fetches them from DuckDuckGo and the
+  sender's BIMI record, so only it sees the device's IP address. An address without a scheme gets
+  `https://`. `bulwarkBase` accepts only what the public image loader may request (HTTPS on port
+  443 at a public host) and no query, fragment, or `{`. Any other address becomes a proxy that
+  loads nothing, so no icons show, not even for a contact styled to show its website. The
+  routes need no login, so Otus sends no credentials. A Bulwark admin can turn them off with its
+  no-third-party-traffic mode, which leaves initials.
+
+A proxy miss never falls back to the sender's website. Anyone who turned on the earlier **Ask
+DuckDuckGo** switch reads as the DuckDuckGo choice. `IconSourceSheet` saves the source and address only on
+Done, and only with a usable Bulwark address, so a half-typed address is never asked. Changing the choice or the saved address
+reloads the inbox's avatars.
+
+### Brand logos
+
+The inbox requests every `Authentication-Results` field (`header:Authentication-Results:asText:all`).
+`dmarcPassDomain` reads only the topmost one, which the receiving server adds; a sender can add
+fields further down. That field counts only when its server id (RFC 8601 `authserv-id`) is the
+login's JMAP host, its parent domain, or another host of that domain, such as `mx.example.net`
+beside `mail.example.net`. A server that added no field would otherwise leave the sender's own on
+top. A server whose id names another domain shows no brand logos. A message counts when every
+`dmarc=` result in that field is `pass` and names the From domain in `header.from`. A `;` or space
+inside a comment or quoted string does not split, so an envelope address or a `reason` cannot
+smuggle in a pass. The domain goes to `MailSender.brandDomain` and on
+to `AvatarRequest.brandDomain`; inbox lookups keep a sender's mail with and without a pass apart.
+Email objects cached before this
+change lack the header, so their senders show the icon until the message changes.
 
 Turned off, Mail loads only contact photos stored as JMAP blobs or embedded data URIs, which come
 from the user's own JMAP server; other senders show initials. Contact cache keys include the
