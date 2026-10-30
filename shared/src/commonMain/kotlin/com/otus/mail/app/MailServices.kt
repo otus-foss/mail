@@ -8,7 +8,6 @@ import com.otus.avatar.AvatarCacheConfig
 import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
-import com.otus.avatar.DomainIconSource
 import com.otus.avatar.EmptyAvatarStore
 import com.otus.avatar.HttpAvatarImageLoader
 import com.otus.avatar.JmapContactAvatarSource
@@ -59,6 +58,7 @@ import com.otus.mail.feature.inbox.data.JmapPeopleSearch
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
+import com.otus.mail.feature.inbox.data.ServerSites
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
@@ -122,15 +122,13 @@ class MailServices(
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
+    private val domains by lazy { PublicSuffixDomainResolver(::avatarSuffixRules) }
+    private val serverSites by lazy { ServerSites(domains) }
     internal val avatars by lazy {
         AvatarService(
             JmapContactAvatarSource(connections, logins, avatarImages),
             avatarImages,
-            domains = PublicSuffixDomainResolver(::avatarSuffixRules),
-            iconFallback =
-                DomainIconSource { domain ->
-                    avatarImages.load("https://icons.duckduckgo.com/ip3/$domain.ico")
-                },
+            domains = domains,
             cacheConfig = AvatarCacheConfig(store = avatarStore),
         )
     }
@@ -166,7 +164,7 @@ class MailServices(
             )
         CacheAccountRepository(repository, logins, accountCache)
     }
-    internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache) }
+    internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache, sites = serverSites) }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache) }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
     internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache) }
@@ -187,7 +185,7 @@ class MailServices(
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins, cache) }
     internal val conversationMessages: ConversationMessages by lazy {
-        JmapConversationMessages(connections, logins, cache)
+        JmapConversationMessages(connections, logins, cache, sites = serverSites)
     }
     internal val downloads: AttachmentDownloads by lazy { JmapAttachmentDownloads(connections, logins) }
     internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, logins) }

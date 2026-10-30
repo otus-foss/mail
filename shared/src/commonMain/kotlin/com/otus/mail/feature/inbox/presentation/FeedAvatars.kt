@@ -39,12 +39,12 @@ internal class FeedAvatars(
         val kept = shown.takeIf { options == shownOptions }.orEmpty()
         val previous = kept.associate { it.sender.key() to it.sender.avatar }
         val accounts = kept.associate { it.location.accountId to it.location.accountAvatar }
-        val restored = mutableMapOf<Pair<String, String>, ResolvedAvatar?>()
+        val restored = mutableMapOf<SenderKey, ResolvedAvatar?>()
         return incoming.map { message ->
             val sender = message.sender
             val key = sender.key()
             if (key !in restored) {
-                val cached = service.cached(AvatarRequest(sender.accountKey, sender.address), options)
+                val cached = service.cached(sender.avatarRequest(), options)
                 restored[key] = keepIdenticalImage(cached, previous[key])
             }
             val avatar = restored[key]?.copy(fallback = generatedAvatar(sender.name, sender.address))
@@ -113,11 +113,7 @@ internal class FeedAvatars(
         coroutineScope {
             senders.forEach { sender ->
                 launch {
-                    val resolved =
-                        service.resolve(
-                            AvatarRequest(sender.accountKey, sender.address, sender.name),
-                            options,
-                        )
+                    val resolved = service.resolve(sender.avatarRequest(), options)
                     if (!isCurrent()) return@launch
                     val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved
                     edit { message ->
@@ -137,7 +133,16 @@ internal class FeedAvatars(
     }
 }
 
-private fun MailSender.key() = accountKey to avatarEmailKey(address)
+/** A brand logo shows only for mail that passed DMARC, so a sender's other mail looks up apart. */
+private data class SenderKey(
+    val accountKey: String,
+    val email: String,
+    val brandDomain: String?,
+)
+
+private fun MailSender.key() = SenderKey(accountKey, avatarEmailKey(address), brandDomain)
+
+private fun MailSender.avatarRequest() = AvatarRequest(accountKey, address, name, brandDomain)
 
 /** Disk restoration may allocate new bytes. Keep a displayed image's identity when its content matches. */
 private fun keepIdenticalImage(
