@@ -1,29 +1,37 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_edit
-import com.otus.designsystem.resources.symbol_person
+import com.otus.designsystem.resources.symbol_image
+import com.otus.designsystem.resources.symbol_photo_camera
 import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.pages.components.Subpage
-import com.otus.designsystem.shared.selection.components.PickMark
-import com.otus.designsystem.shared.selection.components.PickRow
-import com.otus.designsystem.shared.selection.components.PickRowLayout
+import com.otus.designsystem.shared.selection.components.ChoiceOptions
+import com.otus.designsystem.shared.selection.components.ChoiceRow
+import com.otus.designsystem.shared.selection.components.RadioChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingPageRow
+import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
+import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.components.AvatarSettings
 
 /**
- * Settings › Privacy: when mail loads images from other servers, who may always show them
- * ([onOpenAllowed] opens that list), whether avatars load website icons, and the screen and
- * keyboard protections that [device] offers. Each change is saved at once. Website icons and
- * DuckDuckGo are off by default, so avatars reach only the user's servers.
+ * Settings › Privacy: when mail loads images from other servers, chosen in a sheet, who may always
+ * show them ([onOpenAllowed] opens that list), whether avatars load website icons, and the screen
+ * and keyboard protections that [device] offers. Each switch saves at once, and each sheet saves
+ * on Done. Website icons are off by default, so avatars reach only the user's servers.
  */
 @Composable
 fun PrivacyScreen(
@@ -33,12 +41,12 @@ fun PrivacyScreen(
     device: DevicePrivacy = DevicePrivacy(),
 ) {
     val behavior = state.behavior
+    var choosingImages by rememberSaveable { mutableStateOf(false) }
+    var choosingPhotos by rememberSaveable { mutableStateOf(false) }
     Subpage("Privacy", onBack) {
         SettingsSection("Load remote images", info = ImagesInfo) {
-            RemoteImages.entries.forEach { choice ->
-                PrivacyChoiceRow(choice.title, choice.description, selected = choice == behavior.remoteImages) {
-                    state.update { it.copy(remoteImages = choice) }
-                }
+            SettingRow("Load images", { choosingImages = true }, icon = Res.drawable.symbol_image) {
+                ValueButton(behavior.remoteImages.title)
             }
             val count = behavior.allowedSenders.size
             SettingPageRow(
@@ -49,55 +57,29 @@ fun PrivacyScreen(
             )
         }
         SettingsSection("Photos you attach", info = PhotosInfo) {
-            PhotoCleaning.entries.forEach { choice ->
-                PrivacyChoiceRow(choice.title, choice.description, selected = choice == behavior.photoCleaning) {
-                    state.update { it.copy(photoCleaning = choice) }
-                }
+            SettingRow("Photo details", { choosingPhotos = true }, icon = Res.drawable.symbol_photo_camera) {
+                ValueButton(behavior.photoCleaning.title)
             }
         }
-        AvatarsSection(state)
+        AvatarSettings(state)
         if (device.screen || device.keyboard) DeviceSection(state, device)
     }
-}
-
-/** Whether avatars load website icons, from DuckDuckGo when a site has none, and contacts from every account. */
-@Composable
-private fun AvatarsSection(state: MailBehaviorState) {
-    val behavior = state.behavior
-    SettingsSection("Avatars") {
-        SettingToggleRow(
-            "Website icons",
-            checked = behavior.websiteIcons,
-            onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
-            description = "Logos from sender websites",
-            icon = Res.drawable.symbol_person,
-            info =
-                InfoText(
-                    "Website icons",
-                    "The sender's website sees your IP address and that you got their mail.",
-                ),
+    if (choosingImages) {
+        RadioChoiceSheet(
+            "Load remote images",
+            ChoiceOptions(RemoteImages.entries, behavior.remoteImages),
+            row = { ChoiceRow(it.title, it.description) },
+            onSave = { choice -> state.update { it.copy(remoteImages = choice) } },
+            onDismiss = { choosingImages = false },
         )
-        if (behavior.websiteIcons) {
-            SettingToggleRow(
-                "Ask DuckDuckGo",
-                checked = behavior.duckDuckGoIcons,
-                onCheckedChange = { on -> state.update { it.copy(duckDuckGoIcons = on) } },
-                description = "For sites without an icon",
-                icon = Res.drawable.symbol_person,
-                info = InfoText("Ask DuckDuckGo", "DuckDuckGo sees your IP address and each sender's domain."),
-            )
-        }
-        SettingToggleRow(
-            "Photos from all accounts",
-            checked = behavior.allAccountPhotos,
-            onCheckedChange = { on -> state.update { it.copy(allAccountPhotos = on) } },
-            description = "Contact photos on mail to any account",
-            icon = Res.drawable.symbol_person,
-            info =
-                InfoText(
-                    "Photos from all accounts",
-                    "Mail to one of your accounts shows a contact's photo even when another account saved the contact.",
-                ),
+    }
+    if (choosingPhotos) {
+        RadioChoiceSheet(
+            "Photos you attach",
+            ChoiceOptions(PhotoCleaning.entries, behavior.photoCleaning),
+            row = { ChoiceRow(it.title, it.description) },
+            onSave = { choice -> state.update { it.copy(photoCleaning = choice) } },
+            onDismiss = { choosingPhotos = false },
         )
     }
 }
@@ -137,31 +119,11 @@ private fun DeviceSection(
     }
 }
 
-/** One of a section's choices: a radio first, then its [title] and what it means. */
-@Composable
-private fun PrivacyChoiceRow(
-    title: String,
-    description: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    PickRow(
-        title,
-        description,
-        PickMark(selected, atStart = true),
-        onClick,
-        layout = PickRowLayout(subtitleLines = DESCRIPTION_LINES),
-    )
-}
-
-/** Enough lines for the longest description on a narrow phone. */
-private const val DESCRIPTION_LINES = 2
-
 private val RemoteImages.title: String
     get() =
         when (this) {
             RemoteImages.Always -> "Always"
-            RemoteImages.Known -> "From people you know"
+            RemoteImages.Known -> "In your contacts"
             RemoteImages.Never -> "Never"
         }
 
@@ -194,7 +156,7 @@ private val ImagesInfo =
         "Remote images",
         listOf(
             "Always shows every mail as the sender designed it, and lets senders see when you open their mail.",
-            "From people you know loads images from contacts, people you've written to, and senders you " +
+            "In your contacts loads images from contacts, people you've written to, and senders you " +
                 "allowed. Everyone else asks first.",
             "Images that are part of the mail itself always show. Mail in Spam never loads remote images.",
         ),

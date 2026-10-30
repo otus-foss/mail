@@ -1,6 +1,8 @@
 package com.otus.mail
 
 import android.content.Context
+import androidx.core.content.edit
+import com.otus.mail.core.avatar.IconSource
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
@@ -84,10 +86,24 @@ class InboxPillPersistenceTest {
             .clear()
             .apply()
         assertFalse(AndroidMailBehaviorStore(context).read().websiteIcons)
-        assertFalse(AndroidMailBehaviorStore(context).read().duckDuckGoIcons)
-        AndroidMailBehaviorStore(context).write(MailBehavior(websiteIcons = true, duckDuckGoIcons = true))
-        assertTrue(AndroidMailBehaviorStore(context).read().websiteIcons)
-        assertTrue(AndroidMailBehaviorStore(context).read().duckDuckGoIcons)
+        assertEquals(IconSource.Websites, AndroidMailBehaviorStore(context).read().iconSource)
+        val bulwark =
+            MailBehavior(websiteIcons = true, iconSource = IconSource.Bulwark, bulwarkAddress = "mail.example.net")
+        AndroidMailBehaviorStore(context).write(bulwark)
+        val read = AndroidMailBehaviorStore(context).read()
+        assertTrue(read.websiteIcons)
+        assertEquals(IconSource.Bulwark, read.iconSource)
+        assertEquals("mail.example.net", read.bulwarkAddress)
+    }
+
+    @Test
+    fun askDuckDuckGoTurnedOnEarlierReadsAsTheDuckDuckGoSource() {
+        val context = RuntimeEnvironment.getApplication()
+        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit {
+            clear()
+            putBoolean("duckduckgo_icons", true)
+        }
+        assertEquals(IconSource.DuckDuckGo, AndroidMailBehaviorStore(context).read().iconSource)
     }
 
     @Test

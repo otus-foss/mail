@@ -122,9 +122,9 @@ private fun AvatarEffects(
     states: MailStates,
     behaviorState: MailBehaviorState,
 ) {
-    // Changing Website icons stops the inbox's avatar lookups at once and looks again with the new choice.
+    // Changing where avatars load from stops the inbox's avatar lookups and looks again with the new choice.
     LaunchedEffect(states) {
-        snapshotFlow { behaviorState.behavior.let { it.websiteIcons to it.duckDuckGoIcons } }
+        snapshotFlow { states.avatarOptions() }
             .drop(1)
             .collect { states.feed.refresh() }
     }

@@ -32,9 +32,10 @@ internal fun MailScope.listingQueries(
 
 /**
  * [login]'s lists of [scope] as the cache holds them, one page per mailbox, mapped like loaded
- * rows. A mailbox without a saved list for [query] shows the rows of its unfiltered list that
- * pass [check], or nothing without one. A row whose email has left the mailbox since, such as
- * after a move, is left out. A row that no longer reads leaves the login out.
+ * rows, trusting DMARC results only from [serverSite] (see [ServerSites]). A mailbox without a saved
+ * list for [query] shows the rows of its unfiltered list that pass [check], or nothing without
+ * one. A row whose email has left the mailbox since, such as after a move, is left out. A row that
+ * no longer reads leaves the login out.
  */
 internal suspend fun MailCache.cachedPages(
     login: JmapLogin,
@@ -42,6 +43,7 @@ internal suspend fun MailCache.cachedPages(
     query: MailQuery,
     conditions: List<JsonObject>,
     zone: TimeZone,
+    serverSite: String,
     check: ((ListedRow) -> Boolean)? = null,
 ): List<ListingPage<ListedRow>> {
     val mailboxes = mailboxes(login.id)
@@ -65,7 +67,7 @@ internal suspend fun MailCache.cachedPages(
         jmapDecoding {
             chosen.indices.mapNotNull { index ->
                 val mailbox = chosen[index]
-                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone)
+                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone, serverSite)
                 val listing = listings[queries[index].key]
                 when {
                     listing != null -> held.page(listing, list)
@@ -92,6 +94,7 @@ private class ListedMailbox(
     val name: String,
     val view: ThreadView,
     val zone: TimeZone,
+    val serverSite: String,
 )
 
 /** The cached row emails of some lists, their threads, and those threads' emails. */
@@ -121,7 +124,7 @@ private class HeldMail(
         val login = list.login
         val message =
             row
-                .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId)
+                .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId, list.serverSite)
                 .inConversation(row, thread, list.mailboxId, list.view, list.zone)
         return ListedRow(message, Instant.parse(row.receivedAt))
     }

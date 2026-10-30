@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.avatar.IconSource
 import com.otus.mail.core.preferences.KeyValueStore
 import com.otus.mail.core.preferences.decoded
 import com.otus.mail.core.preferences.flag
@@ -40,7 +41,8 @@ class KeyValueMailBehaviorStore(
                 actionBarMode = ActionBarMode.fromStorageValue(string(ACTION_BAR_MODE)) ?: defaults.actionBarMode,
                 minimizedBar = flag(MINIMIZED_BAR, defaults.minimizedBar),
                 websiteIcons = flag(WEBSITE_ICONS, defaults.websiteIcons),
-                duckDuckGoIcons = flag(DUCKDUCKGO_ICONS, defaults.duckDuckGoIcons),
+                iconSource = savedIconSource() ?: defaults.iconSource,
+                bulwarkAddress = string(BULWARK_ADDRESS) ?: defaults.bulwarkAddress,
                 allAccountPhotos = flag(ALL_ACCOUNT_PHOTOS, defaults.allAccountPhotos),
                 showQuotes = flag(SHOW_QUOTES, defaults.showQuotes),
                 zenRead = flag(ZEN_READ, defaults.zenRead),
@@ -70,7 +72,8 @@ class KeyValueMailBehaviorStore(
             put(ACTION_BAR_MODE, behavior.actionBarMode.storageValue)
             put(MINIMIZED_BAR, behavior.minimizedBar)
             put(WEBSITE_ICONS, behavior.websiteIcons)
-            put(DUCKDUCKGO_ICONS, behavior.duckDuckGoIcons)
+            put(ICON_SOURCE, behavior.iconSource.storageValue)
+            put(BULWARK_ADDRESS, behavior.bulwarkAddress)
             put(ALL_ACCOUNT_PHOTOS, behavior.allAccountPhotos)
             put(SHOW_QUOTES, behavior.showQuotes)
             put(ZEN_READ, behavior.zenRead)
@@ -87,6 +90,11 @@ class KeyValueMailBehaviorStore(
             put(ALLOWED_SENDERS, encodeAddresses(behavior.allowedSenders))
         }
     }
+
+    /** The saved choice, or DuckDuckGo for anyone who turned on Ask DuckDuckGo before the choice existed. */
+    private fun savedIconSource() =
+        IconSource.decode(values.string(ICON_SOURCE))
+            ?: IconSource.DuckDuckGo.takeIf { values.flag(DUCKDUCKGO_ICONS, false) }
 
     private fun savedRemoteImages() =
         decodeRemoteImages(
@@ -108,6 +116,10 @@ class KeyValueMailBehaviorStore(
         // Website icons moved here when they turned off by default, since the earlier key held on for
         // anyone who saved any setting.
         const val WEBSITE_ICONS = "load_website_icons"
+        const val ICON_SOURCE = "website_icon_source"
+        const val BULWARK_ADDRESS = "bulwark_address"
+
+        // Ask DuckDuckGo, a switch for sites without an icon, before the icon source choice.
         const val DUCKDUCKGO_ICONS = "duckduckgo_icons"
         const val ALL_ACCOUNT_PHOTOS = "all_account_photos"
         const val SHOW_QUOTES = "show_quotes"

@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.avatar.IconSource
+
 /**
  * How the inbox responds to the user. Swipes are named by layout direction: [startToEnd] is a
  * swipe right in left-to-right languages. [readLater] adds a Read later folder to each account, an
@@ -7,12 +9,12 @@ package com.otus.mail.feature.inbox.domain
  * [sidebar] arranges the sidebar. [actionBar] holds each place's bar, and [actionBarMode] picks
  * whether places use their own or the Everywhere bar. A [minimizedBar] shows only its primary,
  * as a round button. A null swipe does nothing. [websiteIcons] lets sender avatars load images
- * from outside the user's servers, such as sender websites, and [duckDuckGoIcons] also asks
- * DuckDuckGo's icon cache for a site without an icon. [allAccountPhotos] lets mail to one account
- * show the photo of a contact saved in another. [recentFrom] holds the addresses the user last
- * sent from, newest first, which compose offers first and a new message from all accounts sends
- * from. [signatureInReplies] adds the identity's signature to replies and forwards too; new
- * messages always get it. [undoSendSeconds] holds each sent message on the device
+ * from outside the user's servers, website icons from [iconSource], and with Bulwark from the
+ * server at [bulwarkAddress]. [allAccountPhotos] lets mail to one account
+ * show the photo of a contact saved in another. [recentFrom] holds the
+ * addresses the user last sent from, newest first, which compose offers first and a new message
+ * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
+ * forwards too; new messages always get it. [undoSendSeconds] holds each sent message on the device
  * that long so Undo can stop it; 0 sends at once. [filters] arranges the filter panel. [list] sets
  * how the mail list's rows read. [remoteImages] decides when a message loads images from other
  * servers, and [allowedSenders] are the lowercase addresses whose images always load.
@@ -34,7 +36,8 @@ data class MailBehavior(
     val actionBarMode: ActionBarMode = ActionBarMode.Adaptive,
     val minimizedBar: Boolean = false,
     val websiteIcons: Boolean = false,
-    val duckDuckGoIcons: Boolean = false,
+    val iconSource: IconSource = IconSource.Websites,
+    val bulwarkAddress: String = "",
     val allAccountPhotos: Boolean = true,
     val recentFrom: List<String> = emptyList(),
     val signatureInReplies: Boolean = true,

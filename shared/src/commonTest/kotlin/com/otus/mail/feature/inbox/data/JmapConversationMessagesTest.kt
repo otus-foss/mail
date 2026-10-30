@@ -35,7 +35,8 @@ class JmapConversationMessagesTest {
             JmapConnections(JmapClient(stalwartLike(api = server::answer)), store),
             store,
             cache,
-        ) { TimeZone.UTC }
+            zone = { TimeZone.UTC },
+        )
 
     private val sender = MailSender("Grace", "grace@example.org", "ada")
     private val row =
