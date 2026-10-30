@@ -5,6 +5,7 @@ import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import io.ktor.http.URLDecodeException
@@ -46,7 +47,7 @@ internal class ListUnsubscriber(
                 subject = mailto.subject ?: DEFAULT_SUBJECT,
                 body = mailto.body.orEmpty(),
             )
-        return sender.send(draft, answered = null, at = null).isSuccess
+        return sender.send(draft, answered = null, SendTime.Now).isSuccess
     }
 
     /**
