@@ -64,7 +64,7 @@ fun conversationRows(
             message.rowModel(
                 look,
                 address,
-                dateFormatter.listDateLabel(message.lastReceived, today, look.layout.dateStyle),
+                dateFormatter.listDateLabel(message.lastReceived, today, look.layout),
             )
     }
 }

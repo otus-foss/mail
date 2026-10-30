@@ -20,6 +20,15 @@ enum class MailboxStyle(
     Rows("rows"),
 }
 
+/** How many of the grid's three columns a mailbox spans while the sidebar shows pinned mailboxes as a grid. */
+enum class PinSize(
+    val storageValue: String,
+) {
+    Small("small"),
+    Wide("wide"),
+    Full("full"),
+}
+
 /** Which count the sidebar shows beside mailboxes and folders. */
 enum class SidebarCount(
     val storageValue: String,
@@ -32,18 +41,27 @@ enum class SidebarCount(
 /**
  * How the sidebar is arranged, the same for every account. [sections] lists every section in
  * order; [hidden] ones are left out. [pinned] lists what the Pinned section shows below the Inbox,
- * in order. Turning [folderColors] off hides folder colors everywhere without forgetting them.
+ * in order. In the grid, each pin spans its [sizes] entry, or by default the whole width for the
+ * Inbox and one column for the rest. A pin keeps its size after it is unpinned, so pinning it
+ * again restores it. Turning
+ * [folderColors] off hides folder colors everywhere without forgetting them.
  */
 data class SidebarLayout(
     val sections: List<SidebarSection> = SidebarSection.entries,
     val hidden: Set<SidebarSection> = emptySet(),
     val pinned: List<SidebarPin> = SidebarPin.defaults,
+    val sizes: Map<SidebarPin, PinSize> = emptyMap(),
     val mailboxes: MailboxStyle = MailboxStyle.Grid,
     val counts: SidebarCount = SidebarCount.Unread,
     val folderColors: Boolean = true,
 ) {
     val shown: List<SidebarSection>
         get() = sections - hidden
+
+    fun sizeOf(pin: SidebarPin): PinSize = sizes[pin] ?: if (pin == SidebarPin.Inbox) PinSize.Full else PinSize.Small
+
+    /** Pins [shown] in this order; saved pins not among them, such as a folder that failed to load, follow. */
+    fun withPinOrder(shown: List<SidebarPin>): SidebarLayout = copy(pinned = shown + (pinned - shown.toSet()))
 
     fun moved(
         from: Int,
@@ -72,6 +90,10 @@ data class SidebarLayout(
                 HIDDEN to layout.hidden.joinToString(",") { it.storageValue },
                 PINNED to SidebarPin.encode(layout.pinned),
                 OFFERED to SidebarPin.encode(SidebarPin.introduced),
+                SIZES to
+                    layout.sizes
+                        .entries
+                        .joinToString(",") { (pin, size) -> "${size.storageValue}:${pin.storageValue}" },
                 MAILBOXES to layout.mailboxes.storageValue,
                 COUNTS to layout.counts.storageValue,
                 FOLDER_COLORS to layout.folderColors.toString(),
@@ -98,8 +120,11 @@ data class SidebarLayout(
                 pinned =
                     values[PINNED]?.let(SidebarPin::decode)?.let { pins ->
                         val offered = values[OFFERED]?.let(SidebarPin::decode).orEmpty()
-                        pins + (SidebarPin.introduced - offered.toSet() - pins.toSet())
+                        val added = SidebarPin.introduced - offered.toSet() - pins.toSet()
+                        // The Inbox goes back to the top, where it always was before it became a pin.
+                        added.filter { it == SidebarPin.Inbox } + pins + (added - SidebarPin.Inbox)
                     } ?: defaults.pinned,
+                sizes = sizes(values[SIZES].orEmpty()),
                 mailboxes =
                     MailboxStyle.entries.firstOrNull { it.storageValue == values[MAILBOXES] } ?: defaults.mailboxes,
                 counts = SidebarCount.entries.firstOrNull { it.storageValue == values[COUNTS] } ?: defaults.counts,
@@ -107,10 +132,22 @@ data class SidebarLayout(
             )
         }
 
+        /** Each `size:pin` entry, leaving out ones this version cannot read. */
+        private fun sizes(saved: String): Map<SidebarPin, PinSize> =
+            saved
+                .split(",")
+                .mapNotNull { entry ->
+                    val size = pinSize(entry.substringBefore(":")) ?: return@mapNotNull null
+                    SidebarPin.fromStorageValue(entry.substringAfter(":", ""))?.let { it to size }
+                }.toMap()
+
+        private fun pinSize(saved: String?): PinSize? = PinSize.entries.firstOrNull { it.storageValue == saved }
+
         private const val SECTIONS = "sections"
         private const val HIDDEN = "hidden"
         private const val PINNED = "pinned"
         private const val OFFERED = "offered"
+        private const val SIZES = "sizes"
         private const val MAILBOXES = "mailboxes"
         private const val COUNTS = "counts"
         private const val FOLDER_COLORS = "folderColors"

@@ -13,8 +13,18 @@ class SidebarLayoutTest {
                 mailboxes = MailboxStyle.Rows,
                 counts = SidebarCount.None,
                 folderColors = false,
+                sizes = mapOf(SidebarPin.Inbox to PinSize.Small, SidebarPin.Folder(listOf("a,b")) to PinSize.Wide),
             )
         assertEquals(layout, SidebarLayout.decode(SidebarLayout.encode(layout)))
+    }
+
+    @Test
+    fun theInboxSpansTheGridAndOtherPinsOneColumnUntilResized() {
+        val layout = SidebarLayout(sizes = mapOf(SidebarPin.Contacts to PinSize.Wide))
+        assertEquals(PinSize.Full, layout.sizeOf(SidebarPin.Inbox))
+        assertEquals(PinSize.Small, layout.sizeOf(SidebarPin.ReadLater))
+        assertEquals(PinSize.Wide, layout.sizeOf(SidebarPin.Contacts))
+        assertEquals(emptyMap(), SidebarLayout.decode("sizes=huge:inbox,wide:future").sizes)
     }
 
     @Test
@@ -34,11 +44,24 @@ class SidebarLayoutTest {
     }
 
     @Test
-    fun aLayoutSavedBeforeContactsPinsItOnce() {
+    fun aLayoutSavedBeforeContactsAndTheInboxPinnedPinsThemOnce() {
         val saved = SidebarLayout.decode("pinned=read_later,role:sent")
-        assertEquals(listOf(SidebarPin.ReadLater, SidebarPin.Role("sent"), SidebarPin.Contacts), saved.pinned)
-        val unpinned = saved.copy(pinned = saved.pinned - SidebarPin.Contacts)
+        assertEquals(
+            listOf(SidebarPin.Inbox, SidebarPin.ReadLater, SidebarPin.Role("sent"), SidebarPin.Contacts),
+            saved.pinned,
+        )
+        val unpinned = saved.copy(pinned = saved.pinned - SidebarPin.Contacts - SidebarPin.Inbox)
         assertEquals(unpinned, SidebarLayout.decode(SidebarLayout.encode(unpinned)))
+    }
+
+    @Test
+    fun reorderingTheShownPinsKeepsThoseThatCannotShowAfterThem() {
+        val gone = SidebarPin.Folder(listOf("gone"))
+        val layout = SidebarLayout(pinned = listOf(SidebarPin.Inbox, gone, SidebarPin.Contacts))
+        assertEquals(
+            listOf(SidebarPin.Contacts, SidebarPin.Inbox, gone),
+            layout.withPinOrder(listOf(SidebarPin.Contacts, SidebarPin.Inbox)).pinned,
+        )
     }
 
     @Test

@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
@@ -116,7 +117,7 @@ class InboxPillsTest {
         )
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isSelectable()).performClick()
+        compose.onNode(hasContentDescription("Inbox", substring = true) and isSelectable()).performClick()
         compose.waitForText("Welcome")
         pill("Receipts").performClick()
         compose.waitForText("Order shipped")

@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -39,8 +40,17 @@ class SidebarNavigationTest {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithText("All mail").assertIsDisplayed()
         compose.onNodeWithText("No accounts yet").assertIsDisplayed()
-        compose.onNode(hasText("Inbox") and isSelectable()).assertIsDisplayed().assertIsSelected()
-        val inbox = compose.onNode(hasText("Inbox") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        compose
+            .onNode(
+                hasContentDescription("Inbox", substring = true) and isSelectable(),
+            ).assertIsDisplayed()
+            .assertIsSelected()
+        val inbox =
+            compose
+                .onNode(
+                    hasContentDescription("Inbox", substring = true) and isSelectable(),
+                ).fetchSemanticsNode()
+                .boundsInRoot
         val settings = compose.onNodeWithContentDescription("Settings").fetchSemanticsNode().boundsInRoot
         assertTrue("Settings sits in the header, above the inbox", settings.bottom <= inbox.top)
         val sidebarWidth = with(compose.density) { 336.dp.toPx() }
@@ -57,7 +67,11 @@ class SidebarNavigationTest {
         compose.onNodeWithText("All mail").assertDoesNotExist()
         compose.onNodeWithText("Email accounts").assertIsDisplayed()
         compose.onNodeWithContentDescription("Open navigation").performClick()
-        compose.onNode(hasText("Inbox") and isSelectable()).assertIsNotSelected().performClick()
+        compose
+            .onNode(
+                hasContentDescription("Inbox", substring = true) and isSelectable(),
+            ).assertIsNotSelected()
+            .performClick()
         compose.onNodeWithText("Tap to search").assertIsDisplayed()
     }
 

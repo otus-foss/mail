@@ -17,6 +17,7 @@ import com.otus.designsystem.shared.reorder.components.ReorderableColumn
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.ChoiceSheet
+import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
@@ -24,18 +25,16 @@ import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.inbox.domain.MailboxStyle
 import com.otus.mail.feature.inbox.domain.SidebarCount
 import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.SidebarPin
 import com.otus.mail.feature.inbox.domain.SidebarSection
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
-import com.otus.mail.feature.inbox.presentation.components.OrderedChoice
-import com.otus.mail.feature.inbox.presentation.components.OrderedChoiceSheet
 import com.otus.mail.feature.inbox.presentation.label
 import com.otus.mail.feature.inbox.presentation.title
 
 /**
  * Arranges the sidebar for every account. Drag a section's handle to move it, or switch it off to
- * hide it. The Pinned rows choose what shows below the Inbox, from [pins], and how; the layout rows
+ * hide it. The Pinned rows open [onPinned], the page that arranges the mailboxes from [pins], and
+ * choose how they show; the layout rows
  * choose which counts appear, and a switch hides folder colors without forgetting them. Each change
  * is saved at once.
  */
@@ -43,6 +42,7 @@ import com.otus.mail.feature.inbox.presentation.title
 fun SidebarSettingsScreen(
     state: MailBehaviorState,
     pins: List<SidebarPinOption>,
+    onPinned: () -> Unit,
     onBack: () -> Unit,
 ) {
     val layout = state.behavior.sidebar
@@ -71,13 +71,11 @@ fun SidebarSettingsScreen(
             }
         }
         SettingsSection("Pinned") {
-            SettingRow(
+            SettingPageRow(
                 "Mailboxes and folders",
-                { choosing = LayoutChoice.Pinned },
-                description = "Shown below the Inbox",
-            ) {
-                ValueButton(pinned.size.toString())
-            }
+                onPinned,
+                description = pinnedSummary(pinned.size),
+            )
             SettingRow("Show as", { choosing = LayoutChoice.Mailboxes }) {
                 ValueButton(layout.mailboxes.label)
             }
@@ -95,29 +93,17 @@ fun SidebarSettingsScreen(
             )
         }
     }
-    choosing?.let { LayoutChoiceSheet(it, layout, pins, change) { choosing = null } }
+    choosing?.let { LayoutChoiceSheet(it, layout, change) { choosing = null } }
 }
 
 @Composable
 private fun LayoutChoiceSheet(
     choice: LayoutChoice,
     layout: SidebarLayout,
-    pins: List<SidebarPinOption>,
     change: ((SidebarLayout) -> SidebarLayout) -> Unit,
     onDismiss: () -> Unit,
 ) {
     when (choice) {
-        LayoutChoice.Pinned -> {
-            OrderedChoiceSheet(
-                "Pinned",
-                layout.pinned,
-                pins.map { OrderedChoice(it.pin, it.pin.storageValue, it.path, it.icon, it.group) },
-                keyOf = SidebarPin::storageValue,
-                onApply = { pinned -> change { it.copy(pinned = pinned) } },
-                onDismiss = onDismiss,
-            )
-        }
-
         LayoutChoice.Mailboxes -> {
             ChoiceSheet(
                 title = "Show pinned as",
@@ -140,7 +126,9 @@ private fun LayoutChoiceSheet(
     }
 }
 
-private enum class LayoutChoice { Pinned, Mailboxes, Counts }
+private enum class LayoutChoice { Mailboxes, Counts }
+
+private fun pinnedSummary(count: Int): String = if (count == 0) "Nothing pinned" else "$count pinned"
 
 private val SidebarSection.icon
     get() =

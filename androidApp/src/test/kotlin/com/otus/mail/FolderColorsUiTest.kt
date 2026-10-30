@@ -7,6 +7,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
@@ -99,7 +100,10 @@ class FolderColorsUiTest {
     @Test
     fun systemFoldersOfferNoColor() {
         openSidebar()
-        compose.onAllNodes(folderRow("Inbox"))[0].performTouchInput { longClick() }
+        compose
+            .onNode(
+                hasContentDescription("Inbox", substring = true) and isSelectable(),
+            ).performTouchInput { longClick() }
         compose.waitForIdle()
         compose.onNodeWithText("Color").assertDoesNotExist()
     }

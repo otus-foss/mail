@@ -26,7 +26,7 @@ internal fun SettingsPageContent(
         MailPage.Appearance -> AppearancePage(states, settings, navigation, back)
         MailPage.Behavior -> MailBehaviorPage(states, navigation, back)
         MailPage.Notifications, MailPage.NotificationOverrides -> NotificationPages(page, states, navigation, back)
-        MailPage.SidebarSettings -> SidebarSettingsPage(states, back)
+        MailPage.SidebarSettings, MailPage.PinnedSettings -> SidebarSettingsPage(page, states, navigation, back)
         MailPage.ThemeSettings -> ThemeSettingsScreen(settings.theme, onBack = back) { ThemeInboxPreview() }
         MailPage.ActionBarSettings -> ActionBarSettingsPage(states, back)
         MailPage.MailListSettings -> MailListSettingsPage(states, dateFormatter, back)

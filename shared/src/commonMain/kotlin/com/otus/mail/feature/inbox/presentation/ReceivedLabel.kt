@@ -2,22 +2,40 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.domain.DateStyle
+import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.presentation.components.monthAndDay
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 
 /**
- * When a message arrived, as its row shows it: the time today, "Yesterday", the weekday within
- * the last week, and the saved date format before that.
+ * When a message arrived, as the mail list's [layout] shows it. A relative style names recent
+ * days with [recentDayLabel]; a full style always names the date and adds the time today. Dates
+ * follow [DateStyle.monthNames] and [MailListLayout.showThisYear].
  */
-fun DateFormatter.receivedLabel(
+fun DateFormatter.listDateLabel(
     received: ReceivedAt,
     today: LocalDate,
+    layout: MailListLayout,
 ): String {
     val date = LocalDate.parse(received.date)
-    return recentDayLabel(date, received.time, today) ?: format(date)
+    val day = dayLabel(date, today, layout)
+    return when {
+        layout.dateStyle.relative -> recentDayLabel(date, received.time, today) ?: day
+        date == today -> "$day ${received.time}"
+        else -> day
+    }
+}
+
+/** What [layout]'s date style means, with a date from three weeks ago: "Yesterday, then Oct 8". */
+fun DateFormatter.dateStyleExample(
+    layout: MailListLayout,
+    today: LocalDate,
+): String {
+    val sample = dayLabel(today.minus(DatePeriod(days = SAMPLE_DAYS_AGO)), today, layout)
+    return if (layout.dateStyle.relative) "Yesterday, then $sample" else "Always the date, like $sample"
 }
 
 /** The [time] for [today], "Yesterday", or the weekday within the last week; null for other dates. */
@@ -33,26 +51,22 @@ internal fun recentDayLabel(
         else -> null
     }
 
-/** When a message arrived, in the mail list's [style]: [receivedLabel], or the date with the time for today. */
-fun DateFormatter.listDateLabel(
-    received: ReceivedAt,
+/** The date alone, such as 08.10.2026, 08.10, Oct 8, 2026, or Oct 8. */
+private fun DateFormatter.dayLabel(
+    date: LocalDate,
     today: LocalDate,
-    style: DateStyle,
-): String =
-    when (style) {
-        DateStyle.Relative -> receivedLabel(received, today)
-        DateStyle.Full -> fullListDate(received, today)
-    }
-
-private fun DateFormatter.fullListDate(
-    received: ReceivedAt,
-    today: LocalDate,
+    layout: MailListLayout,
 ): String {
-    val date = LocalDate.parse(received.date)
-    return if (date == today) "${format(date)} ${received.time}" else format(date)
+    val withYear = layout.showThisYear || date.year != today.year
+    return when {
+        layout.dateStyle.monthNames -> if (withYear) "${date.monthAndDay}, ${date.year}" else date.monthAndDay
+        withYear -> format(date)
+        else -> formatDayMonth(date)
+    }
 }
 
 private const val WEEK = 7
+private const val SAMPLE_DAYS_AGO = 21
 private const val SHORT_DAY = 3
 
 /** The weekday's three-letter name, such as "Mon". */

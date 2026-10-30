@@ -24,12 +24,16 @@ import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.roleIcon
 import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.MailboxStyle
+import com.otus.mail.feature.inbox.domain.PinSize
+import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.SidebarPin
+import com.otus.mail.feature.inbox.presentation.tileSize
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
  * A sidebar mailbox, the same for every account, holding each account's [folders] of its kind.
- * A pinned folder of the user's own is [shared], so its icon takes the folder's color.
+ * A pinned folder of the user's own is [shared], so its icon takes the folder's color. In the grid
+ * it spans [size].
  */
 internal data class SidebarMailbox(
     val title: String,
@@ -37,36 +41,38 @@ internal data class SidebarMailbox(
     val page: MailPage,
     val folders: List<MailFolder>,
     val shared: SharedFolder? = null,
+    val size: PinSize = PinSize.Small,
 )
 
 /**
- * Inbox, then each of [pinned] that some account has, in the user's order. The Inbox counts the
- * folders [inbox] lists: each account's inbox, and the other folders chosen for it.
+ * Each pin of [layout] that some account has, in the user's order and at its size. The Inbox counts
+ * the folders [inbox] lists: each account's inbox, and the other folders chosen for it.
  */
 internal fun sidebarMailboxes(
     accounts: List<AccountFolders>,
     inbox: InboxContents = InboxContents(),
-    pinned: List<SidebarPin> = SidebarPin.defaults,
+    layout: SidebarLayout = SidebarLayout(),
 ): List<SidebarMailbox> {
-    val inboxFolders =
-        accounts.flatMap { account ->
-            account.folders.filter {
-                it.role in inbox.roles ||
-                    (inbox.ownFolders && it.isCustom)
-            }
-        }
-    val pinnable = pinnableMailboxes(accounts).toMap()
-    return listOf(SidebarMailbox("Inbox", roleIcon(INBOX_ROLE), MailPage.Inbox, inboxFolders)) +
-        pinned.mapNotNull(pinnable::get)
+    val pinnable = pinnableMailboxes(accounts, inbox).toMap()
+    return layout.pinned.mapNotNull { pin -> pinnable[pin]?.copy(size = layout.sizeOf(pin)) }
 }
 
 /**
- * Every mailbox the accounts can pin, in the order Settings offers them: Read later while it is on,
+ * Every mailbox the accounts can pin, in the order Settings offers them: the Inbox, counting the
+ * folders [inbox] lists, Read later while it is on,
  * Conversations once an account has a Sent folder, each system folder some account has, then the
  * user's folders, parents before their nested ones.
  */
-internal fun pinnableMailboxes(accounts: List<AccountFolders>): List<Pair<SidebarPin, SidebarMailbox>> =
+internal fun pinnableMailboxes(
+    accounts: List<AccountFolders>,
+    inbox: InboxContents = InboxContents(),
+): List<Pair<SidebarPin, SidebarMailbox>> =
     buildList {
+        val inboxFolders =
+            accounts.flatMap { account ->
+                account.folders.filter { it.role in inbox.roles || (inbox.ownFolders && it.isCustom) }
+            }
+        add(SidebarPin.Inbox to SidebarMailbox("Inbox", roleIcon(INBOX_ROLE), MailPage.Inbox, inboxFolders))
         val readLater = accounts.mapNotNull { it.readLater }
         if (readLater.isNotEmpty()) {
             add(
@@ -106,8 +112,8 @@ internal fun pinnableMailboxes(accounts: List<AccountFolders>): List<Pair<Sideba
     }
 
 /**
- * Inbox as a large row, then the pinned mailboxes as tiles in a grid or as rows, as [style] chooses.
- * [colorOf] names a pinned folder's icon color.
+ * Every mailbox as a tile at its size in a grid, or as rows with the Inbox as a large one, as
+ * [style] chooses. [colorOf] names a pinned folder's icon color.
  */
 @Composable
 internal fun SidebarMailboxList(
@@ -118,61 +124,44 @@ internal fun SidebarMailboxList(
     colorOf: (SharedFolder) -> String?,
     onSelect: (MailPage) -> Unit,
 ) {
-    val inbox = mailboxes.first()
-    val others = mailboxes.drop(1)
-    SidebarInboxEntry(
-        inbox.title,
-        inbox.icon,
-        selected = current == inbox.page,
-        onClick = { onSelect(inbox.page) },
-        // Above the tiles the count takes their badge, so it shares their cap.
-        count = if (style == MailboxStyle.Grid) counter.badge(inbox.folders) else counter.of(inbox.folders),
-        inset = style == MailboxStyle.Grid,
-    )
     when (style) {
-        MailboxStyle.Grid -> MailboxTiles(others, current, counter, colorOf, onSelect)
-        MailboxStyle.Rows -> MailboxRows(others, current, counter, colorOf, onSelect)
-    }
-}
-
-@Composable
-private fun MailboxTiles(
-    mailboxes: List<SidebarMailbox>,
-    current: MailPage,
-    counter: SidebarCounter,
-    colorOf: (SharedFolder) -> String?,
-    onSelect: (MailPage) -> Unit,
-) {
-    SidebarMailboxGrid(mailboxes) { mailbox ->
-        mailbox.Tinted(colorOf) {
-            SidebarMailboxTile(
-                mailbox.title,
-                mailbox.icon,
-                selected = current == mailbox.page,
-                onClick = { onSelect(mailbox.page) },
-                count = counter.badge(mailbox.folders),
-            )
+        MailboxStyle.Grid -> {
+            SidebarMailboxGrid(mailboxes, sizeOf = { it.size.tileSize }) { mailbox ->
+                mailbox.Tinted(colorOf) {
+                    SidebarMailboxTile(
+                        mailbox.title,
+                        mailbox.icon,
+                        selected = current == mailbox.page,
+                        onClick = { onSelect(mailbox.page) },
+                        count = counter.badge(mailbox.folders),
+                        size = mailbox.size.tileSize,
+                    )
+                }
+            }
         }
-    }
-}
 
-@Composable
-private fun MailboxRows(
-    mailboxes: List<SidebarMailbox>,
-    current: MailPage,
-    counter: SidebarCounter,
-    colorOf: (SharedFolder) -> String?,
-    onSelect: (MailPage) -> Unit,
-) {
-    mailboxes.forEach { mailbox ->
-        mailbox.Tinted(colorOf) {
-            SidebarEntry(
-                mailbox.title,
-                mailbox.icon,
-                selected = current == mailbox.page,
-                onClick = { onSelect(mailbox.page) },
-                trailing = { counter.of(mailbox.folders)?.let { SidebarCount(it) } },
-            )
+        MailboxStyle.Rows -> {
+            mailboxes.forEach { mailbox ->
+                if (mailbox.page == MailPage.Inbox) {
+                    SidebarInboxEntry(
+                        mailbox.title,
+                        mailbox.icon,
+                        selected = current == mailbox.page,
+                        onClick = { onSelect(mailbox.page) },
+                        count = counter.of(mailbox.folders),
+                    )
+                } else {
+                    mailbox.Tinted(colorOf) {
+                        SidebarEntry(
+                            mailbox.title,
+                            mailbox.icon,
+                            selected = current == mailbox.page,
+                            onClick = { onSelect(mailbox.page) },
+                            trailing = { counter.of(mailbox.folders)?.let { SidebarCount(it) } },
+                        )
+                    }
+                }
+            }
         }
     }
 }
