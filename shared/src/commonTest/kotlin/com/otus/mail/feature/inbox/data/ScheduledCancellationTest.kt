@@ -9,6 +9,9 @@ import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -36,6 +39,27 @@ class ScheduledCancellationTest {
             calls.clear()
             assertTrue(sender(calls, restored = false).cancel(message).exceptionOrNull() is DraftRestoreException)
             assertEquals(2, calls.size)
+        }
+
+    @Test
+    fun aCanceledCopyGoesBackToDraftsAsADraft() =
+        runTest {
+            val calls = mutableListOf<String>()
+            assertTrue(sender(calls).cancel(message.copy(draftsId = "dr")).isSuccess)
+            val update =
+                Json
+                    .parseToJsonElement(calls.last())
+                    .jsonObject
+                    .getValue("methodCalls")
+                    .jsonArray
+                    .single()
+                    .jsonArray[1]
+                    .jsonObject
+                    .getValue("update")
+                    .jsonObject
+                    .getValue("e")
+            val expected = """{"keywords/${'$'}draft": true, "mailboxIds": {"dr": true}}"""
+            assertEquals(Json.parseToJsonElement(expected), update)
         }
 
     @Test

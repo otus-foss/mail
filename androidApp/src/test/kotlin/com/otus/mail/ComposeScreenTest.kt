@@ -29,6 +29,7 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.domain.ScheduledSends
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.earliestPick
 import com.otus.mail.feature.inbox.presentation.ComposeAccount
@@ -52,7 +53,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 /** The compose page against a fake Drafts folder: chips, the bar's context, sending, leaving, and discarding. */
 @RunWith(RobolectricTestRunner::class)
@@ -115,11 +115,13 @@ class ComposeScreenTest {
                                 }
 
                                 override fun send(
-                                    run: suspend (Instant?) -> Result<SentMessage>,
+                                    run: suspend (SendTime) -> Result<SentMessage>,
                                     at: LocalDateTime?,
                                 ) {
                                     scheduledAt = at
-                                    scope.launch { run(at?.toInstant(TimeZone.UTC)) }
+                                    scope.launch {
+                                        run(at?.let { SendTime.Scheduled(it.toInstant(TimeZone.UTC)) } ?: SendTime.Now)
+                                    }
                                     close()
                                 }
                             },
