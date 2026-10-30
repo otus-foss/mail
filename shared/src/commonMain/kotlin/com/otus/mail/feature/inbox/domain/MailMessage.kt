@@ -55,11 +55,13 @@ data class RowFolder(
 
 enum class FolderKind { Folder, Inbox }
 
+/** [brandDomain] is the From domain the message passed DMARC for, which lets its avatar show a brand logo. */
 data class MailSender(
     val name: String,
     val address: String,
     val accountKey: String = "",
     val avatar: ResolvedAvatar? = null,
+    val brandDomain: String? = null,
 )
 
 /** The sender's name, or the address when the name is blank. */

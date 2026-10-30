@@ -15,6 +15,7 @@ import com.otus.mail.core.mail.objects
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
+import io.ktor.http.Url
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonObject
 import kotlin.time.Instant
@@ -119,7 +120,7 @@ private class HeldMail(
         val login = list.login
         val message =
             row
-                .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId)
+                .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId, login.host)
                 .inConversation(row, thread, list.mailboxId, list.view, list.zone)
         return ListedRow(message, Instant.parse(row.receivedAt))
     }
@@ -142,3 +143,7 @@ private suspend fun MailCache.heldMail(
     val rowMembers = objects(loginId, CacheKind.Email, EmailObject.serializer(), memberIds - members.keys)
     return HeldMail(rows, threads, rowMembers + members)
 }
+
+/** The host of the login's JMAP server, which DMARC results must come from to count. */
+private val JmapLogin.host: String
+    get() = runCatching { Url(sessionUrl).host }.getOrDefault("")

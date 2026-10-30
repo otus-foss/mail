@@ -3,9 +3,9 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -13,7 +13,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextInput
 import com.otus.mail.app.App
+import com.otus.mail.core.avatar.IconSource
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
@@ -50,14 +52,18 @@ class PrivacySettingsTest {
     }
 
     @Test
-    fun knownPeopleIsTheDefaultAndAChoiceIsSavedAtOnce() {
+    fun knownPeopleIsTheDefaultAndDoneSavesAChoice() {
         openPrivacy()
-        compose.onNodeWithText("From people you know").assertIsSelected()
         compose.screenshot("2026-10-19-feat-read-view-privacy")
-        compose.onNodeWithText("Never").performClick()
+        compose.onNodeWithText("Load images").performClick()
+        compose.onNode(hasText("In your contacts") and isSelectable()).assertIsSelected()
+        compose.onNode(hasText("Never") and isSelectable()).performClick()
+        assertEquals("Nothing is saved before Done", RemoteImages.Known, behavior.behavior.remoteImages)
+        compose.onNodeWithText("Done").performClick()
+        // Done saves once the sheet has finished closing.
+        compose.waitForIdle()
         assertEquals(RemoteImages.Never, behavior.behavior.remoteImages)
-        compose.onNodeWithText("Never").assertIsSelected()
-        compose.onNodeWithText("From people you know").assertIsNotSelected()
+        compose.onNodeWithText("Never").assertIsDisplayed()
     }
 
     @Test
@@ -77,16 +83,20 @@ class PrivacySettingsTest {
     }
 
     @Test
-    fun websiteIconsAndDuckDuckGoStartOffAndDuckDuckGoShowsOnlyWithIcons() {
+    fun iconSourcesShowOnlyWithWebsiteIconsAndBulwarkAsksForItsAddress() {
         openPrivacy()
-        compose.onNode(hasText("Ask DuckDuckGo") and isToggleable()).assertDoesNotExist()
+        compose.onNodeWithText("Icons from").assertDoesNotExist()
         // The row's info button sits mid-row, so the switch is flipped by its action, not a tap at the center.
         compose.onNode(hasText("Website icons") and isToggleable()).performSemanticsAction(SemanticsActions.OnClick)
         assertTrue(behavior.behavior.websiteIcons)
-        compose
-            .onNode(hasText("Ask DuckDuckGo") and isToggleable())
-            .performScrollTo()
-            .performSemanticsAction(SemanticsActions.OnClick)
-        assertTrue(behavior.behavior.duckDuckGoIcons)
+        compose.onNodeWithText("Icons from").performScrollTo().performClick()
+        compose.onNodeWithText("Bulwark").performClick()
+        assertEquals("Nothing is saved before Done", IconSource.Websites, behavior.behavior.iconSource)
+        compose.onNodeWithContentDescription("Bulwark address").performTextInput("mail.example.net")
+        compose.onNodeWithText("Done").performClick()
+        compose.waitForIdle()
+        assertEquals(IconSource.Bulwark, behavior.behavior.iconSource)
+        assertEquals("mail.example.net", behavior.behavior.bulwarkAddress)
+        compose.onNodeWithText("No Bulwark address, so no icons load").assertDoesNotExist()
     }
 }
