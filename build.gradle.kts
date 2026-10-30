@@ -120,17 +120,26 @@ tasks.register<Exec>("pushBridgeTest") {
     commandLine(qualityPython.get(), "-m", "unittest", "discover", "-s", "push_bridge/tests")
 }
 
+// CI runs each part of checkAll as its own parallel job.
+tasks.register("checkTooling") {
+    group = "verification"
+    dependsOn("qualityCheck", "pushBridgeTest")
+}
+
+tasks.register("checkAndroidBuild") {
+    group = "verification"
+    dependsOn(":androidApp:lintDebug", ":androidApp:assembleDebug")
+}
+
+tasks.register("checkTests") {
+    group = "verification"
+    dependsOn(":androidApp:testDebugUnitTest", ":shared:testAndroidHostTest")
+}
+
 tasks.register("checkAll") {
     group = "verification"
     description = "Run portable quality checks, Android lint, and debug compilation."
-    dependsOn(
-        "qualityCheck",
-        "pushBridgeTest",
-        ":androidApp:lintDebug",
-        ":androidApp:assembleDebug",
-        ":androidApp:testDebugUnitTest",
-        ":shared:testAndroidHostTest",
-    )
+    dependsOn("checkTooling", "checkAndroidBuild", "checkTests")
 }
 
 tasks.register("qualityCheck") {
@@ -138,9 +147,27 @@ tasks.register("qualityCheck") {
     dependsOn("spotlessCheck", "detekt", "architectureCheck", "architectureTest", "ruffCheck", "ruffFormatCheck")
 }
 
+// CI splits the tests across jobs with -Potus.testShard=<index>/<count>. A test class runs in the
+// shard its name hashes to, so each class runs in exactly one job.
+val testShard =
+    providers
+        .gradleProperty("otus.testShard")
+        .orNull
+        ?.split('/')
+        ?.map(String::toInt)
+
 subprojects {
     tasks.matching { it.name == "check" }.configureEach {
         dependsOn(rootProject.tasks.named("qualityCheck"))
+    }
+    if (testShard != null) {
+        val (index, count) = testShard
+        tasks.withType<Test>().configureEach {
+            exclude { file ->
+                val testClass = file.relativePath.pathString.substringBefore('$')
+                !file.isDirectory && testClass.hashCode().mod(count) != index - 1
+            }
+        }
     }
 }
 

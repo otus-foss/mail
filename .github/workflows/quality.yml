@@ -22,9 +22,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Each job runs one part of checkAll, so the parts run at the same time. The tests run in two
+  # shards; each test class runs in exactly one of them.
   check:
     if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    name: check (${{ matrix.part }})
     runs-on: ubicloud-standard-2
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - part: tooling
+            tasks: checkTooling
+          - part: android build
+            tasks: checkAndroidBuild
+          - part: tests 1 of 2
+            tasks: checkTests -Potus.testShard=1/2
+          - part: tests 2 of 2
+            tasks: checkTests -Potus.testShard=2/2
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -63,7 +78,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
       - run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
       - run: python3 -m pip install -r requirements-quality.txt
-      - run: ./gradlew checkAll --console=plain -Potus.meta.path="$RUNNER_TEMP/otus-meta"
+      - run: ./gradlew ${{ matrix.tasks }} --console=plain -Potus.meta.path="$RUNNER_TEMP/otus-meta"
 
   ios:
     # macOS checks are paused; delete this condition to run them again.
