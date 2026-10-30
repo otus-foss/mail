@@ -69,7 +69,8 @@ class PanelRailViewportTest {
         assertNotEquals(
             "A scrolled pill must remain visible inside the first 8 dp of the panel",
             OtusColors.bgRegular.toArgb(),
-            bitmap.getPixel(x.toInt(), (pill.center.y + 4f).toInt()),
+            // Above the label, so an anti-aliased glyph edge cannot match the page color.
+            bitmap.getPixel(x.toInt(), (pill.top + 4f).toInt()),
         )
         bitmap.recycle()
         assertEquals(action, compose.onNodeWithContentDescription("More filters").fetchSemanticsNode().boundsInRoot)
