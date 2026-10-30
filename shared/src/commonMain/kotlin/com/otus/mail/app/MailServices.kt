@@ -8,7 +8,6 @@ import com.otus.avatar.AvatarCacheConfig
 import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
-import com.otus.avatar.DomainIconSource
 import com.otus.avatar.EmptyAvatarStore
 import com.otus.avatar.HttpAvatarImageLoader
 import com.otus.avatar.JmapContactAvatarSource
@@ -127,10 +126,6 @@ class MailServices(
             JmapContactAvatarSource(connections, logins, avatarImages),
             avatarImages,
             domains = PublicSuffixDomainResolver(::avatarSuffixRules),
-            iconFallback =
-                DomainIconSource { domain ->
-                    avatarImages.load("https://icons.duckduckgo.com/ip3/$domain.ico")
-                },
             cacheConfig = AvatarCacheConfig(store = avatarStore),
         )
     }

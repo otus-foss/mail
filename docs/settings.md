@@ -51,18 +51,22 @@ own page.
   when opened** is a switch. Each change is saved before it is shown. See
   [inbox pills](inbox.md#inbox-pills) and [swipe actions](inbox.md#swipe-actions).
 - **Privacy** (`PrivacyScreen`) decides what mail and avatars load from other servers. Under
-  **Load remote images**, three rows choose **Always**, **From people you know** (the default:
-  contacts, people the user wrote to, and allowed senders), or **Never**; the chosen one ends in a
-  check. The section's info button explains each choice and says that images inside the mail
+  **Load remote images**, the **Load images** row shows the current choice and opens a sheet of
+  radio rows: **Always**, **In your contacts** (the default: contacts, people the user wrote
+  to, and allowed senders), or **Never**. Done saves the choice; closing the sheet any other way
+  discards it. Every Privacy choice sheet is a `RadioChoiceSheet`. The section's info button explains each choice and says that images inside the mail
   itself always show and that mail in Spam never loads remote images. Mail in a folder the app has not loaded yet waits as if it were in Spam. **Allowed senders** names how many there are and opens their page
   (`AllowedSendersScreen`), which lists each address with a **Remove** button, or says how to add
   one. The Read view adds a sender with "Always for" on its image banner. Under **Avatars**, the
-  **Website icons** switch, off by default, lets avatars load logos from sender websites and photos
-  that contact cards link to. While it is on, **Ask DuckDuckGo**, also off by default, fills in
-  sites without an icon; see [website icons](avatars.md#website-icons). The choice and the
+  **Website icons** switch, off by default, lets avatars load website icons and photos that contact
+  cards link to. The Avatars rows show no descriptions. While it is on, **Icons from** shows the
+  current source, or that a Bulwark address is missing, and opens one sheet with **Sender websites** (the default), **DuckDuckGo**, and
+  **Bulwark** as radio rows. Picking Bulwark shows its address field under them. Done saves both,
+  and stays off while the address is not a public HTTPS one. See
+  [website icons](avatars.md#website-icons). The choice and the
   list are saved in `MailBehavior.remoteImages` and `allowedSenders` before they are shown.
-  **Photos you attach** chooses **Ask each time** (the default), **Always remove details**, or
-  **Keep details** for the location, time, camera, and file name of attached photos, saved in
+  Under **Photos you attach**, the **Photo details** row opens the same kind of sheet with **Ask
+  each time** (the default), **Always remove details**, or **Keep details** for the location, time, camera, and file name of attached photos, saved in
   `MailBehavior.photoCleaning`; see [attachments](compose.md).
   On Android, **This device** adds **Screen security**, off by default, which sets `FLAG_SECURE`
   so screenshots, screen recordings, casting, and the recent apps preview show nothing, and

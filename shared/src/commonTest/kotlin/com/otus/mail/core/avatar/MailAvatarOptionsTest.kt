@@ -5,7 +5,6 @@ import com.otus.avatar.AvatarImageLoader
 import com.otus.avatar.AvatarOrigin
 import com.otus.avatar.AvatarRequest
 import com.otus.avatar.AvatarService
-import com.otus.avatar.DomainIconSource
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,14 +25,14 @@ class MailAvatarOptionsTest {
                 photo.takeIf { request.email == "ada@example.org" }
             },
             AvatarImageLoader {
-                urls += it
-                null
-            },
-            iconFallback =
-                DomainIconSource {
+                if (it.startsWith("https://example.org/")) {
+                    urls += it
+                    null
+                } else {
                     proxied += it
                     icon
-                },
+                }
+            },
         )
     private val ada = AvatarRequest("work", "ada@example.org", "Ada Lovelace")
     private val bob = AvatarRequest("work", "bob@example.org", "Bob Example")
@@ -48,7 +47,7 @@ class MailAvatarOptionsTest {
             assertNull(avatars.resolve(bob, off).image)
             assertEquals(listOf(false, false), external, "Contact cards may not load linked images")
             assertTrue(urls.isEmpty(), "No sender website is asked: $urls")
-            assertTrue(proxied.isEmpty(), "DuckDuckGo is not asked: $proxied")
+            assertTrue(proxied.isEmpty(), "No icon service is asked: $proxied")
         }
 
     @Test
@@ -57,31 +56,45 @@ class MailAvatarOptionsTest {
             val found = avatars.resolve(bob, mailAvatarOptions(websiteIcons = true))
             assertNull(found.image)
             assertTrue(urls.isNotEmpty() && urls.all { it.startsWith("https://example.org/") }, "$urls")
-            assertTrue(proxied.isEmpty(), "DuckDuckGo is not asked: $proxied")
+            assertTrue(proxied.isEmpty(), "No icon service is asked: $proxied")
         }
 
     @Test
-    fun duckDuckGoIsAskedOnlyWithWebsiteIcons() =
+    fun iconServicesAreAskedOnlyWithWebsiteIcons() =
         runTest {
-            assertNull(avatars.resolve(bob, mailAvatarOptions(websiteIcons = false, duckDuckGo = true)).image)
+            assertNull(avatars.resolve(bob, mailAvatarOptions(websiteIcons = false, IconSource.DuckDuckGo)).image)
             assertTrue(urls.isEmpty() && proxied.isEmpty(), "Nothing is asked: $urls $proxied")
         }
 
     @Test
-    fun withWebsiteIconsAndDuckDuckGoSendersWithoutAPhotoTryTheirWebsiteThenDuckDuckGo() =
+    fun duckDuckGoIsAskedInsteadOfTheWebsite() =
         runTest {
-            val found = avatars.resolve(bob, mailAvatarOptions(websiteIcons = true, duckDuckGo = true))
+            val found = avatars.resolve(bob, mailAvatarOptions(websiteIcons = true, IconSource.DuckDuckGo))
             assertSame(icon, found.image)
             assertEquals(AvatarOrigin.Domain, found.origin)
             assertEquals(listOf(true), external)
-            assertTrue(urls.isNotEmpty() && urls.all { it.startsWith("https://example.org/") }, "$urls")
-            assertEquals(listOf("example.org"), proxied)
+            assertTrue(urls.isEmpty(), "No sender website is asked: $urls")
+            assertEquals(listOf("https://icons.duckduckgo.com/ip3/example.org.ico"), proxied)
+        }
+
+    @Test
+    fun bulwarkIsAskedAtItsAddressAndShowsNothingWithoutOne() =
+        runTest {
+            val bulwark = mailAvatarOptions(websiteIcons = true, IconSource.Bulwark, "mail.example.net/")
+            assertSame(icon, avatars.resolve(bob, bulwark).image)
+            assertEquals(listOf("https://mail.example.net/api/favicon?domain=example.org"), proxied)
+            val carol = AvatarRequest("work", "carol@example.com")
+            for (address in listOf("", "http://mail.example.net")) {
+                assertNull(avatars.resolve(carol, mailAvatarOptions(true, IconSource.Bulwark, address)).image)
+            }
+            assertTrue(urls.isEmpty(), "No sender website is asked: $urls")
+            assertEquals(1, proxied.size)
         }
 
     @Test
     fun websiteIconsFoundBeforeTurningThemOffAreNotShownAfterwards() =
         runTest {
-            val on = mailAvatarOptions(websiteIcons = true, duckDuckGo = true)
+            val on = mailAvatarOptions(websiteIcons = true, IconSource.DuckDuckGo)
             val off = mailAvatarOptions(websiteIcons = false)
             assertSame(icon, avatars.resolve(bob, on).image)
             val asked = urls.size + proxied.size
