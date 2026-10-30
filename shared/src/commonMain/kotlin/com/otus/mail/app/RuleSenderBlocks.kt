@@ -54,7 +54,8 @@ internal class RuleSenderBlocks(
         folders.cachedAccounts().junkFolderId(accountId) ?: folders.accounts().junkFolderId(accountId)
 }
 
-private fun List<AccountFolders>.junkFolderId(accountId: String): String? {
-    val account = firstOrNull { it.accountId == accountId }
-    return account?.folders?.firstOrNull { it.role == JUNK_ROLE }?.id
-}
+private fun List<AccountFolders>.junkFolderId(accountId: String): String? =
+    firstOrNull { it.accountId == accountId }
+        ?.folders
+        ?.firstOrNull { it.role == JUNK_ROLE }
+        ?.id

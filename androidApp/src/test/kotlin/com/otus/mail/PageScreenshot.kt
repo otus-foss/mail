@@ -10,22 +10,20 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
  * their own, laid over it, to `build/reports/compose/<name>.png`.
  */
 internal fun AndroidComposeTestRule<*, out ComponentActivity>.screenshot(name: String) {
-    val bitmap =
-        runOnIdle {
-            val decor = activity.window.decorView
-            val snapshot = decor.drawnBitmap()
-            val canvas = Canvas(snapshot)
-            windowViews().filter { it !== decor && it.isShown }.forEach { view ->
-                val position = IntArray(2)
-                view.getLocationOnScreen(position)
-                canvas.save()
-                canvas.translate(position[0].toFloat(), position[1].toFloat())
-                view.draw(canvas)
-                canvas.restore()
-            }
-            snapshot
+    runOnIdle {
+        val decor = activity.window.decorView
+        val snapshot = decor.drawnBitmap()
+        val canvas = Canvas(snapshot)
+        windowViews().filter { it !== decor && it.isShown }.forEach { view ->
+            val position = IntArray(2)
+            view.getLocationOnScreen(position)
+            canvas.save()
+            canvas.translate(position[0].toFloat(), position[1].toFloat())
+            view.draw(canvas)
+            canvas.restore()
         }
-    bitmap.savePng("build/reports/compose/$name.png")
+        snapshot
+    }.savePng("build/reports/compose/$name.png")
 }
 
 /** Every window's root view, the page's and each popup's, from the framework's window list. */

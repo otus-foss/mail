@@ -49,11 +49,11 @@ class MainActivity : ComponentActivity() {
         themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))
         appIconState = AppIconSettingsState(AndroidAppIconPreferenceStore(this))
         // Until Compose draws, the window shows the theme's color behind the launch animation.
-        val background =
+        window.setBackgroundDrawable(
             themeState.palette.bgDark
                 .toArgb()
-                .toDrawable()
-        window.setBackgroundDrawable(background)
+                .toDrawable(),
+        )
         val animationState = AnimationSettingsState(AndroidAnimationPreferenceStore(this))
         val build =
             InstalledBuild(

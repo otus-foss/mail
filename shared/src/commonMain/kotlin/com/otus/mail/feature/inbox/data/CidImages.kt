@@ -67,10 +67,8 @@ private suspend fun MailAccount.inlineBytes(
     part: EmailBodyPart,
     type: String,
     maxBytes: Long,
-): ByteArray? {
-    val blobId = part.blobId ?: return null
-    return connection.download(id, blobId, type, maxBytes, part.name ?: "image").bytes
-}
+): ByteArray? =
+    part.blobId?.let { blobId -> connection.download(id, blobId, type, maxBytes, part.name ?: "image").bytes }
 
 private const val MAX_INLINE_BYTES = 5L * 1024 * 1024
 private const val MAX_TOTAL_INLINE_BYTES = 8L * 1024 * 1024

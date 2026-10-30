@@ -47,8 +47,10 @@ internal class JmapContactRepository(
 ) : ContactRepository {
     override suspend fun load(): ContactsSnapshot =
         coroutineScope {
-            val all = withContext(Dispatchers.IO) { logins.logins() }
-            val loaded = all.map { login -> async { login.id to runCatching { loadLogin(login) } } }.awaitAll()
+            val loaded =
+                withContext(Dispatchers.IO) { logins.logins() }
+                    .map { login -> async { login.id to runCatching { loadLogin(login) } } }
+                    .awaitAll()
             val found = loaded.mapNotNull { (_, result) -> result.getOrNull() }
             ContactsSnapshot(
                 books = found.flatMap { it.books },
@@ -126,9 +128,10 @@ internal class JmapContactRepository(
     ): Pair<List<ContactBook>, List<ContactCard>> {
         val info = session.accounts.getValue(account)
         val shared = account != own && !info.isPersonal
-        val availableBooks = connection.call(GetMethod(AddressBookType, account)).list
         val books =
-            availableBooks
+            connection
+                .call(GetMethod(AddressBookType, account))
+                .list
                 .filter { it.myRights.mayRead }
                 .sortedWith(AddressBookOrder)
                 .map { book ->
@@ -276,8 +279,12 @@ internal fun bookName(
 ): String {
     val own = setOf(login.username, login.name, login.username.substringBefore('@'), account).map { it.lowercase() }
     val bracket = Regex("""\s*\(([^()]*)\)\s*$""").find(name)
-    val bracketed = bracket?.groupValues?.get(1)
-    val inside = bracketed?.trim().orEmpty()
+    val inside =
+        bracket
+            ?.groupValues
+            ?.get(1)
+            ?.trim()
+            .orEmpty()
     // An account in brackets: the login's or account's own name, or anything shaped like a
     // username or address, such as "ada.lovelace" or "ada@example.org".
     val isAccount = inside.lowercase() in own || (' ' !in inside && ('@' in inside || '.' in inside))

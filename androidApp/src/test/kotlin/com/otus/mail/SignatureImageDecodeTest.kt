@@ -32,8 +32,7 @@ class SignatureImageDecodeTest {
         val source = Bitmap.createBitmap(10, 2000, Bitmap.Config.ARGB_8888)
         val png = source.pngBytes()
         source.recycle()
-        val pick = signatureImage { png.inputStream() }
-        val image = (pick as SignatureImagePick.Picked).image
+        val image = (signatureImage { png.inputStream() } as SignatureImagePick.Picked).image
         assertTrue(Base64.decode(image.base64).size <= SignatureImages.MAX_BYTES)
     }
 

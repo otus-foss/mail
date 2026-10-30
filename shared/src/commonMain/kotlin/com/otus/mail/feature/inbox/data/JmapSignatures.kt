@@ -29,9 +29,10 @@ class JmapSignatures(
                     put("htmlSignature", signature.html)
                     put("textSignature", signature.text)
                 }
-            val update = SetMethod(IdentityType, account.id, update = mapOf(identity.id to patch))
-            val result = account.connection.call(update)
-            result.notUpdated[identity.id]?.let { Result.failure(IllegalStateException(it.type)) }
+            account.connection
+                .call(SetMethod(IdentityType, account.id, update = mapOf(identity.id to patch)))
+                .notUpdated[identity.id]
+                ?.let { Result.failure(IllegalStateException(it.type)) }
                 ?: Result.success(Unit)
         } catch (error: JmapException) {
             Result.failure(error)

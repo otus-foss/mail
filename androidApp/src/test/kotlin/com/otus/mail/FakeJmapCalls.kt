@@ -51,10 +51,10 @@ internal fun List<String>.toJsonArray(): JsonArray = JsonArray(map(::JsonPrimiti
 
 internal val JsonObject.id: String get() = getValue("id").jsonPrimitive.content
 
-private fun refusal(method: String): JsonObject {
-    val type = if (method.endsWith("/changes")) "cannotCalculateChanges" else "serverFail"
-    return buildJsonObject { put("type", JsonPrimitive(type)) }
-}
+private fun refusal(method: String): JsonObject =
+    buildJsonObject {
+        put("type", JsonPrimitive(if (method.endsWith("/changes")) "cannotCalculateChanges" else "serverFail"))
+    }
 
 /** [arguments] with `#ids` replaced by the result it points to; null when that call failed. */
 private fun resolved(
@@ -62,16 +62,20 @@ private fun resolved(
     results: Map<String, JsonObject>,
 ): JsonObject? {
     val reference = arguments["#ids"]?.jsonObject ?: return arguments
-    val referencePath = reference.getValue("path").jsonPrimitive.content
-    val path = referencePath.trim('/').split('/')
+    val path =
+        reference
+            .getValue("path")
+            .jsonPrimitive.content
+            .trim('/')
+            .split('/')
     return results[reference.getValue("resultOf").jsonPrimitive.content]?.let { source ->
-        val found =
-            path.fold(listOf<JsonElement>(source)) { elements, step ->
-                elements.flatMap {
-                    if (step == "*") it.jsonArray.toList() else listOfNotNull((it as? JsonObject)?.get(step))
-                }
-            }
-        val ids = found.flatMap { if (it is JsonArray) it.toList() else listOf(it) }
+        val ids =
+            path
+                .fold(listOf<JsonElement>(source)) { elements, step ->
+                    elements.flatMap {
+                        if (step == "*") it.jsonArray.toList() else listOfNotNull((it as? JsonObject)?.get(step))
+                    }
+                }.flatMap { if (it is JsonArray) it.toList() else listOf(it) }
         JsonObject(arguments - "#ids" + ("ids" to JsonArray(ids)))
     }
 }

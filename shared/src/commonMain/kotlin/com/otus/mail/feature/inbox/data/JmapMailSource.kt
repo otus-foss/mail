@@ -146,11 +146,13 @@ class JmapMailSource(
                 selected
                     .map { login ->
                         async {
-                            val conditions = emailConditions(query, login.id, now, local) ?: return@async emptyList()
-                            val check = localCheck(query, login.id, now, local)
-                            cache.withAccount(login.id) {
-                                it.cachedPages(login, scope, query, conditions, local, check)
-                            }
+                            emailConditions(query, login.id, now, local)
+                                ?.let { conditions ->
+                                    val check = localCheck(query, login.id, now, local)
+                                    cache.withAccount(login.id) {
+                                        it.cachedPages(login, scope, query, conditions, local, check)
+                                    }
+                                }.orEmpty()
                         }
                     }.awaitAll()
                     .flatten()

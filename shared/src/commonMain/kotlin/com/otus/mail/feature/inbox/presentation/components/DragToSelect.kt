@@ -37,8 +37,8 @@ internal fun Modifier.dragToSelect(
                 val drag = RowDrag(listState, anchor, { DragSelection(ids(), anchor, selectedIds()) }, onSelect)
                 var scroll: Job? = null
                 while (true) {
-                    val event = awaitPointerEvent(PointerEventPass.Initial)
-                    val change = event.changes.firstOrNull { it.id == down.id }
+                    val change =
+                        awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id }
                     if (change == null || !change.pressed) break
                     drag.moveTo(change.position.y, listState.edgeStep(change.position.y, edge, maxStep))
                     if (drag.step != 0f && scroll?.isActive != true) scroll = launch { drag.scroll() }

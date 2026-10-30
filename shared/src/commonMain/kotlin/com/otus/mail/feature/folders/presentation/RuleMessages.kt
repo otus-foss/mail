@@ -19,10 +19,8 @@ fun RuleFailure.message(detail: String? = null): String =
         RuleFailure.ServerProblem -> "The server returned an error. Try again."
     }
 
-private fun invalidRules(detail: String?): String {
-    val explanation = detail?.let { ": ${it.trimEnd('.')}" }.orEmpty()
-    return "The server refused these rules$explanation. Nothing was changed."
-}
+private fun invalidRules(detail: String?): String =
+    "The server refused these rules${detail?.let { ": ${it.trimEnd('.')}" }.orEmpty()}. Nothing was changed."
 
 private const val VACATION_NOTICE =
     "Your vacation reply is on. Turn it off to use rules; the server runs one of them at a time."

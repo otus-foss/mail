@@ -59,8 +59,8 @@ data class ContactDraft(
         val keptPhones = phones.filter { it.value.isNotBlank() }
         val emailKeys = valueKeys(keptEmails, "e", card.emails.orEmpty().keys)
         val phoneKeys = valueKeys(keptPhones, "p", card.phones.orEmpty().keys)
-        val updated =
-            card.copy(
+        return card
+            .copy(
                 name = nameFor(card),
                 emails =
                     keptEmails
@@ -88,9 +88,9 @@ data class ContactDraft(
                         .plus(listOfNotNull(birthday?.let { BIRTHDAY to Anniversary(AnniversaryKind.Birth, it) }))
                         .takeIf { it.isNotEmpty() },
                 notes = replaceFirst(card.notes, note) { old, text -> old?.copy(note = text) ?: Note(text) },
-            )
-        val sameAvatar = photo == card.photo && style == card.avatarStyle
-        return if (sameAvatar) updated else updated.withPhoto(photo).withAvatarStyle(style)
+            ).let {
+                if (photo == card.photo && style == card.avatarStyle) it else it.withPhoto(photo).withAvatarStyle(style)
+            }
     }
 
     // Rebuilding the name sets its full form, order and separators from the two fields alone, so a
@@ -144,7 +144,13 @@ data class ContactDraft(
 /** The editor's given name for this card: its given names, else its full name when it has no parts. */
 private val Card.draftGiven: String
     get() =
-        givenName.ifEmpty { if (surname.isEmpty()) name?.full.orEmpty() else "" }
+        givenName.ifEmpty {
+            name
+                ?.full
+                .orEmpty()
+                .takeIf { surname.isEmpty() }
+                .orEmpty()
+        }
 
 /** The card's photo: the avatar photo on an avatar card, else its first. */
 internal val Card.photo: Media?
@@ -165,8 +171,7 @@ internal fun Card.withPhoto(photo: Media?): Card {
             .filterValues { it.kind != MediaKind.Photo }
             .plus(listOfNotNull(photo?.let { (if (avatar) AVATAR_PHOTO_KEY else PHOTO_KEY) to it }))
             .takeIf { it.isNotEmpty() }
-    val updated = copy(media = photos)
-    return if (avatar && photo != null) updated.withoutAvatarStyle() else updated
+    return copy(media = photos).let { if (avatar && photo != null) it.withoutAvatarStyle() else it }
 }
 
 private const val PHOTO_KEY = "photo"
@@ -212,8 +217,12 @@ private fun <T> replaceFirst(
 ): Map<String, T>? {
     val first = values?.keys?.firstOrNull() ?: "1"
     val rest = values.orEmpty() - first
-    val trimmed = text?.trim()?.takeIf { it.isNotEmpty() }
-    val kept = if (trimmed == null) emptyMap() else mapOf(first to update(values?.get(first), trimmed))
+    val kept =
+        text
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { mapOf(first to update(values?.get(first), it)) }
+            .orEmpty()
     return (kept + rest).takeIf { it.isNotEmpty() }
 }
 

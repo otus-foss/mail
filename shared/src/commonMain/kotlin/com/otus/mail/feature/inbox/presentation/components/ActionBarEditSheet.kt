@@ -63,25 +63,19 @@ internal fun ActionBarEditSheet(
         }
     }
     val slot = picking ?: return
-    // An empty slot takes only what the bar lacks; a filled one can trade with any button.
-    val choices = state.behavior.barChoices(place).filter { layout.actionAt(slot) != null || layout.slotOf(it) == null }
-    val moveTo = folders.map(BarButton::MoveTo).filter(place::offers).associateWith { folderColor(it.path) }
-    val removable = (slot as? BarSlot.Secondary)?.takeIf { layout.actionAt(it) != null }
-    val remove: (() -> Unit)? =
-        if (removable == null) {
-            null
-        } else {
-            {
-                save(layout.withSlot(removable.index, null))
-                picking = null
-            }
-        }
     ActionPickerSheet(
         slot,
         layout,
-        choices,
-        moveTo,
+        // An empty slot takes only what the bar lacks; a filled one can trade with any button.
+        state.behavior.barChoices(place).filter { layout.actionAt(slot) != null || layout.slotOf(it) == null },
+        folders.map(BarButton::MoveTo).filter(place::offers).associateWith { folderColor(it.path) },
         onPick = { save(layout.with(slot, it)) },
-        onRemove = remove,
+        onRemove =
+            (slot as? BarSlot.Secondary)?.takeIf { layout.actionAt(it) != null }?.let {
+                {
+                    save(layout.withSlot(it.index, null))
+                    picking = null
+                }
+            },
     ) { picking = null }
 }

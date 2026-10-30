@@ -59,8 +59,9 @@ class NotificationSettingsTest {
         open(push)
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithContentDescription("About Instant delivery").performClick()
-        val explanation = "Choose Google Play services for instant delivery without an extra app."
-        compose.onNodeWithText(explanation).assertIsDisplayed()
+        compose
+            .onNodeWithText("Choose Google Play services for instant delivery without an extra app.")
+            .assertIsDisplayed()
         compose.onNodeWithContentDescription("Close").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Instant delivery").performClick()
@@ -94,8 +95,10 @@ class NotificationSettingsTest {
         open(FakeNotificationPush(emptyList()))
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithContentDescription("About Instant delivery").performClick()
-        val explanation = "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy."
-        compose.onNodeWithText(explanation).assertIsDisplayed()
+        compose
+            .onNodeWithText(
+                "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy.",
+            ).assertIsDisplayed()
         compose.onAllNodesWithText("Accounts").assertCountEquals(0)
         compose.onRoot().captureRoboImage("src/test/screenshots/notifications/google-unavailable.png")
     }

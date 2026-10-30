@@ -27,9 +27,11 @@ class JmapThreadHistory(
         emailId: String,
     ): List<ThreadMessage> =
         mailCallOr(emptyList()) {
-            val account = mailAccount(connections, logins, accountId) ?: return@mailCallOr emptyList()
-            val emails = account.threadEmails(emailId, PROPERTIES)
-            jmapDecoding { emails.upTo(emailId).map { it.threadMessage() } }
+            mailAccount(connections, logins, accountId)
+                ?.let { account ->
+                    val emails = account.threadEmails(emailId, PROPERTIES)
+                    jmapDecoding { emails.upTo(emailId).map { it.threadMessage() } }
+                }.orEmpty()
         }
 
     /** The messages received no later than [emailId], newest first, without drafts. */

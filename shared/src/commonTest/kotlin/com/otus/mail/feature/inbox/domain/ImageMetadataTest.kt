@@ -90,8 +90,7 @@ class ImageMetadataTest {
 
         fun webp(vararg chunks: ByteArray): ByteArray {
             val body = chunks.fold(ByteArray(0)) { all, it -> all + it }
-            val size = body.size + 4
-            return "RIFF".encodeToByteArray() + bytes(size, 0, 0, 0) + "WEBP".encodeToByteArray() + body
+            return "RIFF".encodeToByteArray() + bytes(body.size + 4, 0, 0, 0) + "WEBP".encodeToByteArray() + body
         }
         val header = chunk("VP8X", 0x2C, 0, 0, 0, 1, 0, 0, 1, 0, 0)
         val image = webp(header, chunk("VP8 ", 9, 9, 9), chunk("EXIF", 7), chunk("XMP ", 8, 8))

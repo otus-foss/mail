@@ -134,10 +134,14 @@ internal fun rememberReadContext(
     navigation: MailNavigation,
 ): ReadContext = remember(states, feed) { states.reading.context(feed, contactSheet(states, navigation)) }
 
-private fun MailScope.Roles.folderIds(folders: List<MailFolder>): Set<String> {
-    val matching = folders.filter { it.role in names || (ownFolders && it.role == null) }
-    return matching.map { it.id }.toSet()
-}
+private fun MailScope.Roles.folderIds(folders: List<MailFolder>): Set<String> =
+    folders
+        .filter { it.role in names || (ownFolders && it.role == null) }
+        .map { it.id }
+        .toSet()
 
 private fun MailScope.Folders.folderIds(accountId: String): Set<String> =
-    folders.filter { it.accountId == accountId }.map { it.folderId }.toSet()
+    folders
+        .filter { it.accountId == accountId }
+        .map { it.folderId }
+        .toSet()

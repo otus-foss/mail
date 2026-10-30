@@ -94,10 +94,11 @@ class ActiveFilters(
             else -> null
         }
 
-    private fun receivedInPill(): ActivePill {
-        val label = "In " + applied.receivedIn.sortedBy { it.ordinal }.joinToString(", ") { it.label }
-        return symbolPill(label, Res.drawable.symbol_alternate_email)
-    }
+    private fun receivedInPill(): ActivePill =
+        symbolPill(
+            "In " + applied.receivedIn.sortedBy { it.ordinal }.joinToString(", ") { it.label },
+            Res.drawable.symbol_alternate_email,
+        )
 
     private fun removing(
         key: Any,

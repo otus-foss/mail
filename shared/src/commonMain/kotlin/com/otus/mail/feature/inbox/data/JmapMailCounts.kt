@@ -69,23 +69,26 @@ internal class JmapMailCounts(
         scope: MailScope,
         query: MailQuery,
         conditions: List<JsonObject>,
-    ): Long? {
-        return try {
+    ): Long? =
+        try {
             val connection = connections.connection(login)
-            val accountId = connection.session().accountFor(JmapCapability.MAIL) ?: return null
-            val known = knownMailboxes(login.id, connection, accountId)
-            val ids = scope.chosen(known, login.id, query).map { it.id }
-            if (ids.isEmpty()) {
-                0L
-            } else {
-                val request = QueryMethod(EmailType, accountId, mailFilter(ids, conditions), limit = 0, extra = COUNT)
-                connection.call(request).total
+            connection.session().accountFor(JmapCapability.MAIL)?.let { accountId ->
+                val ids =
+                    scope
+                        .chosen(knownMailboxes(login.id, connection, accountId), login.id, query)
+                        .map { it.id }
+                if (ids.isEmpty()) {
+                    0L
+                } else {
+                    connection
+                        .call(QueryMethod(EmailType, accountId, mailFilter(ids, conditions), limit = 0, extra = COUNT))
+                        .total
+                }
             }
         } catch (expected: JmapException) {
             // A login that cannot be counted leaves the others' sum.
             null
         }
-    }
 
     private suspend fun knownMailboxes(
         loginId: String,

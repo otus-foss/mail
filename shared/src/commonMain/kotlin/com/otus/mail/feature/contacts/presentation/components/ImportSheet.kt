@@ -99,8 +99,11 @@ private fun Preview(
     if (cards.isEmpty()) return
     ChoiceHeading("Preview")
     cards.take(PREVIEW).forEach { card ->
-        val firstEmail = card.emails?.values?.firstOrNull()
-        val address = firstEmail?.address
+        val address =
+            card.emails
+                ?.values
+                ?.firstOrNull()
+                ?.address
         val name = card.name?.full ?: address ?: "No name"
         val tag = mode.label.takeIf { plan?.match(card) != null }
         Text(listOfNotNull(name, address, tag).joinToString(" · "), Inset, maxLines = 1)

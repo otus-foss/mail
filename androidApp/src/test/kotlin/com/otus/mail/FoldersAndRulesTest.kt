@@ -72,8 +72,7 @@ class FoldersAndRulesTest {
         server.alsoIn += "r"
         start()
         compose.waitForText("Welcome")
-        val row = hasText("Welcome") and hasContentDescription("Folders: Receipts", substring = true)
-        compose.waitForNode(row)
+        compose.waitForNode(hasText("Welcome") and hasContentDescription("Folders: Receipts", substring = true))
         server.alsoIn.clear()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         // Message rows are selectable too, so this picks the sidebar's folder.

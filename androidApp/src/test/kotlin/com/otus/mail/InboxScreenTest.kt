@@ -80,8 +80,9 @@ class InboxScreenTest {
     fun liveSearchFiltersFixturesAndResetRestoresList() {
         showFixtures()
         // The saved message's row marks its attachment and Read later, which its description says.
-        val saved = hasText("Design review") and hasContentDescription("Attachment. Read later.", substring = true)
-        compose.onNode(saved).assertIsDisplayed()
+        compose
+            .onNode(hasText("Design review") and hasContentDescription("Attachment. Read later.", substring = true))
+            .assertIsDisplayed()
         compose.onNode(hasText("Weekend plans")).assertIsDisplayed()
         screenshot("inbox-fixtures")
         compose.onNodeWithContentDescription("Search mailbox").performClick()

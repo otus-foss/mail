@@ -100,12 +100,16 @@ class PushSyncWorker(
             context: Context,
             change: Data = Data.EMPTY,
         ) {
-            val request =
-                OneTimeWorkRequestBuilder<PushSyncWorker>()
-                    .setInputData(change)
-                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                    .build()
-            WorkManager.getInstance(context).enqueueUniqueWork(NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
+            WorkManager
+                .getInstance(context)
+                .enqueueUniqueWork(
+                    NAME,
+                    ExistingWorkPolicy.APPEND_OR_REPLACE,
+                    OneTimeWorkRequestBuilder<PushSyncWorker>()
+                        .setInputData(change)
+                        .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                        .build(),
+                )
         }
     }
 }

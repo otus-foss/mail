@@ -32,19 +32,21 @@ class JmapDraftRepository(
 ) : DraftRepository {
     override suspend fun identities(accountId: String): List<SendIdentity> =
         mailCallOr(emptyList()) {
-            val account =
-                mailAccount(connections, logins, accountId)
-                    ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) } ?: return@mailCallOr emptyList()
-            val request = GetMethod(IdentityType, account.id, properties = IDENTITY_PROPERTIES)
-            val identities = account.connection.call(request)
-            identities.list.map {
-                SendIdentity(
-                    it.id,
-                    MailSender(it.name.ifBlank { it.email }, it.email, accountId),
-                    it.textSignature,
-                    it.htmlSignature,
-                )
-            }
+            mailAccount(connections, logins, accountId)
+                ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
+                ?.let { account ->
+                    account.connection
+                        .call(GetMethod(IdentityType, account.id, properties = IDENTITY_PROPERTIES))
+                        .list
+                        .map {
+                            SendIdentity(
+                                it.id,
+                                MailSender(it.name.ifBlank { it.email }, it.email, accountId),
+                                it.textSignature,
+                                it.htmlSignature,
+                            )
+                        }
+                }.orEmpty()
         }
 
     override suspend fun save(draft: Draft): Result<String> =
@@ -91,10 +93,11 @@ class JmapDraftRepository(
         }
     }
 
-    private suspend fun draftsFolder(account: MailAccount): String? {
-        val folders = account.connection.call(account.roleQuery(DRAFTS_ROLE))
-        return folders.ids.firstOrNull()
-    }
+    private suspend fun draftsFolder(account: MailAccount): String? =
+        account.connection
+            .call(account.roleQuery(DRAFTS_ROLE))
+            .ids
+            .firstOrNull()
 
     private suspend fun <T> attempt(
         loginId: String,

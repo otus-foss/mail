@@ -40,12 +40,11 @@ class AndroidAttachmentFiles(
 
     private fun picked(uri: Uri): PickedFile? {
         val resolver = context.contentResolver
-        val columns = arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
-        val details =
-            resolver.query(uri, columns, null, null, null)?.use { row ->
-                if (row.moveToFirst()) row.getString(0).orEmpty() to row.getLong(1) else null
-            }
-        val (name, size) = details ?: return null
+        val (name, size) =
+            resolver
+                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
+                ?.use { row -> row.takeIf { it.moveToFirst() }?.let { it.getString(0).orEmpty() to it.getLong(1) } }
+                ?: return null
         return PickedFile(
             name.ifBlank { uri.lastPathSegment ?: "file" },
             resolver.getType(uri) ?: GENERIC_TYPE,

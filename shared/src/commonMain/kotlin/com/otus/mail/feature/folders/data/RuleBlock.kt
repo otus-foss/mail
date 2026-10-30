@@ -100,9 +100,11 @@ internal fun blockText(script: String): String? = findBlock(script)?.let { scrip
 
 private fun lineStarts(text: String): Sequence<Int> =
     generateSequence(0) { start ->
-        val newline = text.indexOf('\n', start)
-        val next = if (newline >= 0) newline + 1 else null
-        next?.takeIf { it < text.length }
+        text
+            .indexOf('\n', start)
+            .takeIf { it >= 0 }
+            ?.plus(1)
+            ?.takeIf { it < text.length }
     }
 
 private fun String.lineAt(start: Int): String {

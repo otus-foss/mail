@@ -132,8 +132,11 @@ private fun CardRow(
 
 /** A draft named and addressed as the message names [person]. */
 private fun newDraft(person: ContactAddress): ContactDraft {
-    val name = person.name.trim()
-    val words = name.split(' ').filter { it.isNotEmpty() }
+    val words =
+        person.name
+            .trim()
+            .split(' ')
+            .filter { it.isNotEmpty() }
     return ContactDraft(
         given = words.dropLast(1).joinToString(" ").ifEmpty { words.firstOrNull().orEmpty() },
         surname = if (words.size > 1) words.last() else "",

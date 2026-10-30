@@ -20,12 +20,15 @@ class JmapMessageHeaders(
 ) : MessageHeaders {
     override suspend fun headers(message: MailMessage): List<MailHeader>? =
         mailCallOr(null) {
-            val account = mailAccount(connections, logins, message.location.accountId) ?: return@mailCallOr null
-            val ids = JmapIds.Of(listOf(message.emailId))
-            val emails = account.connection.call(GetMethod(EmailType, account.id, ids, PROPERTIES))
-            val email = emails.list.firstOrNull()
-            val headers = email?.headers.orEmpty()
-            headers.map { MailHeader(it.name, it.value.replace(FOLD, " ").trim()) }
+            mailAccount(connections, logins, message.location.accountId)?.let { account ->
+                account.connection
+                    .call(GetMethod(EmailType, account.id, JmapIds.Of(listOf(message.emailId)), PROPERTIES))
+                    .list
+                    .firstOrNull()
+                    ?.headers
+                    .orEmpty()
+                    .map { MailHeader(it.name, it.value.replace(FOLD, " ").trim()) }
+            }
         }
 
     private companion object {

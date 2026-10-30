@@ -126,8 +126,7 @@ class InboxPickerTest {
         compose.onNodeWithText("Done").performClick()
         assertResults(1)
         compose.onNodeWithContentDescription("From Alex").performClick()
-        compose.onNodeWithText("Clear").performTouchInput { doubleClick() }
-        compose.onNodeWithText("Clear").assertDoesNotExist()
+        compose.onNodeWithText("Clear").performTouchInput { doubleClick() }.assertDoesNotExist()
         assertResults(2)
     }
 
@@ -153,8 +152,11 @@ class InboxPickerTest {
 
     @Test
     fun accountPickerSearchesAccountsAndRestrictsMessages() {
-        val accounts = compose.onNodeWithText("All accounts")
-        accounts.performScrollTo().assertIsOff().performClick()
+        compose
+            .onNodeWithText("All accounts")
+            .performScrollTo()
+            .assertIsOff()
+            .performClick()
         compose.onNodeWithText("1 selected").assertIsDisplayed()
         compose.onNodeWithContentDescription("Search accounts…").performTextInput("Personal")
         compose.onNode(hasText("Personal") and isToggleable()).performClick()
@@ -228,15 +230,14 @@ class InboxPickerTest {
         name: String,
     ) {
         val bounds = compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInWindow
-        val chip =
-            Bitmap.createBitmap(
+        Bitmap
+            .createBitmap(
                 compose.windowBitmap(),
                 bounds.left.toInt(),
                 bounds.top.toInt(),
                 bounds.width.toInt(),
                 bounds.height.toInt(),
-            )
-        chip.savePng("build/reports/pickers/$name.png")
+            ).savePng("build/reports/pickers/$name.png")
     }
 
     private fun screenshot(name: String) = compose.dialogBitmap().savePng("build/reports/pickers/$name.png")

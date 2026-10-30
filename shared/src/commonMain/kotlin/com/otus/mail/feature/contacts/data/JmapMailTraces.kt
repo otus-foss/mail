@@ -48,9 +48,10 @@ internal class JmapMailTraces(
 
     private suspend fun MailAccount.newest(role: String): List<MailTrace> {
         val mailbox = connection.call(roleQuery(role)).ids.firstOrNull() ?: return emptyList()
-        val ids = connection.call(QueryMethod(EmailType, id, inMailbox(mailbox), NEWEST_FIRST, SCAN)).ids
         val batch = (session.maxObjectsInGet ?: GET_BATCH.toLong()).toInt().coerceIn(1, GET_BATCH)
-        return ids
+        return connection
+            .call(QueryMethod(EmailType, id, inMailbox(mailbox), NEWEST_FIRST, SCAN))
+            .ids
             .chunked(batch)
             .flatMap { connection.call(GetMethod(EmailType, id, JmapIds.Of(it), PROPERTIES)).list }
             .mapNotNull(::trace)

@@ -79,8 +79,7 @@ private fun PeopleCard(
     onEdit: FilterEdit,
     area: PeopleCardArea,
 ) {
-    val card = Modifier.onGloballyPositioned { area.card = it }
-    PeopleSection(draft, options, people, onEdit, card)
+    PeopleSection(draft, options, people, onEdit, Modifier.onGloballyPositioned { area.card = it })
 }
 
 @Composable

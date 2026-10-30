@@ -35,8 +35,8 @@ internal fun ActionBarCopySheet(
     var ticked by rememberSaveable { mutableStateOf(emptyList<ActionBarPlace>()) }
     val behavior = state.behavior
     val source = behavior.savedLayout(from)
-    val others = ActionBarPlace.entries - from
-    val (targets, unusable) = others.partition { behavior.copiedBar(from, it).shares(source) }
+    val (targets, unusable) =
+        (ActionBarPlace.entries - from).partition { behavior.copiedBar(from, it).shares(source) }
     SheetFrame(
         "Copy to",
         onDismiss,

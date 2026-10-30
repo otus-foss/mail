@@ -33,17 +33,20 @@ data class MergePlan(
         val emails =
             cards
                 .flatMap { card ->
-                    val emailEntries = card.card.emails.orEmpty()
-                    emailEntries.toList()
+                    card.card.emails
+                        .orEmpty()
+                        .entries
+                        .map { it.key to it.value }
                 }.filter { (_, email) -> email.address.lowercase() in addresses.map(String::lowercase) }
                 .distinctBy { (_, email) -> email.address.lowercase() }
                 .mapIndexed { index, (_, email) -> "e${index + 1}" to email }
                 .toMap()
         val phones =
             cards
-                .flatMap { card ->
-                    val numbers = card.card.phones.orEmpty()
-                    numbers.values
+                .flatMap {
+                    it.card.phones
+                        .orEmpty()
+                        .values
                 }.distinctBy { it.number.filter(Char::isDigit) }
                 .mapIndexed { index, phone -> "p${index + 1}" to phone }
                 .toMap()

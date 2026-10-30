@@ -78,21 +78,20 @@ internal class FeedAvatars(
         isCurrent: () -> Boolean,
         edit: ((MailMessage) -> MailMessage) -> Unit,
     ) {
-        val accounts =
+        coroutineScope {
             messages
                 .map { it.location }
                 .distinctBy { it.accountId }
                 .filter { it.accountAddress.isNotBlank() }
-        coroutineScope {
-            accounts.forEach { account ->
-                launch {
-                    val request = AvatarRequest(account.accountId, account.accountAddress, account.account)
-                    val resolved = service.resolve(request, options)
-                    if (!isCurrent()) return@launch
-                    val avatar = keepIdenticalImage(resolved, account.accountAvatar) ?: resolved
-                    edit { message -> message.withAccountAvatar(account.accountId, avatar) }
+                .forEach { account ->
+                    launch {
+                        val request = AvatarRequest(account.accountId, account.accountAddress, account.account)
+                        val resolved = service.resolve(request, options)
+                        if (!isCurrent()) return@launch
+                        val avatar = keepIdenticalImage(resolved, account.accountAvatar) ?: resolved
+                        edit { message -> message.withAccountAvatar(account.accountId, avatar) }
+                    }
                 }
-            }
         }
     }
 
@@ -103,17 +102,19 @@ internal class FeedAvatars(
         isCurrent: () -> Boolean,
         edit: ((MailMessage) -> MailMessage) -> Unit,
     ) {
-        val senders = messages.map { it.sender }.distinctBy { it.key() }
         coroutineScope {
-            senders.forEach { sender ->
-                launch {
-                    val request = AvatarRequest(sender.accountKey, sender.address, sender.name)
-                    val resolved = service.resolve(request, options)
-                    if (!isCurrent()) return@launch
-                    val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved
-                    edit { message -> message.withSenderAvatar(sender, avatar) }
+            messages
+                .map { it.sender }
+                .distinctBy { it.key() }
+                .forEach { sender ->
+                    launch {
+                        val request = AvatarRequest(sender.accountKey, sender.address, sender.name)
+                        val resolved = service.resolve(request, options)
+                        if (!isCurrent()) return@launch
+                        val avatar = keepIdenticalImage(resolved, sender.avatar) ?: resolved
+                        edit { message -> message.withSenderAvatar(sender, avatar) }
+                    }
                 }
-            }
         }
     }
 }
@@ -137,8 +138,9 @@ private fun MailMessage.withAccountAvatar(
 private fun MailMessage.withSenderAvatar(
     person: MailSender,
     avatar: ResolvedAvatar,
-): MailMessage {
-    if (sender.key() != person.key()) return this
-    val updated = avatar.copy(fallback = generatedAvatar(sender.name, sender.address))
-    return copy(sender = sender.copy(avatar = updated))
-}
+): MailMessage =
+    if (sender.key() == person.key()) {
+        copy(sender = sender.copy(avatar = avatar.copy(fallback = generatedAvatar(sender.name, sender.address))))
+    } else {
+        this
+    }

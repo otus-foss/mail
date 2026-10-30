@@ -195,10 +195,9 @@ private fun PersonBody(
     val writable = state.canWrite(main)
     var editing by remember { mutableStateOf(false) }
     if (editing) {
-        val address = main.emails.firstOrNull()?.value
         ContactAvatarSheet(
             name,
-            address,
+            main.emails.firstOrNull()?.value,
             main.look,
             state.photoPicker,
             { state.setAvatar(main, it) },

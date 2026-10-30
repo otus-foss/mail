@@ -205,10 +205,11 @@ class ActionBarTest {
         assertEquals(shell.center.y, group.center.y, 1f)
     }
 
-    private fun shellBounds(description: String): Rect {
-        val shell = hasContentDescription(description) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Role)
-        return compose.onNode(shell).fetchSemanticsNode().boundsInRoot
-    }
+    private fun shellBounds(description: String): Rect =
+        compose
+            .onNode(hasContentDescription(description) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Role))
+            .fetchSemanticsNode()
+            .boundsInRoot
 
     private fun boundsOf(label: String): Rect =
         compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot

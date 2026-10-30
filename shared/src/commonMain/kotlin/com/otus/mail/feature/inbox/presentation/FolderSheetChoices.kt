@@ -45,8 +45,11 @@ fun sheetTree(folders: List<MessageFolder>): List<SheetTreeFolder> {
         generateSequence(path) { child -> child.dropLast(1).takeIf { hasListedParent(child) } }.count() - 1
     }
     return folders.map { folder ->
-        val path = folder.path.dropLast(1)
-        val parents = path.takeUnless { hasListedParent(folder.path) }.orEmpty()
+        val parents =
+            folder.path
+                .dropLast(1)
+                .takeUnless { hasListedParent(folder.path) }
+                .orEmpty()
         SheetTreeFolder(folder, depth(folder.path), parents)
     }
 }

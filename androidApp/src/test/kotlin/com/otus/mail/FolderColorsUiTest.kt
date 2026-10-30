@@ -69,14 +69,19 @@ class FolderColorsUiTest {
     fun theColorSheetListsDefaultFirstAndReadsEachColorByName() {
         openSidebar()
         openColorSheet("Receipts")
-        val radioButton = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
-        val options = compose.onAllNodes(radioButton).fetchSemanticsNodes()
-        val labels =
-            options.map {
-                val text = it.config.getOrNull(SemanticsProperties.Text)
-                text.orEmpty().joinToString()
-            }
-        assertEquals(listOf("Default", "Red", "Orange", "Yellow", "Green", "Teal", "Blue", "Purple", "Pink"), labels)
+        val options =
+            compose
+                .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+                .fetchSemanticsNodes()
+        assertEquals(
+            listOf("Default", "Red", "Orange", "Yellow", "Green", "Teal", "Blue", "Purple", "Pink"),
+            options.map { node ->
+                node.config
+                    .getOrNull(SemanticsProperties.Text)
+                    .orEmpty()
+                    .joinToString()
+            },
+        )
         // The swatch is decoration, so no option carries a description.
         val descriptions = options.mapNotNull { it.config.getOrNull(SemanticsProperties.ContentDescription) }
         assertEquals(emptyList<String>(), descriptions.flatten())
@@ -87,8 +92,7 @@ class FolderColorsUiTest {
     fun choosingAColorSavesItForTheFolderAndDefaultForgetsIt() {
         openSidebar()
         openColorSheet("Receipts")
-        compose.onNode(hasText("Teal") and isSelectable()).performClick()
-        compose.onNode(hasText("Teal") and isSelectable()).assertIsSelected()
+        compose.onNode(hasText("Teal") and isSelectable()).performClick().assertIsSelected()
         assertEquals(mapOf("r" to "Teal"), storedColors())
         closeSheet()
         openColorSheet("Receipts")

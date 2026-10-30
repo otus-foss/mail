@@ -46,11 +46,12 @@ class JmapKnownPeople(
 
     private suspend fun load(accountId: String): Set<String>? =
         mailCallOr(null) {
-            val account = mailAccount(connections, logins, accountId) ?: return@mailCallOr null
-            (account.contactCards(CONTACT_SCAN).map { it.address } + account.sentTo())
-                .map { it.trim().lowercase() }
-                .filter { it.isNotEmpty() }
-                .toSet()
+            mailAccount(connections, logins, accountId)?.let { account ->
+                (account.contactCards(CONTACT_SCAN).map { it.address } + account.sentTo())
+                    .map { it.trim().lowercase() }
+                    .filter { it.isNotEmpty() }
+                    .toSet()
+            }
         }
 
     /**
@@ -59,8 +60,9 @@ class JmapKnownPeople(
      */
     private suspend fun MailAccount.sentTo(): List<String> {
         val sent = connection.call(roleQuery(SENT_ROLE)).ids.firstOrNull() ?: return emptyList()
-        val ids = connection.call(QueryMethod(EmailType, id, inMailbox(sent), NEWEST_FIRST, SENT_SCAN)).ids
-        return ids
+        return connection
+            .call(QueryMethod(EmailType, id, inMailbox(sent), NEWEST_FIRST, SENT_SCAN))
+            .ids
             .chunked(session.coreLimit("maxObjectsInGet", GET_BATCH))
             .flatMap { batch -> connection.call(GetMethod(EmailType, id, JmapIds.Of(batch), PROPERTIES)).list }
             .flatMap { it.to.orEmpty() + it.cc.orEmpty() + it.bcc.orEmpty() }

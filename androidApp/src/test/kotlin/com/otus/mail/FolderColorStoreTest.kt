@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.content.Context
-import androidx.core.content.edit
 import com.otus.mail.feature.folders.domain.FolderColors
 import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.MailFolder
@@ -31,13 +30,15 @@ class FolderColorStoreTest {
 
     @Test
     fun unreadableValuesReadAsTheDefault() {
-        context.getSharedPreferences("otus_mail_folder_colors", Context.MODE_PRIVATE).edit {
-            clear()
-            putInt("M1:ada", 3)
-            putString("no separator", "Red")
-            putString("M2:ada", "")
-            putString("M3:ada", "Green")
-        }
+        context
+            .getSharedPreferences("otus_mail_folder_colors", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .putInt("M1:ada", 3)
+            .putString("no separator", "Red")
+            .putString("M2:ada", "")
+            .putString("M3:ada", "Green")
+            .apply()
         assertEquals(mapOf(FolderKey("ada", "M3") to "Green"), AndroidFolderColorStore(context).readColors().names)
     }
 }

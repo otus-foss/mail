@@ -67,15 +67,17 @@ class JmapPeopleSearch(
         text: String,
     ): List<FoundPerson> =
         mailCallOr(emptyList()) {
-            val account = mailAccount(connections, logins, loginId) ?: return@mailCallOr emptyList()
-            val emails =
-                account.connection.request {
-                    val filter = field.filter(text)
-                    val query = call(QueryMethod(EmailType, account.id, filter, NEWEST_FIRST, limit, COLLAPSED))
-                    val ids = JmapIds.Result(query.resultOf("/ids"))
-                    call(GetMethod(EmailType, account.id, ids, field.properties))
-                }
-            jmapDecoding { people(emails.list, field) }
+            mailAccount(connections, logins, loginId)
+                ?.let { account ->
+                    val emails =
+                        account.connection.request {
+                            val filter = field.filter(text)
+                            val query = call(QueryMethod(EmailType, account.id, filter, NEWEST_FIRST, limit, COLLAPSED))
+                            val ids = JmapIds.Result(query.resultOf("/ids"))
+                            call(GetMethod(EmailType, account.id, ids, field.properties))
+                        }
+                    jmapDecoding { people(emails.list, field) }
+                }.orEmpty()
         }
 
     private companion object {

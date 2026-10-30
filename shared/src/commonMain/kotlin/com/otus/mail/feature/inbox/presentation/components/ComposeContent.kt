@@ -50,7 +50,10 @@ internal fun ComposeContent(
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding)) {
             ComposeFields(state, shown, focus, Modifier.onSizeChanged { fieldsHeight = it.height })
             // A reply's thread shows above the bar instead; only a forward carries its original here.
-            val quote = if (state.thread == null) state.draft.quote.orEmpty() else ""
+            val quote =
+                state.draft.quote
+                    .takeIf { state.thread == null }
+                    .orEmpty()
             // The body fills the page only while nothing follows it, so files and a quote stay in view.
             val alone = quote.isEmpty() && state.draft.attachments.isEmpty()
             RichTextBody(

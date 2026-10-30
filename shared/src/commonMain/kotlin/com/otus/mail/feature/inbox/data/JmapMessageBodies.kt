@@ -46,9 +46,10 @@ class JmapMessageBodies(
             val loginId = message.location.accountId
             cache.withAccount(loginId) { accountCache ->
                 val email = accountCache.cached(loginId, message.emailId) ?: accountCache.fetched(loginId, message)
-                val found = email ?: return@withAccount null
-                val content = jmapDecoding { found.toMessageContent() }
-                withImages(loginId, content, found.inlineParts(content.html?.html))
+                email?.let { found ->
+                    val content = jmapDecoding { found.toMessageContent() }
+                    withImages(loginId, content, found.inlineParts(content.html?.html))
+                }
             }
         }
 
@@ -82,9 +83,11 @@ class JmapMessageBodies(
         message: MailMessage,
     ): EmailObject? {
         val account = mailAccount(connections, logins, loginId) ?: return null
-        val ids = JmapIds.Of(listOf(message.emailId))
-        val fetched = account.connection.call(GetMethod(EmailType, account.id, ids, PROPERTIES, ARGUMENTS))
-        val email = fetched.list.firstOrNull()
+        val email =
+            account.connection
+                .call(GetMethod(EmailType, account.id, JmapIds.Of(listOf(message.emailId)), PROPERTIES, ARGUMENTS))
+                .list
+                .firstOrNull()
         if (email != null) {
             try {
                 write(loginId) {

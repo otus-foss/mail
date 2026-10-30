@@ -83,9 +83,10 @@ fun FolderDetailScreen(
         )
         if (own) {
             val account = folders.account(id)
-            val parent = account?.folder(folder.parentId.orEmpty())
-            val move = { dialog = FolderDialog.Move(id, folder.id) }
-            FolderParentRow(parent?.name, move.takeIf { account?.canMove(folder) == true })
+            FolderParentRow(
+                account?.folder(folder.parentId.orEmpty())?.name,
+                { dialog = FolderDialog.Move(id, folder.id) }.takeIf { account?.canMove(folder) == true },
+            )
         }
         if (own && colors.colorable(folder)) {
             FolderColorRow(colors.colors.of(folder)) { dialog = FolderDialog.Color(id, folder.id) }

@@ -138,10 +138,11 @@ class DateNavigationPickerTest {
         assertEquals(nextBefore, compose.onNodeWithContentDescription("Next month").fetchSemanticsNode().boundsInRoot)
     }
 
-    private fun yearBounds(): Rect {
-        val year = hasText("2026") and hasAnyAncestor(hasText("2026"))
-        return compose.onNode(year, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-    }
+    private fun yearBounds(): Rect =
+        compose
+            .onNode(hasText("2026") and hasAnyAncestor(hasText("2026")), useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .boundsInRoot
 
     private fun choose(
         column: String,

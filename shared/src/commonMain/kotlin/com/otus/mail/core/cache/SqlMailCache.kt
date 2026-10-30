@@ -37,8 +37,10 @@ class SqlMailCache(
         kind: CacheKind,
     ): Map<String, String> =
         io {
-            val query = objects.readKind(loginId, kind.name) { id, json -> id to json }
-            query.executeAsList().toMap()
+            objects
+                .readKind(loginId, kind.name) { id, json -> id to json }
+                .executeAsList()
+                .toMap()
         }
 
     override suspend fun value(

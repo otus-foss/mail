@@ -117,7 +117,7 @@ data class ActionBarLayout(
     private fun swapPrimary(
         old: BarButton?,
         action: BarButton,
-    ): ActionBarLayout = if (old == null) this else ActionBarLayout(secondary.replace(old, action), old)
+    ): ActionBarLayout = old?.let { ActionBarLayout(secondary.replace(it, action), it) } ?: this
 
     /**
      * Drops [action], such as Read later once it is off. A dropped primary returns to [place]'s

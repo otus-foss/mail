@@ -51,8 +51,7 @@ class SignaturesState(
         source: SendIdentity,
         targets: List<SendIdentity>,
     ) {
-        val signature = source.signature
-        targets.forEach { save(it, signature) }
+        targets.forEach { save(it, source.signature) }
     }
 
     /** Picks an image, or shows a [notice] when the picked one can't be used. Null when there is none. */

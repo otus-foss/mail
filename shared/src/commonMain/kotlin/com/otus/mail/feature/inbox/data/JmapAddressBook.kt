@@ -56,10 +56,11 @@ class JmapAddressBook(
 
     private suspend fun load(accountId: String): List<MailSender>? =
         mailCallOr(null) {
-            val account = mailAccount(connections, logins, accountId) ?: return@mailCallOr null
-            (account.contactCards(CONTACT_SCAN) + correspondents(account))
-                .distinctBy { it.address.lowercase() }
-                .map { it.copy(accountKey = accountId) }
+            mailAccount(connections, logins, accountId)?.let { account ->
+                (account.contactCards(CONTACT_SCAN) + correspondents(account))
+                    .distinctBy { it.address.lowercase() }
+                    .map { it.copy(accountKey = accountId) }
+            }
         }
 
     private suspend fun correspondents(account: MailAccount): List<MailSender> {

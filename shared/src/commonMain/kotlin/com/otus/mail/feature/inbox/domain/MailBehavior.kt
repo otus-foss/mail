@@ -51,10 +51,13 @@ data class MailBehavior(
     val photoCleaning: PhotoCleaning = PhotoCleaning.Ask,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
-    fun sentFrom(address: String): MailBehavior {
-        val others = recentFrom.filterNot { it.equals(address, ignoreCase = true) }
-        return copy(recentFrom = (listOf(address) + others).take(RECENT_FROM_LIMIT))
-    }
+    fun sentFrom(address: String): MailBehavior =
+        copy(
+            recentFrom =
+                listOf(address)
+                    .plus(recentFrom.filterNot { it.equals(address, ignoreCase = true) })
+                    .take(RECENT_FROM_LIMIT),
+        )
 
     /** What a swipe can be set to besides nothing; Read later only while it is on. */
     val swipeChoices: List<MailAction>
@@ -64,10 +67,8 @@ data class MailBehavior(
     fun barChoices(place: ActionBarPlace): List<MailAction> = place.actions.filter(::offers)
 
     /** The layout [place] shows: its own in Adaptive mode, the Everywhere one in Fixed mode. */
-    fun barLayout(place: ActionBarPlace): ActionBarLayout {
-        val shown = if (actionBarMode == ActionBarMode.Fixed) ActionBarPlace.Everywhere else place
-        return savedLayout(shown)
-    }
+    fun barLayout(place: ActionBarPlace): ActionBarLayout =
+        savedLayout(if (actionBarMode == ActionBarMode.Fixed) ActionBarPlace.Everywhere else place)
 
     /** The layout saved for [place], whichever mode is on; settings edit this one. */
     fun savedLayout(place: ActionBarPlace): ActionBarLayout = actionBar[place] ?: place.defaultLayout

@@ -80,8 +80,11 @@ class CalendarWeekLayoutTest {
         val cells =
             dates.map { date ->
                 compose.onAllNodesWithContentDescription(date).assertCountEquals(1)
-                val day = compose.onNodeWithContentDescription(date).assertIsDisplayed()
-                day.fetchSemanticsNode().boundsInRoot
+                compose
+                    .onNodeWithContentDescription(date)
+                    .assertIsDisplayed()
+                    .fetchSemanticsNode()
+                    .boundsInRoot
             }
         cells.zipWithNext().forEach { (left, right) ->
             assertEquals(left.top, right.top, 1f)
@@ -111,8 +114,11 @@ class CalendarWeekLayoutTest {
         label: String,
     ) {
         val cell = compose.onNodeWithContentDescription(date).fetchSemanticsNode().boundsInRoot
-        val dayLabel = hasText(label) and hasAnyAncestor(hasContentDescription(date))
-        val text = compose.onNode(dayLabel, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val text =
+            compose
+                .onNode(hasText(label) and hasAnyAncestor(hasContentDescription(date)), useUnmergedTree = true)
+                .fetchSemanticsNode()
+                .boundsInRoot
         assertEquals("Day numbers remain vertically centered", cell.center.y, text.center.y, 1f)
     }
 
@@ -130,11 +136,10 @@ class CalendarWeekLayoutTest {
     }
 
     private fun saveScreenshot() {
-        val bitmap =
-            compose.runOnIdle {
+        compose
+            .runOnIdle {
                 val dialog = ShadowDialog.getShownDialogs().last { it.isShowing }
                 requireNotNull(dialog.window).decorView.drawnBitmap()
-            }
-        bitmap.savePng("build/reports/pickers/calendar-continuous-week.png")
+            }.savePng("build/reports/pickers/calendar-continuous-week.png")
     }
 }

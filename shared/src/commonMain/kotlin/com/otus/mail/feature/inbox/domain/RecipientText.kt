@@ -25,12 +25,19 @@ private fun parseRecipient(part: String): MailSender? {
     val close = part.lastIndexOf('>')
     if (open >= 0 && close > open) {
         val address = part.substring(open + 1, close).trim()
-        val display = part.substring(0, open).trim()
-        val name = display.trim('"').trim()
+        val name =
+            part
+                .substring(0, open)
+                .trim()
+                .trim('"')
+                .trim()
         return address.takeIf { it.isNotEmpty() }?.let { MailSender(name, it) }
     }
-    val address = part.trim().trim('"')
-    return address.takeIf { it.isNotEmpty() }?.let { MailSender("", it) }
+    return part
+        .trim()
+        .trim('"')
+        .takeIf { it.isNotEmpty() }
+        ?.let { MailSender("", it) }
 }
 
 private fun splitRecipients(text: String): List<String> {

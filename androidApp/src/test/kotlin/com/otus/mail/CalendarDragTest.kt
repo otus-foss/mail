@@ -49,9 +49,11 @@ class CalendarDragTest {
         dragRange(19, 8, "calendar-drag-backward")
         compose.onNodeWithText("Done").performClick()
         val month = LocalDate.now().minusMonths(1).withDayOfMonth(1)
-        val start = month.withDayOfMonth(8).toString()
-        val end = month.withDayOfMonth(19).toString()
-        compose.onNodeWithText(relativeIsoRange(start, end, "–")).performScrollTo().assertIsDisplayed()
+        compose
+            .onNodeWithText(
+                relativeIsoRange(month.withDayOfMonth(8).toString(), month.withDayOfMonth(19).toString(), "–"),
+            ).performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test
@@ -134,8 +136,11 @@ class CalendarDragTest {
         val heading = "${today.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${today.year}"
         compose.onNodeWithContentDescription("Previous month").assertIsDisplayed()
         compose.onNodeWithContentDescription("Next month").assertIsDisplayed()
-        val month = today.month.name
-        val marker = month.take(3).lowercase().replaceFirstChar { it.uppercase() }
+        val marker =
+            today.month.name
+                .take(3)
+                .lowercase()
+                .replaceFirstChar { it.uppercase() }
         compose.onNodeWithText(marker, useUnmergedTree = true).assertHasNoClickAction().assertIsDisplayed()
         compose.onNodeWithContentDescription("Calendar weekdays").assertIsDisplayed()
         compose.onNode(hasText(heading) and hasClickAction()).performTouchInput { click(center) }
@@ -216,8 +221,11 @@ class CalendarDragTest {
         val calendar = compose.onNodeWithContentDescription("Calendar months")
         val viewport = calendar.fetchSemanticsNode().boundsInRoot.topLeft
         val origin = first.fetchSemanticsNode().boundsInRoot.center - viewport
-        val last = compose.onNodeWithContentDescription(end).fetchSemanticsNode()
-        val destination = last.boundsInRoot.center - viewport
+        val destination =
+            compose
+                .onNodeWithContentDescription(end)
+                .fetchSemanticsNode()
+                .boundsInRoot.center - viewport
         compose.mainClock.autoAdvance = false
         calendar.performTouchInput { down(origin) }
         compose.mainClock.advanceTimeBy(600)

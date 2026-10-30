@@ -29,8 +29,10 @@ internal class SidebarCounter(
 
     private fun sum(folders: List<MailFolder>): Long? {
         val valueOf = count ?: return null
-        val matching = folders.filter { accountId == null || it.accountId == accountId }
-        return matching.sumOf(valueOf).takeIf { it > 0 }
+        return folders
+            .filter { accountId == null || it.accountId == accountId }
+            .sumOf(valueOf)
+            .takeIf { it > 0 }
     }
 
     private companion object {

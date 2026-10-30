@@ -175,7 +175,8 @@ internal class PeopleCardArea {
     fun holds(offset: Offset): Boolean {
         val pageCoordinates = page?.takeIf { it.isAttached }
         val cardCoordinates = card?.takeIf { it.isAttached }
-        val attached = pageCoordinates != null && cardCoordinates != null
-        return attached && pageCoordinates.localBoundingBoxOf(cardCoordinates).contains(offset)
+        return pageCoordinates != null &&
+            cardCoordinates != null &&
+            pageCoordinates.localBoundingBoxOf(cardCoordinates).contains(offset)
     }
 }

@@ -13,10 +13,11 @@ fun AccountFolderRules.sendersByFolder(): Map<String, List<String>> =
  * The address this rule moves every message from: a single "From is" condition. A group that also
  * needs another condition moves only some of a sender's mail.
  */
-fun FolderRule.senders(): List<String> {
-    val condition = conditions.singleOrNull() as? RuleCondition.Address ?: return emptyList()
-    val sender = condition.takeIf { it.field == AddressField.From && !it.negated }
-    val match = sender?.match as? AddressMatch.Exact
-    val address = match?.address?.trim()
-    return listOfNotNull(address?.takeIf { it.isNotEmpty() })
-}
+fun FolderRule.senders(): List<String> =
+    conditions
+        .singleOrNull()
+        ?.let { it as? RuleCondition.Address }
+        ?.takeIf { it.field == AddressField.From && !it.negated }
+        ?.let { (it.match as? AddressMatch.Exact)?.address?.trim() }
+        ?.takeIf { it.isNotEmpty() }
+        .let(::listOfNotNull)

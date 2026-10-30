@@ -83,10 +83,10 @@ private sealed class ConditionDto {
         val value: String,
         val not: Boolean = false,
     ) : ConditionDto() {
-        fun condition(): RuleCondition.Address? {
-            val parsedField = AddressField.entries.wired(field) ?: return null
-            return addressMatch(match, value)?.let { RuleCondition.Address(parsedField, it, not) }
-        }
+        fun condition(): RuleCondition.Address? =
+            AddressField.entries.wired(field)?.let { parsedField ->
+                addressMatch(match, value)?.let { RuleCondition.Address(parsedField, it, not) }
+            }
     }
 
     @Serializable
@@ -97,10 +97,10 @@ private sealed class ConditionDto {
         val value: String,
         val not: Boolean = false,
     ) : ConditionDto() {
-        fun condition(): RuleCondition.Text? {
-            val parsedField = TextField.entries.wired(field) ?: return null
-            return TextOperator.entries.wired(op)?.let { RuleCondition.Text(parsedField, it, value, not) }
-        }
+        fun condition(): RuleCondition.Text? =
+            TextField.entries.wired(field)?.let { parsedField ->
+                TextOperator.entries.wired(op)?.let { RuleCondition.Text(parsedField, it, value, not) }
+            }
     }
 
     @Serializable

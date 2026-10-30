@@ -3,7 +3,6 @@ package com.otus.mail
 import android.content.Context
 import android.os.Looper
 import android.view.WindowManager
-import androidx.core.content.edit
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,7 +28,11 @@ class ScreenSecurityTest {
 
     @Test
     fun theScreenStaysCapturableUntilScreenSecurityIsOn() {
-        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit { clear() }
+        context
+            .getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
         assertFalse(secure())
         AndroidMailBehaviorStore(context).write(MailBehavior(screenSecurity = true))
         assertTrue(secure())
@@ -37,7 +40,11 @@ class ScreenSecurityTest {
 
     @Test
     fun theKeyboardIsIncognitoByDefaultAndBothChoicesSurviveReopeningTheStore() {
-        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit { clear() }
+        context
+            .getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
         val defaults = AndroidMailBehaviorStore(context).read()
         assertTrue(defaults.incognitoKeyboard)
         assertFalse(defaults.screenSecurity)

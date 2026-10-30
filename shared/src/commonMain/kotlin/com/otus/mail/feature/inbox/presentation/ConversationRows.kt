@@ -59,11 +59,10 @@ fun conversationRows(
 ): Map<String, ConversationRowModel> {
     val receivedOn = messages.associate { it.id to it.receivedOn(look.own) }
     return messages.associate { message ->
-        val address = receivedOn[message.id]?.takeIf { mixed }
         message.id to
             message.rowModel(
                 look,
-                address,
+                receivedOn[message.id]?.takeIf { mixed },
                 dateFormatter.listDateLabel(message.lastReceived, today, look.layout),
             )
     }
@@ -145,21 +144,28 @@ private fun SenderLine.toLine(): RowLine =
     }
 
 private val SenderLine.YouTo.repliedLine: RowLine
-    get() {
-        val person = listOf(RowTextPart("You"), RowTextPart(" to", quiet = true), RowTextPart(" $name"))
-        return RowLine(person + others.morePart(), icon = Res.drawable.symbol_reply)
-    }
+    get() =
+        RowLine(
+            listOf(RowTextPart("You"), RowTextPart(" to", quiet = true), RowTextPart(" $name")) + others.morePart(),
+            icon = Res.drawable.symbol_reply,
+        )
 
 private fun Int.morePart(): List<RowTextPart> =
     if (this > 0) listOf(RowTextPart(" +$this", quiet = true)) else emptyList()
 
-private fun RowFolder.icon(): RowFolderIcon {
-    val tint = if (kind == FolderKind.Inbox) null else FolderColor.named(color).takeIf { it != FolderColor.Default }
-    return when (kind) {
-        FolderKind.Inbox -> RowFolderIcon(FolderGlyphKind.Inbox, color = null)
-        FolderKind.Folder -> RowFolderIcon(FolderGlyphKind.Folder, tint)
+private fun RowFolder.icon(): RowFolderIcon =
+    when (kind) {
+        FolderKind.Inbox -> {
+            RowFolderIcon(FolderGlyphKind.Inbox, color = null)
+        }
+
+        FolderKind.Folder -> {
+            RowFolderIcon(
+                FolderGlyphKind.Folder,
+                FolderColor.named(color).takeIf { it != FolderColor.Default },
+            )
+        }
     }
-}
 
 /** What TalkBack reads for the row, built from what it shows. */
 private fun MailMessage.description(

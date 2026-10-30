@@ -56,8 +56,10 @@ class ReadViewTest {
         newFolder: NewFolderSheet? = null,
         showQuotes: Boolean = false,
     ) {
-        val base = fixtures.read(pages, cameFrom, { applied = it.added to it.removed }, { unsubscribed++ }, newFolder)
-        val read = if (showQuotes) with(fixtures) { base.showingQuotes() } else base
+        val read =
+            fixtures
+                .read(pages, cameFrom, { applied = it.added to it.removed }, { unsubscribed++ }, newFolder)
+                .let { if (showQuotes) with(fixtures) { it.showingQuotes() } else it }
         val context =
             InboxContext(
                 loadContent = { fixtures.content(it) },

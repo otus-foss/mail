@@ -29,8 +29,7 @@ internal fun LinkDialog(
                 "Add",
                 {
                     onDismiss()
-                    val trimmed = address.trim()
-                    onAdd(if ("://" in trimmed || trimmed.startsWith("mailto:")) trimmed else "https://$trimmed")
+                    onAdd(address.trim().let { if ("://" in it || it.startsWith("mailto:")) it else "https://$it" })
                 },
                 Modifier.weight(1f),
                 primary = true,

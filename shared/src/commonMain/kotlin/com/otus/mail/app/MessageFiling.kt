@@ -41,19 +41,20 @@ internal class MessageFiling(
     fun labeled(messages: List<MailMessage>): List<MailMessage> {
         val trees = folders.accounts.associate { it.accountId to it.folderTree() }
         return messages.map { message ->
-            val labels =
-                trees[message.location.accountId]
-                    ?.labelFolders(message.location.mailboxIds, message.location.mailboxId)
-                    ?.map {
-                        RowFolder(
-                            it.folder.id,
-                            it.folder.name,
-                            if (it.folder.role == INBOX_ROLE) FolderKind.Inbox else FolderKind.Folder,
-                            colors.colorOf(it.folder),
-                            it.readLater,
-                        )
-                    }
-            message.copy(labels = labels.orEmpty())
+            message.copy(
+                labels =
+                    trees[message.location.accountId]
+                        ?.labelFolders(message.location.mailboxIds, message.location.mailboxId)
+                        ?.map {
+                            RowFolder(
+                                it.folder.id,
+                                it.folder.name,
+                                if (it.folder.role == INBOX_ROLE) FolderKind.Inbox else FolderKind.Folder,
+                                colors.colorOf(it.folder),
+                                it.readLater,
+                            )
+                        }.orEmpty(),
+            )
         }
     }
 

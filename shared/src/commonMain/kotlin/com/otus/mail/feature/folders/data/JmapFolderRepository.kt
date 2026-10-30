@@ -206,7 +206,7 @@ private suspend fun MailAccount.loadShared(
         null
     }
 
-private fun MailAccount.ownerName(jmapAccountId: String): String {
-    val account = session.accounts[jmapAccountId]
-    return account?.name.orEmpty()
-}
+private fun MailAccount.ownerName(jmapAccountId: String): String =
+    session.accounts[jmapAccountId]
+        ?.name
+        .orEmpty()

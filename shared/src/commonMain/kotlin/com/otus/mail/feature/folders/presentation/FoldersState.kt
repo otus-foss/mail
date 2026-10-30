@@ -49,8 +49,15 @@ class FoldersState(
         sharedIn: String? = null,
     ): MailFolder? {
         val account = account(accountId)
-        val shared = account?.shared?.firstOrNull { it.jmapAccountId == sharedIn }
-        return if (sharedIn == null) account?.folder(folderId) else shared?.folders?.firstOrNull { it.id == folderId }
+        return if (sharedIn == null) {
+            account?.folder(folderId)
+        } else {
+            account
+                ?.shared
+                ?.firstOrNull { it.jmapAccountId == sharedIn }
+                ?.folders
+                ?.firstOrNull { it.id == folderId }
+        }
     }
 
     fun refresh() {

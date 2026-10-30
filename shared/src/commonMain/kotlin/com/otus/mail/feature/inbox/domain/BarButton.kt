@@ -46,8 +46,12 @@ sealed interface BarButton {
         /** A saved button, such as `archive` or `move_to:Clients/Acme`; null when it is unknown. */
         fun fromStorageValue(value: String): BarButton? {
             if (!value.startsWith(MOVE_TO_PREFIX)) return MailAction.fromStorageValue(value)
-            val path = value.removePrefix(MOVE_TO_PREFIX).split(PATH_SEPARATOR).map { it.unescaped() }
-            return path.takeIf { names -> names.none { it.isEmpty() } }?.let(::MoveTo)
+            return value
+                .removePrefix(MOVE_TO_PREFIX)
+                .split(PATH_SEPARATOR)
+                .map { it.unescaped() }
+                .takeIf { names -> names.none { it.isEmpty() } }
+                ?.let(::MoveTo)
         }
     }
 }
@@ -62,8 +66,10 @@ private fun String.escaped(): String = map { ESCAPES[it] ?: it.toString() }.join
 
 private fun String.unescaped(): String =
     ESCAPE.replace(this) {
-        val code = it.groupValues[1].toInt(HEX)
-        code.toChar().toString()
+        it.groupValues[1]
+            .toInt(HEX)
+            .toChar()
+            .toString()
     }
 
 private const val HEX = 16

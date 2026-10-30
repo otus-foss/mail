@@ -57,16 +57,19 @@ internal class MessageSorting(
     ): FutureSorting? {
         val account = rules.account(message.location.accountId)
         if (account?.support == null) return null
-        val firstRecipient = message.to.firstOrNull()
-        val recipient = firstRecipient?.address.orEmpty()
-        val choices =
-            sortConditions(message.sender.address, recipient, message.subject).map { sort ->
+        val recipient =
+            message.to
+                .firstOrNull()
+                ?.address
+                .orEmpty()
+        return sortConditions(message.sender.address, recipient, message.subject)
+            .map { sort ->
                 val person = message.personFor(sort.kind)
                 SortChoice(sort.phrase, sort.keyword, sort.shown, sort.reach, person) { target, moved ->
                     addRule(account.accountId, sort, person, target, moved, feed)
                 }
-            }
-        return choices.takeIf { it.isNotEmpty() }?.let { FutureSorting(account.accountName, it) }
+            }.takeIf { it.isNotEmpty() }
+            ?.let { FutureSorting(account.accountName, it) }
     }
 
     private fun addRule(

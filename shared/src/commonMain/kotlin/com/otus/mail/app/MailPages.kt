@@ -91,8 +91,7 @@ private fun CombinedPage(
     navigation: MailNavigation,
 ) {
     val folder = page.folder
-    val scope = MailScope.Role(folder.role, folder.title)
-    FeedPage(page, scope, folder.title, states, dateFormatter, navigation)
+    FeedPage(page, MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
 }
 
 @Composable

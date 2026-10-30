@@ -83,8 +83,10 @@ private fun OriginalMessage.reply(
 ): Draft {
     val primary = if (fromSelf) to else replyTo.ifEmpty { listOf(from) }
     val recipients = if (all && !fromSelf) primary + to else primary
-    val addressed = recipients + if (all) cc else emptyList()
-    val kept = addressed.distinctBy { it.address.lowercase() }.filterNot { it.address.lowercase() in own }
+    val kept =
+        (recipients + if (all) cc else emptyList())
+            .distinctBy { it.address.lowercase() }
+            .filterNot { it.address.lowercase() in own }
     val toAddresses = recipients.map { it.address.lowercase() }.toSet()
     return Draft(
         accountId,

@@ -47,8 +47,11 @@ class MailboxPickerTest {
         val context = InboxContext(mailboxSearch = MailboxSearch(listOf("Inbox", "Archive", "Sent")) { loaded += it })
         compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(fixtures, context = context) } } }
         compose.onNodeWithContentDescription("Search mailbox").performClick()
-        val inboxes = compose.onNodeWithContentDescription("All accounts, Inbox")
-        inboxes.performScrollTo().assertIsOff().performClick()
+        compose
+            .onNodeWithContentDescription("All accounts, Inbox")
+            .performScrollTo()
+            .assertIsOff()
+            .performClick()
     }
 
     @Test
@@ -58,8 +61,11 @@ class MailboxPickerTest {
         row("Archive").performClick()
         compose.onNodeWithText("2 selected").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        val inboxes = compose.onNodeWithContentDescription("All accounts, Inbox, Archive").performScrollTo()
-        inboxes.assert(hasText("All accounts") and hasText("Inbox +1")).assertIsOn()
+        compose
+            .onNodeWithContentDescription("All accounts, Inbox, Archive")
+            .performScrollTo()
+            .assert(hasText("All accounts") and hasText("Inbox +1"))
+            .assertIsOn()
         compose.runOnIdle {
             assertEquals(
                 MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox"), MailboxScope(null, "Archive"))),
@@ -77,8 +83,11 @@ class MailboxPickerTest {
         compose.onNodeWithText("1 selected").assertIsDisplayed()
         compose.onNodeWithText("Done").assertIsEnabled().performClick()
         compose.runOnIdle { assertEquals(MailScope.Mailboxes(emptySet(), setOf("Personal")), loaded.last()) }
-        val inboxes = compose.onNodeWithContentDescription("Personal account, All inboxes").performScrollTo()
-        inboxes.assert(hasText("Personal") and hasText("All inboxes")).performClick()
+        compose
+            .onNodeWithContentDescription("Personal account, All inboxes")
+            .performScrollTo()
+            .assert(hasText("Personal") and hasText("All inboxes"))
+            .performClick()
         compose.onNodeWithText("Clear").performClick()
         compose.onNodeWithText("0 selected").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()

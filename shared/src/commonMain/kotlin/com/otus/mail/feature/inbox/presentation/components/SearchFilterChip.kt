@@ -67,7 +67,7 @@ fun SearchFilterChip(
 private fun Modifier.mailboxDescription(
     label: String,
     mailboxes: MailboxSummary?,
-): Modifier = if (mailboxes == null) this else semantics { contentDescription = "$label, ${mailboxes.description}" }
+): Modifier = mailboxes?.let { semantics { contentDescription = "$label, ${it.description}" } } ?: this
 
 private fun filterIcon(filter: InboxFilter): DrawableResource =
     when (filter) {

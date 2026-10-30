@@ -46,17 +46,16 @@ internal class FrequentContacts(
         scope.launch {
             try {
                 val logins = source.logins()
-                val due =
-                    logins.filter { id ->
-                        val scan = scans[id]
-                        scan == null || now().toEpochMilliseconds() - scan.atMillis >= MAX_AGE
-                    }
                 val fresh =
-                    due.mapNotNull { id ->
-                        source.traces(id)?.let { traces ->
-                            id to FrequentScan(now().toEpochMilliseconds(), frequencyScores(traces, now()))
+                    logins
+                        .filter { id ->
+                            val scan = scans[id]
+                            scan == null || now().toEpochMilliseconds() - scan.atMillis >= MAX_AGE
+                        }.mapNotNull { id ->
+                            source.traces(id)?.let { traces ->
+                                id to FrequentScan(now().toEpochMilliseconds(), frequencyScores(traces, now()))
+                            }
                         }
-                    }
                 scans = (scans + fresh).filterKeys { it in logins }
                 if (store != null) store.write(store.read() + (ContactStore.FREQUENT to encode(scans)))
             } finally {

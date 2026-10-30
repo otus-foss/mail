@@ -44,8 +44,7 @@ internal fun sampledBitmap(
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     open()?.use { BitmapFactory.decodeStream(it, null, bounds) }
     val sample = sampleSize(bounds.outWidth, bounds.outHeight, maxSide) ?: return null
-    val options = BitmapFactory.Options().apply { inSampleSize = sample }
-    return open()?.use { BitmapFactory.decodeStream(it, null, options) }
+    return open()?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
 }
 
 /** The smallest power of two that brings the longest side to at most [maxSide], or null without a size. */

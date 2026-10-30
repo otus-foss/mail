@@ -8,7 +8,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 
 /** Picks the last matching option, such as one in a sheet over the page. */
-internal fun ComposeTestRule.pickLastText(text: String): SemanticsNodeInteraction {
-    val option = onAllNodesWithText(text).onLast()
-    return option.performScrollTo().performClick()
-}
+internal fun ComposeTestRule.pickLastText(text: String): SemanticsNodeInteraction =
+    onAllNodesWithText(text)
+        .onLast()
+        .performScrollTo()
+        .performClick()

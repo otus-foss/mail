@@ -83,8 +83,11 @@ internal class ApplePushSession(
         val push = subscriptions
         val client = bridge ?: return
         val logins = mailServices.notificationLogins().map { it.id }
-        val registered = storage.registrations().keys
-        registered.filter { !enabled || it !in logins }.forEach { remove(it) }
+        storage
+            .registrations()
+            .keys
+            .filter { !enabled || it !in logins }
+            .forEach { remove(it) }
         if (!enabled || registrationError) return
         val deviceToken = token ?: host.read("token")
         if (deviceToken != null) syncLogins(logins, deviceToken, client, push)

@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.Manifest
-import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -69,8 +68,8 @@ class MailNotifications(
                 manager.notify("$loginId/${arrival.emailId}", MESSAGE_ID, message(arrival, preview))
             }
             // The account's name shows only if every message in the group may show its details.
-            val anyHidden = NotificationPreviews.Hidden in shown
-            val summary = if (anyHidden) NotificationPreviews.Hidden else NotificationPreviews.Device
+            val summary =
+                if (NotificationPreviews.Hidden in shown) NotificationPreviews.Hidden else NotificationPreviews.Device
             manager.notify(loginId, SUMMARY_ID, summary(messages.last(), summary))
         }
     }
@@ -78,14 +77,12 @@ class MailNotifications(
     private fun message(
         mail: NewMail,
         shown: NotificationPreviews,
-    ): Notification {
-        val notification =
-            when (shown) {
-                NotificationPreviews.Hidden -> newMail(mail).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                NotificationPreviews.Device -> detailedMessage(mail)
-            }
-        return notification.setWhen(mail.receivedAt.toEpochMilliseconds()).setShowWhen(true).build()
-    }
+    ) = when (shown) {
+        NotificationPreviews.Hidden -> newMail(mail).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        NotificationPreviews.Device -> detailedMessage(mail)
+    }.setWhen(mail.receivedAt.toEpochMilliseconds())
+        .setShowWhen(true)
+        .build()
 
     private fun detailedMessage(mail: NewMail) =
         base(mail)
@@ -99,14 +96,12 @@ class MailNotifications(
     private fun summary(
         latest: NewMail,
         shown: NotificationPreviews,
-    ): Notification {
-        val notification =
-            when (shown) {
-                NotificationPreviews.Hidden -> newMail(latest).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                NotificationPreviews.Device -> accountSummary(latest)
-            }
-        return notification.setGroupSummary(true).setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN).build()
-    }
+    ) = when (shown) {
+        NotificationPreviews.Hidden -> newMail(latest).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        NotificationPreviews.Device -> accountSummary(latest)
+    }.setGroupSummary(true)
+        .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+        .build()
 
     private fun accountSummary(latest: NewMail) =
         base(latest)

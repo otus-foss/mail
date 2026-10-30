@@ -35,8 +35,11 @@ class RelativeDatePickerTest {
         compose.onNodeWithText("Today").performClick()
         compose.onNodeWithText("Today → Today").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        val today = compose.onNodeWithText("Today")
-        today.assertIsOn().performScrollTo().performClick()
+        compose
+            .onNodeWithText("Today")
+            .assertIsOn()
+            .performScrollTo()
+            .performClick()
         compose.onNodeWithText("Today → Today").assertIsDisplayed()
     }
 
@@ -52,8 +55,11 @@ class RelativeDatePickerTest {
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithText("Yesterday → Today").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        val range = compose.onNodeWithText("Yesterday–Today")
-        range.assertIsOn().performScrollTo().performClick()
+        compose
+            .onNodeWithText("Yesterday–Today")
+            .assertIsOn()
+            .performScrollTo()
+            .performClick()
         compose.onNodeWithText("Yesterday → Today").assertIsDisplayed()
     }
 
@@ -66,13 +72,19 @@ class RelativeDatePickerTest {
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithText("Yesterday → Yesterday").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        val yesterdayChip = compose.onNodeWithText("Yesterday")
-        yesterdayChip.assertIsOn().performScrollTo().performClick()
+        compose
+            .onNodeWithText("Yesterday")
+            .assertIsOn()
+            .performScrollTo()
+            .performClick()
         compose.onNodeWithText("Last 7 days").performClick()
         val start = LocalDate.now().minusDays(6)
         compose.onNodeWithText("$start → Today").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        val week = compose.onNodeWithText("This week")
-        week.assertIsOn().performScrollTo().assertIsDisplayed()
+        compose
+            .onNodeWithText("This week")
+            .assertIsOn()
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 }

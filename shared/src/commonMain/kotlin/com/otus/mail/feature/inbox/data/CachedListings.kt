@@ -104,10 +104,13 @@ private class HeldMail(
         listing: Listing,
         list: ListedMailbox,
         check: ((ListedRow) -> Boolean)? = null,
-    ): ListingPage<ListedRow> {
-        val listedRows = listing.ids.mapNotNull { row(it, list) }
-        return ListingPage(if (check == null) listedRows else listedRows.filter(check), listing.hasMore)
-    }
+    ): ListingPage<ListedRow> =
+        ListingPage(
+            listing.ids
+                .mapNotNull { row(it, list) }
+                .filter { check?.invoke(it) ?: true },
+            listing.hasMore,
+        )
 
     fun row(
         id: String,

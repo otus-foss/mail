@@ -43,8 +43,14 @@ class MailNotificationsTest {
         val first = posted.getValue("ada/m1")
         assertEquals("Grace", first.extras.getString(Notification.EXTRA_TITLE))
         assertEquals("Order shipped", first.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
-        val second = posted.getValue("ada/m2")
-        assertEquals("(No subject)", second.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        assertEquals(
+            "(No subject)",
+            posted
+                .getValue("ada/m2")
+                .extras
+                .getCharSequence(Notification.EXTRA_TEXT)
+                .toString(),
+        )
         assertEquals("New mail", first.publicVersion.extras.getString(Notification.EXTRA_TITLE))
         assertEquals(null, first.publicVersion.extras.getCharSequence(Notification.EXTRA_SUB_TEXT))
         assertEquals(Notification.VISIBILITY_PRIVATE, first.visibility)
@@ -60,8 +66,13 @@ class MailNotificationsTest {
         val posted = manager.activeNotifications.associate { it.tag to it.notification }
         assertEquals(Notification.VISIBILITY_PRIVATE, posted.getValue("ada/m1").visibility)
         assertEquals(Notification.VISIBILITY_PRIVATE, posted.getValue("ada").visibility)
-        val publicSummary = posted.getValue("ada").publicVersion
-        assertEquals("New mail", publicSummary.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals(
+            "New mail",
+            posted
+                .getValue("ada")
+                .publicVersion.extras
+                .getString(Notification.EXTRA_TITLE),
+        )
         assertEquals("Grace", posted.getValue("ada/m1").extras.getString(Notification.EXTRA_TITLE))
     }
 

@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.content.Context
-import androidx.core.content.edit
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import org.junit.Assert.assertEquals
@@ -20,10 +19,12 @@ class RemoteImagesPersistenceTest {
         key: String,
         stored: String,
     ): MailBehavior {
-        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit {
-            clear()
-            putString(key, stored)
-        }
+        context
+            .getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .putString(key, stored)
+            .apply()
         return AndroidMailBehaviorStore(context).read()
     }
 

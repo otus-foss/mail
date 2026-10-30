@@ -38,10 +38,11 @@ fun InboxFilters.toggle(folder: FilterFolder): InboxFilters {
 fun InboxFilters.includeSubfolders(
     folder: FilterFolder,
     include: Boolean,
-): InboxFilters {
-    val chosen = folders.firstOrNull { it.key == folder.key } ?: return this
-    return withFolder(chosen.copy(includeSubfolders = include), on = true)
-}
+): InboxFilters =
+    folders
+        .firstOrNull { it.key == folder.key }
+        ?.let { withFolder(it.copy(includeSubfolders = include), on = true) }
+        ?: this
 
 /**
  * The folders the tree shows: those matching [query] by name while searching, else every folder

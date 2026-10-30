@@ -38,9 +38,10 @@ private fun MessageActions.offerToInbox(
         messages
             .filter { cleanup?.role?.invoke(it) == role }
             .mapNotNull { message -> shortcutTarget(message, FolderShortcut.Inbox)?.let { message to it } }
-    if (moving.isEmpty()) return null
-    return OfferedAction(action.label, action.symbol, leaves = true) {
-        moving.forEach { (message, inbox) -> move(message, inbox) }
+    return moving.takeIf { it.isNotEmpty() }?.let {
+        OfferedAction(action.label, action.symbol, leaves = true) {
+            moving.forEach { (message, inbox) -> move(message, inbox) }
+        }
     }
 }
 
@@ -50,9 +51,7 @@ private fun MessageActions.offerDeleteForever(messages: List<MailMessage>): Offe
     val deleting = messages.filter(actions.canDelete)
     val title = if (deleting.size == 1) "Delete this message forever?" else "Delete ${deleting.size} messages forever?"
     val question = ConfirmQuestion(title, "You can't undo this.", "Delete")
-    return if (deleting.isEmpty()) {
-        null
-    } else {
+    return deleting.takeIf { it.isNotEmpty() }?.let {
         OfferedAction(
             MailAction.DeleteForever.label,
             MailAction.DeleteForever.symbol,

@@ -33,8 +33,11 @@ class InMemoryMailCache : MailCache {
         kind: CacheKind,
     ): Map<String, String> =
         lock.withLock {
-            val objects = logins[loginId]?.objects?.get(kind)
-            objects.orEmpty().mapValues { it.value.json }
+            logins[loginId]
+                ?.objects
+                ?.get(kind)
+                .orEmpty()
+                .mapValues { it.value.json }
         }
 
     override suspend fun value(
@@ -47,8 +50,7 @@ class InMemoryMailCache : MailCache {
         changes: CacheWrite.() -> Unit,
     ) {
         lock.withLock {
-            val batch = Batch(logins[loginId] ?: Login()).apply(changes)
-            logins = logins + (loginId to batch.login)
+            logins = logins + (loginId to Batch(logins[loginId] ?: Login()).apply(changes).login)
         }
     }
 

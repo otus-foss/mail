@@ -21,13 +21,16 @@ data class ContactPerson(
     val letter: String
         get() = name.firstOrNull()?.takeIf { it.isLetter() }?.uppercase() ?: "#"
 
-    fun matches(query: String): Boolean {
-        val normalized = query.trim().lowercase()
-        val words = normalized.split(' ').filter { it.isNotEmpty() }
-        return words.all { word ->
-            cards.any { card -> word in card.displayName.lowercase() } || emails.any { word in it.value.lowercase() }
-        }
-    }
+    fun matches(query: String): Boolean =
+        query
+            .trim()
+            .lowercase()
+            .split(' ')
+            .filter { it.isNotEmpty() }
+            .all { word ->
+                cards.any { card -> word in card.displayName.lowercase() } ||
+                    emails.any { word in it.value.lowercase() }
+            }
 }
 
 /**

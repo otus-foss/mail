@@ -43,7 +43,6 @@ import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.containsSearch
 import com.otus.mail.feature.inbox.presentation.matchesSearch
 import com.otus.mail.feature.inbox.presentation.ownFolders
@@ -97,7 +96,7 @@ internal fun MoveSheet(
             val suggestion = suggested?.takeIf { it.matchesSearch(query) }
             val folders = listed.ownFolders().filter { it.matchesSearch(query) }
             MovePills(
-                onReadLater = readLaterAction(readLater, onLeave),
+                onReadLater = readLater?.let { changes -> { onLeave { changes.forEach { it.apply() } } } },
                 shortcuts,
                 sorting,
                 onMove = move,
@@ -115,14 +114,6 @@ internal fun MoveSheet(
         // The keyboard leaves little room, so the folders get it while the user types.
         if (!(searching && keyboardOpen)) MoveSortFooter(sorting)
     }
-}
-
-private fun readLaterAction(
-    changes: List<ReadLaterChange>?,
-    onLeave: (() -> Unit) -> Unit,
-): (() -> Unit)? {
-    if (changes == null) return null
-    return { onLeave { changes.forEach { it.apply() } } }
 }
 
 /**

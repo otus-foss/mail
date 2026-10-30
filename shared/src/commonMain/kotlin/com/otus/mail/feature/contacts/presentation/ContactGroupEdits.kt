@@ -46,7 +46,8 @@ internal fun ContactsState.removeFromGroup(
         group.card.members
             .orEmpty()
             .filterKeys { it !in uids }
-    update(group, group.card.copy(members = members.takeIf { it.isNotEmpty() }))
+            .takeIf { it.isNotEmpty() }
+    update(group, group.card.copy(members = members))
 }
 
 /** Gives [group] a new [name]. */

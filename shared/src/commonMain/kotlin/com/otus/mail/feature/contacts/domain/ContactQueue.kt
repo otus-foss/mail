@@ -26,8 +26,11 @@ private fun List<ContactCard>.updated(
     sync: CardSync,
 ): List<ContactCard> =
     map { card ->
-        if (card.key != edit.key) return@map card
-        card.copy(card = edit.after, books = card.booksAfter(edit.after), sync = sync)
+        if (card.key == edit.key) {
+            card.copy(card = edit.after, books = card.booksAfter(edit.after), sync = sync)
+        } else {
+            card
+        }
     }
 
 private fun List<ContactCard>.deleted(

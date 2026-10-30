@@ -97,14 +97,13 @@ private fun LazyListScope.accountChoices(
         item { EmptyChoices(accounts.isEmpty() && names.isEmpty(), "No accounts connected.") }
     }
     items(matches, key = { it.accountId }) { account ->
-        // The account name defaults to its address; show the address only when it adds something.
-        val address = account.accountAddress
-        val subtitle = address.takeIf { it.isNotBlank() && !it.equals(account.account, ignoreCase = true) }
         SelectionRow(
             account.account,
             account.accountId in draft.accounts,
             { onChange(draft.copy(accounts = draft.accounts.toggled(account.accountId))) },
-            subtitle = subtitle,
+            // The account name defaults to its address; show the address only when it adds something.
+            subtitle =
+                account.accountAddress.takeIf { it.isNotBlank() && !it.equals(account.account, ignoreCase = true) },
             leading = { AccountAvatar(account) },
         )
     }

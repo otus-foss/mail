@@ -88,8 +88,7 @@ internal suspend fun JmapConnection.queryPages(
     sendAll(
         pages.map { page ->
             CallGroup(size = 1) {
-                val request = page.queryMethod(accountId)
-                val query = call(request)
+                val query = call(page.queryMethod(accountId))
                 return@CallGroup { response: JmapResponse -> response[query].toListing(page.limit) }
             }
         },

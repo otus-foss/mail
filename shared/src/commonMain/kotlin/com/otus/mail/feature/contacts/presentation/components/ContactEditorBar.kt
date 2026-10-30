@@ -78,17 +78,20 @@ internal fun editorBarContext(
 ): BarContext? {
     val name =
         draft.fullName.ifEmpty {
-            val first = draft.emails.firstOrNull()
-            first?.value.orEmpty()
+            draft.emails
+                .firstOrNull()
+                ?.value
+                .orEmpty()
         }
-    val book = books.firstOrNull { it.key == chosen } ?: return null
-    return BarContext(
-        "To ${book.name}",
-        BarToken.Person(nameAvatar(name.ifEmpty { "?" })),
-        "Save to ${book.name}. Change the address book",
-        choices =
-            books.filter { it.key != chosen }.map { other ->
-                MenuAction("Save to ${other.name}", other.icon) { onChoose(other.key) }
-            },
-    )
+    return books.firstOrNull { it.key == chosen }?.let { book ->
+        BarContext(
+            "To ${book.name}",
+            BarToken.Person(nameAvatar(name.ifEmpty { "?" })),
+            "Save to ${book.name}. Change the address book",
+            choices =
+                books
+                    .filter { it.key != chosen }
+                    .map { other -> MenuAction("Save to ${other.name}", other.icon) { onChoose(other.key) } },
+        )
+    }
 }

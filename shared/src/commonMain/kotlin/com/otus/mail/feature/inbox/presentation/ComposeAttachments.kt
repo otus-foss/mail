@@ -117,17 +117,19 @@ class ComposeAttachments(
     }
 
     /** The bytes of the file whose image the body shows at [source], while the app still has them. */
-    suspend fun bytes(source: String): ByteArray? {
-        val attachment = attachments().firstOrNull { it.source == source }
-        val file = attachment?.let { picked[it.id] } ?: return null
-        return drawLock.withLock {
-            try {
-                file.read()
-            } catch (expected: UploadException) {
-                null
+    suspend fun bytes(source: String): ByteArray? =
+        attachments()
+            .firstOrNull { it.source == source }
+            ?.let { picked[it.id] }
+            ?.let { file ->
+                drawLock.withLock {
+                    try {
+                        file.read()
+                    } catch (expected: UploadException) {
+                        null
+                    }
+                }
             }
-        }
-    }
 
     /**
      * Uploads every file again whenever the draft moves to another account, and removes an inline

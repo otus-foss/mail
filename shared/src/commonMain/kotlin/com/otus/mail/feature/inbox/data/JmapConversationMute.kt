@@ -32,28 +32,27 @@ class JmapConversationMute(
     override suspend fun isMuted(message: MailMessage): Boolean =
         fromServer(message) { account, ids ->
             val oldest = ids.take(account.session.coreLimit("maxObjectsInGet", GET_BATCH))
-            val emails = account.connection.call(GetMethod(EmailType, account.id, JmapIds.Of(oldest), PROPERTIES))
-            emails.list.any { it.keywords[MUTED_KEYWORD] == true }
+            account.connection
+                .call(GetMethod(EmailType, account.id, JmapIds.Of(oldest), PROPERTIES))
+                .list
+                .any { it.keywords[MUTED_KEYWORD] == true }
         } ?: cachedMuted(message)
 
     override suspend fun setMuted(
         message: MailMessage,
         muted: Boolean,
-    ): Boolean {
-        return cache.withAccount(message.location.accountId) { accountCache ->
+    ): Boolean =
+        cache.withAccount(message.location.accountId) { accountCache ->
             val ids = fromServer(message) { _, ids -> ids } ?: return@withAccount false
             val patch = membershipPatch("keywords", MUTED_KEYWORD, muted)
-            val updated =
-                updateAccountEmails(
-                    connections,
-                    logins,
-                    message.location.accountId,
-                    ids.associateWith { patch },
-                    accountCache,
-                )
-            updated.containsAll(ids)
+            updateAccountEmails(
+                connections,
+                logins,
+                message.location.accountId,
+                ids.associateWith { patch },
+                accountCache,
+            ).containsAll(ids)
         }
-    }
 
     /** [read] with the thread's Email ids; null when the server could not be read or knows none. */
     private suspend fun <T> fromServer(
@@ -62,20 +61,20 @@ class JmapConversationMute(
     ): T? {
         if (message.emailId.isEmpty()) return null
         return mailCallOr(null) {
-            val account = mailAccount(connections, logins, message.location.accountId) ?: return@mailCallOr null
-            val ids = account.threadEmailIds(message.emailId)
-            if (ids.isEmpty()) null else read(account, ids)
+            mailAccount(connections, logins, message.location.accountId)?.let { account ->
+                account.threadEmailIds(message.emailId).ifEmpty { null }?.let { read(account, it) }
+            }
         }
     }
 
     /** Offline, the list's copies of the row's emails answer. */
-    private suspend fun cachedMuted(message: MailMessage): Boolean {
-        val loginId = message.location.accountId
-        return listOf(CacheKind.Email, CacheKind.Member).any { kind ->
-            val emails = cache.objects(loginId, kind, EmailObject.serializer(), message.memberIds)
-            emails.values.any { it.keywords[MUTED_KEYWORD] == true }
+    private suspend fun cachedMuted(message: MailMessage): Boolean =
+        listOf(CacheKind.Email, CacheKind.Member).any { kind ->
+            cache
+                .objects(message.location.accountId, kind, EmailObject.serializer(), message.memberIds)
+                .values
+                .any { it.keywords[MUTED_KEYWORD] == true }
         }
-    }
 
     private companion object {
         val PROPERTIES = listOf("id", "receivedAt", "keywords")

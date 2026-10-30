@@ -48,8 +48,10 @@ class ReadDisplay(
     val zen: () -> Boolean = { false },
     val setZen: (Boolean) -> Unit = {},
     val today: () -> LocalDate = {
-        val now = Clock.System.now()
-        now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        Clock.System
+            .now()
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .date
     },
 )
 

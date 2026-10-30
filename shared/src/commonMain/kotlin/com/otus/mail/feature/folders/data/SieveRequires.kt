@@ -59,7 +59,5 @@ private fun String.afterStatement(end: Int): Int {
 /** The index after the line end at or after [at], or the text's length. */
 private fun String.lineEnd(at: Int): Int = indexOf('\n', at).let { if (it < 0) length else it + 1 }
 
-private fun String.afterComment(at: Int): Step {
-    val end = indexOf("*/", at + 2)
-    return Step(if (end < 0) length else end + 2, afterRequire = null)
-}
+private fun String.afterComment(at: Int): Step =
+    Step(indexOf("*/", at + 2).let { if (it < 0) length else it + 2 }, afterRequire = null)

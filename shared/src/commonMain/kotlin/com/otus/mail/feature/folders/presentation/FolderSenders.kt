@@ -50,15 +50,17 @@ class FolderSenders(
         val missing =
             accounts
                 .flatMap { account ->
-                    val senders = account.sendersByFolder().values
-                    senders.flatten().map { account.accountId to it }
+                    account
+                        .sendersByFolder()
+                        .values
+                        .flatten()
+                        .map { account.accountId to it }
                 }.distinctBy { (accountId, address) -> accountId to avatarEmailKey(address) }
                 .filter { (accountId, address) -> senderKey(options, accountId, address) !in resolved }
         coroutineScope {
             missing.forEach { (accountId, address) ->
                 launch {
-                    val request = AvatarRequest(accountId, address, nameOf(address).orEmpty())
-                    val avatar = service.resolve(request, options)
+                    val avatar = service.resolve(AvatarRequest(accountId, address, nameOf(address).orEmpty()), options)
                     resolved = resolved + (senderKey(options, accountId, address) to avatar)
                 }
             }

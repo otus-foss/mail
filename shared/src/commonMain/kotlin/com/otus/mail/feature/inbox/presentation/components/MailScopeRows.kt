@@ -113,10 +113,12 @@ internal class MailScopeRows(
     }
 
     /** The domain's addresses' counts added up; null when none of them has one. */
-    private fun domainCount(group: DomainGroup): String? {
-        val counts = group.addresses.mapNotNull { count(it)?.toLongOrNull() }
-        return if (counts.isEmpty()) null else counts.sum().toString()
-    }
+    private fun domainCount(group: DomainGroup): String? =
+        group.addresses
+            .mapNotNull { count(it)?.toLongOrNull() }
+            .takeIf { it.isNotEmpty() }
+            ?.sum()
+            ?.toString()
 }
 
 /** The key of the group that holds [chosen], so the sheet opens with it expanded. */

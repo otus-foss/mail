@@ -30,8 +30,11 @@ private fun String.quoteHtml(): String =
         .chunkedBy { it.startsWith(QUOTE_MARK) }
         .joinToString("", prefix = "<br>") { (quoted, lines) ->
             if (quoted) {
-                val text = lines.map { it.removePrefix(QUOTE_MARK).trimStart().escapeHtml() }
-                text.joinToString("<br>", "<blockquote>", "</blockquote>")
+                lines.joinToString(
+                    "<br>",
+                    "<blockquote>",
+                    "</blockquote>",
+                ) { it.removePrefix(QUOTE_MARK).trimStart().escapeHtml() }
             } else {
                 lines.joinToString("<br>", postfix = "<br>") { it.escapeHtml() }
             }

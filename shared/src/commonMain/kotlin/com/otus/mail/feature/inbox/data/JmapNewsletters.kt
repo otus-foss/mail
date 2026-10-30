@@ -73,12 +73,8 @@ class JmapNewsletters(
             val patches =
                 mailCallOr(null) { mailAccount(connections, logins, accountId)?.archivePatches(emailIds) }
                     ?: return@withAccount false
-            if (patches.isEmpty()) {
-                true
-            } else {
-                val updated = updateAccountEmails(connections, logins, accountId, patches, accountCache)
-                updated.containsAll(patches.keys)
-            }
+            patches.isEmpty() ||
+                updateAccountEmails(connections, logins, accountId, patches, accountCache).containsAll(patches.keys)
         }
     }
 

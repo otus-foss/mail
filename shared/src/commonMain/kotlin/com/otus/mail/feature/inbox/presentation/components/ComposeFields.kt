@@ -67,8 +67,11 @@ private fun RecipientRow(
             modifier = modifier,
             collapsedAfter = FOLDED_RECIPIENTS,
         )
-        val suggestions = recipients.suggestions
-        val suggested = suggestions.takeIf { it.field == field }?.people.orEmpty()
+        val suggested =
+            recipients.suggestions
+                .takeIf { it.field == field }
+                ?.people
+                .orEmpty()
         if (suggested.isNotEmpty()) {
             Dropdown(recipients::dismissSuggestions, focusable = false) {
                 suggested.forEach { person ->

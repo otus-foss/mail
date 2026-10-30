@@ -152,12 +152,16 @@ class JmapDraftSender(
 
     override suspend fun maxDelaySeconds(accountId: String): Long =
         mailCallOr(0L) {
-            val account =
-                mailAccount(connections, logins, accountId)
-                    ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) } ?: return@mailCallOr 0L
-            val capabilities = account.session.accounts[account.id]?.capabilityObjects
-            val submission = capabilities?.get(JmapCapability.SUBMISSION)
-            submission?.get("maxDelayedSend")?.jsonPrimitive?.longOrNull ?: 0L
+            mailAccount(connections, logins, accountId)
+                ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
+                ?.let { account ->
+                    account.session.accounts[account.id]
+                        ?.capabilityObjects
+                        ?.get(JmapCapability.SUBMISSION)
+                        ?.get("maxDelayedSend")
+                        ?.jsonPrimitive
+                        ?.longOrNull
+                } ?: 0L
         }
 
     override suspend fun cancel(message: SentMessage): Result<Unit> =

@@ -59,15 +59,13 @@ fun FolderRule.sheetDraft(index: Int): RuleSheetDraft? {
     return start?.copy(chosen = condition, editing = index)
 }
 
-private fun RuleCondition.Address.sheetDraft(): RuleSheetDraft? {
-    val kind = RuleKind.entries.firstOrNull { it.field == field } ?: return null
-    return RuleSheetDraft(kind, match.typed())
-}
+private fun RuleCondition.Address.sheetDraft(): RuleSheetDraft? =
+    RuleKind.entries
+        .firstOrNull { it.field == field }
+        ?.let { RuleSheetDraft(it, match.typed()) }
 
-private fun RuleCondition.Text.sheetDraft(): RuleSheetDraft? {
-    val contains = field == TextField.Subject && operator == TextOperator.Contains
-    return RuleSheetDraft(RuleKind.Subject, value).takeIf { contains }
-}
+private fun RuleCondition.Text.sheetDraft(): RuleSheetDraft? =
+    RuleSheetDraft(RuleKind.Subject, value).takeIf { field == TextField.Subject && operator == TextOperator.Contains }
 
 /** The search text that offers [this] match again. */
 private fun AddressMatch.typed(): String =

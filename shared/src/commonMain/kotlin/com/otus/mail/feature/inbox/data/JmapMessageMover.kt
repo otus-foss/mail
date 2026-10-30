@@ -56,11 +56,14 @@ class JmapMessageMover(
     override suspend fun setMailboxes(
         accountId: String,
         mailboxes: Map<String, Set<String>>,
-    ): Set<String> {
-        val patches =
+    ): Set<String> =
+        updateAccountEmails(
+            connections,
+            logins,
+            accountId,
             mailboxes.mapValues { (_, boxes) ->
                 buildJsonObject { put("mailboxIds", JsonObject(boxes.associateWith { JsonPrimitive(true) })) }
-            }
-        return updateAccountEmails(connections, logins, accountId, patches, cache)
-    }
+            },
+            cache,
+        )
 }
