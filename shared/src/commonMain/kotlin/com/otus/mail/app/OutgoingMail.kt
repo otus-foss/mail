@@ -6,51 +6,70 @@ import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.ScheduledSends
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.presentation.components.scheduledLabel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-/** A draft handed over for sending: [run] sends it, at a time or now, and [open] shows [reopen] for Undo. */
+/** A draft handed over for sending: [run] sends it at a [SendTime], and [open] shows [reopen] for Undo. */
 internal class Outgoing(
-    val run: suspend (at: Instant?) -> Result<SentMessage>,
+    val run: suspend (SendTime) -> Result<SentMessage>,
     val reopen: ComposeRequest.Resume,
     val open: (ComposeRequest) -> Unit,
 )
 
 /**
  * Sends drafts after the compose page has closed, with toasts that say how it went. A message
- * waits [holdMillis] on the device first, read when it is sent, with Undo, which opens it again;
- * a hold of 0 sends at once. A scheduled one goes to the server at once, and Undo cancels it there.
- * A failure stays as a toast with Retry.
+ * waits [holdMillis], read when it is sent, with Undo, which opens it again; a hold of 0 sends at
+ * once. Where the server can hold mail that long, the message goes to the server at once and the
+ * server holds it, so it still goes if the app closes; Undo cancels it there. Elsewhere the device
+ * holds it. A scheduled one goes to the server at once too. A failure stays as a toast with Retry.
  */
 internal class OutgoingMail(
     private val scope: CoroutineScope,
     private val toasts: ToastState,
     private val scheduled: ScheduledSends,
+    private val now: () -> Instant = { Clock.System.now() },
     private val holdMillis: () -> Long,
 ) {
     fun send(outgoing: Outgoing) {
         val group = Any()
         val hold = holdMillis()
-        val held =
+        if (hold == 0L) {
             scope.launch {
+                toasts.show(ToastMessage("Sending…", group = group))
+                deliver(outgoing, group)
+            }
+            return
+        }
+        val held = scope.async { holdOnServer(outgoing, hold, group) }
+        val onDevice =
+            scope.launch {
+                if (held.await() != null) return@launch
                 delay(hold)
                 toasts.show(ToastMessage("Sending…", group = group))
                 deliver(outgoing, group)
             }
-        if (hold == 0L) return
         val undo =
             ToastAction("Undo") {
-                held.cancel()
-                outgoing.open(outgoing.reopen)
+                onDevice.cancel()
+                scope.launch {
+                    val sent = held.await()?.getOrNull()
+                    if (sent == null) outgoing.open(outgoing.reopen) else unschedule(outgoing, sent)
+                }
             }
-        toasts.show(ToastMessage("Sending…", undo, group, durationMillis = hold))
+        val sentToast = { scope.launch { if (held.await()?.isSuccess == true) toasts.show(sent(group)) } }
+        toasts.show(ToastMessage("Sending…", undo, group, onClose = { sentToast() }, durationMillis = hold))
     }
 
     fun schedule(
@@ -58,7 +77,7 @@ internal class OutgoingMail(
         at: LocalDateTime,
     ) {
         scope.launch {
-            outgoing.run(at.toInstant(TimeZone.currentSystemDefault())).fold(
+            outgoing.run(SendTime.Scheduled(at.toInstant(TimeZone.currentSystemDefault()))).fold(
                 onSuccess = { sent ->
                     val undo = ToastAction("Undo") { scope.launch { unschedule(outgoing, sent) } }
                     toasts.show(ToastMessage(at.scheduledLabel(), undo))
@@ -71,20 +90,42 @@ internal class OutgoingMail(
         }
     }
 
+    /**
+     * Hands the message to the server to send once [hold] and a little spare time have passed, so
+     * the request's trip and the server's clock cannot cut the Undo window short. Null when the
+     * account cannot hold mail that long, so the device has to.
+     */
+    private suspend fun holdOnServer(
+        outgoing: Outgoing,
+        hold: Long,
+        group: Any,
+    ): Result<SentMessage>? {
+        val wait = hold.milliseconds + SERVER_SPARE
+        if (scheduled.maxDelaySeconds(outgoing.reopen.draft.accountId).seconds < wait) return null
+        return outgoing.run(SendTime.Held(now() + wait)).onFailure { failed(outgoing, group) }
+    }
+
     private suspend fun deliver(
         outgoing: Outgoing,
         group: Any,
     ) {
-        outgoing.run(null).fold(
-            onSuccess = { toasts.show(ToastMessage("Sent", group = group)) },
-            onFailure = {
-                val retry = ToastAction("Retry") { scope.launch { deliver(outgoing, group) } }
-                toasts.show(ToastMessage("Couldn't send", retry, group, sticky = true))
-            },
+        outgoing.run(SendTime.Now).fold(
+            onSuccess = { toasts.show(sent(group)) },
+            onFailure = { failed(outgoing, group) },
         )
     }
 
-    /** Cancels a scheduled message and opens its copy, a draft again, to edit. */
+    private fun sent(group: Any) = ToastMessage("Sent", group = group)
+
+    private fun failed(
+        outgoing: Outgoing,
+        group: Any,
+    ) {
+        val retry = ToastAction("Retry") { scope.launch { deliver(outgoing, group) } }
+        toasts.show(ToastMessage("Couldn't send", retry, group, sticky = true))
+    }
+
+    /** Cancels a held or scheduled message and opens its copy, a draft again, to edit. */
     private suspend fun unschedule(
         outgoing: Outgoing,
         sent: SentMessage,
@@ -106,3 +147,6 @@ internal class OutgoingMail(
         )
     }
 }
+
+/** Time for the request to reach the server and for its clock to differ from the device's. */
+private val SERVER_SPARE = 2.seconds

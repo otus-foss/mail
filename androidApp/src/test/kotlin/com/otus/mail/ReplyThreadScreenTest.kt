@@ -16,6 +16,7 @@ import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.ThreadMessage
 import com.otus.mail.feature.inbox.presentation.ComposeAccount
@@ -33,7 +34,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import kotlin.time.Instant
 
 /** A reply's thread above the bar in its two styles, its sheet with the quote choice, and long To lines. */
 @RunWith(RobolectricTestRunner::class)
@@ -100,7 +100,7 @@ class ReplyThreadScreenTest {
             override fun discarded(delete: () -> Unit) = Unit
 
             override fun send(
-                run: suspend (Instant?) -> Result<SentMessage>,
+                run: suspend (SendTime) -> Result<SentMessage>,
                 at: LocalDateTime?,
             ) = Unit
         }

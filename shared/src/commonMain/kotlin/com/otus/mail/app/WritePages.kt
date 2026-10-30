@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.SendIdentityKey
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
@@ -14,7 +15,6 @@ import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import com.otus.mail.feature.inbox.presentation.screens.SignatureEditorScreen
 import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
 import kotlinx.datetime.LocalDateTime
-import kotlin.time.Instant
 
 /**
  * A draft for the page's request; without an account there is nothing to write from. A discarded
@@ -40,7 +40,7 @@ internal fun ComposePage(
                 }
 
                 override fun send(
-                    run: suspend (Instant?) -> Result<SentMessage>,
+                    run: suspend (SendTime) -> Result<SentMessage>,
                     at: LocalDateTime?,
                 ) {
                     val outgoing = Outgoing(run, compose.reopening()) { navigation.go(page.copy(request = it)) }

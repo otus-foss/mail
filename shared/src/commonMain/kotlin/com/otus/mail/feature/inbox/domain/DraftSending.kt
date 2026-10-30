@@ -35,25 +35,44 @@ class SendException(
     cause: Throwable? = null,
 ) : Exception("The message could not be sent: $failure", cause)
 
-/** A message the server accepted: its stored copy [emailId] and its submission [submissionId]. */
+/**
+ * A message the server accepted: its stored copy [emailId] and its submission [submissionId]. A
+ * canceled send moves the copy back to [draftsId], the account's Drafts folder when it has one.
+ */
 data class SentMessage(
     val accountId: String,
     val emailId: String,
     val submissionId: String,
+    val draftsId: String? = null,
 )
+
+/** When the server sends a message, and where its copy waits until then. */
+sealed interface SendTime {
+    /** At once; the copy moves to Sent. */
+    data object Now : SendTime
+
+    /** At [at], so Undo can still cancel it until then; the copy moves to Sent at once. */
+    data class Held(
+        val at: Instant,
+    ) : SendTime
+
+    /** At [at], a time the user chose; the copy stays in Drafts, without `$draft`, until then. */
+    data class Scheduled(
+        val at: Instant,
+    ) : SendTime
+}
 
 /** Sends drafts from the identity their From line names. */
 fun interface DraftSender {
     /**
-     * Sends [draft], files the sent copy in Sent, deletes the draft's saved copy, and marks
-     * [answered] as answered or forwarded. With [at], the server holds the message until then and
-     * the copy stays in Drafts, no longer marked as a draft, until it goes. A failed result holds a
-     * [SendException] and leaves the saved copy in Drafts.
+     * Sends [draft] at [time], files its copy as [time] says, deletes the draft's saved copy, and
+     * marks [answered] as answered or forwarded. A failed result holds a [SendException] and leaves
+     * the saved copy in Drafts.
      */
     suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
-        at: Instant?,
+        time: SendTime,
     ): Result<SentMessage>
 }
 
@@ -62,7 +81,7 @@ interface ScheduledSends {
     /** How far ahead the account may schedule, in seconds; 0 when it cannot. */
     suspend fun maxDelaySeconds(accountId: String): Long
 
-    /** Cancels a scheduled [message] and makes its copy a draft again. */
+    /** Cancels a held or scheduled [message] and makes its copy a draft in Drafts again. */
     suspend fun cancel(message: SentMessage): Result<Unit>
 }
 
