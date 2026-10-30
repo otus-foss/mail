@@ -1,6 +1,5 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.avatar.AvatarDomainResolver
 import com.otus.jmap.JmapException
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
@@ -16,7 +15,6 @@ import com.otus.mail.core.mail.objects
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
-import io.ktor.http.Url
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonObject
 import kotlin.time.Instant
@@ -34,7 +32,7 @@ internal fun MailScope.listingQueries(
 
 /**
  * [login]'s lists of [scope] as the cache holds them, one page per mailbox, mapped like loaded
- * rows, with [sites] finding the domain DMARC results must come from. A mailbox without a saved
+ * rows, trusting DMARC results only from [serverSite] (see [ServerSites]). A mailbox without a saved
  * list for [query] shows the rows of its unfiltered list that pass [check], or nothing without
  * one. A row whose email has left the mailbox since, such as after a move, is left out. A row that
  * no longer reads leaves the login out.
@@ -45,11 +43,9 @@ internal suspend fun MailCache.cachedPages(
     query: MailQuery,
     conditions: List<JsonObject>,
     zone: TimeZone,
-    sites: AvatarDomainResolver,
+    serverSite: String,
     check: ((ListedRow) -> Boolean)? = null,
 ): List<ListingPage<ListedRow>> {
-    val host = runCatching { Url(login.sessionUrl).host }.getOrDefault("")
-    val site = sites.resolve(host) ?: host
     val mailboxes = mailboxes(login.id)
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
@@ -71,7 +67,7 @@ internal suspend fun MailCache.cachedPages(
         jmapDecoding {
             chosen.indices.mapNotNull { index ->
                 val mailbox = chosen[index]
-                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone, site)
+                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone, serverSite)
                 val listing = listings[queries[index].key]
                 when {
                     listing != null -> {
