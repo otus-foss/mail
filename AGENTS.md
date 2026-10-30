@@ -86,6 +86,12 @@ chain. Change immutable values with `copy`. Keep a loop or a local `var` when ea
 or cycle tracking would make a chain harder to follow. Do not add Java-style setters that return
 `this`, chain side effects through `let` or `also`, or change a public API only for style.
 
+Keep a call chain as one expression, with one call per line, instead of splitting it into temporary
+`val`s that are each read once. Use a builder or chainable API wherever the library offers one and
+it fits, such as `SharedPreferences.Editor`, Ktor request builders, and `buildJsonObject`. Name an
+intermediate value only when the code reads it more than once or the name says something the chain
+cannot.
+
 Keep colors and all visual tokens in Meta's `designsystem/theme` and refer to named tokens.
 Feature UI belongs with its feature; reusable rendering belongs in Meta. Create folders with real code rather than placeholder files. Keep
 handwritten Kotlin files at most 300 lines and Swift files at most 200 lines, including tests,
