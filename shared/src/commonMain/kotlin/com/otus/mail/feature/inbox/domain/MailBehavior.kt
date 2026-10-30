@@ -14,8 +14,8 @@ import com.otus.mail.core.avatar.IconSource
  * show the photo of a contact saved in another. [recentFrom] holds the
  * addresses the user last sent from, newest first, which compose offers first and a new message
  * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
- * forwards too; new messages always get it. [undoSendSeconds] holds each sent message on the device
- * that long so Undo can stop it; 0 sends at once. [filters] arranges the filter panel. [list] sets
+ * forwards too; new messages always get it. [undoSendSeconds] holds each sent message that long
+ * so Undo can stop it, on the server where it can; 0 sends at once. [filters] arranges the filter panel. [list] sets
  * how the mail list's rows read. [remoteImages] decides when a message loads images from other
  * servers, and [allowedSenders] are the lowercase addresses whose images always load.
  * [showQuotes] shows a reply's quoted text even when earlier messages of its conversation are a

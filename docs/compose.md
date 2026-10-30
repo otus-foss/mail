@@ -178,13 +178,20 @@ succeeds. The notice says why: no Drafts folder, no permission, or an unreachabl
 ### Sending
 
 Send closes the page at once and hands the draft to `OutgoingMail`. A "Sending…" toast with Undo
-holds it on the device for the **Undo send** delay in Appearance & behavior: 5, 10, 15, or 30
-seconds, 15 by default, with the toast's ring draining over that time. Undo opens the draft again
-as it was. With Undo send off, the message goes at once. Then the send
-waits for any save in progress, so it knows the draft's saved copy, and calls `JmapDraftSender`.
-The toast turns into "Sent", or into "Couldn't send" with Retry, which stays until it is handled.
-The hold is on the device, not the server's `HOLDFOR`, because `onSuccessUpdateEmail` files the
-copy in Sent as soon as the submission is created, and a cancelled one would leave it there. The sender makes three requests (RFC 8621, section 7.5):
+stays for the **Undo send** delay in Appearance & behavior: 5, 10, 15, or 30 seconds, 15 by
+default, with the toast's ring draining over that time. With Undo send off, the message goes at
+once. The send waits for any save in progress, so it knows the draft's saved copy, and calls
+`JmapDraftSender`. The toast turns into "Sent", or into "Couldn't send" with Retry, which stays
+until it is handled.
+
+The server holds the message for the Undo window wherever it can: when the account's
+`maxDelayedSend` covers the delay plus 2 seconds, the message goes to the server at once with a
+`HOLDUNTIL` envelope set to the end of the window plus those 2 seconds, so the request's trip and
+the server's clock cannot cut the window short. The message then goes even if the app closes
+during the window. Its copy files in Sent at once. Undo sets the submission's `undoStatus` to
+`canceled`, moves the copy back to Drafts as a draft, and opens it, as for a scheduled message.
+Where the server cannot hold mail that long, the device holds it instead, and Undo opens the
+draft again as it was. The sender makes three requests (RFC 8621, section 7.5):
 
 1. `Identity/get` and two `Mailbox/query` calls find the identity for the From address and the
    Drafts and Sent folders. An identity matches by exact address, or by a wildcard such as
@@ -233,9 +240,9 @@ send was canceled but the draft could not be restored.
 - Photos larger than 4096 px on a side show no preview, though they still send.
 - Picked files are read again for each upload while the app runs; a draft reopened after the app
   closed cannot upload its files to another account.
-- There is no outbox that survives the app closing: a message in its Undo window or waiting to
-  retry is lost with the process, though its saved copy stays in Drafts
-  ([Mail #26](https://github.com/reazndev/otus-mail/issues/26)).
+- There is no outbox that survives the app closing: a message waiting to retry, or in its Undo
+  window on a server that cannot hold mail, is lost with the process, though its saved copy stays
+  in Drafts ([Mail #16](https://github.com/reazndev/otus-mail/issues/16)).
 - Scheduled messages show only in Drafts. A Scheduled view with Send now and Cancel is not built;
   it waits for a decision.
 - Rotating the device or the system ending the app returns to the page that opened the draft.
@@ -273,5 +280,5 @@ a forward's quote. `ReplyThreadScreenTest` covers the thread rows, the folded th
 To line, and the quote choice in the sheet; `JmapThreadHistoryTest` the thread request and
 `ReplyQuoteTest` the quote modes. `SignatureTest`, `SignaturesStateTest`, and `SignatureScreensTest` cover the
 signature HTML and images, copying and failed saves, `SendLaterTest` the Send later times,
-`OutgoingMailTest` the Undo window and turning it off, `UndoSendSettingTest` the delay setting, Retry, and undoing a scheduled message, the list, the editor with its size list,
+`OutgoingMailTest` the Undo window on the server and on the device and turning it off, `UndoSendSettingTest` the delay setting, Retry, and undoing a scheduled message, the list, the editor with its size list,
 and the copy sheet. Their screenshots of each state are written to `androidApp/build/reports/compose/`.

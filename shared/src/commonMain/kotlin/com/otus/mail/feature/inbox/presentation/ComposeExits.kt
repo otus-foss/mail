@@ -1,8 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import kotlinx.datetime.LocalDateTime
-import kotlin.time.Instant
 
 /** Where the compose page goes when it closes, and what it hands over on the way. */
 interface ComposeExits {
@@ -14,7 +14,7 @@ interface ComposeExits {
 
     /** Leaves the page with the draft to send: now, after an Undo window, or [at] a local time. */
     fun send(
-        run: suspend (at: Instant?) -> Result<SentMessage>,
+        run: suspend (SendTime) -> Result<SentMessage>,
         at: LocalDateTime?,
     )
 }

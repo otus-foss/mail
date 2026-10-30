@@ -27,13 +27,13 @@ import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
-import kotlin.time.Instant
+import kotlinx.serialization.json.putJsonObject
 
 /**
  * Sends a draft with `EmailSubmission/set` (RFC 8621, section 7.5). One request stores the draft
@@ -48,12 +48,12 @@ class JmapDraftSender(
     override suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
-        at: Instant?,
+        time: SendTime,
     ): Result<SentMessage> =
         try {
             val account = mailAccount(connections, logins, draft.accountId) ?: failSend(SendFailure.ServerProblem)
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
-            val sent = account.submit(draft, account.route(from ?: failSend(SendFailure.NoIdentity)), at)
+            val sent = account.submit(draft, account.route(from ?: failSend(SendFailure.NoIdentity)), time)
             account.tidy(draft.emailId, answered)
             Result.success(sent)
         } catch (error: SendException) {
@@ -89,7 +89,7 @@ class JmapDraftSender(
     private suspend fun MailAccount.submit(
         draft: Draft,
         route: SendRoute,
-        at: Instant?,
+        time: SendTime,
     ): SentMessage {
         val folder = route.drafts ?: route.sent ?: failSend(SendFailure.ServerProblem)
         val email = draft.toEmail(folder, inlineImages(draft.htmlContent()))
@@ -98,7 +98,7 @@ class JmapDraftSender(
         val response =
             connection.send {
                 stored = call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
-                submitted = call(submission(route, folder, at?.let { draft.heldEnvelope(it) }))
+                submitted = call(submission(route, folder, draft, time))
             }
         val created = response[stored]
         val creationFailure = created.notCreated[EMAIL]
@@ -118,17 +118,20 @@ class JmapDraftSender(
             draft.accountId,
             copy,
             response[submitted].createdId(SUBMISSION) ?: failSend(SendFailure.ServerProblem),
+            route.drafts,
         )
     }
 
     /**
-     * The submission of the stored copy. A held one carries its [envelope] and stays in [folder],
-     * only losing `$draft`, since the server sends it later; any other moves to Sent at once.
+     * The submission of the stored copy in [folder]. A held or scheduled one carries an envelope
+     * with its time. A scheduled copy stays in [folder], only losing `$draft`, since the server
+     * sends it much later; any other moves to Sent at once.
      */
     private fun MailAccount.submission(
         route: SendRoute,
         folder: String,
-        envelope: JsonObject?,
+        draft: Draft,
+        time: SendTime,
     ) = SetMethod(
         EmailSubmissionType,
         id,
@@ -138,14 +141,21 @@ class JmapDraftSender(
                     buildJsonObject {
                         put("emailId", "#$EMAIL")
                         put("identityId", route.identityId)
-                        if (envelope != null) put("envelope", envelope)
+                        when (time) {
+                            SendTime.Now -> Unit
+                            is SendTime.Held -> put("envelope", draft.heldEnvelope(time.at))
+                            is SendTime.Scheduled -> put("envelope", draft.heldEnvelope(time.at))
+                        }
                     },
             ),
         extra =
             mapOf(
                 "onSuccessUpdateEmail" to
                     buildJsonObject {
-                        put("#$SUBMISSION", if (envelope == null) route.sentPatch(folder) else route.heldPatch())
+                        put(
+                            "#$SUBMISSION",
+                            if (time is SendTime.Scheduled) route.heldPatch() else route.sentPatch(folder),
+                        )
                     },
             ),
     )
@@ -178,7 +188,7 @@ class JmapDraftSender(
             val failure = undone.notUpdated[message.submissionId]
             if (failure != null) failSend(failure.toSendFailure())
             if (message.submissionId !in undone.updated) failSend(SendFailure.ServerProblem)
-            account.restoreCanceledDraft(message.emailId)
+            account.restoreCanceledDraft(message)
             Result.success(Unit)
         } catch (error: DraftRestoreException) {
             Result.failure(error)
@@ -190,16 +200,16 @@ class JmapDraftSender(
             Result.failure(SendException(SendFailure.ServerProblem, error))
         }
 
-    private suspend fun MailAccount.restoreCanceledDraft(emailId: String) {
+    /** Marks the copy of a canceled [message] as a draft again, back in Drafts if it moved to Sent. */
+    private suspend fun MailAccount.restoreCanceledDraft(message: SentMessage) {
+        val emailId = message.emailId
+        val patch =
+            buildJsonObject {
+                put("keywords/$DRAFT_KEYWORD", true)
+                if (message.draftsId != null) putJsonObject("mailboxIds") { put(message.draftsId, true) }
+            }
         try {
-            val restored =
-                connection.call(
-                    SetMethod(
-                        EmailType,
-                        id,
-                        update = mapOf(emailId to membershipPatch("keywords", DRAFT_KEYWORD, member = true)),
-                    ),
-                )
+            val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch)))
             if (emailId !in restored.updated || emailId in restored.notUpdated) throw DraftRestoreException()
         } catch (error: JmapException) {
             throw DraftRestoreException(error)

@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -126,10 +127,10 @@ class ComposeMigrationTest {
             advanceTimeBy(DELAY + 1)
             state.chooseFrom(home)
             val send = assertNotNull(state.handOff())
-            assertTrue(send(null).isFailure)
+            assertTrue(send(SendTime.Now).isFailure)
             assertEquals(setOf("a" to "1"), drafts.copies.keys)
             accepted = true
-            assertTrue(send(null).isSuccess)
+            assertTrue(send(SendTime.Now).isSuccess)
             assertTrue(drafts.copies.isEmpty())
             assertEquals(listOf("a" to "1"), drafts.removed)
         }

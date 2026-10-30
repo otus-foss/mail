@@ -12,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.answered
@@ -31,7 +32,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDateTime
-import kotlin.time.Instant
 
 /**
  * The draft [request] starts in the [origin] account, as the user edits it. Each change saves to the
@@ -203,21 +203,21 @@ class ComposeState(
 
     /**
      * Stops saving and hands the draft over for sending: the returned send waits for any save in
-     * progress, so it knows the saved copy, and sends at `at`, or now when that is null. Null when
+     * progress, so it knows the saved copy, and sends at the [SendTime] it gets. Null when
      * the draft has no From address or no recipient. Typed addresses become recipients first.
      */
-    fun handOff(): (suspend (at: Instant?) -> Result<SentMessage>)? {
+    fun handOff(): (suspend (SendTime) -> Result<SentMessage>)? {
         recipients.commitAll()
         if (!canSend) return null
         finished = true
         pending?.cancel()
         val outgoing = draft.copy(signature = signature)
         val answered = request.answered(outgoing.accountId)
-        return { at ->
+        return { time ->
             saving
                 .withLock {
                     val savedId = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId
-                    sender.send(outgoing.copy(emailId = savedId), answered, at).onSuccess {
+                    sender.send(outgoing.copy(emailId = savedId), answered, time).onSuccess {
                         stored?.takeIf { it.accountId != outgoing.accountId }?.discardCopy(drafts)
                     }
                 }.onSuccess {

@@ -23,6 +23,7 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.PickedFile
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.UploadException
 import com.otus.mail.feature.inbox.domain.UploadFailure
@@ -39,7 +40,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import kotlin.time.Instant
 
 /**
  * The Write page with files attached: a photo shown in the message, a file uploaded, and one too
@@ -202,7 +202,7 @@ class ComposeAttachmentScreenTest {
         override fun discarded(delete: () -> Unit) = Unit
 
         override fun send(
-            run: suspend (Instant?) -> Result<SentMessage>,
+            run: suspend (SendTime) -> Result<SentMessage>,
             at: LocalDateTime?,
         ) = Unit
     }

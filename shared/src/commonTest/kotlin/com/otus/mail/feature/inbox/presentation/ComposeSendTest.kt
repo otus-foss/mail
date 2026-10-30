@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
+import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,7 +23,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ComposeSendTest {
@@ -34,7 +34,7 @@ class ComposeSendTest {
         override suspend fun send(
             draft: Draft,
             answered: AnsweredMessage?,
-            at: Instant?,
+            time: SendTime,
         ): Result<SentMessage> {
             failure?.let { return Result.failure(SendException(it)) }
             sent += draft to answered
@@ -80,7 +80,7 @@ class ComposeSendTest {
             val state = state(sender = sender, onSent = { sentFrom = it })
             state.recipients.type(RecipientField.To, "ada@example.com")
             val send = assertNotNull(state.handOff())
-            send(null)
+            send(SendTime.Now)
             assertEquals(
                 listOf(MailSender("", "ada@example.com")),
                 sender.sent
@@ -97,7 +97,7 @@ class ComposeSendTest {
             val reply = ComposeRequest.Reply(original(), all = false)
             val state = state(sender = sender, request = reply)
             state.edit { it.copy(body = "Thanks!") }
-            assertEquals(SentMessage("a1", "e1", "s1"), assertNotNull(state.handOff())(null).getOrThrow())
+            assertEquals(SentMessage("a1", "e1", "s1"), assertNotNull(state.handOff())(SendTime.Now).getOrThrow())
 
             val (draft, answered) = sender.sent.single()
             assertEquals("Thanks!", draft.body)
@@ -117,7 +117,7 @@ class ComposeSendTest {
             assertEquals(1, drafts.saved.size, "A save is under way")
 
             val send = assertNotNull(state.handOff())
-            backgroundScope.launch { send(null) }
+            backgroundScope.launch { send(SendTime.Now) }
             runCurrent()
             assertTrue(sender.sent.isEmpty(), "Sending waits for the save to learn its copy's id")
             answer.complete(Unit)
@@ -143,9 +143,9 @@ class ComposeSendTest {
             assertNull(state.handOff(), "No recipient yet")
             state.recipients.type(RecipientField.To, "ada@example.com,")
             val send = assertNotNull(state.handOff())
-            assertTrue(send(null).isFailure)
+            assertTrue(send(SendTime.Now).isFailure)
             sender.failure = null
-            assertTrue(send(null).isSuccess)
+            assertTrue(send(SendTime.Now).isSuccess)
             assertEquals(1, sender.sent.size)
         }
 
