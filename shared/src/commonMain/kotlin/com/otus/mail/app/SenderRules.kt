@@ -71,7 +71,7 @@ internal fun SenderRuleSheets(states: MailStates) {
             account.ruleFolders(),
             selected = null,
             label = { it?.path.orEmpty() },
-            onSelect = { node -> node?.let { senderRules.choose(it.folder.id) } },
+            onSelect = { node -> if (node != null) senderRules.choose(node.folder.id) },
             onDismiss = { senderRules.dismiss(picking = true) },
         )
     } else {

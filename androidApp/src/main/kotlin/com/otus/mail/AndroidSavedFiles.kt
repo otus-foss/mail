@@ -79,12 +79,12 @@ class AndroidSavedFiles(
         bytes: ByteArray,
     ): Boolean {
         val uri = sharedCopy(name, bytes) ?: return false
-        val view =
-            Intent(Intent.ACTION_VIEW)
-                .setDataAndType(uri, type)
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         return try {
-            context.startActivity(view)
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, type)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
             true
         } catch (expected: ActivityNotFoundException) {
             false

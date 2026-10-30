@@ -44,7 +44,7 @@ internal fun ImportSheet(
     ClosableSheet(
         "Import contacts",
         onDismiss,
-        SheetConfirm("Import $count", { plan?.let { onImport(it, mode) } }, enabled = count > 0),
+        SheetConfirm("Import $count", { if (plan != null) onImport(plan, mode) }, enabled = count > 0),
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -54,7 +54,8 @@ internal fun ImportSheet(
             Text("${file.name} · $cards", Inset, color = OtusColors.text2)
             ChoiceHeading("Import into")
             BookChoices(books, book?.key) { book = it }
-            book?.let { chosen -> plan?.let { MatchedPeople(it, chosen, mode) { picked -> mode = picked } } }
+            val chosen = book
+            if (chosen != null && plan != null) MatchedPeople(plan, chosen, mode) { mode = it }
             Failures(file.failures)
             Preview(file.cards, plan, mode)
         }

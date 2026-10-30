@@ -51,35 +51,57 @@ internal fun FilterSections(
     ) {
         options.layout.sections.forEach { section ->
             when (section) {
-                FilterSection.Status -> {
-                    SegmentSection("Status", ReadStatus.entries, draft.status, { it.label }) { status ->
-                        onEdit { it.copy(status = status) }
-                    }
-                }
-
-                FilterSection.Quick -> {
-                    QuickSection(draft, options, onEdit)
-                }
-
-                FilterSection.People -> {
-                    val card = Modifier.onGloballyPositioned { area.card = it }
-                    PeopleSection(draft, options, people, onEdit, card)
-                }
-
-                FilterSection.Rows -> {
-                    PopupRows(draft, options, dateFormatter, onEdit)
-                    SegmentSection("Size", SizeFilter.entries, draft.size, { it.label }) { size ->
-                        onEdit { it.copy(size = size) }
-                    }
-                }
-
-                FilterSection.Sort -> {
-                    SegmentSection("Sort", FilterSort.entries, draft.sort, { it.label }) { sort ->
-                        onEdit { it.copy(sort = sort) }
-                    }
-                }
+                FilterSection.Status -> StatusSection(draft, onEdit)
+                FilterSection.Quick -> QuickSection(draft, options, onEdit)
+                FilterSection.People -> PeopleCard(draft, options, people, onEdit, area)
+                FilterSection.Rows -> MetadataRows(draft, options, dateFormatter, onEdit)
+                FilterSection.Sort -> SortSection(draft, onEdit)
             }
         }
+    }
+}
+
+@Composable
+private fun StatusSection(
+    draft: InboxFilters,
+    onEdit: FilterEdit,
+) {
+    SegmentSection("Status", ReadStatus.entries, draft.status, { it.label }) { status ->
+        onEdit { it.copy(status = status) }
+    }
+}
+
+@Composable
+private fun PeopleCard(
+    draft: InboxFilters,
+    options: FilterOptions,
+    people: PeopleSearches,
+    onEdit: FilterEdit,
+    area: PeopleCardArea,
+) {
+    PeopleSection(draft, options, people, onEdit, Modifier.onGloballyPositioned { area.card = it })
+}
+
+@Composable
+private fun MetadataRows(
+    draft: InboxFilters,
+    options: FilterOptions,
+    dateFormatter: DateFormatter,
+    onEdit: FilterEdit,
+) {
+    PopupRows(draft, options, dateFormatter, onEdit)
+    SegmentSection("Size", SizeFilter.entries, draft.size, { it.label }) { size ->
+        onEdit { it.copy(size = size) }
+    }
+}
+
+@Composable
+private fun SortSection(
+    draft: InboxFilters,
+    onEdit: FilterEdit,
+) {
+    SegmentSection("Sort", FilterSort.entries, draft.sort, { it.label }) { sort ->
+        onEdit { it.copy(sort = sort) }
     }
 }
 
@@ -110,20 +132,27 @@ private fun QuickSection(
 ) {
     // Each group keeps the user's order; a group whose chips are all hidden leaves no caption.
     // The mail types close the Mail group.
-    QuickGroup.entries.forEach { group ->
-        val facets = options.quick.filter { it.group == group }
-        val types = if (group == QuickGroup.Mail) TypeFacet.entries else emptyList()
-        if (facets.isNotEmpty() || types.isNotEmpty()) {
-            FilterSection(group.label) {
-                facets.forEach { facet ->
-                    val on = draft.has(facet)
-                    QuickChip(facet.label, facet.icon, on) { onEdit { it.with(facet, !on) } }
-                }
-                types.forEach { facet ->
-                    val on = draft.has(facet)
-                    QuickChip(facet.label, facet.icon, on) { onEdit { it.with(facet, !on) } }
-                }
-            }
+    QuickGroup.entries.forEach { group -> QuickFilterGroup(group, draft, options, onEdit) }
+}
+
+@Composable
+private fun QuickFilterGroup(
+    group: QuickGroup,
+    draft: InboxFilters,
+    options: FilterOptions,
+    onEdit: FilterEdit,
+) {
+    val facets = options.quick.filter { it.group == group }
+    val types = if (group == QuickGroup.Mail) TypeFacet.entries else emptyList()
+    if (facets.isEmpty() && types.isEmpty()) return
+    FilterSection(group.label) {
+        facets.forEach { facet ->
+            val on = draft.has(facet)
+            QuickChip(facet.label, facet.icon, on) { onEdit { it.with(facet, !on) } }
+        }
+        types.forEach { facet ->
+            val on = draft.has(facet)
+            QuickChip(facet.label, facet.icon, on) { onEdit { it.with(facet, !on) } }
         }
     }
 }

@@ -25,9 +25,8 @@ internal suspend fun MailCache.patchEmails(
     write(loginId) {
         held.forEach { (kind, objects) ->
             objects.forEach { (id, json) ->
-                patched(json, patches.getValue(id))?.let { email ->
-                    put(kind, id, email.toString(), email.receivedMillis)
-                }
+                val email = patched(json, patches.getValue(id))
+                if (email != null) put(kind, id, email.toString(), email.receivedMillis)
             }
         }
     }

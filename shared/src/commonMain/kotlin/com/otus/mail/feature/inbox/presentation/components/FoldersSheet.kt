@@ -117,7 +117,9 @@ private fun SystemFolderPills(
                 selected = folder.id in checked,
             )
         }
-        onNewFolder?.let { IconPill(NEW_FOLDER, Res.drawable.symbol_add, false, it, size = MoveTokens.pillHeight) }
+        if (onNewFolder != null) {
+            IconPill(NEW_FOLDER, Res.drawable.symbol_add, selected = false, onNewFolder, size = MoveTokens.pillHeight)
+        }
     }
 }
 

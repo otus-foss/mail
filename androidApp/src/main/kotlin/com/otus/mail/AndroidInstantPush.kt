@@ -61,7 +61,7 @@ class AndroidInstantPush(
                 val distributor = UnifiedPush.getSavedDistributor(app)
                 UnifiedPush.unregister(app, loginId)
                 // Keep the user's choice for the next account, including after removing the last.
-                distributor?.let { UnifiedPush.saveDistributor(app, it) }
+                if (distributor != null) UnifiedPush.saveDistributor(app, distributor)
                 registration.forget(loginId)
                 app.push.forget(loginId)
             }

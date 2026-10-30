@@ -33,20 +33,14 @@ class GoogleNotificationsScreenTest {
     @Test
     fun unsupportedServerExplainsTheFallback() {
         show(ThemeBase.Light, PushDeliveryStatus.VapidRequired)
-        compose
-            .onNodeWithText(
-                "The server doesn't support Google delivery.",
-            ).assertIsDisplayed()
+        compose.onNodeWithText("The server doesn't support Google delivery.").assertIsDisplayed()
         capture("google-unsupported")
     }
 
     @Test
     fun failedRegistrationExplainsTheRetry() {
         show(ThemeBase.Black, PushDeliveryStatus.RegistrationFailed)
-        compose
-            .onNodeWithText(
-                "Push registration failed.",
-            ).assertIsDisplayed()
+        compose.onNodeWithText("Push registration failed.").assertIsDisplayed()
         capture("google-failed")
     }
 

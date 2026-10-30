@@ -45,24 +45,17 @@ private fun splitRecipients(text: String): List<String> {
     var start = 0
     var quoted = false
     var bracketed = false
+
+    fun finishPart(index: Int) {
+        parts += text.substring(start, index)
+        start = index + 1
+    }
     text.forEachIndexed { index, char ->
         when {
-            char == '"' -> {
-                quoted = !quoted
-            }
-
-            char == '<' && !quoted -> {
-                bracketed = true
-            }
-
-            char == '>' && !quoted -> {
-                bracketed = false
-            }
-
-            char in SEPARATORS && !quoted && !bracketed -> {
-                parts += text.substring(start, index)
-                start = index + 1
-            }
+            char == '"' -> quoted = !quoted
+            char == '<' && !quoted -> bracketed = true
+            char == '>' && !quoted -> bracketed = false
+            char in SEPARATORS && !quoted && !bracketed -> finishPart(index)
         }
     }
     parts += text.substring(start)

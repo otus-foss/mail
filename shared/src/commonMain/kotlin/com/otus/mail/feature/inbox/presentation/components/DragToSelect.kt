@@ -82,7 +82,12 @@ private class RowDrag(
         val index = listState.rowAt(y, clamp = true) ?: return
         // The row's long press toggles the anchor, so read the selection once the finger leaves it.
         if (selection == null && index == anchor) return
-        onSelect((selection ?: start().also { selection = it }).through(index))
+        var active = selection
+        if (active == null) {
+            active = start()
+            selection = active
+        }
+        onSelect(active.through(index))
     }
 }
 

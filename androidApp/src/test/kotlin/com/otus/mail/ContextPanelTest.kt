@@ -136,6 +136,9 @@ class ContextPanelTest {
         saveScreenshot("search-large-text")
     }
 
-    private fun saveScreenshot(name: String): Bitmap =
-        compose.windowBitmap().also { it.savePng("build/reports/context-panel/$name.png") }
+    private fun saveScreenshot(name: String): Bitmap {
+        val bitmap = compose.windowBitmap()
+        bitmap.savePng("build/reports/context-panel/$name.png")
+        return bitmap
+    }
 }

@@ -124,8 +124,7 @@ class SwipeActionsTest {
         compose.waitForText("Welcome")
         compose.waitForCall(server, "Mailbox/get")
         compose.waitForIdle()
-        compose.onNodeWithText("Welcome").performTouchInput { swipeLeft() }
-        compose.onNodeWithText("Welcome").performTouchInput { swipeRight() }
+        compose.onNodeWithText("Welcome").performTouchInput { swipeLeft() }.performTouchInput { swipeRight() }
         compose.waitForIdle()
         assertTrue(compose.onAllNodes(offers("Archive")).fetchSemanticsNodes().isEmpty())
         assertTrue(updates().isEmpty())

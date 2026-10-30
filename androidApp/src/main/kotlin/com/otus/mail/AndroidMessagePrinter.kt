@@ -54,9 +54,11 @@ class AndroidMessagePrinter : MessagePrinter {
                 ) {
                     if (loading !== page) return
                     loading = null
-                    val printing = host.getSystemService(Context.PRINT_SERVICE) as PrintManager
-                    val adapter = DestroyingAdapter(page.createPrintDocumentAdapter(title), page)
-                    printing.print(title, adapter, PrintAttributes.Builder().build())
+                    (host.getSystemService(Context.PRINT_SERVICE) as PrintManager).print(
+                        title,
+                        DestroyingAdapter(page.createPrintDocumentAdapter(title), page),
+                        PrintAttributes.Builder().build(),
+                    )
                 }
             }
         view.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)

@@ -23,15 +23,12 @@ internal fun ContextPanelScope.InboxPanelChips(
     val shown = context.folderPill
     transition(searching) { mode ->
         if (mode) {
-            shown?.let { item(it.pill) { FolderPillChip(it, selected = true, actions.onFolder) } }
-            InboxFilter.entries
-                .forEach { filter ->
-                    item(filter) {
-                        SearchFilterChip(filter, search, context, dateFormatter, selection) {
-                            actions.onFilter(filter)
-                        }
-                    }
+            if (shown != null) item(shown.pill) { FolderPillChip(shown, selected = true, actions.onFolder) }
+            InboxFilter.entries.forEach { filter ->
+                item(filter) {
+                    SearchFilterChip(filter, search, context, dateFormatter, selection) { actions.onFilter(filter) }
                 }
+            }
         } else {
             InboxRowPills(context.pills, look.filters, shown?.pill, actions.onFolder, look.unreadCount)
         }

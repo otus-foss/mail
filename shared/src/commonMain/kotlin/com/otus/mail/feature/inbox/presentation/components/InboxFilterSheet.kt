@@ -27,6 +27,7 @@ fun InboxFilterSheet(
 ) {
     var draft by rememberSaveable(filter, stateSaver = InboxSearchSaver) { mutableStateOf(search) }
     var query by rememberSaveable(filter) { mutableStateOf("") }
+    val updateDraft = { changed: InboxSearch -> draft = changed }
     val searchable = filter in listOf(InboxFilter.People, InboxFilter.Accounts)
     SelectionSheet(
         title = if (filter == InboxFilter.People) "From" else filter.title,
@@ -45,32 +46,40 @@ fun InboxFilterSheet(
             },
     ) {
         when (filter) {
-            InboxFilter.Date -> {
-                DateRangePicker(draft.dateStart, draft.dateEnd, dateFormatter) { start, end ->
-                    draft = draft.copy(dateStart = start, dateEnd = end)
-                }
-            }
-
-            InboxFilter.People, InboxFilter.Accounts -> {
-                SheetCaption("${draft.selectionCount(filter)} selected", heading = false)
-                InboxPickerChoices(
-                    filter,
-                    messages,
-                    context.mailboxSearch,
-                    context.allowsMailboxSelection,
-                    query,
-                    draft,
-                ) { draft = it }
-            }
+            InboxFilter.Date -> SearchDates(draft, dateFormatter, updateDraft)
+            InboxFilter.People, InboxFilter.Accounts -> context.Choices(filter, messages, query, draft, updateDraft)
         }
     }
 }
 
+@Composable
+private fun SearchDates(
+    draft: InboxSearch,
+    dateFormatter: DateFormatter,
+    onChange: (InboxSearch) -> Unit,
+) {
+    DateRangePicker(draft.dateStart, draft.dateEnd, dateFormatter) { start, end ->
+        onChange(draft.copy(dateStart = start, dateEnd = end))
+    }
+}
+
+@Composable
+private fun InboxContext.Choices(
+    filter: InboxFilter,
+    messages: List<MailMessage>,
+    query: String,
+    draft: InboxSearch,
+    onChange: (InboxSearch) -> Unit,
+) {
+    SheetCaption("${draft.selectionCount(filter)} selected", heading = false)
+    InboxPickerChoices(filter, messages, mailboxSearch, allowsMailboxSelection, query, draft, onChange)
+}
+
 /** No date range, or one with both ends no later than [today]. */
 private fun InboxSearch.hasCompleteDates(today: String): Boolean {
-    val first = dateStart
+    val first = dateStart ?: return true
     val last = dateEnd
-    return first == null || (last != null && first <= today && last <= today)
+    return last != null && first <= today && last <= today
 }
 
 /** Unchecks everything in [filter]; nothing checked means all of it. */

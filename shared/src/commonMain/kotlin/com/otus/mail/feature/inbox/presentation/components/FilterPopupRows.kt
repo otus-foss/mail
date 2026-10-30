@@ -39,7 +39,6 @@ internal fun PopupRows(
     dateFormatter: DateFormatter,
     onEdit: FilterEdit,
 ) {
-    val date = FilterRowValue(dateValue(draft.date, dateFormatter), draft.date != DateFilter.Any)
     val rows =
         buildList<@Composable () -> Unit> {
             if (options.offersAccount) {
@@ -50,21 +49,36 @@ internal fun PopupRows(
                 }
             }
             if (options.folders) {
-                add {
-                    var open by remember { mutableStateOf(false) }
-                    ValueRow(Res.drawable.symbol_folder, "Folders", foldersValue(draft, options)) { open = true }
-                    if (open) FolderPickerSheet(draft, options, onEdit) { open = false }
-                }
+                add { FolderPopup(draft, options, onEdit) }
             }
-            add {
-                var custom by remember { mutableStateOf(false) }
-                PopupRow(Res.drawable.symbol_calendar_today, "Date", date) { close ->
-                    DateChoices(draft.date, onEdit, close) { custom = true }
-                }
-                if (custom) DateRangeSheet(draft.date, dateFormatter, onEdit) { custom = false }
-            }
+            add { DatePopup(draft, dateFormatter, onEdit) }
         }
     FilterRowCard(rows)
+}
+
+@Composable
+private fun FolderPopup(
+    draft: InboxFilters,
+    options: FilterOptions,
+    onEdit: FilterEdit,
+) {
+    var open by remember { mutableStateOf(false) }
+    ValueRow(Res.drawable.symbol_folder, "Folders", foldersValue(draft, options)) { open = true }
+    if (open) FolderPickerSheet(draft, options, onEdit) { open = false }
+}
+
+@Composable
+private fun DatePopup(
+    draft: InboxFilters,
+    dateFormatter: DateFormatter,
+    onEdit: FilterEdit,
+) {
+    val date = FilterRowValue(dateValue(draft.date, dateFormatter), draft.date != DateFilter.Any)
+    var custom by remember { mutableStateOf(false) }
+    PopupRow(Res.drawable.symbol_calendar_today, "Date", date) { close ->
+        DateChoices(draft.date, onEdit, close) { custom = true }
+    }
+    if (custom) DateRangeSheet(draft.date, dateFormatter, onEdit) { custom = false }
 }
 
 /** A row whose tap opens a list under it; [choices] get a way to close it. */

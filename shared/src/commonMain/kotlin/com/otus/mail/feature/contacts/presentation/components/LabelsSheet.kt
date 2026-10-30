@@ -60,23 +60,22 @@ internal fun LabelsSheet(
             }
         }
     }
-    deleting?.let { name ->
-        val uses = labels.uses(name)
-        ConfirmDialog(
-            title = "Delete “$name”?",
-            message =
-                if (uses == 0) {
-                    "No saved card uses it."
-                } else {
-                    val cards = if (uses == 1) "1 card" else "$uses cards"
-                    "It’s removed from $cards. Those addresses and numbers keep no label."
-                },
-            confirmLabel = "Delete",
-            onConfirm = {
-                labels.delete(name)
-                deleting = null
+    val name = deleting ?: return
+    val uses = labels.uses(name)
+    ConfirmDialog(
+        title = "Delete “$name”?",
+        message =
+            if (uses == 0) {
+                "No saved card uses it."
+            } else {
+                val cards = if (uses == 1) "1 card" else "$uses cards"
+                "It’s removed from $cards. Those addresses and numbers keep no label."
             },
-            onDismiss = { deleting = null },
-        )
-    }
+        confirmLabel = "Delete",
+        onConfirm = {
+            labels.delete(name)
+            deleting = null
+        },
+        onDismiss = { deleting = null },
+    )
 }

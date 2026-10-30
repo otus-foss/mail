@@ -142,11 +142,10 @@ internal class ReadPageLook(
     /** The full record under the sender pill: every folder [page] is in, the one shown included. */
     @Composable
     fun Details(page: MailMessage) {
-        val shown = orderedFolders(page.location.mailboxIds, folders)
         ReadSenderDetails(
             page,
             page.received.fullLabel(),
-            shown,
+            orderedFolders(page.location.mailboxIds, folders),
             onFolders = { state.sheet = ReadSheet.Folders },
             onPerson = read.services.person?.let { { person -> state.sheet = ReadSheet.Person(person) } },
         )

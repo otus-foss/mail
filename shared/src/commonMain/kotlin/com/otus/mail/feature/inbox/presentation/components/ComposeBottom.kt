@@ -46,15 +46,19 @@ internal fun ComposeBottom(
     val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
     val at = state.sendAt?.sendLaterLabel(now)
     var showingThread by remember { mutableStateOf(false) }
+    val scheduled = state.sendAt
+    val thread = state.thread
     Column(verticalArrangement = Arrangement.spacedBy(ActionBarTokens.gap)) {
-        state.sendAt?.let { BarNotice(Res.drawable.symbol_schedule, it.scheduledLabel(), "Change", onChangeSchedule) }
-        state.thread?.takeIf { !keyboardUp }?.let { ReplyThreadStrip(it) { showingThread = true } }
+        if (scheduled != null) {
+            BarNotice(Res.drawable.symbol_schedule, scheduled.scheduledLabel(), "Change", onChangeSchedule)
+        }
+        if (thread != null && !keyboardUp) ReplyThreadStrip(thread) { showingThread = true }
         Bottom(state, behavior, keyboardUp, onSend, onDiscard, at) { linking = true }
     }
     if (linking) LinkDialog(state.body::addLink) { linking = false }
-    if (showingThread) state.thread?.let { ThreadSheet(it) { showingThread = false } }
-    state.attachments.cleaning.question
-        ?.let { PhotoCleaningSheet(it, state.attachments.cleaning::answer) }
+    if (showingThread && thread != null) ThreadSheet(thread) { showingThread = false }
+    val question = state.attachments.cleaning.question
+    if (question != null) PhotoCleaningSheet(question, state.attachments.cleaning::answer)
 }
 
 /** The action bar, the formatting row while the keyboard is up, or the image bar; each morphs into the next. */
@@ -76,26 +80,29 @@ private fun Bottom(
         }
     BarMorph(shown) { bar ->
         when (bar) {
-            BottomBar.Image -> {
-                ComposeImageBar(state)
-            }
-
-            BottomBar.Formatting -> {
-                FormattingRow(state, onSend, at, onLink)
-            }
-
-            BottomBar.Actions -> {
-                ComposeBar(
-                    behavior,
-                    state.draft,
-                    onSend = onSend,
-                    onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
-                    onDiscard = onDiscard,
-                    scheduled = at != null,
-                )
-            }
+            BottomBar.Image -> ComposeImageBar(state)
+            BottomBar.Formatting -> FormattingRow(state, onSend, at, onLink)
+            BottomBar.Actions -> DraftActions(state, behavior, onSend, onDiscard, scheduled = at != null)
         }
     }
+}
+
+@Composable
+private fun DraftActions(
+    state: ComposeState,
+    behavior: MailBehavior,
+    onSend: (() -> Unit)?,
+    onDiscard: () -> Unit,
+    scheduled: Boolean,
+) {
+    ComposeBar(
+        behavior,
+        state.draft,
+        onSend = onSend,
+        onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },
+        onDiscard = onDiscard,
+        scheduled = scheduled,
+    )
 }
 
 /** Which bar the compose page shows: the image's while one is selected, the formatting row while typing. */

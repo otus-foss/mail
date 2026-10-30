@@ -101,7 +101,8 @@ class JmapDraftSender(
                 submitted = call(submission(route, folder, at?.let { draft.heldEnvelope(it) }))
             }
         val created = response[stored]
-        created.notCreated[EMAIL]?.let { failSend(it.toSendFailure()) }
+        val creationFailure = created.notCreated[EMAIL]
+        if (creationFailure != null) failSend(creationFailure.toSendFailure())
         val copy = created.createdId(EMAIL) ?: failSend(SendFailure.ServerProblem)
         val refusal =
             try {
@@ -137,7 +138,7 @@ class JmapDraftSender(
                     buildJsonObject {
                         put("emailId", "#$EMAIL")
                         put("identityId", route.identityId)
-                        envelope?.let { put("envelope", it) }
+                        if (envelope != null) put("envelope", envelope)
                     },
             ),
         extra =
@@ -174,7 +175,8 @@ class JmapDraftSender(
                         update = mapOf(message.submissionId to buildJsonObject { put("undoStatus", "canceled") }),
                     ),
                 )
-            undone.notUpdated[message.submissionId]?.let { failSend(it.toSendFailure()) }
+            val failure = undone.notUpdated[message.submissionId]
+            if (failure != null) failSend(failure.toSendFailure())
             if (message.submissionId !in undone.updated) failSend(SendFailure.ServerProblem)
             account.restoreCanceledDraft(message.emailId)
             Result.success(Unit)

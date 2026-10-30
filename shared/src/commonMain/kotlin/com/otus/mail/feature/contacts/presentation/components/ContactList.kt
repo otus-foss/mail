@@ -75,7 +75,10 @@ internal fun ContactList(
     val scope = rememberCoroutineScope()
     val sections = content.people.groupBy { it.letter }
     val positions = content.letterPositions(sections)
-    val jump = { letter: String -> positions[letter]?.let { scope.launch { listState.scrollToItem(it) } } }
+    val jump = { letter: String ->
+        val position = positions[letter]
+        if (position != null) scope.launch { listState.scrollToItem(position) }
+    }
     LazyColumn(
         modifier,
         listState,

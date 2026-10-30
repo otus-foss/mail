@@ -32,7 +32,7 @@ val InboxFiltersSaver: Saver<InboxFilters, Any> =
                 filters.quick.forEach { add(line(QUICK, it.name)) }
                 filters.types.forEach { add(line(TYPE, it.name)) }
                 filters.from.forEach { add(line(SENDER, listOf(it.name) + it.addresses)) }
-                filters.account?.let { add(line(ACCOUNT, it)) }
+                if (filters.account != null) add(line(ACCOUNT, filters.account))
                 filters.sentTo.forEach { add(line(SENT_TO, it.accountId, it.address)) }
                 filters.to.forEach { add(line(RECIPIENT, it)) }
                 filters.folders.forEach { add(it.saved()) }
@@ -111,8 +111,8 @@ private fun DateFilter.saved(): String =
         is DateFilter.Range -> line(from.toString(), to.toString())
     }
 
-private fun dateOf(line: String?): DateFilter =
-    when (line) {
+private fun dateOf(value: String?): DateFilter =
+    when (value) {
         "today" -> {
             DateFilter.Today
         }
@@ -130,8 +130,11 @@ private fun dateOf(line: String?): DateFilter =
         }
 
         else -> {
-            val ends = line?.split(SEPARATOR)?.takeIf { it.size == 2 }
-            ends?.let { (from, to) -> DateFilter.Range(LocalDate.parse(from), LocalDate.parse(to)) } ?: DateFilter.Any
+            value
+                ?.split(SEPARATOR)
+                ?.takeIf { it.size == 2 }
+                ?.let { (from, to) -> DateFilter.Range(LocalDate.parse(from), LocalDate.parse(to)) }
+                ?: DateFilter.Any
         }
     }
 

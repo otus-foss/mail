@@ -10,7 +10,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -77,9 +76,7 @@ class MoveSheetTest {
         server.senderFolders += listOf("z", "a", "z", "r")
         openMoveSheet()
         val suggestion = "Move to Receipts / Amazon, where Grace Hopper's mail usually goes"
-        compose.waitUntil(
-            TIMEOUT,
-        ) { compose.onAllNodesWithContentDescription(suggestion).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(hasContentDescription(suggestion))
         screenshot("move-sheet")
         compose.onNodeWithContentDescription(suggestion).performClick()
         val move = moveUpdate()
@@ -106,9 +103,7 @@ class MoveSheetTest {
         server.senderFolders += listOf("r", "r")
         openMoveSheet()
         val suggestion = "Move to Receipts, where Grace Hopper's mail usually goes"
-        compose.waitUntil(
-            TIMEOUT,
-        ) { compose.onAllNodesWithContentDescription(suggestion).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForNode(hasContentDescription(suggestion))
     }
 
     @Test

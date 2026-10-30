@@ -60,8 +60,7 @@ class FolderSenders(
         coroutineScope {
             missing.forEach { (accountId, address) ->
                 launch {
-                    val request = AvatarRequest(accountId, address, nameOf(address).orEmpty())
-                    val avatar = service.resolve(request, options)
+                    val avatar = service.resolve(AvatarRequest(accountId, address, nameOf(address).orEmpty()), options)
                     resolved = resolved + (senderKey(options, accountId, address) to avatar)
                 }
             }

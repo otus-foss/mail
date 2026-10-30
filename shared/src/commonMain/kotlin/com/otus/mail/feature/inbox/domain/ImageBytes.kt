@@ -50,13 +50,13 @@ internal class MalformedImage : Exception("The image does not follow its format"
 internal fun malformed(): Nothing = throw MalformedImage()
 
 internal fun joined(pieces: List<ByteArray>): ByteArray {
-    val joined = ByteArray(pieces.sumOf { it.size })
+    val bytes = ByteArray(pieces.sumOf { it.size })
     var at = 0
     pieces.forEach { piece ->
-        piece.copyInto(joined, at)
+        piece.copyInto(bytes, at)
         at += piece.size
     }
-    return joined
+    return bytes
 }
 
 internal fun littleEndian(value: Int): ByteArray = ByteArray(INT_BYTES) { (value shr (BYTE_BITS * it)).toByte() }

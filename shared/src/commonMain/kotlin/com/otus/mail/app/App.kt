@@ -144,23 +144,15 @@ private fun rememberNightlyUpdate(
     services: MailServices,
     build: InstalledBuild?,
 ): NightlyUpdateState? {
-    val nightly =
-        remember(services, build) {
-            build
-                ?.takeIf { it.channel == ReleaseChannel.Nightly }
-                ?.let { installed ->
-                    services.nightly.installer?.let {
-                        NightlyUpdateState(
-                            services.nightly.feed,
-                            installed.versionCode,
-                            it,
-                        )
-                    }
-                }
-        }
+    val nightly = remember(services, build) { services.nightlyState(build) }
     LaunchedEffect(nightly) { nightly?.check() }
     return nightly
 }
+
+private fun MailServices.nightlyState(build: InstalledBuild?): NightlyUpdateState? =
+    build
+        ?.takeIf { it.channel == ReleaseChannel.Nightly }
+        ?.let { installed -> nightly.installer?.let { NightlyUpdateState(nightly.feed, installed.versionCode, it) } }
 
 /** The [BuildFooter], which installs [nightly] in the background and says in [toasts] when that fails. */
 @Composable

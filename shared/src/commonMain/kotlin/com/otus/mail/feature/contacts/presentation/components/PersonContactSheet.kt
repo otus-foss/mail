@@ -66,46 +66,59 @@ internal fun PersonContactSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             Text(person.address, Inset, color = OtusColors.text2)
+            val create = {
+                state.prefill = newDraft(person)
+                onNew()
+            }
+            val pick = { picking = true }.takeIf { writable.isNotEmpty() }
             when {
-                picking -> {
-                    PickerSearch(query, { query = it }, "Search people…", Inset)
-                    writable
-                        .filter { query.isBlank() || it.displayName.contains(query, ignoreCase = true) }
-                        .take(PICKER_LIMIT)
-                        .forEach { card -> CardRow(card) { add(card) } }
-                }
-
-                saved.isNotEmpty() -> {
-                    SectionCaption("In your contacts", RowInset)
-                    saved.forEach { card -> CardRow(card) { onOpen(card.key) } }
-                }
-
-                else -> {
-                    sameName.firstOrNull()?.let { match ->
-                        SectionCaption("Maybe already in your contacts", RowInset)
-                        CardRow(match) { onOpen(match.key) }
-                        ActionButton("Add this address there", { add(match) }, Inset.fillMaxWidth(), primary = true)
-                    }
-                    PlainAction(
-                        "New contact",
-                        Res.drawable.symbol_person_add,
-                        {
-                            state.prefill = newDraft(person)
-                            onNew()
-                        },
-                        Modifier.fillMaxWidth(),
-                    )
-                    if (writable.isNotEmpty()) {
-                        PlainAction(
-                            "Add to another contact…",
-                            Res.drawable.symbol_group_add,
-                            { picking = true },
-                            Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
+                picking -> PickContact(writable, query, { query = it }, add)
+                saved.isNotEmpty() -> SavedContacts(saved, onOpen)
+                else -> NewContactOptions(sameName.firstOrNull(), onOpen, add, create, pick)
             }
         }
+    }
+}
+
+@Composable
+private fun PickContact(
+    contacts: List<ContactCard>,
+    query: String,
+    onQuery: (String) -> Unit,
+    onAdd: (ContactCard) -> Unit,
+) {
+    PickerSearch(query, onQuery, "Search people…", Inset)
+    contacts
+        .filter { query.isBlank() || it.displayName.contains(query, ignoreCase = true) }
+        .take(PICKER_LIMIT)
+        .forEach { card -> CardRow(card) { onAdd(card) } }
+}
+
+@Composable
+private fun SavedContacts(
+    contacts: List<ContactCard>,
+    onOpen: (CardKey) -> Unit,
+) {
+    SectionCaption("In your contacts", RowInset)
+    contacts.forEach { card -> CardRow(card) { onOpen(card.key) } }
+}
+
+@Composable
+private fun NewContactOptions(
+    match: ContactCard?,
+    onOpen: (CardKey) -> Unit,
+    onAdd: (ContactCard) -> Unit,
+    onNew: () -> Unit,
+    onPick: (() -> Unit)?,
+) {
+    if (match != null) {
+        SectionCaption("Maybe already in your contacts", RowInset)
+        CardRow(match) { onOpen(match.key) }
+        ActionButton("Add this address there", { onAdd(match) }, Inset.fillMaxWidth(), primary = true)
+    }
+    PlainAction("New contact", Res.drawable.symbol_person_add, onNew, Modifier.fillMaxWidth())
+    if (onPick != null) {
+        PlainAction("Add to another contact…", Res.drawable.symbol_group_add, onPick, Modifier.fillMaxWidth())
     }
 }
 

@@ -39,30 +39,40 @@ internal fun FilterPanelSettings(state: MailBehaviorState) {
         icon = Res.drawable.symbol_mark_email_unread,
     ) { ValueButton(shownCount(layout.quick.size)) }
     when (choosing) {
-        FilterSetting.Sections -> {
-            OrderedChoiceSheet(
-                "Filter panel",
-                layout.sections,
-                FilterSection.entries.map { OrderedChoice(it, it.storageValue, it.title, it.icon, "Sections") },
-                FilterSection::storageValue,
-                onApply = { sections -> state.update { it.copy(filters = it.filters.copy(sections = sections)) } },
-                onDismiss = { choosing = null },
-            )
-        }
-
-        FilterSetting.Quick -> {
-            OrderedChoiceSheet(
-                "Quick filters",
-                layout.quick,
-                QuickFacet.entries.map { OrderedChoice(it, it.storageValue, it.label, it.icon, "Quick filters") },
-                QuickFacet::storageValue,
-                onApply = { quick -> state.update { it.copy(filters = it.filters.copy(quick = quick)) } },
-                onDismiss = { choosing = null },
-            )
-        }
-
-        null -> {}
+        FilterSetting.Sections -> SectionChoices(state) { choosing = null }
+        FilterSetting.Quick -> QuickChoices(state) { choosing = null }
+        null -> Unit
     }
+}
+
+@Composable
+private fun SectionChoices(
+    state: MailBehaviorState,
+    onDismiss: () -> Unit,
+) {
+    OrderedChoiceSheet(
+        "Filter panel",
+        state.behavior.filters.sections,
+        FilterSection.entries.map { OrderedChoice(it, it.storageValue, it.title, it.icon, "Sections") },
+        FilterSection::storageValue,
+        onApply = { sections -> state.update { it.copy(filters = it.filters.copy(sections = sections)) } },
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun QuickChoices(
+    state: MailBehaviorState,
+    onDismiss: () -> Unit,
+) {
+    OrderedChoiceSheet(
+        "Quick filters",
+        state.behavior.filters.quick,
+        QuickFacet.entries.map { OrderedChoice(it, it.storageValue, it.label, it.icon, "Quick filters") },
+        QuickFacet::storageValue,
+        onApply = { quick -> state.update { it.copy(filters = it.filters.copy(quick = quick)) } },
+        onDismiss = onDismiss,
+    )
 }
 
 private enum class FilterSetting { Sections, Quick }

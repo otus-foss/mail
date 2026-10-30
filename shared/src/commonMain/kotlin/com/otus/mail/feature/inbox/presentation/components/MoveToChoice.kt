@@ -71,7 +71,7 @@ internal fun MoveToChoice(
                 )
             },
             onSelect = { picked ->
-                picked?.let(onPick)
+                if (picked != null) onPick(picked)
                 choosing = false
             },
             onDismiss = { choosing = false },

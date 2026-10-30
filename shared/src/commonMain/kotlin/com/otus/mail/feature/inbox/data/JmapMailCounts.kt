@@ -73,10 +73,10 @@ internal class JmapMailCounts(
         try {
             val connection = connections.connection(login)
             connection.session().accountFor(JmapCapability.MAIL)?.let { accountId ->
-                val known =
-                    mailboxes[login.id]
-                        ?: mailboxesOf(connection, accountId).also { adding.withLock { mailboxes += login.id to it } }
-                val ids = scope.chosen(known, login.id, query).map { it.id }
+                val ids =
+                    scope
+                        .chosen(knownMailboxes(login.id, connection, accountId), login.id, query)
+                        .map { it.id }
                 if (ids.isEmpty()) {
                     0L
                 } else {
@@ -89,6 +89,18 @@ internal class JmapMailCounts(
             // A login that cannot be counted leaves the others' sum.
             null
         }
+
+    private suspend fun knownMailboxes(
+        loginId: String,
+        connection: JmapConnection,
+        accountId: String,
+    ): List<MailboxObject> {
+        val cached = mailboxes[loginId]
+        if (cached != null) return cached
+        val loaded = mailboxesOf(connection, accountId)
+        adding.withLock { mailboxes += loginId to loaded }
+        return loaded
+    }
 
     private suspend fun mailboxesOf(
         connection: JmapConnection,

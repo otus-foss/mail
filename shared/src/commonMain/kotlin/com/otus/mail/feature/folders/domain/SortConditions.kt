@@ -25,14 +25,17 @@ fun sortConditions(
         if (address.isNotEmpty()) {
             add(SortCondition(SortBy.Sender, address, from(AddressMatch.Exact(address))))
         }
-        address.substringAfterLast('@', "").takeIf { it.isNotEmpty() }?.let { domain ->
-            add(SortCondition(SortBy.Domain, "@$domain", from(AddressMatch.Domain(domain))))
+        val domain = address.substringAfterLast('@', "")
+        if (domain.isNotEmpty()) add(SortCondition(SortBy.Domain, "@$domain", from(AddressMatch.Domain(domain))))
+        val recipientAddress = recipient.trim()
+        if (recipientAddress.isNotEmpty()) {
+            val condition = RuleCondition.Address(AddressField.To, AddressMatch.Exact(recipientAddress))
+            add(SortCondition(SortBy.Recipient, recipientAddress, condition))
         }
-        recipient.trim().takeIf { it.isNotEmpty() }?.let {
-            add(SortCondition(SortBy.Recipient, it, RuleCondition.Address(AddressField.To, AddressMatch.Exact(it))))
-        }
-        subjectKeyword(subject)?.let {
-            add(SortCondition(SortBy.Subject, it, RuleCondition.Text(TextField.Subject, TextOperator.Contains, it)))
+        val keyword = subjectKeyword(subject)
+        if (keyword != null) {
+            val condition = RuleCondition.Text(TextField.Subject, TextOperator.Contains, keyword)
+            add(SortCondition(SortBy.Subject, keyword, condition))
         }
     }
 

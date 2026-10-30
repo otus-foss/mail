@@ -94,21 +94,9 @@ internal fun ContactsSelectionBar(
     val single = chosen.singleOrNull()
     val context =
         when {
-            merge != null -> {
-                BarContext(
-                    "2 cards, same address",
-                    BarToken.Count(chosen.size),
-                    "Merge 2 cards that share an address",
-                )
-            }
-
-            single != null -> {
-                BarContext(single.name, BarToken.Person(single.avatar), "to ${single.name}")
-            }
-
-            else -> {
-                peopleContext(chosen.size)
-            }
+            merge != null -> mergeContext(chosen.size)
+            single != null -> BarContext(single.name, BarToken.Person(single.avatar), "to ${single.name}")
+            else -> peopleContext(chosen.size)
         }
     val mergeItem =
         actions.onMerge
@@ -131,6 +119,9 @@ internal fun ContactsSelectionBar(
         context = context,
     )
 }
+
+private fun mergeContext(count: Int): BarContext =
+    BarContext("2 cards, same address", BarToken.Count(count), "Merge 2 cards that share an address")
 
 /** The bar's ⋯ button with every secondary action in its menu, or no button when there are none. */
 internal fun moreOptions(items: List<MenuAction>): List<BarAction> =

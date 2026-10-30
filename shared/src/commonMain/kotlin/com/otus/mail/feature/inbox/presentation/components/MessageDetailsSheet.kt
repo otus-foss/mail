@@ -55,13 +55,16 @@ private fun HeaderLines(headers: List<MailHeader>) {
     }
     SelectionContainer {
         Column(verticalArrangement = Arrangement.spacedBy(SheetTokens.gap)) {
-            headers.forEach { header ->
-                Column {
-                    Text(header.name, color = OtusColors.text3, fontSize = SheetTokens.detailSize)
-                    Text(header.value.replace(FOLDED, " ").trim(), fontSize = SheetTokens.detailSize)
-                }
-            }
+            headers.forEach { header -> HeaderLine(header) }
         }
+    }
+}
+
+@Composable
+private fun HeaderLine(header: MailHeader) {
+    Column {
+        Text(header.name, color = OtusColors.text3, fontSize = SheetTokens.detailSize)
+        Text(header.value.replace(FOLDED, " ").trim(), fontSize = SheetTokens.detailSize)
     }
 }
 

@@ -67,10 +67,7 @@ class SignatureScreensTest {
     private val drafts =
         object : DraftRepository {
             override suspend fun identities(accountId: String) =
-                listOf(alex, sales, support, otus, hello).filter {
-                    it.accountId ==
-                        accountId
-                }
+                listOf(alex, sales, support, otus, hello).filter { it.accountId == accountId }
 
             override suspend fun save(draft: Draft) = Result.success("d1")
 
@@ -88,10 +85,8 @@ class SignatureScreensTest {
                     val state =
                         androidx.compose.runtime.remember {
                             SignaturesState(drafts, { identity, signature ->
-                                Result.success(Unit).also {
-                                    saved +=
-                                        identity.id to signature
-                                }
+                                saved += identity.id to signature
+                                Result.success(Unit)
                             }, null, scope) {
                                 listOf(ComposeAccount("a1", "Company A"), ComposeAccount("a2", "Rubylabs"))
                             }
@@ -126,8 +121,7 @@ class SignatureScreensTest {
         compose.onNodeWithContentDescription("Signature image").performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Medium").assertExists()
         compose.screenshot("signature-editor")
-        compose.onNodeWithText("Medium").performClick()
-        compose.onNodeWithText("Medium").assertIsSelected()
+        compose.onNodeWithText("Medium").performClick().assertIsSelected()
         compose.onNodeWithContentDescription("Image options").performClick()
         compose.screenshot("signature-image-size")
         compose.onNodeWithText("Remove image").assertExists()

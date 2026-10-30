@@ -56,7 +56,9 @@ internal fun ContactsState.merge(plan: MergePlan): CardKey {
     val target = plan.target
     val key =
         if (target == null) {
-            ContactEdit.Create(newId(), plan.book, merged.copy(id = null)).also(::send).key
+            val created = ContactEdit.Create(newId(), plan.book, merged.copy(id = null))
+            send(created)
+            created.key
         } else {
             send(ContactEdit.Update(newId(), target.key, target.card, merged))
             target.key

@@ -66,12 +66,7 @@ class ActionBarSettingsTest {
     /** The topmost match, such as a button in the editor's preview over the page's cards. */
     private fun top(label: String) = compose.onAllNodes(hasContentDescription(label) and hasClickAction()).onLast()
 
-    private fun pick(text: String) =
-        compose
-            .onAllNodesWithText(text)
-            .onLast()
-            .performScrollTo()
-            .performClick()
+    private fun pick(text: String) = compose.pickLastText(text)
 
     private fun done() = compose.onAllNodesWithText("Done").onLast().performClick()
 
@@ -125,10 +120,7 @@ class ActionBarSettingsTest {
     fun aMinimizedBarShowsOnlyTheMainButton() {
         start()
         openActionBarSettings()
-        compose
-            .onNode(hasText("Minimize") and isToggleable())
-            .performClick()
-            .assertIsOn()
+        compose.onNode(hasText("Minimize") and isToggleable()).performClick().assertIsOn()
         assertEquals(true, AndroidMailBehaviorStore(compose.activity).read().minimizedBar)
 
         // Back leads to Mail behavior, then Settings.

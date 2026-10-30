@@ -92,8 +92,7 @@ class FolderColorsUiTest {
     fun choosingAColorSavesItForTheFolderAndDefaultForgetsIt() {
         openSidebar()
         openColorSheet("Receipts")
-        compose.onNode(hasText("Teal") and isSelectable()).performClick()
-        compose.onNode(hasText("Teal") and isSelectable()).assertIsSelected()
+        compose.onNode(hasText("Teal") and isSelectable()).performClick().assertIsSelected()
         assertEquals(mapOf("r" to "Teal"), storedColors())
         closeSheet()
         openColorSheet("Receipts")

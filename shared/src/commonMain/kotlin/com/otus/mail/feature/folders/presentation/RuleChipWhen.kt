@@ -11,8 +11,8 @@ import kotlinx.datetime.LocalTime
  * "outside 9:00–18:00 · weekdays". Without a range, the days alone are bright, as in "Weekends".
  */
 internal fun RuleCondition.When.whenChip(): RuleChipText {
-    val range = range
-    return if (range == null) {
+    val timeRange = range
+    return if (timeRange == null) {
         RuleChipText(
             "When",
             ChipSlot.Icon(RuleIcon.CalendarMonth),
@@ -21,7 +21,7 @@ internal fun RuleCondition.When.whenChip(): RuleChipText {
     } else {
         val words = if (outside) "outside " else ""
         val dayWords = if (days.isEmpty()) "" else " · " + daysText(days)
-        val time = "${timeText(range.start)}–${timeText(range.end)}"
+        val time = "${timeText(timeRange.start)}–${timeText(timeRange.end)}"
         RuleChipText("When", ChipSlot.Icon(RuleIcon.Schedule), dim(words) + bright(time) + dim(dayWords))
     }
 }
@@ -29,27 +29,13 @@ internal fun RuleCondition.When.whenChip(): RuleChipText {
 /** "weekdays", "weekends", "every day", or the days in week order, such as "Mon, Wed". */
 private fun daysText(days: Set<DayOfWeek>): String =
     when (days) {
-        WEEKDAYS -> {
-            "weekdays"
-        }
-
-        WEEKEND -> {
-            "weekends"
-        }
-
-        emptySet<DayOfWeek>(), DayOfWeek.entries.toSet() -> {
-            "every day"
-        }
-
-        else -> {
-            days.sorted().joinToString(", ") { day ->
-                day.name
-                    .take(SHORT_DAY)
-                    .lowercase()
-                    .replaceFirstChar { it.uppercase() }
-            }
-        }
+        WEEKDAYS -> "weekdays"
+        WEEKEND -> "weekends"
+        emptySet<DayOfWeek>(), DayOfWeek.entries.toSet() -> "every day"
+        else -> days.sorted().joinToString(", ") { it.shortName() }
     }
+
+private fun DayOfWeek.shortName(): String = name.take(SHORT_DAY).lowercase().replaceFirstChar { it.uppercase() }
 
 private const val SHORT_DAY = 3
 

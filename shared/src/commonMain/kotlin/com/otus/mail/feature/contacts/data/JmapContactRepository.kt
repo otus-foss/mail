@@ -47,8 +47,10 @@ internal class JmapContactRepository(
 ) : ContactRepository {
     override suspend fun load(): ContactsSnapshot =
         coroutineScope {
-            val all = withContext(Dispatchers.IO) { logins.logins() }
-            val loaded = all.map { login -> async { login.id to runCatching { loadLogin(login) } } }.awaitAll()
+            val loaded =
+                withContext(Dispatchers.IO) { logins.logins() }
+                    .map { login -> async { login.id to runCatching { loadLogin(login) } } }
+                    .awaitAll()
             val found = loaded.mapNotNull { (_, result) -> result.getOrNull() }
             ContactsSnapshot(
                 books = found.flatMap { it.books },
@@ -72,7 +74,8 @@ internal class JmapContactRepository(
                     ),
                 )
             }
-        result.firstError?.let { throw refused(it.type) }
+        val error = result.firstError
+        if (error != null) throw refused(error.type)
         val id = result.createdId(NEW_CARD) ?: throw ContactWriteException(ContactWriteFailure.Refused)
         return CardKey(book.loginId, book.accountId, id)
     }
@@ -88,7 +91,8 @@ internal class JmapContactRepository(
             write(key.loginId) { connection ->
                 connection.call(SetMethod(ContactCardType, key.accountId, update = mapOf(key.cardId to patch)))
             }
-        result.firstError?.let { throw refused(it.type) }
+        val error = result.firstError
+        if (error != null) throw refused(error.type)
     }
 
     override suspend fun delete(keys: List<CardKey>) {
@@ -98,20 +102,21 @@ internal class JmapContactRepository(
                     connection.call(SetMethod(ContactCardType, place.second, destroy = cards.map { it.cardId }))
                 }
             // A card someone else already removed is gone either way.
-            result.notDestroyed.values
-                .firstOrNull { it.type != NOT_FOUND }
-                ?.let { throw refused(it.type) }
+            val error = result.notDestroyed.values.firstOrNull { it.type != NOT_FOUND }
+            if (error != null) throw refused(error.type)
         }
     }
 
     private suspend fun loadLogin(login: JmapLogin): LoginContacts {
         val connection = connections.connection(login)
         val session = connection.session()
-        if (JmapCapability.CONTACTS !in session.capabilities) return LoginContacts(emptyList(), emptyList(), false)
+        if (JmapCapability.CONTACTS !in session.capabilities) {
+            return LoginContacts(emptyList(), emptyList(), hasContacts = false)
+        }
         val own = session.accountFor(JmapCapability.CONTACTS)
         val accounts = session.accounts.filterValues { JmapCapability.CONTACTS in it.capabilities }.keys
         val parts = accounts.map { account -> loadAccount(login, connection, session, account, own) }
-        return LoginContacts(parts.flatMap { it.first }, parts.flatMap { it.second }, true)
+        return LoginContacts(parts.flatMap { it.first }, parts.flatMap { it.second }, hasContacts = true)
     }
 
     private suspend fun loadAccount(
@@ -282,8 +287,8 @@ internal fun bookName(
             .orEmpty()
     // An account in brackets: the login's or account's own name, or anything shaped like a
     // username or address, such as "ada.lovelace" or "ada@example.org".
-    val account = inside.lowercase() in own || (' ' !in inside && ('@' in inside || '.' in inside))
-    val trimmed = if (bracket != null && account) name.removeRange(bracket.range) else name
+    val isAccount = inside.lowercase() in own || (' ' !in inside && ('@' in inside || '.' in inside))
+    val trimmed = if (bracket != null && isAccount) name.removeRange(bracket.range) else name
     return trimmed.trim().ifBlank { "Contacts" }
 }
 

@@ -80,7 +80,8 @@ class ComposeAttachments(
     }
 
     fun remove(id: String) {
-        attachments().firstOrNull { it.id == id }?.takeIf { it.inline }?.let { body.images.remove(it.source) }
+        val attachment = attachments().firstOrNull { it.id == id }
+        if (attachment?.inline == true) body.images.remove(attachment.source)
         jobs.remove(id)?.cancel()
         picked -= id
         failures -= id

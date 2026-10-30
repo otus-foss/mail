@@ -94,11 +94,11 @@ class JmapMessageCleaner(
             connection.call(
                 GetMethod(EmailFoldersType, id, JmapIds.Of(folders.keys.toList()), EMAIL_FOLDERS_PROPERTIES),
             )
-        val current =
-            fresh.list.mapNotNull { email ->
-                folders[email.id]?.let { folder -> FolderEmail(email.id, folder, email.mailboxIds.keys) }
-            }
-        val (present, absent) = current.partition { it.folderId in it.mailboxIds }
+        val (present, absent) =
+            fresh.list
+                .mapNotNull { email ->
+                    folders[email.id]?.let { folder -> FolderEmail(email.id, folder, email.mailboxIds.keys) }
+                }.partition { it.folderId in it.mailboxIds }
         val alreadyRemoved = absent.map { it.emailId }.toSet() + fresh.notFound
         if (present.isEmpty()) return alreadyRemoved
         val (elsewhere, onlyHere) = present.partition { it.elsewhere }

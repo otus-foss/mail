@@ -47,11 +47,11 @@ class JmapAddressBook(
 
     private suspend fun people(accountId: String): List<MailSender> =
         loading.of(accountId).withLock {
-            known[accountId]?.takeIf { it.loadedAt.elapsedNow() < maxAge }?.people
-                ?: load(accountId)?.also { people ->
-                    storing.withLock { known += accountId to Known(people, timeSource.markNow()) }
-                }
-                ?: emptyList()
+            val cached = known[accountId]?.takeIf { it.loadedAt.elapsedNow() < maxAge }
+            if (cached != null) return@withLock cached.people
+            val loaded = load(accountId)
+            if (loaded != null) storing.withLock { known += accountId to Known(loaded, timeSource.markNow()) }
+            loaded.orEmpty()
         }
 
     private suspend fun load(accountId: String): List<MailSender>? =

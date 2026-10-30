@@ -101,7 +101,7 @@ internal fun MoveSheet(
                 sorting,
                 onMove = move,
             )
-            suggestion?.let { MoveSuggestion(it, first.sender, move) }
+            if (suggestion != null) MoveSuggestion(suggestion, first.sender, move)
             MoveFolderList(folders, here, searching = query.isNotBlank(), onMove = move)
             if (readLater == null && suggestion == null && (shortcuts + folders).none { it.folderId != here }) {
                 SheetCaption(
@@ -133,10 +133,10 @@ private fun MovePills(
             // Inbox leads whenever the message can go back there, so the pills keep one order.
             val (inbox, others) = shortcuts.partition { it.shortcut == FolderShortcut.Inbox }
             inbox.forEach { ShortcutPill(it, onMove) }
-            onReadLater?.let { DestinationPill(READ_LATER, Res.drawable.symbol_bookmark, it) }
+            if (onReadLater != null) DestinationPill(READ_LATER, Res.drawable.symbol_bookmark, onReadLater)
             others.forEach { ShortcutPill(it, onMove) }
         }
-        sorting.future?.let {
+        if (sorting.future != null) {
             IconPill(
                 SORT_FUTURE_MAIL,
                 Res.drawable.symbol_auto_filter,
@@ -153,7 +153,8 @@ private fun ShortcutPill(
     target: MoveTarget,
     onMove: (MoveTarget) -> Unit,
 ) {
-    target.shortcut?.let { DestinationPill(it.label, it.icon, { onMove(target) }) }
+    val shortcut = target.shortcut ?: return
+    DestinationPill(shortcut.label, shortcut.icon, { onMove(target) })
 }
 
 /**

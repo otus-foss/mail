@@ -68,7 +68,8 @@ internal fun ContactEditorScreen(
     var draft by remember(key) { mutableStateOf(state.startDraft(existing)) }
     var book by remember(key) { mutableStateOf(existing?.books?.firstOrNull() ?: state.defaultBook?.key) }
     val save: (Boolean) -> Unit = { andNext ->
-        book?.let { target ->
+        val target = book
+        if (target != null) {
             val saved = state.save(draft, existing, target)
             if (andNext) draft = ContactDraft() else onSaved(saved)
         }
@@ -129,8 +130,12 @@ private fun EditorPanel(
 }
 
 /** The draft the editor opens with: the card's own fields, else a prefill handed over once, else blank. */
-private fun ContactsState.startDraft(existing: ContactCard?): ContactDraft =
-    existing?.let(ContactDraft::of) ?: prefill.also { prefill = null } ?: ContactDraft()
+private fun ContactsState.startDraft(existing: ContactCard?): ContactDraft {
+    if (existing != null) return ContactDraft.of(existing)
+    val initial = prefill
+    prefill = null
+    return initial ?: ContactDraft()
+}
 
 /** The books the card can be saved to: any writable one for a new card, else one in the card's own account. */
 private fun ContactsState.targetBooks(existing: ContactCard?): List<ContactBook> =

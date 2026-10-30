@@ -92,8 +92,12 @@ class InboxPillsTest {
     fun accessibilityServicesMoveAPillWithoutDragging() {
         start(MailBehavior(pills = listOf(Unread, Attachments)))
         openPillsSheet()
-        val attachments = compose.onNode(hasText("Attachments") and isToggleable()).fetchSemanticsNode()
-        val moveUp = attachments.config[SemanticsActions.CustomActions].single { it.label == "Move up" }
+        val moveUp =
+            compose
+                .onNode(hasText("Attachments") and isToggleable())
+                .fetchSemanticsNode()
+                .config[SemanticsActions.CustomActions]
+                .single { it.label == "Move up" }
         compose.runOnUiThread { moveUp.action() }
         compose.onNodeWithText("Done").performClick()
         compose.runOnIdle { assertEquals(listOf(Attachments, Unread), behavior.behavior.pills) }

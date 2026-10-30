@@ -41,21 +41,18 @@ class JmapConversationMute(
     override suspend fun setMuted(
         message: MailMessage,
         muted: Boolean,
-    ): Boolean {
-        return cache.withAccount(message.location.accountId) { accountCache ->
+    ): Boolean =
+        cache.withAccount(message.location.accountId) { accountCache ->
             val ids = fromServer(message) { _, ids -> ids } ?: return@withAccount false
             val patch = membershipPatch("keywords", MUTED_KEYWORD, muted)
-            val updated =
-                updateAccountEmails(
-                    connections,
-                    logins,
-                    message.location.accountId,
-                    ids.associateWith { patch },
-                    accountCache,
-                )
-            updated.containsAll(ids)
+            updateAccountEmails(
+                connections,
+                logins,
+                message.location.accountId,
+                ids.associateWith { patch },
+                accountCache,
+            ).containsAll(ids)
         }
-    }
 
     /** [read] with the thread's Email ids; null when the server could not be read or knows none. */
     private suspend fun <T> fromServer(
@@ -71,15 +68,13 @@ class JmapConversationMute(
     }
 
     /** Offline, the list's copies of the row's emails answer. */
-    private suspend fun cachedMuted(message: MailMessage): Boolean {
-        val loginId = message.location.accountId
-        return listOf(CacheKind.Email, CacheKind.Member).any { kind ->
+    private suspend fun cachedMuted(message: MailMessage): Boolean =
+        listOf(CacheKind.Email, CacheKind.Member).any { kind ->
             cache
-                .objects(loginId, kind, EmailObject.serializer(), message.memberIds)
+                .objects(message.location.accountId, kind, EmailObject.serializer(), message.memberIds)
                 .values
                 .any { it.keywords[MUTED_KEYWORD] == true }
         }
-    }
 
     private companion object {
         val PROPERTIES = listOf("id", "receivedAt", "keywords")

@@ -29,7 +29,8 @@ class AndroidPhotoPicker(
 
     suspend fun pick(): (() -> InputStream?)? {
         val picker = launcher ?: return null
-        val result = CompletableDeferred<Uri?>().also { pending = it }
+        val result = CompletableDeferred<Uri?>()
+        pending = result
         picker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
         return result.await()?.let { uri -> { context.contentResolver.openInputStream(uri) } }
     }
@@ -43,8 +44,7 @@ internal fun sampledBitmap(
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     open()?.use { BitmapFactory.decodeStream(it, null, bounds) }
     val sample = sampleSize(bounds.outWidth, bounds.outHeight, maxSide) ?: return null
-    val options = BitmapFactory.Options().apply { inSampleSize = sample }
-    return open()?.use { BitmapFactory.decodeStream(it, null, options) }
+    return open()?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
 }
 
 /** The smallest power of two that brings the longest side to at most [maxSide], or null without a size. */
@@ -63,4 +63,8 @@ internal fun sampleSize(
 fun Bitmap.encoded(
     format: Bitmap.CompressFormat,
     quality: Int,
-): ByteArray = ByteArrayOutputStream().also { compress(format, quality, it) }.toByteArray()
+): ByteArray {
+    val output = ByteArrayOutputStream()
+    compress(format, quality, output)
+    return output.toByteArray()
+}

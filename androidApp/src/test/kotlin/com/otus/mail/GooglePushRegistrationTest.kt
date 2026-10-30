@@ -142,13 +142,10 @@ class GooglePushRegistrationTest {
     fun oneServersFailureDoesNotBlockAnotherAccount() =
         runBlocking {
             UnifiedPush.saveDistributor(context, app.packageName)
-            val registrar =
-                registrar {
-                    if (it.id == login.id) throw JmapException.Unauthorized() else KEY
-                }
-            registrar.register(login, app.packageName, retry = true)
-            registrar.register(login.copy(id = "bob", name = "Bob"), app.packageName, retry = true)
-            assertEquals(PushDeliveryStatus.Unavailable, registrar.problems()[login.id])
+            val failing = registrar { if (it.id == login.id) throw JmapException.Unauthorized() else KEY }
+            failing.register(login, app.packageName, retry = true)
+            failing.register(login.copy(id = "bob", name = "Bob"), app.packageName, retry = true)
+            assertEquals(PushDeliveryStatus.Unavailable, failing.problems()[login.id])
             assertEquals(1, requests().size)
         }
 
@@ -163,9 +160,8 @@ class GooglePushRegistrationTest {
     fun externalDistributorsStillWorkWithoutVapid() =
         runBlocking {
             UnifiedPush.saveDistributor(context, "io.heckel.ntfy")
-            val registrar =
-                registrar { error("External push must not fetch a Google key") }
-            registrar.register(login, "io.heckel.ntfy", retry = true)
+            val external = registrar { error("External push must not fetch a Google key") }
+            external.register(login, "io.heckel.ntfy", retry = true)
             assertEquals("io.heckel.ntfy", requests().single().`package`)
             assertFalse(requests().single().hasExtra("vapid"))
         }
@@ -194,12 +190,7 @@ class GooglePushRegistrationTest {
 
     // Robolectric has no Android keystore. These tests inspect registration, not encryption.
     private fun registrar(key: suspend (JmapLogin) -> String?): AndroidPushRegistration =
-        AndroidPushRegistration(
-            context,
-            subscriptions,
-            key,
-            testKeys,
-        )
+        AndroidPushRegistration(context, subscriptions, key, testKeys)
 
     private fun requests(): List<Intent> =
         broadcasts.filter { it.action == "org.unifiedpush.android.distributor.REGISTER" }

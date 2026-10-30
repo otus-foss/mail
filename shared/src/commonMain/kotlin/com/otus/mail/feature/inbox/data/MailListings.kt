@@ -88,24 +88,24 @@ internal suspend fun JmapConnection.queryPages(
     sendAll(
         pages.map { page ->
             CallGroup(size = 1) {
-                val query =
-                    call(
-                        QueryMethod(
-                            EmailType,
-                            accountId,
-                            page.query.filter,
-                            receivedOrder(page.query.sort),
-                            page.limit,
-                            mapOf(
-                                "collapseThreads" to JsonPrimitive(true),
-                                "calculateTotal" to JsonPrimitive(true),
-                                "position" to JsonPrimitive(page.position),
-                            ),
-                        ),
-                    )
+                val query = call(page.queryMethod(accountId))
                 return@CallGroup { response: JmapResponse -> response[query].toListing(page.limit) }
             }
         },
+    )
+
+private fun PageRequest.queryMethod(accountId: String) =
+    QueryMethod(
+        EmailType,
+        accountId,
+        query.filter,
+        receivedOrder(query.sort),
+        limit,
+        mapOf(
+            "collapseThreads" to JsonPrimitive(true),
+            "calculateTotal" to JsonPrimitive(true),
+            "position" to JsonPrimitive(position),
+        ),
     )
 
 /** More remain when the total says so, or, without a total, when the page came back full. */

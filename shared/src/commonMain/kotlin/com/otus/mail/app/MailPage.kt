@@ -186,39 +186,18 @@ internal sealed interface MailPage {
         /** A draft's request holds a whole message, so a restored app returns to the page that opened it. */
         private fun saved(page: MailPage): List<String> =
             when (page) {
-                is Folder -> {
-                    listOf(FOLDER, page.accountId, page.folderId)
-                }
-
-                is FolderDetail -> {
-                    listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
-                }
-
-                is Combined -> {
-                    listOf(COMBINED, page.folder.name)
-                }
-
-                is Shared -> {
-                    listOf(SHARED) + page.key
-                }
-
-                is Compose -> {
-                    saved(page.parent)
-                }
-
-                is Contact -> {
-                    listOf(CONTACT, page.key.loginId, page.key.accountId, page.key.cardId)
-                }
-
-                is ContactEditor -> {
-                    listOf(CONTACT_EDITOR) +
-                        page.key?.let { listOf(it.loginId, it.accountId, it.cardId) }.orEmpty()
-                }
-
-                else -> {
-                    listOf(page.toString())
-                }
+                is Folder -> listOf(FOLDER, page.accountId, page.folderId)
+                is FolderDetail -> listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
+                is Combined -> listOf(COMBINED, page.folder.name)
+                is Shared -> listOf(SHARED) + page.key
+                is Compose -> saved(page.parent)
+                is Contact -> listOf(CONTACT, page.key.loginId, page.key.accountId, page.key.cardId)
+                is ContactEditor -> listOf(CONTACT_EDITOR) + savedKey(page.key)
+                else -> listOf(page.toString())
             }
+
+        private fun savedKey(key: CardKey?): List<String> =
+            key?.let { listOf(it.loginId, it.accountId, it.cardId) }.orEmpty()
 
         private const val FOLDER = "Folder"
         private const val FOLDER_DETAIL = "FolderDetail"

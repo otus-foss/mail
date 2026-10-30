@@ -42,14 +42,8 @@ class JmapSenderHistory(
             account.connection.request {
                 val filter = buildJsonObject { put("from", JsonPrimitive(address)) }
                 val query = call(QueryMethod(EmailFoldersType, account.id, filter, NEWEST_FIRST, limit))
-                call(
-                    GetMethod(
-                        EmailFoldersType,
-                        account.id,
-                        JmapIds.Result(query.resultOf("/ids")),
-                        EMAIL_FOLDERS_PROPERTIES,
-                    ),
-                )
+                val ids = JmapIds.Result(query.resultOf("/ids"))
+                call(GetMethod(EmailFoldersType, account.id, ids, EMAIL_FOLDERS_PROPERTIES))
             }
         return jmapDecoding { emails.list.map { email -> email.mailboxIds.filterValues { it }.keys } }
     }

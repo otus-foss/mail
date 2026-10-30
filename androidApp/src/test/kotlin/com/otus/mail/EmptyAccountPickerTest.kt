@@ -94,8 +94,7 @@ class EmptyAccountPickerTest {
         if (dialog) {
             hasText(text) and isToggleable() and hasAnyAncestor(isDialog())
         } else {
-            hasText(text) and
-                isToggleable()
+            hasText(text) and isToggleable()
         },
     )
 }

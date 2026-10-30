@@ -46,11 +46,15 @@ class NewMailWorker(
 
         /** Keeps an existing schedule, so each app start does not restart the period. */
         fun schedule(context: Context) {
-            val request =
-                PeriodicWorkRequestBuilder<NewMailWorker>(PERIOD_MINUTES, TimeUnit.MINUTES)
-                    .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
-                    .build()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+            WorkManager
+                .getInstance(context)
+                .enqueueUniquePeriodicWork(
+                    NAME,
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    PeriodicWorkRequestBuilder<NewMailWorker>(PERIOD_MINUTES, TimeUnit.MINUTES)
+                        .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
+                        .build(),
+                )
         }
 
         /**
@@ -58,12 +62,16 @@ class NewMailWorker(
          * during a check queues another, so mail delivered mid-check is not missed.
          */
         fun runNow(context: Context) {
-            val request =
-                OneTimeWorkRequestBuilder<NewMailWorker>()
-                    .setInputData(workDataOf(PUSHED to true))
-                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                    .build()
-            WorkManager.getInstance(context).enqueueUniqueWork(NOW, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
+            WorkManager
+                .getInstance(context)
+                .enqueueUniqueWork(
+                    NOW,
+                    ExistingWorkPolicy.APPEND_OR_REPLACE,
+                    OneTimeWorkRequestBuilder<NewMailWorker>()
+                        .setInputData(workDataOf(PUSHED to true))
+                        .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                        .build(),
+                )
         }
     }
 }

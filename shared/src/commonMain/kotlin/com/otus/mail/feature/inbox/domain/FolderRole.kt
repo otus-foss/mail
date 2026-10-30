@@ -51,8 +51,8 @@ private fun ActionBarPlace.cleanupBar(primary: MailAction): ActionBarLayout? =
 fun MailBehavior.barLayout(
     place: ActionBarPlace,
     role: FolderRole?,
-): ActionBarLayout {
-    val untouched = actionBarMode == ActionBarMode.Adaptive && savedLayout(place) == place.defaultLayout
-    val folderBar = role?.takeIf { untouched }?.let(place::folderDefault)
-    return folderBar ?: barLayout(place)
-}
+): ActionBarLayout =
+    role
+        ?.takeIf { actionBarMode == ActionBarMode.Adaptive && savedLayout(place) == place.defaultLayout }
+        ?.let(place::folderDefault)
+        ?: barLayout(place)

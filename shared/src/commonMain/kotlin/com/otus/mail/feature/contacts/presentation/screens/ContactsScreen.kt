@@ -19,7 +19,6 @@ import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey
-import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.presentation.ContactsNavigation
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.book
@@ -112,7 +111,10 @@ private fun ContactsBody(
                 view.selected,
                 onOpen,
                 onToggle = view::toggle,
-                onReviewDuplicate = { content.notices.duplicate?.let { view.merging = state.mergePlan(it) } },
+                onReviewDuplicate = {
+                    val duplicate = content.notices.duplicate
+                    if (duplicate != null) view.merging = state.mergePlan(duplicate)
+                },
             ),
             barPadding,
             letterIndex,
@@ -121,11 +123,9 @@ private fun ContactsBody(
 }
 
 /** What the list shows for the current search, books, and selection. */
-private fun ContactsState.listContent(view: ContactsView): ContactListContent {
-    val shown = peopleIn(view.books)
-    val people: List<ContactPerson> = if (view.query.isBlank()) shown else shown.filter { it.matches(view.query) }
-    return ContactListContent(
-        people,
+private fun ContactsState.listContent(view: ContactsView): ContactListContent =
+    ContactListContent(
+        peopleIn(view.books).filter { view.query.isBlank() || it.matches(view.query) },
         groups.filter { g -> view.query.isBlank() && view.books.admits(g.books) },
         ListNotices(
             view.books
@@ -142,4 +142,3 @@ private fun ContactsState.listContent(view: ContactsView): ContactListContent {
         frequent = mostFrequent.takeIf { view.showsAll && view.selected.isEmpty() }.orEmpty(),
         ownAddresses = ownAddresses(),
     )
-}

@@ -121,9 +121,8 @@ class SettingsPagesTest {
         compose.onNodeWithContentDescription("Username").performTextInput("me@example.com")
         compose.onNodeWithContentDescription("Password").performTextInput("app-password")
         compose
-            .onNodeWithContentDescription(
-                "Password",
-            ).assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
+            .onNodeWithContentDescription("Password")
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
         compose.onNodeWithText("Connect").assertIsEnabled()
     }
 

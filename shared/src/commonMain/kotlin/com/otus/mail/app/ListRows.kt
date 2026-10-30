@@ -45,8 +45,7 @@ internal fun rememberListNudge(
     messages: List<MailMessage>,
 ): ListNudge? {
     val visible = remember(messages) { messages.folderCounts() }
-    val candidate = states.folderNudge.pick(visible) ?: return null
-    val folder = candidate.folder
+    val folder = states.folderNudge.pick(visible)?.folder ?: return null
     LaunchedEffect(folder.key) { states.folderNudge.markShown(folder.key) }
     return ListNudge(
         folder.name,

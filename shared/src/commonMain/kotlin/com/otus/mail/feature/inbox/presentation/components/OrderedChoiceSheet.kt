@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.components.SelectionSheet
 import com.otus.designsystem.shared.reorder.components.ReorderableColumn
+import com.otus.designsystem.shared.reorder.components.ReorderableScope
 import com.otus.designsystem.shared.rows.elements.nestIndent
 import com.otus.designsystem.shared.selection.elements.SelectionRow
 import com.otus.designsystem.theme.colors.OtusColors
@@ -62,25 +63,41 @@ internal fun <T> OrderedChoiceSheet(
                 spacing = SheetTokens.gap,
                 background = OtusColors.bgDark,
             ) { choice ->
-                SelectionRow(choice.path, selected = true, onClick = { draft = draft - choice.key }, leading = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        DragHandle(choice.path)
-                        Symbol(choice.icon)
-                    }
-                })
+                ShownChoice(choice) { draft = draft - choice.key }
             }
-            choices.filter { it.key !in draft }.groupBy { it.group }.forEach { (group, options) ->
-                SheetCaption(group)
-                options.nestedByPath { it.path }.forEach { (choice, name, depth) ->
-                    SelectionRow(
-                        name,
-                        selected = false,
-                        onClick = { draft = draft + choice.key },
-                        modifier = Modifier.nestIndent(PageTokens.nestIndent, depth),
-                        leading = { Symbol(choice.icon) },
-                    )
-                }
-            }
+            AvailableChoices(choices.filter { it.key !in draft }) { key -> draft = draft + key }
+        }
+    }
+}
+
+@Composable
+private fun <T> ReorderableScope.ShownChoice(
+    choice: OrderedChoice<T>,
+    onRemove: () -> Unit,
+) {
+    SelectionRow(choice.path, selected = true, onClick = onRemove, leading = {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            DragHandle(choice.path)
+            Symbol(choice.icon)
+        }
+    })
+}
+
+@Composable
+private fun <T> AvailableChoices(
+    choices: List<OrderedChoice<T>>,
+    onAdd: (String) -> Unit,
+) {
+    choices.groupBy { it.group }.forEach { (group, options) ->
+        SheetCaption(group)
+        options.nestedByPath { it.path }.forEach { (choice, name, depth) ->
+            SelectionRow(
+                name,
+                selected = false,
+                onClick = { onAdd(choice.key) },
+                modifier = Modifier.nestIndent(PageTokens.nestIndent, depth),
+                leading = { Symbol(choice.icon) },
+            )
         }
     }
 }

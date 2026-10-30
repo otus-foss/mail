@@ -26,8 +26,8 @@ internal class Outgoing(
 /**
  * Sends drafts after the compose page has closed, with toasts that say how it went. A message
  * waits [holdMillis] on the device first, read when it is sent, with Undo, which opens it again;
- * a hold of 0 sends at once. A scheduled one goes to
- * the server at once, and Undo cancels it there. A failure stays as a toast with Retry.
+ * a hold of 0 sends at once. A scheduled one goes to the server at once, and Undo cancels it there.
+ * A failure stays as a toast with Retry.
  */
 internal class OutgoingMail(
     private val scope: CoroutineScope,

@@ -96,15 +96,20 @@ internal class MailScopeRows(
         Collapsible(open) {
             Column {
                 addresses.forEach { address ->
-                    ScopeChildRow(
-                        addressOption(address, accounts, count(address), pinned = false),
-                        chosen = chosen == address,
-                        onClick = { onChoose(address) },
-                        onLongClick = { onTogglePin(address) },
-                    )
+                    ChildAddress(address)
                 }
             }
         }
+    }
+
+    @Composable
+    private fun ChildAddress(address: MailScopeChoice.Address) {
+        ScopeChildRow(
+            addressOption(address, accounts, count(address), pinned = false),
+            chosen = chosen == address,
+            onClick = { onChoose(address) },
+            onLongClick = { onTogglePin(address) },
+        )
     }
 
     /** The domain's addresses' counts added up; null when none of them has one. */

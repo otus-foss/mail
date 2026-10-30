@@ -60,9 +60,8 @@ class NotificationSettingsTest {
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithContentDescription("About Instant delivery").performClick()
         compose
-            .onNodeWithText(
-                "Choose Google Play services for instant delivery without an extra app.",
-            ).assertIsDisplayed()
+            .onNodeWithText("Choose Google Play services for instant delivery without an extra app.")
+            .assertIsDisplayed()
         compose.onNodeWithContentDescription("Close").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Instant delivery").performClick()
@@ -87,10 +86,7 @@ class NotificationSettingsTest {
         compose.onNodeWithText("Delivery through Google Play services").assertIsDisplayed()
         compose.onRoot().captureRoboImage("src/test/screenshots/notifications/google-settings.png")
         compose.onNodeWithText("Notifications").performClick()
-        compose
-            .onNodeWithText(
-                "The server doesn't support Google delivery.",
-            ).assertIsDisplayed()
+        compose.onNodeWithText("The server doesn't support Google delivery.").assertIsDisplayed()
         compose.onAllNodesWithText("Connecting").assertCountEquals(0)
     }
 

@@ -63,29 +63,40 @@ internal fun ActionPickerSheet(
                 Column {
                     if (groups.size > 1) SheetCaption(target.title, RowTextInset)
                     actions.forEach { action ->
-                        SettingRow(
-                            action.label,
-                            { onPick(action) },
-                            description = layout.swapNote(slot, action),
-                            icon = action.symbol,
-                            trailing = { if (action == current) Symbol(Res.drawable.symbol_check) },
-                            density = RowDensity.Compact,
-                        )
+                        ActionChoice(action, layout, slot, current, onPick)
                     }
                     if (moveTo && target == ActionTarget.Messages) MoveToChoice(slot, layout, folders, onPick)
                 }
             }
             if (groups.isEmpty()) SheetCaption("No actions match.", RowTextInset, heading = false)
-            onRemove?.let {
+            if (onRemove != null) {
                 SettingRow(
                     "Remove from bar",
-                    it,
+                    onRemove,
                     icon = Res.drawable.symbol_close,
                     density = RowDensity.Compact,
                 )
             }
         }
     }
+}
+
+@Composable
+private fun ActionChoice(
+    action: MailAction,
+    layout: ActionBarLayout,
+    slot: BarSlot,
+    current: BarButton?,
+    onPick: (BarButton) -> Unit,
+) {
+    SettingRow(
+        action.label,
+        { onPick(action) },
+        description = layout.swapNote(slot, action),
+        icon = action.symbol,
+        trailing = { if (action == current) Symbol(Res.drawable.symbol_check) },
+        density = RowDensity.Compact,
+    )
 }
 
 /** Says that picking [button] for [slot] trades places with the slot that holds it, if another does. */

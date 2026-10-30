@@ -62,14 +62,14 @@ internal class MessageSorting(
                 .firstOrNull()
                 ?.address
                 .orEmpty()
-        val choices =
-            sortConditions(message.sender.address, recipient, message.subject).map { sort ->
+        return sortConditions(message.sender.address, recipient, message.subject)
+            .map { sort ->
                 val person = message.personFor(sort.kind)
                 SortChoice(sort.phrase, sort.keyword, sort.shown, sort.reach, person) { target, moved ->
                     addRule(account.accountId, sort, person, target, moved, feed)
                 }
-            }
-        return choices.takeIf { it.isNotEmpty() }?.let { FutureSorting(account.accountName, it) }
+            }.takeIf { it.isNotEmpty() }
+            ?.let { FutureSorting(account.accountName, it) }
     }
 
     private fun addRule(

@@ -88,13 +88,10 @@ internal class FolderCleaning(
     /** Empties only the list's folders that let their messages leave. */
     private fun emptying(feed: InboxFeedState): FolderEmptying? {
         val role = listRole(feed)?.takeIf { it != FolderRole.Sent } ?: return null
-        val emptied = shownFolders(feed.mailScope).filter { it.rights.mayRemoveItems }
-        return emptied.takeIf { it.isNotEmpty() }?.let {
-            FolderEmptying(
-                role,
-                it.sumOf(MailFolder::total),
-            ) { empty(feed, it) }
-        }
+        return shownFolders(feed.mailScope)
+            .filter { it.rights.mayRemoveItems }
+            .takeIf { it.isNotEmpty() }
+            ?.let { folders -> FolderEmptying(role, folders.sumOf(MailFolder::total)) { empty(feed, folders) } }
     }
 
     /** Takes the loaded messages off the list, and puts back those the server kept. */
@@ -102,11 +99,11 @@ internal class FolderCleaning(
         feed: InboxFeedState,
         emptied: List<MailFolder>,
     ) {
-        val loaded =
-            feed.messages.filter { message ->
-                emptied.any { it.accountId == message.location.accountId && it.id == message.location.mailboxId }
-            }
-        val changes = loaded.associateWith { feed.remove(it.id) }
+        val changes =
+            feed.messages
+                .filter { message ->
+                    emptied.any { it.accountId == message.location.accountId && it.id == message.location.mailboxId }
+                }.associateWith { feed.remove(it.id) }
         scope.launch {
             val results = emptied.map { it.accountId to services.cleaner.empty(it.accountId, it.id) }
             val removed = results.flatMap { (account, deletion) -> deletion.emailIds.map { account to it } }.toSet()

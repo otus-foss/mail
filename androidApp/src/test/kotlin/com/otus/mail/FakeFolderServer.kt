@@ -99,28 +99,17 @@ class FakeFolderServer {
     private val engine =
         MockEngine { request ->
             check(request.headers[HttpHeaders.Authorization] in SIGN_INS)
+            val adaSignedIn = request.headers[HttpHeaders.Authorization] == SIGN_INS.first()
             when (request.url.encodedPath) {
-                "/jmap/session" -> {
-                    json(session(adaSignedIn = request.headers[HttpHeaders.Authorization] == SIGN_INS.first()))
-                }
-
-                "/upload/d1/" -> {
-                    upload(request)
-                }
-
-                "/download/S1" -> {
-                    respond(
-                        script.orEmpty(),
-                        HttpStatusCode.OK,
-                        headersOf(HttpHeaders.ContentType, "application/sieve"),
-                    )
-                }
-
-                else -> {
-                    json(api((request.body as TextContent).text))
-                }
+                "/jmap/session" -> json(session(adaSignedIn))
+                "/upload/d1/" -> upload(request)
+                "/download/S1" -> downloadScript()
+                else -> json(api((request.body as TextContent).text))
             }
         }
+
+    private fun MockRequestHandleScope.downloadScript(): HttpResponseData =
+        respond(script.orEmpty(), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/sieve"))
 
     private fun MockRequestHandleScope.upload(request: HttpRequestData): HttpResponseData {
         uploaded = (request.body as OutgoingContent.ByteArrayContent).bytes().decodeToString()

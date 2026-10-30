@@ -27,7 +27,8 @@ class JmapMessageMover(
         leaving: Set<String>,
     ): Boolean {
         val left = leaving - folderId - ""
-        return left.isNotEmpty() && updateEmail(connections, logins, message, movePatch(left, folderId), cache)
+        if (left.isEmpty()) return false
+        return updateEmail(connections, logins, message, movePatch(left, folderId), cache)
     }
 
     override suspend fun moveBack(
@@ -41,7 +42,8 @@ class JmapMessageMover(
                 if (folderId !in message.location.mailboxIds) remove("mailboxIds", folderId)
                 back.forEach { set(JsonPrimitive(true), "mailboxIds", it) }
             }
-        return back.isNotEmpty() && updateEmail(connections, logins, message, patch, cache)
+        if (back.isEmpty()) return false
+        return updateEmail(connections, logins, message, patch, cache)
     }
 
     override suspend fun setInFolder(
@@ -54,11 +56,14 @@ class JmapMessageMover(
     override suspend fun setMailboxes(
         accountId: String,
         mailboxes: Map<String, Set<String>>,
-    ): Set<String> {
-        val patches =
+    ): Set<String> =
+        updateAccountEmails(
+            connections,
+            logins,
+            accountId,
             mailboxes.mapValues { (_, boxes) ->
                 buildJsonObject { put("mailboxIds", JsonObject(boxes.associateWith { JsonPrimitive(true) })) }
-            }
-        return updateAccountEmails(connections, logins, accountId, patches, cache)
-    }
+            },
+            cache,
+        )
 }

@@ -83,14 +83,10 @@ internal fun MailSidebar(
             )
         (layout.shown - empty).forEach { section ->
             SidebarDivider()
+            val style = layout.mailboxes
             when (section) {
-                SidebarSection.Mailboxes -> {
-                    SidebarMailboxList(mailboxes, layout.mailboxes, current, counter, colorOf, onSelect)
-                }
-
-                SidebarSection.Folders -> {
-                    tree.Rows(shared)
-                }
+                SidebarSection.Mailboxes -> SidebarMailboxList(mailboxes, style, current, counter, colorOf, onSelect)
+                SidebarSection.Folders -> tree.Rows(shared)
             }
         }
     }

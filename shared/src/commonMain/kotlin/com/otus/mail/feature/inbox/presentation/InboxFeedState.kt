@@ -184,12 +184,7 @@ class InboxFeedState(
                     publish(load, fetch(this, load))
                 } catch (expected: InboxStorageException) {
                     if (load.number == request) {
-                        val failure =
-                            when (expected.storage) {
-                                InboxStorage.Accounts -> "Couldn't load saved accounts. Try again in Settings."
-                                InboxStorage.Cache -> "Couldn't save cached mail. Refresh to try again."
-                            }
-                        notice = loadNotice(reportedNotice, failure)
+                        notice = loadNotice(reportedNotice, expected.storage.notice)
                     }
                 } finally {
                     if (load.number == request) onEnd()
@@ -268,3 +263,10 @@ private fun loadNotice(
     reported: String?,
     loading: String?,
 ): String? = listOfNotNull(reported, loading).distinct().joinToString(" ").ifEmpty { null }
+
+private val InboxStorage.notice: String
+    get() =
+        when (this) {
+            InboxStorage.Accounts -> "Couldn't load saved accounts. Try again in Settings."
+            InboxStorage.Cache -> "Couldn't save cached mail. Refresh to try again."
+        }

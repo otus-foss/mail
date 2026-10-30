@@ -80,10 +80,7 @@ class CalendarDragTest {
         saveScreenshot("month-year-picker")
         compose.onNodeWithText("Go").performClick()
         compose.onNode(hasText("February 2020") and hasClickAction()).assertIsDisplayed()
-        compose
-            .onNodeWithText(
-                "2020-02-01 → Choose an end date",
-            ).assertIsDisplayed()
+        compose.onNodeWithText("2020-02-01 → Choose an end date").assertIsDisplayed()
         compose.onNodeWithContentDescription("2020-02-29").performScrollTo().assertIsDisplayed()
     }
 

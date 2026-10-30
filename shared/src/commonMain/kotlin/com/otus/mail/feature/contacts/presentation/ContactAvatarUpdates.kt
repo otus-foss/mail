@@ -98,8 +98,10 @@ internal fun contactPhotos(
                 .filter { allAccounts || it.loginId == login }
                 .groupBy { it.email }
                 .map { (email, found) ->
-                    val ranked = found.sortedWith(compareBy({ !it.avatarCard }, { it.loginId != login }))
-                    PhotoAddress(login, email) to ranked.firstNotNullOfOrNull { it.shown }
+                    PhotoAddress(login, email) to
+                        found
+                            .sortedWith(compareBy({ !it.avatarCard }, { it.loginId != login }))
+                            .firstNotNullOfOrNull { it.shown }
                 }
         }.toMap()
 }

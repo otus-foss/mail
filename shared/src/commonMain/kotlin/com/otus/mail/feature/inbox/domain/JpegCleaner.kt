@@ -27,20 +27,18 @@ internal class JpegCleaner(
         while (image.u8(code) == MARKER) code++
         val marker = image.u8(code)
         return when (marker) {
-            END_OF_IMAGE -> {
-                kept += image.slice(code - 1, code + 1)
-                null
-            }
-
-            in FIRST_RESTART..LAST_RESTART, TEMPORARY -> {
-                kept += image.slice(code - 1, code + 1)
-                code + 1
-            }
-
-            else -> {
-                segment(code, marker)
-            }
+            END_OF_IMAGE -> keepMarker(code, last = true)
+            in FIRST_RESTART..LAST_RESTART, TEMPORARY -> keepMarker(code, last = false)
+            else -> segment(code, marker)
         }
+    }
+
+    private fun keepMarker(
+        code: Int,
+        last: Boolean,
+    ): Int? {
+        kept += image.slice(code - 1, code + 1)
+        return if (last) null else code + 1
     }
 
     /** Copies the segment whose [marker] is at [code] when it draws the image; where the next one starts. */
@@ -55,7 +53,10 @@ internal class JpegCleaner(
         val segment = image.slice(code - 1, end)
         if (keeps(marker, data)) kept += segment
         if (marker == APP0 && kept.size == 2) orientationAt = 2
-        if (marker == APP1) exifOrientation(image, data, end)?.let { orientation = it }
+        if (marker == APP1) {
+            val decoded = exifOrientation(image, data, end)
+            if (decoded != null) orientation = decoded
+        }
         return if (marker == START_OF_SCAN) scanned(end) else end
     }
 

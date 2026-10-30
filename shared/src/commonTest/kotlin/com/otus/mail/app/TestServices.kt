@@ -12,10 +12,11 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.withContext
 
 /** Services signed in to Ada's account alone, on the server that [engine] mocks. */
-internal fun adaServices(engine: HttpClientEngine): MailServices {
-    val logins = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-    return MailServices(logins = logins, createClient = { JmapClient(engine) })
-}
+internal fun adaServices(engine: HttpClientEngine): MailServices =
+    MailServices(
+        logins = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") },
+        createClient = { JmapClient(engine) },
+    )
 
 /** Lets the JMAP calls, which read logins off the test thread, finish until [done], or for a short while. */
 @OptIn(ExperimentalCoroutinesApi::class)

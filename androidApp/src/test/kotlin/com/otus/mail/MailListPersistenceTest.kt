@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.content.Context
-import androidx.core.content.edit
 import com.otus.mail.feature.inbox.domain.DateStyle
 import com.otus.mail.feature.inbox.domain.ListOrder
 import com.otus.mail.feature.inbox.domain.MailBehavior
@@ -21,10 +20,12 @@ class MailListPersistenceTest {
 
     @Test
     fun settingsSavedBeforeTheMailListPageReadItsDefaults() {
-        context.getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE).edit {
-            clear()
-            putBoolean("read_later", true)
-        }
+        context
+            .getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .putBoolean("read_later", true)
+            .apply()
         assertEquals(MailListLayout(), AndroidMailBehaviorStore(context).read().list)
     }
 
