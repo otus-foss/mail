@@ -137,12 +137,7 @@ fun MailBehaviorSettings(
             "Show quoted text",
             checked = behavior.showQuotes,
             onCheckedChange = { on -> state.update { it.copy(showQuotes = on) } },
-            description = "When off, replies show only what's new",
-            info =
-                InfoText(
-                    "Show quoted text",
-                    "With it off, swipe through the conversation to read the earlier messages.",
-                ),
+            info = InfoText("Show quoted text", "Swipe through the conversation to read earlier messages."),
             icon = Res.drawable.symbol_forum,
         )
     }

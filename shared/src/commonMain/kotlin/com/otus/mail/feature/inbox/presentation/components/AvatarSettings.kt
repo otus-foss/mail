@@ -69,7 +69,7 @@ private val IconSourceInfo =
     InfoText(
         "Website icons",
         listOf(
-            "Senders without a contact photo show their website's logo. Icons from picks who fetches it.",
+            "Senders without a contact photo show their website's logo.",
             "Sender websites give the sharpest icons, but each website sees your IP address and that you " +
                 "got its mail.",
             "DuckDuckGo fetches icons for you, so senders see nothing. DuckDuckGo sees your IP address and " +

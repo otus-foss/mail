@@ -29,13 +29,11 @@ internal fun FilterPanelSettings(state: MailBehaviorState) {
     SettingRow(
         "Filter panel",
         { choosing = FilterSetting.Sections },
-        description = "Sections and their order",
         icon = Res.drawable.symbol_tune,
     ) { ValueButton(shownCount(layout.sections.size)) }
     SettingRow(
         "Quick filters",
         { choosing = FilterSetting.Quick },
-        description = "On/off filters and their order",
         icon = Res.drawable.symbol_mark_email_unread,
     ) { ValueButton(shownCount(layout.quick.size)) }
     when (choosing) {

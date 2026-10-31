@@ -29,7 +29,7 @@ internal fun MoveSortFooter(sorting: MoveSorting) {
         Modifier.padding(SheetTokens.inset),
         verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
     ) {
-        SheetCaption("Create new rule based on this move action", RowTextInset)
+        SheetCaption("New rule", RowTextInset)
         ValuePicker(
             chosen.value,
             { choosing = true },
@@ -37,7 +37,6 @@ internal fun MoveSortFooter(sorting: MoveSorting) {
             keyword = chosen.keyword,
             avatar = chosen.person?.chipAvatar,
         )
-        SheetCaption("This message and future ones like it go there.", RowTextInset, heading = false)
     }
     if (choosing) {
         ChoiceSheet(
@@ -46,7 +45,7 @@ internal fun MoveSortFooter(sorting: MoveSorting) {
             row = { ChoiceRow(it.value, it.detail, person = it.person?.namedByAddress, keyword = it.keyword) },
             onSelect = sorting.onChoose,
             onDismiss = { choosing = false },
-            footnote = "Becomes a rule in ${future.accountName}. Change or delete it any time in Rules.",
+            footnote = "Becomes a rule in ${future.accountName}.",
         )
     }
 }

@@ -55,7 +55,7 @@ internal fun <T> OrderedChoiceSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             SheetCaption("Shown")
-            if (shown.isEmpty()) SheetCaption("Nothing shown yet. Add something below.", heading = false)
+            if (shown.isEmpty()) SheetCaption("Nothing shown yet.", heading = false)
             ReorderableColumn(
                 shown,
                 key = { it.key },

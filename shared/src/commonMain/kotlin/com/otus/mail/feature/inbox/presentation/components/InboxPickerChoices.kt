@@ -56,7 +56,7 @@ private fun LazyListScope.peopleChoices(
                 it.address.contains(needle, ignoreCase = true)
         }
     if (matches.isEmpty()) {
-        item { EmptyChoices(people.isEmpty(), "No senders yet. Your mail contacts will appear here.") }
+        item { EmptyChoices(people.isEmpty(), "No senders yet.") }
     }
     items(matches, key = { it.address }) { person ->
         SelectionRow(

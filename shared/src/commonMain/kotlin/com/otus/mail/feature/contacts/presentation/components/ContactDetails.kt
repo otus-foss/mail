@@ -188,7 +188,7 @@ internal fun GroupMembers(
             onEdit = onEditAvatar,
         )
         if (members.isEmpty()) {
-            PageNote("No one in this group yet. Add people to write to all of them at once.")
+            PageNote("No one in this group yet.")
         }
         Column(verticalArrangement = Arrangement.spacedBy(EntryTokens.gap)) {
             members.forEach { person -> GroupMember(person, onOpen, onRemove) }

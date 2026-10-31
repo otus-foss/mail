@@ -47,7 +47,6 @@ internal fun FolderPickerSheet(
         "Folders",
         onDismiss,
         search = { PickerSearch(query, { query = it }, "Search folders") },
-        footnote = "Drafts, Sent, Junk and Trash are left out unless you tick them.",
     ) {
         options.accounts.forEach { account ->
             val open = account.id !in foldedAccounts
