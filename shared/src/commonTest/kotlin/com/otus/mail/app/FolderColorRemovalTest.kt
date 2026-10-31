@@ -30,7 +30,7 @@ class FolderColorRemovalTest {
             val store = MemoryStore()
             store.writeColors(FolderColors().with(listOf(adaClients, bobClients), "Yellow"))
 
-            MailServices(logins, stores = MailDeviceStores(folderColors = store)).accounts.remove("ada")
+            MailServices(logins, stores = MailDeviceStores(FolderStores(colors = store))).accounts.remove("ada")
 
             assertEquals(FolderColors().with(listOf(bobClients), "Yellow"), store.readColors())
         }

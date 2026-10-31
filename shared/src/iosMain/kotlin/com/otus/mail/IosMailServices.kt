@@ -3,8 +3,10 @@ package com.otus.mail
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.IosLoginStore
+import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailServices
+import com.otus.mail.app.WaitingStores
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.feature.notifications.domain.InstantPush
@@ -26,12 +28,11 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
         avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
         stores =
             MailDeviceStores(
-                IosReadLaterStore(),
-                IosFolderColorStore(),
+                FolderStores(IosReadLaterStore(), IosFolderColorStore(), IosFolderNudgeStore()),
                 IosAddressPinStore(),
-                IosFolderNudgeStore(),
                 SqlMailCache(cacheDriver(cacheDirectory)),
                 contacts = IosContactStore(),
+                waiting = WaitingStores(IosOutboxStore(), IosEmailChangeStore()),
             ),
     )
 }

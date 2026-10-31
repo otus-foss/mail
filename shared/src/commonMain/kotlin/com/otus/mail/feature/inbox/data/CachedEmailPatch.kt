@@ -47,7 +47,7 @@ private fun patched(
     }
 
 /** [path] is `property` or `property/key`, with the key escaped as a JSON Pointer token (RFC 6901). */
-private fun JsonObject.patchedAt(
+internal fun JsonObject.patchedAt(
     path: String,
     value: JsonElement,
 ): JsonObject {

@@ -19,6 +19,9 @@ internal fun LocalDateTime.sendLaterLabel(now: LocalDateTime): String {
     return "$day, $clock"
 }
 
+/** When cached mail last matched the server: the time today, such as "14:32", or else the date, "30 Oct". */
+internal fun LocalDateTime.syncedLabel(now: LocalDateTime): String = if (date == now.date) clock else dayAndMonth
+
 /** When a scheduled message goes, with its date, as the notice and toast say: "Scheduled for Mon 19 Oct, 8:00". */
 internal fun LocalDateTime.scheduledLabel(): String = "Scheduled for $weekday $dayAndMonth, $clock"
 

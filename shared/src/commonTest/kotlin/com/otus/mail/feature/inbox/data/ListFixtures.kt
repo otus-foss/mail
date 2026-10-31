@@ -18,14 +18,12 @@ internal fun FakeMailServer.source(
     store: LoginStore,
     cache: MailCache = InMemoryMailCache(),
     limit: Int = PAGE,
-): JmapMailSource =
-    JmapMailSource(
-        JmapConnections(JmapClient(stalwartLike(api = ::answer)), store),
-        store,
-        cache,
-        limit,
-        zone = { TimeZone.UTC },
-    )
+    queue: EmailChangeQueue? = null,
+): JmapMailSource = JmapMailSource(connections(store), store, cache, limit, zone = { TimeZone.UTC }, queue = queue)
+
+/** Connections to this server for the saved logins of [store]. */
+internal fun FakeMailServer.connections(store: LoginStore) =
+    JmapConnections(JmapClient(stalwartLike(api = ::answer)), store)
 
 private const val PAGE = 50
 

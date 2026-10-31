@@ -26,7 +26,7 @@ class ComposeAutosaveIdentityTest {
                 }
             val state =
                 ComposeState(
-                    ComposeServices(drafts, { _, _, _ -> error("No sending") }, { _, _ -> emptyList() }),
+                    ComposeServices(drafts, { _, _ -> emptyList() }),
                     backgroundScope,
                     ComposeRequest.Resume(
                         Draft("a", from = first.sender, body = "Hello", emailId = "existing"),

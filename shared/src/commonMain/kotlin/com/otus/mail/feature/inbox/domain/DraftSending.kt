@@ -1,8 +1,10 @@
 package com.otus.mail.feature.inbox.domain
 
+import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
 /** The message a draft answers; [forwarded] when the draft passes it on rather than replying. */
+@Serializable
 data class AnsweredMessage(
     val emailId: String,
     val forwarded: Boolean,
@@ -27,7 +29,18 @@ fun ComposeRequest.answered(accountId: String): AnsweredMessage? {
  * Why a draft was not sent. [Unreachable] means the outcome is unknown: the server may have sent
  * the message before the connection failed.
  */
-enum class SendFailure { NoIdentity, Recipients, TooManyRecipients, TooLarge, NotPermitted, Unreachable, ServerProblem }
+enum class SendFailure {
+    NoIdentity,
+    Recipients,
+    TooManyRecipients,
+    TooLarge,
+    NotPermitted,
+    Unreachable,
+    ServerProblem,
+
+    /** A send may have gone, and the server cannot say whether it did, so only the user can tell. */
+    Unconfirmed,
+}
 
 /** The failure a [DraftSender] result carries. */
 class SendException(

@@ -8,7 +8,6 @@ import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.SizeFilter
-import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import com.otus.mail.testing.ADA_LOGIN
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonArray
@@ -17,6 +16,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /** The inbox list kept on the device, synced by changes, and loaded a page at a time. */
@@ -131,7 +131,9 @@ class JmapMailSourceCacheTest {
             server.down = true
             val snapshot = source.messages(MailScope.Inbox, query)
             assertEquals(shown, snapshot.messages)
-            assertEquals(listOf(UnavailableAccount("Ada", InboxFailure.Unreachable)), snapshot.unavailable)
+            val unavailable = snapshot.unavailable.single()
+            assertEquals("Ada" to InboxFailure.Unreachable, unavailable.name to unavailable.reason)
+            assertNotNull(unavailable.syncedAt, "The notice says when the account last loaded")
         }
 
     private val JsonObject.properties: List<String>

@@ -12,18 +12,20 @@ import com.otus.mail.feature.inbox.domain.MessageMarker
  * Sets or clears one keyword with an `Email/set` patch (RFC 8621, sections 4.1.1 and 4.6). Other
  * keywords stay as they are. A cleared keyword is removed, because keyword values must be true.
  * Each account gets one call per batch of at most its session's `maxObjectsInSet` messages. The
- * emails the server changed change in [cache] too.
+ * emails the server changed change in [cache] too. Offline, a mark waits in [queue].
  */
 class JmapMessageMarker(
     private val connections: JmapConnections,
     private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
+    private val queue: EmailChangeQueue? = null,
 ) : MessageMarker {
     override suspend fun mark(
         messages: List<MailMessage>,
         flag: MessageFlag,
         on: Boolean,
-    ): Set<String> = updateEmails(connections, logins, messages, membershipPatch("keywords", flag.keyword, on), cache)
+    ): Set<String> =
+        updateEmails(connections, logins, messages, membershipPatch("keywords", flag.keyword, on), cache, queue)
 }
 
 internal val MessageFlag.keyword: String

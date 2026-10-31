@@ -3,6 +3,7 @@ package com.otus.mail
 import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.folders.domain.FolderColorStore
@@ -33,7 +34,8 @@ import java.util.concurrent.CopyOnWriteArrayList
  * A JMAP server shaped like Stalwart that answers each method call of a request by name and
  * remembers changes: folders created with `Mailbox/set` and the rules script uploaded and
  * activated with `SieveScript/set`. Drafts saved with `Email/set` go in the [draftsFolder] that
- * `Mailbox/query` finds by role. [FakeFolderMail] holds the mail.
+ * `Mailbox/query` finds by role. It cannot calculate `Mailbox/changes`, so each load reads every
+ * folder. [FakeFolderMail] holds the mail.
  */
 class FakeFolderServer {
     /** Every API request body, in order. The client adds to it while tests read it. */
@@ -89,7 +91,7 @@ class FakeFolderServer {
         }
         return MailServices(
             store,
-            stores = MailDeviceStores(folderColors = folderColorStore),
+            stores = MailDeviceStores(FolderStores(colors = folderColorStore)),
             instantPush = instantPush,
         ) {
             JmapClient(engine)
@@ -127,6 +129,7 @@ class FakeFolderServer {
     ): JsonObject? =
         when (method) {
             "Mailbox/get" -> mailboxes(arguments)
+            "Mailbox/changes" -> null
             "Mailbox/query" -> buildJsonObject { put("ids", listOfNotNull(draftsFolder).toJsonArray()) }
             "Mailbox/set" -> setFolders(arguments)
             "Identity/get" -> IDENTITIES

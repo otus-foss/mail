@@ -16,6 +16,7 @@ import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
+import com.otus.designsystem.R as DesignR
 
 /**
  * Posts one notification per new message, grouped by account, showing what [previews] allows for
@@ -52,7 +53,7 @@ class MailNotifications(
             BACKGROUND_ID,
             NotificationCompat
                 .Builder(context, BACKGROUND_CHANNEL)
-                .setSmallIcon(android.R.drawable.sym_action_email)
+                .setSmallIcon(DesignR.drawable.otus_mail_status_icon)
                 .setContentTitle(context.getString(R.string.notification_checking))
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .build(),
@@ -154,7 +155,7 @@ private const val CHANNEL = "new_mail"
 private fun Context.mailAlert(mail: NewMail) =
     NotificationCompat
         .Builder(this, CHANNEL)
-        .setSmallIcon(android.R.drawable.sym_action_email)
+        .setSmallIcon(DesignR.drawable.otus_mail_status_icon)
         .setCategory(NotificationCompat.CATEGORY_EMAIL)
         .setGroup("mail/${mail.loginId}")
         .setContentIntent(openApp())

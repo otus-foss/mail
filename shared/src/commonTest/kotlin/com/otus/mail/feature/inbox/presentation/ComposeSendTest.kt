@@ -3,13 +3,8 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OriginalMessage
-import com.otus.mail.feature.inbox.domain.SendException
-import com.otus.mail.feature.inbox.domain.SendFailure
-import com.otus.mail.feature.inbox.domain.SendTime
-import com.otus.mail.feature.inbox.domain.SentMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -26,31 +21,14 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ComposeSendTest {
-    private class FakeSender(
-        var failure: SendFailure? = null,
-    ) : DraftSender {
-        val sent = mutableListOf<Pair<Draft, AnsweredMessage?>>()
-
-        override suspend fun send(
-            draft: Draft,
-            answered: AnsweredMessage?,
-            time: SendTime,
-        ): Result<SentMessage> {
-            failure?.let { return Result.failure(SendException(it)) }
-            sent += draft to answered
-            return Result.success(SentMessage(draft.accountId, "e1", "s1"))
-        }
-    }
-
     private val me = MailSender("Me", "me@example.com", "a1")
 
     private fun TestScope.state(
         drafts: FakeDrafts = FakeDrafts(listOf(me)),
-        sender: DraftSender = FakeSender(),
         request: ComposeRequest = ComposeRequest.New(),
         onSent: (MailSender) -> Unit = {},
     ) = ComposeState(
-        ComposeServices(drafts, sender, { _, _ -> emptyList() }),
+        ComposeServices(drafts, { _, _ -> emptyList() }),
         backgroundScope,
         request,
         ComposeOrigin("a1", listOf(ComposeAccount("a1", "Work")), listOf(me.address)),
@@ -75,78 +53,62 @@ class ComposeSendTest {
     @Test
     fun sendTakesAnAddressStillBeingTypedAndRecordsTheAddressItWentFrom() =
         runTest {
-            val sender = FakeSender()
             var sentFrom: MailSender? = null
-            val state = state(sender = sender, onSent = { sentFrom = it })
+            val state = state(onSent = { sentFrom = it })
             state.recipients.type(RecipientField.To, "ada@example.com")
-            val send = assertNotNull(state.handOff())
-            send(SendTime.Now)
-            assertEquals(
-                listOf(MailSender("", "ada@example.com")),
-                sender.sent
-                    .single()
-                    .first.to,
-            )
+            val outgoing = assertNotNull(state.handOff())
+            assertEquals(listOf(MailSender("", "ada@example.com")), outgoing.ready().to)
+            assertNull(sentFrom, "Nothing is recorded before the message went")
+            outgoing.sent()
             assertEquals(me.address, sentFrom?.address)
         }
 
     @Test
-    fun aReplyIsSentAsWrittenWithItsOriginal() =
+    fun aReplyIsHandedOverAsWrittenWithItsOriginal() =
         runTest {
-            val sender = FakeSender()
             val reply = ComposeRequest.Reply(original(), all = false)
-            val state = state(sender = sender, request = reply)
+            val state = state(request = reply)
             state.edit { it.copy(body = "Thanks!") }
-            assertEquals(SentMessage("a1", "e1", "s1"), assertNotNull(state.handOff())(SendTime.Now).getOrThrow())
+            val outgoing = assertNotNull(state.handOff())
 
-            val (draft, answered) = sender.sent.single()
+            val draft = outgoing.ready()
             assertEquals("Thanks!", draft.body)
             assertEquals(me, draft.from)
-            assertEquals(AnsweredMessage("m1", forwarded = false), answered)
+            assertEquals(AnsweredMessage("m1", forwarded = false), outgoing.answered)
         }
 
     @Test
-    fun aSendWaitsForTheSaveInProgressAndNothingSavesAfterIt() =
+    fun aHandOffWaitsForTheSaveInProgressAndNothingSavesAfterIt() =
         runTest {
             val answer = CompletableDeferred<Unit>()
             val drafts = FakeDrafts(listOf(me), answer)
-            val sender = FakeSender()
-            val state = state(drafts, sender)
+            val state = state(drafts)
             state.recipients.type(RecipientField.To, "ada@example.com,")
             advanceTimeBy(DELAY + 1)
             assertEquals(1, drafts.saved.size, "A save is under way")
 
-            val send = assertNotNull(state.handOff())
-            backgroundScope.launch { send(SendTime.Now) }
+            val outgoing = assertNotNull(state.handOff())
+            var ready: Draft? = null
+            backgroundScope.launch { ready = outgoing.ready() }
             runCurrent()
-            assertTrue(sender.sent.isEmpty(), "Sending waits for the save to learn its copy's id")
+            assertNull(ready, "The draft waits for the save to learn its copy's id")
             answer.complete(Unit)
             runCurrent()
-            assertEquals(
-                "d1",
-                sender.sent
-                    .single()
-                    .first.emailId,
-            )
+            assertEquals("d1", ready?.emailId)
 
             state.edit { it.copy(subject = "Late change") }
             state.close()
             advanceTimeBy(DELAY * 2)
-            assertEquals(1, drafts.saved.size, "A sent draft is never saved again")
+            assertEquals(1, drafts.saved.size, "A handed-over draft is never saved again")
         }
 
     @Test
-    fun aFailedSendCanRunAgainAndNothingSendsWithoutRecipients() =
+    fun nothingIsHandedOverWithoutRecipients() =
         runTest {
-            val sender = FakeSender(SendFailure.Unreachable)
-            val state = state(sender = sender)
+            val state = state()
             assertNull(state.handOff(), "No recipient yet")
             state.recipients.type(RecipientField.To, "ada@example.com,")
-            val send = assertNotNull(state.handOff())
-            assertTrue(send(SendTime.Now).isFailure)
-            sender.failure = null
-            assertTrue(send(SendTime.Now).isSuccess)
-            assertEquals(1, sender.sent.size)
+            assertNotNull(state.handOff())
         }
 
     private fun original() =
