@@ -10,6 +10,7 @@ import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailPickers
 import com.otus.mail.app.MailPlatform
+import com.otus.mail.app.MailPush
 import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.app.WaitingStores
@@ -79,7 +80,9 @@ class OtusMailApplication :
     val instantPush: AndroidInstantPush by lazy { AndroidInstantPush(this) }
 
     /** One per process, so its lock covers the push service, the workers, and the settings page. */
-    val push: PushSubscriptions by lazy { services.pushSubscriptions(AndroidPushStateStore(this), deviceClientId()) }
+    val push: PushSubscriptions by lazy {
+        services.pushSubscriptions(AndroidPushStateStore(this), deviceClientId(), MailPush.Changes)
+    }
 
     /** Work that outlives any screen, such as cache upkeep. It ends with the process. */
     private val processScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

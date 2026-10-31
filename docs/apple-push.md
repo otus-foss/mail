@@ -11,7 +11,8 @@ by the pull request.
 2. Mail registers its APNs device token with the bridge and creates a random route for each login.
    The bridge receives no login name, server password, Web Push private key or authentication secret.
 3. Mail subscribes to `EmailDelivery` using the existing JMAP subscription library and Web Push
-   encryption keys. The server posts encrypted notices to the route's HTTPS endpoint.
+   encryption keys. It leaves out `Email`, which Android adds to clear alerts for mail read
+   elsewhere, because the notification extension shows an alert for every notice. The server posts encrypted notices to the route's HTTPS endpoint.
 4. During subscription verification, the bridge buffers notices without sending an alert. Mail
    polls the encrypted notices, decrypts the verification code and returns it to the JMAP server.
    The shared library pauses alerts before every new subscription, including replacements.

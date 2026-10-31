@@ -17,7 +17,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.TimeUnit
 
-/** Looks for new mail and posts notifications for it, periodically and after each push. */
+/**
+ * Looks for new mail and posts notifications for it, periodically and after each push, and clears
+ * the notifications of mail handled since.
+ */
 class NewMailWorker(
     context: Context,
     parameters: WorkerParameters,
@@ -26,7 +29,7 @@ class NewMailWorker(
         val app = applicationContext as OtusMailApplication
         // A periodic run and a pushed one can overlap. Running both from the same saved state
         // would post the same mail twice and bring back notifications the user dismissed.
-        checking.withLock { app.services.newMail(AndroidMailStateStore(app)).check(MailNotifications(app)::show) }
+        checking.withLock { app.services.newMail(AndroidMailStateStore(app)).check(MailNotifications(app)) }
         // The periodic run also renews push subscriptions and registers new accounts.
         if (!inputData.getBoolean(PUSHED, false)) PushSyncWorker.enqueue(app)
         return Result.success()

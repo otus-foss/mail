@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class InboxFeedPendingTest {
@@ -43,6 +44,24 @@ class InboxFeedPendingTest {
         runCurrent()
         return feed to source
     }
+
+    @Test
+    fun aReloadAfterAServerChangeKeepsAReportedFailure() =
+        runTest {
+            val (feed, source) = loadedFeed()
+            feed.report("Couldn't finish archiving.")
+            feed.refresh(keepReport = true)
+            runCurrent()
+            source.answer(serverMail)
+            runCurrent()
+            assertEquals("Couldn't finish archiving.", feed.notice, "The push that followed the action keeps it")
+
+            feed.refresh()
+            runCurrent()
+            source.answer(serverMail)
+            runCurrent()
+            assertNull(feed.notice, "A refresh by the user clears it")
+        }
 
     @Test
     fun anArchivedMessageStaysRemovedWhenAnOlderLoadAnswers() =
