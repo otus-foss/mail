@@ -55,7 +55,7 @@ internal fun ComposeBottom(
         if (thread != null && !keyboardUp) ReplyThreadStrip(thread) { showingThread = true }
         Bottom(state, behavior, keyboardUp, onSend, onDiscard, at) { linking = true }
     }
-    if (linking) LinkDialog(state.body::addLink) { linking = false }
+    if (linking) LinkSheet(state.body::addLink) { linking = false }
     if (showingThread && thread != null) ThreadSheet(thread) { showingThread = false }
     val question = state.attachments.cleaning.question
     if (question != null) PhotoCleaningSheet(question, state.attachments.cleaning::answer)

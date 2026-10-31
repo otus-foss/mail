@@ -1,15 +1,20 @@
 package com.otus.mail.feature.folders.presentation.screens
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.otus.designsystem.shared.overlays.components.ActionDialog
-import com.otus.designsystem.shared.overlays.components.DialogAction
+import androidx.compose.ui.Modifier
+import com.otus.designsystem.shared.overlays.components.ClosableSheet
+import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.Subpage
+import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.scopeOf
@@ -135,7 +140,7 @@ private fun AvailableRules(
     )
 }
 
-/** The folder popups, the Add rule sheet, the delete-only menu, and the replace confirmation. */
+/** The folder popups, the Add rule sheet, the delete-only sheet, and the replace confirmation. */
 @Composable
 private fun FolderDetailDialogs(
     folder: MailFolder,
@@ -157,12 +162,17 @@ private fun FolderDetailDialogs(
         AddRuleSheet(folder.name, draft, known, actions)
     }
     popup.locked?.let { index ->
-        ActionDialog(
-            "Can't edit this rule here",
-            listOf(DialogAction("Delete rule", { rules.remove(folder, index) })),
-            onDismiss = close,
-            message = "Only rules on one sender, recipient, subject, or mailing list can be edited here.",
-        )
+        val delete = {
+            rules.remove(folder, index)
+            close()
+        }
+        ClosableSheet("Can't edit this rule here", close, SheetConfirm("Delete rule", delete)) {
+            Text(
+                "Only rules on one sender, recipient, subject, or mailing list can be edited here.",
+                Modifier.padding(SheetTokens.inset),
+                color = OtusColors.text2,
+            )
+        }
     }
     RulesReplaceDialog(rules)
 }

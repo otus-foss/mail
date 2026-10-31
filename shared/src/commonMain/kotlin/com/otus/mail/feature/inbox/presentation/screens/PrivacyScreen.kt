@@ -98,11 +98,6 @@ private fun DeviceSection(
                 checked = behavior.screenSecurity,
                 onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
                 description = "Hides Mail from recent apps and screenshots",
-                info =
-                    InfoText(
-                        "Screen security",
-                        "Mail is hidden in recent apps, and screenshots and screen recording are blocked.",
-                    ),
                 icon = Res.drawable.symbol_visibility_off,
             )
         }
@@ -154,20 +149,11 @@ private val PhotoCleaning.description: String
 private val ImagesInfo =
     InfoText(
         "Remote images",
-        listOf(
-            "Always shows every mail as the sender designed it, and lets senders see when you open their mail.",
-            "In your contacts loads images from contacts, people you've written to, and senders you " +
-                "allowed. Everyone else asks first.",
-            "Images that are part of the mail itself always show. Mail in Spam never loads remote images.",
-        ),
+        "Images that are part of the mail itself always show. Mail in Spam never loads remote images.",
     )
 
 private val PhotosInfo =
     InfoText(
         "Photo details",
-        listOf(
-            "Photos can carry where, when, and with what camera they were taken, and their file name.",
-            "Always remove details strips these from every JPEG, PNG, and WebP photo. Ask each time offers " +
-                "removing them first. Keep details sends photos as they are.",
-        ),
+        "Photos can carry where, when, and with what camera they were taken, and their file name.",
     )

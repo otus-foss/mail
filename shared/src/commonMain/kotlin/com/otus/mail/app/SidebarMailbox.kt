@@ -119,7 +119,7 @@ internal fun pinnableMailboxes(
 internal fun SidebarMailboxList(
     mailboxes: List<SidebarMailbox>,
     style: MailboxStyle,
-    current: MailPage,
+    current: MailPage?,
     counter: SidebarCounter,
     colorOf: (SharedFolder) -> String?,
     onSelect: (MailPage) -> Unit,
