@@ -35,6 +35,8 @@ import com.otus.designsystem.shared.actionbar.components.BarMorph
 import com.otus.designsystem.shared.input.elements.isKeyboardUp
 import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.pages.components.PageNote
+import com.otus.designsystem.shared.pages.components.belowControlPanel
+import com.otus.designsystem.shared.pages.components.pageSideInset
 import com.otus.designsystem.shared.people.elements.rememberAvatarImage
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.editing.SignatureTokens
@@ -78,12 +80,11 @@ fun SignatureEditorScreen(
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar = shown?.let { { SignatureBottom(editor, it) { linking = true } } },
-            Modifier.safeDrawingPadding(),
+            Modifier.belowControlPanel(),
         ) { padding ->
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(PageTokens.pageInset)
                     .verticalScroll(rememberScrollState())
                     .padding(padding),
             ) {
@@ -94,8 +95,10 @@ fun SignatureEditorScreen(
                     onCopy = { copying = true },
                     onRemove = { removing = true },
                 )
-                signatures.notice?.let { Box(Modifier.padding(top = PageTokens.contentInset)) { PageNote(it) } }
-                SignatureBox(editor)
+                Column(Modifier.pageSideInset()) {
+                    signatures.notice?.let { Box(Modifier.padding(top = PageTokens.contentInset)) { PageNote(it) } }
+                    SignatureBox(editor)
+                }
             }
         }
     }

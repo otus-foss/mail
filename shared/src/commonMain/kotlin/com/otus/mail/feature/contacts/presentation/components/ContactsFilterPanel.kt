@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,9 +19,12 @@ import com.otus.designsystem.resources.symbol_contacts
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FilterPanel
 import com.otus.designsystem.shared.filters.components.FilterPanelFooter
+import com.otus.designsystem.shared.filters.components.FilterPanelTitle
+import com.otus.designsystem.shared.filters.components.FilterResetAction
 import com.otus.designsystem.shared.filters.components.FilterSection
 import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.filters.elements.FilterChipRole
+import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -51,22 +52,23 @@ internal fun ContactsFilterPanel(
         open = open,
         collapsedHeight = collapsedHeight,
         onDismiss = onDismiss,
-        header = { Spacer(Modifier.height(FilterTokens.headerHeight).semantics { paneTitle = "Filters" }) },
+        header = {
+            FilterPanelTitle(
+                "Contacts",
+                onDismiss,
+            ) { FilterResetAction({ draft = emptySet() }, enabled = draft.isNotEmpty()) }
+        },
         footer = {
             val count = countOf(draft)
             FilterPanelFooter(
                 if (count == 1) "Show 1 contact" else "Show $count contacts",
                 onApply = { onApply(draft) },
-                onReset = { draft = emptySet() },
                 applyEnabled = count > 0,
-                resetEnabled = draft.isNotEmpty(),
             )
         },
         modifier =
             Modifier
-                .safeDrawingPadding()
-                .imePadding()
-                .padding(start = PageTokens.pageInset, end = PageTokens.pageInset, top = PageTokens.pageInset)
+                .belowControlPanel()
                 .padding(bottom = FilterTokens.screenInset),
     ) {
         Column(

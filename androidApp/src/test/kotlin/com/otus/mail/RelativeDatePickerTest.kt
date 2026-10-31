@@ -26,7 +26,7 @@ class RelativeDatePickerTest {
     @Before
     fun openCalendar() {
         compose.runOnUiThread { compose.activity.showIsoDateApp() }
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("Date").performClick()
     }
 

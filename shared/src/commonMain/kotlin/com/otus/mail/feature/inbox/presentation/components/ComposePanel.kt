@@ -23,6 +23,7 @@ import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.OptionsMenu
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
@@ -45,11 +46,7 @@ internal fun ComposePanel(
 ) {
     ContextPanel(
         placement = ChipPlacement.Overlapping,
-        navigation = {
-            IconButton("Back", onBack, look = IconButtonLook.Plain) {
-                Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
-            }
-        },
+        navigation = { PanelNavigation("Back", onBack) },
         trailingAction = { OptionsButton(options) },
         chips = {
             item(FROM_PILL) { FromPill(state, recentFrom) }

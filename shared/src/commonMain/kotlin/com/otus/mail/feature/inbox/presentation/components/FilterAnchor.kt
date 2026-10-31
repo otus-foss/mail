@@ -1,8 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,6 +14,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -70,6 +69,7 @@ internal fun InboxFilterLayer(
     messages: List<MailMessage>,
     dateFormatter: DateFormatter,
     anchor: FilterAnchor,
+    title: String,
 ) {
     InboxFilterPanel(
         state,
@@ -77,10 +77,9 @@ internal fun InboxFilterLayer(
         messages,
         dateFormatter,
         anchor.height(),
+        title,
         Modifier
-            .safeDrawingPadding()
-            .imePadding()
-            .padding(start = InboxTokens.pageInset, end = InboxTokens.pageInset, top = InboxTokens.pageInset)
+            .belowControlPanel()
             .padding(bottom = FilterTokens.screenInset),
     )
 }

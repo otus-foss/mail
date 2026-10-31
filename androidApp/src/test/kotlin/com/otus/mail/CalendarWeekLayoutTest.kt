@@ -123,7 +123,7 @@ class CalendarWeekLayoutTest {
     }
 
     private fun openDecember2020() {
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("Date").performClick()
         val today = LocalDate.now()
         val heading = "${today.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${today.year}"

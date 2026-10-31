@@ -16,33 +16,19 @@ import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.avatarOf
 import com.otus.mail.feature.inbox.domain.searchAddresses
 import com.otus.mail.feature.inbox.presentation.ALL_MAIL
+import com.otus.mail.feature.inbox.presentation.ScopeHeader
 import com.otus.mail.feature.inbox.presentation.allMailAvatars
 import com.otus.mail.feature.inbox.presentation.allMailSummary
+import com.otus.mail.feature.inbox.presentation.scopeHeader
 
-/**
- * "Show mail from": every account, one account, or one address. [count] gives each choice's
- * count, or null for none. Choosing a row applies it at once and keeps the sheet open; a long
- * press on an address calls [onTogglePin]. One account lists its addresses by domain, several
- * accounts list theirs under each account.
- */
+/** "Show mail from" in a sheet, which stays open after a choice and searches many addresses. */
 @Composable
 fun MailScopeSheet(
-    accounts: List<AccountAddresses>,
-    chosen: MailScopeChoice,
-    pins: AddressPins,
-    count: (MailScopeChoice) -> String?,
-    onChoose: (MailScopeChoice) -> Unit,
-    onTogglePin: (MailScopeChoice.Address) -> Unit,
+    switch: MailScopeSwitch,
     onDismiss: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    // The group holding the chosen scope starts open.
-    var expanded by rememberSaveable { mutableStateOf(listOfNotNull(groupKey(chosen, accounts))) }
-    val total = accounts.sumOf { it.addresses.size }
-    val rows =
-        MailScopeRows(accounts, chosen, count, onChoose, onTogglePin, expanded) { key, open ->
-            expanded = if (open) expanded + key else expanded - key
-        }
+    val total = switch.accounts.sumOf { it.addresses.size }
     ScopeSheet(
         "Show mail from",
         onDismiss,
@@ -53,18 +39,41 @@ fun MailScopeSheet(
                 null
             },
         footnote = "Long-press to pin.",
-    ) {
-        if (query.isNotBlank()) {
-            searchAddresses(accounts, query).forEach { rows.Address(it, it in pins) }
-        } else {
-            ScopeRow(
-                ScopeOption(ALL_MAIL, allMailAvatars(accounts), allMailSummary(accounts), count(MailScopeChoice.All)),
-                chosen = chosen == MailScopeChoice.All,
-                onClick = { onChoose(MailScopeChoice.All) },
-            )
-            Pinned(pins, accounts, rows)
-            if (accounts.size > 1) rows.Accounts(accounts) else rows.Domains(accounts)
+    ) { MailScopeChoices(switch, query) }
+}
+
+/**
+ * The choices themselves: All mail, the pinned addresses, then each account with its addresses, or
+ * the one account's addresses by domain. A [query] lists the matching addresses instead. The group
+ * holding the chosen scope starts open.
+ */
+@Composable
+fun MailScopeChoices(
+    switch: MailScopeSwitch,
+    query: String = "",
+) {
+    val accounts = switch.accounts
+    val chosen = switch.chosen
+    var expanded by rememberSaveable { mutableStateOf(listOfNotNull(groupKey(chosen, accounts))) }
+    val rows =
+        MailScopeRows(accounts, chosen, switch.count, switch.onChoose, switch.onTogglePin, expanded) { key, open ->
+            expanded = if (open) expanded + key else expanded - key
         }
+    if (query.isNotBlank()) {
+        searchAddresses(accounts, query).forEach { rows.Address(it, it in switch.pins) }
+    } else {
+        ScopeRow(
+            ScopeOption(
+                ALL_MAIL,
+                allMailAvatars(accounts),
+                allMailSummary(accounts),
+                switch.count(MailScopeChoice.All),
+            ),
+            chosen = chosen == MailScopeChoice.All,
+            onClick = { switch.onChoose(MailScopeChoice.All) },
+        )
+        Pinned(switch.pins, accounts, rows)
+        if (accounts.size > 1) rows.Accounts(accounts) else rows.Domains(accounts)
     }
 }
 

@@ -59,7 +59,7 @@ class DateFormatPreferenceUiTest {
     }
 
     private fun openDatePicker() {
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("Date").performClick()
     }
 }
