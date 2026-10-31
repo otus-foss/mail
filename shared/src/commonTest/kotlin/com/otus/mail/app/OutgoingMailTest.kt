@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -266,11 +267,11 @@ class OutgoingMailTest {
     fun aMessageAnEarlierRunCouldNotSendIsOfferedToOpen() =
         runTest {
             val store = object : MemoryMapStore(), OutboxStore {}
-            val earlier = MailOutbox(store, sender, { check })
+            val earlier = MailOutbox(store, sender, { check }, io = EmptyCoroutineContext)
             failure = SendFailure.Recipients
             earlier.send(earlier.add(draft, null, NOW))
 
-            val restarted = MailOutbox(store, sender, { check })
+            val restarted = MailOutbox(store, sender, { check }, io = EmptyCoroutineContext)
             OutgoingMail(backgroundScope, toasts, scheduled, restarted) { hold }.resume { opened += it }
             runCurrent()
             val offer = toasts.messages.single()

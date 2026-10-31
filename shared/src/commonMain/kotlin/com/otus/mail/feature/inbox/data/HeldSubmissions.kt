@@ -79,4 +79,4 @@ internal inline fun <T> unlessUnanswered(read: () -> T): T? =
         null
     }
 
-private const val RESUBMISSION = "resend"
+private const val RESUBMISSION = "send"

@@ -5,6 +5,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -15,8 +16,8 @@ import kotlin.uuid.Uuid
  * Messages handed over for sending, kept in [store] until the server has them, so a closed app or
  * a dropped connection loses none. Each gets its own Message-ID, so after a send whose answer was
  * lost, [checker] can find out whether it went before it goes again. [wake] asks the platform to
- * run [resume] at a time even if the app is closed by then. Without a store, messages last as long
- * as the process.
+ * run [resume] at a time even if the app is closed by then. [store] is read and written on [io].
+ * Without a store, messages last as long as the process.
  */
 class MailOutbox(
     private val store: OutboxStore?,
@@ -24,6 +25,7 @@ class MailOutbox(
     private val checker: SendChecker,
     private val wake: (Instant) -> Unit = {},
     private val now: () -> Instant = { Clock.System.now() },
+    private val io: CoroutineContext = Dispatchers.IO,
 ) {
     // One send at a time, so Undo, a retry, and a background run never send the same message twice.
     private val lock = Mutex()
@@ -168,13 +170,13 @@ class MailOutbox(
 
     private suspend fun entries(): List<OutboxEntry> {
         val saved = store ?: return memory
-        return withContext(Dispatchers.IO) { OutboxEntry.decode(saved.read()[OutboxStore.ENTRIES]) }
+        return withContext(io) { OutboxEntry.decode(saved.read()[OutboxStore.ENTRIES]) }
     }
 
     private suspend fun save(entries: List<OutboxEntry>) {
         memory = entries
         val saved = store ?: return
-        withContext(Dispatchers.IO) { saved.write(mapOf(OutboxStore.ENTRIES to OutboxEntry.encode(entries))) }
+        withContext(io) { saved.write(mapOf(OutboxStore.ENTRIES to OutboxEntry.encode(entries))) }
     }
 }
 
