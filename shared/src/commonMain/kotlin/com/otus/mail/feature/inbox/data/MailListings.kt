@@ -28,11 +28,16 @@ internal class ListingQuery(
         get() = "$LISTING_PREFIX${sort.name}:$filter"
 }
 
-/** The row email ids of a list loaded so far, in its order, and whether the server has more. */
+/**
+ * The row email ids of a list loaded so far, in its order, and whether the server has more.
+ * [queryState] is the `Email/query` state the ids match, kept only when the server can say what
+ * changed since (RFC 8620, section 5.6).
+ */
 @Serializable
 internal data class Listing(
     val ids: List<String> = emptyList(),
     val hasMore: Boolean = false,
+    val queryState: String? = null,
 )
 
 /** The saved listings of [queries], by key. A listing that no longer decodes counts as missing. */
@@ -110,7 +115,11 @@ private fun PageRequest.queryMethod(accountId: String) =
 
 /** More remain when the total says so, or, without a total, when the page came back full. */
 private fun QueryResult.toListing(limit: Int): Listing =
-    Listing(ids, hasMore = total?.let { position + ids.size < it } ?: (ids.size >= limit))
+    Listing(
+        ids,
+        hasMore = total?.let { position + ids.size < it } ?: (ids.size >= limit),
+        queryState = queryState.takeIf { canCalculateChanges && it.isNotEmpty() },
+    )
 
 private fun <T> String.decodedOrNull(serializer: KSerializer<T>): T? =
     try {

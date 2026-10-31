@@ -131,7 +131,7 @@ class JmapMailSource(
                 null
             }
         } catch (error: JmapException) {
-            UnavailableAccount(login.name, error.toInboxFailure())
+            UnavailableAccount(login.name, error.toInboxFailure(), cache.syncedAt(login.id))
         }
     }
 
