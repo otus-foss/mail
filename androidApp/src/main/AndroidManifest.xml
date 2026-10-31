@@ -117,6 +117,66 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity-alias>
+    <activity-alias
+      android:name=".icon.Chrome"
+      android:enabled="false"
+      android:exported="true"
+      android:icon="@mipmap/otus_mail_icon_chrome"
+      android:targetActivity=".MainActivity"
+    >
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity-alias>
+    <activity-alias
+      android:name=".icon.Rainbow"
+      android:enabled="false"
+      android:exported="true"
+      android:icon="@mipmap/otus_mail_icon_rainbow"
+      android:targetActivity=".MainActivity"
+    >
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity-alias>
+    <activity-alias
+      android:name=".icon.Trans"
+      android:enabled="false"
+      android:exported="true"
+      android:icon="@mipmap/otus_mail_icon_trans"
+      android:targetActivity=".MainActivity"
+    >
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity-alias>
+    <activity-alias
+      android:name=".icon.Bi"
+      android:enabled="false"
+      android:exported="true"
+      android:icon="@mipmap/otus_mail_icon_bi"
+      android:targetActivity=".MainActivity"
+    >
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity-alias>
+    <activity-alias
+      android:name=".icon.Lesbian"
+      android:enabled="false"
+      android:exported="true"
+      android:icon="@mipmap/otus_mail_icon_lesbian"
+      android:targetActivity=".MainActivity"
+    >
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity-alias>
     <service android:name=".MailPushService" android:exported="false">
       <intent-filter>
         <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
