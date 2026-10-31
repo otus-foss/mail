@@ -9,6 +9,7 @@ import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -98,17 +99,43 @@ class ScheduledCancellationTest {
             assertEquals(1, calls.size)
         }
 
+    @Test
+    fun aLostResubmissionAnswerRestoresTheDraftWhenNothingWasSubmitted() =
+        runTest {
+            val calls = mutableListOf<String>()
+            val result = sender(calls, resendLost = true).sendNow(message.copy(draftsId = "dr"))
+            assertTrue(result.isFailure)
+            assertTrue("EmailSubmission/query" in calls[1], "The server is asked before the draft comes back")
+            assertTrue("Email/set" in calls.last() && "keywords/" in calls.last(), "The copy is a draft again")
+        }
+
+    @Test
+    fun aLostResubmissionAnswerKeepsAMessageTheServerTook() =
+        runTest {
+            val calls = mutableListOf<String>()
+            assertTrue(sender(calls, resendLost = true, submitted = true).sendNow(message).isSuccess)
+            assertTrue(calls.none { "keywords" in it }, "A message on its way stays in Sent")
+        }
+
     private fun sender(
         calls: MutableList<String>,
         canceled: Boolean = true,
         restored: Boolean = true,
         acknowledged: Boolean = true,
+        resendLost: Boolean = false,
+        submitted: Boolean = false,
     ): JmapDraftSender {
         val login = JmapLogin("a", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val engine =
             stalwartLike(SUBMISSION_SESSION) { body ->
+                if (resendLost && """"create"""" in body) throw IOException("The answer was lost")
                 calls += body
+                if ("EmailSubmission/query" in body) {
+                    val ids = if (submitted) """["s2"]""" else "[]"
+                    val found = """{"queryState": "q", "ids": $ids, "position": 0}"""
+                    return@stalwartLike """{"methodResponses": [["EmailSubmission/query", $found, "c0"]]}"""
+                }
                 val cancel = "EmailSubmission/set" in body
                 val method = if (cancel) "EmailSubmission/set" else "Email/set"
                 val id = if (cancel) "s" else "e"
