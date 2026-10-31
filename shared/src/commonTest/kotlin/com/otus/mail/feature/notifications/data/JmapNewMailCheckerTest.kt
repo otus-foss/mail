@@ -6,6 +6,8 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.feature.notifications.domain.AlertedMail
+import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.testing.ADA_LOGIN
@@ -29,15 +31,32 @@ class JmapNewMailCheckerTest {
         }
     }
 
+    private class Alerts(
+        val alerted: Set<AlertedMail> = emptySet(),
+    ) : MailAlerts {
+        val shown = mutableListOf<NewMail>()
+        val cleared = mutableListOf<AlertedMail>()
+
+        override fun showing() = alerted
+
+        override fun show(mail: List<NewMail>) {
+            shown += mail
+        }
+
+        override fun clear(mail: List<AlertedMail>) {
+            cleared += mail
+        }
+    }
+
     private suspend fun check(
         states: States,
+        alerts: Alerts = Alerts(),
         reply: (String) -> String,
     ): List<NewMail> {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        val shown = mutableListOf<NewMail>()
         JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(api = reply)), store), store, states)
-            .check { shown += it }
-        return shown
+            .check(alerts)
+        return alerts.shown
     }
 
     @Test
@@ -157,8 +176,10 @@ class JmapNewMailCheckerTest {
                 object : LoginStore by InMemoryLoginStore() {
                     override fun logins(): List<JmapLogin> = throw LoginStoreException("locked")
                 }
+            val alerts = Alerts()
             JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike()), locked), locked, states)
-                .check { error("Nothing is shown") }
+                .check(alerts)
+            assertEquals(emptyList(), alerts.shown)
             assertEquals(mapOf("ada" to "e1"), states.saved)
         }
 
@@ -214,6 +235,53 @@ class JmapNewMailCheckerTest {
                     }
                 }
             assertEquals(listOf("m1"), shown.map { it.emailId })
+        }
+
+    @Test
+    fun mailReadOrDeletedElsewhereLosesItsAlert() =
+        runTest {
+            val alerts = Alerts(listOf("m1", "m2", "m3", "m4").map { AlertedMail("ada", it) }.toSet())
+            check(States(mapOf("ada" to "e1")), alerts) { body ->
+                if ("Email/changes" in body) {
+                    """{"methodResponses": [["Email/changes", {"oldState": "e1", "newState": "e2",
+                       "hasMoreChanges": false, "updated": ["m1", "m2", "m5"], "destroyed": ["m3"]}, "c0"]]}"""
+                } else {
+                    assertTrue("\"ids\":[\"m1\",\"m2\",\"m3\"]" in body, body)
+                    """{"methodResponses": [
+                       ["Mailbox/get", {"state": "b1", "list": [{"id": "i", "role": "inbox"}]}, "c0"],
+                       ["Email/get", {"state": "e2", "notFound": ["m3"], "list": [
+                         ${email("m1", "i", "{\"\$seen\": true}")}, ${email("m2", "i", "{}")}]}, "c1"]]}"""
+                }
+            }
+            assertEquals(listOf("m1", "m3"), alerts.cleared.map { it.emailId })
+        }
+
+    @Test
+    fun aForgottenStateLooksAtEveryAlert() =
+        runTest {
+            val alerts = Alerts(setOf(AlertedMail("ada", "m1"), AlertedMail("ada", "m2")))
+            check(States(mapOf("ada" to "old")), alerts) { body ->
+                when {
+                    "Email/changes" in body -> {
+                        """{"methodResponses": [["error", {"type": "cannotCalculateChanges"}, "c0"]]}"""
+                    }
+
+                    "Mailbox/get" in body -> {
+                        """{"methodResponses": [
+                           ["Mailbox/get", {"state": "b1", "list": [{"id": "i", "role": "inbox"}]}, "c0"],
+                           ["Email/get", {"state": "e9", "list": [${email(
+                            "m1",
+                            "a",
+                            "{}",
+                        )}, ${email("m2", "i", "{}")}]}, "c1"]]}"""
+                    }
+
+                    else -> {
+                        """{"methodResponses": [["Email/get", {"state": "e9", "list": []}, "c0"]]}"""
+                    }
+                }
+            }
+            assertEquals(listOf(AlertedMail("ada", "m1")), alerts.cleared)
         }
 
     private fun email(

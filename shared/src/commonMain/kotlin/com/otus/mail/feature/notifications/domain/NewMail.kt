@@ -22,12 +22,29 @@ data class NewMail(
 /** Each login's Email state from the last check, keyed by login id. */
 interface MailStateStore : StringMapStore
 
-/** Finds mail that arrived since the last check. */
+/** A message the device has an alert for. */
+data class AlertedMail(
+    val loginId: String,
+    val emailId: String,
+)
+
+/** The device's new mail alerts. */
+interface MailAlerts {
+    /** The mail with an alert still showing. */
+    fun showing(): Set<AlertedMail>
+
+    fun show(mail: List<NewMail>)
+
+    fun clear(mail: List<AlertedMail>)
+}
+
+/** Finds mail that arrived since the last check, and alerted mail the user has handled since. */
 fun interface NewMailChecker {
     /**
-     * Passes the new mail of every login to [show], oldest first, then saves each login's state.
+     * Shows the new mail of every login, oldest first, and clears the alerts of mail that was read,
+     * moved out of the inbox, or deleted, on this device or another. Then saves each login's state.
      * The first check of a login only saves its state. A login that fails keeps its old state, so
      * the next check reports its mail.
      */
-    suspend fun check(show: suspend (List<NewMail>) -> Unit)
+    suspend fun check(alerts: MailAlerts)
 }

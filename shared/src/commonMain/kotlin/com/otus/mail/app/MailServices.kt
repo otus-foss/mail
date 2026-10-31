@@ -27,6 +27,7 @@ import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
+import com.otus.mail.core.mail.ServerChanges
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
@@ -115,6 +116,9 @@ class MailServices(
 
     /** The screen and keyboard protections this platform can apply. */
     internal val devicePrivacy: DevicePrivacy get() = host.devicePrivacy
+
+    /** Pushed changes, which reload the open inbox and folders. */
+    val serverChanges = ServerChanges()
 
     /** The device's copy of each login's mail; see docs/storage.md. */
     private val accountCache = AccountMailCache(RecoveringMailCache(stores.cache))
@@ -216,7 +220,8 @@ class MailServices(
 
     /**
      * Keeps each login's push subscription pointed at its push endpoint. Create one per process.
-     * Servers push only new deliveries (RFC 8621, section 1.5), not flag or folder changes.
+     * `EmailDelivery` pushes new deliveries (RFC 8621, section 1.5); `Email` also pushes flag and
+     * folder changes, so mail read elsewhere loses its notification within seconds.
      */
     fun pushSubscriptions(
         states: PushStateStore,
@@ -228,7 +233,7 @@ class MailServices(
             logins,
             states,
             deviceClientId,
-            listOf("EmailDelivery"),
+            listOf("EmailDelivery", "Email"),
             beforeCreate = beforeCreate,
         )
 

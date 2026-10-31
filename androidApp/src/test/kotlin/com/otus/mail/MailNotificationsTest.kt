@@ -7,6 +7,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
@@ -102,6 +103,19 @@ class MailNotificationsTest {
                 ).joinToString { shown.extras.getCharSequence(it).toString() }
             listOf("Grace", "Order shipped", "parcel", "Ada").forEach { assertFalse(it, text.contains(it)) }
         }
+    }
+
+    @Test
+    fun clearingAnAccountsLastMessageRemovesItsSummary() {
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        val notifications = MailNotifications(app) { PreviewChoices() }
+        notifications.show(listOf(mail("m1"), mail("m2"), mail("m3", login = "bob")))
+        assertEquals(
+            setOf(AlertedMail("ada", "m1"), AlertedMail("ada", "m2"), AlertedMail("bob", "m3")),
+            notifications.showing(),
+        )
+        notifications.clear(listOf(AlertedMail("ada", "m1"), AlertedMail("bob", "m3")))
+        assertEquals(setOf("ada/m2", "ada"), manager.activeNotifications.map { it.tag }.toSet())
     }
 
     @Test

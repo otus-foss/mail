@@ -11,6 +11,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ForegroundInfo
+import com.otus.mail.feature.notifications.domain.AlertedMail
+import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
@@ -19,12 +21,13 @@ import com.otus.mail.feature.notifications.domain.PreviewChoices
  * Posts one notification per new message, grouped by account, showing what [previews] allows for
  * its account and addresses: by default the sender, subject, preview and account. On the lock
  * screen the device's setting decides whether such an alert shows in full or only "New mail".
- * [NotificationPreviews.Hidden] says only "New mail" everywhere, without the account.
+ * [NotificationPreviews.Hidden] says only "New mail" everywhere, without the account. An account's
+ * summary goes once its last message notification is cleared.
  */
 class MailNotifications(
     context: Context,
     private val previews: () -> PreviewChoices = { AndroidNotificationPreviewStore(context).read() },
-) {
+) : MailAlerts {
     private val context = context.applicationContext
     private val manager = NotificationManagerCompat.from(this.context)
 
@@ -55,7 +58,25 @@ class MailNotifications(
                 .build(),
         )
 
-    fun show(mail: List<NewMail>) {
+    override fun showing(): Set<AlertedMail> =
+        manager.activeNotifications
+            .filter { it.id == MESSAGE_ID }
+            .mapNotNull { it.tag }
+            .map { AlertedMail(it.substringBeforeLast('/'), it.substringAfterLast('/')) }
+            .toSet()
+
+    override fun clear(mail: List<AlertedMail>) {
+        // Read before cancelling: the system removes notifications a moment after the call.
+        val remaining = (showing() - mail.toSet()).map { it.loginId }.toSet()
+        mail.forEach { manager.cancel(it.tag, MESSAGE_ID) }
+        mail
+            .map { it.loginId }
+            .distinct()
+            .filterNot { it in remaining }
+            .forEach { manager.cancel(it, SUMMARY_ID) }
+    }
+
+    override fun show(mail: List<NewMail>) {
         // From Android 13 on, posting needs the user's permission.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
@@ -65,7 +86,7 @@ class MailNotifications(
         mail.groupBy { it.loginId }.forEach { (loginId, messages) ->
             val shown = messages.map { choices.forMail(loginId, it.recipients) }
             messages.zip(shown).forEach { (arrival, preview) ->
-                manager.notify("$loginId/${arrival.emailId}", MESSAGE_ID, message(arrival, preview))
+                manager.notify(AlertedMail(loginId, arrival.emailId).tag, MESSAGE_ID, message(arrival, preview))
             }
             // The account's name shows only if every message in the group may show its details.
             val summary =
@@ -85,7 +106,8 @@ class MailNotifications(
         .build()
 
     private fun detailedMessage(mail: NewMail) =
-        base(mail)
+        context
+            .mailAlert(mail)
             .setContentTitle(mail.sender)
             .setContentText(mail.subject(context))
             .setSubText(mail.accountName)
@@ -104,40 +126,48 @@ class MailNotifications(
         .build()
 
     private fun accountSummary(latest: NewMail) =
-        base(latest)
+        context
+            .mailAlert(latest)
             .setContentTitle(latest.accountName)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(newMail(latest).build())
 
     /** "New mail" alone: a hidden alert, and what a locked device shows when it hides details. */
-    private fun newMail(mail: NewMail) = base(mail).setContentTitle(context.getString(R.string.notification_new_mail))
-
-    private fun base(mail: NewMail) =
-        NotificationCompat
-            .Builder(context, CHANNEL)
-            .setSmallIcon(android.R.drawable.sym_action_email)
-            .setCategory(NotificationCompat.CATEGORY_EMAIL)
-            .setGroup("mail/${mail.loginId}")
-            .setContentIntent(openApp())
-            .setAutoCancel(true)
-            .setOnlyAlertOnce(true)
-
-    private fun openApp() =
-        PendingIntent.getActivity(
-            context,
-            0,
-            Intent(context, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
+    private fun newMail(mail: NewMail) =
+        context
+            .mailAlert(mail)
+            .setContentTitle(context.getString(R.string.notification_new_mail))
 
     private companion object {
-        const val CHANNEL = "new_mail"
         const val BACKGROUND_CHANNEL = "background"
         const val BACKGROUND_ID = 3
         const val MESSAGE_ID = 1
         const val SUMMARY_ID = 2
     }
 }
+
+private val AlertedMail.tag get() = "$loginId/$emailId"
+
+private const val CHANNEL = "new_mail"
+
+/** The parts every alert about [mail] shares: its channel, icon, account group, and tap action. */
+private fun Context.mailAlert(mail: NewMail) =
+    NotificationCompat
+        .Builder(this, CHANNEL)
+        .setSmallIcon(android.R.drawable.sym_action_email)
+        .setCategory(NotificationCompat.CATEGORY_EMAIL)
+        .setGroup("mail/${mail.loginId}")
+        .setContentIntent(openApp())
+        .setAutoCancel(true)
+        .setOnlyAlertOnce(true)
+
+private fun Context.openApp() =
+    PendingIntent.getActivity(
+        this,
+        0,
+        Intent(this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        PendingIntent.FLAG_IMMUTABLE,
+    )
 
 private fun NewMail.subject(context: Context) = subject.ifBlank { context.getString(R.string.notification_no_subject) }
