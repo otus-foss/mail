@@ -15,12 +15,14 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.feature.inbox.domain.EmailChangeStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.JsonObject
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -29,16 +31,20 @@ import kotlin.time.Instant
  * [store] by login and email, so a change made offline or just before the app closed still
  * arrives. A change shows in the cache at once. A later patch of an email merges into the one
  * waiting. The patches only set or remove keys, so sending one twice changes nothing more. [wake]
- * asks the platform to try again once the network is back. Without a store, changes last as long
- * as the process.
+ * asks the platform to try again once the network is back. [store] is read and written on [io].
+ * Without a store, changes last as long as the process.
  */
 class EmailChangeQueue(
     private val store: EmailChangeStore?,
     private val wake: (Instant) -> Unit = {},
     private val now: () -> Instant = { Clock.System.now() },
+    private val io: CoroutineContext = Dispatchers.IO,
 ) {
     // A login's changes go out one batch after another, in the order they were made.
     private val locks = LoginLocks()
+
+    // Every login's changes share one store value, so its read and rewrite happen one at a time.
+    private val storeLock = Mutex()
     private var memory = emptyMap<String, String>()
 
     /**
@@ -126,17 +132,17 @@ class EmailChangeQueue(
         return refused
     }
 
-    private suspend fun saved(): Map<String, String> =
-        store?.let { withContext(Dispatchers.IO) { it.read() } } ?: memory
+    private suspend fun saved(): Map<String, String> = store?.let { withContext(io) { it.read() } } ?: memory
 
     private suspend fun write(
         loginId: String,
         changes: Map<String, JsonObject>,
     ) {
-        val all = saved() - loginId + if (changes.isEmpty()) emptyMap() else mapOf(loginId to encoded(changes))
-        memory = all
-        val saving = store ?: return
-        withContext(Dispatchers.IO) { saving.write(all) }
+        storeLock.withLock {
+            val all = saved() - loginId + if (changes.isEmpty()) emptyMap() else mapOf(loginId to encoded(changes))
+            memory = all
+            store?.let { saving -> withContext(io) { saving.write(all) } }
+        }
     }
 }
 
@@ -145,8 +151,9 @@ private suspend fun MailAccount.sendBatch(batch: Map<String, JsonObject>): Pair<
     try {
         val result = connection.call(SetMethod(EmailType, id, update = batch))
         result.updated.keys + result.notUpdated.keys to result.notUpdated.keys
-    } catch (expected: JmapException.MethodError) {
-        // The server refused the whole call, so the batch would fail again.
+    } catch (error: JmapException.MethodError) {
+        // A server down for now may take the batch later; any other refusal of the call would recur.
+        if (error.type in TEMPORARY_METHOD_ERRORS) throw error
         batch.keys to batch.keys
     }
 

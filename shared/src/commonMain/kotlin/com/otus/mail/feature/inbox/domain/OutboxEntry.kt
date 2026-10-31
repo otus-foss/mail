@@ -73,12 +73,15 @@ enum class SendCheck {
 }
 
 /**
- * Looks on the server for a draft sent with its [Draft.messageId]. With [cancelHeld], as after
- * Undo, a copy the server still holds is canceled and removed, and counts as never sent.
+ * Looks on the server for a draft sent with its [Draft.messageId]. A copy that went is tidied up
+ * as after a send: the saved draft goes and the message it [answered] gets its mark. With
+ * [cancelHeld], as after Undo, a copy the server still holds is canceled and removed, and counts
+ * as never sent.
  */
 fun interface SendChecker {
     suspend fun check(
         draft: Draft,
+        answered: AnsweredMessage?,
         cancelHeld: Boolean,
     ): SendCheck
 }

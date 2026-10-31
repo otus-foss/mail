@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.feature.inbox.domain.EmailChangeStore
 import com.otus.mail.feature.inbox.domain.MailQuery
@@ -8,6 +9,9 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.MemoryMapStore
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -110,6 +114,34 @@ class OfflineChangesTest {
         }
 
     @Test
+    fun aServerDownForNowKeepsTheChangeForTheNextSync() =
+        runTest {
+            val message = message()
+            server.refused = setOf("Email/set")
+            server.refusalType = "serverUnavailable"
+            marker.mark(listOf(message), MessageFlag.Read, on = true)
+            assertTrue(changes.saved.isNotEmpty(), "It waits")
+
+            server.refused = emptySet()
+            source.messages(MailScope.Inbox, MailQuery())
+            assertEquals(2, server.calls("Email/set").size)
+            assertTrue(changes.saved.isEmpty())
+        }
+
+    @Test
+    fun changesOfTwoLoginsMadeAtOnceBothWait() =
+        runTest {
+            store.save(GRACE_LOGIN, "secret")
+            val both = EmailChangeQueue(changes, io = StandardTestDispatcher(testScheduler))
+            server.down = true
+            val patch = mapOf("m1" to JsonObject(mapOf("keywords/\$seen" to JsonPrimitive(true))))
+            listOf(ADA_LOGIN.id, GRACE_LOGIN.id)
+                .map { login -> async { both.update(server.connections(store), store, login, patch, cache = null) } }
+                .awaitAll()
+            assertEquals(setOf(ADA_LOGIN.id, GRACE_LOGIN.id), changes.saved.keys, "Neither write lost the other")
+        }
+
+    @Test
     fun aWholePropertyAndAKeyBelowItMergeIntoOneValidPatch() {
         val whole = mapOf("m1" to JsonObject(mapOf("mailboxIds" to JsonObject(mapOf("a" to JsonPrimitive(true))))))
         val key = mapOf("m1" to JsonObject(mapOf("mailboxIds/r" to JsonPrimitive(true))))
@@ -128,6 +160,8 @@ class OfflineChangesTest {
     private fun JsonObject.patchOf(id: String) = (getValue("update") as JsonObject).getValue(id) as JsonObject
 
     private companion object {
+        val GRACE_LOGIN = JmapLogin("grace", ADA_LOGIN.sessionUrl, "grace@example.org", "Grace")
+
         const val INBOX = """{"id": "a", "name": "Inbox", "role": "inbox"}, {"id": "r", "name": "Receipts"}"""
 
         fun email(

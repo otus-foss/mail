@@ -195,9 +195,14 @@ gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
 - A send that got no answer may have reached the server. Before it goes again, `JmapSendChecker`
   looks the message up with the `header` filter of `Email/query` (RFC 8621, section 4.4.1). A
   copy without `$draft` went, so nothing goes twice. A copy that kept `$draft` was refused, so
-  it is destroyed and the message goes again. Without a copy, the message goes again.
-- A server that cannot run that lookup leaves the message to the user: after the next start a
-  "Couldn't confirm sending" toast offers to open it.
+  it is destroyed and the message goes again. Without a copy, the message goes again. A copy
+  that went is tidied up as after a send: the saved draft is deleted and the message it answered
+  gets its mark.
+- A server that cannot run that lookup leaves the message to the user: a "Couldn't confirm
+  sending" toast offers to open it, at once or after the next start. A server down for now is
+  asked again later.
+- A failed send that may hide a lost answer, such as a gateway error, is looked up before Retry
+  sends it. Only a clear refusal, such as an unknown recipient, lets Retry skip the lookup.
 - A refused message stays too. After a restart a "Couldn't send" toast offers to open it, and
   opening it takes it out of the outbox.
 - On Android, `OutboxWorker` runs the outbox 30 seconds after a message is due, and again once the

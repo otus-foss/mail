@@ -29,7 +29,18 @@ fun ComposeRequest.answered(accountId: String): AnsweredMessage? {
  * Why a draft was not sent. [Unreachable] means the outcome is unknown: the server may have sent
  * the message before the connection failed.
  */
-enum class SendFailure { NoIdentity, Recipients, TooManyRecipients, TooLarge, NotPermitted, Unreachable, ServerProblem }
+enum class SendFailure {
+    NoIdentity,
+    Recipients,
+    TooManyRecipients,
+    TooLarge,
+    NotPermitted,
+    Unreachable,
+    ServerProblem,
+
+    /** A send may have gone, and the server cannot say whether it did, so only the user can tell. */
+    Unconfirmed,
+}
 
 /** The failure a [DraftSender] result carries. */
 class SendException(

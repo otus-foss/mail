@@ -218,15 +218,35 @@ internal class OutgoingMail(
         )
     }
 
-    /** A failed send's toast; offline, the outbox sends it once the network is back. */
+    /**
+     * A failed send's toast; offline, the outbox sends it once the network is back. A send nobody
+     * can confirm would fail the same way again, so it offers the message to open instead of Retry.
+     */
     private fun failed(
         outgoing: Outgoing,
         id: String,
         group: Any,
         error: Throwable,
     ) {
-        val retry = ToastAction("Retry") { scope.launch { deliver(outgoing, id, group) } }
-        toasts.show(ToastMessage(if (error.isOffline()) WILL_SEND else "Couldn't send", retry, group, sticky = true))
+        val unconfirmed = (error as? SendException)?.failure == SendFailure.Unconfirmed
+        val action =
+            if (unconfirmed) {
+                ToastAction("Open") {
+                    scope.launch {
+                        outbox.drop(id)
+                        outgoing.open(outgoing.reopen)
+                    }
+                }
+            } else {
+                ToastAction("Retry") { scope.launch { deliver(outgoing, id, group) } }
+            }
+        val text =
+            when {
+                unconfirmed -> UNCONFIRMED
+                error.isOffline() -> WILL_SEND
+                else -> "Couldn't send"
+            }
+        toasts.show(ToastMessage(text, action, group, sticky = true))
     }
 
     /** Cancels a held or scheduled message and opens its copy, a draft again, to edit. */
@@ -257,10 +277,10 @@ private fun sent(group: Any) = ToastMessage("Sent", group = group)
 private fun Throwable.isOffline() = (this as? SendException)?.failure == SendFailure.Unreachable
 
 private const val WILL_SEND = "Will send when online"
+private const val UNCONFIRMED = "Couldn't confirm sending"
 
 /** What the toast for a message an earlier run could not send says. */
-private fun OutboxProblem?.offerText() =
-    if (this == OutboxProblem.Unconfirmed) "Couldn't confirm sending" else "Couldn't send"
+private fun OutboxProblem?.offerText() = if (this == OutboxProblem.Unconfirmed) UNCONFIRMED else "Couldn't send"
 
 /** Time for the request to reach the server and for its clock to differ from the device's. */
 private val SERVER_SPARE = 2.seconds

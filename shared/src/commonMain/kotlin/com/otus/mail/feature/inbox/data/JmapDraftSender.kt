@@ -54,7 +54,7 @@ class JmapDraftSender(
             val account = mailAccount(connections, logins, draft.accountId) ?: failSend(SendFailure.ServerProblem)
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
             val sent = account.submit(draft, account.route(from ?: failSend(SendFailure.NoIdentity)), time)
-            account.tidy(draft.emailId, answered)
+            account.tidySent(draft.emailId, answered)
             Result.success(sent)
         } catch (error: SendException) {
             Result.failure(error)
@@ -243,29 +243,8 @@ class JmapDraftSender(
         }
     }
 
-    /** Deletes the draft's earlier copy [draftId] and marks the answered message. */
-    private suspend fun MailAccount.tidy(
-        draftId: String?,
-        answered: AnsweredMessage?,
-    ) {
-        val update = answered?.let { mapOf(it.emailId to membershipPatch("keywords", it.keyword, member = true)) }
-        if (draftId == null && update == null) return
-        // The message is already sent, so a leftover draft or a missing mark is not a failure.
-        bestEffort {
-            connection.call(SetMethod(EmailType, id, update = update.orEmpty(), destroy = listOfNotNull(draftId)))
-        }
-    }
-
     private companion object {
         const val EMAIL = "draft"
         const val SUBMISSION = "send"
-    }
-}
-
-private suspend fun bestEffort(block: suspend () -> Unit) {
-    try {
-        block()
-    } catch (expected: JmapException) {
-        // The caller already knows the outcome that matters; this step only tidies up.
     }
 }

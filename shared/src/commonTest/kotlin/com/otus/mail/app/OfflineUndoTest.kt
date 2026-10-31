@@ -68,6 +68,24 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
             assertEquals(listOf("Sent"), toasts.messages.map { it.text })
         }
 
+    @Test
+    fun aSendNobodyCanConfirmOffersTheMessageToOpenAtOnce() =
+        runTest {
+            failure = SendFailure.Unreachable
+            outgoing().send(message)
+            advanceTimeBy(HOLD + 1)
+            runCurrent()
+            check = SendCheck.Unconfirmable
+            assertNotNull(toasts.messages.single().action).onAction()
+            runCurrent()
+            val offer = toasts.messages.single()
+            assertEquals("Couldn't confirm sending", offer.text)
+            assertNotNull(offer.action).onAction()
+            runCurrent()
+            assertEquals(listOf<ComposeRequest>(message.reopen), opened)
+            assertEquals(1, runs.size, "It never goes again by itself")
+        }
+
     private companion object {
         const val RETRY_WAIT = 5_001L
     }

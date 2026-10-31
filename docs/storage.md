@@ -54,7 +54,10 @@ more.
 - The waiting changes go to the server before each refresh, and after it they show again on top
   of what the server sent.
 - A change the server refuses is dropped, and its email leaves the cache, so the next refresh
-  reads it again.
+  reads it again. A server that is down for now (`serverUnavailable`, `serverFail`, or
+  `serverPartialFail`, RFC 8620, section 3.6.2) refuses nothing: the change waits.
+- Every login's changes share one stored value, so one lock covers each read and rewrite of it,
+  and changes made on two accounts at once both stay.
 - Android keeps the queue in the `otus_mail_pending_changes` shared preferences file, written at
   once, and `OutboxWorker` sends it once the network is back. iOS keeps it in user defaults.
 - Removing an account drops its changes. Deleting, muting, and newsletter cleanup still need the

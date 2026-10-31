@@ -34,7 +34,7 @@ class MailOutboxTest {
         }
 
     private val checker =
-        SendChecker { draft, cancelHeld ->
+        SendChecker { draft, _, cancelHeld ->
             checks += draft
             heldCancels += cancelHeld
             check
@@ -122,6 +122,19 @@ class MailOutboxTest {
             failure = null
             assertTrue(outbox.send(id).isSuccess)
             assertTrue(checks.isEmpty())
+        }
+
+    @Test
+    fun aServerProblemThatMayHideALostAnswerIsLookedUpBeforeARetry() =
+        runTest {
+            val outbox = outbox()
+            val id = outbox.add(draft, null, NOW)
+            failure = SendFailure.ServerProblem
+            assertTrue(outbox.send(id).isFailure)
+            failure = null
+            check = SendCheck.Sent
+            assertNull(outbox.send(id).getOrThrow())
+            assertEquals(1, sent.size, "The gateway error hid a send that went")
         }
 
     @Test

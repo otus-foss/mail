@@ -122,8 +122,9 @@ class MailOutbox(
 
             failure == SendFailure.Unreachable -> wake(now())
 
-            // A refused send left nothing on the server, so the next try needs no lookup.
-            else -> entries.fail(entry.copy(attempted = false), OutboxProblem.Refused)
+            // A clear refusal left nothing on the server, so the next try needs no lookup. A server
+            // problem, such as a gateway error, may hide a lost answer, so that try looks first.
+            else -> entries.fail(entry.copy(attempted = failure.mayHaveSent()), OutboxProblem.Refused)
         }
         return if (result.isSuccess || failure != null) result else sendFailure(SendFailure.ServerProblem)
     }
@@ -133,7 +134,7 @@ class MailOutbox(
      * withdrawn message never goes: it leaves once the server answers, holding no copy to cancel.
      */
     private suspend fun earlierTry(entry: OutboxEntry): Result<SentMessage?>? {
-        val check = checker.check(entry.draft, cancelHeld = entry.withdrawn)
+        val check = checker.check(entry.draft, entry.answered, cancelHeld = entry.withdrawn)
         return when {
             check == SendCheck.Unreachable -> {
                 wake(now())
@@ -151,11 +152,13 @@ class MailOutbox(
 
             else -> {
                 entries.fail(entry, OutboxProblem.Unconfirmed)
-                sendFailure(SendFailure.Unreachable)
+                sendFailure(SendFailure.Unconfirmed)
             }
         }
     }
 }
+
+private fun SendFailure?.mayHaveSent() = this == null || this == SendFailure.ServerProblem
 
 private fun sendFailure(failure: SendFailure) = Result.failure<SentMessage?>(SendException(failure))
 

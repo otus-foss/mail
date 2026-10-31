@@ -40,8 +40,9 @@ internal class FakeMailServer(
     /** Every method call so far, as its name and arguments. */
     val calls = mutableListOf<Pair<String, JsonObject>>()
 
-    /** Methods that answer with an error, such as `Thread/get`. */
+    /** Methods that answer with an error, such as `Thread/get`, of [refusalType] when it is set. */
     var refused: Set<String> = emptySet()
+    var refusalType: String? = null
 
     /** Whether the server has forgotten old states, so `/changes` cannot be calculated. */
     var forgotStates = false
@@ -103,7 +104,8 @@ internal class FakeMailServer(
 
     private fun refusal(method: String): JsonObject =
         buildJsonObject {
-            put("type", JsonPrimitive(if (method.endsWith("/changes")) "cannotCalculateChanges" else "requestTooLarge"))
+            val type = if (method.endsWith("/changes")) "cannotCalculateChanges" else "requestTooLarge"
+            put("type", JsonPrimitive(refusalType ?: type))
         }
 
     private fun respond(
