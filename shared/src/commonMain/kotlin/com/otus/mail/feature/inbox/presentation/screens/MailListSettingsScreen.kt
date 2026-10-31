@@ -51,7 +51,6 @@ fun MailListSettingsScreen(
                 "Show sender",
                 checked = list.showSender,
                 onCheckedChange = { on -> change { it.copy(showSender = on) } },
-                description = "When off, the preview takes its line",
             )
             if (list.showSender) {
                 SettingRow("Preview", { choosing = ListChoice.Preview }) { ValueButton(list.preview.label) }
@@ -60,7 +59,6 @@ fun MailListSettingsScreen(
                 "Folder icons",
                 checked = list.folderIcons,
                 onCheckedChange = { on -> change { it.copy(folderIcons = on) } },
-                description = "Show which folder each mail is in",
             )
         }
         SettingsSection("Dates") {
@@ -69,7 +67,6 @@ fun MailListSettingsScreen(
                 "Show this year",
                 checked = list.showThisYear,
                 onCheckedChange = { on -> change { it.copy(showThisYear = on) } },
-                description = "When off, only older dates show the year",
             )
         }
     }

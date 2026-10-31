@@ -100,12 +100,6 @@ internal fun PreviewChoices.overrideSummary(accounts: List<ConnectedAccount>): S
 internal val PreviewsInfo =
     InfoText(
         "Previews",
-        listOf(
-            "Use device setting shows the sender and subject. On the lock screen, your phone's own " +
-                "notification setting decides whether they show, only \"New mail\" shows, or nothing does.",
-            "New mail only never shows the sender, subject, or account, locked or unlocked.",
-            "Accounts and addresses can each have their own setting. An address's setting covers mail " +
-                "its own account gets for it. Mail to several people follows the more private setting, " +
-                "and people without a setting of their own count with the account's.",
-        ),
+        "Accounts and addresses can each have their own setting. Mail to several of your addresses " +
+            "follows the more private one.",
     )

@@ -2,7 +2,6 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -14,6 +13,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_inbox
+import com.otus.designsystem.shared.controls.components.ButtonPair
+import com.otus.designsystem.shared.controls.components.PairButton
 import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.components.SheetFrame
@@ -74,19 +75,14 @@ internal fun SortedMoveSheet(
                 }
             }
             if (checking || count > 0) {
-                Row(horizontalArrangement = Arrangement.spacedBy(SheetTokens.gap)) {
-                    ActionButton("Leave them", onDismiss, Modifier.weight(1f))
-                    ActionButton(
-                        if (checking) "Move them too" else "Move $count too",
-                        {
-                            older?.move?.invoke()
-                            onDismiss()
-                        },
-                        Modifier.weight(1f),
-                        primary = true,
-                        enabled = !checking,
-                    )
+                val moveOlder = {
+                    older?.move?.invoke()
+                    onDismiss()
                 }
+                ButtonPair(
+                    PairButton("Leave them", onDismiss),
+                    PairButton(if (checking) "Move them too" else "Move $count too", moveOlder, enabled = !checking),
+                )
             } else {
                 ActionButton("Done", onDismiss, Modifier.fillMaxWidth())
             }

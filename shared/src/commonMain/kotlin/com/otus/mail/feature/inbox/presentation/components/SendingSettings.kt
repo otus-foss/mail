@@ -26,7 +26,6 @@ internal fun SendingSettings(state: MailBehaviorState) {
         SettingRow(
             "Undo send",
             { choosing = true },
-            description = "Wait before sending, so you can take it back",
             icon = Res.drawable.symbol_schedule_send,
         ) { ValueButton(seconds.undoLabel) }
     }

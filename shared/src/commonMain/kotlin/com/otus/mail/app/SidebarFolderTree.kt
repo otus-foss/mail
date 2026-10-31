@@ -18,7 +18,7 @@ import com.otus.mail.feature.folders.domain.SharedFolder
 internal class SidebarFolderTree(
     private val collapsed: Set<List<String>>,
     private val onCollapse: (key: List<String>, collapsed: Boolean) -> Unit,
-    private val current: MailPage,
+    private val current: MailPage?,
     private val counter: SidebarCounter,
     private val colorOf: (SharedFolder) -> String?,
     private val onSelect: (MailPage) -> Unit,

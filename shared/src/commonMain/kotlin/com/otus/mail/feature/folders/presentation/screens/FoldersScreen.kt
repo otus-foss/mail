@@ -80,7 +80,7 @@ fun FoldersScreen(
     ) {
         listOfNotNull(state.notice, rules.notice).forEach { PageNote(it) }
         if (accounts.isEmpty()) {
-            PageNote(if (state.loading) "Loading folders…" else "Connect an account in Settings to manage its folders.")
+            PageNote(if (state.loading) "Loading folders…" else "Connect an account in Settings.")
         }
         val newFolder = { account: AccountFolders -> newFolderButton(account, state.busy) { dialog = it } }
         // With one account the hint holds its New folder button; each account's row holds it otherwise.
@@ -136,7 +136,7 @@ private fun AccountFolders(
 @Composable
 private fun FolderHint(button: (@Composable () -> Unit)?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.weight(1f)) { PageNote("Tap a folder to edit it, drag to reorder.") }
+        Box(Modifier.weight(1f)) { PageNote("Drag to reorder.") }
         // The empty last slot stands where the folder rows have their drag handles.
         button?.let { TrailingIcons(first = it, last = {}) }
     }

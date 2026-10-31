@@ -32,30 +32,26 @@ internal fun InboxContentsSheet(
             "Archive",
             checked = contents.archive,
             onCheckedChange = { on -> change { it.copy(archive = on) } },
-            description = "Mail you archived",
             icon = Res.drawable.symbol_archive,
         )
         SettingToggleRow(
             "Your folders",
             checked = contents.ownFolders,
             onCheckedChange = { on -> change { it.copy(ownFolders = on) } },
-            description = "Mail you moved to your own folders",
             icon = Res.drawable.symbol_folder,
         )
         SettingToggleRow(
             "Spam",
             checked = contents.spam,
             onCheckedChange = { on -> change { it.copy(spam = on) } },
-            description = "Mail the server marked as spam",
             icon = Res.drawable.symbol_report,
         )
         SettingToggleRow(
             "Trash",
             checked = contents.trash,
             onCheckedChange = { on -> change { it.copy(trash = on) } },
-            description = "Mail you deleted",
             icon = Res.drawable.symbol_delete,
         )
-        PageNote("Mail stays in its own folders. This changes what the Inbox lists and counts.")
+        PageNote("Mail stays in its own folders.")
     }
 }

@@ -33,7 +33,7 @@ fun SignaturesScreen(
     LaunchedEffect(state) { state.load() }
     Subpage("Signatures", onBack) {
         Column(verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) {
-            SettingToggleRow("Add to replies", inReplies, onInRepliesChange, description = "New messages always get it")
+            SettingToggleRow("Add to replies", inReplies, onInRepliesChange)
             state.notice?.let { Text(it, color = OtusColors.text2) }
             state.accountList.forEach { account ->
                 val identities = state.identities.filter { it.accountId == account.id }
