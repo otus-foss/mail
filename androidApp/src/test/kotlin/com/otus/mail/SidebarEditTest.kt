@@ -60,9 +60,7 @@ class SidebarEditTest {
         compose.onNode(hasText("Receipts") and hasText("4") and isSelectable()).assertIsDisplayed()
         openScopeSheet()
         compose.onNodeWithText("2 accounts · 3 addresses").assertIsDisplayed()
-        compose
-            .onNodeWithText("Choose an account to see all its addresses, or one address. Long-press to pin.")
-            .assertIsDisplayed()
+        compose.onNodeWithText("Long-press to pin.").assertIsDisplayed()
         compose.onNode(hasText("Bob") and hasText("2 addresses") and hasClickAction()).performClick()
         closeChoice()
         compose.onNodeWithText("Bob").assertIsDisplayed()
@@ -74,7 +72,7 @@ class SidebarEditTest {
     fun choosingAnAddressShowsOnlyMailSentToItUntilAllMailIsChosen() {
         openSidebar()
         openScopeSheet()
-        compose.onNodeWithText("Choose an address to see only its mail. Long-press to pin.").assertIsDisplayed()
+        compose.onNodeWithText("Long-press to pin.").assertIsDisplayed()
         row("example.org").performClick()
         row("ada@example.org").performClick()
         closeChoice()
@@ -114,7 +112,7 @@ class SidebarEditTest {
         compose.onNodeWithText("Grid").performClick()
         compose.onNodeWithText("Rows").performClick()
         closeChoice()
-        compose.onNode(hasText("Next to mailboxes and folders")).performClick()
+        compose.onNode(hasText("Counts") and hasClickAction()).performClick()
         compose.onNodeWithText("Off").performClick()
         closeChoice()
         assertEquals(MailboxStyle.Rows, behavior.behavior.sidebar.mailboxes)

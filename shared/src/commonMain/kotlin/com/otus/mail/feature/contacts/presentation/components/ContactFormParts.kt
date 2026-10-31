@@ -72,8 +72,7 @@ internal fun PartialDate.yearly(): YearlyDate? {
 internal val PrimaryInfo =
     InfoText(
         "Primary address",
-        "The starred address is the primary one. Mail fills it in when you pick this person, " +
-            "and the contact page lists it first.",
+        "Mail fills in the starred address when you pick this person.",
     )
 
 /** Digits and the marks people write numbers with, such as "+41 (0)79 123-45-67" or "*31#". */
