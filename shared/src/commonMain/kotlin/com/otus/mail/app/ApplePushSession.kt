@@ -31,7 +31,7 @@ internal class ApplePushSession(
         val saved = host.read("device")
         val deviceId = saved ?: host.newIdentifier()
         if (saved == null) check(host.write("device", deviceId))
-        mailServices.pushSubscriptions(storage, "ios-$deviceId") { login ->
+        mailServices.pushSubscriptions(storage, "ios-$deviceId", MailPush.Deliveries) { login ->
             val registration = storage.registrations()[login]
             if (registration != null) checkNotNull(bridge).active(registration.route, value = false)
         }

@@ -234,13 +234,13 @@ class MailServices(
     fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, logins, states)
 
     /**
-     * Keeps each login's push subscription pointed at its push endpoint. Create one per process.
-     * `EmailDelivery` pushes new deliveries (RFC 8621, section 1.5); `Email` also pushes flag and
-     * folder changes, so mail read elsewhere loses its notification within seconds.
+     * Keeps each login's push subscription pointed at its push endpoint, for the changes in [push].
+     * Create one per process.
      */
     fun pushSubscriptions(
         states: PushStateStore,
         deviceClientId: String,
+        push: MailPush,
         beforeCreate: suspend (String) -> Unit = {},
     ): PushSubscriptions =
         PushSubscriptions(
@@ -248,7 +248,7 @@ class MailServices(
             logins,
             states,
             deviceClientId,
-            listOf("EmailDelivery", "Email"),
+            push.types,
             beforeCreate = beforeCreate,
         )
 

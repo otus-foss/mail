@@ -62,15 +62,17 @@ class JmapNewMailChecker(
         val showing = alerts.showing().groupBy({ it.loginId }, { it.emailId })
         val checked =
             coroutineScope { logins.map { async { check(it, saved[it.id], showing[it.id].orEmpty()) } }.awaitAll() }
+        // Clearing first: Android may not list an alert it was just asked to show, so clearing after
+        // could take an account for empty and remove its summary along with the new alert.
+        checked
+            .flatMap { it.handled }
+            .takeIf { it.isNotEmpty() }
+            ?.let { alerts.clear(it) }
         checked
             .flatMap { it.mail }
             .sortedBy { it.receivedAt }
             .takeIf { it.isNotEmpty() }
             ?.let { alerts.show(it) }
-        checked
-            .flatMap { it.handled }
-            .takeIf { it.isNotEmpty() }
-            ?.let { alerts.clear(it) }
         val next = checked.mapNotNull { login -> (login.state ?: saved[login.loginId])?.let { login.loginId to it } }
         withContext(Dispatchers.IO) { states.write(next.toMap()) }
     }

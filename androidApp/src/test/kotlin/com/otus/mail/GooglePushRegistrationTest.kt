@@ -10,6 +10,7 @@ import com.otus.jmap.PushKeys
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.push.PushEndpoint
 import com.otus.jmap.push.PushStateStore
+import com.otus.mail.app.MailPush
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import kotlinx.coroutines.CancellationException
@@ -66,7 +67,7 @@ class GooglePushRegistrationTest {
                 this.records = records
             }
         }
-    private val subscriptions = MailServices().pushSubscriptions(state, "test-device")
+    private val subscriptions = MailServices().pushSubscriptions(state, "test-device", MailPush.Changes)
     private var key: String? = KEY
     private val registration by lazy { registrar { key } }
 

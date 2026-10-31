@@ -88,7 +88,7 @@ class InboxFeedState(
 
     private var reportedNotice: String? = null
 
-    /** Keeps an action failure visible through the current load, until the next refresh. */
+    /** Keeps an action failure visible through the current load, until the next refresh by the user. */
     fun report(text: String) {
         reportedNotice = text
         notice = text
@@ -153,13 +153,17 @@ class InboxFeedState(
     /**
      * Loads the scope's messages from the server again, with as many pages as are shown. With
      * [cachedFirst], as for a list left empty by a new scope or a new query, it first shows what
-     * the device kept, while [loading] stays true, unless the server answers first.
+     * the device kept, while [loading] stays true, unless the server answers first. With
+     * [keepReport], as for a reload after a change on the server, a reported failure stays.
      */
-    fun refresh(cachedFirst: Boolean = messages.isEmpty()) {
+    fun refresh(
+        cachedFirst: Boolean = messages.isEmpty(),
+        keepReport: Boolean = false,
+    ) {
         loading = true
         loadingMore = false
-        reportedNotice = null
-        notice = null
+        if (!keepReport) reportedNotice = null
+        notice = reportedNotice
         start(onEnd = { loading = false }) { load ->
             if (cachedFirst) launch { showCached(load) }
             source.messages(load.scope, load.query)
