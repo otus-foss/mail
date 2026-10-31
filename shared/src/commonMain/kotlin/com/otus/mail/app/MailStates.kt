@@ -174,7 +174,6 @@ internal class MailStates(
         return ComposeState(
             ComposeServices(
                 services.drafts,
-                services.sender,
                 services.addressBook,
                 services.scheduled,
                 services.threads,
@@ -231,9 +230,12 @@ internal class MailStates(
             folderActions(folders, folderColors, rules) { knownAddresses(it) },
         )
 
-    /** Sends drafts after their page closes, with Undo and the outcome in a toast. */
+    /**
+     * Sends drafts after their page closes, with Undo and the outcome in a toast. It runs in the
+     * process's scope, so a send outlives a recreated activity.
+     */
     val outgoing =
-        OutgoingMail(scope, moveToasts.toasts, services.scheduled) {
+        OutgoingMail(services.work, moveToasts.toasts, services.scheduled, services.outbox) {
             behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
         }
     private val cleaning = FolderCleaning(services, folders, scope)

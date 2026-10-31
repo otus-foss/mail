@@ -7,6 +7,7 @@ import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.inbox.domain.AddressPinStore
+import com.otus.mail.feature.inbox.domain.OutboxStore
 import com.otus.mail.feature.notifications.domain.MailStateStore
 
 // Each store keeps its own shared preferences file. Changing a file name loses what users saved.
@@ -35,6 +36,12 @@ class AndroidMailStateStore(
     context: Context,
 ) : MailStateStore,
     StringMapStore by PreferenceMap(context, "otus_mail_states")
+
+// Written at once rather than in the background, so a message survives the app closing right after.
+class AndroidOutboxStore(
+    context: Context,
+) : OutboxStore,
+    StringMapStore by PreferenceMap(context, "otus_mail_outbox", commit = true)
 
 class AndroidReadLaterStore(
     context: Context,

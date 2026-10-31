@@ -82,7 +82,7 @@ class ComposeUndoPersistenceTest {
         drafts: FakeDrafts,
         request: ComposeRequest = ComposeRequest.Resume(saved, ComposeRequest.New("a")),
     ) = ComposeState(
-        ComposeServices(drafts, { _, _, _ -> error("Sending was undone") }, { _, _ -> emptyList() }),
+        ComposeServices(drafts, { _, _ -> emptyList() }),
         backgroundScope,
         request,
         ComposeOrigin("a", listOf(ComposeAccount("a", "A")), emptyList()),

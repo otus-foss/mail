@@ -2,6 +2,8 @@ package com.otus.mail.feature.inbox.domain
 
 import com.otus.avatar.ResolvedAvatar
 import com.otus.mail.core.mail.INBOX_ROLE
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 /** Portable, supplied message data. No account connection or persistence is implied. */
 data class MailMessage(
@@ -56,11 +58,12 @@ data class RowFolder(
 enum class FolderKind { Folder, Inbox }
 
 /** [brandDomain] is the From domain the message passed DMARC for, which lets its avatar show a brand logo. */
+@Serializable
 data class MailSender(
     val name: String,
     val address: String,
     val accountKey: String = "",
-    val avatar: ResolvedAvatar? = null,
+    @Transient val avatar: ResolvedAvatar? = null,
     val brandDomain: String? = null,
 )
 

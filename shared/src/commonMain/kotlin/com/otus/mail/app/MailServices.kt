@@ -55,6 +55,7 @@ import com.otus.mail.feature.inbox.data.JmapMessageMarker
 import com.otus.mail.feature.inbox.data.JmapMessageMover
 import com.otus.mail.feature.inbox.data.JmapNewsletters
 import com.otus.mail.feature.inbox.data.JmapPeopleSearch
+import com.otus.mail.feature.inbox.data.JmapSendChecker
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
@@ -68,6 +69,7 @@ import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.KnownPeople
+import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageCleaner
@@ -155,6 +157,7 @@ class MailServices(
                     stores.addressPins?.forgetAccount(loginId)
                     stores.folderNudges?.forgetAccount(loginId)
                     stores.contacts?.forgetAccount(loginId)
+                    outbox.forget(loginId)
                     try {
                         cache.forget(loginId)
                     } catch (error: CacheStorageException) {
@@ -173,6 +176,11 @@ class MailServices(
     private val jmapSender by lazy { JmapDraftSender(connections, logins) }
     internal val sender: DraftSender get() = jmapSender
     internal val scheduled: ScheduledSends get() = jmapSender
+
+    /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
+    internal val outbox by lazy {
+        MailOutbox(stores.outbox, jmapSender, JmapSendChecker(connections, logins), host.wakeOutbox)
+    }
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections, logins) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
     internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
@@ -238,6 +246,15 @@ class MailServices(
      */
     suspend fun trimCache(now: Instant = Clock.System.now()) {
         cache.trim(CacheKind.Body, (now - BODY_RETENTION).toEpochMilliseconds())
+    }
+
+    /**
+     * Sends the messages the outbox kept that are due, as from a background job after the app
+     * closed. True when one still waits for the network, so the job should run again.
+     */
+    suspend fun resumeOutbox(): Boolean {
+        outbox.resume()
+        return outbox.waiting()
     }
 
     /** The server signing key used to register directly with Google (RFC 9749). */

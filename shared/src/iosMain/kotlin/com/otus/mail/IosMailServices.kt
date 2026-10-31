@@ -32,6 +32,7 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
                 IosFolderNudgeStore(),
                 SqlMailCache(cacheDriver(cacheDirectory)),
                 contacts = IosContactStore(),
+                outbox = IosOutboxStore(),
             ),
     )
 }

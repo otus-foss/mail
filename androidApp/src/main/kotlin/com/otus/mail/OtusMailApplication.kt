@@ -45,6 +45,7 @@ class OtusMailApplication :
                     SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
                     AndroidNotificationPreviewStore(this),
                     AndroidContactStore(this),
+                    AndroidOutboxStore(this),
                 ),
             instantPush = instantPush,
             pickers =
@@ -59,6 +60,7 @@ class OtusMailApplication :
                 MailPlatform(
                     NightlyUpdates(installer = AndroidUpdateInstaller(this)),
                     DevicePrivacy(screen = true, keyboard = true),
+                    wakeOutbox = { OutboxWorker.wake(this, it) },
                 ),
         )
     }

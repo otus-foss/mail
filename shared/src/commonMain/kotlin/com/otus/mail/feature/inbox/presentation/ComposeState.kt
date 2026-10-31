@@ -12,8 +12,6 @@ import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
-import com.otus.mail.feature.inbox.domain.SendTime
-import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.answered
 import com.otus.mail.feature.inbox.domain.answeredOriginal
@@ -38,7 +36,7 @@ import kotlinx.datetime.LocalDateTime
  * Drafts folder [saveDelayMillis] after the last one, and [close] saves at once; each save
  * replaces the earlier copy. Saves run one at a time, and a started save finishes, so each save knows
  * the copy it replaces. A failed save shows a [notice] until the next one succeeds. [handOff] hands
- * the draft to the sender of [services] and reports the address it went from to [onSent].
+ * the draft over for sending and reports the address it went from to [onSent].
  * [scope] must outlive the page, so a save started on closing finishes.
  */
 class ComposeState(
@@ -50,7 +48,6 @@ class ComposeState(
     private val saveDelayMillis: Long = SAVE_DELAY_MILLIS,
 ) {
     private val drafts = services.drafts
-    private val sender = services.sender
     private val scheduled = services.scheduled
     val accounts: List<ComposeAccount> get() = origin.accounts
 
@@ -202,29 +199,30 @@ class ComposeState(
     }
 
     /**
-     * Stops saving and hands the draft over for sending: the returned send waits for any save in
-     * progress, so it knows the saved copy, and sends at the [SendTime] it gets. Null when
-     * the draft has no From address or no recipient. Typed addresses become recipients first.
+     * Stops saving and hands the draft over for sending. Its [OutgoingDraft.ready] waits for any
+     * save in progress, so the draft knows its saved copy. Null when the draft has no From address
+     * or no recipient. Typed addresses become recipients first.
      */
-    fun handOff(): (suspend (SendTime) -> Result<SentMessage>)? {
+    fun handOff(): OutgoingDraft? {
         recipients.commitAll()
         if (!canSend) return null
         finished = true
         pending?.cancel()
         val outgoing = draft.copy(signature = signature)
-        val answered = request.answered(outgoing.accountId)
-        return { time ->
-            saving
-                .withLock {
-                    val savedId = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId
-                    sender.send(outgoing.copy(emailId = savedId), answered, time).onSuccess {
-                        stored?.takeIf { it.accountId != outgoing.accountId }?.discardCopy(drafts)
-                    }
-                }.onSuccess {
-                    val from = outgoing.from
-                    if (from != null) onSent(from)
+        return OutgoingDraft(
+            ready = {
+                saving.withLock {
+                    outgoing.copy(emailId = stored?.takeIf { it.accountId == outgoing.accountId }?.emailId)
                 }
-        }
+            },
+            answered = request.answered(outgoing.accountId),
+            sent = {
+                // A copy saved in another account before the From address changed has no use now.
+                saving.withLock { stored?.takeIf { it.accountId != outgoing.accountId }?.discardCopy(drafts) }
+                val from = outgoing.from
+                if (from != null) onSent(from)
+            },
+        )
     }
 
     private fun scheduleSave() {

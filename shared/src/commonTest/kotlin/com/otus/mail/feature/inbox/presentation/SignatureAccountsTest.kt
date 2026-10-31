@@ -57,7 +57,7 @@ class SignatureAccountsTest {
         runTest {
             val compose =
                 ComposeState(
-                    ComposeServices(drafts, { _, _, _ -> error("No sending here") }, { _, _ -> emptyList() }),
+                    ComposeServices(drafts, { _, _ -> emptyList() }),
                     backgroundScope,
                     ComposeRequest.New("a"),
                     ComposeOrigin("a", accounts, emptyList()),

@@ -77,6 +77,8 @@ fun App(
             SharedSettings(dateFormatState, themeState, animationState, appIconState)
         }
     val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
+    // Messages an earlier run could not hand to the server go now, or wait in a toast for the user.
+    LaunchedEffect(states) { states.outgoing.resume { navigation.go(MailPage.Compose(it)) } }
     OtusTheme(themeState.palette) {
         CompositionLocalProvider(
             LocalMotionScale provides animationState.speed.scale,

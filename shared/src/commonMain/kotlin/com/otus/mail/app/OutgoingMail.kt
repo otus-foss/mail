@@ -5,9 +5,14 @@ import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
+import com.otus.mail.feature.inbox.domain.MailOutbox
+import com.otus.mail.feature.inbox.domain.OutboxEntry
+import com.otus.mail.feature.inbox.domain.OutboxProblem
 import com.otus.mail.feature.inbox.domain.ScheduledSends
-import com.otus.mail.feature.inbox.domain.SendTime
+import com.otus.mail.feature.inbox.domain.SendException
+import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SentMessage
+import com.otus.mail.feature.inbox.presentation.OutgoingDraft
 import com.otus.mail.feature.inbox.presentation.components.scheduledLabel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -22,54 +27,59 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-/** A draft handed over for sending: [run] sends it at a [SendTime], and [open] shows [reopen] for Undo. */
+/** A draft handed over for sending, and [open], which shows [reopen] for Undo. */
 internal class Outgoing(
-    val run: suspend (SendTime) -> Result<SentMessage>,
+    val draft: OutgoingDraft,
     val reopen: ComposeRequest.Resume,
     val open: (ComposeRequest) -> Unit,
 )
 
 /**
- * Sends drafts after the compose page has closed, with toasts that say how it went. A message
- * waits [holdMillis], read when it is sent, with Undo, which opens it again; a hold of 0 sends at
- * once. Where the server can hold mail that long, the message goes to the server at once and the
- * server holds it, so it still goes if the app closes; Undo cancels it there. Elsewhere the device
- * holds it. Swiping the toast away sends it at once. A scheduled one goes to the server at once
- * too. A failure stays as a toast with Retry.
+ * Sends drafts after the compose page has closed, with toasts that say how it went. Each draft goes
+ * into [outbox] first, so it still goes if the app closes. A message waits [holdMillis], read when
+ * it is sent, with Undo, which opens it again; a hold of 0 sends at once. Where the server can hold
+ * mail that long, the message goes to the server at once and the server holds it; Undo cancels it
+ * there. Elsewhere the device holds it. Swiping the toast away sends it at once. A scheduled one
+ * goes to the server at once too. A failure stays as a toast with Retry.
  */
 internal class OutgoingMail(
     private val scope: CoroutineScope,
     private val toasts: ToastState,
     private val scheduled: ScheduledSends,
+    private val outbox: MailOutbox,
     private val now: () -> Instant = { Clock.System.now() },
     private val holdMillis: () -> Long,
 ) {
     fun send(outgoing: Outgoing) {
         val group = Any()
         val hold = holdMillis()
+        val deadline = now() + hold.milliseconds
+        val id = scope.async { park(outgoing, deadline) }
         if (hold == 0L) {
             scope.launch {
                 toasts.show(ToastMessage("Sending…", group = group))
-                deliver(outgoing, group)
+                deliver(outgoing, id.await(), group)
             }
             return
         }
-        val deadline = now() + hold.milliseconds
-        val held = scope.async { holdOnServer(outgoing, hold, group) }
+        val held = scope.async { holdOnServer(outgoing, id.await(), hold, group) }
         val early = CompletableDeferred<Unit>()
         val onDevice =
             scope.launch {
                 if (held.await() != null) return@launch
                 withTimeoutOrNull(hold) { early.await() }
                 toasts.show(ToastMessage("Sending…", group = group))
-                deliver(outgoing, group)
+                deliver(outgoing, id.await(), group)
             }
         val undo =
             ToastAction("Undo") {
                 onDevice.cancel()
                 scope.launch {
                     val sent = held.await()?.getOrNull()
-                    if (sent == null) outgoing.open(outgoing.reopen) else unschedule(outgoing, sent)
+                    when {
+                        sent != null -> unschedule(outgoing, sent)
+                        outbox.cancel(id.await()) -> outgoing.open(outgoing.reopen)
+                    }
                 }
             }
         val sentToast = { scope.launch { if (held.await()?.isSuccess == true) toasts.show(sent(group)) } }
@@ -88,32 +98,64 @@ internal class OutgoingMail(
         at: LocalDateTime,
     ) {
         scope.launch {
-            outgoing.run(SendTime.Scheduled(at.toInstant(TimeZone.currentSystemDefault()))).fold(
-                onSuccess = { sent ->
-                    val undo = ToastAction("Undo") { scope.launch { unschedule(outgoing, sent) } }
-                    toasts.show(ToastMessage(at.scheduledLabel(), undo))
-                },
-                onFailure = {
-                    val retry = ToastAction("Retry") { schedule(outgoing, at) }
-                    toasts.show(ToastMessage("Couldn't schedule", retry, sticky = true))
-                },
-            )
+            val id = park(outgoing, now(), at.toInstant(TimeZone.currentSystemDefault()))
+            schedule(outgoing, id, at)
         }
+    }
+
+    /**
+     * Sends what the outbox kept from an earlier run, such as a message held on the device when
+     * the app closed, and offers each message that needs the user, which [open] shows.
+     */
+    fun resume(open: (ComposeRequest) -> Unit) {
+        scope.launch {
+            outbox.resume()
+            outbox.offers().forEach { offer(it, open) }
+        }
+    }
+
+    private suspend fun park(
+        outgoing: Outgoing,
+        due: Instant,
+        sendAt: Instant? = null,
+    ): String = outbox.add(outgoing.draft.ready(), outgoing.draft.answered, due, sendAt)
+
+    private suspend fun schedule(
+        outgoing: Outgoing,
+        id: String,
+        at: LocalDateTime,
+    ) {
+        outbox.send(id).fold(
+            onSuccess = { sent ->
+                outgoing.draft.sent()
+                val undo = sent?.let { ToastAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
+                toasts.show(ToastMessage(at.scheduledLabel(), undo))
+            },
+            onFailure = {
+                val retry = ToastAction("Retry") { scope.launch { schedule(outgoing, id, at) } }
+                toasts.show(ToastMessage("Couldn't schedule", retry, sticky = true))
+            },
+        )
     }
 
     /**
      * Hands the message to the server to send once [hold] and a little spare time have passed, so
      * the request's trip and the server's clock cannot cut the Undo window short. Null when the
-     * account cannot hold mail that long, so the device has to.
+     * account cannot hold mail that long, or no answer came, so the device has to; it asks the
+     * server whether the hold arrived before it sends.
      */
     private suspend fun holdOnServer(
         outgoing: Outgoing,
+        id: String,
         hold: Long,
         group: Any,
-    ): Result<SentMessage>? {
+    ): Result<SentMessage?>? {
         val wait = hold.milliseconds + SERVER_SPARE
         if (scheduled.maxDelaySeconds(outgoing.reopen.draft.accountId).seconds < wait) return null
-        return outgoing.run(SendTime.Held(now() + wait)).onFailure { failed(outgoing, group) }
+        val result = outbox.send(id, holdUntil = now() + wait)
+        if ((result.exceptionOrNull() as? SendException)?.failure == SendFailure.Unreachable) return null
+        if (result.isSuccess) outgoing.draft.sent() else failed(outgoing, id, group)
+        return result
     }
 
     /**
@@ -137,11 +179,15 @@ internal class OutgoingMail(
 
     private suspend fun deliver(
         outgoing: Outgoing,
+        id: String,
         group: Any,
     ) {
-        outgoing.run(SendTime.Now).fold(
-            onSuccess = { toasts.show(sent(group)) },
-            onFailure = { failed(outgoing, group) },
+        outbox.send(id).fold(
+            onSuccess = {
+                outgoing.draft.sent()
+                toasts.show(sent(group))
+            },
+            onFailure = { failed(outgoing, id, group) },
         )
     }
 
@@ -149,10 +195,28 @@ internal class OutgoingMail(
 
     private fun failed(
         outgoing: Outgoing,
+        id: String,
         group: Any,
     ) {
-        val retry = ToastAction("Retry") { scope.launch { deliver(outgoing, group) } }
+        val retry = ToastAction("Retry") { scope.launch { deliver(outgoing, id, group) } }
         toasts.show(ToastMessage("Couldn't send", retry, group, sticky = true))
+    }
+
+    /** Offers a message an earlier run could not send; opening it takes it out of the outbox. */
+    private fun offer(
+        entry: OutboxEntry,
+        open: (ComposeRequest) -> Unit,
+    ) {
+        val text = if (entry.problem == OutboxProblem.Unconfirmed) "Couldn't confirm sending" else "Couldn't send"
+        val draft = entry.draft.copy(messageId = null)
+        val action =
+            ToastAction("Open") {
+                scope.launch {
+                    outbox.drop(entry.id)
+                    open(ComposeRequest.Resume(draft, ComposeRequest.New(draft.accountId)))
+                }
+            }
+        toasts.show(ToastMessage(text, action, sticky = true))
     }
 
     /** Cancels a held or scheduled message and opens its copy, a draft again, to edit. */

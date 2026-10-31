@@ -1,8 +1,10 @@
 package com.otus.mail.feature.inbox.domain
 
+import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
 /** The message a draft answers; [forwarded] when the draft passes it on rather than replying. */
+@Serializable
 data class AnsweredMessage(
     val emailId: String,
     val forwarded: Boolean,
