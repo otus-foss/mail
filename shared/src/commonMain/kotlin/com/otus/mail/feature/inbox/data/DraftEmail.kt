@@ -14,9 +14,10 @@ import kotlinx.serialization.json.putJsonObject
 /**
  * The Email object `Email/set` creates for this draft in the [draftsId] mailbox (RFC 8621,
  * section 4.6). It is marked `$draft`, and `$seen` so the Drafts folder does not count it as unread.
- * Empty recipient and thread headers are left out rather than written empty. The body is plain
- * text, or text and [html] as alternatives; HTML with inline images puts them beside it in a
- * `multipart/related` part, which the HTML names by `cid:`; inline attachments join them there.
+ * Empty recipient and thread headers are left out rather than written empty, and so is a missing
+ * Message-ID, which the server then makes up. The body is plain text, or text and [html] as
+ * alternatives; HTML with inline images puts them beside it in a `multipart/related` part, which
+ * the HTML names by `cid:`; inline attachments join them there.
  * Other attachments uploaded to the draft's account follow the body in `multipart/mixed`. One
  * still uploading waits for a later save.
  */
@@ -35,6 +36,7 @@ internal fun Draft.toEmail(
             .filterValues { it.isNotEmpty() }
             .forEach { (header, senders) -> put(header, addresses(senders)) }
         put("subject", subject)
+        if (messageId != null) put("messageId", JsonArray(listOf(JsonPrimitive(messageId))))
         mapOf("inReplyTo" to inReplyTo, "references" to references)
             .filterValues { it.isNotEmpty() }
             .forEach { (header, ids) -> put(header, JsonArray(ids.map(::JsonPrimitive))) }

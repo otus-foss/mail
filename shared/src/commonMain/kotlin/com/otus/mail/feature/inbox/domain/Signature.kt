@@ -1,6 +1,9 @@
 package com.otus.mail.feature.inbox.domain
 
+import kotlinx.serialization.Serializable
+
 /** An identity's signature, as JMAP stores it on the Identity: formatted [html] and plain [text]. */
+@Serializable
 data class Signature(
     val html: String = "",
     val text: String = "",

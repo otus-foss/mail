@@ -11,14 +11,13 @@ import com.otus.jmap.JmapIds
 import com.otus.jmap.JmapResponse
 import com.otus.jmap.JmapType
 import com.otus.mail.core.cache.CacheKind
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.CacheWrite
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.ThreadType
-import com.otus.mail.core.mail.replaceMailboxes
+import kotlin.time.Instant
 
 /**
  * What changed in one type's objects since the saved state (RFC 8620, section 5.2). [changed]
@@ -55,15 +54,20 @@ internal data class ObjectChanges(
 
 /** A login's mailboxes and what changed in its emails and threads, as one request found them. */
 internal class MailChanges(
-    val mailboxes: List<MailboxObject>,
+    private val mailboxList: MailboxList,
     val emails: ObjectChanges,
     val threads: ObjectChanges,
-)
+) {
+    val mailboxes: List<MailboxObject> get() = mailboxList.mailboxes
+
+    fun saveMailboxes(write: CacheWrite) = write.saveMailboxes(mailboxList)
+}
 
 /**
  * The mailboxes and the `Email/changes` and `Thread/changes` since the login's saved states, in
- * one request. Empty `/get` calls give the current states, used when there is nothing to start
- * from. Further pages of changes take a request each, up to [MAX_PAGES].
+ * one request; the mailboxes follow their own changes where they can. Empty `/get` calls give the
+ * current states, used when there is nothing to start from. Further pages of changes take a request
+ * each, up to [MAX_PAGES], and mailboxes whose changes could not be followed one more.
  */
 internal suspend fun JmapConnection.mailChanges(
     accountId: String,
@@ -72,21 +76,22 @@ internal suspend fun JmapConnection.mailChanges(
 ): MailChanges {
     val emailState = cache.value(loginId, EMAIL_STATE)
     val threadState = cache.value(loginId, THREAD_STATE)
-    lateinit var mailboxes: JmapCall<GetResult<MailboxObject>>
+    val savedMailboxes = cache.savedMailboxes(loginId)
+    lateinit var mailboxes: MailboxCalls
     lateinit var emailsNow: JmapCall<GetResult<*>>
     lateinit var threadsNow: JmapCall<GetResult<*>>
     var emailChanges: JmapCall<ChangesResult>? = null
     var threadChanges: JmapCall<ChangesResult>? = null
     val response =
         send {
-            mailboxes = call(GetMethod(MailboxType, accountId, properties = MAILBOX_PROPERTIES))
+            mailboxes = mailboxCalls(accountId, savedMailboxes)
             emailsNow = call(GetMethod(EmailType, accountId, JmapIds.Of(emptyList()), listOf("id")))
             threadsNow = call(GetMethod(ThreadType, accountId, JmapIds.Of(emptyList())))
             emailChanges = emailState?.let { call(ChangesMethod(EmailType, accountId, it, MAX_CHANGES)) }
             threadChanges = threadState?.let { call(ChangesMethod(ThreadType, accountId, it, MAX_CHANGES)) }
         }
     return MailChanges(
-        mailboxes = response[mailboxes].list,
+        mailboxList = mailboxes.read(response) ?: allMailboxes(accountId),
         emails = objectChanges(EmailType, accountId, response, emailsNow, emailChanges),
         threads = objectChanges(ThreadType, accountId, response, threadsNow, threadChanges),
     )
@@ -94,7 +99,7 @@ internal suspend fun JmapConnection.mailChanges(
 
 /** Saves [changes]: the mailboxes, the removal of changed and destroyed objects, and the states. */
 internal fun CacheWrite.saveChanges(changes: MailChanges) {
-    replaceMailboxes(changes.mailboxes)
+    changes.saveMailboxes(this)
     changes.emails.applyTo(this, CacheKind.Email, CacheKind.Member)
     changes.threads.applyTo(this, CacheKind.Thread)
     putValue(EMAIL_STATE, changes.emails.state)
@@ -143,9 +148,20 @@ internal inline fun <T> unlessRefused(read: () -> T): T? =
         null
     }
 
+/** When [loginId]'s cache last matched the server; null before the first sync or when unreadable. */
+internal suspend fun MailCache.syncedAt(loginId: String): Instant? =
+    try {
+        value(loginId, SYNCED_AT)?.toLongOrNull()?.let(Instant::fromEpochMilliseconds)
+    } catch (expected: CacheStorageException) {
+        null
+    }
+
 /** Saved-value keys of the states the cached emails and threads match. */
 private const val EMAIL_STATE = "state:Email"
 private const val THREAD_STATE = "state:Thread"
+
+/** The saved-value key of the time, in epoch milliseconds, the cache last matched the server. */
+internal const val SYNCED_AT = "synced:at"
 
 /** Changes asked for per call; the server may send fewer (RFC 8620, section 5.2). */
 private const val MAX_CHANGES = 500

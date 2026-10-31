@@ -70,11 +70,14 @@ internal class MailStates(
 
     /** Colors the user gave their folders; the Folder colors switch hides them. */
     val folderColors: FolderColorsState =
-        FolderColorsState(services.stores.folderColors, { folders.accounts }) { behavior.behavior.sidebar.folderColors }
+        FolderColorsState(
+            services.stores.folders.colors,
+            { folders.accounts },
+        ) { behavior.behavior.sidebar.folderColors }
 
     /** Which folder the color nudge offers a color for; only while folder colors and folder icons are on. */
     val folderNudge =
-        FolderNudgeState(services.stores.folderNudges, folderColors, { folders.accounts }) {
+        FolderNudgeState(services.stores.folders.nudges, folderColors, { folders.accounts }) {
             behavior.behavior.sidebar.folderColors && behavior.behavior.list.folderIcons
         }
 
@@ -174,7 +177,6 @@ internal class MailStates(
         return ComposeState(
             ComposeServices(
                 services.drafts,
-                services.sender,
                 services.addressBook,
                 services.scheduled,
                 services.threads,
@@ -231,9 +233,12 @@ internal class MailStates(
             folderActions(folders, folderColors, rules) { knownAddresses(it) },
         )
 
-    /** Sends drafts after their page closes, with Undo and the outcome in a toast. */
+    /**
+     * Sends drafts after their page closes, with Undo and the outcome in a toast. It runs in the
+     * process's scope, so a send outlives a recreated activity.
+     */
     val outgoing =
-        OutgoingMail(scope, moveToasts.toasts, services.scheduled) {
+        OutgoingMail(services.work, moveToasts.toasts, services.scheduled, services.outbox) {
             behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
         }
     private val cleaning = FolderCleaning(services, folders, scope)

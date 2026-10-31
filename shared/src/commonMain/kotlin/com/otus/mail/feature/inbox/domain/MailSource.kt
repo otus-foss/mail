@@ -1,12 +1,15 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.mail.core.mail.INBOX_ROLE
+import kotlin.time.Instant
 
 enum class InboxFailure { SignInRejected, NotPermitted, CredentialsUnavailable, NoMail, Unreachable, ServerProblem }
 
+/** An account that could not be loaded; [syncedAt] is when its cached mail last matched the server. */
 data class UnavailableAccount(
     val name: String,
     val reason: InboxFailure,
+    val syncedAt: Instant? = null,
 )
 
 /** Messages from every connected account, and the accounts that could not be loaded. */

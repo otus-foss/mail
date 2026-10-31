@@ -6,11 +6,13 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.AndroidLoginStore
 import com.otus.jmap.push.PushSubscriptions
+import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailPickers
 import com.otus.mail.app.MailPlatform
 import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
+import com.otus.mail.app.WaitingStores
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
@@ -38,13 +40,16 @@ class OtusMailApplication :
             avatarStore = FileAvatarStore(File(cacheDir, "avatars-v1").absolutePath),
             stores =
                 MailDeviceStores(
-                    AndroidReadLaterStore(this),
-                    AndroidFolderColorStore(this),
+                    FolderStores(
+                        AndroidReadLaterStore(this),
+                        AndroidFolderColorStore(this),
+                        AndroidFolderNudgeStore(this),
+                    ),
                     AndroidAddressPinStore(this),
-                    AndroidFolderNudgeStore(this),
                     SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
                     AndroidNotificationPreviewStore(this),
                     AndroidContactStore(this),
+                    WaitingStores(AndroidOutboxStore(this), AndroidEmailChangeStore(this)),
                 ),
             instantPush = instantPush,
             pickers =
@@ -59,6 +64,7 @@ class OtusMailApplication :
                 MailPlatform(
                     NightlyUpdates(installer = AndroidUpdateInstaller(this)),
                     DevicePrivacy(screen = true, keyboard = true),
+                    wakeOutbox = { OutboxWorker.wake(this, it) },
                 ),
         )
     }

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import kotlinx.serialization.Serializable
 import kotlin.random.Random
 
 /**
@@ -7,6 +8,7 @@ import kotlin.random.Random
  * account; a draft moved to another account needs it uploaded there too. An [inline] image shows
  * in the body where the HTML names it by [cid] (RFC 2392) instead of as a file.
  */
+@Serializable
 data class DraftAttachment(
     val id: String,
     val name: String,
@@ -25,6 +27,7 @@ data class DraftAttachment(
 }
 
 /** An uploaded file: blob [blobId] of account [accountId] (RFC 8620, section 6.1). */
+@Serializable
 data class AttachmentBlob(
     val accountId: String,
     val blobId: String,

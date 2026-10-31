@@ -14,12 +14,13 @@ import kotlinx.serialization.json.buildJsonObject
 /**
  * Files a message with one `Email/set` patch of its `mailboxIds` (RFC 8621, section 4.6). Only the
  * named mailboxes change, so the message keeps any other mailboxes it is in. The emails the server
- * moved move in [cache] too.
+ * moved move in [cache] too. Offline, a move waits in [queue].
  */
 class JmapMessageMover(
     private val connections: JmapConnections,
     private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
+    private val queue: EmailChangeQueue? = null,
 ) : MessageMover {
     override suspend fun move(
         message: MailMessage,
@@ -28,7 +29,7 @@ class JmapMessageMover(
     ): Boolean {
         val left = leaving - folderId - ""
         if (left.isEmpty()) return false
-        return updateEmail(connections, logins, message, movePatch(left, folderId), cache)
+        return updateEmail(connections, logins, message, movePatch(left, folderId), cache, queue)
     }
 
     override suspend fun moveBack(
@@ -43,14 +44,15 @@ class JmapMessageMover(
                 back.forEach { set(JsonPrimitive(true), "mailboxIds", it) }
             }
         if (back.isEmpty()) return false
-        return updateEmail(connections, logins, message, patch, cache)
+        return updateEmail(connections, logins, message, patch, cache, queue)
     }
 
     override suspend fun setInFolder(
         message: MailMessage,
         folderId: String,
         inFolder: Boolean,
-    ): Boolean = updateEmail(connections, logins, message, membershipPatch("mailboxIds", folderId, inFolder), cache)
+    ): Boolean =
+        updateEmail(connections, logins, message, membershipPatch("mailboxIds", folderId, inFolder), cache, queue)
 
     /** Sends each email's whole `mailboxIds`, so one call files a conversation whose emails differ. */
     override suspend fun setMailboxes(
@@ -65,5 +67,6 @@ class JmapMessageMover(
                 buildJsonObject { put("mailboxIds", JsonObject(boxes.associateWith { JsonPrimitive(true) })) }
             },
             cache,
+            queue,
         )
 }

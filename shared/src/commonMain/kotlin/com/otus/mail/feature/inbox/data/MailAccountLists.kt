@@ -23,15 +23,16 @@ internal class MailAccountLists(
 ) {
     /**
      * Brings the login's cache up to date: the changes since the saved states, then each list of
-     * [listingsOf] again, as long as it has loaded so far and at least a page, then only the rows
-     * and threads the cache lacks or that changed.
+     * [listingsOf], by its changes where the server can say them, or again, as long as it has
+     * loaded so far and at least a page, then only the rows and threads the cache lacks or that
+     * changed.
      */
     suspend fun refresh(listingsOf: ListingsOf) {
         val changes = connection.mailChanges(accountId, cache, loginId)
         val queries = listingsOf(changes.mailboxes)
         val saved = cache.listings(loginId, queries)
         val pages = queries.map { PageRequest(it, position = 0, limit = maxOf(page, saved[it.key]?.ids?.size ?: 0)) }
-        val listings = queries.map { it.key }.zip(connection.queryPages(accountId, pages)).toMap()
+        val listings = queries.map { it.key }.zip(connection.refreshPages(accountId, pages, saved, page)).toMap()
         store(listings, listings.values.flatMap { it.ids }.toSet(), changes)
     }
 
@@ -47,8 +48,19 @@ internal class MailAccountLists(
         val requests = growing.map { PageRequest(it, position = saved.getValue(it.key).ids.size, limit = page) }
         val added = growing.map { it.key }.zip(connection.queryPages(accountId, requests)).toMap()
         // New mail moves every row down, so a page can repeat rows the list already has.
+        // The ids only follow later changes when the page came from the same query state.
         val listings =
-            added.mapValues { (key, next) -> Listing((saved.getValue(key).ids + next.ids).distinct(), next.hasMore) }
+            added.mapValues { (key, next) ->
+                val before = saved.getValue(key)
+                Listing(
+                    (before.ids + next.ids).distinct(),
+                    next.hasMore,
+                    next.queryState.takeIf {
+                        it ==
+                            before.queryState
+                    },
+                )
+            }
         store(listings, added.values.flatMap { it.ids }.toSet(), changes = null)
     }
 
@@ -62,7 +74,10 @@ internal class MailAccountLists(
         val fetched = connection.fetchMail(accountId, wanted)
         val use = cache.listingUse(loginId)
         cache.write(loginId) {
-            if (changes != null) saveChanges(changes)
+            if (changes != null) {
+                saveChanges(changes)
+                putValue(SYNCED_AT, now().toString())
+            }
             saveMail(fetched)
             putListings(listings, use, now())
         }

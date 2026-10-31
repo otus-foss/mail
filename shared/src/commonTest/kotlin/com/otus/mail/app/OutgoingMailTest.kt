@@ -3,71 +3,35 @@ package com.otus.mail.app
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
+import com.otus.mail.feature.inbox.domain.DraftSender
+import com.otus.mail.feature.inbox.domain.MailOutbox
+import com.otus.mail.feature.inbox.domain.OutboxStore
 import com.otus.mail.feature.inbox.domain.ScheduledSends
+import com.otus.mail.feature.inbox.domain.SendCheck
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
+import com.otus.mail.feature.inbox.presentation.OutgoingDraft
+import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class OutgoingMailTest {
-    private val toasts = ToastState()
-    private val runs = mutableListOf<SendTime>()
-    private val opened = mutableListOf<ComposeRequest>()
-    private val cancelled = mutableListOf<SentMessage>()
-    private val sentNow = mutableListOf<SentMessage>()
-    private var sendNowFails = false
-    private var failing = false
-    private var hold = HOLD
-    private var serverDelaySeconds = 0L
-    private val draft = Draft("a1", subject = "Lunch", emailId = "d1")
-
-    private val scheduled =
-        object : ScheduledSends {
-            override suspend fun maxDelaySeconds(accountId: String) = serverDelaySeconds
-
-            override suspend fun cancel(message: SentMessage) = Result.success(Unit).also { cancelled += message }
-
-            override suspend fun sendNow(message: SentMessage): Result<Unit> {
-                sentNow += message
-                return if (sendNowFails) Result.failure(SendException(SendFailure.Recipients)) else Result.success(Unit)
-            }
-        }
-
-    private fun TestScope.outgoing() =
-        OutgoingMail(backgroundScope, toasts, scheduled, { NOW + testScheduler.currentTime.milliseconds }) { hold }
-
-    private fun swipeAway() = assertNotNull(toasts.messages.single().swipeAction).onAction()
-
-    private val message =
-        Outgoing(
-            run = { time ->
-                runs += time
-                if (failing) {
-                    Result.failure(
-                        SendException(SendFailure.Unreachable),
-                    )
-                } else {
-                    Result.success(SentMessage("a1", "e9", "s1"))
-                }
-            },
-            reopen = ComposeRequest.Resume(draft, ComposeRequest.New()),
-            open = { opened += it },
-        )
-
+internal class OutgoingMailTest : OutgoingMailFixture() {
     @Test
     fun aMessageWaitsWithUndoThenSaysSent() =
         runTest {
@@ -105,14 +69,14 @@ class OutgoingMailTest {
     @Test
     fun aFailureStaysWithRetryUntilItGoes() =
         runTest {
-            failing = true
+            failure = SendFailure.Unreachable
             outgoing().send(message)
             advanceTimeBy(HOLD + 1)
             runCurrent()
             val failed = toasts.messages.single()
-            assertEquals("Couldn't send", failed.text)
+            assertEquals("Will send when online", failed.text)
             assertTrue(failed.sticky)
-            failing = false
+            failure = null
             assertNotNull(failed.action).onAction()
             runCurrent()
             assertEquals(listOf("Sent"), toasts.messages.map { it.text })
@@ -176,7 +140,7 @@ class OutgoingMailTest {
     fun aRefusedServerHoldStaysWithRetry() =
         runTest {
             serverDelaySeconds = 60
-            failing = true
+            failure = SendFailure.Recipients
             outgoing().send(message)
             runCurrent()
             val failed = toasts.messages.single()
@@ -213,7 +177,7 @@ class OutgoingMailTest {
     fun aRefusedEarlySendOffersTheDraftToOpen() =
         runTest {
             serverDelaySeconds = 60
-            sendNowFails = true
+            sendNowFailure = SendFailure.Recipients
             outgoing().send(message)
             runCurrent()
             swipeAway()
@@ -235,8 +199,41 @@ class OutgoingMailTest {
             assertEquals(listOf("Sent"), toasts.messages.map { it.text })
         }
 
-    private companion object {
-        const val HOLD = 5_000L
-        val NOW = Instant.parse("2026-10-30T12:00:00Z")
-    }
+    @Test
+    fun aServerHoldWithoutAnAnswerIsLookedUpBeforeTheDeviceSendsIt() =
+        runTest {
+            serverDelaySeconds = 60
+            failure = SendFailure.Unreachable
+            outgoing().send(message)
+            runCurrent()
+            assertEquals("Sending…", toasts.messages.single().text, "The device takes over the hold")
+            failure = null
+            check = SendCheck.Sent
+            advanceTimeBy(HOLD + 1)
+            runCurrent()
+            assertEquals(1, runs.size, "The server had the hold, so nothing goes twice")
+            assertEquals(listOf("Sent"), toasts.messages.map { it.text })
+        }
+
+    @Test
+    fun aMessageAnEarlierRunCouldNotSendIsOfferedToOpen() =
+        runTest {
+            val store = object : MemoryMapStore(), OutboxStore {}
+            val earlier = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
+            failure = SendFailure.Recipients
+            earlier.send(earlier.add(draft, null, NOW))
+
+            val restarted = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
+            OutgoingMail(backgroundScope, toasts, scheduled, restarted) { hold }.resume { opened += it }
+            runCurrent()
+            val offer = toasts.messages.single()
+            assertEquals("Couldn't send", offer.text)
+            assertNotNull(offer.action).onAction()
+            runCurrent()
+            val reopened = (opened.single() as ComposeRequest.Resume).draft
+            assertEquals("Lunch", reopened.subject)
+            assertNull(reopened.messageId, "An edited message is a new one")
+            assertTrue(restarted.offers().isEmpty())
+            assertEquals(1, runs.size, "A refused message never goes again by itself")
+        }
 }

@@ -69,7 +69,7 @@ class ComposeInitialIdentityTest {
                 }
             }
         return ComposeState(
-            ComposeServices(drafts, { _, _, _ -> error("No sending") }, { _, _ -> emptyList() }),
+            ComposeServices(drafts, { _, _ -> emptyList() }),
             backgroundScope,
             ComposeRequest.New(),
             ComposeOrigin(

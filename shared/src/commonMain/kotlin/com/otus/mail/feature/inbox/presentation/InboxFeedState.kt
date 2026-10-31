@@ -15,9 +15,14 @@ import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
+import com.otus.mail.feature.inbox.presentation.components.syncedLabel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 /**
  * Loaded messages of the unified inbox or one folder, or of the mailboxes a search or a folder
@@ -233,7 +238,8 @@ class InboxFeedState(
         avatars.shown(load.options)
         if (fromServer) {
             load.served = true
-            val unavailable = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice() }
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val unavailable = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice(now) }
             notice = loadNotice(reportedNotice, unavailable)
         }
     }
@@ -249,7 +255,16 @@ private class FeedLoad(
     var served = false
 }
 
-private fun UnavailableAccount.notice(): String =
+/** Why the account did not load, and when the mail it shows last matched the server. */
+private fun UnavailableAccount.notice(now: LocalDateTime): String {
+    val updated =
+        syncedAt
+            ?.toLocalDateTime(TimeZone.currentSystemDefault())
+            ?.let { " Last updated ${it.syncedLabel(now)}." }
+    return reasonNotice() + updated.orEmpty()
+}
+
+private fun UnavailableAccount.reasonNotice(): String =
     when (reason) {
         InboxFailure.SignInRejected -> "$name: the server rejected the sign-in. Reconnect it in Settings."
         InboxFailure.NotPermitted -> "$name: the server doesn't allow this account to read mail."

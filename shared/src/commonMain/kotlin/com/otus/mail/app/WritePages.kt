@@ -6,9 +6,8 @@ import androidx.compose.runtime.remember
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.SendIdentityKey
-import com.otus.mail.feature.inbox.domain.SendTime
-import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.presentation.ComposeExits
+import com.otus.mail.feature.inbox.presentation.OutgoingDraft
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.reopening
 import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
@@ -40,10 +39,10 @@ internal fun ComposePage(
                 }
 
                 override fun send(
-                    run: suspend (SendTime) -> Result<SentMessage>,
+                    draft: OutgoingDraft,
                     at: LocalDateTime?,
                 ) {
-                    val outgoing = Outgoing(run, compose.reopening()) { navigation.go(page.copy(request = it)) }
+                    val outgoing = Outgoing(draft, compose.reopening()) { navigation.go(page.copy(request = it)) }
                     if (at == null) states.outgoing.send(outgoing) else states.outgoing.schedule(outgoing, at)
                     onClose()
                 }
