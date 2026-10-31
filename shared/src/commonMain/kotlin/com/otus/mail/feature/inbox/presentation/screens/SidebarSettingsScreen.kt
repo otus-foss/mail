@@ -81,15 +81,14 @@ fun SidebarSettingsScreen(
             }
         }
         SettingsSection("Layout") {
-            SettingRow("Counts", { choosing = LayoutChoice.Counts }, description = "Next to mailboxes and folders") {
+            SettingRow("Counts", { choosing = LayoutChoice.Counts }) {
                 ValueButton(layout.counts.label)
             }
             SettingToggleRow(
                 "Folder colors",
                 checked = layout.folderColors,
                 onCheckedChange = { shown -> change { it.copy(folderColors = shown) } },
-                description = "Only changes the folder icon",
-                info = InfoText("Folder colors", "Colors stay on this device. Other apps and devices don't see them."),
+                info = InfoText("Folder colors", "Only on this device."),
             )
         }
     }

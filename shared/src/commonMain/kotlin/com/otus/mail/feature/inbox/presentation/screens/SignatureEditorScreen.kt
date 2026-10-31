@@ -44,7 +44,7 @@ import com.otus.mail.feature.inbox.domain.SignatureImage
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.inbox.presentation.components.CopySignatureSheet
-import com.otus.mail.feature.inbox.presentation.components.LinkDialog
+import com.otus.mail.feature.inbox.presentation.components.LinkSheet
 import com.otus.mail.feature.inbox.presentation.components.SignatureImageBar
 import com.otus.mail.feature.inbox.presentation.components.SignaturePanel
 import com.otus.mail.feature.inbox.presentation.components.imageSizing
@@ -114,7 +114,7 @@ fun SignatureEditorScreen(
             onDismiss = { removing = false },
         )
     }
-    if (linking) LinkDialog(editor.text::addLink) { linking = false }
+    if (linking) LinkSheet(editor.text::addLink) { linking = false }
 }
 
 /** The text and the images under it, in one `bgDark` box with a neutral outline, focused or not. */

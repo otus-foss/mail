@@ -52,7 +52,7 @@ fun MailScopeSheet(
             } else {
                 null
             },
-        footnote = if (accounts.size > 1) SEVERAL_ACCOUNTS else ONE_ACCOUNT,
+        footnote = "Long-press to pin.",
     ) {
         if (query.isNotBlank()) {
             searchAddresses(accounts, query).forEach { rows.Address(it, it in pins) }
@@ -97,5 +97,3 @@ internal fun addressOption(
     )
 
 private const val SEARCH_FROM = 8
-private const val SEVERAL_ACCOUNTS = "Choose an account to see all its addresses, or one address. Long-press to pin."
-private const val ONE_ACCOUNT = "Choose an address to see only its mail. Long-press to pin."

@@ -7,7 +7,6 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.shared.controls.elements.LocalIconTint
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.rows.elements.nestIndent
 import com.otus.designsystem.shared.settings.components.SettingRow
@@ -41,10 +40,7 @@ fun PinnedSettingsScreen(
     }
     val pinned = layout.pinned.mapNotNull { pin -> pins.firstOrNull { it.pin == pin } }
     Subpage("Pinned", onBack) {
-        SettingsSection(
-            "Shown",
-            info = InfoText("Pinned", "Sizes show while the sidebar shows pinned mailboxes as a grid."),
-        ) {
+        SettingsSection("Shown") {
             SidebarTileEditor(
                 pinned,
                 tileOf = { EditableTile(it.pin.storageValue, it.title, layout.sizeOf(it.pin).tileSize) },

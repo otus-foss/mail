@@ -35,7 +35,7 @@ internal fun FolderColorRow(
     onClick: () -> Unit,
 ) {
     val shown = FolderColor.named(color)
-    SettingRow("Color", onClick, description = "Only changes the folder icon", icon = Res.drawable.symbol_palette) {
+    SettingRow("Color", onClick, icon = Res.drawable.symbol_palette) {
         ValueButton(shown.label, swatch = shown.tint)
     }
 }

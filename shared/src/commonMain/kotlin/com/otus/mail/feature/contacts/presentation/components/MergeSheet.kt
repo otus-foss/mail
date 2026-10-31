@@ -218,7 +218,7 @@ private val MergeInfo =
         listOf(
             "Merge saves one card with what you picked, in the book you chose. Other contact apps see it too.",
             "Show as one leaves the cards as they are on your server and only lists them as one person " +
-                "in Otus. Show separately undoes that.",
+                "in Otus.",
         ),
     )
 

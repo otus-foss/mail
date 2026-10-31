@@ -51,7 +51,7 @@ private fun UnavailableContacts() {
 private fun NoContacts(onImport: (() -> Unit)?) {
     EmptyState(
         "No contacts yet",
-        "Add someone, or bring your contacts over from a vCard file.",
+        null,
         Res.drawable.symbol_person_add,
         actionLabel = "Import a file".takeIf { onImport != null },
         onAction = onImport ?: {},

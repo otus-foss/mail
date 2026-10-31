@@ -52,7 +52,7 @@ class FolderDetailUiTest {
         openFolder("Receipts")
         compose.onNodeWithText("3 messages · 2 unread · 1 folder inside").assertExists()
         compose.onNode(hasText("Name") and hasText("Receipts") and hasClickAction()).assertExists()
-        compose.onNodeWithText("Only changes the folder icon").assertExists()
+        compose.onNode(hasText("Color") and hasClickAction()).assertExists()
         compose.waitForText("New mail that matches any of these goes here")
         compose.onNodeWithText("Add rule").assertExists()
         compose.onNodeWithText("Empty its messages and subfolders first").assertExists()
@@ -68,7 +68,7 @@ class FolderDetailUiTest {
         compose.onNodeWithText("Delete Travel?").assertExists()
         compose.onNodeWithText("Delete").performClick()
         compose.waitUntil(TIMEOUT) { server.calls.any { "Mailbox/set" in it && "\"destroy\":[\"t\"]" in it } }
-        compose.waitForText("Tap a folder to edit it, drag to reorder.")
+        compose.waitForText("Drag to reorder.")
         compose.waitUntil(TIMEOUT) { count("Travel") == 0 }
     }
 
@@ -88,7 +88,7 @@ class FolderDetailUiTest {
     fun rulesHideWhenTheServerHasNoSieve() {
         server.sieve = false
         openFolder("Receipts")
-        compose.onNodeWithText("Only changes the folder icon").assertExists()
+        compose.onNode(hasText("Color") and hasClickAction()).assertExists()
         compose.onNodeWithText("Rules").assertDoesNotExist()
         compose.onNodeWithText("Add rule").assertDoesNotExist()
     }
@@ -99,7 +99,7 @@ class FolderDetailUiTest {
         openFolder("Design reviews")
         compose.waitForCall(server, "SieveScript/get")
         compose.waitForIdle()
-        compose.onNodeWithText("Only changes the folder icon").assertDoesNotExist()
+        compose.onNode(hasText("Color") and hasClickAction()).assertDoesNotExist()
         compose.onNodeWithText("Rules").assertDoesNotExist()
     }
 

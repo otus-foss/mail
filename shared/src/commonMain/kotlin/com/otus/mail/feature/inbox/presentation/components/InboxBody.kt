@@ -177,7 +177,7 @@ internal fun InboxEmptyState(
     if (status.loading || status.loadingMore) {
         // A filtered list keeps searching later pages, so an empty one is not a final answer yet.
         if (filtered) {
-            EmptyState("Searching mail", "Looking for matching messages in your accounts.", Res.drawable.symbol_search)
+            EmptyState("Searching mail", null, Res.drawable.symbol_search)
         } else {
             EmptyState("Loading mail", "Fetching messages from your accounts.", Res.drawable.symbol_inbox)
         }
@@ -202,7 +202,7 @@ internal fun InboxEmptyState(
             },
         description =
             when {
-                hasMessages -> "Try another search or clear your filters."
+                hasMessages -> null
                 status.connected -> "New messages will appear here."
                 else -> "Connect an account in Settings to see your mail."
             },

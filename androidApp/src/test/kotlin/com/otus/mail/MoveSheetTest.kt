@@ -140,7 +140,7 @@ class MoveSheetTest {
     @Test
     fun sortingFutureMailAlsoAddsARuleForTheChosenMail() {
         openMoveSheet()
-        compose.onNodeWithText("This message and future ones like it go there.").assertDoesNotExist()
+        compose.onNodeWithText("New rule").assertDoesNotExist()
         compose.onNodeWithContentDescription("Also sort future mail").performClick()
         screenshot("move-sheet-sorting")
         compose.onNodeWithContentDescription("From grace@example.org, change").performClick()

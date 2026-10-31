@@ -64,7 +64,7 @@ internal fun ActionBarCopySheet(
             if (unusable.isNotEmpty()) {
                 SheetCaption("${unusable.joinToString(" and ") { it.title }} can't use these buttons.", heading = false)
             }
-            SheetCaption("Done replaces the bars you tick. Each one can still be changed on its own.", heading = false)
+            SheetCaption("Replaces the bars you tick.", heading = false)
         }
     }
 }
