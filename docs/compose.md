@@ -180,9 +180,29 @@ succeeds. The notice says why: no Drafts folder, no permission, or an unreachabl
 Send closes the page at once and hands the draft to `OutgoingMail`. A "Sending…" toast with Undo
 stays for the **Undo send** delay in Appearance & behavior: 5, 10, 15, or 30 seconds, 15 by
 default, with the toast's ring draining over that time. With Undo send off, the message goes at
-once. The send waits for any save in progress, so it knows the draft's saved copy, and calls
-`JmapDraftSender`. The toast turns into "Sent", or into "Couldn't send" with Retry, which stays
-until it is handled.
+once. The send waits for any save in progress, so it knows the draft's saved copy, puts the
+draft in the outbox, and sends it through `JmapDraftSender`. The toast turns into "Sent", or into
+"Couldn't send" with Retry, which stays until it is handled.
+
+### Outbox
+
+`MailOutbox` keeps each message handed over for sending until the server has it, so closing the
+app or losing the network loses no mail. Android keeps it in the `otus_mail_outbox` shared
+preferences file and writes it before the send starts; iOS keeps it in user defaults. Each message
+gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
+
+- A send that got no answer may have reached the server. Before it goes again, `JmapSendChecker`
+  looks the message up with the `header` filter of `Email/query` (RFC 8621, section 4.4.1). A
+  copy without `$draft` went, so nothing goes twice. A copy that kept `$draft` was refused, so
+  it is destroyed and the message goes again. Without a copy, the message goes again.
+- A server that cannot run that lookup leaves the message to the user: after the next start a
+  "Couldn't confirm sending" toast offers to open it.
+- A refused message stays too. After a restart a "Couldn't send" toast offers to open it, and
+  opening it takes it out of the outbox.
+- On Android, `OutboxWorker` runs the outbox 30 seconds after a message is due, and again once the
+  network is back after a lost connection. So a message the device held for Undo still goes if
+  the app closed during the window. The app sends due messages when it starts too.
+- Removing an account drops its messages.
 
 The server holds the message for the Undo window wherever it can: when the account's
 `maxDelayedSend` covers the delay plus 2 seconds, the message goes to the server at once with a
@@ -248,9 +268,10 @@ send was canceled but the draft could not be restored.
 - Photos larger than 4096 px on a side show no preview, though they still send.
 - Picked files are read again for each upload while the app runs; a draft reopened after the app
   closed cannot upload its files to another account.
-- There is no outbox that survives the app closing: a message waiting to retry, or in its Undo
-  window on a server that cannot hold mail, is lost with the process, though its saved copy stays
-  in Drafts ([Mail #16](https://github.com/reazndev/otus-mail/issues/16)).
+- iOS has no background job for the outbox, so a message the device held, or one waiting for
+  the network, goes only when the app runs again.
+- Sending from the outbox after a restart cannot clean up a copy saved in another account before
+  the From address changed, or record the address in `recentFrom`.
 - Scheduled messages show only in Drafts. A Scheduled view with Send now and Cancel is not built;
   it waits for a decision.
 - Rotating the device or the system ending the app returns to the page that opened the draft.

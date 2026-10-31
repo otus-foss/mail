@@ -29,6 +29,37 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 The file is not encrypted. Only the app-private storage of each platform protects it. Login
 secrets never go in it; they stay in the platform's protected login store.
 
+## Following the server
+
+Each refresh brings the cache up to date with as little as the server allows:
+
+- `Email/changes` and `Thread/changes` name the emails and threads to read again.
+- `Mailbox/changes` patches the cached mailboxes from the saved `Mailbox` state, and a `Mailbox/get`
+  of only the created and updated ones fills them in. Without a saved state, or when the server
+  cannot follow the changes, one `Mailbox/get` reads them all.
+- A list whose `Email/query` said `canCalculateChanges` keeps its query state. The next refresh
+  asks `Email/queryChanges` (RFC 8620, section 5.6) up to the list's last row and splices the
+  removed and added ids into it. A list without a state, one whose changes the server refuses, or
+  one left with less than a page while the server has more, runs `Email/query` again.
+- A full refresh saves its time under `synced:at`. When an account cannot load, the inbox notice
+  adds when its mail was last updated, such as "Last updated 14:32".
+
+## Changes waiting for the server
+
+Marks and moves go through `EmailChangeQueue`. Each change is saved by login and email before it
+is sent, shows in the cache at once, and counts as made. A later change of the same email merges
+into the waiting patch. The patches only set or remove keys, so sending one twice changes nothing
+more.
+
+- The waiting changes go to the server before each refresh, and after it they show again on top
+  of what the server sent.
+- A change the server refuses is dropped, and its email leaves the cache, so the next refresh
+  reads it again.
+- Android keeps the queue in the `otus_mail_pending_changes` shared preferences file, written at
+  once, and `OutboxWorker` sends it once the network is back. iOS keeps it in user defaults.
+- Removing an account drops its changes. Deleting, muting, and newsletter cleanup still need the
+  server at once.
+
 ## Retention and removal
 
 At each start the app removes cached bodies of mail received more than 90 days ago
