@@ -15,6 +15,8 @@ internal val InboxSearchSaver =
                 "mailboxNames" to it.mailboxes.map { scope -> scope.name },
                 "mailboxAccounts" to it.mailboxes.map { scope -> scope.account },
                 "accounts" to it.accounts.toList(),
+                "inSubject" to it.inSubject,
+                "withFiles" to it.withFiles,
             )
         },
         restore = { values ->
@@ -27,6 +29,8 @@ internal val InboxSearchSaver =
                 dateEnd = values["end"] as String?,
                 mailboxes = names.zip(accounts) { name, account -> MailboxScope(account, name) }.toSet(),
                 accounts = (values["accounts"] as List<*>).map { it as String }.toSet(),
+                inSubject = values["inSubject"] as Boolean,
+                withFiles = values["withFiles"] as Boolean,
             )
         },
     )

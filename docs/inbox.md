@@ -73,15 +73,27 @@ Physical Android device and iOS runtime testing remain separate platform checks.
 
 ## Inbox header actions
 
-The default header shows a tappable "Tap to search" prompt in a minimum 48 dp target. Tapping it
-opens the search field, requests focus and the software keyboard, and reveals the search filter
-pills. The trailing button opens the filter sheet in both inbox and search modes.
-The default leading icon is a mirrored left chevron that opens the sidebar. In search mode, the
-chevron still closes search.
+The control panel runs edge to edge behind the status bar. Its header row holds the chevron, which
+opens the sidebar, a "Search Inbox" pill named after the shown mailbox, and the account stack:
+the avatars of the accounts or address the page shows, which opens the account switcher inside
+the panel. The pills sit across the panel's bottom edge, with the filter button at their end.
+
+Scrolling the list collapses the panel over 60 dp, read through a nested scroll connection: the
+pills fade, the search pill tightens, the stack folds into one avatar with a "+N" badge, and a
+filter button grows into the search pill, with a dot while a filter is on. A release halfway
+settles on the nearer state; the top of the list expands the panel again.
+
+Tapping the search pill grows the panel into search: the field, "Narrow it" chips (In subject,
+Has files, This month), the people and first three messages that match, and "Show all N results".
+Show all or the keyboard's search key puts every result in the list under the field, with the
+People, Date, and Accounts pills. The chevron closes search. The filter panel and the account
+switcher open inside the panel the same way, over a scrim, with a grab handle; back, a tap
+outside, or a swipe up closes them. While rows are selected the header shows ✕, "N selected",
+and Select all.
 
 ## Page width
 
-Content spans the context panel's width: the page has an 8 dp inset and full-width elements, such as
+The control panel runs edge to edge; the page content below it has an 8 dp inset and full-width elements, such as
 Settings rows, fields, and buttons, use it directly. Free-standing text, such as the message count,
 section captions, and notes (`PageNote`), lines up with the text inside those rows. Inbox and folder
 message rows are the exception: they reach the screen edges so a swipe's color does too, and pad

@@ -13,6 +13,12 @@ class InboxPanelActions(
     val onFilter: (InboxFilter) -> Unit,
     val onOpenFilters: () -> Unit,
     val onSubmit: () -> Unit,
-    val onOpenNavigation: () -> Unit,
     val onFolder: (InboxPill.FolderPill?) -> Unit,
+    val opens: PanelOpens,
+)
+
+/** What the header's ends open: the chevron the sidebar, and the account stack the account switcher. */
+class PanelOpens(
+    val onOpenNavigation: () -> Unit,
+    val onOpenAccounts: () -> Unit,
 )

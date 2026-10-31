@@ -48,6 +48,8 @@ internal class MailStates(
     private val scope: CoroutineScope,
     val behavior: MailBehaviorState = MailBehaviorState(),
     private val chosenScope: () -> MailScopeChoice = { MailScopeChoice.All },
+    /** Chooses whose mail the pages show, as the sidebar and the inbox's account switcher do. */
+    val chooseScope: (MailScopeChoice) -> Unit = {},
 ) {
     /** Whose mail the pages show. A removed account's choice falls back to every account. */
     val mailScope: MailScopeChoice

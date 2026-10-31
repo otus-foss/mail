@@ -29,8 +29,11 @@ import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.pages.components.belowControlPanel
+import com.otus.designsystem.shared.pages.components.pageSideInset
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
@@ -84,13 +87,14 @@ internal fun ContactScreen(
     ProvideTextStyle(panelTextStyle()) {
         ActionBarHost(
             bar = { ContactPageBar(page, state, navigation) { overlay = it } },
-            Modifier.fillMaxSize().safeDrawingPadding(),
+            Modifier.fillMaxSize().belowControlPanel(),
         ) { barPadding ->
-            Column(Modifier.fillMaxSize().padding(horizontal = PageTokens.pageInset)) {
+            Column(Modifier.fillMaxSize()) {
                 ContactPanel(page, state, navigation.onBack) { overlay = ContactOverlay.Merge(it) }
                 Box(
                     Modifier
                         .weight(1f)
+                        .pageSideInset()
                         .verticalScroll(rememberScrollState())
                         .padding(barPadding)
                         .padding(vertical = PageTokens.contentInset),
@@ -120,13 +124,8 @@ private fun ContactPanel(
         if (plan != null) onMerge(plan)
     }
     ContextPanel(
-        Modifier.padding(top = PageTokens.pageInset),
         placement = if (cards.size > 1) ChipPlacement.Overlapping else ChipPlacement.None,
-        navigation = {
-            IconButton("Back", onBack, look = IconButtonLook.Plain) {
-                Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
-            }
-        },
+        navigation = { PanelNavigation("Back", onBack) },
         chips = {
             if (cards.size > 1) {
                 item("cards") {
