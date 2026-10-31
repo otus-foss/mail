@@ -7,6 +7,7 @@ import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.inbox.domain.AddressPinStore
+import com.otus.mail.feature.inbox.domain.EmailChangeStore
 import com.otus.mail.feature.inbox.domain.OutboxStore
 import com.otus.mail.feature.notifications.domain.MailStateStore
 
@@ -37,11 +38,17 @@ class AndroidMailStateStore(
 ) : MailStateStore,
     StringMapStore by PreferenceMap(context, "otus_mail_states")
 
-// Written at once rather than in the background, so a message survives the app closing right after.
+// The outbox and waiting changes write at once rather than in the background, so they survive the
+// app closing right after.
 class AndroidOutboxStore(
     context: Context,
 ) : OutboxStore,
     StringMapStore by PreferenceMap(context, "otus_mail_outbox", commit = true)
+
+class AndroidEmailChangeStore(
+    context: Context,
+) : EmailChangeStore,
+    StringMapStore by PreferenceMap(context, "otus_mail_pending_changes", commit = true)
 
 class AndroidReadLaterStore(
     context: Context,

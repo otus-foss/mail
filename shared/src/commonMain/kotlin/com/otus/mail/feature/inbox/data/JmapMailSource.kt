@@ -35,7 +35,8 @@ import kotlin.time.Instant
  * rows without the server. Logins load in parallel and fail alone; a failed login still shows what
  * the cache holds. Each list loads [limit] conversations at a time. [sites] holds each login's
  * server domain, which a sender's DMARC result must come from to show a brand logo; a load finds
- * it, and the cached list reads only what is already known.
+ * it, and the cached list reads only what is already known. Marks and moves waiting in [queue] go
+ * to the server before a sync, and still show after it when the server could not take them.
  */
 class JmapMailSource(
     private val connections: JmapConnections,
@@ -45,6 +46,7 @@ class JmapMailSource(
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     private val clock: Clock = Clock.System,
     private val sites: ServerSites = ServerSites { null },
+    private val queue: EmailChangeQueue? = null,
 ) : MailSource {
     // A refresh and a next page of one login both rewrite its listings, so they take turns.
     private val locks = LoginLocks()
@@ -122,7 +124,9 @@ class JmapMailSource(
                         clock.now().toEpochMilliseconds()
                     }
                 locks.of(login.id).withLock {
+                    queue?.flush(connections, logins, login.id, accountCache)
                     lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
+                    if (queue != null) accountCache.patchEmails(login.id, queue.pending(login.id))
                 }
                 null
             }

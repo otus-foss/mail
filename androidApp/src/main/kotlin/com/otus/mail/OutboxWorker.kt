@@ -15,7 +15,8 @@ import kotlin.time.Instant
 
 /**
  * Sends what the outbox keeps once the network is back, such as a message the device held for
- * Undo when the app closed, or one whose send lost its connection.
+ * Undo when the app closed, or one whose send lost its connection, and the marks and moves that
+ * wait for the server.
  */
 class OutboxWorker(
     context: Context,

@@ -46,6 +46,7 @@ class OtusMailApplication :
                     AndroidNotificationPreviewStore(this),
                     AndroidContactStore(this),
                     AndroidOutboxStore(this),
+                    AndroidEmailChangeStore(this),
                 ),
             instantPush = instantPush,
             pickers =

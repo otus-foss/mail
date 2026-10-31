@@ -23,6 +23,7 @@ import kotlinx.serialization.json.JsonPrimitive
  * Applies [patch] to [message], and to every email of its conversation, with `Email/set` updates
  * (RFC 8621, section 4.6) in the mail account of the message's login. False when the server did
  * not update every listed email or could not be reached. The emails it updated change in [cache] too.
+ * With a [queue], a change the server cannot get now waits in it and counts as made.
  */
 internal suspend fun updateEmail(
     connections: JmapConnections,
@@ -30,6 +31,7 @@ internal suspend fun updateEmail(
     message: MailMessage,
     patch: JsonObject,
     cache: MailCache? = null,
+    queue: EmailChangeQueue? = null,
 ): Boolean =
     message.emailId.isNotEmpty() &&
         updateAccountEmails(
@@ -38,6 +40,7 @@ internal suspend fun updateEmail(
             message.location.accountId,
             message.memberIds.associateWith { patch },
             cache,
+            queue,
         ).containsAll(message.memberIds)
 
 /**
@@ -45,7 +48,8 @@ internal suspend fun updateEmail(
  * updates: per account, one call for each batch of at most the session's `maxObjectsInSet` emails.
  * Accounts are asked at the same time, so a slow one holds up only its own messages. Returns the
  * [MailMessage.id]s whose listed emails the server all updated; the others were refused, have no server id,
- * or their account could not be reached. The emails it updated change in [cache] too.
+ * or their account could not be reached. The emails it updated change in [cache] too. With a
+ * [queue], a change the server cannot get now waits in it and counts as made.
  */
 internal suspend fun updateEmails(
     connections: JmapConnections,
@@ -53,6 +57,7 @@ internal suspend fun updateEmails(
     messages: List<MailMessage>,
     patch: JsonObject,
     cache: MailCache? = null,
+    queue: EmailChangeQueue? = null,
 ): Set<String> =
     coroutineScope {
         messages
@@ -61,7 +66,7 @@ internal suspend fun updateEmails(
             .map { (loginId, group) ->
                 async {
                     val patches = group.flatMap { it.memberIds }.associateWith { patch }
-                    val updated = updateAccountEmails(connections, logins, loginId, patches, cache)
+                    val updated = updateAccountEmails(connections, logins, loginId, patches, cache, queue)
                     group.filter { updated.containsAll(it.memberIds) }.map { it.id }
                 }
             }.awaitAll()
@@ -98,7 +103,8 @@ internal val MailMessage.memberIds: List<String>
 
 /**
  * The emails of [loginId] that their [patches] updated, batch by batch. Those emails change in
- * [cache] too, so lists show the change before the next sync.
+ * [cache] too, so lists show the change before the next sync. With a [queue], the patches wait in
+ * it until the server answers, and the ones it did not refuse count as updated.
  */
 internal suspend fun updateAccountEmails(
     connections: JmapConnections,
@@ -106,7 +112,9 @@ internal suspend fun updateAccountEmails(
     loginId: String,
     patches: Map<String, JsonObject>,
     cache: MailCache? = null,
+    queue: EmailChangeQueue? = null,
 ): Set<String> {
+    if (queue != null) return queue.update(connections, logins, loginId, patches, cache)
     if (cache == null) return sendUpdates(connections, logins, loginId, patches)
     return cache.withAccount(loginId) { accountCache ->
         val updated = sendUpdates(connections, logins, loginId, patches)

@@ -39,6 +39,7 @@ import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.forgetAccount
+import com.otus.mail.feature.inbox.data.EmailChangeQueue
 import com.otus.mail.feature.inbox.data.JmapAddressBook
 import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
 import com.otus.mail.feature.inbox.data.JmapAttachmentUploads
@@ -158,6 +159,7 @@ class MailServices(
                     stores.folderNudges?.forgetAccount(loginId)
                     stores.contacts?.forgetAccount(loginId)
                     outbox.forget(loginId)
+                    changes.forget(loginId)
                     try {
                         cache.forget(loginId)
                     } catch (error: CacheStorageException) {
@@ -167,10 +169,15 @@ class MailServices(
             )
         CacheAccountRepository(repository, logins, accountCache)
     }
-    internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache, sites = serverSites) }
-    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache) }
+
+    /** Marks and moves that wait for the server; see docs/storage.md. */
+    private val changes by lazy { EmailChangeQueue(stores.changes, host.wakeOutbox) }
+    internal val mail: MailSource by lazy {
+        JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes)
+    }
+    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache, changes) }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
-    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache) }
+    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache, changes) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
     internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins) }
     private val jmapSender by lazy { JmapDraftSender(connections, logins) }
@@ -249,12 +256,14 @@ class MailServices(
     }
 
     /**
-     * Sends the messages the outbox kept that are due, as from a background job after the app
-     * closed. True when one still waits for the network, so the job should run again.
+     * Sends the messages the outbox kept that are due, and the marks and moves that wait, as from
+     * a background job after the app closed. True when some still wait for the network, so the job
+     * should run again.
      */
     suspend fun resumeOutbox(): Boolean {
         outbox.resume()
-        return outbox.waiting()
+        val changesWait = changes.flushAll(connections, logins, cache)
+        return outbox.waiting() || changesWait
     }
 
     /** The server signing key used to register directly with Google (RFC 9749). */
