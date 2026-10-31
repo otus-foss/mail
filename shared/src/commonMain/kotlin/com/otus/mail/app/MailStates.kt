@@ -70,11 +70,14 @@ internal class MailStates(
 
     /** Colors the user gave their folders; the Folder colors switch hides them. */
     val folderColors: FolderColorsState =
-        FolderColorsState(services.stores.folderColors, { folders.accounts }) { behavior.behavior.sidebar.folderColors }
+        FolderColorsState(
+            services.stores.folders.colors,
+            { folders.accounts },
+        ) { behavior.behavior.sidebar.folderColors }
 
     /** Which folder the color nudge offers a color for; only while folder colors and folder icons are on. */
     val folderNudge =
-        FolderNudgeState(services.stores.folderNudges, folderColors, { folders.accounts }) {
+        FolderNudgeState(services.stores.folders.nudges, folderColors, { folders.accounts }) {
             behavior.behavior.sidebar.folderColors && behavior.behavior.list.folderIcons
         }
 

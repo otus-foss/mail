@@ -23,8 +23,6 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.PickedFile
-import com.otus.mail.feature.inbox.domain.SendTime
-import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.UploadException
 import com.otus.mail.feature.inbox.domain.UploadFailure
 import com.otus.mail.feature.inbox.presentation.ComposeAccount
@@ -32,6 +30,7 @@ import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.ComposeOrigin
 import com.otus.mail.feature.inbox.presentation.ComposeServices
 import com.otus.mail.feature.inbox.presentation.ComposeState
+import com.otus.mail.feature.inbox.presentation.OutgoingDraft
 import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
 import kotlinx.datetime.LocalDateTime
 import org.junit.Rule
@@ -145,7 +144,6 @@ class ComposeAttachmentScreenTest {
                             ComposeState(
                                 ComposeServices(
                                     TwoAccountDrafts(),
-                                    { draft, _, _ -> Result.success(SentMessage(draft.accountId, "e1", "s1")) },
                                     { _, _ -> emptyList() },
                                     uploads = { account, _, type ->
                                         if (type.startsWith("video/")) {
@@ -202,7 +200,7 @@ class ComposeAttachmentScreenTest {
         override fun discarded(delete: () -> Unit) = Unit
 
         override fun send(
-            run: suspend (SendTime) -> Result<SentMessage>,
+            draft: OutgoingDraft,
             at: LocalDateTime?,
         ) = Unit
     }

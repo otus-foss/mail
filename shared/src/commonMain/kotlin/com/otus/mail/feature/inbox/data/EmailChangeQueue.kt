@@ -11,6 +11,7 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.feature.inbox.domain.EmailChangeStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -106,25 +107,13 @@ class EmailChangeQueue(
             val account = mailAccount(connections, logins, loginId)
             if (account == null) {
                 // The login was removed, and its changes with it.
-                write(loginId, emptyMap())
-                return emptySet()
-            }
-            for (batch in waiting.entries.chunked(account.session.setBatch)) {
-                val ids = batch.map { it.key }.toSet()
-                val answered =
-                    try {
-                        val result =
-                            account.connection.call(
-                                SetMethod(EmailType, account.id, update = batch.associate { it.toPair() }),
-                            )
-                        refused = refused + result.notUpdated.keys
-                        result.updated.keys + result.notUpdated.keys
-                    } catch (error: JmapException.MethodError) {
-                        // The server refused the whole call, so the batch would fail again.
-                        refused = refused + ids
-                        ids
-                    }
-                left = left - answered
+                left = emptyMap()
+            } else {
+                waiting.entries.chunked(account.session.setBatch).forEach { batch ->
+                    val (answered, notTaken) = account.sendBatch(batch.associate { it.toPair() })
+                    left = left - answered
+                    refused = refused + notTaken
+                }
             }
         } catch (expected: JmapException) {
             // Offline or a server error: what is left goes with the next sync or background run.
@@ -150,6 +139,16 @@ class EmailChangeQueue(
         withContext(Dispatchers.IO) { saving.write(all) }
     }
 }
+
+/** Sends one batch; returns the emails the server answered for and those it refused. */
+private suspend fun MailAccount.sendBatch(batch: Map<String, JsonObject>): Pair<Set<String>, Set<String>> =
+    try {
+        val result = connection.call(SetMethod(EmailType, id, update = batch))
+        result.updated.keys + result.notUpdated.keys to result.notUpdated.keys
+    } catch (expected: JmapException.MethodError) {
+        // The server refused the whole call, so the batch would fail again.
+        batch.keys to batch.keys
+    }
 
 /**
  * These patches with [later] ones merged in, email by email. A later key wins; setting a whole

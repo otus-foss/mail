@@ -113,19 +113,28 @@ internal suspend fun updateAccountEmails(
     patches: Map<String, JsonObject>,
     cache: MailCache? = null,
     queue: EmailChangeQueue? = null,
-): Set<String> {
-    if (queue != null) return queue.update(connections, logins, loginId, patches, cache)
-    if (cache == null) return sendUpdates(connections, logins, loginId, patches)
-    return cache.withAccount(loginId) { accountCache ->
-        val updated = sendUpdates(connections, logins, loginId, patches)
-        try {
-            accountCache.patchEmails(loginId, patches.filterKeys { it in updated })
-        } catch (expected: CacheStorageException) {
-            // A cache failure must not turn a confirmed server update into a failed action.
+): Set<String> =
+    when {
+        queue != null -> {
+            queue.update(connections, logins, loginId, patches, cache)
         }
-        updated
+
+        cache == null -> {
+            sendUpdates(connections, logins, loginId, patches)
+        }
+
+        else -> {
+            cache.withAccount(loginId) { accountCache ->
+                val updated = sendUpdates(connections, logins, loginId, patches)
+                try {
+                    accountCache.patchEmails(loginId, patches.filterKeys { it in updated })
+                } catch (expected: CacheStorageException) {
+                    // A cache failure must not turn a confirmed server update into a failed action.
+                }
+                updated
+            }
+        }
     }
-}
 
 private suspend fun sendUpdates(
     connections: JmapConnections,

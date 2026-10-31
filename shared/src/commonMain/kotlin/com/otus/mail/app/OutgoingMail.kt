@@ -6,7 +6,6 @@ import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.MailOutbox
-import com.otus.mail.feature.inbox.domain.OutboxEntry
 import com.otus.mail.feature.inbox.domain.OutboxProblem
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SendException
@@ -105,12 +104,23 @@ internal class OutgoingMail(
 
     /**
      * Sends what the outbox kept from an earlier run, such as a message held on the device when
-     * the app closed, and offers each message that needs the user, which [open] shows.
+     * the app closed, and offers each message that needs the user, which [open] shows. Opening
+     * one takes it out of the outbox.
      */
     fun resume(open: (ComposeRequest) -> Unit) {
         scope.launch {
             outbox.resume()
-            outbox.offers().forEach { offer(it, open) }
+            outbox.offers().forEach { entry ->
+                val draft = entry.draft.copy(messageId = null)
+                val action =
+                    ToastAction("Open") {
+                        scope.launch {
+                            outbox.drop(entry.id)
+                            open(ComposeRequest.Resume(draft, ComposeRequest.New(draft.accountId)))
+                        }
+                    }
+                toasts.show(ToastMessage(entry.problem.offerText(), action, sticky = true))
+            }
         }
     }
 
@@ -152,10 +162,11 @@ internal class OutgoingMail(
     ): Result<SentMessage?>? {
         val wait = hold.milliseconds + SERVER_SPARE
         if (scheduled.maxDelaySeconds(outgoing.reopen.draft.accountId).seconds < wait) return null
-        val result = outbox.send(id, holdUntil = now() + wait)
-        if ((result.exceptionOrNull() as? SendException)?.failure == SendFailure.Unreachable) return null
-        if (result.isSuccess) outgoing.draft.sent() else failed(outgoing, id, group)
-        return result
+        return outbox
+            .send(id, holdUntil = now() + wait)
+            .takeUnless { (it.exceptionOrNull() as? SendException)?.failure == SendFailure.Unreachable }
+            ?.onSuccess { outgoing.draft.sent() }
+            ?.onFailure { failed(outgoing, id, group) }
     }
 
     /**
@@ -191,8 +202,6 @@ internal class OutgoingMail(
         )
     }
 
-    private fun sent(group: Any) = ToastMessage("Sent", group = group)
-
     private fun failed(
         outgoing: Outgoing,
         id: String,
@@ -200,23 +209,6 @@ internal class OutgoingMail(
     ) {
         val retry = ToastAction("Retry") { scope.launch { deliver(outgoing, id, group) } }
         toasts.show(ToastMessage("Couldn't send", retry, group, sticky = true))
-    }
-
-    /** Offers a message an earlier run could not send; opening it takes it out of the outbox. */
-    private fun offer(
-        entry: OutboxEntry,
-        open: (ComposeRequest) -> Unit,
-    ) {
-        val text = if (entry.problem == OutboxProblem.Unconfirmed) "Couldn't confirm sending" else "Couldn't send"
-        val draft = entry.draft.copy(messageId = null)
-        val action =
-            ToastAction("Open") {
-                scope.launch {
-                    outbox.drop(entry.id)
-                    open(ComposeRequest.Resume(draft, ComposeRequest.New(draft.accountId)))
-                }
-            }
-        toasts.show(ToastMessage(text, action, sticky = true))
     }
 
     /** Cancels a held or scheduled message and opens its copy, a draft again, to edit. */
@@ -241,6 +233,12 @@ internal class OutgoingMail(
         )
     }
 }
+
+private fun sent(group: Any) = ToastMessage("Sent", group = group)
+
+/** What the toast for a message an earlier run could not send says. */
+private fun OutboxProblem?.offerText() =
+    if (this == OutboxProblem.Unconfirmed) "Couldn't confirm sending" else "Couldn't send"
 
 /** Time for the request to reach the server and for its clock to differ from the device's. */
 private val SERVER_SPARE = 2.seconds

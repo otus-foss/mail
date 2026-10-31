@@ -12,6 +12,7 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.condition
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendCheck
@@ -32,20 +33,7 @@ class JmapSendChecker(
     override suspend fun check(draft: Draft): SendCheck {
         val messageId = draft.messageId ?: return SendCheck.Unconfirmable
         return try {
-            val account = mailAccount(connections, logins, draft.accountId) ?: return SendCheck.Unconfirmable
-            lateinit var found: JmapCall<GetResult<EmailObject>>
-            val response =
-                account.connection.send {
-                    val query = call(QueryMethod(EmailType, account.id, messageIdFilter(messageId)))
-                    found =
-                        call(GetMethod(EmailType, account.id, JmapIds.Result(query.resultOf("/ids")), FOUND_PROPERTIES))
-                }
-            val (stored, sent) = response[found].list.partition { DRAFT_KEYWORD in it.keywords }
-            if (sent.isNotEmpty()) return SendCheck.Sent
-            if (stored.isNotEmpty()) {
-                account.connection.call(SetMethod(EmailType, account.id, destroy = stored.map { it.id }))
-            }
-            SendCheck.NotSent
+            mailAccount(connections, logins, draft.accountId)?.findSent(messageId) ?: SendCheck.Unconfirmable
         } catch (expected: JmapException.MethodError) {
             // The server answered but cannot look the message up, as with `unsupportedFilter`.
             SendCheck.Unconfirmable
@@ -55,6 +43,20 @@ class JmapSendChecker(
             SendCheck.Unreachable
         }
     }
+}
+
+private suspend fun MailAccount.findSent(messageId: String): SendCheck {
+    lateinit var found: JmapCall<GetResult<EmailObject>>
+    val response =
+        connection.send {
+            val query = call(QueryMethod(EmailType, id, messageIdFilter(messageId)))
+            found = call(GetMethod(EmailType, id, JmapIds.Result(query.resultOf("/ids")), FOUND_PROPERTIES))
+        }
+    val (stored, sent) = response[found].list.partition { DRAFT_KEYWORD in it.keywords }
+    if (sent.isEmpty() && stored.isNotEmpty()) {
+        connection.call(SetMethod(EmailType, id, destroy = stored.map { it.id }))
+    }
+    return if (sent.isEmpty()) SendCheck.NotSent else SendCheck.Sent
 }
 
 /** The mail whose Message-ID header holds [messageId]. */

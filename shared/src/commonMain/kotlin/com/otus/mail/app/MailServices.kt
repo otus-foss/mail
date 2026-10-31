@@ -154,9 +154,9 @@ class MailServices(
                 },
                 beforeRemove = { loginId ->
                     instantPush?.forget(loginId)
-                    stores.folderColors?.forgetAccount(loginId)
+                    stores.folders.colors?.forgetAccount(loginId)
                     stores.addressPins?.forgetAccount(loginId)
-                    stores.folderNudges?.forgetAccount(loginId)
+                    stores.folders.nudges?.forgetAccount(loginId)
                     stores.contacts?.forgetAccount(loginId)
                     outbox.forget(loginId)
                     changes.forget(loginId)
@@ -171,7 +171,7 @@ class MailServices(
     }
 
     /** Marks and moves that wait for the server; see docs/storage.md. */
-    private val changes by lazy { EmailChangeQueue(stores.changes, host.wakeOutbox) }
+    private val changes by lazy { EmailChangeQueue(stores.waiting.changes, host.wakeOutbox) }
     internal val mail: MailSource by lazy {
         JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes)
     }
@@ -186,7 +186,7 @@ class MailServices(
 
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {
-        MailOutbox(stores.outbox, jmapSender, JmapSendChecker(connections, logins), host.wakeOutbox)
+        MailOutbox(stores.waiting.outbox, jmapSender, JmapSendChecker(connections, logins), host.wakeOutbox)
     }
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections, logins) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
@@ -223,7 +223,7 @@ class MailServices(
     internal val newsletterSteps = NewsletterSteps()
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
-    internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }
+    internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
     internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, logins) }
 
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */

@@ -44,10 +44,11 @@ class JmapMailSource(
     private val cache: MailCache = InMemoryMailCache(),
     private val limit: Int = DEFAULT_LIMIT,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
-    private val clock: Clock = Clock.System,
     private val sites: ServerSites = ServerSites { null },
     private val queue: EmailChangeQueue? = null,
 ) : MailSource {
+    private val clock: Clock = Clock.System
+
     // A refresh and a next page of one login both rewrite its listings, so they take turns.
     private val locks = LoginLocks()
     private val counts = JmapMailCounts(connections, zone, clock)
