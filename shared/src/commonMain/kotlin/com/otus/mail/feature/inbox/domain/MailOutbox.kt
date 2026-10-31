@@ -52,12 +52,20 @@ class MailOutbox(
         return id
     }
 
-    /** Drops a message before it goes, as on Undo; false when it already went or is on its way. */
+    /**
+     * Takes a message back, as on Undo; false when it already went. A message an earlier try may
+     * have handed to the server stays as withdrawn, so a hold the server keeps is canceled once
+     * it can be reached.
+     */
     suspend fun cancel(id: String): Boolean =
         lock.withLock {
-            val waiting = entries.all().any { it.id == id && !it.attempted }
-            if (waiting) entries.removeIf { it.id == id }
-            waiting
+            val entry = entries.all().firstOrNull { it.id == id }
+            when {
+                entry == null -> Unit
+                entry.attempted -> entries.replace(entry.copy(withdrawn = true, problem = null))
+                else -> entries.removeIf { it.id == id }
+            }
+            entry != null
         }
 
     /** Forgets a message the user took back to edit, as from a "Couldn't send" toast. */
@@ -120,28 +128,33 @@ class MailOutbox(
         return if (result.isSuccess || failure != null) result else sendFailure(SendFailure.ServerProblem)
     }
 
-    /** What the server says of an earlier try decides the outcome; null when the message can go. */
-    private suspend fun earlierTry(entry: OutboxEntry): Result<SentMessage?>? =
-        when (checker.check(entry.draft)) {
-            SendCheck.Sent -> {
-                entries.removeIf { it.id == entry.id }
-                Result.success(null)
-            }
-
-            SendCheck.NotSent -> {
-                null
-            }
-
-            SendCheck.Unreachable -> {
+    /**
+     * What the server says of an earlier try decides the outcome; null when the message can go. A
+     * withdrawn message never goes: it leaves once the server answers, holding no copy to cancel.
+     */
+    private suspend fun earlierTry(entry: OutboxEntry): Result<SentMessage?>? {
+        val check = checker.check(entry.draft, cancelHeld = entry.withdrawn)
+        return when {
+            check == SendCheck.Unreachable -> {
                 wake(now())
                 sendFailure(SendFailure.Unreachable)
             }
 
-            SendCheck.Unconfirmable -> {
+            check == SendCheck.Sent || entry.withdrawn -> {
+                entries.removeIf { it.id == entry.id }
+                Result.success(null)
+            }
+
+            check == SendCheck.NotSent -> {
+                null
+            }
+
+            else -> {
                 entries.fail(entry, OutboxProblem.Unconfirmed)
                 sendFailure(SendFailure.Unreachable)
             }
         }
+    }
 }
 
 private fun sendFailure(failure: SendFailure) = Result.failure<SentMessage?>(SendException(failure))

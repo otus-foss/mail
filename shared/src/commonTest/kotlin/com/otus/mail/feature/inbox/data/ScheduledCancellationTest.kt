@@ -5,6 +5,8 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
+import com.otus.mail.feature.inbox.domain.SendException
+import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
@@ -87,8 +89,27 @@ class ScheduledCancellationTest {
     fun aHoldTheServerKeepsIsNotSentAgain() =
         runTest {
             val calls = mutableListOf<String>()
-            assertTrue(sender(calls, canceled = false).sendNow(message).isSuccess, "It still goes at its time")
-            assertEquals(1, calls.size)
+            val result = sender(calls, canceled = false, submitted = true).sendNow(message)
+            assertTrue(result.isSuccess, "It still goes at its time")
+            assertTrue(calls.none { "create" in it })
+        }
+
+    @Test
+    fun aLostCancelAnswerWithTheServerOutOfReachSubmitsNothing() =
+        runTest {
+            val calls = mutableListOf<String>()
+            val result = sender(calls, lost = setOf(Lost.Cancel, Lost.Query)).sendNow(message)
+            assertEquals(SendFailure.Unreachable, (result.exceptionOrNull() as SendException).failure)
+            assertTrue(calls.isEmpty(), "A later run decides once the server can say")
+        }
+
+    @Test
+    fun aHoldCanceledByALostRequestIsSubmittedAgain() =
+        runTest {
+            val calls = mutableListOf<String>()
+            assertTrue(sender(calls, lost = setOf(Lost.Cancel)).sendNow(message).isSuccess)
+            assertTrue("EmailSubmission/query" in calls.first(), "The server says no submission is left")
+            assertTrue("\"create\"" in calls.last())
         }
 
     @Test
@@ -103,7 +124,7 @@ class ScheduledCancellationTest {
     fun aLostResubmissionAnswerRestoresTheDraftWhenNothingWasSubmitted() =
         runTest {
             val calls = mutableListOf<String>()
-            val result = sender(calls, resendLost = true).sendNow(message.copy(draftsId = "dr"))
+            val result = sender(calls, lost = setOf(Lost.Resend)).sendNow(message.copy(draftsId = "dr"))
             assertTrue(result.isFailure)
             assertTrue("EmailSubmission/query" in calls[1], "The server is asked before the draft comes back")
             assertTrue("Email/set" in calls.last() && "keywords/" in calls.last(), "The copy is a draft again")
@@ -113,7 +134,7 @@ class ScheduledCancellationTest {
     fun aLostResubmissionAnswerKeepsAMessageTheServerTook() =
         runTest {
             val calls = mutableListOf<String>()
-            assertTrue(sender(calls, resendLost = true, submitted = true).sendNow(message).isSuccess)
+            assertTrue(sender(calls, lost = setOf(Lost.Resend), submitted = true).sendNow(message).isSuccess)
             assertTrue(calls.none { "keywords" in it }, "A message on its way stays in Sent")
         }
 
@@ -122,14 +143,21 @@ class ScheduledCancellationTest {
         canceled: Boolean = true,
         restored: Boolean = true,
         acknowledged: Boolean = true,
-        resendLost: Boolean = false,
+        lost: Set<Lost> = emptySet(),
         submitted: Boolean = false,
     ): JmapDraftSender {
         val login = JmapLogin("a", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val engine =
             stalwartLike(SUBMISSION_SESSION) { body ->
-                if (resendLost && """"create"""" in body) throw IOException("The answer was lost")
+                val kind =
+                    when {
+                        "EmailSubmission/query" in body -> Lost.Query
+                        """"create"""" in body -> Lost.Resend
+                        "EmailSubmission/set" in body -> Lost.Cancel
+                        else -> null
+                    }
+                if (kind in lost) throw IOException("The answer was lost")
                 calls += body
                 if ("EmailSubmission/query" in body) {
                     val ids = if (submitted) """["s2"]""" else "[]"
@@ -152,4 +180,7 @@ class ScheduledCancellationTest {
     }
 
     private val message = SentMessage("a", "e", "s")
+
+    /** Requests whose answers the fake server loses. */
+    private enum class Lost { Cancel, Resend, Query }
 }

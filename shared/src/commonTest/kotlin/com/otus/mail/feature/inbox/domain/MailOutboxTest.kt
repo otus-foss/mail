@@ -19,6 +19,7 @@ class MailOutboxTest {
     private val store = Store()
     private val sent = mutableListOf<Pair<Draft, SendTime>>()
     private val checks = mutableListOf<Draft>()
+    private val heldCancels = mutableListOf<Boolean>()
     private var failure: SendFailure? = null
     private var check = SendCheck.NotSent
     private var now = NOW
@@ -33,8 +34,9 @@ class MailOutboxTest {
         }
 
     private val checker =
-        SendChecker { draft ->
+        SendChecker { draft, cancelHeld ->
             checks += draft
+            heldCancels += cancelHeld
             check
         }
 
@@ -123,14 +125,33 @@ class MailOutboxTest {
         }
 
     @Test
-    fun undoDropsAWaitingMessageButNotOneOnItsWay() =
+    fun undoDropsAWaitingMessageButNotOneThatWent() =
         runTest {
             val outbox = outbox()
             assertTrue(outbox.cancel(outbox.add(draft, null, NOW + 5.seconds)))
+            assertTrue(OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).isEmpty())
+            val went = outbox.add(draft, null, NOW)
+            outbox.send(went)
+            assertFalse(outbox.cancel(went))
+        }
+
+    @Test
+    fun undoOfAMessageTheServerMayHoldNeverSendsItAndCancelsTheHold() =
+        runTest {
+            val outbox = outbox()
             val sending = outbox.add(draft, null, NOW)
             failure = SendFailure.Unreachable
             outbox.send(sending)
-            assertFalse(outbox.cancel(sending), "The server may already have it")
+            assertTrue(outbox.cancel(sending), "It is withdrawn")
+
+            check = SendCheck.Unreachable
+            outbox.resume()
+            assertTrue(outbox.waiting(), "It waits until the server can be asked")
+            check = SendCheck.NotSent
+            outbox.resume()
+            assertEquals(1, sent.size, "A withdrawn message never goes again")
+            assertEquals(listOf(true, true), heldCancels, "A hold found there is canceled")
+            assertTrue(OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).isEmpty())
         }
 
     @Test

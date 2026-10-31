@@ -16,6 +16,7 @@ import com.otus.mail.feature.inbox.presentation.components.scheduledLabel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDateTime
@@ -23,6 +24,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -78,6 +80,7 @@ internal class OutgoingMail(
                     when {
                         sent != null -> unschedule(outgoing, sent)
                         outbox.cancel(id.await()) -> outgoing.open(outgoing.reopen)
+                        else -> toasts.show(ToastMessage("Already sent", group = group))
                     }
                 }
             }
@@ -141,9 +144,10 @@ internal class OutgoingMail(
                 val undo = sent?.let { ToastAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
                 toasts.show(ToastMessage(at.scheduledLabel(), undo))
             },
-            onFailure = {
+            onFailure = { error ->
                 val retry = ToastAction("Retry") { scope.launch { schedule(outgoing, id, at) } }
-                toasts.show(ToastMessage("Couldn't schedule", retry, sticky = true))
+                val text = if (error.isOffline()) "Will schedule when online" else "Couldn't schedule"
+                toasts.show(ToastMessage(text, retry, sticky = true))
             },
         )
     }
@@ -164,14 +168,16 @@ internal class OutgoingMail(
         if (scheduled.maxDelaySeconds(outgoing.reopen.draft.accountId).seconds < wait) return null
         return outbox
             .send(id, holdUntil = now() + wait)
-            .takeUnless { (it.exceptionOrNull() as? SendException)?.failure == SendFailure.Unreachable }
+            .takeUnless { it.exceptionOrNull()?.isOffline() == true }
             ?.onSuccess { outgoing.draft.sent() }
-            ?.onFailure { failed(outgoing, id, group) }
+            ?.onFailure { failed(outgoing, id, group, it) }
     }
 
     /**
      * Sends a message the server holds at once, unless its time is nearly up anyway, where canceling
-     * and sending again would only add a request. A failure leaves the message as a draft to open.
+     * and sending again would only add a request. Offline, it tries again until the server answers,
+     * since the cancel may have arrived without the new submission. A failure leaves the message
+     * as a draft to open.
      */
     private suspend fun sendEarly(
         outgoing: Outgoing,
@@ -179,7 +185,17 @@ internal class OutgoingMail(
         deadline: Instant,
         group: Any,
     ) {
-        if (deadline - now() <= SEND_EARLY_MIN || scheduled.sendNow(held).isSuccess) {
+        var result = if (deadline - now() <= SEND_EARLY_MIN) Result.success(Unit) else scheduled.sendNow(held)
+        var wait = RETRY_FIRST
+        if (result.exceptionOrNull()?.isOffline() == true) {
+            toasts.show(ToastMessage(WILL_SEND, group = group, sticky = true))
+        }
+        while (result.exceptionOrNull()?.isOffline() == true) {
+            delay(wait)
+            wait = (wait * 2).coerceAtMost(RETRY_MAX)
+            result = scheduled.sendNow(held)
+        }
+        if (result.isSuccess) {
             toasts.show(sent(group))
             return
         }
@@ -198,17 +214,19 @@ internal class OutgoingMail(
                 outgoing.draft.sent()
                 toasts.show(sent(group))
             },
-            onFailure = { failed(outgoing, id, group) },
+            onFailure = { failed(outgoing, id, group, it) },
         )
     }
 
+    /** A failed send's toast; offline, the outbox sends it once the network is back. */
     private fun failed(
         outgoing: Outgoing,
         id: String,
         group: Any,
+        error: Throwable,
     ) {
         val retry = ToastAction("Retry") { scope.launch { deliver(outgoing, id, group) } }
-        toasts.show(ToastMessage("Couldn't send", retry, group, sticky = true))
+        toasts.show(ToastMessage(if (error.isOffline()) WILL_SEND else "Couldn't send", retry, group, sticky = true))
     }
 
     /** Cancels a held or scheduled message and opens its copy, a draft again, to edit. */
@@ -236,12 +254,20 @@ internal class OutgoingMail(
 
 private fun sent(group: Any) = ToastMessage("Sent", group = group)
 
+private fun Throwable.isOffline() = (this as? SendException)?.failure == SendFailure.Unreachable
+
+private const val WILL_SEND = "Will send when online"
+
 /** What the toast for a message an earlier run could not send says. */
 private fun OutboxProblem?.offerText() =
     if (this == OutboxProblem.Unconfirmed) "Couldn't confirm sending" else "Couldn't send"
 
 /** Time for the request to reach the server and for its clock to differ from the device's. */
 private val SERVER_SPARE = 2.seconds
+
+/** The first and the longest wait before sending early again while offline. */
+private val RETRY_FIRST = 5.seconds
+private val RETRY_MAX = 1.minutes
 
 /** Below this much of the Undo window left, a swipe lets the server send on time. */
 private val SEND_EARLY_MIN = 3.seconds

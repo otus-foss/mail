@@ -24,16 +24,21 @@ import kotlinx.serialization.json.JsonPrimitive
  * Finds a sent draft by its Message-ID with the `header` filter of `Email/query` (RFC 8621,
  * section 4.4.1). A send stores a copy and submits it in one request, and a submission the server
  * takes clears the copy's `$draft`. So a copy without `$draft` went; one that kept it was refused,
- * and is destroyed so the next send leaves no second copy.
+ * and is destroyed so the next send leaves no second copy. A copy the server holds, whose
+ * submission is canceled after Undo, is destroyed too.
  */
 class JmapSendChecker(
     private val connections: JmapConnections,
     private val logins: LoginStore,
 ) : SendChecker {
-    override suspend fun check(draft: Draft): SendCheck {
+    override suspend fun check(
+        draft: Draft,
+        cancelHeld: Boolean,
+    ): SendCheck {
         val messageId = draft.messageId ?: return SendCheck.Unconfirmable
         return try {
-            mailAccount(connections, logins, draft.accountId)?.findSent(messageId) ?: SendCheck.Unconfirmable
+            mailAccount(connections, logins, draft.accountId)?.findSent(messageId, cancelHeld)
+                ?: SendCheck.Unconfirmable
         } catch (expected: JmapException.MethodError) {
             // The server answered but cannot look the message up, as with `unsupportedFilter`.
             SendCheck.Unconfirmable
@@ -45,7 +50,10 @@ class JmapSendChecker(
     }
 }
 
-private suspend fun MailAccount.findSent(messageId: String): SendCheck {
+private suspend fun MailAccount.findSent(
+    messageId: String,
+    cancelHeld: Boolean,
+): SendCheck {
     lateinit var found: JmapCall<GetResult<EmailObject>>
     val response =
         connection.send {
@@ -53,10 +61,11 @@ private suspend fun MailAccount.findSent(messageId: String): SendCheck {
             found = call(GetMethod(EmailType, id, JmapIds.Result(query.resultOf("/ids")), FOUND_PROPERTIES))
         }
     val (stored, sent) = response[found].list.partition { DRAFT_KEYWORD in it.keywords }
-    if (sent.isEmpty() && stored.isNotEmpty()) {
-        connection.call(SetMethod(EmailType, id, destroy = stored.map { it.id }))
+    val went = sent.isNotEmpty() && !(cancelHeld && cancelHeld(sent.map { it.id }))
+    if (!went && (stored + sent).isNotEmpty()) {
+        connection.call(SetMethod(EmailType, id, destroy = (stored + sent).map { it.id }))
     }
-    return if (sent.isEmpty()) SendCheck.NotSent else SendCheck.Sent
+    return if (went) SendCheck.Sent else SendCheck.NotSent
 }
 
 /** The mail whose Message-ID header holds [messageId]. */

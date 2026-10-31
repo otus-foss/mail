@@ -31,55 +31,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class OutgoingMailTest {
-    private val toasts = ToastState()
-    private val runs = mutableListOf<SendTime>()
-    private val opened = mutableListOf<ComposeRequest>()
-    private val cancelled = mutableListOf<SentMessage>()
-    private val sentNow = mutableListOf<SentMessage>()
-    private var sendNowFails = false
-    private var failure: SendFailure? = null
-    private var check = SendCheck.NotSent
-    private var hold = HOLD
-    private var serverDelaySeconds = 0L
-    private val draft = Draft("a1", subject = "Lunch", emailId = "d1")
-
-    private val scheduled =
-        object : ScheduledSends {
-            override suspend fun maxDelaySeconds(accountId: String) = serverDelaySeconds
-
-            override suspend fun cancel(message: SentMessage) = Result.success(Unit).also { cancelled += message }
-
-            override suspend fun sendNow(message: SentMessage): Result<Unit> {
-                sentNow += message
-                return if (sendNowFails) Result.failure(SendException(SendFailure.Recipients)) else Result.success(Unit)
-            }
-        }
-
-    private val sender =
-        DraftSender { _, _, time ->
-            runs += time
-            failure
-                ?.let { Result.failure<SentMessage>(SendException(it)) }
-                ?: Result.success(SentMessage("a1", "e9", "s1"))
-        }
-
-    private fun TestScope.outgoing(): OutgoingMail {
-        val now = { NOW + testScheduler.currentTime.milliseconds }
-        return OutgoingMail(backgroundScope, toasts, scheduled, MailOutbox(null, sender, { check }, now = now), now) {
-            hold
-        }
-    }
-
-    private fun swipeAway() = assertNotNull(toasts.messages.single().swipeAction).onAction()
-
-    private val message =
-        Outgoing(
-            OutgoingDraft(ready = { draft }, answered = null, sent = {}),
-            reopen = ComposeRequest.Resume(draft, ComposeRequest.New()),
-            open = { opened += it },
-        )
-
+internal class OutgoingMailTest : OutgoingMailFixture() {
     @Test
     fun aMessageWaitsWithUndoThenSaysSent() =
         runTest {
@@ -122,7 +74,7 @@ class OutgoingMailTest {
             advanceTimeBy(HOLD + 1)
             runCurrent()
             val failed = toasts.messages.single()
-            assertEquals("Couldn't send", failed.text)
+            assertEquals("Will send when online", failed.text)
             assertTrue(failed.sticky)
             failure = null
             assertNotNull(failed.action).onAction()
@@ -225,7 +177,7 @@ class OutgoingMailTest {
     fun aRefusedEarlySendOffersTheDraftToOpen() =
         runTest {
             serverDelaySeconds = 60
-            sendNowFails = true
+            sendNowFailure = SendFailure.Recipients
             outgoing().send(message)
             runCurrent()
             swipeAway()
@@ -267,11 +219,11 @@ class OutgoingMailTest {
     fun aMessageAnEarlierRunCouldNotSendIsOfferedToOpen() =
         runTest {
             val store = object : MemoryMapStore(), OutboxStore {}
-            val earlier = MailOutbox(store, sender, { check }, io = EmptyCoroutineContext)
+            val earlier = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
             failure = SendFailure.Recipients
             earlier.send(earlier.add(draft, null, NOW))
 
-            val restarted = MailOutbox(store, sender, { check }, io = EmptyCoroutineContext)
+            val restarted = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
             OutgoingMail(backgroundScope, toasts, scheduled, restarted) { hold }.resume { opened += it }
             runCurrent()
             val offer = toasts.messages.single()
@@ -284,9 +236,4 @@ class OutgoingMailTest {
             assertTrue(restarted.offers().isEmpty())
             assertEquals(1, runs.size, "A refused message never goes again by itself")
         }
-
-    private companion object {
-        const val HOLD = 5_000L
-        val NOW = Instant.parse("2026-10-30T12:00:00Z")
-    }
 }

@@ -10,7 +10,9 @@ import kotlin.time.Instant
  * A message handed over for sending, kept on the device until the server has it. It goes once
  * [dueMillis] has passed, or at [sendAtMillis], a time the user chose, which the server holds it
  * for. [attempted] once a send started: the server may have taken it even if no answer came, so it
- * is looked for before it goes again. [problem] when it needs the user.
+ * is looked for before it goes again. [problem] when it needs the user. [withdrawn] after Undo
+ * of a message the server may hold: it never goes, and stays only until a hold found there is
+ * canceled.
  */
 @Serializable
 data class OutboxEntry(
@@ -21,6 +23,7 @@ data class OutboxEntry(
     val sendAtMillis: Long? = null,
     val attempted: Boolean = false,
     val problem: OutboxProblem? = null,
+    val withdrawn: Boolean = false,
 ) {
     /** The time the message was given, or null when it goes as soon as it is due. */
     val sendAt: Instant? get() = sendAtMillis?.let(Instant::fromEpochMilliseconds)
@@ -69,7 +72,13 @@ enum class SendCheck {
     Unconfirmable,
 }
 
-/** Looks on the server for a draft sent with its [Draft.messageId]. */
+/**
+ * Looks on the server for a draft sent with its [Draft.messageId]. With [cancelHeld], as after
+ * Undo, a copy the server still holds is canceled and removed, and counts as never sent.
+ */
 fun interface SendChecker {
-    suspend fun check(draft: Draft): SendCheck
+    suspend fun check(
+        draft: Draft,
+        cancelHeld: Boolean,
+    ): SendCheck
 }

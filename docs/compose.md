@@ -182,7 +182,8 @@ stays for the **Undo send** delay in Appearance & behavior: 5, 10, 15, or 30 sec
 default, with the toast's ring draining over that time. With Undo send off, the message goes at
 once. The send waits for any save in progress, so it knows the draft's saved copy, puts the
 draft in the outbox, and sends it through `JmapDraftSender`. The toast turns into "Sent", or into
-"Couldn't send" with Retry, which stays until it is handled.
+"Couldn't send" with Retry, which stays until it is handled. Offline, it says "Will send when
+online" with Retry instead, since the outbox sends it once the network is back.
 
 ### Outbox
 
@@ -211,15 +212,24 @@ the server's clock cannot cut the window short. The message then goes even if th
 during the window. Its copy files in Sent at once. Undo sets the submission's `undoStatus` to
 `canceled`, moves the copy back to Drafts as a draft, and opens it, as for a scheduled message.
 Where the server cannot hold mail that long, the device holds it instead, and Undo opens the
-draft again as it was.
+draft again as it was. If the hold request got no answer, the device takes over the hold, since
+the server may or may not have it. Undo then opens the draft at once and keeps the message in the
+outbox as withdrawn. It never goes. Once the server can be reached, `JmapSendChecker` looks it up:
+a hold the server has is canceled and its copy destroyed, and the entry leaves the outbox. If
+the server already sent it, nothing can bring it back. Undo after the message went says
+"Already sent".
 
 Swiping the "Sending…" toast away sends the message at once; screen readers offer the swipe as
 Send. JMAP cannot move a held submission's send time forward, so Mail cancels the held submission
 and, once the server confirms that, submits the same stored copy again without a hold. If the
 server keeps the held submission, the message still goes at its time. With 3 seconds or less of the
 window left, Mail lets the server send on time instead. If the new submission is refused, the copy
-becomes a draft again and a "Couldn't send" toast offers to open it. On the device hold, the
-swipe ends the wait. The sender makes three requests (RFC 8621, section 7.5):
+becomes a draft again and a "Couldn't send" toast offers to open it. Offline, a "Will send when
+online" toast shows and Mail tries again after 5 seconds, doubling the wait up to a minute,
+while the app runs. Trying again is safe: when a cancel's answer was lost, Mail asks whether a
+submission that nobody canceled is left. If one is, the server sends it at its time; if none is,
+the cancel arrived and the copy is submitted again. On the device hold, the swipe ends the
+wait. The sender makes three requests (RFC 8621, section 7.5):
 
 1. `Identity/get` and two `Mailbox/query` calls find the identity for the From address and the
    Drafts and Sent folders. An identity matches by exact address, or by a wildcard such as
@@ -309,5 +319,5 @@ a forward's quote. `ReplyThreadScreenTest` covers the thread rows, the folded th
 To line, and the quote choice in the sheet; `JmapThreadHistoryTest` the thread request and
 `ReplyQuoteTest` the quote modes. `SignatureTest`, `SignaturesStateTest`, and `SignatureScreensTest` cover the
 signature HTML and images, copying and failed saves, `SendLaterTest` the Send later times,
-`OutgoingMailTest` the Undo window on the server and on the device, sending early with a swipe, and turning it off, `UndoSendSettingTest` the delay setting, Retry, and undoing a scheduled message, the list, the editor with its size list,
+`OutgoingMailTest` the Undo window on the server and on the device, sending early with a swipe, and turning it off, `OfflineUndoTest` Undo and the swipe without a network, `UndoSendSettingTest` the delay setting, Retry, and undoing a scheduled message, the list, the editor with its size list,
 and the copy sheet. Their screenshots of each state are written to `androidApp/build/reports/compose/`.

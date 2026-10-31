@@ -49,27 +49,43 @@ internal suspend fun MailAccount.resubmit(message: SentMessage): SetError? =
 
 /**
  * Whether the server holds or sent a submission of [emailId] that nobody canceled (RFC 8621,
- * section 7.3), for a request whose answer was lost. False when it could not say.
+ * section 7.3), for a request whose answer was lost. Null when it could not say.
  */
-internal suspend fun MailAccount.isSubmitted(emailId: String): Boolean =
-    unlessUnanswered {
-        connection
-            .call(
-                QueryMethod(
-                    EmailSubmissionType,
-                    id,
-                    operator(
-                        "AND",
-                        listOf(
-                            condition("emailIds", JsonArray(listOf(JsonPrimitive(emailId)))),
-                            operator("NOT", listOf(condition("undoStatus", JsonPrimitive("canceled")))),
-                        ),
+internal suspend fun MailAccount.isSubmitted(emailId: String): Boolean? =
+    unlessUnanswered { liveSubmissions(listOf(emailId), limit = 1).isNotEmpty() }
+
+/**
+ * Cancels every submission of [emailIds] that nobody canceled yet. True when there was one and the
+ * server canceled them all, so none of the emails goes; false when one already went or the server
+ * keeps it.
+ */
+internal suspend fun MailAccount.cancelHeld(emailIds: List<String>): Boolean {
+    val live = liveSubmissions(emailIds)
+    if (live.isEmpty()) return false
+    val canceled = buildJsonObject { put("undoStatus", "canceled") }
+    val undone = connection.call(SetMethod(EmailSubmissionType, id, update = live.associateWith { canceled }))
+    return undone.updated.keys.containsAll(live)
+}
+
+private suspend fun MailAccount.liveSubmissions(
+    emailIds: List<String>,
+    limit: Int? = null,
+): List<String> =
+    connection
+        .call(
+            QueryMethod(
+                EmailSubmissionType,
+                id,
+                operator(
+                    "AND",
+                    listOf(
+                        condition("emailIds", JsonArray(emailIds.map(::JsonPrimitive))),
+                        operator("NOT", listOf(condition("undoStatus", JsonPrimitive("canceled")))),
                     ),
-                    limit = 1,
                 ),
-            ).ids
-            .isNotEmpty()
-    } == true
+                limit = limit,
+            ),
+        ).ids
 
 /** [read]'s result, or null when the server could not be reached or refused the call. */
 internal inline fun <T> unlessUnanswered(read: () -> T): T? =
