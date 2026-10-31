@@ -1,0 +1,71 @@
+package com.otus.mail.app
+
+import com.otus.jmap.JmapClient
+import com.otus.jmap.PushKeys
+import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.jmap.push.PushEndpoint
+import com.otus.jmap.push.PushStateStore
+import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.stalwartLike
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class MailPushTest {
+    private class States : PushStateStore {
+        var records = emptyMap<String, String>()
+
+        override fun read() = records
+
+        override fun write(records: Map<String, String>) {
+            this.records = records
+        }
+    }
+
+    @Test
+    fun iosAsksOnlyForNewMailAndAndroidForEveryChange() =
+        runTest {
+            assertEquals("""["EmailDelivery"]""", typesSent(MailPush.Deliveries), "Each iOS push shows an alert")
+            assertEquals("""["EmailDelivery","Email"]""", typesSent(MailPush.Changes))
+        }
+
+    /** The `types` a new subscription for [push] asks the server for. */
+    private suspend fun typesSent(push: MailPush): String {
+        val sent = mutableListOf<String>()
+        val logins = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
+        val engine =
+            stalwartLike { body ->
+                sent += body
+                if ("PushSubscription/get" in body) {
+                    """{"methodResponses": [["PushSubscription/get", {"list": [], "notFound": []}, "c0"]]}"""
+                } else {
+                    """{"methodResponses": [["PushSubscription/set", {"created": {"push": {"id": "ps1"}}}, "c0"]]}"""
+                }
+            }
+        val subscriptions =
+            MailServices(
+                logins,
+                createClient = { JmapClient(engine) },
+            ).pushSubscriptions(States(), "d", push)
+        subscriptions.setEndpoint(ADA_LOGIN.id, PushEndpoint("https://push.example/1", PushKeys("BKey", "c2Vj")))
+        subscriptions.sync()
+        return Json
+            .parseToJsonElement(sent.single { "PushSubscription/set" in it })
+            .jsonObject
+            .getValue("methodCalls")
+            .jsonArray
+            .single()
+            .jsonArray[1]
+            .jsonObject
+            .getValue("create")
+            .jsonObject
+            .values
+            .single()
+            .jsonObject
+            .getValue("types")
+            .toString()
+    }
+}

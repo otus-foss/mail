@@ -28,6 +28,7 @@ class MailPushService : PushService() {
         when (val push = decode(message)) {
             is JmapPush.StateChange -> {
                 NewMailWorker.runNow(this)
+                (application as OtusMailApplication).services.serverChanges.changed()
             }
 
             is JmapPush.Verification -> {

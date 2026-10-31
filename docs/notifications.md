@@ -35,11 +35,14 @@ work, so server discovery never holds the settings screen open.
 Choosing a service registers each account as its own instance, keyed by login id:
 
 1. The selected service hands `MailPushService` an endpoint URL and Web Push keys.
-2. `PushSyncWorker` saves them and asks the account's server to push `EmailDelivery` changes
-   there, through `PushSubscriptions` from `com.otus:jmap-push`.
+2. `PushSyncWorker` saves them and asks the account's server to push `EmailDelivery` and `Email`
+   changes there, through `PushSubscriptions` from `com.otus:jmap-push`. A subscription made with
+   other types is replaced, which needs a new verification.
 3. The server sends a verification push; the worker sends its code back, and the account shows
    "Instant".
-4. Each delivery push requests expedited `NewMailWorker` work. Android can still delay it when
+4. Each push tells the open app, through `MailServices.serverChanges`, to reload the folders and,
+   while it shows, the inbox, so new mail and read changes from elsewhere show without a pull.
+   Each push also requests expedited `NewMailWorker` work. Android can still delay it when
    expedited-work quotas are exhausted. The check below then finds and posts the new mail.
 
 The UnifiedPush connector decrypts pushes from either service. A push holds only account ids
@@ -61,9 +64,15 @@ Each run calls `JmapNewMailChecker`:
   100 changes, and fetch at most the 50 newest created messages.
 - A message notifies when it is in a mailbox with the `inbox` role and has neither `$seen` nor
   `$draft`.
+- A message whose notification is still showing and that `Email/changes` lists as updated or
+  destroyed is fetched again. Its notification goes once the message is read, leaves every inbox,
+  or is deleted, on this device or another, and the account's summary goes with its last message.
+  A push wakes the check on every Email change, so this takes seconds with instant push and up to
+  one period with the background check alone.
 - The new state is saved after the notifications are posted. A login that fails keeps its old
   state, so the next run reports its mail. When the server answers `cannotCalculateChanges`, the
-  login starts again from the current state without notifying.
+  login starts again from the current state without notifying, and every showing notification of
+  that login is checked again.
 
 `AndroidMailStateStore` keeps the states in app-private preferences, keyed by login id.
 

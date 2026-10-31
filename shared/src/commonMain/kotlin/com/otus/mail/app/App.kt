@@ -69,6 +69,7 @@ fun App(
     LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
     // Reload whenever the inbox is shown, including at launch.
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
+    ServerChangeEffects(services, states) { page == MailPage.Inbox }
     AvatarEffects(states, behaviorState)
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
@@ -114,6 +115,25 @@ fun App(
             // Outlives the page a move closed, such as the open message.
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
             SenderRuleSheets(states)
+        }
+    }
+}
+
+/**
+ * Shows mail that arrives or changes elsewhere without a pull: each push reloads the folders, and
+ * the inbox while [inboxShown]. Other pages reload when shown. A push often follows the user's own
+ * action, so the inbox keeps a notice about that action's failure.
+ */
+@Composable
+private fun ServerChangeEffects(
+    services: MailServices,
+    states: MailStates,
+    inboxShown: () -> Boolean,
+) {
+    LaunchedEffect(states) {
+        services.serverChanges.changes.collect {
+            states.folders.refresh()
+            if (inboxShown()) states.feed.refresh(keepReport = true)
         }
     }
 }

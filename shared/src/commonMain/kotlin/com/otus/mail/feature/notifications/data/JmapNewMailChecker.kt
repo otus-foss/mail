@@ -23,6 +23,8 @@ import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.feature.notifications.domain.AlertedMail
+import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NewMailChecker
@@ -37,8 +39,9 @@ import kotlin.time.Instant
 
 /**
  * Reads `Email/changes` since each login's saved state (RFC 8620, section 5.2) and reports created
- * mail that is unread, in an inbox, and not in a muted conversation. Logins are checked in
- * parallel and fail alone. When the saved logins cannot be read, the check does nothing and the
+ * mail that is unread, in an inbox, and not in a muted conversation. Alerted mail that changed
+ * since is fetched again, and its alert cleared once it is read, out of the inbox, or deleted.
+ * Logins are checked in parallel and fail alone. When the saved logins cannot be read, the check does nothing and the
  * next one tries again.
  */
 class JmapNewMailChecker(
@@ -48,7 +51,7 @@ class JmapNewMailChecker(
 ) : NewMailChecker {
     private val accounts = MailAccounts(connections, logins)
 
-    override suspend fun check(show: suspend (List<NewMail>) -> Unit) {
+    override suspend fun check(alerts: MailAlerts) {
         val logins =
             try {
                 accounts.logins()
@@ -56,12 +59,20 @@ class JmapNewMailChecker(
                 return
             }
         val saved = withContext(Dispatchers.IO) { states.read() }
-        val checked = coroutineScope { logins.map { async { check(it, saved[it.id]) } }.awaitAll() }
+        val showing = alerts.showing().groupBy({ it.loginId }, { it.emailId })
+        val checked =
+            coroutineScope { logins.map { async { check(it, saved[it.id], showing[it.id].orEmpty()) } }.awaitAll() }
+        // Clearing first: Android may not list an alert it was just asked to show, so clearing after
+        // could take an account for empty and remove its summary along with the new alert.
+        checked
+            .flatMap { it.handled }
+            .takeIf { it.isNotEmpty() }
+            ?.let { alerts.clear(it) }
         checked
             .flatMap { it.mail }
             .sortedBy { it.receivedAt }
             .takeIf { it.isNotEmpty() }
-            ?.let { show(it) }
+            ?.let { alerts.show(it) }
         val next = checked.mapNotNull { login -> (login.state ?: saved[login.loginId])?.let { login.loginId to it } }
         withContext(Dispatchers.IO) { states.write(next.toMap()) }
     }
@@ -69,37 +80,76 @@ class JmapNewMailChecker(
     private suspend fun check(
         login: JmapLogin,
         since: String?,
+        showing: List<String>,
     ): LoginCheck =
         mailCallOr(LoginCheck(login.id, state = null, mail = emptyList())) {
             val account = accounts.open(login)
-            since?.let { changesSince(account, it) } ?: startFromNow(account)
+            since?.let { changesSince(account, it, showing) } ?: startFromNow(account)
         }
 
-    private suspend fun startFromNow(account: MailAccount): LoginCheck {
+    private suspend fun startFromNow(
+        account: MailAccount,
+        handled: List<AlertedMail> = emptyList(),
+    ): LoginCheck {
         val state = account.connection.call(GetMethod(EmailType, account.id, JmapIds.Of(emptyList()))).state
-        return LoginCheck(account.login.id, state, emptyList())
+        return LoginCheck(account.login.id, state, emptyList(), handled)
     }
 
     private suspend fun changesSince(
         account: MailAccount,
         since: String,
+        showing: List<String>,
     ): LoginCheck {
         var state = since
         var created = emptyList<String>()
+        var touched = emptySet<String>()
         var pages = 0
         do {
             val page =
                 try {
                     account.connection.call(ChangesMethod(EmailType, account.id, state, MAX_CHANGES))
                 } catch (error: JmapException.MethodError) {
-                    // The server forgot the old state; start again from now rather than report old mail.
-                    if (error.type == CANNOT_CALCULATE_CHANGES) return startFromNow(account) else throw error
+                    // The server forgot the old state; start again from now rather than report old
+                    // mail, and look at every alert, since any of them may have changed.
+                    if (error.type != CANNOT_CALCULATE_CHANGES) throw error
+                    return startFromNow(account, handled(account, showing))
                 }
             created = created + page.created
+            touched = touched + page.updated + page.destroyed
             state = page.newState
             pages++
         } while (page.hasMoreChanges && pages < MAX_PAGES)
-        return LoginCheck(account.login.id, state, unreadInInbox(account, created.takeLast(MAX_FETCHED)))
+        return LoginCheck(
+            account.login.id,
+            state,
+            unreadInInbox(account, created.takeLast(MAX_FETCHED)),
+            handled(account, showing.filter { it in touched }),
+        )
+    }
+
+    /** The alerted [ids] whose mail is no longer unread in an inbox, or is gone. */
+    private suspend fun handled(
+        account: MailAccount,
+        ids: List<String>,
+    ): List<AlertedMail> {
+        if (ids.isEmpty()) return emptyList()
+        lateinit var mailboxes: JmapCall<GetResult<MailboxObject>>
+        lateinit var emails: JmapCall<GetResult<EmailObject>>
+        val response =
+            account.connection.send {
+                mailboxes = call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
+                emails = call(GetMethod(EmailType, account.id, JmapIds.Of(ids), ALERTED_PROPERTIES))
+            }
+        val inboxes = inboxIds(response[mailboxes])
+        val waiting =
+            response[emails]
+                .list
+                .filter { it.waitsIn(inboxes) }
+                .map { it.id }
+                .toSet()
+        return ids
+            .filterNot { it in waiting }
+            .map { AlertedMail(account.login.id, it) }
     }
 
     private suspend fun unreadInInbox(
@@ -127,16 +177,10 @@ class JmapNewMailChecker(
                     )
             }
         val muted = mutedThreads(response, members) ?: mutedThreads(response, emails).orEmpty()
-        val inboxes =
-            response[mailboxes]
-                .list
-                .filter { it.role?.lowercase() == INBOX_ROLE }
-                .map { it.id }
-                .toSet()
+        val inboxes = inboxIds(response[mailboxes])
         return response[emails]
             .list
-            .filter { email -> email.mailboxIds.any { it.value && it.key in inboxes } }
-            .filterNot { it.keywords["\$seen"] == true || it.keywords["\$draft"] == true }
+            .filter { it.waitsIn(inboxes) }
             .filterNot { it.threadId in muted }
             .map { it.toNewMail(account) }
     }
@@ -166,6 +210,7 @@ class JmapNewMailChecker(
         /** Null when the check failed and the saved state stays. */
         val state: String?,
         val mail: List<NewMail>,
+        val handled: List<AlertedMail> = emptyList(),
     )
 
     private companion object {
@@ -192,8 +237,22 @@ class JmapNewMailChecker(
                 ORIGINAL_TO_PROPERTY,
             )
         val MEMBER_PROPERTIES = listOf("id", "threadId", "keywords", "receivedAt")
+        val ALERTED_PROPERTIES = listOf("id", "mailboxIds", "keywords", "receivedAt")
     }
 }
+
+private fun inboxIds(mailboxes: GetResult<MailboxObject>): Set<String> =
+    mailboxes
+        .list
+        .filter { it.role?.lowercase() == INBOX_ROLE }
+        .map { it.id }
+        .toSet()
+
+/** Unread, not a draft, and in one of [inboxes]: mail worth an alert. */
+private fun EmailObject.waitsIn(inboxes: Set<String>): Boolean =
+    mailboxIds.any { it.value && it.key in inboxes } &&
+        keywords["\$seen"] != true &&
+        keywords["\$draft"] != true
 
 private fun EmailObject.toNewMail(account: MailAccount): NewMail {
     val from = from?.firstOrNull()

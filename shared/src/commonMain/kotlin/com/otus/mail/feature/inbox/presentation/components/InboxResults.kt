@@ -2,10 +2,12 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.otus.dateformat.DateFormatter
@@ -37,6 +39,7 @@ internal fun InboxResults(
     val searchScroll = rememberLazyListState()
     val listState = if (state.searching) searchScroll else inboxScroll
     LaunchedEffect(state.search, state.folderPill, filters) { listState.scrollToItem(0) }
+    StayAtTop(listState, results.firstOrNull()?.id)
     LoadMoreNearEnd(listState, status.hasMore && !status.loading && !status.loadingMore, frame.onLoadMore)
     Box(Modifier.fillMaxSize().nestedScroll(rememberCompactOnScroll(listState, frame.onCompactChange))) {
         InboxBody(
@@ -49,4 +52,24 @@ internal fun InboxResults(
             emptyContent = emptyContent,
         )
     }
+}
+
+/**
+ * Shows mail that arrives above the first row when the list was at the top. A lazy list keeps the
+ * row in view in place, which would leave the new mail above the screen.
+ */
+@Composable
+private fun StayAtTop(
+    listState: LazyListState,
+    firstId: String?,
+) {
+    // Read while composing the new first row, before the list measures it and moves down; reading
+    // without observation keeps scrolling from recomposing this.
+    val wasAtTop =
+        remember(firstId) {
+            Snapshot.withoutReadObservation {
+                listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+            }
+        }
+    LaunchedEffect(firstId) { if (wasAtTop) listState.scrollToItem(0) }
 }
