@@ -28,7 +28,6 @@ class ComposeAttachmentUndoTest {
     ) = ComposeState(
         ComposeServices(
             FakeDrafts(),
-            { _, _, _ -> error("No sending") },
             { _, _ -> emptyList() },
             uploads = uploads,
             files = { listOf(image) },

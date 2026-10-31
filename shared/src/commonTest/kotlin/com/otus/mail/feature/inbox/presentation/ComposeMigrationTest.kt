@@ -5,11 +5,8 @@ import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
-import com.otus.mail.feature.inbox.domain.SendTime
-import com.otus.mail.feature.inbox.domain.SentMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -108,29 +105,18 @@ class ComposeMigrationTest {
         }
 
     @Test
-    fun sendingFromTheDestinationKeepsTheSourceUntilSubmissionSucceeds() =
+    fun sendingFromTheDestinationKeepsTheSourceUntilTheMessageWent() =
         runTest {
             val drafts = Copies()
-            var accepted = false
-            val sender =
-                DraftSender { draft, _, _ ->
-                    assertEquals("b", draft.accountId)
-                    assertNull(draft.emailId)
-                    assertTrue(drafts.removed.isEmpty())
-                    if (accepted) {
-                        Result.success(SentMessage("b", "sent", "submission"))
-                    } else {
-                        Result.failure(IllegalStateException("Offline"))
-                    }
-                }
-            val state = state(drafts, sender)
+            val state = state(drafts)
             advanceTimeBy(DELAY + 1)
             state.chooseFrom(home)
-            val send = assertNotNull(state.handOff())
-            assertTrue(send(SendTime.Now).isFailure)
-            assertEquals(setOf("a" to "1"), drafts.copies.keys)
-            accepted = true
-            assertTrue(send(SendTime.Now).isSuccess)
+            val outgoing = assertNotNull(state.handOff())
+            val draft = outgoing.ready()
+            assertEquals("b", draft.accountId)
+            assertNull(draft.emailId)
+            assertEquals(setOf("a" to "1"), drafts.copies.keys, "The source stays while the send may still fail")
+            outgoing.sent()
             assertTrue(drafts.copies.isEmpty())
             assertEquals(listOf("a" to "1"), drafts.removed)
         }
@@ -151,12 +137,9 @@ class ComposeMigrationTest {
             assertEquals(listOf("a" to "1"), drafts.removed)
         }
 
-    private fun TestScope.state(
-        drafts: DraftRepository,
-        sender: DraftSender = DraftSender { _, _, _ -> error("No sending here") },
-    ): ComposeState =
+    private fun TestScope.state(drafts: DraftRepository): ComposeState =
         ComposeState(
-            ComposeServices(drafts, sender, { _, _ -> emptyList() }),
+            ComposeServices(drafts, { _, _ -> emptyList() }),
             backgroundScope,
             ComposeRequest.New("a"),
             ComposeOrigin("a", listOf(ComposeAccount("a", "Work"), ComposeAccount("b", "Home")), emptyList()),

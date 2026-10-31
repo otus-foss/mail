@@ -5,7 +5,6 @@ import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.AttachmentFiles
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SendIdentity
@@ -18,13 +17,12 @@ data class ComposeAccount(
 )
 
 /**
- * Where a draft saves, sends, and finds people to suggest; [scheduled] where sending later works,
+ * Where a draft saves and finds people to suggest; [scheduled] where sending later works,
  * [threads] for the earlier messages of a reply's thread, and [files] where the user can pick
  * files to attach, which [uploads] sends to the server.
  */
 class ComposeServices(
     val drafts: DraftRepository,
-    val sender: DraftSender,
     val addressBook: AddressBook,
     val scheduled: ScheduledSends? = null,
     val threads: ThreadHistory? = null,

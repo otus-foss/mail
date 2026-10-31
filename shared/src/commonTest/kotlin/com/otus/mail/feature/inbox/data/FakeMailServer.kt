@@ -40,14 +40,24 @@ internal class FakeMailServer(
     /** Every method call so far, as its name and arguments. */
     val calls = mutableListOf<Pair<String, JsonObject>>()
 
-    /** Methods that answer with an error, such as `Thread/get`. */
+    /** Methods that answer with an error, such as `Thread/get`, of [refusalType] when it is set. */
     var refused: Set<String> = emptySet()
+    var refusalType: String? = null
 
     /** Whether the server has forgotten old states, so `/changes` cannot be calculated. */
     var forgotStates = false
 
     /** Whether requests fail as if the network were down. */
     var down = false
+
+    /** Emails whose `Email/set` updates the server refuses. */
+    var refusedUpdates: Set<String> = emptySet()
+
+    /** Whether `Email/query` offers `Email/queryChanges` for its results. */
+    var followsQueries = false
+
+    // Each query state's results, by filter and sort, for `Email/queryChanges`.
+    private val queries = mutableMapOf<String, List<String>>()
 
     fun calls(name: String): List<JsonObject> = calls.filter { it.first == name }.map { it.second }
 
@@ -94,7 +104,8 @@ internal class FakeMailServer(
 
     private fun refusal(method: String): JsonObject =
         buildJsonObject {
-            put("type", JsonPrimitive(if (method.endsWith("/changes")) "cannotCalculateChanges" else "requestTooLarge"))
+            val type = if (method.endsWith("/changes")) "cannotCalculateChanges" else "requestTooLarge"
+            put("type", JsonPrimitive(refusalType ?: type))
         }
 
     private fun respond(
@@ -102,7 +113,9 @@ internal class FakeMailServer(
         arguments: JsonObject,
     ): JsonObject? =
         when (method) {
-            "Mailbox/get" -> listResult("m", mailboxes.toList())
+            "Mailbox/get" -> listResult("m", mailboxes.filter { arguments.ids()?.contains(it.id) ?: true })
+            "Mailbox/changes" -> mailboxChanges(arguments)
+            "Email/queryChanges" -> queryChanges(arguments)
             "Email/get" -> emailGet(arguments)
             "Thread/get" -> listResult("t$state", threadsOf(arguments.ids() ?: emptyList()))
             "Email/query" -> query(arguments)
@@ -137,6 +150,57 @@ internal class FakeMailServer(
         }
 
     private fun query(arguments: JsonObject): JsonObject {
+        val rows = rows(arguments)
+        val position = arguments["position"]?.jsonPrimitive?.int ?: 0
+        val limit = arguments["limit"]?.jsonPrimitive?.int ?: rows.size
+        queries["${arguments.listKey}@$state"] = rows
+        return buildJsonObject {
+            put("queryState", JsonPrimitive("q$state"))
+            put("ids", JsonArray(rows.drop(position).take(limit).map { JsonPrimitive(it) }))
+            put("position", JsonPrimitive(position))
+            put("total", JsonPrimitive(rows.size))
+            put("canCalculateChanges", JsonPrimitive(followsQueries))
+        }
+    }
+
+    /** The changes since a query state this server answered; ids that kept their place stay out. */
+    private fun queryChanges(arguments: JsonObject): JsonObject? {
+        val since =
+            arguments
+                .getValue("sinceQueryState")
+                .jsonPrimitive.content
+                .removePrefix("q")
+        val old = queries["${arguments.listKey}@$since"] ?: return null
+        val rows = rows(arguments)
+        queries["${arguments.listKey}@$state"] = rows
+        return buildJsonObject {
+            put("oldQueryState", JsonPrimitive("q$since"))
+            put("newQueryState", JsonPrimitive("q$state"))
+            put("total", JsonPrimitive(rows.size))
+            put("removed", JsonArray((old - rows.toSet()).map(::JsonPrimitive)))
+            val added =
+                rows.withIndex().filter { it.value !in old }.map {
+                    buildJsonObject {
+                        put("id", JsonPrimitive(it.value))
+                        put("index", JsonPrimitive(it.index))
+                    }
+                }
+            put("added", JsonArray(added))
+        }
+    }
+
+    /** Mailboxes never change here, so every state is the current one. */
+    private fun mailboxChanges(arguments: JsonObject) =
+        buildJsonObject {
+            put("oldState", arguments.getValue("sinceState"))
+            put("newState", JsonPrimitive("m"))
+            put("hasMoreChanges", JsonPrimitive(false))
+            put("created", JsonArray(emptyList()))
+            put("updated", JsonArray(emptyList()))
+            put("destroyed", JsonArray(emptyList()))
+        }
+
+    private fun rows(arguments: JsonObject): List<String> {
         val boxes = mailboxesIn(arguments.getValue("filter").jsonObject)
         val ascending =
             arguments["sort"]
@@ -149,15 +213,7 @@ internal class FakeMailServer(
         val inBoxes = emails.values.filter { email -> email.boxes.any { it in boxes } }.sortedBy { it.receivedAt }
         val ordered = if (ascending == true) inBoxes else inBoxes.reversed()
         val collapsed = arguments["collapseThreads"] == JsonPrimitive(true)
-        val rows = if (collapsed) ordered.distinctBy { it.threadId } else ordered
-        val position = arguments["position"]?.jsonPrimitive?.int ?: 0
-        val limit = arguments["limit"]?.jsonPrimitive?.int ?: rows.size
-        return buildJsonObject {
-            put("queryState", JsonPrimitive("q$state"))
-            put("ids", JsonArray(rows.drop(position).take(limit).map { JsonPrimitive(it.id) }))
-            put("position", JsonPrimitive(position))
-            put("total", JsonPrimitive(rows.size))
-        }
+        return (if (collapsed) ordered.distinctBy { it.threadId } else ordered).map { it.id }
     }
 
     private fun changes(
@@ -184,7 +240,11 @@ internal class FakeMailServer(
     }
 
     private fun set(arguments: JsonObject): JsonObject {
-        val updates = arguments.getValue("update").jsonObject
+        val (refusals, updates) =
+            arguments
+                .getValue("update")
+                .jsonObject.entries
+                .partition { it.key in refusedUpdates }
         updates.forEach { (id, patch) ->
             update(id) { email ->
                 patch.jsonObject.entries.fold(email) { patched, (path, value) -> patched.at(path, value) }
@@ -192,7 +252,16 @@ internal class FakeMailServer(
         }
         return buildJsonObject {
             put("newState", JsonPrimitive("e$state"))
-            put("updated", JsonObject(updates.mapValues { JsonNull }))
+            put("updated", JsonObject(updates.associate { it.key to JsonNull }))
+            put(
+                "notUpdated",
+                JsonObject(
+                    refusals.associate {
+                        it.key to
+                            buildJsonObject { put("type", JsonPrimitive("forbidden")) }
+                    },
+                ),
+            )
         }
     }
 
@@ -218,64 +287,3 @@ internal class FakeMailServer(
         val threads: Set<String>,
     )
 }
-
-/**
- * Arguments with `#ids` replaced by the earlier result it refers to (RFC 8620, section 3.7); null
- * when that call failed, which the server answers with an error.
- */
-private fun resolved(
-    arguments: JsonObject,
-    results: Map<String, JsonObject>,
-): JsonObject? {
-    val reference = arguments["#ids"]?.jsonObject ?: return arguments
-    val path =
-        reference
-            .getValue("path")
-            .jsonPrimitive.content
-            .trim('/')
-            .split('/')
-    return results[reference.getValue("resultOf").jsonPrimitive.content]?.let { source ->
-        val ids =
-            path
-                .fold(listOf<JsonElement>(source)) { elements, step ->
-                    elements.flatMap {
-                        if (step == "*") it.jsonArray.toList() else listOfNotNull((it as? JsonObject)?.get(step))
-                    }
-                }.flatMap { if (it is JsonArray) it.toList() else listOf(it) }
-        JsonObject(arguments - "#ids" + ("ids" to JsonArray(ids)))
-    }
-}
-
-/** The mailboxes a list filter names: an AND's first condition holds them, and an OR lists them. */
-private fun mailboxesIn(filter: JsonObject): Set<String> {
-    val conditions = filter["conditions"]?.jsonArray.orEmpty().map { it.jsonObject }
-    return when {
-        "inMailbox" in filter -> setOf(filter.getValue("inMailbox").jsonPrimitive.content)
-        filter["operator"] == JsonPrimitive("AND") -> mailboxesIn(conditions.first())
-        else -> conditions.flatMap(::mailboxesIn).toSet()
-    }
-}
-
-/** [path] is a property, which [value] replaces, or `property/key`, which it sets or clears. */
-private fun JsonObject.at(
-    path: String,
-    value: JsonElement,
-): JsonObject {
-    if ('/' !in path) return JsonObject(this + (path to value))
-    val property = path.substringBefore('/')
-    val key = path.substringAfter('/')
-    val inner = (get(property) as? JsonObject).orEmpty()
-    return JsonObject(this + (property to JsonObject(if (value is JsonNull) inner - key else inner + (key to value))))
-}
-
-private fun JsonObject.only(properties: Set<String>?): JsonObject =
-    if (properties == null) this else JsonObject(filterKeys { it in properties })
-
-private fun JsonObject.ids(): List<String>? = (get("ids") as? JsonArray)?.strings()
-
-private fun JsonArray.strings(): List<String> = map { it.jsonPrimitive.content }
-
-private val JsonElement.id: String get() = jsonObject.getValue("id").jsonPrimitive.content
-private val JsonObject.threadId: String get() = get("threadId")?.jsonPrimitive?.content ?: id
-private val JsonObject.receivedAt: String get() = getValue("receivedAt").jsonPrimitive.content
-private val JsonObject.boxes: Set<String> get() = (get("mailboxIds") as? JsonObject)?.keys.orEmpty()

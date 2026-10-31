@@ -39,6 +39,7 @@ import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.forgetAccount
+import com.otus.mail.feature.inbox.data.EmailChangeQueue
 import com.otus.mail.feature.inbox.data.JmapAddressBook
 import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
 import com.otus.mail.feature.inbox.data.JmapAttachmentUploads
@@ -55,6 +56,7 @@ import com.otus.mail.feature.inbox.data.JmapMessageMarker
 import com.otus.mail.feature.inbox.data.JmapMessageMover
 import com.otus.mail.feature.inbox.data.JmapNewsletters
 import com.otus.mail.feature.inbox.data.JmapPeopleSearch
+import com.otus.mail.feature.inbox.data.JmapSendChecker
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
@@ -68,6 +70,7 @@ import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.KnownPeople
+import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageCleaner
@@ -151,10 +154,12 @@ class MailServices(
                 },
                 beforeRemove = { loginId ->
                     instantPush?.forget(loginId)
-                    stores.folderColors?.forgetAccount(loginId)
+                    stores.folders.colors?.forgetAccount(loginId)
                     stores.addressPins?.forgetAccount(loginId)
-                    stores.folderNudges?.forgetAccount(loginId)
+                    stores.folders.nudges?.forgetAccount(loginId)
                     stores.contacts?.forgetAccount(loginId)
+                    outbox.forget(loginId)
+                    changes.forget(loginId)
                     try {
                         cache.forget(loginId)
                     } catch (error: CacheStorageException) {
@@ -164,15 +169,25 @@ class MailServices(
             )
         CacheAccountRepository(repository, logins, accountCache)
     }
-    internal val mail: MailSource by lazy { JmapMailSource(connections, logins, cache, sites = serverSites) }
-    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache) }
+
+    /** Marks and moves that wait for the server; see docs/storage.md. */
+    private val changes by lazy { EmailChangeQueue(stores.waiting.changes, host.wakeOutbox) }
+    internal val mail: MailSource by lazy {
+        JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes)
+    }
+    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache, changes) }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
-    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache) }
+    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache, changes) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
     internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins) }
     private val jmapSender by lazy { JmapDraftSender(connections, logins) }
     internal val sender: DraftSender get() = jmapSender
     internal val scheduled: ScheduledSends get() = jmapSender
+
+    /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
+    internal val outbox by lazy {
+        MailOutbox(stores.waiting.outbox, jmapSender, JmapSendChecker(connections, logins), host.wakeOutbox)
+    }
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections, logins) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
     internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
@@ -208,7 +223,7 @@ class MailServices(
     internal val newsletterSteps = NewsletterSteps()
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
-    internal val readLater by lazy { ReadLaterFolders(folders, stores.readLater) }
+    internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
     internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, logins) }
 
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */
@@ -238,6 +253,17 @@ class MailServices(
      */
     suspend fun trimCache(now: Instant = Clock.System.now()) {
         cache.trim(CacheKind.Body, (now - BODY_RETENTION).toEpochMilliseconds())
+    }
+
+    /**
+     * Sends the messages the outbox kept that are due, and the marks and moves that wait, as from
+     * a background job after the app closed. True when some still wait for the network, so the job
+     * should run again.
+     */
+    suspend fun resumeOutbox(): Boolean {
+        outbox.resume()
+        val changesWait = changes.flushAll(connections, logins, cache)
+        return outbox.waiting() || changesWait
     }
 
     /** The server signing key used to register directly with Google (RFC 9749). */

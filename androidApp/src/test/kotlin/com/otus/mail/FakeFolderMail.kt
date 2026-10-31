@@ -16,8 +16,8 @@ import kotlinx.serialization.json.putJsonObject
 /**
  * The mail of a [FakeFolderServer]: each mailbox holds one message from Grace Hopper, alone in its
  * thread. The inbox's is `m1` and any other mailbox's is `m1-<mailbox>`, titled by
- * [FakeFolderServer.subjects]. The server keeps no states, so `Email/changes` and `Thread/changes`
- * cannot be calculated and every load reads the lists again; updates are accepted without being
+ * [FakeFolderServer.subjects]. The server keeps no states, so `Email/changes`, `Thread/changes`,
+ * and `Email/queryChanges` cannot be calculated and every load reads the lists again; updates are accepted without being
  * applied, so tests read what was sent from [FakeFolderServer.calls].
  */
 internal class FakeFolderMail(
@@ -33,7 +33,7 @@ internal class FakeFolderMail(
             "Email/query" -> query(arguments)
             "Email/get" -> emails(arguments)
             "Thread/get" -> listResult("t", arguments.ids().orEmpty().mapNotNull(::thread))
-            "Email/changes", "Thread/changes" -> null
+            "Email/changes", "Thread/changes", "Email/queryChanges" -> null
             "Email/set" -> setEmails(arguments)
             else -> error("Unexpected call: $method")
         }
