@@ -76,7 +76,7 @@ class JmapFilteredMailTest {
             val bodies = server.bodies.filter { "Email/query" in it }
             assertTrue(bodies.any { "\"inMailbox\":\"s\"" in it }, "Sent is queried too")
             assertTrue(bodies.none { "\"from\":\"ada@example.org\"" in it }, "No server condition on the sender")
-            assertEquals(null, source.count(MailScope.Inbox, query), "Only the loaded threads can tell")
+            assertEquals(1L, source.count(MailScope.Inbox, query), "Counted in the loaded threads")
         }
 
     @OptIn(ExperimentalAtomicApi::class)
@@ -99,12 +99,12 @@ class JmapFilteredMailTest {
         }
 
     @Test
-    fun calendarInvitesAreCheckedOnTheLoadedMailAndNotCounted() =
+    fun calendarInvitesAreCheckedAndCountedOnTheLoadedMail() =
         runTest {
             val source = FakeMailServer(MAILBOXES, INVITES).source(store)
             val query = MailQuery(InboxFilters(types = setOf(TypeFacet.CalendarInvites)), logins = setOf("ada"))
             assertEquals(listOf("invite"), source.messages(MailScope.Inbox, query).messages.map { it.emailId })
-            assertEquals(null, source.count(MailScope.Inbox, query))
+            assertEquals(1L, source.count(MailScope.Inbox, query))
         }
 
     @Test
