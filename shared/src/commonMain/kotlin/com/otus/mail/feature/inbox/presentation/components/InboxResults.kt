@@ -6,7 +6,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -15,6 +18,7 @@ import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.ListFrame
+import kotlinx.coroutines.flow.drop
 
 /**
  * Any notice and the matching messages, which respond to [gestures]. The list runs under the
@@ -38,7 +42,7 @@ internal fun InboxResults(
     val inboxScroll = rememberLazyListState()
     val searchScroll = rememberLazyListState()
     val listState = if (state.searching) searchScroll else inboxScroll
-    LaunchedEffect(state.search, state.folderPill, filters) { listState.scrollToItem(0) }
+    TopForNewResults(listState, Triple(state.search, state.folderPill, filters))
     StayAtTop(listState, results.firstOrNull()?.id)
     LoadMoreNearEnd(listState, status.hasMore && !status.loading && !status.loadingMore, frame.onLoadMore)
     Box(Modifier.fillMaxSize().nestedScroll(rememberCompactOnScroll(listState, frame.onCompactChange))) {
@@ -51,6 +55,24 @@ internal fun InboxResults(
             status,
             emptyContent = emptyContent,
         )
+    }
+}
+
+/**
+ * Scrolls [listState] to the top when [shown], what the list shows, changes. A page that comes back
+ * keeps its saved position, so composing it again does not scroll.
+ */
+@Composable
+private fun TopForNewResults(
+    listState: LazyListState,
+    shown: Any,
+) {
+    val currentList by rememberUpdatedState(listState)
+    val currentShown by rememberUpdatedState(shown)
+    LaunchedEffect(Unit) {
+        snapshotFlow { currentShown }
+            .drop(1)
+            .collect { currentList.scrollToItem(0) }
     }
 }
 
