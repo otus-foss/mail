@@ -55,7 +55,7 @@ fun InboxFilterPanel(
                 state::close,
             ) { FilterResetAction(state::reset, enabled = !shown.isDefault) }
         },
-        footer = { InboxFilterFooter(state) },
+        footer = { InboxFilterFooter(state, state::show) },
         modifier = modifier,
     ) {
         val searches = PeopleSearches(state.senders, state.recipients, people)
@@ -63,12 +63,16 @@ fun InboxFilterPanel(
     }
 }
 
+/** The Show button for [state]'s count, which runs [onApply]. */
 @Composable
-private fun InboxFilterFooter(state: InboxFilterState) {
+internal fun InboxFilterFooter(
+    state: InboxFilterState,
+    onApply: () -> Unit,
+) {
     val count = state.count
     FilterPanelFooter(
         count.showLabel,
-        onApply = state::show,
+        onApply = onApply,
         applyEnabled = count != FilterCount.Known(0),
         counting = count == FilterCount.Counting,
     )

@@ -17,6 +17,7 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.pages.components.SlidingOverlay
 import com.otus.designsystem.shared.pages.components.belowControlPanel
+import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -27,21 +28,29 @@ import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.BackHandler
+import com.otus.mail.feature.inbox.presentation.components.ExpandedInbox
+import com.otus.mail.feature.inbox.presentation.components.ExpandedInboxContent
 import com.otus.mail.feature.inbox.presentation.components.HitDates
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
+import com.otus.mail.feature.inbox.presentation.components.InboxHeaderActions
 import com.otus.mail.feature.inbox.presentation.components.InboxLayers
 import com.otus.mail.feature.inbox.presentation.components.InboxOverlays
 import com.otus.mail.feature.inbox.presentation.components.InboxPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.InboxResults
+import com.otus.mail.feature.inbox.presentation.components.InboxRows
 import com.otus.mail.feature.inbox.presentation.components.ListedMail
 import com.otus.mail.feature.inbox.presentation.components.PanelLook
 import com.otus.mail.feature.inbox.presentation.components.PanelOpens
 import com.otus.mail.feature.inbox.presentation.components.PanelOverList
+import com.otus.mail.feature.inbox.presentation.components.QuickSources
+import com.otus.mail.feature.inbox.presentation.components.grownWith
 import com.otus.mail.feature.inbox.presentation.components.inboxBar
 import com.otus.mail.feature.inbox.presentation.components.panelSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterAnchor
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
+import com.otus.mail.feature.inbox.presentation.components.rememberHeaderActions
+import com.otus.mail.feature.inbox.presentation.components.rememberInboxExpansion
 import com.otus.mail.feature.inbox.presentation.components.rememberInboxOverlays
 import com.otus.mail.feature.inbox.presentation.components.rememberInboxRows
 import com.otus.mail.feature.inbox.presentation.components.rememberUnreadCount
@@ -64,12 +73,12 @@ fun InboxScreen(
         }
     val rows = rememberInboxRows(messages, messageActions)
     val filters = context.filters ?: remember { InboxFilterState() }
-    val overlays = rememberInboxOverlays(filters)
     val listed = ListedMail(messages, filters.applied)
     val unreadCount = rememberUnreadCount(listed, status.loading)
     val anchor = rememberFilterAnchor(filters, context.filterOptions, messages, dateFormatter)
     val page = shownPage(state, context)
-    val headerActions = InboxHeaderActions(searchCloser(state), onOpenNavigation, overlays, context.quick != null)
+    val headerActions = rememberHeaderActions(state, page, filters, messages, rows, onOpenNavigation, dateFormatter)
+    val overlays = headerActions.overlays
     val selecting = rows.panelSelection(listed.messages)
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
@@ -77,12 +86,12 @@ fun InboxScreen(
             Modifier.fillMaxSize(),
             base = {
                 ActionBarHost(
-                    bar = inboxBar(listed, state, rows, messageActions, context.onCompose, filters::open),
+                    bar = inboxBar(listed, state, rows, messageActions, context.onCompose, headerActions::openFilters),
                     Modifier
                         .fillMaxSize()
                         // The control panel draws behind the status bar and pads itself.
                         .belowControlPanel()
-                        .hiddenWhenCovered(rows.opened != null || overlays.cover(state)),
+                        .hiddenWhenCovered(rows.opened != null || headerActions.covers(state)),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
@@ -90,6 +99,7 @@ fun InboxScreen(
                         rowsShown = messages.isNotEmpty(),
                         onRefresh,
                         holdInset = selecting != null,
+                        expansion = headerActions.expansion,
                         panel = { collapse, modifier ->
                             InboxHeader(
                                 messages,
@@ -135,26 +145,6 @@ private fun InboxContext.cameFrom(
         ?.takeIf { !filtered && folderPill == null }
         .orEmpty()
 
-/** Closes [state]'s search and the keyboard, also on system back while searching. */
-@Composable
-private fun searchCloser(state: InboxState): () -> Unit {
-    val focus = LocalFocusManager.current
-    val closeSearch = {
-        state.closeSearch()
-        focus.clearFocus()
-    }
-    BackHandler(state.searching, closeSearch)
-    return closeSearch
-}
-
-/** What the control panel's buttons do besides editing the search. */
-private class InboxHeaderActions(
-    val closeSearch: () -> Unit,
-    val onOpenNavigation: () -> Unit,
-    val overlays: InboxOverlays,
-    val quickView: Boolean = false,
-)
-
 @Composable
 private fun inboxPanelActions(
     state: InboxState,
@@ -170,23 +160,15 @@ private fun inboxPanelActions(
         },
         onOpenFilters = {
             focus.clearFocus()
-            actions.overlays.filters.open()
+            actions.openFilters()
         },
         onSubmit = { focus.clearFocus() },
         onFolder = state::showFolder,
         opens =
-            PanelOpens(
-                actions.onOpenNavigation,
-                onOpenAccounts = {
-                    focus.clearFocus()
-                    actions.overlays.accountsOpen = true
-                },
-                onOpenQuickView =
-                    {
-                        focus.clearFocus()
-                        actions.overlays.quickOpen = true
-                    }.takeIf { actions.quickView },
-            ),
+            PanelOpens(actions.onOpenNavigation) {
+                focus.clearFocus()
+                actions.overlays.accountsOpen = true
+            },
     )
 }
 
@@ -209,7 +191,7 @@ private fun InboxHeader(
             context,
             inboxPanelActions(state, actions),
             rememberFilterSelection(messages, state.search, context.mailboxSearch.accounts),
-            look,
+            look.grownWith(actions.expansion, actions.grown),
         )
     }
 }

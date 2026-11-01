@@ -27,9 +27,10 @@ import com.otus.designsystem.shared.overlays.components.SheetHeaderAction
 import com.otus.designsystem.shared.panels.components.AccountStack
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.components.PanelExpansion
+import com.otus.designsystem.shared.panels.components.PanelMotion
 import com.otus.designsystem.shared.panels.components.PanelSearchField
 import com.otus.designsystem.shared.panels.components.PanelSearchPill
-import com.otus.designsystem.shared.panels.components.pullDown
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
 import com.otus.designsystem.shared.panels.elements.PanelTitle
@@ -62,7 +63,6 @@ fun InboxPanel(
     val railShown = searching || context.pills.shown.isNotEmpty()
     val scope = context.scope.takeIf { !searching }
     ContextPanel(
-        modifier = Modifier.pullDown(actions.opens.onOpenQuickView.takeIf { !searching }),
         // Without pills, the filter button moves into the header and the list gets the row's space.
         placement = if (railShown) ChipPlacement.Overlapping else ChipPlacement.None,
         navigation = {
@@ -80,7 +80,7 @@ fun InboxPanel(
             )
         },
         chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, look) },
-        collapse = look.collapse,
+        motion = PanelMotion(look.collapse, look.expansion.takeIf { !searching }, look.expanded),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             InboxHeaderField(searching, search, context, actions, look, filterInPill = railShown, Modifier.weight(1f))
@@ -224,7 +224,15 @@ class PanelLook(
     val filters: ActiveFilters = ActiveFilters(),
     val selecting: PanelSelection? = null,
     val searchFocused: Boolean = false,
+    val expansion: PanelExpansion? = null,
+    val expanded: @Composable () -> Unit = {},
 )
+
+/** This look with the panel able to grow by [expansion], showing [expanded] in the room it grows. */
+fun PanelLook.grownWith(
+    expansion: PanelExpansion?,
+    expanded: @Composable () -> Unit,
+): PanelLook = PanelLook(collapse, unreadCount, filters, selecting, searchFocused, expansion, expanded)
 
 /** The selected rows' [count], with what ✕ and Select all do. */
 class PanelSelection(
