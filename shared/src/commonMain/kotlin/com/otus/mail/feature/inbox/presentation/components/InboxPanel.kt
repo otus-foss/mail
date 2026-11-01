@@ -61,7 +61,9 @@ fun InboxPanel(
         SelectionPanel(selecting)
         return
     }
-    val railShown = searching || context.pills.shown.isNotEmpty()
+    // While the panel grows a search room it keeps its pills; the search's own chips come with the results.
+    val searchChips = searching && look.expansion == null
+    val railShown = searchChips || context.pills.shown.isNotEmpty()
     val scope = context.scope
     ContextPanel(
         // Without pills, the filter button moves into the header and the list gets the row's space.
@@ -80,7 +82,7 @@ fun InboxPanel(
                 IconButtonLook.Outlined,
             )
         },
-        chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, look) },
+        chips = { InboxPanelChips(searchChips, search, context, dateFormatter, selection, actions, look) },
         motion = PanelMotion(look.collapse, look.expansion, look.expanded),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
