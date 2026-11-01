@@ -1,5 +1,8 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -10,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
@@ -184,7 +189,7 @@ internal fun InboxSearchInput(
     PanelSearchField(query, onChange, "Search your mailbox…", searchFieldModifier(active), onSubmit)
 }
 
-/** Focuses a search field with the keyboard up while [active]; the user focusing it runs [onFocus]. */
+/** Focuses a search field with the keyboard up while [active]; the user focusing or tapping it runs [onFocus]. */
 @Composable
 private fun searchFieldModifier(
     active: Boolean,
@@ -198,7 +203,19 @@ private fun searchFieldModifier(
             keyboard?.show()
         }
     }
-    return Modifier.focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocus() }
+    return Modifier
+        .focusRequester(focusRequester)
+        .onFocusChanged { if (it.isFocused) onFocus() }
+        // Any tap brings the keyboard, also on a field that kept its focus while the keyboard went.
+        .pointerInput(onFocus) {
+            awaitEachGesture {
+                awaitFirstDown(pass = PointerEventPass.Initial)
+                if (waitForUpOrCancellation(PointerEventPass.Initial) != null) {
+                    keyboard?.show()
+                    onFocus()
+                }
+            }
+        }
 }
 
 /**

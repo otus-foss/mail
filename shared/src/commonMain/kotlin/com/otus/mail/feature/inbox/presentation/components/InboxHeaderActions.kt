@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalFocusManager
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.panels.components.PanelExpansion
@@ -83,6 +84,9 @@ internal fun rememberHeaderActions(
     val roomHeight = if (state.searchSurfaceOpen) searchRoomHeight(state.search.query.isNotBlank()) else null
     val typed = state.search.query.isNotBlank()
     val expansion = rememberInboxExpansion(page.quick, filters, roomHeight, typed) { leaveSearch(state, closeSearch) }
+    // With a search room, results showing take the cursor from the field, so a tap on it is a fresh
+    // focus again. Without one, the results keep the field focused.
+    LaunchedEffect(state.resultsShown) { if (state.resultsShown && expansion != null) focus.clearFocus() }
     val overlays = rememberInboxOverlays(filters, filtersInPanel = expansion != null)
     val sources = QuickSources(filters, page, messages, rows.gestures.onOpen) { expansion?.collapse() }
     val room =
