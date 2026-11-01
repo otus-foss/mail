@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -197,6 +199,8 @@ private fun searchFieldModifier(
 ): Modifier {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    val currentKeyboard by rememberUpdatedState(keyboard)
+    val currentOnFocus by rememberUpdatedState(onFocus)
     LaunchedEffect(active) {
         if (active) {
             focusRequester.requestFocus()
@@ -207,12 +211,13 @@ private fun searchFieldModifier(
         .focusRequester(focusRequester)
         .onFocusChanged { if (it.isFocused) onFocus() }
         // Any tap brings the keyboard, also on a field that kept its focus while the keyboard went.
-        .pointerInput(onFocus) {
+        // Keyed on nothing, so a recomposition mid-tap, such as while the panel moves, cannot drop it.
+        .pointerInput(Unit) {
             awaitEachGesture {
                 awaitFirstDown(pass = PointerEventPass.Initial)
                 if (waitForUpOrCancellation(PointerEventPass.Initial) != null) {
-                    keyboard?.show()
-                    onFocus()
+                    currentKeyboard?.show()
+                    currentOnFocus()
                 }
             }
         }

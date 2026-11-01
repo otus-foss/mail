@@ -38,6 +38,7 @@ internal class InboxHeaderActions(
     val overlays: InboxOverlays,
     val expansion: PanelExpansion? = null,
     val grown: @Composable () -> Unit = {},
+    private val searchChanges: SearchFilterChanges? = null,
 ) {
     /** Whether an overlay or the grown panel covers the list. */
     fun covers(state: InboxState): Boolean = overlays.cover(state) || expansion?.expanded == true
@@ -69,6 +70,8 @@ internal class InboxHeaderActions(
 
     /** Shows the mail the panel's filters pick and brings the panel back to its usual height. */
     fun showFiltered() {
+        // The filters Show applies are the user's now, also those a search turned on.
+        searchChanges?.keep()
         expansion?.collapse()
         overlays.filters.show()
     }
@@ -91,7 +94,9 @@ internal fun rememberHeaderActions(
     val focus = LocalFocusManager.current
     val changes = remember { SearchFilterChanges() }
     val closeSearch = searchCloser(state, filters, changes)
-    val roomHeight = if (state.searchSurfaceOpen) searchRoomHeight(state.search.query.isNotBlank()) else null
+    // Only a page with a quick view grows a search room; others keep their search sheet.
+    val roomHeight =
+        if (state.searchSurfaceOpen && page.quick != null) searchRoomHeight(state.search.query.isNotBlank()) else null
     val typed = state.search.query.isNotBlank()
     val expansion = rememberInboxExpansion(page.quick, filters, roomHeight, typed) { leaveSearch(state, closeSearch) }
     // With a search room, results showing take the cursor from the field, so a tap on it is a fresh
@@ -110,6 +115,7 @@ internal fun rememberHeaderActions(
         overlays,
         expansion,
         grownPanel(expansion, sources, room, dateFormatter),
+        changes,
     )
 }
 

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
@@ -45,8 +46,9 @@ class InboxScreenTest {
         compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
         compose.onNodeWithText("Context panel playground").assertDoesNotExist()
         screenshot("empty-inbox")
-        compose.openSearchResults()
-        compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused().performTextInput("hello")
+        compose.openSearch()
+        compose.searchField().assertIsFocused().performTextInput("hello")
+        compose.searchField().performImeAction()
         compose.onNodeWithText("Nothing to search yet").assertIsDisplayed()
         screenshot("empty-search")
         compose.onNodeWithContentDescription("Clear search").performClick().assertDoesNotExist()
@@ -61,16 +63,15 @@ class InboxScreenTest {
         compose.mainClock.autoAdvance = false
         compose.onNodeWithContentDescription("Search Inbox").performClick()
         compose.mainClock.advanceTimeBy(96)
-        compose.onNodeWithContentDescription("Search your mailbox…").assertExists()
+        compose.searchField().assertExists()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.mainClock.advanceTimeBy(48)
         compose.onNodeWithContentDescription("Search Inbox").performSemanticsAction(SemanticsActions.OnClick) { it() }
         compose.mainClock.advanceTimeBy(320)
-        compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused()
-        compose.onNodeWithContentDescription("Search Inbox").assertDoesNotExist()
+        compose.searchField().assertIsFocused()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.mainClock.advanceTimeBy(320)
-        compose.onNodeWithContentDescription("Search your mailbox…").assertDoesNotExist()
+        compose.searchField().assertDoesNotExist()
         compose.onNodeWithContentDescription("Search Inbox").assertIsDisplayed()
         compose.mainClock.autoAdvance = true
     }
@@ -85,11 +86,11 @@ class InboxScreenTest {
         compose.onNode(hasText("Weekend plans")).assertIsDisplayed()
         screenshot("inbox-fixtures")
         compose.openSearchResults()
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("prototype")
+        compose.searchField().performTextInput("prototype")
         compose.onNodeWithText("Design review").assertIsDisplayed()
         compose.onNodeWithText("Weekend plans").assertDoesNotExist()
         screenshot("search-fixtures")
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextReplacement("nothing matches")
+        compose.searchField().performTextReplacement("nothing matches")
         compose.onNodeWithText("No matching mail").assertIsDisplayed()
         compose.onNodeWithText("Clear search and filters").performClick()
         compose.onNodeWithText("Weekend plans").assertIsDisplayed()
@@ -118,7 +119,7 @@ class InboxScreenTest {
     @Test
     fun searchInputSurvivesActivityRecreation() {
         compose.openSearchResults()
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("saved query")
+        compose.searchField().performTextInput("saved query")
         compose.activityRule.scenario.recreate()
         compose.onNodeWithText("saved query").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
@@ -137,7 +138,7 @@ class InboxScreenTest {
             }
         }
         compose.openSearchResults()
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("hello")
+        compose.searchField().performTextInput("hello")
         compose.onNodeWithText("Clear search and filters").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Clear search").assertDoesNotExist()
         screenshot("large-text-empty")

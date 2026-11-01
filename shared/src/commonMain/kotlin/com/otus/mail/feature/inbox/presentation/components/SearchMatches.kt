@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.mail.quickview.components.QuickFace
 import com.otus.designsystem.mail.quickview.components.QuickFaceLook
@@ -124,6 +125,7 @@ private fun SearchMail(
     hits: List<MailMessage>,
     modifier: Modifier,
 ) {
+    val focus = LocalFocusManager.current
     val today = currentLocalDate()
     val look = room.sources.page.rowLook
     val rows =
@@ -143,7 +145,13 @@ private fun SearchMail(
                 }
             }
             items(hits, key = { it.id }) { message ->
-                rows[message.id]?.let { ConversationRow(message, it) { room.gestures.tap(message) } }
+                rows[message.id]?.let {
+                    ConversationRow(message, it) {
+                        // The message opens over the room, without the keyboard.
+                        focus.clearFocus()
+                        room.gestures.tap(message)
+                    }
+                }
             }
         }
     }
