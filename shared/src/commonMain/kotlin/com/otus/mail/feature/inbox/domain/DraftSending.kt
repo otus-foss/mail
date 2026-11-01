@@ -51,7 +51,7 @@ class SendException(
 /**
  * A message the server accepted: its stored copy [emailId] and its submission [submissionId], sent
  * as [identityId]. A canceled send moves the copy back to [draftsId], the account's Drafts folder
- * when it has one.
+ * when it has one, and takes back the answered or forwarded mark this send gave [marked].
  */
 data class SentMessage(
     val accountId: String,
@@ -59,6 +59,7 @@ data class SentMessage(
     val submissionId: String,
     val draftsId: String? = null,
     val identityId: String = "",
+    val marked: AnsweredMessage? = null,
 )
 
 /** When the server sends a message, and where its copy waits until then. */

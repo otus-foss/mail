@@ -58,8 +58,10 @@ class JmapDraftSender(
             val account = mailAccount(connections, logins, draft.accountId) ?: failSend(SendFailure.ServerProblem)
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
             val sent = account.submit(draft, account.route(from ?: failSend(SendFailure.NoIdentity)), time)
+            // Undo or a cancel can still stop a held or scheduled send, so it takes back a mark it added.
+            val marked = if (time == SendTime.Now) null else answered?.let { account.unmarked(it) }
             account.tidySent(draft.emailId, answered)
-            Result.success(sent)
+            Result.success(sent.copy(marked = marked))
         } catch (error: SendException) {
             Result.failure(error)
         } catch (error: JmapException) {
@@ -236,7 +238,10 @@ class JmapDraftSender(
             Result.failure(SendException(SendFailure.ServerProblem, error))
         }
 
-    /** Marks the copy of a canceled [message] as a draft again, back in Drafts if it moved to Sent. */
+    /**
+     * Marks the copy of a canceled [message] as a draft again, back in Drafts if it moved to Sent,
+     * and takes back the mark its send gave the original it answered.
+     */
     private suspend fun MailAccount.restoreCanceledDraft(message: SentMessage) {
         val emailId = message.emailId
         val patch =
@@ -244,8 +249,14 @@ class JmapDraftSender(
                 put("keywords/$DRAFT_KEYWORD", true)
                 if (message.draftsId != null) putJsonObject("mailboxIds") { put(message.draftsId, true) }
             }
+        val unmarked =
+            listOfNotNull(message.marked).associate {
+                it.emailId to
+                    membershipPatch("keywords", it.keyword, member = false)
+            }
         try {
-            val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch)))
+            // Only the copy decides: an original deleted since then keeps nothing to take back.
+            val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch) + unmarked))
             if (emailId !in restored.updated || emailId in restored.notUpdated) throw DraftRestoreException()
         } catch (error: JmapException) {
             throw DraftRestoreException(error)

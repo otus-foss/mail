@@ -227,6 +227,8 @@ The server holds the message for the Undo window wherever it can: when the accou
 the server's clock cannot cut the window short. The message then goes even if the app closes
 during the window. Its copy files in Sent at once. Undo sets the submission's `undoStatus` to
 `canceled`, moves the copy back to Drafts as a draft, and opens it, as for a scheduled message.
+It also removes the `$answered` or `$forwarded` mark the send gave the original, unless the
+original had that mark before, which the sender reads before it marks a held or scheduled send.
 Where the server cannot hold mail that long, the device holds it instead, and Undo opens the
 draft again as it was. If the hold request got no answer, the device takes over the hold, since
 the server may or may not have it. Undo then opens the draft at once and keeps the message in the
@@ -277,7 +279,7 @@ then reads "Sends to" with the schedule-send symbol. Send sends with an explicit
 carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled for Mon 19 Oct, 8:00" with Undo.
 The scheduled copy stays in Drafts without `$draft` until the server sends it. Undo sets the
 submission's `undoStatus` to `canceled`. Only after the server confirms cancellation does Mail
-mark the copy `$draft` again and open it. If restoring the draft fails, Mail reports that the
+mark the copy `$draft` again, take back the original's mark as for a held send, and open it. If restoring the draft fails, Mail reports that the
 send was canceled but the draft could not be restored.
 
 ## Limits

@@ -22,6 +22,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class JmapDraftSenderTest {
@@ -38,6 +39,7 @@ class JmapDraftSenderTest {
         sent: Boolean = true,
         submitted: String = """"created": {"send": {"id": "s1"}}""",
         tidied: String = """"updated": {"m1": null}, "destroyed": ["old"]""",
+        originalKeywords: String = "{}",
     ): JmapDraftSender {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val engine =
@@ -61,6 +63,12 @@ class JmapDraftSenderTest {
 
                     "Email/set" in body -> {
                         responses("""["Email/set", {"newState": "e3", $tidied}, "c0"]""")
+                    }
+
+                    "Email/get" in body -> {
+                        responses(
+                            """["Email/get", {"state": "e", "list": [{"id": "m1", $RECEIVED, "keywords": $originalKeywords}]}, "c0"]""",
+                        )
                     }
 
                     else -> {
@@ -240,4 +248,23 @@ class JmapDraftSenderTest {
             val filed = """{"#send": {"mailboxIds/dr": null, "mailboxIds/se": true, "keywords/${'$'}draft": null}}"""
             assertEquals(Json.parseToJsonElement(filed), submission["onSuccessUpdateEmail"])
         }
+
+    @Test
+    fun aHeldReplyRemembersTheMarkItAddsSoUndoCanTakeItBack() =
+        runTest {
+            val at = kotlin.time.Instant.parse("2026-10-19T06:00:17Z")
+            val answered = AnsweredMessage("m1", forwarded = false)
+            val held = sender().send(reply, answered, SendTime.Held(at)).getOrThrow()
+            assertEquals(answered, held.marked)
+            assertTrue("Email/get" in calls[2], "The original is looked at before it is marked")
+
+            val marked = """{"${'$'}answered": true}"""
+            val before = sender(originalKeywords = marked).send(reply, answered, SendTime.Held(at)).getOrThrow()
+            assertNull(before.marked, "A mark the original had before stays")
+            assertNull(sender().send(reply, answered, SendTime.Now).getOrThrow().marked)
+        }
+
+    private companion object {
+        const val RECEIVED = """"receivedAt": "2026-10-31T12:00:00Z""""
+    }
 }
