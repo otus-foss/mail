@@ -129,7 +129,7 @@ private enum class LayoutChoice { Mailboxes, Counts }
 
 private fun pinnedSummary(count: Int): String = if (count == 0) "Nothing pinned" else "$count pinned"
 
-private val SidebarSection.icon
+internal val SidebarSection.icon
     get() =
         when (this) {
             SidebarSection.Mailboxes -> Res.drawable.symbol_inbox
