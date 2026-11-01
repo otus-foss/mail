@@ -40,6 +40,7 @@ import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 
 /**
  * What the inbox panel's search room reads and does: [state]'s search over the mail [sources] hold,
@@ -56,25 +57,40 @@ internal class SearchRoom(
 )
 
 /**
- * Which of the page's filters a search turned on: Has files and Past 30 days. Closing the search
- * turns them off again with [undo]; showing its results keeps them. A filter that was on before
- * the search is the page's, not the search's.
+ * Which of the page's filters a search turned on: Has files, and Past 30 days with the date it
+ * replaced. Closing the search sets them back with [undo]; the filter panel's Show makes them the
+ * page's with [keep]. A filter that was on before the search stays.
  */
 internal class SearchFilterChanges {
-    var files = false
-    var recent = false
+    private var files = false
+    private var dateBefore: DateFilter? = null
+
+    fun files(on: Boolean) {
+        files = on
+    }
+
+    fun recent(
+        on: Boolean,
+        before: DateFilter,
+    ) {
+        dateBefore = if (on) dateBefore ?: before else null
+    }
+
+    fun keep() {
+        files = false
+        dateBefore = null
+    }
 
     fun undo(filters: InboxFilterState) {
         val applied = filters.applied
         val files = files && applied.has(QuickFacet.Attachments)
-        val recent = recent && applied.date == DateFilter.Last30
-        this.files = false
-        this.recent = false
-        if (!files && !recent) return
+        val date = dateBefore?.takeIf { applied.date == DateFilter.Last30 }
+        keep()
+        if (!files && date == null) return
         filters.update(
             applied
                 .with(QuickFacet.Attachments, on = applied.has(QuickFacet.Attachments) && !files)
-                .copy(date = if (recent) DateFilter.Any else applied.date),
+                .copy(date = date ?: applied.date),
         )
     }
 }
@@ -133,7 +149,7 @@ private fun NarrowRow(room: SearchRoom) {
             "Has files",
             {
                 filters.update(applied.with(QuickFacet.Attachments, !files))
-                room.changes.files = !files
+                room.changes.files(on = !files)
             },
             selected = files,
         ) {
@@ -143,7 +159,7 @@ private fun NarrowRow(room: SearchRoom) {
             "Past 30 days",
             {
                 filters.update(applied.copy(date = if (recent) DateFilter.Any else DateFilter.Last30))
-                room.changes.recent = !recent
+                room.changes.recent(on = !recent, before = applied.date)
             },
             selected = recent,
         ) { Symbol(Res.drawable.symbol_calendar_today) }
@@ -195,7 +211,9 @@ internal fun FollowSearch(
         }
     }
     LaunchedEffect(expansion) {
-        snapshotFlow { expansion.expanded }.distinctUntilChanged().collect { open ->
+        // Only a room that was open and shut leaves the search, not the first reading, such as when
+        // a restored search composes before its room has grown.
+        snapshotFlow { expansion.expanded }.distinctUntilChanged().drop(1).collect { open ->
             if (!open && inRoom) leave()
         }
     }

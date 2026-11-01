@@ -20,6 +20,7 @@ import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.InboxFilters
+import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.scopeToLoad
 import com.otus.mail.feature.inbox.presentation.InboxContext
@@ -67,11 +68,7 @@ fun InboxScreen(
     context: InboxContext = InboxContext(),
     messageActions: MessageActions? = null,
 ) {
-    // A new default, such as folders added to what the Inbox shows, starts a fresh search from it.
-    val state =
-        rememberSaveable(context.defaultSearch, saver = InboxState.saver(context.defaultSearch)) {
-            InboxState(defaultSearch = context.defaultSearch)
-        }
+    val state = rememberInboxState(context.defaultSearch)
     val rows = rememberInboxRows(messages, messageActions)
     val filters = context.filters ?: remember { InboxFilterState() }
     val listed = ListedMail(messages, filters.applied)
@@ -92,7 +89,7 @@ fun InboxScreen(
                         .fillMaxSize()
                         // The control panel draws behind the status bar and pads itself.
                         .belowControlPanel()
-                        .hiddenWhenCovered(rows.opened != null || headerActions.covers(state)),
+                        .hiddenWhenCovered(rows.opened != null),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
@@ -114,8 +111,10 @@ fun InboxScreen(
                         },
                     ) { topInset, collapse ->
                         val frame = context.listFrame(state.searching, topInset, barPadding, collapse)
-                        InboxResults(listed, status, state, dateFormatter, rows.gestures, frame) {
-                            InboxEmptyContent(messages, status, state, page, filters, onRefresh)
+                        Box(Modifier.hiddenWhenCovered(headerActions.covers(state))) {
+                            InboxResults(listed, status, state, dateFormatter, rows.gestures, frame) {
+                                InboxEmptyContent(messages, status, state, page, filters, onRefresh)
+                            }
                         }
                     }
                 }
@@ -128,7 +127,19 @@ fun InboxScreen(
     }
 }
 
-/** An open message or the filter panel covers the list, so accessibility services skip it too. */
+/** The page's search state; a new default, such as folders added to the Inbox, starts a fresh search from it. */
+@Composable
+private fun rememberInboxState(defaultSearch: InboxSearch): InboxState =
+    rememberSaveable(
+        defaultSearch,
+        saver = InboxState.saver(defaultSearch),
+    ) { InboxState(defaultSearch = defaultSearch) }
+
+/**
+ * An open message, an overlay, or the grown panel covers what is under it, so accessibility
+ * services skip it too. Under the grown panel only the list hides: the panel holds the search and
+ * the filters.
+ */
 private fun Modifier.hiddenWhenCovered(covered: Boolean): Modifier = if (covered) clearAndSetSemantics {} else this
 
 /**
@@ -200,7 +211,8 @@ private fun InboxHeader(
             inboxPanelActions(state, actions),
             rememberFilterSelection(messages, state.search, context.mailboxSearch.accounts),
             look.grownWith(
-                actions.expansion.takeIf { !state.resultsShown },
+                // Over a search's results the panel does not drag open, but the filter button still grows it.
+                actions.expansion.takeIf { !state.resultsShown || it?.expanded == true },
                 actions.grown,
                 actions.searchFocused(state),
             ),

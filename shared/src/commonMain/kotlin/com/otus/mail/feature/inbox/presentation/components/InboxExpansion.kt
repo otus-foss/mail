@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.mail.quickview.components.QuickJump
@@ -102,48 +103,34 @@ internal class ExpandedInbox(
  */
 @Composable
 internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
-    val position = { inbox.expansion.position }
+    val expansion = inbox.expansion
+    val position = { expansion.position }
+    // A faded layer leaves the accessibility tree too, so a screen reader finds only what shows.
+    val quickHidden by remember(expansion) { derivedStateOf { expansion.skipping || quickAlpha(position()) == 0f } }
+    val filtersHidden by remember(expansion) { derivedStateOf { filtersAlpha(position()) == 0f } }
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.graphicsLayer { alpha = if (inbox.expansion.skipping) 0f else quickAlpha(position()) }) {
+        Box(
+            Modifier
+                .graphicsLayer {
+                    alpha =
+                        if (expansion.skipping) {
+                            0f
+                        } else {
+                            quickAlpha(
+                                position(),
+                            )
+                        }
+                }.hiddenWhen(quickHidden),
+        ) {
             if (rememberSearchShown(inbox)) SearchRoomContent(inbox.room) else QuickViewContent(inbox)
         }
         val filters = inbox.sources.filters
         if (rememberFiltersShown(inbox)) {
-            Box(Modifier.fillMaxSize().graphicsLayer { alpha = filtersAlpha(position()) }) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = filtersAlpha(position()) }.hiddenWhen(filtersHidden)) {
                 FiltersContent(filters, inbox)
             }
         }
     }
-}
-
-/**
- * Whether the filters show: while their draft is open, and on until the panel stops moving after,
- * so a drag that started in them keeps its list under the finger and ends where the panel settles.
- */
-@Composable
-private fun rememberFiltersShown(inbox: ExpandedInbox): Boolean {
-    val open = inbox.sources.filters.isOpen
-    var shown by remember { mutableStateOf(open) }
-    if (open) {
-        shown = true
-    } else if (!inbox.expansion.moving) {
-        shown = false
-    }
-    return shown
-}
-
-/** Whether the search room shows: while the search is in it, and until the panel has closed after. */
-@Composable
-private fun rememberSearchShown(inbox: ExpandedInbox): Boolean {
-    val searching = inbox.room.state.searchSurfaceOpen
-    val expanded by remember(inbox.expansion) { derivedStateOf { inbox.expansion.expanded } }
-    var shown by remember { mutableStateOf(searching) }
-    if (searching) {
-        shown = true
-    } else if (!expanded) {
-        shown = false
-    }
-    return shown
 }
 
 @Composable

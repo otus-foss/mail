@@ -41,7 +41,7 @@ internal fun InboxResults(
     val searchScroll = rememberLazyListState()
     // Under a search surface the inbox stays as it was; the search's own list starts with its results.
     val listState = if (state.resultsShown) searchScroll else inboxScroll
-    LaunchedEffect(state.search, state.folderPill, filters) { listState.scrollToItem(0) }
+    LaunchedEffect(state.search, state.folderPill, filters, state.resultsShown) { listState.scrollToItem(0) }
     StayAtTop(listState, results.firstOrNull()?.id)
     LoadMoreNearEnd(listState, status.hasMore && !status.loading && !status.loadingMore, frame.onLoadMore)
     val collapse = rememberPanelCollapse(listState)

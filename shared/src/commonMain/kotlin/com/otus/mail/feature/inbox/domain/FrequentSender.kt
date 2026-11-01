@@ -18,10 +18,10 @@ fun frequentSenders(
     own: OwnAddresses,
     limit: Int = PEOPLE_LIMIT,
 ): List<FrequentSender> {
-    val mine = { message: MailMessage, address: String -> own.isMine(message.location.accountId, address) }
-    val written = messages.filter { mine(it, it.sender.address) }
-    val wroteTo = written.flatMap { message -> message.to.filterNot { mine(message, it.address) } }
-    val received = messages.filterNot { mine(it, it.sender.address) }
+    // Mail between the user's own logins is theirs on both ends, as in the combined inbox.
+    val written = messages.filter { own.isMineAnywhere(it.sender.address) }
+    val wroteTo = written.flatMap { message -> message.to.filterNot { own.isMineAnywhere(it.address) } }
+    val received = messages.filterNot { own.isMineAnywhere(it.sender.address) }
     val writtenKeys = wroteTo.map { it.key }.toSet()
     val writes = wroteTo.map { it.key to WROTE_TO }
     // Without sent mail loaded, such as an inbox of incoming mail only, every sender counts.
