@@ -89,7 +89,7 @@ fun InboxScreen(
                         .fillMaxSize()
                         // The control panel draws behind the status bar and pads itself.
                         .belowControlPanel()
-                        .hiddenWhenCovered(rows.opened != null),
+                        .hiddenWhenCovered(rows.opened != null || overlays.coverPage(state)),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
@@ -137,8 +137,8 @@ private fun rememberInboxState(defaultSearch: InboxSearch): InboxState =
 
 /**
  * An open message, an overlay, or the grown panel covers what is under it, so accessibility
- * services skip it too. Under the grown panel only the list hides: the panel holds the search and
- * the filters.
+ * services skip it too. An overlay of its own hides the whole page; under the grown panel only the
+ * list hides, as the panel holds the search and the filters.
  */
 private fun Modifier.hiddenWhenCovered(covered: Boolean): Modifier = if (covered) clearAndSetSemantics {} else this
 

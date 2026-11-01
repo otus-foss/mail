@@ -209,6 +209,14 @@ imperative verbs, breaking-change explanations, and the
 exempt; the final squash message must follow the rules. CI tests the checker but does not inspect
 commit history. See [the decision](docs/decisions/0004-commit-messages.md).
 
+## Pull requests
+
+Write every pull request from `.github/pull_request_template.md` and keep its headings in the same
+order. GitHub fills it in on the website, but `gh pr create --body` skips it, so copy the headings
+when you write the body yourself. The title follows the commit title rules above. Leave out
+"Generated with" footers and session links. `gh` cannot upload images, so link recorded
+screenshots at the head commit, and send phone captures to the user to drag in.
+
 ## Agent workflow
 
 During development, prefer `./gradlew spotlessCheck detekt ruffCheck ruffFormatCheck` and run
