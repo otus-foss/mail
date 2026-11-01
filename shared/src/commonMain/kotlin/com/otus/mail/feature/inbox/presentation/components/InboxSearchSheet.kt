@@ -212,9 +212,11 @@ private fun Matches(
     )
 }
 
+/** The senders of [hits] whose name or address holds every term of [query], at most [limit] of them. */
 internal fun matchingPeople(
     hits: List<MailMessage>,
     query: String,
+    limit: Int = FIRST_PEOPLE,
 ): List<MailSender> =
     hits
         .map { it.sender }
@@ -225,7 +227,7 @@ internal fun matchingPeople(
                 .split(
                     Regex("\\s+"),
                 ).all { sender.name.contains(it, true) || sender.address.contains(it, true) }
-        }.take(FIRST_PEOPLE)
+        }.take(limit)
 
 private const val RECENT_DAYS = 30
 
