@@ -107,8 +107,8 @@ class JmapFolderRuleRepository(
     ): RuleOutcome {
         val read = read(account, support)
         val plan = read.plan
-        val block = encodeBlock(RuleBlock(rules.inFolderOrder(read.folders), zone()), support)
-        val bytes = plan?.withBlock(block)?.encodeToByteArray()
+        val block = RuleBlock(rules.inFolderOrder(read.folders), zone())
+        val bytes = plan?.withBlock(encodeBlock(block, support), encodeRequire(block, support))?.encodeToByteArray()
         return when {
             plan == null || bytes == null -> RuleOutcome.Failed(RuleFailure.VacationActive)
             state != null && read.state != state -> RuleOutcome.Failed(RuleFailure.ChangedElsewhere)
