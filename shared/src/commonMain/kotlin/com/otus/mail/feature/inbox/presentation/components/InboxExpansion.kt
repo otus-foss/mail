@@ -67,16 +67,17 @@ internal fun rememberInboxExpansion(
     FollowSearch(expansion, searchRoom != null, onLeaveSearch)
     val focus = LocalFocusManager.current
     LaunchedEffect(expansion) {
-        // Moved past the first stop, the panel heads for every filter: the keyboard goes first, or the
-        // page scrolls to keep the focused field in view. A stop the keyboard moves is not a move.
-        snapshotFlow { expansion.moving && expansion.position > 1f }
+        // Dragged past the first stop, or sent to every filter, the panel heads for the filters: the
+        // keyboard goes first, or the page scrolls to keep the focused field in view. A stop the
+        // keyboard moves, or a search room shrinking as its text is cleared, is neither.
+        snapshotFlow { expansion.position > 1f && (expansion.dragging || expansion.stop == FILTERS_STOP) }
             .distinctUntilChanged()
             .collect { past -> if (past) focus.clearFocus() }
     }
     LaunchedEffect(expansion, filters) {
         snapshotFlow { expansion.position >= FILTERS_FROM }.distinctUntilChanged().collect { full ->
             when {
-                full && !filters.isOpen && expansion.moving -> filters.open()
+                full && !filters.isOpen && (expansion.dragging || expansion.stop == FILTERS_STOP) -> filters.open()
                 !full && filters.isOpen -> filters.close()
             }
         }
@@ -106,12 +107,28 @@ internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
             if (rememberSearchShown(inbox)) SearchRoomContent(inbox.room) else QuickViewContent(inbox)
         }
         val filters = inbox.sources.filters
-        if (filters.isOpen) {
+        if (rememberFiltersShown(inbox)) {
             Box(Modifier.fillMaxSize().graphicsLayer { alpha = filtersAlpha(position()) }) {
                 FiltersContent(filters, inbox)
             }
         }
     }
+}
+
+/**
+ * Whether the filters show: while their draft is open, and on until the panel stops moving after,
+ * so a drag that started in them keeps its list under the finger and ends where the panel settles.
+ */
+@Composable
+private fun rememberFiltersShown(inbox: ExpandedInbox): Boolean {
+    val open = inbox.sources.filters.isOpen
+    var shown by remember { mutableStateOf(open) }
+    if (open) {
+        shown = true
+    } else if (!inbox.expansion.moving) {
+        shown = false
+    }
+    return shown
 }
 
 /** Whether the search room shows: while the search is in it, and until the panel has closed after. */

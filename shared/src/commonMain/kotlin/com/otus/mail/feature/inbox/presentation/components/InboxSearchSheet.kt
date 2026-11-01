@@ -191,7 +191,7 @@ private fun Matches(
         }
     }
     if (hits.isEmpty()) {
-        PageNote("No matching messages")
+        PageNote("No matching mail")
         return
     }
     Column {

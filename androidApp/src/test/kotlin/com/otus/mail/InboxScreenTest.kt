@@ -90,7 +90,7 @@ class InboxScreenTest {
         compose.onNodeWithText("Weekend plans").assertDoesNotExist()
         screenshot("search-fixtures")
         compose.onNodeWithContentDescription("Search your mailbox…").performTextReplacement("nothing matches")
-        compose.onNodeWithText("No matching messages").assertIsDisplayed()
+        compose.onNodeWithText("No matching mail").assertIsDisplayed()
         compose.onNodeWithText("Clear search and filters").performClick()
         compose.onNodeWithText("Weekend plans").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
@@ -111,7 +111,7 @@ class InboxScreenTest {
         compose.onNodeWithText("All accounts").performScrollTo().performClick()
         compose.onNodeWithText("Personal").performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("No matching messages").assertIsDisplayed()
+        compose.onNodeWithText("No matching mail").assertIsDisplayed()
         screenshot("narrow-filtered")
     }
 
