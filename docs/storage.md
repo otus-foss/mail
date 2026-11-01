@@ -61,8 +61,9 @@ more.
   and changes made on two accounts at once both stay.
 - Android keeps the queue in the `otus_mail_pending_changes` shared preferences file, written at
   once, and `OutboxWorker` sends it once the network is back. iOS keeps it in user defaults.
-- Removing an account drops its changes. Deleting, muting, and newsletter cleanup still need the
-  server at once.
+- Removing an account drops its changes, before its login is deleted and again after, so a change
+  made in between does not wait for the same account to be added again. Deleting, muting, and
+  newsletter cleanup still need the server at once.
 
 ## Retention and removal
 

@@ -153,7 +153,8 @@ class MailServices(
                 AccountService.Mail,
                 onAccountChanged = { loginId ->
                     val connected = withContext(Dispatchers.IO) { logins.logins().any { it.id == loginId } }
-                    if (connected) accountCache.connected(loginId)
+                    // A change queued while the login was being removed must not wait for it to come back.
+                    if (connected) accountCache.connected(loginId) else changes.forget(loginId)
                     avatars.removeAccount(loginId)
                 },
                 beforeRemove = { loginId ->
