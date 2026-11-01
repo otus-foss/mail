@@ -42,7 +42,6 @@ import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.listDateLabel
-import com.otus.mail.feature.inbox.presentation.mailToday
 import kotlinx.datetime.LocalDate
 
 /**
