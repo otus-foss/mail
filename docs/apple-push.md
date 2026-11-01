@@ -67,8 +67,8 @@ Apple App Attest check; configure ingress limits before making it publicly reach
 
 Routes expire after eight days without upkeep. Ciphertext expires after at most one hour, or
 sooner when acknowledged. Deleting a route deletes its pending messages. APNs rejects an invalid
-device token with a permanent error; the bridge revokes that route. Transient APNs errors return
-503 so the JMAP sender can retry. SQLite state survives restarts; prune runs on incoming requests.
+device token with a permanent error; the bridge revokes that route. Transient APNs errors, and
+APNs errors whose body cannot be read, return 503 so the JMAP sender can retry. SQLite state survives restarts; prune runs on incoming requests.
 No email content is decrypted by the bridge. It can see device tokens, opaque route identifiers,
 message sizes, delivery timing and source IP addresses.
 
