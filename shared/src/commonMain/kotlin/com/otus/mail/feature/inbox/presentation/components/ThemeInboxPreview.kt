@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,6 +26,7 @@ import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.people.elements.Avatar
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.shapes.SmoothCornerShape
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.settings.ThemeTokens
 
@@ -80,7 +80,7 @@ private fun PreviewMessage(
             .fillMaxWidth()
             .background(
                 if (selected) OtusColors.accentDark else OtusColors.bgRegular,
-                RoundedCornerShape(ThemeTokens.previewRowRadius),
+                SmoothCornerShape(ThemeTokens.previewRowRadius),
             ).padding(ThemeTokens.previewRowPadding),
         horizontalArrangement = Arrangement.spacedBy(ThemeTokens.previewRowGap),
         verticalAlignment = Alignment.CenterVertically,

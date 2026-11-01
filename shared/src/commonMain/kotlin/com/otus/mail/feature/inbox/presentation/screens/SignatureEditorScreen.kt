@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
@@ -37,6 +35,8 @@ import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.people.elements.rememberAvatarImage
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.shapes.SmoothCornerShape
+import com.otus.designsystem.theme.shapes.strokeBorder
 import com.otus.designsystem.theme.tokens.editing.SignatureTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
@@ -120,13 +120,13 @@ fun SignatureEditorScreen(
 /** The text and the images under it, in one `bgDark` box with a neutral outline, focused or not. */
 @Composable
 private fun SignatureBox(editor: SignatureEditorState) {
-    val shape = RoundedCornerShape(SignatureTokens.editorRadius)
+    val shape = SmoothCornerShape(SignatureTokens.editorRadius)
     Column(
         Modifier
             .padding(top = PageTokens.contentInset)
             .fillMaxWidth()
             .background(OtusColors.bgDark, shape)
-            .border(PanelTokens.borderWidth, OtusColors.strokeBgDark, shape)
+            .strokeBorder(PanelTokens.borderWidth, OtusColors.strokeBgDark, shape)
             .padding(bottom = PageTokens.contentInset),
         verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap),
     ) {
