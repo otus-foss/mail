@@ -18,7 +18,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_close
-import com.otus.designsystem.resources.symbol_tune
+import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
@@ -74,6 +74,7 @@ fun InboxPanel(
                 look.filters,
                 actions.onOpenFilters,
                 Modifier.focusRequester(look.filters.button),
+                IconButtonLook.Outlined,
             )
         },
         chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, look) },
@@ -132,21 +133,25 @@ private fun InboxHeaderField(
     }
 }
 
-/** Opens the filter panel; a dot shows while filters narrow the list. */
+/**
+ * Opens the filter panel; a dot shows while filters narrow the list. It is [IconButtonLook.Bare]
+ * by default for the search pill, which has its own fill.
+ */
 @Composable
 private fun FilterButton(
     filters: ActiveFilters,
     onOpenFilters: () -> Unit,
     modifier: Modifier = Modifier,
+    look: IconButtonLook = IconButtonLook.Bare,
 ) {
     val count = filters.applied.activeCount
     IconButton(
         if (count == 0) "Open filters" else "Open filters, $count active",
         onOpenFilters,
         modifier,
-        look = IconButtonLook.Bare,
+        look = look,
         badgeCount = count,
-    ) { Symbol(Res.drawable.symbol_tune) }
+    ) { Symbol(Res.drawable.symbol_filter_list) }
 }
 
 /** The accounts or address whose mail the page shows; a tap opens the account switcher. */
