@@ -12,21 +12,27 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.otus.dateformat.currentLocalDate
+import com.otus.designsystem.mail.quickview.components.QuickFace
+import com.otus.designsystem.mail.quickview.components.QuickFaceLook
+import com.otus.designsystem.mail.quickview.components.ScrollingFaces
+import com.otus.designsystem.mail.quickview.components.VISIBLE_FACES
 import com.otus.designsystem.shared.pages.components.PageNote
-import com.otus.designsystem.shared.people.components.PersonAvatar
-import com.otus.designsystem.shared.people.components.PersonRow
 import com.otus.designsystem.shared.rows.components.LocalEntriesOnRaised
 import com.otus.designsystem.shared.rows.elements.SectionCaption
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.designsystem.theme.tokens.rows.InboxTokens
+import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.looksLikeAddress
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.conversationRows
 
-/** The people whose name or address matches, who narrow the results to their mail, then every hit. */
+/**
+ * What a typed search finds: the people whose name or address matches in a row of faces, which
+ * stays put, and every hit under it as the list shows them.
+ */
 @Composable
 internal fun SearchMatches(
     room: SearchRoom,
@@ -35,26 +41,72 @@ internal fun SearchMatches(
     val state = room.state
     val sources = room.sources
     val applied = sources.filters.applied
+    val query = state.search.query
     val hits =
         remember(
             sources.messages,
             state.matching,
             applied,
         ) { searchMessages(sources.messages, state.matching, applied) }
-    val people = remember(hits, state.search.query) { matchingPeople(hits, state.search.query) }
+    val people = remember(hits, query) { matchingPeople(hits, query, limit = Int.MAX_VALUE) }
+    Column(modifier) {
+        if (people.isNotEmpty()) SearchPeople(room, people, byAddress = looksLikeAddress(query))
+        SectionCaption("Mail", Modifier.padding(horizontal = SheetTokens.inset))
+        SearchMail(room, hits, Modifier.weight(1f))
+    }
+}
+
+/**
+ * The matching [people] as faces, five across and the rest a scroll away; the caption counts the
+ * ones past the row. Each face is named by its address while the query is one [byAddress], else
+ * by first name. A face shows that person's mail.
+ */
+@Composable
+private fun SearchPeople(
+    room: SearchRoom,
+    people: List<MailSender>,
+    byAddress: Boolean,
+) {
+    val state = room.state
+    val more = people.size - VISIBLE_FACES
+    SectionCaption(
+        if (more > 0) "People · $more more" else "People",
+        Modifier.padding(horizontal = SheetTokens.inset),
+    )
+    ScrollingFaces(
+        people.map { person ->
+            QuickFace(
+                if (byAddress) person.address else person.firstName,
+                "Mail from ${person.shownName}",
+                QuickFaceLook.Person(person.chipAvatar),
+                {
+                    state.update(state.search.copy(query = "", senders = setOf(person.address)))
+                    state.showResults()
+                },
+            )
+        },
+        Modifier.padding(horizontal = InboxTokens.pageInset),
+    )
+}
+
+/** Every hit as the list draws it, on the page's color so the rows stand out from the raised panel. */
+@Composable
+private fun SearchMail(
+    room: SearchRoom,
+    hits: List<MailMessage>,
+    modifier: Modifier,
+) {
     val today = currentLocalDate()
-    val look = sources.page.rowLook
+    val look = room.sources.page.rowLook
     val rows =
         remember(hits, look, room.dateFormatter, today) { conversationRows(hits, look, room.dateFormatter, today) }
-    // The panel is raised, so the rows take the page's color to stand out from it.
     CompositionLocalProvider(LocalEntriesOnRaised provides true) {
         LazyColumn(
             modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(start = InboxTokens.pageInset, end = InboxTokens.pageInset),
+            contentPadding = PaddingValues(horizontal = InboxTokens.pageInset),
             verticalArrangement = Arrangement.spacedBy(EntryTokens.gap),
         ) {
-            if (people.isNotEmpty()) item(key = PEOPLE_KEY) { SearchPeople(room, people) }
-            if (hits.isEmpty()) item(key = EMPTY_KEY) { PageNote("No matching messages") }
+            if (hits.isEmpty()) item(key = EMPTY_KEY) { PageNote("No matching mail") }
             items(hits, key = { it.id }) { message ->
                 rows[message.id]?.let { ConversationRow(message, it) { room.gestures.tap(message) } }
             }
@@ -62,25 +114,4 @@ internal fun SearchMatches(
     }
 }
 
-@Composable
-private fun SearchPeople(
-    room: SearchRoom,
-    people: List<MailSender>,
-) {
-    val state = room.state
-    Column(Modifier.padding(horizontal = SheetTokens.inset - InboxTokens.pageInset)) {
-        SectionCaption("People")
-        people.forEach { person ->
-            val fromThem = {
-                state.update(state.search.copy(query = "", senders = setOf(person.address)))
-                state.showResults()
-            }
-            PersonRow(person.shownName, person.address, fromThem) {
-                PersonAvatar(person.chipAvatar, PanelTokens.stackAvatarSize)
-            }
-        }
-    }
-}
-
-private const val PEOPLE_KEY = "people"
 private const val EMPTY_KEY = "empty"

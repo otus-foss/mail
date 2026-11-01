@@ -145,7 +145,7 @@ private val QuickFacet.quickIcon: DrawableResource
         }
 
 /** The first word of the name, or the address's local part when the name is blank. */
-private val MailSender.firstName: String
+internal val MailSender.firstName: String
     get() =
         name
             .trim()
