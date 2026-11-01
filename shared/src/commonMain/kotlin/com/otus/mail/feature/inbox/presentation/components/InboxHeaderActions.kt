@@ -76,11 +76,12 @@ internal fun rememberHeaderActions(
 ): InboxHeaderActions {
     val focus = LocalFocusManager.current
     val closeSearch = searchCloser(state)
-    val expansion = rememberInboxExpansion(page.quick, filters, state.searchSurfaceOpen, closeSearch)
+    val roomHeight = if (state.searchSurfaceOpen) searchRoomHeight(state.search.query.isNotBlank()) else null
+    val expansion = rememberInboxExpansion(page.quick, filters, roomHeight) { leaveSearch(state, closeSearch) }
     val overlays = rememberInboxOverlays(filters, filtersInPanel = expansion != null)
     val sources = QuickSources(filters, page, messages, rows.gestures.onOpen) { expansion?.collapse() }
     val room =
-        SearchRoom(state, filters) {
+        SearchRoom(state, sources, rows.gestures, dateFormatter) {
             focus.clearFocus()
             expansion?.expandTo(Int.MAX_VALUE)
         }
@@ -91,6 +92,15 @@ internal fun rememberHeaderActions(
         expansion,
         grownPanel(expansion, sources, room, dateFormatter),
     )
+}
+
+/** Shows the search's results once the room closes, or ends a search with nothing typed or picked. */
+private fun leaveSearch(
+    state: InboxState,
+    closeSearch: () -> Unit,
+) {
+    val search = state.search
+    if (search.query.isBlank() && search.senders.isEmpty()) closeSearch() else state.showResults()
 }
 
 /** What the panel grows, while it has an [expansion]: the quick view or search [room], then every filter. */
