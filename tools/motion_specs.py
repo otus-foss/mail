@@ -5,7 +5,8 @@ import re
 # `Motion.tween(...)` and `motionTween(...)` are Meta's and stay allowed.
 RAW_SPEC = re.compile(r"(?<![\w.])(tween|spring|CubicBezierEasing)\s*(?:<[^()]*>)?\s*\(")
 DEFAULTED = re.compile(
-    r"(?<![\w])(animateScrollToPage|animateScrollBy|animate\w*AsState)\s*(?:<[^()]*>)?\s*\("
+    r"(?<![\w])(animateScrollToItem|animateScrollToPage|animateScrollBy|animate\w*AsState)"
+    r"\s*(?:<[^()]*>)?\s*\("
 )
 # How many positional arguments come before the spec; animate*AsState takes it second.
 SPEC_POSITION = {"animateScrollToPage": 2, "animateScrollBy": 1}
