@@ -20,6 +20,7 @@ import com.otus.mail.feature.inbox.domain.DraftFailure
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
+import kotlinx.coroutines.CancellationException
 
 /**
  * Drafts as Email objects in the mailbox with role `drafts` (RFC 8621, sections 2 and 4.6), and
@@ -112,6 +113,11 @@ class JmapDraftRepository(
             Result.failure(DraftException(error.toDraftFailure(), error))
         } catch (error: LoginStoreException) {
             Result.failure(DraftException(DraftFailure.ServerProblem, error))
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            // Anything else, such as content that cannot be encoded, fails the save rather than the app.
+            Result.failure(DraftException(DraftFailure.ServerProblem))
         }
 
     private companion object {

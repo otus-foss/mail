@@ -29,6 +29,7 @@ import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
@@ -62,6 +63,11 @@ class JmapDraftSender(
             Result.failure(SendException(error.toSendFailure(), error))
         } catch (error: LoginStoreException) {
             Result.failure(SendException(SendFailure.ServerProblem, error))
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            // Anything else, such as content that cannot be encoded, fails the send rather than the app.
+            Result.failure(SendException(SendFailure.ServerProblem))
         }
 
     /** The identity that sends as [from], and the folders the sent copy moves between. */

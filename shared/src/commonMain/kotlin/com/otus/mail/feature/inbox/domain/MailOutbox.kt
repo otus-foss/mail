@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.sync.Mutex
@@ -115,7 +116,7 @@ class MailOutbox(
         if (earlier != null) return earlier
         entries.replace(entry.copy(attempted = true, problem = null))
         val time = entry.sendAt?.let(SendTime::Scheduled) ?: holdUntil?.let(SendTime::Held) ?: SendTime.Now
-        val result = sender.send(entry.draft, entry.answered, time)
+        val result = failSafe { sender.send(entry.draft, entry.answered, time) }
         val failure = (result.exceptionOrNull() as? SendException)?.failure
         when {
             result.isSuccess -> entries.removeIf { it.id == entry.id }
@@ -134,7 +135,14 @@ class MailOutbox(
      * withdrawn message never goes: it leaves once the server answers, holding no copy to cancel.
      */
     private suspend fun earlierTry(entry: OutboxEntry): Result<SentMessage?>? {
-        val check = checker.check(entry.draft, entry.answered, cancelHeld = entry.withdrawn)
+        val check =
+            try {
+                checker.check(entry.draft, entry.answered, cancelHeld = entry.withdrawn)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                SendCheck.Unconfirmable
+            }
         return when {
             check == SendCheck.Unreachable -> {
                 wake(now())
@@ -157,6 +165,19 @@ class MailOutbox(
         }
     }
 }
+
+/**
+ * [send]'s result, or a server problem for anything it throws but cancellation, so a message that
+ * keeps failing waits for the user rather than crashing every start of the app.
+ */
+private suspend fun failSafe(send: suspend () -> Result<SentMessage>): Result<SentMessage> =
+    try {
+        send()
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        Result.failure(SendException(SendFailure.ServerProblem))
+    }
 
 private fun SendFailure?.mayHaveSent() = this == null || this == SendFailure.ServerProblem
 

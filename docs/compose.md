@@ -160,7 +160,9 @@ rejects an image that cannot fit the limit. It is stored in the signature as a `
 image has a `text2` outline, a ✕, and one corner handle that keeps its aspect ratio between 48
 and 300 px and snaps to Small (96), Medium (132), or Large (200) within 6 px. The size pill under
 it names the preset or the pixel size. When a draft is saved or sent, each image is uploaded and
-the HTML points at it by `cid:`, inside `multipart/related`, so the message carries it.
+the HTML points at it by `cid:`, inside `multipart/related`, so the message carries it. Only the
+`src` of an `<img>` element changes: text that looks like a `data:` URI, as in a quote, and an
+image whose data is not valid base64 stay as written.
 
 **Copy signature** copies from one other address, which needs a signature, to this one, or from
 this one to several others, and shows "Signature copied".
@@ -204,7 +206,9 @@ gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
 - A failed send that may hide a lost answer, such as a gateway error, is looked up before Retry
   sends it. Only a clear refusal, such as an unknown recipient, lets Retry skip the lookup.
 - A refused message stays too. After a restart a "Couldn't send" toast offers to open it, and
-  opening it takes it out of the outbox once its page shows.
+  opening it takes it out of the outbox once its page shows. A send or lookup that fails in an
+  unexpected way, rather than with an answer from the server, counts as a server problem or an
+  unconfirmed send, so the message waits for the user instead of stopping the app at every start.
 - On Android, `OutboxWorker` runs the outbox 30 seconds after a message is due, and again once the
   network is back after a lost connection. So a message the device held for Undo still goes if
   the app closed during the window. The app sends due messages when it starts too.

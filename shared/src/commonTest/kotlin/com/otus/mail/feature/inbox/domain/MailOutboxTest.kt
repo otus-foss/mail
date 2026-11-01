@@ -178,6 +178,29 @@ class MailOutboxTest {
         }
 
     @Test
+    fun aSendThatThrowsWaitsForTheUserInsteadOfFailingEveryStart() =
+        runTest {
+            var tries = 0
+            val throwing =
+                DraftSender { _, _, _ ->
+                    tries++
+                    throw IllegalArgumentException("Not base64")
+                }
+            val outbox = MailOutbox(store, throwing, checker, now = { now })
+            val id = outbox.add(draft, null, NOW)
+            outbox.resume()
+            val restarted = MailOutbox(store, throwing, checker, now = { now })
+            restarted.resume()
+            assertEquals(OutboxProblem.Refused, restarted.offers().single().problem)
+            assertEquals(1, tries, "It does not go again by itself")
+
+            check = SendCheck.Sent
+            val unsure = MailOutbox(store, sender, { _, _, _ -> error("Unreadable answer") }, now = { now })
+            assertEquals(SendFailure.Unconfirmed, (unsure.send(id).exceptionOrNull() as SendException).failure)
+            assertTrue(sent.isEmpty(), "A lookup that throws never lets the message go again")
+        }
+
+    @Test
     fun removingAnAccountDropsItsMessages() =
         runTest {
             val outbox = outbox()
