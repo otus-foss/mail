@@ -57,45 +57,6 @@ internal class SearchRoom(
 )
 
 /**
- * Which of the page's filters a search turned on: Has files, and Past 30 days with the date it
- * replaced. Closing the search sets them back with [undo]; the filter panel's Show makes them the
- * page's with [keep]. A filter that was on before the search stays.
- */
-internal class SearchFilterChanges {
-    private var files = false
-    private var dateBefore: DateFilter? = null
-
-    fun files(on: Boolean) {
-        files = on
-    }
-
-    fun recent(
-        on: Boolean,
-        before: DateFilter,
-    ) {
-        dateBefore = if (on) dateBefore ?: before else null
-    }
-
-    fun keep() {
-        files = false
-        dateBefore = null
-    }
-
-    fun undo(filters: InboxFilterState) {
-        val applied = filters.applied
-        val files = files && applied.has(QuickFacet.Attachments)
-        val date = dateBefore?.takeIf { applied.date == DateFilter.Last30 }
-        keep()
-        if (!files && date == null) return
-        filters.update(
-            applied
-                .with(QuickFacet.Attachments, on = applied.has(QuickFacet.Attachments) && !files)
-                .copy(date = date ?: applied.date),
-        )
-    }
-}
-
-/**
  * The room the inbox panel grows for a search: a row of ways to narrow it, then, once a query is
  * typed, the people and mail that match, as the list shows them.
  */
@@ -148,8 +109,8 @@ private fun NarrowRow(room: SearchRoom) {
         Chip(
             "Has files",
             {
+                room.changes.files(applied)
                 filters.update(applied.with(QuickFacet.Attachments, !files))
-                room.changes.files(on = !files)
             },
             selected = files,
         ) {
@@ -158,8 +119,8 @@ private fun NarrowRow(room: SearchRoom) {
         Chip(
             "Past 30 days",
             {
+                room.changes.recent(applied)
                 filters.update(applied.copy(date = if (recent) DateFilter.Any else DateFilter.Last30))
-                room.changes.recent(on = !recent, before = applied.date)
             },
             selected = recent,
         ) { Symbol(Res.drawable.symbol_calendar_today) }

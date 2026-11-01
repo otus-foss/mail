@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalFocusManager
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.panels.components.PanelExpansion
@@ -92,7 +93,7 @@ internal fun rememberHeaderActions(
     dateFormatter: DateFormatter,
 ): InboxHeaderActions {
     val focus = LocalFocusManager.current
-    val changes = remember { SearchFilterChanges() }
+    val changes = rememberSaveable(saver = SearchFilterChanges.saver) { SearchFilterChanges() }
     val closeSearch = searchCloser(state, filters, changes)
     // Only a page with a quick view grows a search room; others keep their search sheet.
     val roomHeight =
