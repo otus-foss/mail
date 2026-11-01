@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -14,9 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -43,17 +46,23 @@ import com.otus.mail.feature.inbox.presentation.QuickViewContext
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
- * How far the inbox's control panel is dragged open: its usual height, the quick view, and every
- * filter. Past halfway to the filters the panel opens the [filters] draft, and back below it drops
- * it. Back steps down to the usual height. Null for a page without [quick].
+ * How far the inbox's control panel is dragged open: its usual height, the quick view, or the search
+ * room while [searching], and every filter. Past halfway to the filters the panel opens the
+ * [filters] draft, and back below it drops it. Back steps down to the usual height. Null for a page
+ * without [quick].
  */
 @Composable
 internal fun rememberInboxExpansion(
     quick: QuickViewContext?,
     filters: InboxFilterState,
+    searching: Boolean,
+    onLeaveSearch: () -> Unit,
 ): PanelExpansion? {
     val modules = quick?.modules?.size ?: 0
-    val expansion = rememberPanelExpansion(listOf(quickHeight(modules), filtersHeight()))
+    val full = filtersHeight()
+    val first = if (searching) minOf(searchHeight(), full) else quickHeight(modules)
+    val expansion = rememberPanelExpansion(listOf(first, full))
+    FollowSearch(expansion, searching, first, onLeaveSearch)
     LaunchedEffect(expansion, filters) {
         snapshotFlow { expansion.position >= FILTERS_FROM }.distinctUntilChanged().collect { full ->
             when {
@@ -66,10 +75,11 @@ internal fun rememberInboxExpansion(
     return expansion.takeIf { quick != null }
 }
 
-/** What the panel shows in the room it grows: the quick view first, then every filter. */
+/** What the panel shows in the room it grows: the quick view or the search [room] first, then every filter. */
 internal class ExpandedInbox(
     val expansion: PanelExpansion,
     val sources: QuickSources,
+    val room: SearchRoom,
     val dateFormatter: DateFormatter,
 )
 
@@ -82,7 +92,9 @@ internal class ExpandedInbox(
 internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
     val position = { inbox.expansion.position }
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.graphicsLayer { alpha = quickAlpha(position()) }) { QuickViewContent(inbox) }
+        Box(Modifier.graphicsLayer { alpha = quickAlpha(position()) }) {
+            if (rememberSearchShown(inbox)) SearchRoomContent(inbox.room) else QuickViewContent(inbox)
+        }
         val filters = inbox.sources.filters
         if (filters.isOpen) {
             Box(Modifier.fillMaxSize().graphicsLayer { alpha = filtersAlpha(position()) }) {
@@ -90,6 +102,20 @@ internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
             }
         }
     }
+}
+
+/** Whether the search room shows: while the search is in it, and until the panel has closed after. */
+@Composable
+private fun rememberSearchShown(inbox: ExpandedInbox): Boolean {
+    val searching = inbox.room.state.searchSurfaceOpen
+    val expanded by remember(inbox.expansion) { derivedStateOf { inbox.expansion.expanded } }
+    var shown by remember { mutableStateOf(searching) }
+    if (searching) {
+        shown = true
+    } else if (!expanded) {
+        shown = false
+    }
+    return shown
 }
 
 @Composable
@@ -161,6 +187,19 @@ private fun filtersHeight(): Dp {
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val bar = ActionBarTokens.height + ActionBarTokens.barInset * 2
     return window - top - PanelTokens.headerRowHeight - bottom - bar
+}
+
+/** The search room's height: the window below the header row and above the keyboard, less a gap. */
+@Composable
+private fun searchHeight(): Dp {
+    val window =
+        with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height
+                .toDp()
+        }
+    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val keyboard = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+    return window - top - PanelTokens.headerRowHeight - keyboard - ActionBarTokens.barInset
 }
 
 /** The quick view's height with [modules] picked: the modules, Jump to, and the grab handle. */

@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.panels.components.PanelExpansion
@@ -32,6 +33,19 @@ internal class InboxHeaderActions(
     /** Whether an overlay or the grown panel covers the list. */
     fun covers(state: InboxState): Boolean = overlays.cover(state) || expansion?.expanded == true
 
+    /** Whether the panel shows the search field: while searching if it grows a search room, else with results. */
+    fun searching(state: InboxState): Boolean = if (expansion != null) state.searching else state.resultsShown
+
+    /** Whether the search field takes the keyboard: while the search room is open, else with results. */
+    fun searchFocused(state: InboxState): Boolean =
+        if (expansion !=
+            null
+        ) {
+            state.searchSurfaceOpen
+        } else {
+            state.resultsShown
+        }
+
     /** Whether the panel has grown to every filter, whose own Show button stands in for the action bar. */
     val showsFilters: Boolean get() = overlays.filtersInPanel && overlays.filters.isOpen
 
@@ -61,21 +75,38 @@ internal fun rememberHeaderActions(
     onOpenNavigation: () -> Unit,
     dateFormatter: DateFormatter,
 ): InboxHeaderActions {
-    val expansion = rememberInboxExpansion(page.quick, filters)
+    val focus = LocalFocusManager.current
+    val expansion = rememberInboxExpansion(page.quick, filters, state.searchSurfaceOpen) { leaveSearch(state, focus) }
     val overlays = rememberInboxOverlays(filters, filtersInPanel = expansion != null)
     val sources = QuickSources(filters, page, messages, rows.gestures.onOpen) { expansion?.collapse() }
+    val room =
+        SearchRoom(state, sources, rows.gestures, dateFormatter) {
+            focus.clearFocus()
+            expansion?.expandTo(Int.MAX_VALUE)
+        }
     return InboxHeaderActions(
         searchCloser(state),
         onOpenNavigation,
         overlays,
         expansion,
-        grownPanel(expansion, sources, dateFormatter),
+        grownPanel(expansion, sources, room, dateFormatter),
     )
 }
 
-/** What the panel shows as it grows, while it has an [expansion]: the quick view, then every filter. */
+/** Shows the search's results once the room closes, or ends a search with nothing typed or picked. */
+private fun leaveSearch(
+    state: InboxState,
+    focus: FocusManager,
+) {
+    focus.clearFocus()
+    val search = state.search
+    if (search.query.isBlank() && search.senders.isEmpty()) state.closeSearch() else state.showResults()
+}
+
+/** What the panel grows, while it has an [expansion]: the quick view or search [room], then every filter. */
 private fun grownPanel(
     expansion: PanelExpansion?,
     sources: QuickSources,
+    room: SearchRoom,
     dateFormatter: DateFormatter,
-): @Composable () -> Unit = { expansion?.let { ExpandedInboxContent(ExpandedInbox(it, sources, dateFormatter)) } }
+): @Composable () -> Unit = { expansion?.let { ExpandedInboxContent(ExpandedInbox(it, sources, room, dateFormatter)) } }
