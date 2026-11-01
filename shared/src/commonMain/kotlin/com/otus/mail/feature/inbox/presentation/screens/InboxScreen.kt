@@ -44,6 +44,7 @@ import com.otus.mail.feature.inbox.presentation.components.PanelLook
 import com.otus.mail.feature.inbox.presentation.components.PanelOpens
 import com.otus.mail.feature.inbox.presentation.components.PanelOverList
 import com.otus.mail.feature.inbox.presentation.components.QuickSources
+import com.otus.mail.feature.inbox.presentation.components.SearchFieldActions
 import com.otus.mail.feature.inbox.presentation.components.grownWith
 import com.otus.mail.feature.inbox.presentation.components.inboxBar
 import com.otus.mail.feature.inbox.presentation.components.panelSelection
@@ -107,7 +108,7 @@ fun InboxScreen(
                                 page,
                                 dateFormatter,
                                 headerActions,
-                                PanelLook(collapse, unreadCount, anchor.filters, selecting, state.resultsShown),
+                                PanelLook(collapse, unreadCount, anchor.filters, selecting),
                                 anchor.measure.then(modifier),
                             )
                         },
@@ -162,7 +163,15 @@ private fun inboxPanelActions(
             focus.clearFocus()
             actions.openFilters()
         },
-        onSubmit = { focus.clearFocus() },
+        field =
+            SearchFieldActions(
+                onSubmit = {
+                    focus.clearFocus()
+                    if (state.searchSurfaceOpen) state.showResults()
+                },
+                // Over the results, a page whose panel grows opens the search room again.
+                onFocus = { if (actions.expansion != null) state.editSearch() },
+            ),
         onFolder = state::showFolder,
         opens =
             PanelOpens(actions.onOpenNavigation) {
@@ -184,14 +193,17 @@ private fun InboxHeader(
 ) {
     Box(modifier) {
         InboxPanel(
-            // Under the search surface the panel stays as it was, and takes the search once results show.
-            state.resultsShown,
+            actions.searching(state),
             state.search,
             dateFormatter,
             context,
             inboxPanelActions(state, actions),
             rememberFilterSelection(messages, state.search, context.mailboxSearch.accounts),
-            look.grownWith(actions.expansion, actions.grown),
+            look.grownWith(
+                actions.expansion.takeIf { !state.resultsShown },
+                actions.grown,
+                actions.searchFocused(state),
+            ),
         )
     }
 }

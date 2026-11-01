@@ -12,9 +12,15 @@ class InboxPanelActions(
     val onSearchingChange: (Boolean) -> Unit,
     val onFilter: (InboxFilter) -> Unit,
     val onOpenFilters: () -> Unit,
-    val onSubmit: () -> Unit,
+    val field: SearchFieldActions,
     val onFolder: (InboxPill.FolderPill?) -> Unit,
     val opens: PanelOpens,
+)
+
+/** What the panel's search field does: [onSubmit] on the keyboard's search key, [onFocus] when the user focuses it. */
+class SearchFieldActions(
+    val onSubmit: () -> Unit,
+    val onFocus: () -> Unit = {},
 )
 
 /** What the header's ends open: the chevron the sidebar, and the account stack the account switcher. */

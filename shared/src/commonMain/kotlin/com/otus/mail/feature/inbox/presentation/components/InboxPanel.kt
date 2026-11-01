@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
@@ -61,7 +62,7 @@ fun InboxPanel(
         return
     }
     val railShown = searching || context.pills.shown.isNotEmpty()
-    val scope = context.scope.takeIf { !searching }
+    val scope = context.scope
     ContextPanel(
         // Without pills, the filter button moves into the header and the list gets the row's space.
         placement = if (railShown) ChipPlacement.Overlapping else ChipPlacement.None,
@@ -80,7 +81,7 @@ fun InboxPanel(
             )
         },
         chips = { InboxPanelChips(searching, search, context, dateFormatter, selection, actions, look) },
-        motion = PanelMotion(look.collapse, look.expansion.takeIf { !searching }, look.expanded),
+        motion = PanelMotion(look.collapse, look.expansion, look.expanded),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             InboxHeaderField(searching, search, context, actions, look, filterInPill = railShown, Modifier.weight(1f))
@@ -120,9 +121,9 @@ private fun InboxHeaderField(
             InboxSearchInput(
                 search.query,
                 { actions.onChange(search.copy(query = it)) },
-                actions.onSubmit,
-                // The search surface over the panel holds the keyboard until all results show.
+                actions.field.onSubmit,
                 active = look.searchFocused,
+                onFocus = actions.field.onFocus,
             )
         } else {
             PanelSearchPill(
@@ -193,13 +194,14 @@ private fun InboxNavigation(
     )
 }
 
-/** The search field, focused with the keyboard up while [active]. */
+/** The search field, focused with the keyboard up while [active]; the user focusing it runs [onFocus]. */
 @Composable
 internal fun InboxSearchInput(
     query: String,
     onChange: (String) -> Unit,
     onSubmit: () -> Unit,
     active: Boolean,
+    onFocus: () -> Unit = {},
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -209,7 +211,13 @@ internal fun InboxSearchInput(
             keyboard?.show()
         }
     }
-    PanelSearchField(query, onChange, "Search your mailbox…", Modifier.focusRequester(focusRequester), onSubmit)
+    PanelSearchField(
+        query,
+        onChange,
+        "Search your mailbox…",
+        Modifier.focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocus() },
+        onSubmit,
+    )
 }
 
 /**
@@ -228,10 +236,14 @@ class PanelLook(
     val expanded: @Composable () -> Unit = {},
 )
 
-/** This look with the panel able to grow by [expansion], showing [expanded] in the room it grows. */
+/**
+ * This look with the panel able to grow by [expansion], showing [expanded] in the room it grows,
+ * and the keyboard in its search field while [searchFocused].
+ */
 fun PanelLook.grownWith(
     expansion: PanelExpansion?,
     expanded: @Composable () -> Unit,
+    searchFocused: Boolean,
 ): PanelLook = PanelLook(collapse, unreadCount, filters, selecting, searchFocused, expansion, expanded)
 
 /** The selected rows' [count], with what ✕ and Select all do. */

@@ -43,7 +43,8 @@ import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.listDateLabel
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
 
 /**
  * Search, grown out of the control panel [collapsedHeight] tall over the dimmed list: the field,
@@ -143,8 +144,8 @@ private fun NarrowChips(
     search: InboxSearch,
     onChange: (InboxSearch) -> Unit,
 ) {
-    val monthStart = remember { currentLocalDate().monthStart() }
-    val thisMonth = search.dateStart == monthStart && search.dateEnd == null
+    val since = remember { currentLocalDate().minus(RECENT_DAYS, DateTimeUnit.DAY).toString() }
+    val recent = search.dateStart == since && search.dateEnd == null
     Column {
         SectionCaption("Narrow it")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(FilterTokens.chipGap)) {
@@ -155,9 +156,9 @@ private fun NarrowChips(
                 Symbol(Res.drawable.symbol_attach_file, size = FilterTokens.chipIconSize)
             }
             FilterChip(
-                "This month",
-                thisMonth,
-                { onChange(search.copy(dateStart = monthStart.takeIf { !thisMonth }, dateEnd = null)) },
+                "Past 30 days",
+                recent,
+                { onChange(search.copy(dateStart = since.takeIf { !recent }, dateEnd = null)) },
             ) { Symbol(Res.drawable.symbol_calendar_today, size = FilterTokens.chipIconSize) }
         }
     }
@@ -211,7 +212,7 @@ private fun Matches(
     )
 }
 
-private fun matchingPeople(
+internal fun matchingPeople(
     hits: List<MailMessage>,
     query: String,
 ): List<MailSender> =
@@ -226,7 +227,7 @@ private fun matchingPeople(
                 ).all { sender.name.contains(it, true) || sender.address.contains(it, true) }
         }.take(FIRST_PEOPLE)
 
-private fun LocalDate.monthStart(): String = LocalDate(year, month, 1).toString()
+private const val RECENT_DAYS = 30
 
 private const val FIRST_HITS = 3
 private const val FIRST_PEOPLE = 2
