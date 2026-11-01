@@ -58,6 +58,9 @@ class AndroidSavedFiles(
                 resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, details)
             } catch (expected: IllegalStateException) {
                 null
+            } catch (expected: IllegalArgumentException) {
+                // MediaProvider refuses some type and name pairs, and the sender picks the type.
+                null
             } ?: return null
         return try {
             resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: throw IOException("No output for $uri")
