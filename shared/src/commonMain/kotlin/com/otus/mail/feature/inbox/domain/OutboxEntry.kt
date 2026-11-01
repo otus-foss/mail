@@ -38,8 +38,11 @@ data class OutboxEntry(
         fun encode(entries: List<OutboxEntry>): String = json.encodeToString(serializer, entries)
 
         /** The entries [encode] wrote; none when [text] is missing or no longer reads. */
-        fun decode(text: String?): List<OutboxEntry> =
-            text?.let { runCatching { json.decodeFromString(serializer, it) }.getOrNull() }.orEmpty()
+        fun decode(text: String?): List<OutboxEntry> = text?.let(::decodeOrNull).orEmpty()
+
+        /** The entries [encode] wrote in [text]; null when it no longer reads. */
+        fun decodeOrNull(text: String): List<OutboxEntry>? =
+            runCatching { json.decodeFromString(serializer, text) }.getOrNull()
     }
 }
 
@@ -59,10 +62,14 @@ enum class OutboxProblem {
     Unconfirmed,
 }
 
-/** Where the outbox keeps its messages, under [ENTRIES]. It must survive the process. */
+/**
+ * Where the outbox keeps its messages, under [ENTRIES]. It must survive the process. Messages that
+ * no longer read, as after a change of their format, move to [UNREADABLE] rather than being lost.
+ */
 interface OutboxStore : StringMapStore {
     companion object {
         const val ENTRIES = "entries"
+        const val UNREADABLE = "unreadable"
     }
 }
 

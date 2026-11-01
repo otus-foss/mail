@@ -232,6 +232,9 @@ gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
 - Toasts and their work belong to the process, so Undo and Open still work after the activity is
   recreated, as on rotation or a theme, language, or window size change. The draft they open goes
   through `PageRequests` to the activity on screen, and waits for one while none is.
+- Messages saved in a form the app no longer reads, as after a change of their format, move to the
+  store's `unreadable` value before anything is saved over them, so they are kept for recovery
+  rather than lost.
 
 The server holds the message for the Undo window wherever it can: when the account's
 `maxDelayedSend` covers the delay plus 2 seconds, the message goes to the server at once with a

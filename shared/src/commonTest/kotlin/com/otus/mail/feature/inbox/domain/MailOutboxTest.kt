@@ -273,6 +273,15 @@ class MailOutboxTest {
         }
 
     @Test
+    fun messagesThatNoLongerReadAreSetAsideInsteadOfOverwritten() =
+        runTest {
+            store.saved = mapOf(OutboxStore.ENTRIES to "[{\"from an older\": \"format\"}]")
+            outbox().add(draft, null, NOW)
+            assertEquals("[{\"from an older\": \"format\"}]", store.saved[OutboxStore.UNREADABLE])
+            assertEquals(listOf("Lunch"), OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).map { it.draft.subject })
+        }
+
+    @Test
     fun removingAnAccountDropsItsMessages() =
         runTest {
             val outbox = outbox()
