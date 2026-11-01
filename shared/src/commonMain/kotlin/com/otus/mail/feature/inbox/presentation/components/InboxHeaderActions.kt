@@ -45,6 +45,10 @@ internal class InboxHeaderActions(
             state.resultsShown
         }
 
+    /** Whether a typed search fills the grown room, so the bar can show its results. */
+    fun showsSearchBar(state: InboxState): Boolean =
+        expansion != null && state.searchSurfaceOpen && state.search.query.isNotBlank()
+
     /** Whether the panel has grown to every filter, whose own Show button stands in for the action bar. */
     val showsFilters: Boolean get() = overlays.filtersInPanel && overlays.filters.isOpen
 
