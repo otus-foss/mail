@@ -25,7 +25,8 @@ internal fun BackHandler(
 /**
  * The bar under the list: the selection's while rows are selected, none while searching, and the
  * list's otherwise. A minimized bar stays while searching, so it can sink under the keyboard
- * instead of vanishing. Without [actions] there is no bar.
+ * instead of vanishing. Without [actions], or while the [header] panel shows every filter, there
+ * is no bar.
  */
 internal fun inboxBar(
     listed: ListedMail,
@@ -33,12 +34,13 @@ internal fun inboxBar(
     rows: InboxRows,
     actions: MessageActions?,
     onCompose: (ComposeRequest) -> Unit,
-    onFilters: () -> Unit,
+    header: InboxHeaderActions,
 ): (@Composable () -> Unit)? =
     when {
         actions == null || (state.searching && !actions.behavior().minimizedBar) -> null
+        header.showsFilters -> null
         rows.selected.isNotEmpty() -> selectionBarContent(rows, actions)
-        else -> inboxBarContent(listed, state, actions, onFilters, onCompose)
+        else -> inboxBarContent(listed, state, actions, header::openFilters, onCompose)
     }
 
 private fun selectionBarContent(

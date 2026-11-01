@@ -86,7 +86,7 @@ fun InboxScreen(
             Modifier.fillMaxSize(),
             base = {
                 ActionBarHost(
-                    bar = inboxBar(listed, state, rows, messageActions, context.onCompose, headerActions::openFilters),
+                    bar = inboxBar(listed, state, rows, messageActions, context.onCompose, headerActions),
                     Modifier
                         .fillMaxSize()
                         // The control panel draws behind the status bar and pads itself.
