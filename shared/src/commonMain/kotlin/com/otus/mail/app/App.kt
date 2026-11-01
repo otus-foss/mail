@@ -123,8 +123,9 @@ fun App(
 
 /**
  * Shows mail that arrives or changes elsewhere without a pull: each push reloads the folders, and
- * the inbox while [inboxShown]. Other pages reload when shown. A push often follows the user's own
- * action, so the inbox keeps a notice about that action's failure.
+ * the inbox while [inboxShown]. Other pages reload when shown. While Mail is off screen, pushes
+ * wait, and one reload follows when it comes back. A push often follows the user's own action, so
+ * the inbox keeps a notice about that action's failure.
  */
 @Composable
 private fun ServerChangeEffects(
@@ -133,7 +134,7 @@ private fun ServerChangeEffects(
     inboxShown: () -> Boolean,
 ) {
     LaunchedEffect(states) {
-        services.serverChanges.changes.collect {
+        reloadWhileShown(services.serverChanges.changes, services.visibility.shown) {
             states.folders.refresh()
             if (inboxShown()) states.feed.refresh(keepReport = true)
         }

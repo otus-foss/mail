@@ -120,8 +120,11 @@ class MailServices(
     /** The screen and keyboard protections this platform can apply. */
     internal val devicePrivacy: DevicePrivacy get() = host.devicePrivacy
 
-    /** Pushed changes, which reload the open inbox and folders. */
+    /** Pushed changes, which reload the open inbox and folders while Mail is in [visibility]. */
     val serverChanges = ServerChanges()
+
+    /** Whether Mail is on screen; the platform reports it. */
+    val visibility = MailVisibility()
 
     /** The device's copy of each login's mail; see docs/storage.md. */
     private val accountCache = AccountMailCache(RecoveringMailCache(stores.cache))

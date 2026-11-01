@@ -88,9 +88,15 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setRecentsScreenshotEnabled(!on)
     }
 
+    override fun onStart() {
+        super.onStart()
+        (application as OtusMailApplication).services.visibility.show()
+    }
+
     // Switching the launcher icon can close the app on some launchers, so it waits until Mail is hidden.
     override fun onStop() {
         super.onStop()
+        (application as OtusMailApplication).services.visibility.hide()
         showLauncherIcon(appIconState.style, themeState.choice.accent)
     }
 
