@@ -47,7 +47,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * How far the inbox's control panel is dragged open: its usual height, the quick view, or the
- * search room [searchRoom] tall while a search is in it, and every filter. Past halfway to the
+ * search room [searchRoom] tall while a search is in it, [typed] or not, and every filter. Past halfway to the
  * filters the panel opens the [filters] draft, and back below it drops it. Back steps down to the
  * usual height. Null for a page without [quick].
  */
@@ -56,13 +56,15 @@ internal fun rememberInboxExpansion(
     quick: QuickViewContext?,
     filters: InboxFilterState,
     searchRoom: Dp?,
+    typed: Boolean,
     onLeaveSearch: () -> Unit,
 ): PanelExpansion? {
     val modules = quick?.modules?.size ?: 0
     val full = filtersHeight()
     val first = searchRoom?.coerceAtMost(full) ?: quickHeight(modules)
-    val expansion = rememberPanelExpansion(listOf(first, full))
-    FollowSearch(expansion, searchRoom != null, first, onLeaveSearch)
+    // Typing changes what the search room shows; the keyboard only moves its edge.
+    val expansion = rememberPanelExpansion(listOf(first, full), content = (searchRoom != null) to typed)
+    FollowSearch(expansion, searchRoom != null, onLeaveSearch)
     val focus = LocalFocusManager.current
     LaunchedEffect(expansion) {
         // Past the first stop the panel heads for every filter: the keyboard goes first, or the page

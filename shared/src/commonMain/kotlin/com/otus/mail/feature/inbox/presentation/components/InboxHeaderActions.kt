@@ -77,7 +77,8 @@ internal fun rememberHeaderActions(
     val focus = LocalFocusManager.current
     val closeSearch = searchCloser(state)
     val roomHeight = if (state.searchSurfaceOpen) searchRoomHeight(state.search.query.isNotBlank()) else null
-    val expansion = rememberInboxExpansion(page.quick, filters, roomHeight) { leaveSearch(state, closeSearch) }
+    val typed = state.search.query.isNotBlank()
+    val expansion = rememberInboxExpansion(page.quick, filters, roomHeight, typed) { leaveSearch(state, closeSearch) }
     val overlays = rememberInboxOverlays(filters, filtersInPanel = expansion != null)
     val sources = QuickSources(filters, page, messages, rows.gestures.onOpen) { expansion?.collapse() }
     val room =
