@@ -1,10 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -23,7 +18,6 @@ import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.input.elements.SearchField
 import com.otus.designsystem.shared.overlays.components.SheetHeaderAction
 import com.otus.designsystem.shared.panels.components.AccountStack
 import com.otus.designsystem.shared.panels.components.ChipPlacement
@@ -32,11 +26,10 @@ import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.PanelMotion
 import com.otus.designsystem.shared.panels.components.PanelSearchField
 import com.otus.designsystem.shared.panels.components.PanelSearchPill
+import com.otus.designsystem.shared.panels.components.PillSearch
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
 import com.otus.designsystem.shared.panels.elements.PanelTitle
-import com.otus.designsystem.theme.motion.LocalMotionScale
-import com.otus.designsystem.theme.motion.Motion
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
@@ -93,8 +86,8 @@ fun InboxPanel(
 }
 
 /**
- * The search field while [searching], else the search pill, which takes the filter button once the
- * pills fade on scroll when [filterInPill].
+ * The search pill, which is the search field itself while [searching], so nothing moves when a
+ * search starts. It takes the filter button once the pills fade on scroll when [filterInPill].
  */
 @Composable
 private fun InboxHeaderField(
@@ -106,36 +99,20 @@ private fun InboxHeaderField(
     filterInPill: Boolean,
     modifier: Modifier,
 ) {
-    val motionScale = LocalMotionScale.current
-    AnimatedContent(
-        targetState = searching,
+    val field = searchFieldModifier(look.searchFocused, actions.field.onFocus)
+    PanelSearchPill(
+        context.searchPrompt,
+        onClick = { actions.onSearchingChange(true) },
         modifier = modifier,
-        contentAlignment = Alignment.CenterStart,
-        transitionSpec = {
-            (
-                fadeIn(Motion.tween(scale = motionScale)) togetherWith
-                    fadeOut(Motion.tween(scale = motionScale))
-            ).using(SizeTransform(clip = false) { _, _ -> Motion.tween(scale = motionScale) })
-        },
-        label = "Inbox search mode",
-    ) { mode ->
-        if (mode) {
-            InboxSearchInput(
-                search.query,
-                { actions.onChange(search.copy(query = it)) },
-                actions.field.onSubmit,
-                active = look.searchFocused,
-                onFocus = actions.field.onFocus,
-            )
-        } else {
-            PanelSearchPill(
-                context.searchPrompt,
-                onClick = { actions.onSearchingChange(true) },
-                collapse = look.collapse,
-                filter = if (filterInPill) ({ FilterButton(look.filters, actions.onOpenFilters) }) else null,
-            )
-        }
-    }
+        collapse = look.collapse,
+        filter = if (filterInPill && !searching) ({ FilterButton(look.filters, actions.onOpenFilters) }) else null,
+        search =
+            if (searching) {
+                PillSearch(search.query, { actions.onChange(search.copy(query = it)) }, actions.field.onSubmit, field)
+            } else {
+                null
+            },
+    )
 }
 
 /**
@@ -203,8 +180,16 @@ internal fun InboxSearchInput(
     onChange: (String) -> Unit,
     onSubmit: () -> Unit,
     active: Boolean,
-    onFocus: () -> Unit = {},
 ) {
+    PanelSearchField(query, onChange, "Search your mailbox…", searchFieldModifier(active), onSubmit)
+}
+
+/** Focuses a search field with the keyboard up while [active]; the user focusing it runs [onFocus]. */
+@Composable
+private fun searchFieldModifier(
+    active: Boolean,
+    onFocus: () -> Unit = {},
+): Modifier {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(active) {
@@ -213,13 +198,7 @@ internal fun InboxSearchInput(
             keyboard?.show()
         }
     }
-    PanelSearchField(
-        query,
-        onChange,
-        "Search your mailbox…",
-        Modifier.focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocus() },
-        onSubmit,
-    )
+    return Modifier.focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocus() }
 }
 
 /**
