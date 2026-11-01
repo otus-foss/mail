@@ -27,7 +27,9 @@ conditions over every address of the chosen people. The user's own addresses (Se
 recipients (To) become an `OR` of `to`, `cc`, and `bcc` conditions in the chosen Received in
 fields, To and Cc by default; when only the fields differ from the default, the login's own
 addresses stand in. Size is `minSize`, and dates are `after` and `before`, counted from local
-midnight (This year from 1 January) and sent as UTC. Chosen folders, with their subfolders unless
+midnight (Last 7 and Last 30 days from midnight six or 29 days before today, This year from
+1 January) and sent as UTC. Every bound is a day's start, so a list's filter, and with it the key
+of its saved listing, stays the same all day. Chosen folders, with their subfolders unless
 "Only this folder" is on, replace the page's mailboxes; no filter leaves a folder out with `NOT`.
 A login whose account, own addresses, folders, or Read later folder are not chosen is not asked at
 all. Oldest first sorts `receivedAt` ascending.
@@ -41,13 +43,21 @@ user started may have no email elsewhere. Needs my reply keeps threads whose new
 someone else's, sent to the user directly or in a thread the user wrote in, and not from a list.
 Conversations keeps threads with emails both in and outside Sent, and Calendar invites keeps mail
 with a `text/calendar` or `application/ics` attachment or an `.ics` or `.ifb` file. With any of
-these on, the panel shows no count. The same check gives a row the calendar mark: a conversation
-with an invitation shows it, and the paperclip appears only for its other files.
+these on, the panel shows no count, and since a page can then show only a few rows, the list loads
+up to four more pages on its own after a new filter or scope; scrolling loads the rest. Lists the
+server filters alone load only as they scroll. The same check gives a row the calendar mark: a
+conversation with an invitation shows it, and the paperclip appears only for its other files.
 Otherwise its count is the same query with `limit: 0`, `calculateTotal: true`, and
 `collapseThreads`, one per login, summed; each panel session reads each login's mailboxes once.
 The From and To lines also search beyond the loaded rows as the user types: `Email/query` with a `from`, or `to` and
 `cc`, text condition and `collapseThreads`, the newest 20, then each distinct address, plus the
 address book's contacts.
+
+A newsletter's older mail (`JmapNewsletters`) is the newest 100 emails before it with a `header`
+condition on its `List-Id`, or, without one, a `from` condition on its sender. A server may match
+these loosely, by substring or word, and `from` matches names too (RFC 8621, section 4.4.1), so
+the device reads each match's `List-Id` and `from` and keeps only mail with the same list id, or
+from the same address, ignoring case. Archive older moves only those.
 
 Folders use `Mailbox/get` and `Mailbox/set`; rules manage one Sieve script with `SieveScript/get`
 and `SieveScript/set` (RFC 9661, `JmapCapability.SIEVE`) after uploading it as a blob. Messages move
@@ -124,7 +134,10 @@ A refresh (`messages`) takes these requests per login:
    cached email that changed, each with `Thread/get` of their threads and an `Email/get` of those
    threads' emails by back-reference (RFC 8621, sections 3 and 4.4); `Thread/get` of cached rows'
    threads that are missing or changed, with their emails; and `Email/get` of changed or missing
-   thread emails. A refused thread call leaves each row standing for its own email.
+   thread emails. When the server refuses the back-referenced emails, such as with
+   `requestTooLarge` because the threads hold more than `maxObjectsInGet`, the threads are kept and
+   their emails follow in one more request, split at `maxObjectsInGet`. A refused `Thread/get`
+   leaves each row standing for its own email.
 
 An unchanged refresh therefore takes two requests and reads no email. Calls share requests up to the
 session's `maxCallsInRequest` (16 when the server does not say), and `/get` ids are split at
@@ -132,9 +145,14 @@ session's `maxCallsInRequest` (16 when the server does not say), and `/get` ids 
 states, is saved in one cache write. Destroyed and changed objects leave the cache in that write,
 and the changed ones that were read again replace them.
 
-`more` asks each listing that has more for the next 50 rows from `position` equal to the rows
-loaded, adds the ids it does not have yet, reads the objects the cache lacks, and saves them in one
-write. A login whose listings are not cached yet refreshes instead. `cached` builds the same list
+`more` asks each listing that has more for the 50 rows after its last row whose cached email is
+still in the mailbox, with `anchor` and `anchorOffset: 1` (RFC 8620, section 5.5), so rows moved
+or deleted since the listing loaded skip nothing. It adds the ids it does not have yet, reads the
+objects the cache lacks, and saves them in one write. When none of the listing's last 50 rows is
+left, or the server refuses the anchor (`anchorNotFound`, such as after the row left on another
+device), that listing loads again from position 0 with 50 more rows than it had. A listing the
+cache does not hold, such as one dropped for newer ones, loads its first page; `more` never
+refreshes, except for a login whose mailboxes are not cached yet. `cached` builds the same list
 from the cache alone, without a request, so the inbox shows the device's copy at once.
 
 Rows are mapped the same way from the cache in all three: a row whose email has left the mailbox,

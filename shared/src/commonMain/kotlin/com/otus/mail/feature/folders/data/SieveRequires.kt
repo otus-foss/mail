@@ -1,5 +1,10 @@
 package com.otus.mail.feature.folders.data
 
+import com.otus.mail.feature.folders.domain.FolderRule
+import com.otus.mail.feature.folders.domain.RuleCondition
+import com.otus.mail.feature.folders.domain.RuleSupport
+import com.otus.mail.feature.folders.domain.TextField
+
 /**
  * The index just after the `require` commands that open [script] (RFC 5228, section 3.2), past
  * comments and white space between them and past the rest of the last one's line; 0 when the
@@ -27,7 +32,7 @@ private fun String.step(at: Int): Step? =
         else -> null
     }
 
-private const val REQUIRE = "require"
+internal const val REQUIRE = "require"
 
 private fun String.isRequireAt(at: Int): Boolean =
     regionMatches(at, REQUIRE, 0, REQUIRE.length, ignoreCase = true) &&
@@ -61,3 +66,36 @@ private fun String.lineEnd(at: Int): Int = indexOf('\n', at).let { if (it < 0) l
 
 private fun String.afterComment(at: Int): Step =
     Step(indexOf("*/", at + 2).let { if (it < 0) length else it + 2 }, afterRequire = null)
+
+/** The extensions the Sieve of [folders] uses, for a `require`; none when no folder has a rule. */
+internal fun blockExtensions(
+    folders: List<BlockFolder>,
+    support: RuleSupport,
+): List<String> = requiredExtensions(filled(folders).flatMap { it.rules }, support)
+
+private fun requiredExtensions(
+    rules: List<FolderRule>,
+    support: RuleSupport,
+): List<String> {
+    val conditions = rules.flatMap { it.conditions }
+    val extensions = support.extensions
+    return buildSet {
+        if (rules.isEmpty()) return@buildSet
+        add("fileinto")
+        if (support.filesById) {
+            add("mailboxid")
+            // Stalwart refuses `:mailboxid` unless "mailbox" (RFC 5490) is declared too.
+            if ("mailbox" in extensions) add("mailbox")
+        }
+        if (conditions.any { it is RuleCondition.Text && it.field == TextField.Body }) add("body")
+        conditions.filterIsInstance<RuleCondition.When>().forEach {
+            add("date")
+            if (it.range != null) add("relational")
+        }
+        if (conditions.any { it is RuleCondition.Spam }) {
+            add(if ("spamtest" in extensions) "spamtest" else "spamtestplus")
+            add("relational")
+            add("comparator-i;ascii-numeric")
+        }
+    }.sorted()
+}

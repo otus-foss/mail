@@ -8,6 +8,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -138,6 +139,77 @@ class MailOutboxTest {
         }
 
     @Test
+    fun aLostSubmissionIsLookedUpByItsStoredCopyOnceTheServerHadTimeToFinishIt() =
+        runTest {
+            val copies = mutableListOf<String?>()
+            val woken = mutableListOf<Instant>()
+            val outbox = MailOutbox(store, storing, recordingCopies(copies), wake = { woken += it }, now = { now })
+            val id = outbox.add(draft, null, NOW)
+            failure = SendFailure.Unreachable
+            outbox.send(id)
+            assertEquals(
+                "e9",
+                OutboxEntry
+                    .decode(store.saved[OutboxStore.ENTRIES])
+                    .single()
+                    .storedCopy
+                    ?.emailId,
+            )
+
+            failure = null
+            check = SendCheck.Sent
+            now = NOW + 30.seconds
+            assertEquals(SendFailure.Unreachable, (outbox.send(id).exceptionOrNull() as SendException).failure)
+            assertTrue(copies.isEmpty(), "The server may still be working on the submission")
+            assertEquals(NOW + 2.minutes, woken.last())
+
+            now = NOW + 2.minutes
+            assertNull(outbox.send(id).getOrThrow(), "The first submission went")
+            assertEquals(listOf<String?>("e9"), copies)
+            assertEquals(1, sent.size, "Nothing goes twice")
+        }
+
+    /** [sender], storing the copy `e9` before it submits it. */
+    private val storing =
+        object : DraftSender {
+            override suspend fun send(
+                draft: Draft,
+                answered: AnsweredMessage?,
+                time: SendTime,
+            ) = sender.send(draft, answered, time)
+
+            override suspend fun send(
+                draft: Draft,
+                answered: AnsweredMessage?,
+                time: SendTime,
+                stored: suspend (emailId: String) -> Unit,
+            ): Result<SentMessage> {
+                stored("e9")
+                return sender.send(draft, answered, time)
+            }
+        }
+
+    /** [checker], recording the stored copy each lookup goes by in [copies]. */
+    private fun recordingCopies(copies: MutableList<String?>) =
+        object : SendChecker {
+            override suspend fun check(
+                draft: Draft,
+                answered: AnsweredMessage?,
+                cancelHeld: Boolean,
+            ) = checker.check(draft, answered, cancelHeld)
+
+            override suspend fun check(
+                draft: Draft,
+                answered: AnsweredMessage?,
+                cancelHeld: Boolean,
+                storedCopy: String?,
+            ): SendCheck {
+                copies += storedCopy
+                return checker.check(draft, answered, cancelHeld)
+            }
+        }
+
+    @Test
     fun undoDropsAWaitingMessageButNotOneThatWent() =
         runTest {
             val outbox = outbox()
@@ -175,6 +247,38 @@ class MailOutboxTest {
             outbox.send(outbox.add(draft, null, NOW, sendAt = at))
             outbox.send(outbox.add(draft, null, NOW), holdUntil = NOW + 7.seconds)
             assertEquals(listOf(SendTime.Scheduled(at), SendTime.Held(NOW + 7.seconds)), sent.map { it.second })
+        }
+
+    @Test
+    fun aSendThatThrowsWaitsForTheUserInsteadOfFailingEveryStart() =
+        runTest {
+            var tries = 0
+            val throwing =
+                DraftSender { _, _, _ ->
+                    tries++
+                    throw IllegalArgumentException("Not base64")
+                }
+            val outbox = MailOutbox(store, throwing, checker, now = { now })
+            val id = outbox.add(draft, null, NOW)
+            outbox.resume()
+            val restarted = MailOutbox(store, throwing, checker, now = { now })
+            restarted.resume()
+            assertEquals(OutboxProblem.Refused, restarted.offers().single().problem)
+            assertEquals(1, tries, "It does not go again by itself")
+
+            check = SendCheck.Sent
+            val unsure = MailOutbox(store, sender, { _, _, _ -> error("Unreadable answer") }, now = { now })
+            assertEquals(SendFailure.Unconfirmed, (unsure.send(id).exceptionOrNull() as SendException).failure)
+            assertTrue(sent.isEmpty(), "A lookup that throws never lets the message go again")
+        }
+
+    @Test
+    fun messagesThatNoLongerReadAreSetAsideInsteadOfOverwritten() =
+        runTest {
+            store.saved = mapOf(OutboxStore.ENTRIES to "[{\"from an older\": \"format\"}]")
+            outbox().add(draft, null, NOW)
+            assertEquals("[{\"from an older\": \"format\"}]", store.saved[OutboxStore.UNREADABLE])
+            assertEquals(listOf("Lunch"), OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).map { it.draft.subject })
         }
 
     @Test

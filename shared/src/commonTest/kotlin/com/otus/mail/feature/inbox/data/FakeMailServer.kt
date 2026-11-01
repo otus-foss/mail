@@ -16,9 +16,9 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * A mail account in memory that answers JMAP requests as [answer], for list tests. It knows
- * `Mailbox/get`, `Email/query` by mailbox, `Email/get`, `Thread/get`, `Email/changes`,
- * `Thread/changes`, and `Email/set` updates, with result references. Other filter conditions are
- * ignored, so tests check them in [calls]. Threads hold their emails oldest first.
+ * `Mailbox/get`, `Email/query` by mailbox from a position or an anchor, `Email/get`, `Thread/get`,
+ * `Email/changes`, `Thread/changes`, and `Email/set` updates, with result references. Other filter
+ * conditions are ignored, so tests check them in [calls]. Threads hold their emails oldest first.
  */
 internal class FakeMailServer(
     mailboxes: String,
@@ -50,8 +50,12 @@ internal class FakeMailServer(
     /** Whether requests fail as if the network were down. */
     var down = false
 
-    /** Emails whose `Email/set` updates the server refuses. */
+    /** Emails whose `Email/set` updates the server refuses, with a `SetError` of [updateRefusal]. */
     var refusedUpdates: Set<String> = emptySet()
+    var updateRefusal = "forbidden"
+
+    /** The most ids a `/get` may ask for; more are refused with `requestTooLarge`. */
+    var maxIdsInGet = Int.MAX_VALUE
 
     /** Whether `Email/query` offers `Email/queryChanges` for its results. */
     var followsQueries = false
@@ -97,22 +101,32 @@ internal class FakeMailServer(
                 if (resolved != null) calls += method to resolved
                 val result = if (resolved == null || method in refused) null else respond(method, resolved)
                 if (result != null) results[id.jsonPrimitive.content] = result
-                JsonArray(listOf(JsonPrimitive(if (result == null) "error" else method), result ?: refusal(method), id))
+                val reply = result ?: refusal(method, resolved)
+                JsonArray(listOf(JsonPrimitive(if (result == null) "error" else method), reply, id))
             }
         return buildJsonObject { put("methodResponses", JsonArray(responses)) }.toString()
     }
 
-    private fun refusal(method: String): JsonObject =
+    private fun refusal(
+        method: String,
+        arguments: JsonObject?,
+    ): JsonObject =
         buildJsonObject {
-            val type = if (method.endsWith("/changes")) "cannotCalculateChanges" else "requestTooLarge"
+            val type =
+                when {
+                    method.endsWith("/changes") -> "cannotCalculateChanges"
+                    method == "Email/query" && arguments?.get("anchor") != null -> "anchorNotFound"
+                    else -> "requestTooLarge"
+                }
             put("type", JsonPrimitive(refusalType ?: type))
         }
 
     private fun respond(
         method: String,
         arguments: JsonObject,
-    ): JsonObject? =
-        when (method) {
+    ): JsonObject? {
+        if ((arguments.ids()?.size ?: 0) > maxIdsInGet) return null
+        return when (method) {
             "Mailbox/get" -> listResult("m", mailboxes.filter { arguments.ids()?.contains(it.id) ?: true })
             "Mailbox/changes" -> mailboxChanges(arguments)
             "Email/queryChanges" -> queryChanges(arguments)
@@ -124,6 +138,7 @@ internal class FakeMailServer(
             "Email/set" -> set(arguments)
             else -> null
         }
+    }
 
     private fun emailGet(arguments: JsonObject): JsonObject {
         val properties = (arguments["properties"] as? JsonArray)?.strings()?.toSet()
@@ -149,9 +164,14 @@ internal class FakeMailServer(
                 }
         }
 
-    private fun query(arguments: JsonObject): JsonObject {
+    /** The rows from a position, or after an anchor; null, which the server refuses, when the anchor is not one. */
+    private fun query(arguments: JsonObject): JsonObject? {
         val rows = rows(arguments)
-        val position = arguments["position"]?.jsonPrimitive?.int ?: 0
+        val anchor = arguments["anchor"]?.jsonPrimitive?.content
+        if (anchor != null && anchor !in rows) return null
+        val offset = arguments["anchorOffset"]?.jsonPrimitive?.int ?: 0
+        val start = arguments["position"]?.jsonPrimitive?.int ?: 0
+        val position = if (anchor == null) start else rows.indexOf(anchor) + offset
         val limit = arguments["limit"]?.jsonPrimitive?.int ?: rows.size
         queries["${arguments.listKey}@$state"] = rows
         return buildJsonObject {
@@ -188,17 +208,6 @@ internal class FakeMailServer(
             put("added", JsonArray(added))
         }
     }
-
-    /** Mailboxes never change here, so every state is the current one. */
-    private fun mailboxChanges(arguments: JsonObject) =
-        buildJsonObject {
-            put("oldState", arguments.getValue("sinceState"))
-            put("newState", JsonPrimitive("m"))
-            put("hasMoreChanges", JsonPrimitive(false))
-            put("created", JsonArray(emptyList()))
-            put("updated", JsonArray(emptyList()))
-            put("destroyed", JsonArray(emptyList()))
-        }
 
     private fun rows(arguments: JsonObject): List<String> {
         val boxes = mailboxesIn(arguments.getValue("filter").jsonObject)
@@ -253,15 +262,8 @@ internal class FakeMailServer(
         return buildJsonObject {
             put("newState", JsonPrimitive("e$state"))
             put("updated", JsonObject(updates.associate { it.key to JsonNull }))
-            put(
-                "notUpdated",
-                JsonObject(
-                    refusals.associate {
-                        it.key to
-                            buildJsonObject { put("type", JsonPrimitive("forbidden")) }
-                    },
-                ),
-            )
+            val error = buildJsonObject { put("type", JsonPrimitive(updateRefusal)) }
+            put("notUpdated", JsonObject(refusals.associate { it.key to error }))
         }
     }
 

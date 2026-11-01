@@ -17,6 +17,7 @@ import com.otus.mail.app.WaitingStores
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
+import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -69,6 +70,12 @@ class OtusMailApplication :
                 ),
         )
     }
+
+    /**
+     * The saved inbox behavior, for the process like the toasts, so a send that finishes after the
+     * activity was recreated records its From address on top of the current settings.
+     */
+    val behavior: MailBehaviorState by lazy { MailBehaviorState(AndroidMailBehaviorStore(this)) }
 
     val photoPicker: AndroidPhotoPicker by lazy { AndroidPhotoPicker(this) }
 

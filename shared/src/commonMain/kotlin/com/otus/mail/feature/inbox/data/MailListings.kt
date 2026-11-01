@@ -74,11 +74,16 @@ internal fun CacheWrite.putListings(
     putValue(LISTING_USE, JmapJson.encodeToString(USE_SERIALIZER, kept))
 }
 
-/** One page of a list to ask for: [limit] rows from [position]. */
+/**
+ * One page of a list to ask for: [limit] rows from [position], or, with [anchor], the [limit] rows
+ * right after the row [anchor] (`anchorOffset` 1, RFC 8620, section 5.5), which stays right when
+ * rows before it left the list since it loaded.
+ */
 internal class PageRequest(
     val query: ListingQuery,
-    val position: Int,
+    val position: Int = 0,
     val limit: Int,
+    val anchor: String? = null,
 )
 
 /**
@@ -89,15 +94,25 @@ internal class PageRequest(
 internal suspend fun JmapConnection.queryPages(
     accountId: String,
     pages: List<PageRequest>,
-): List<Listing> =
-    sendAll(
-        pages.map { page ->
-            CallGroup(size = 1) {
-                val query = call(page.queryMethod(accountId))
-                return@CallGroup { response: JmapResponse -> response[query].toListing(page.limit) }
-            }
-        },
-    )
+): List<Listing> = sendAll(pages.map { page -> queryGroup(accountId, page) { it() } })
+
+/**
+ * [queryPages], but a page the server refuses, such as with `anchorNotFound` when its anchor left
+ * the list, comes back null.
+ */
+internal suspend fun JmapConnection.queryPagesOrNull(
+    accountId: String,
+    pages: List<PageRequest>,
+): List<Listing?> = sendAll(pages.map { page -> queryGroup(accountId, page) { unlessRefused(it) } })
+
+private fun <T> queryGroup(
+    accountId: String,
+    page: PageRequest,
+    read: (() -> Listing) -> T,
+) = CallGroup(size = 1) {
+    val query = call(page.queryMethod(accountId))
+    return@CallGroup { response: JmapResponse -> read { response[query].toListing(page.limit) } }
+}
 
 private fun PageRequest.queryMethod(accountId: String) =
     QueryMethod(
@@ -109,9 +124,15 @@ private fun PageRequest.queryMethod(accountId: String) =
         mapOf(
             "collapseThreads" to JsonPrimitive(true),
             "calculateTotal" to JsonPrimitive(true),
-            "position" to JsonPrimitive(position),
-        ),
+        ) + start(),
     )
+
+private fun PageRequest.start(): Map<String, JsonPrimitive> =
+    if (anchor == null) {
+        mapOf("position" to JsonPrimitive(position))
+    } else {
+        mapOf("anchor" to JsonPrimitive(anchor), "anchorOffset" to JsonPrimitive(1))
+    }
 
 /** More remain when the total says so, or, without a total, when the page came back full. */
 private fun QueryResult.toListing(limit: Int): Listing =

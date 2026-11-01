@@ -37,6 +37,9 @@ internal class ApplePushSession(
         }
     }
     private val lock = Mutex()
+
+    /** The logins of the last sync that left none waiting for verification; null while one waits. */
+    private var settledLogins: List<String>? = null
     var results = emptyMap<String, PushDeliveryStatus>()
     var registrationError = false
     var token: String? = null
@@ -66,20 +69,33 @@ internal class ApplePushSession(
         results = results - loginId
     }
 
-    suspend fun syncSafely(): Boolean =
+    suspend fun syncSafely(): Boolean = guarded { sync() }
+
+    /**
+     * The foreground check: syncs only while a login waits for verification, after a failed sync, or
+     * when the logins changed. A settled device sends the bridge nothing until the next sync.
+     */
+    suspend fun checkSafely(): Boolean =
+        guarded {
+            if (mailServices.notificationLogins().map { it.id } != settledLogins) sync()
+        }
+
+    private suspend fun guarded(work: suspend () -> Unit): Boolean =
         lock.withLock {
             try {
-                sync()
+                work()
                 true
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
+                settledLogins = null
                 results = mailServices.logins().associate { it.id to PushDeliveryStatus.Unavailable }
                 false
             }
         }
 
     private suspend fun sync() {
+        settledLogins = null
         val push = subscriptions
         val client = bridge ?: return
         val logins = mailServices.notificationLogins().map { it.id }
@@ -88,9 +104,11 @@ internal class ApplePushSession(
             .keys
             .filter { !enabled || it !in logins }
             .forEach { remove(it) }
-        if (!enabled || registrationError) return
-        val deviceToken = token ?: host.read("token")
+        val deviceToken = (token ?: host.read("token")).takeIf { enabled && !registrationError }
         if (deviceToken != null) syncLogins(logins, deviceToken, client, push)
+        // Turning pushes on, a new device token, or the next foreground activation syncs again.
+        val waiting = deviceToken != null && PushDeliveryStatus.Connecting in results.values
+        settledLogins = logins.takeUnless { waiting }
     }
 
     private suspend fun syncLogins(

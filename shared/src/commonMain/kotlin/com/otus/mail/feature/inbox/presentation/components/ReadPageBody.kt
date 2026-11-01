@@ -13,6 +13,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -20,8 +21,6 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalUriHandler
 import com.otus.designsystem.mail.read.components.QuoteFold
 import com.otus.designsystem.mail.read.components.QuotedLevel
-import com.otus.designsystem.mail.read.elements.HtmlQuote
-import com.otus.designsystem.mail.read.elements.HtmlQuoteLevel
 import com.otus.designsystem.mail.read.elements.HtmlView
 import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.theme.colors.OtusColors
@@ -30,14 +29,11 @@ import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.feature.inbox.presentation.PageBody
-import com.otus.mail.feature.inbox.presentation.read.HtmlQuoteSplit
-import com.otus.mail.feature.inbox.presentation.read.QuoteHeader
 import com.otus.mail.feature.inbox.presentation.read.QuoteLevelText
 import com.otus.mail.feature.inbox.presentation.read.levels
-import com.otus.mail.feature.inbox.presentation.read.markupText
-import com.otus.mail.feature.inbox.presentation.read.quoteLevels
-import com.otus.mail.feature.inbox.presentation.read.splitHtmlQuote
 import com.otus.mail.feature.inbox.presentation.read.splitPlainQuote
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * One page of the Read view: [top], such as the images banner and the sender details, floats
@@ -112,6 +108,11 @@ private fun MessageText(
     }
 }
 
+/**
+ * The message's HTML with its quote folded. A short message splits at once; a long one takes a
+ * while, so it splits off the main thread, and the page shows once it is done. A fold made for
+ * other HTML never shows.
+ */
 @Composable
 private fun HtmlBody(
     html: MessageHtml,
@@ -121,15 +122,18 @@ private fun HtmlBody(
     modifier: Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
-    val split = remember(html.html) { splitHtmlQuote(html.html) }
-    val quote = remember(split, hideQuote) { split?.takeUnless { hideQuote }?.let(::htmlQuote) }
+    val quick = remember(html.html) { html.html.takeIf { it.length <= QUICK_FOLD_CHARS }?.let(::htmlFold) }
+    val slow by produceState<Pair<String, HtmlFold>?>(null, html.html) {
+        if (quick == null) value = html.html to withContext(Dispatchers.Default) { htmlFold(html.html) }
+    }
+    val shown = quick ?: slow?.takeIf { it.first == html.html }?.second ?: return
     HtmlView(
-        split?.main ?: html.html,
+        shown.main,
         images.load,
         { url -> openLink(uriHandler::openUri, url) },
         modifier.fillMaxWidth(),
         onShowRemote = images.onShow,
-        quote = quote,
+        quote = shown.quote?.takeUnless { hideQuote },
         insets = room,
     )
 }
@@ -173,35 +177,6 @@ private fun QuoteLevelText.shown(showPerson: (address: String) -> (() -> Unit)?)
         header?.fullDate.orEmpty(),
     )
 
-/**
- * The fold for [split]'s quote. When its text quotes earlier mail in turn, as `>` lines or "On …
- * wrote:" lines, it shows as text with each level folded to a row; else as the sender's markup.
- */
-private fun htmlQuote(split: HtmlQuoteSplit): HtmlQuote {
-    val levels = quoteLevels(split.header, markupText(split.quote))
-    return if (levels.size > 1) {
-        HtmlQuote.ofText(levels.first().htmlLevel(), levels.drop(1).map { it.htmlLevel() })
-    } else {
-        val header = split.header
-        HtmlQuote(
-            header.name(),
-            header.initials(),
-            header?.date.orEmpty(),
-            split.quote,
-            fullDate = header?.fullDate.orEmpty(),
-        )
-    }
-}
-
-private fun QuoteLevelText.htmlLevel(): HtmlQuoteLevel =
-    HtmlQuoteLevel(header.name(), header.initials(), header?.date.orEmpty(), text, header?.fullDate.orEmpty())
-
-/** Blank without a header, so the fold shows no person. */
-private fun QuoteHeader?.name(): String = this?.name.orEmpty()
-
-private fun QuoteHeader?.initials(): String =
-    this?.let { chipAvatar(null, it.name, it.address.orEmpty()).initials }.orEmpty()
-
 /** Opens [url] outside the app; a link no installed app opens does nothing. */
 internal fun openLink(
     open: (String) -> Unit,
@@ -220,3 +195,6 @@ private val spacing = Arrangement.spacedBy(InboxTokens.itemGap)
 
 private const val TOP = "top"
 private const val BODY = "body"
+
+/** HTML up to this many characters splits on the main thread, too quickly to show a blank page. */
+private const val QUICK_FOLD_CHARS = 16_000

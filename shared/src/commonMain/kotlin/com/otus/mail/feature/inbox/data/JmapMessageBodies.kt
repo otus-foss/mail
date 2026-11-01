@@ -24,8 +24,11 @@ import com.otus.mail.core.mail.putObject
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageContent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Loads one message's `textBody` and `htmlBody` parts and their values with `Email/get` (RFC 8621,
@@ -34,21 +37,25 @@ import kotlinx.serialization.json.JsonPrimitive
  * so [cache] keeps the fetched Email object, with only these properties, under its id per login;
  * the message opens again at once and offline. It is saved with its received time, so trimming old
  * bodies can drop it. Images the HTML shows by `cid:` are downloaded on each open, since the cache
- * keeps only the Email object.
+ * keeps only the Email object. Reading the body, up to a megabyte of HTML per part, and inlining its
+ * images runs on [parsing], off the caller's main thread.
  */
 class JmapMessageBodies(
     private val connections: JmapConnections,
     private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
+    private val parsing: CoroutineContext = Dispatchers.Default,
 ) : MessageBodies {
     override suspend fun content(message: MailMessage): MessageContent? =
-        mailCallOr(null) {
-            val loginId = message.location.accountId
-            cache.withAccount(loginId) { accountCache ->
-                val email = accountCache.cached(loginId, message.emailId) ?: accountCache.fetched(loginId, message)
-                email?.let { found ->
-                    val content = jmapDecoding { found.toMessageContent() }
-                    withImages(loginId, content, found.inlineParts(content.html?.html))
+        withContext(parsing) {
+            mailCallOr(null) {
+                val loginId = message.location.accountId
+                cache.withAccount(loginId) { accountCache ->
+                    val email = accountCache.cached(loginId, message.emailId) ?: accountCache.fetched(loginId, message)
+                    email?.let { found ->
+                        val content = jmapDecoding { found.toMessageContent() }
+                        withImages(loginId, content, found.inlineParts(content.html?.html))
+                    }
                 }
             }
         }

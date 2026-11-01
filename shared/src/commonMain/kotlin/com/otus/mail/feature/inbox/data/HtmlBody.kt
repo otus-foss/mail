@@ -27,13 +27,14 @@ private fun String.escapeHtml(): String =
 
 /**
  * An address on another server that the page would load: an image, video poster, embedded object,
- * background, stylesheet, CSS import, or SVG image. A plain link does not count.
+ * background, stylesheet, CSS import, or SVG image. A plain link does not count. An SVG tag is read
+ * only up to the next `<`, so a body full of unclosed tags is not searched again from each one.
  */
 private val REMOTE_RESOURCE =
     Regex(
         listOf(
             """(?:\bsrc|srcset|background|\bposter|\bdata|xlink:href)\s*=\s*["']?\s*$REMOTE""",
-            """<(?:image|use|feImage)\b[^>]*\shref\s*=\s*["']?\s*$REMOTE""",
+            """<(?:image|use|feImage)\b[^<>]*\shref\s*=\s*["']?\s*$REMOTE""",
             """url\(\s*["']?\s*$REMOTE""",
             """@import\s*["']\s*$REMOTE""",
             """<link\b""",

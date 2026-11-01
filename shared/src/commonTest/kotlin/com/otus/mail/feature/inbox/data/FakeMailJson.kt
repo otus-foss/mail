@@ -5,6 +5,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -45,6 +46,17 @@ internal fun mailboxesIn(filter: JsonObject): Set<String> {
         else -> conditions.flatMap(::mailboxesIn).toSet()
     }
 }
+
+/** `Mailbox/changes` of a server whose mailboxes never change, so every state is the current one. */
+internal fun mailboxChanges(arguments: JsonObject) =
+    buildJsonObject {
+        put("oldState", arguments.getValue("sinceState"))
+        put("newState", JsonPrimitive("m"))
+        put("hasMoreChanges", JsonPrimitive(false))
+        put("created", JsonArray(emptyList()))
+        put("updated", JsonArray(emptyList()))
+        put("destroyed", JsonArray(emptyList()))
+    }
 
 /** [path] is a property, which [value] replaces, or `property/key`, which it sets or clears. */
 internal fun JsonObject.at(

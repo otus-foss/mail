@@ -7,6 +7,7 @@ import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendCheck
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -25,19 +26,37 @@ class JmapSendCheckerTest {
     private val answered = AnsweredMessage("o1", forwarded = false)
     private val sets = mutableListOf<JsonObject>()
 
+    private val methods = mutableListOf<String>()
+
+    /**
+     * A server whose `Email/get` finds [found] and whose only submission, when [submitted] is set,
+     * is `s1` with that `undoStatus`.
+     */
     private fun checker(
         found: String,
         queryError: String? = null,
+        submitted: String? = null,
     ): JmapSendChecker {
         val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
         val engine =
-            stalwartLike { body ->
+            stalwartLike(SUBMISSION_SESSION) { body ->
                 val responses =
                     Json.parseToJsonElement(body).jsonObject.getValue("methodCalls").jsonArray.map { call ->
                         val (name, arguments, id) = call.jsonArray
                         val method = name.jsonPrimitive.content
+                        methods += method
+                        val submissions = submitted?.let { """{"id": "s1", "undoStatus": "$it"}""" }.orEmpty()
+                        val submissionIds = if (submitted == null) "" else "\"s1\""
                         val result =
                             when {
+                                method == "EmailSubmission/query" -> {
+                                    """["$method", {"queryState": "q", "ids": [$submissionIds], "position": 0}"""
+                                }
+
+                                method == "EmailSubmission/get" -> {
+                                    """["$method", {"state": "s", "list": [$submissions], "notFound": []}"""
+                                }
+
                                 queryError != null && method == "Email/query" -> {
                                     """["error", {"type": "$queryError"}"""
                                 }
@@ -112,6 +131,68 @@ class JmapSendCheckerTest {
                 SendCheck.Unconfirmable,
                 checker("", queryError = "unsupportedFilter").check(draft, null, false),
             )
+        }
+
+    @Test
+    fun aSubmissionOfTheStoredCopyMeansItWentWithoutAskingASearchIndex() =
+        runTest {
+            val copy = """{"id": "e9", $RECEIVED, "keywords": {"${'$'}draft": true}}"""
+            val check = checker(found = copy, submitted = "pending").check(draft, answered, false, storedCopy = "e9")
+            assertEquals(SendCheck.Sent, check)
+            assertTrue("Email/query" !in methods, "A header search may not know the copy yet")
+            assertEquals(
+                listOf("d1"),
+                sets
+                    .single()
+                    .getValue("destroy")
+                    .jsonArray
+                    .map { it.jsonPrimitive.content },
+            )
+        }
+
+    @Test
+    fun aStoredCopyThatKeptItsDraftMarkWithoutASubmissionIsDestroyedAndGoesAgain() =
+        runTest {
+            val copy = """{"id": "e9", $RECEIVED, "keywords": {"${'$'}draft": true}}"""
+            assertEquals(SendCheck.NotSent, checker(found = copy).check(draft, answered, false, storedCopy = "e9"))
+            assertEquals(
+                listOf("e9"),
+                sets
+                    .single()
+                    .getValue("destroy")
+                    .jsonArray
+                    .map { it.jsonPrimitive.content },
+            )
+
+            sets.clear()
+            val canceled = checker(found = copy, submitted = "canceled")
+            assertEquals(SendCheck.NotSent, canceled.check(draft, answered, false, storedCopy = "e9"))
+        }
+
+    @Test
+    fun aStoredCopyWithoutItsDraftMarkWentThoughTheServerDroppedItsSubmission() =
+        runTest {
+            val copy = """{"id": "e9", $RECEIVED, "keywords": {"${'$'}seen": true}}"""
+            assertEquals(SendCheck.Sent, checker(found = copy).check(draft, answered, false, storedCopy = "e9"))
+        }
+
+    @Test
+    fun withNeitherCopyNorSubmissionOnlyTheUserCanTellUnlessTheSendWasWithdrawn() =
+        runTest {
+            assertEquals(SendCheck.Unconfirmable, checker(found = "").check(draft, answered, false, storedCopy = "e9"))
+            assertEquals(SendCheck.NotSent, checker(found = "").check(draft, answered, true, storedCopy = "e9"))
+            assertTrue(sets.isEmpty(), "Nothing is destroyed or marked")
+        }
+
+    @Test
+    fun aWithdrawnSendCancelsTheHoldOfItsStoredCopyAndDestroysIt() =
+        runTest {
+            val copy = """{"id": "e9", $RECEIVED, "keywords": {}}"""
+            val check = checker(found = copy, submitted = "pending").check(draft, answered, true, storedCopy = "e9")
+            assertEquals(SendCheck.NotSent, check)
+            val (cancel, destroy) = sets
+            assertTrue("s1" in cancel.getValue("update").jsonObject)
+            assertEquals(listOf("e9"), destroy.getValue("destroy").jsonArray.map { it.jsonPrimitive.content })
         }
 
     private companion object {

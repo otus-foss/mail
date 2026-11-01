@@ -120,6 +120,19 @@ class InboxFiltersTest {
     }
 
     @Test
+    fun theLastDaysStartAtALocalMidnightAllDay() {
+        val zurich = TimeZone.of("Europe/Zurich")
+        val morning = Instant.parse("2026-10-18T05:00:00Z")
+        val night = Instant.parse("2026-10-18T21:59:59Z")
+        assertEquals(
+            DateBounds(after = Instant.parse("2026-10-11T22:00:00Z")),
+            DateFilter.Last7.bounds(morning, zurich),
+        )
+        assertEquals(DateFilter.Last7.bounds(morning, zurich), DateFilter.Last7.bounds(night, zurich))
+        assertEquals(DateBounds(after = Instant.parse("2026-09-18T22:00:00Z")), DateFilter.Last30.bounds(night, zurich))
+    }
+
+    @Test
     fun todayStartsAtLocalMidnightAcrossTheDateLine() {
         val auckland = TimeZone.of("Pacific/Auckland")
         // 11:30 UTC on 18 October is already 19 October in Auckland.

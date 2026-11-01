@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.ReadStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -42,11 +43,11 @@ class InboxFeedPagingTest {
         }
 
     @Test
-    fun aFilteredListLoadsEveryPageWithoutScrolling() =
+    fun aListTheDeviceNarrowsLoadsAFewPagesWithoutScrolling() =
         runTest {
             val source = GatedSource()
             val state = InboxFeedState(source, this)
-            state.query = MailQuery(filters = InboxFilters(status = ReadStatus.Unread))
+            state.query = MailQuery(filters = InboxFilters(quick = setOf(QuickFacet.NeedsMyReply)))
             runCurrent()
             source.cachedReads.single().complete(snapshot("a"))
             source.loads.single().complete(snapshot("a", "b", hasMore = true))
@@ -59,6 +60,45 @@ class InboxFeedPagingTest {
             assertEquals(2, source.pages.size)
             assertEquals(listOf("a", "b", "c", "d"), state.messages.map { it.id })
             assertFalse(state.loadingMore)
+        }
+
+    @Test
+    fun pagesLoadOnTheirOwnOnlyUpToTheCap() =
+        runTest {
+            val source = GatedSource()
+            val state = InboxFeedState(source, this)
+            state.query = MailQuery(filters = InboxFilters(quick = setOf(QuickFacet.Conversations)))
+            runCurrent()
+            source.cachedReads.single().complete(snapshot())
+            source.loads.single().complete(snapshot("a", hasMore = true))
+            runCurrent()
+            repeat(times = 10) {
+                val page = source.pages.last()
+                if (page.isActive) page.complete(snapshot("a", hasMore = true))
+                runCurrent()
+            }
+            assertEquals(4, source.pages.size, "Further pages wait for scrolling")
+            assertFalse(state.loadingMore)
+            state.loadMore()
+            runCurrent()
+            assertEquals(5, source.pages.size, "Scrolling still loads the next page")
+            source.pages.last().complete(snapshot("a", hasMore = true))
+            runCurrent()
+            assertEquals(5, source.pages.size)
+        }
+
+    @Test
+    fun aListTheServerFiltersWaitsForScrolling() =
+        runTest {
+            val source = GatedSource()
+            val state = InboxFeedState(source, this)
+            state.query = MailQuery(filters = InboxFilters(account = "ada", status = ReadStatus.Unread))
+            runCurrent()
+            source.cachedReads.single().complete(snapshot())
+            source.loads.single().complete(snapshot("a", "b", hasMore = true))
+            runCurrent()
+            assertTrue(source.pages.isEmpty())
+            assertTrue(state.hasMore)
         }
 
     @Test

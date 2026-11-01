@@ -105,7 +105,11 @@ class JmapNewsletters(
         )
     }
 
-    /** The list's mail received before [email], newest first. */
+    /**
+     * The list's mail received before [email], newest first. The server may match a header or a
+     * sender loosely, such as by substring or by word, or the sender's name too (RFC 8621, section
+     * 4.4.1), so only mail with the same list id, or from the same address, stays.
+     */
     private suspend fun MailAccount.olderMail(email: EmailObject): List<EmailObject> {
         val listId = listIdentifier(email.listId)
         val address = email.from?.firstOrNull()?.email
@@ -121,6 +125,7 @@ class JmapNewsletters(
                 val query = call(QueryMethod(EmailType, id, filter, NEWEST_FIRST, SCAN))
                 call(GetMethod(EmailType, id, JmapIds.Result(query.resultOf("/ids")), OLDER_PROPERTIES))
             }.list
+            .filter { it.sameList(listId, address) }
     }
 
     /** Each email out of every mailbox it is in and into Archive; null without an Archive folder. */
@@ -140,9 +145,20 @@ class JmapNewsletters(
         const val SCAN = 100
         val LIST_PROPERTIES =
             listOf("id", "receivedAt", "from", LIST_ID_PROPERTY, LIST_UNSUBSCRIBE_PROPERTY)
-        val OLDER_PROPERTIES = listOf("id", "receivedAt", "mailboxIds")
+        val OLDER_PROPERTIES = listOf("id", "receivedAt", "mailboxIds", "from", LIST_ID_PROPERTY)
     }
 }
+
+/** Whether this email has the list id [listId], or, without one, comes from [address]; neither counts case. */
+private fun EmailObject.sameList(
+    listId: String?,
+    address: String?,
+): Boolean =
+    if (listId != null) {
+        listIdentifier(this.listId).equals(listId, ignoreCase = true)
+    } else {
+        from?.firstOrNull()?.email.equals(address, ignoreCase = true)
+    }
 
 /**
  * How many mails a week arrive at the times [received]: the gaps between them over the weeks they

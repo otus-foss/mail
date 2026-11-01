@@ -350,13 +350,16 @@ what it matches, and plain "contains" or "is" adds no word.
 
 ### The Otus block
 
-Otus owns only a marked block in the account's active script and never changes a byte outside it:
+Otus owns only a marked block at the end of the account's active script and one marked `require`
+line, and never changes a byte outside them:
 
 ```sieve
+require ["vacation"];
+require ["fileinto", "mailbox", "mailboxid"]; # otus-rules
+# The script's own rules
 # BEGIN otus-rules
 # Otus Mail writes this block. Change these rules in Otus Mail; edits here are replaced.
 # otus-rules-v2 {...}
-require ["fileinto", "mailbox", "mailboxid"];
 if address :is "from" "jana@website-agency.example" {
     fileinto :mailboxid "M7" "Projects";
     stop;
@@ -364,9 +367,18 @@ if address :is "from" "jana@website-agency.example" {
 # END otus-rules
 ```
 
-- Without a block, the app puts one right after the script's leading `require` commands, because
-  RFC 5228 (section 3.2) allows a `require` only before every other command. A script without
-  them gets the block at the top. The block's own `require` then still counts as leading.
+- The block goes at the end of the script, so the script's own commands, such as a forward, a
+  vacation reply, or a spam rule, run first for every message. Its `stop` (RFC 5228, section 3.3)
+  then ends only the processing the app adds. A rule of the script that files a message without
+  `stop` and an Otus rule that matches it too both file it; a script that stops first keeps the
+  Otus rules from running for that message.
+- The block's `require` line, marked with `# otus-rules`, goes right after the script's leading
+  `require` commands, because RFC 5228 (section 3.2) allows a `require` only before every other
+  command; a script without them gets it at the top. Rules that need no extension, as when none
+  is left, leave the line out.
+- Older versions put the whole block, with its `require` inside, at the top. The next save moves
+  it to the end and its `require` to the marked line. Reading such a block back ignores the
+  `require` inside it, so it does not count as edited elsewhere.
 - The block uses CRLF line ends. The app finds it by its begin and end lines in any line ending.
 - Each folder's rules become one `if anyof (...)` that files the message and stops, in the
   account's folder order, so the first folder that matches wins. A parent comes before its
@@ -416,8 +428,9 @@ vacation reply is on. Turn it off to use rules" and saves nothing.
 Accounts that still run the old separate "Otus Mail" script, with its `# otus-rules-v1 {...}`
 line, get those rules converted on the first load. The first save writes them into the block.
 
-- When the old script kept another script running with `include`, the block goes to the top of
-  that kept script, after its `require` lines, and that script becomes the active one. Otherwise
+- When the old script kept another script running with `include`, the block goes to the end of
+  that kept script, its `require` line after that script's `require` lines, and that script
+  becomes the active one. Otherwise
   "Otus Mail" becomes just the block.
 - An old script that was not running held rules that were off, so it stays as it is.
 - The new model has no place for these, so the migration drops them: "mark as read", paused rules,
@@ -495,8 +508,8 @@ Rule for sender flow. Chips, the Add rule chip, and the sheet come from the desi
 - Data: `JmapMailSourceTest` (a role loads that folder of every account under one name),
   `JmapFolderRepositoryTest`, `JmapSharedMailboxTest` (shared accounts load beside the login's
   own folders, and a drop sends one `Mailbox/set`), `RuleBlockTest` (the block's Sieve and JSON,
-  read-back, hand edits), `BlockSpliceTest` (placement after leading `require` lines, other bytes
-  kept, CRLF), `LegacyRulesTest` (what the v1 migration converts and drops),
+  read-back, hand edits), `BlockSpliceTest` (the block at the end and its `require` after the
+  leading ones, a block at the top moved, other bytes kept, CRLF), `LegacyRulesTest` (what the v1 migration converts and drops),
   `JmapFolderRuleRepositoryTest` (validate before save, `ifInState`, activation, the vacation
   script, migration), `ExistingMailTest` (the `Email/query` filters and batched moves),
   `JmapMessageMoverTest`.

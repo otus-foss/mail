@@ -19,12 +19,17 @@ sealed interface ContactEdit {
     /** The card the change is about. */
     val key: CardKey
 
+    /**
+     * A new [card] in [book]. [sent] is the card as a try sent it, kept until the server answers,
+     * since a lost answer may hide that the server stored it.
+     */
     @Serializable
     @SerialName("create")
     data class Create(
         override val id: String,
         val book: BookKey,
         val card: Card,
+        val sent: Card? = null,
     ) : ContactEdit {
         override val key: CardKey get() = CardKey(book.loginId, book.accountId, localId(id))
     }

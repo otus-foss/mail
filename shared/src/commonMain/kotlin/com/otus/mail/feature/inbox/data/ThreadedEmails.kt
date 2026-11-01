@@ -27,19 +27,24 @@ internal class WantedMail(
     val members: Set<String> = emptySet(),
 )
 
-/** Row emails, threads, and thread member emails the server sent. */
+/**
+ * Row emails, threads, and thread member emails the server sent, and the emails of [threads] it
+ * would not send in one call, which [unreadMembers] lists.
+ */
 internal class FetchedMail(
     val rows: List<EmailObject> = emptyList(),
     val threads: List<ThreadObject> = emptyList(),
     val members: List<EmailObject> = emptyList(),
+    val unreadMembers: List<String> = emptyList(),
 )
 
 /**
  * Reads [wanted] in as few requests as the server allows (RFC 8621, sections 3 and 4.2). Each
  * `Email/get` of rows chains `Thread/get` of their threads and an `Email/get` of those threads'
  * emails by back-reference, so new rows arrive with their conversations. When the server refuses
- * a thread call, for example because a thread holds more emails than one `/get` may return, those
- * rows stand for their own emails.
+ * the back-referenced emails, for example because the threads hold more emails than one `/get` may
+ * return (`requestTooLarge`, RFC 8620, section 5.1), they follow in calls of at most
+ * `maxObjectsInGet` ids. When it refuses a thread call, those rows stand for their own emails.
  */
 internal suspend fun JmapConnection.fetchMail(
     accountId: String,
@@ -50,11 +55,13 @@ internal suspend fun JmapConnection.fetchMail(
         wanted.rows.chunked(chunk).map { rowGroup(accountId, it) } +
             wanted.threads.chunked(chunk).map { threadGroup(accountId, it) } +
             wanted.members.chunked(chunk).map { memberGroup(accountId, it) }
-    val parts = if (groups.isEmpty()) emptyList() else sendAll(groups)
+    val parts = sendAll(groups)
+    val unread = parts.flatMap { it.unreadMembers }.distinct()
+    val later = sendAll(unread.chunked(chunk).map { memberGroup(accountId, it) })
     return FetchedMail(
         rows = parts.flatMap { it.rows },
         threads = parts.flatMap { it.threads },
-        members = parts.flatMap { it.members },
+        members = (parts + later).flatMap { it.members },
     )
 }
 
@@ -100,12 +107,14 @@ private fun JmapRequestBuilder.threadCalls(
     val members =
         call(GetMethod(EmailType, accountId, JmapIds.Result(found.resultOf("/list/*/emailIds")), MEMBER_PROPERTIES))
     return { response ->
-        // A thread without its members is no use, so a refused member call drops both.
-        unlessRefused { FetchedMail(threads = response[found].list, members = response[members].list) } ?: FetchedMail()
+        val threads = unlessRefused { response[found].list }.orEmpty()
+        val read = unlessRefused { response[members].list }
+        val unread = if (read == null) threads.flatMap { it.emailIds } else emptyList()
+        FetchedMail(threads = threads, members = read.orEmpty(), unreadMembers = unread)
     }
 }
 
-private fun FetchedMail.withRows(rows: List<EmailObject>) = FetchedMail(rows, threads, members)
+private fun FetchedMail.withRows(rows: List<EmailObject>) = FetchedMail(rows, threads, members, unreadMembers)
 
 /** When the email arrived, in epoch milliseconds, for the cache to trim old mail by. */
 internal val EmailObject.receivedMillis: Long?

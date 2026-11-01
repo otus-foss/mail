@@ -14,7 +14,11 @@ import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.DOWNLOAD_SESSION
 import com.otus.mail.testing.stalwartLike
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.test.runTest
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -30,6 +34,7 @@ class JmapMessageBodiesTest {
         email: String,
         cache: MailCache = InMemoryMailCache(),
         files: Map<String, ByteArray> = emptyMap(),
+        parsing: CoroutineContext = Dispatchers.Default,
     ): JmapMessageBodies {
         val api = { body: String ->
             requests += body
@@ -37,7 +42,7 @@ class JmapMessageBodiesTest {
         }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val engine = stalwartLike(DOWNLOAD_SESSION, files, api)
-        return JmapMessageBodies(JmapConnections(JmapClient(engine), store), store, cache)
+        return JmapMessageBodies(JmapConnections(JmapClient(engine), store), store, cache, parsing)
     }
 
     private val opened =
@@ -86,6 +91,22 @@ class JmapMessageBodiesTest {
             assertEquals("Hello & welcome", content.text, "An HTML-only message reads as text for replies")
             assertEquals("<p>Hello &amp; welcome</p>", content.html?.html)
             assertTrue(content.truncated && content.html?.truncated == true)
+        }
+
+    @Test
+    fun theBodyIsReadOffTheCallersThread() =
+        runTest {
+            val parsing = CountingDispatcher()
+            val content =
+                bodies(
+                    """{"id": "e1", "receivedAt": "2026-10-04T09:30:00Z",
+                        "textBody": [{"partId": "1", "type": "text/html"}],
+                        "htmlBody": [{"partId": "1", "type": "text/html"}],
+                        "bodyValues": {"1": {"value": "<p>Hi</p>"}}}""",
+                    parsing = parsing,
+                ).content(opened)
+            assertEquals("Hi", content?.text)
+            assertTrue(parsing.dispatched > 0, "A megabyte of HTML must not be read on the main thread")
         }
 
     @Test
@@ -167,4 +188,17 @@ class JmapMessageBodiesTest {
                 ).content(opened)
             assertEquals("<img src='cid:pic'>", content?.html?.html)
         }
+
+    /** Runs each block at once, counting how often work was sent to it. */
+    private class CountingDispatcher : CoroutineDispatcher() {
+        var dispatched = 0
+
+        override fun dispatch(
+            context: CoroutineContext,
+            block: Runnable,
+        ) {
+            dispatched++
+            block.run()
+        }
+    }
 }

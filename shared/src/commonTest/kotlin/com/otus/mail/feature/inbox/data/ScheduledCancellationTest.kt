@@ -4,6 +4,7 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
@@ -63,6 +64,26 @@ class ScheduledCancellationTest {
                     .getValue("e")
             val expected = """{"keywords/${'$'}draft": true, "mailboxIds": {"dr": true}}"""
             assertEquals(Json.parseToJsonElement(expected), update)
+        }
+
+    @Test
+    fun aCanceledReplyTakesBackTheMarkItsSendAdded() =
+        runTest {
+            val calls = mutableListOf<String>()
+            val answered = message.copy(marked = AnsweredMessage("o1", forwarded = true))
+            assertTrue(sender(calls, alsoUpdated = "o1").cancel(answered).isSuccess)
+            val update =
+                Json
+                    .parseToJsonElement(calls.last())
+                    .jsonObject
+                    .getValue("methodCalls")
+                    .jsonArray
+                    .single()
+                    .jsonArray[1]
+                    .jsonObject
+                    .getValue("update")
+                    .jsonObject
+            assertEquals(Json.parseToJsonElement("""{"keywords/${'$'}forwarded": null}"""), update.getValue("o1"))
         }
 
     @Test
@@ -145,6 +166,7 @@ class ScheduledCancellationTest {
         acknowledged: Boolean = true,
         lost: Set<Lost> = emptySet(),
         submitted: Boolean = false,
+        alsoUpdated: String? = null,
     ): JmapDraftSender {
         val login = JmapLogin("a", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
         val store = InMemoryLoginStore().apply { save(login, "secret") }
@@ -171,13 +193,15 @@ class ScheduledCancellationTest {
                     when {
                         """"create"""" in body -> """, "created": {"send": {"id": "s2"}}"""
                         cancel && !acknowledged -> ""
-                        if (cancel) canceled else restored -> """, "updated": {"$id": null}"""
+                        if (cancel) canceled else restored -> """, "updated": {"$id": null${also(alsoUpdated)}}"""
                         else -> """, "notUpdated": {"$id": {"type": "forbidden"}}"""
                     }
                 """{"methodResponses": [["$method", {"newState": "n"$result}, "c0"]]}"""
             }
         return JmapDraftSender(JmapConnections(JmapClient(engine), store), store)
     }
+
+    private fun also(id: String?) = id?.let { """, "$it": null""" }.orEmpty()
 
     private val message = SentMessage("a", "e", "s")
 

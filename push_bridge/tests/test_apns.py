@@ -63,3 +63,23 @@ class ApnsTest(unittest.TestCase):
         self.assertEqual(body["otusMessage"], "message")
         self.assertEqual(body["aps"]["mutable-content"], 1)
         self.assertEqual(set(body), {"aps", "otusKey", "otusMessage"})
+
+    def test_a_rejected_token_revokes_and_an_unreadable_error_is_temporary(self):
+        replies = iter(
+            [
+                httpx.Response(400, json={"reason": "BadDeviceToken"}),
+                httpx.Response(500, text="<html>Internal error</html>"),
+                httpx.Response(500, json=["unexpected"]),
+            ]
+        )
+        self.apns.client.close()
+        self.apns.client = httpx.Client(
+            base_url="https://api.sandbox.push.apple.com",
+            transport=httpx.MockTransport(lambda request: next(replies)),
+        )
+        route = {"id": "route", "token": "ab" * 32, "key_id": "key"}
+        self.assertFalse(self.apns.send(route, "message"))
+        # Not a ValueError, which the bridge would answer with 400, a permanent failure.
+        for _ in range(2):
+            with self.assertRaises(httpx.HTTPStatusError):
+                self.apns.send(route, "message")

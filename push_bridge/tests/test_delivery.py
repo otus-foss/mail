@@ -105,6 +105,7 @@ class DeliveryTest(unittest.TestCase):
         self.assertEqual(self.push()[0], 410)
 
     def test_route_and_message_quotas_bound_storage(self):
+        self.store.update(self.route["id"], True)
         for _ in range(32):
             self.assertEqual(self.push()[0], 201)
         self.assertEqual(self.push()[0], 429)
@@ -112,6 +113,12 @@ class DeliveryTest(unittest.TestCase):
             self.store.create("ab" * 32, "key")
         with self.assertRaises(OverflowError):
             self.store.create("ab" * 32, "key")
+
+    def test_an_unverified_route_buffers_only_a_few_pushes(self):
+        for _ in range(4):
+            self.assertEqual(self.push()[0], 201)
+        self.assertEqual(self.push()[0], 429)
+        self.apns.send.assert_not_called()
 
     def test_registration_rejects_tokens_used_as_paths(self):
         payload = json.dumps(

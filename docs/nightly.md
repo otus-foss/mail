@@ -15,6 +15,11 @@ recorded revision, the notes list the commits since it was published instead. On
 The version check reads every release page, so unfinished drafts cannot hide the last publication.
 A rerun after a failed build uses the next unpublished version code; a rerun after publication skips an unchanged pair.
 
+Gradle builds the APK unsigned, without the key. A later step signs it with `zipalign` and
+`apksigner` from build-tools 36.0.0, so Meta's build scripts and the Gradle plugins never see the
+key or its password. The workflow stops the Gradle daemon before signing and deletes the key file
+afterwards, even when a step failed.
+
 Meta source is used because package publishing is paused. The first release after this workflow
 change rebuilds even if Mail is unchanged, since older releases have no Meta provenance. Its code
 still increases from the previous release, so Android can update it. API or download failures stop
@@ -89,4 +94,10 @@ OTUS_NIGHTLY_KEYSTORE=otus-nightly.p12 OTUS_NIGHTLY_KEYSTORE_PASSWORD=... \
   ./gradlew :androidApp:assembleNightly -Potus.versionCode=1 -Potus.versionName=18.10.26
 ```
 
-Without `OTUS_NIGHTLY_KEYSTORE`, the build is unsigned and Android will not install it.
+Without `OTUS_NIGHTLY_KEYSTORE`, the build is unsigned and Android will not install it. To sign such
+a build as the workflow does:
+
+```sh
+apksigner sign --ks otus-nightly.p12 --ks-key-alias otus-nightly \
+  --out androidApp-nightly.apk androidApp/build/outputs/apk/nightly/androidApp-nightly-unsigned.apk
+```

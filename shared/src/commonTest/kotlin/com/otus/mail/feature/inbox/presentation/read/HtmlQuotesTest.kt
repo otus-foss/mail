@@ -76,8 +76,31 @@ class HtmlQuotesTest {
     }
 
     @Test
-    fun stylesAndTitlesAreNotText() =
+    fun wrapperEndsAndTheRuleAboveGoInAnyCaseAndSpacing() {
+        val header =
+            "<div id=\"divRplyFwdMsg\"><b>From:</b> Margaret Knuth &lt;m@x.org&gt;<br>" +
+                "<b>Sent:</b> Thursday, October 10, 2026 9:14 AM</div>"
+        val html = "<BODY><DIV>$reply<HR size=1>\n$header$earlier\n</DIV >\n</BODY>\n</HTML>\n"
+        assertEquals(
+            HtmlQuoteSplit("<BODY><DIV>$reply", earlier, margaret("10 Oct 2026, 9:14 AM")),
+            splitHtmlQuote(html),
+        )
+    }
+
+    @Test
+    fun anAttributionInItsOwnElementGoesWithIt() {
+        val html =
+            "$reply<p class=\"cite\">On 10 Oct 2026, at 09:14, Margaret Knuth &lt;m@x.org&gt; wrote:</p>\n" +
+                "<BLOCKQUOTE>$earlier</BLOCKQUOTE>"
+        assertEquals(HtmlQuoteSplit(reply, earlier, margaret("10 Oct 2026, 09:14")), splitHtmlQuote(html))
+    }
+
+    @Test
+    fun stylesAndTitlesAreNotText() {
         assertEquals("Hi", markupText("<head><title>Mail</title><style>p{}</style></head><style>b{}</style><p>Hi</p>"))
+        // A style that is never closed hides nothing, but a later title still goes.
+        assertEquals("a\nb c d", markupText("<STYLE>x</styles>y</Style >a<br>b <style>c <title>t</title>d"))
+    }
 
     @Test
     fun splitsAPlainBlockquoteAtTheEnd() =

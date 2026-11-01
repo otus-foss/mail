@@ -10,20 +10,27 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
+import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.datetime.TimeZone
 
-/** A mail source that reads this server for the saved logins of [store], in UTC. */
+/** A mail source that reads this server, which offers [session], for the saved logins of [store], in UTC. */
 internal fun FakeMailServer.source(
     store: LoginStore,
     cache: MailCache = InMemoryMailCache(),
     limit: Int = PAGE,
     queue: EmailChangeQueue? = null,
-): JmapMailSource = JmapMailSource(connections(store), store, cache, limit, zone = { TimeZone.UTC }, queue = queue)
+    session: String = STALWART_SESSION,
+): JmapMailSource =
+    JmapMailSource(connections(store, session), store, cache, limit, zone = {
+        TimeZone.UTC
+    }, queue = queue)
 
-/** Connections to this server for the saved logins of [store]. */
-internal fun FakeMailServer.connections(store: LoginStore) =
-    JmapConnections(JmapClient(stalwartLike(api = ::answer)), store)
+/** Connections to this server, which offers [session], for the saved logins of [store]. */
+internal fun FakeMailServer.connections(
+    store: LoginStore,
+    session: String = STALWART_SESSION,
+) = JmapConnections(JmapClient(stalwartLike(session, api = ::answer)), store)
 
 private const val PAGE = 50
 

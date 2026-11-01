@@ -4,10 +4,11 @@ package com.otus.mail.feature.inbox.domain
  * [bytes] without the metadata a camera or editor wrote into them: EXIF, with the place and time a
  * photo was taken and the device that took it, XMP, IPTC, comments, and data trailing the image.
  * Pixels and color profiles stay, and so does a JPEG's orientation, so photos keep their way up.
- * JPEG, PNG, and WebP are recognized by their bytes; other files, and images that do not parse,
- * return unchanged.
+ * JPEG, PNG, and WebP are recognized by their bytes; other files return unchanged. A file cut off
+ * part way loses its metadata too. Null for one of these images that does not parse far enough to
+ * tell its metadata apart, so the caller never takes it for cleaned.
  */
-fun withoutImageMetadata(bytes: ByteArray): ByteArray =
+fun withoutImageMetadata(bytes: ByteArray): ByteArray? =
     try {
         val image = ImageBytes(bytes)
         when {
@@ -17,7 +18,7 @@ fun withoutImageMetadata(bytes: ByteArray): ByteArray =
             else -> bytes
         }
     } catch (expected: MalformedImage) {
-        bytes
+        null
     }
 
 private fun ImageBytes.isJpeg() = size >= JPEG_SIGNATURE_BYTES && u8(0) == JPEG_MARKER && u8(1) == JPEG_START

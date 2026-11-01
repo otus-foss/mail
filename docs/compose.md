@@ -109,7 +109,9 @@ an incorrect size. Settings › Privacy › **Photos you attach** decides whethe
 photos attach as `PickedFile.cleaned()`: without their metadata (`withoutImageMetadata` drops
 EXIF, with GPS position, capture time, and camera model, plus XMP, IPTC, comments, and trailing
 data, while pixels, color profiles, and a JPEG's orientation stay) and under a random name such as
-`photo-3f9a2c41.jpg`. **Ask each time**, the default, shows a sheet when photos are picked, with
+`photo-3f9a2c41.jpg`. A photo cut off part way, as by an interrupted write, loses its metadata
+too and ends where its data does. One too damaged to tell its metadata apart says "Couldn't
+upload" rather than going with it. **Ask each time**, the default, shows a sheet when photos are picked, with
 **Remove details** checked; closing it removes them too. **Always remove details** and **Keep
 details** attach without asking. Other files, including HEIC, attach unchanged. A file larger than this limit
 says "File is too large"; any other failure says "Couldn't upload", and tapping the chip
@@ -160,7 +162,11 @@ rejects an image that cannot fit the limit. It is stored in the signature as a `
 image has a `text2` outline, a ✕, and one corner handle that keeps its aspect ratio between 48
 and 300 px and snaps to Small (96), Medium (132), or Large (200) within 6 px. The size pill under
 it names the preset or the pixel size. When a draft is saved or sent, each image is uploaded and
-the HTML points at it by `cid:`, inside `multipart/related`, so the message carries it.
+the HTML points at it by `cid:`, inside `multipart/related`, so the message carries it. Only the
+`src` of an `<img>` element changes: text that looks like a `data:` URI, as in a quote, and an
+image whose data is not valid base64 stay as written. Saving and sending each remember an image's upload for 30 minutes,
+up to 16 images, and reuse it, so typing does not upload the signature's images at every save.
+The server keeps an upload that nothing uses yet for at least an hour (RFC 8620, section 6.1).
 
 **Copy signature** copies from one other address, which needs a signature, to this one, or from
 this one to several others, and shows "Signature copied".
@@ -173,7 +179,10 @@ remembers the new Email id. Saves run one at a time, so each save knows the copy
 closing the page, or a discard during a save lets that save finish and keep its new id, so the
 next save replaces that copy and a discard deletes it. A failed save keeps the previous copy and
 its id, so the next save replaces it, and shows a notice under the header until a later save
-succeeds. The notice says why: no Drafts folder, no permission, or an unreachable server.
+succeeds. The notice says why: no Drafts folder, no permission, or an unreachable server. Each
+copy gets its own Message-ID. A save that gets no answer may still have stored its copy, so while
+the app runs it remembers that Message-ID, and the next save in that account looks for it in
+Drafts with the `header` filter and destroys what it finds, other than the copy it just stored.
 
 ### Sending
 
@@ -192,23 +201,40 @@ app or losing the network loses no mail. Android keeps it in the `otus_mail_outb
 preferences file and writes it before the send starts; iOS keeps it in user defaults. Each message
 gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
 
-- A send that got no answer may have reached the server. Before it goes again, `JmapSendChecker`
-  looks the message up with the `header` filter of `Email/query` (RFC 8621, section 4.4.1). A
-  copy without `$draft` went, so nothing goes twice. A copy that kept `$draft` was refused, so
-  it is destroyed and the message goes again. Without a copy, the message goes again. A copy
-  that went is tidied up as after a send: the saved draft is deleted and the message it answered
-  gets its mark.
+- A send that got no answer may have reached the server. The sender stores the copy first and
+  submits it in a second request, and the outbox keeps the copy's id and the time it was stored
+  before the submission starts. Before the message goes again, `JmapSendChecker` looks that copy
+  up by its id, so no search index that may lag behind decides: a submission of it that nobody
+  canceled (`EmailSubmission/query` with `emailIds`, RFC 8621, section 7.3) means it went, and
+  so does a copy without `$draft` whose submission the server no longer keeps. A copy that kept
+  `$draft` without a submission is destroyed and the message goes again. With neither a copy nor
+  a submission, only the user can tell. The lookup waits until 2 minutes after the copy was
+  stored, so a submission the server is still working on is not taken for a missing one.
+- When no copy was stored, the submission never started. A copy whose storing lost its answer is
+  found with the `header` filter of `Email/query` (section 4.4.1) and destroyed, and the message
+  goes again. Messages saved by an older version, which stored and submitted in one request, are
+  still looked up this way: a copy without `$draft` went, so nothing goes twice. A copy that went
+  is tidied up as after a send: the saved draft is deleted and the message it answered gets its
+  mark.
 - A server that cannot run that lookup leaves the message to the user: a "Couldn't confirm
   sending" toast offers to open it, at once or after the next start. A server down for now is
   asked again later.
 - A failed send that may hide a lost answer, such as a gateway error, is looked up before Retry
   sends it. Only a clear refusal, such as an unknown recipient, lets Retry skip the lookup.
 - A refused message stays too. After a restart a "Couldn't send" toast offers to open it, and
-  opening it takes it out of the outbox.
+  opening it takes it out of the outbox once its page shows. A send or lookup that fails in an
+  unexpected way, rather than with an answer from the server, counts as a server problem or an
+  unconfirmed send, so the message waits for the user instead of stopping the app at every start.
 - On Android, `OutboxWorker` runs the outbox 30 seconds after a message is due, and again once the
   network is back after a lost connection. So a message the device held for Undo still goes if
   the app closed during the window. The app sends due messages when it starts too.
 - Removing an account drops its messages.
+- Toasts and their work belong to the process, so Undo and Open still work after the activity is
+  recreated, as on rotation or a theme, language, or window size change. The draft they open goes
+  through `PageRequests` to the activity on screen, and waits for one while none is.
+- Messages saved in a form the app no longer reads, as after a change of their format, move to the
+  store's `unreadable` value before anything is saved over them, so they are kept for recovery
+  rather than lost.
 
 The server holds the message for the Undo window wherever it can: when the account's
 `maxDelayedSend` covers the delay plus 2 seconds, the message goes to the server at once with a
@@ -216,6 +242,8 @@ The server holds the message for the Undo window wherever it can: when the accou
 the server's clock cannot cut the window short. The message then goes even if the app closes
 during the window. Its copy files in Sent at once. Undo sets the submission's `undoStatus` to
 `canceled`, moves the copy back to Drafts as a draft, and opens it, as for a scheduled message.
+It also removes the `$answered` or `$forwarded` mark the send gave the original, unless the
+original had that mark before, which the sender reads before it marks a held or scheduled send.
 Where the server cannot hold mail that long, the device holds it instead, and Undo opens the
 draft again as it was. If the hold request got no answer, the device takes over the hold, since
 the server may or may not have it. Undo then opens the draft at once and keeps the message in the
@@ -234,13 +262,13 @@ online" toast shows and Mail tries again after 5 seconds, doubling the wait up t
 while the app runs. Trying again is safe: when a cancel's answer was lost, Mail asks whether a
 submission that nobody canceled is left. If one is, the server sends it at its time; if none is,
 the cancel arrived and the copy is submitted again. On the device hold, the swipe ends the
-wait. The sender makes three requests (RFC 8621, section 7.5):
+wait. The sender makes four requests (RFC 8621, section 7.5):
 
 1. `Identity/get` and two `Mailbox/query` calls find the identity for the From address and the
    Drafts and Sent folders. An identity matches by exact address, or by a wildcard such as
    `*@example.org` for any address in its domain.
-2. One request stores the draft as written with `Email/set` and submits that copy with
-   `EmailSubmission/set`. It sends no envelope, so the server takes the recipients from To, Cc,
+2. One request stores the draft as written with `Email/set`, and a second submits that copy by
+   its id with `EmailSubmission/set`. It sends no envelope, so the server takes the recipients from To, Cc,
    and Bcc, and removes the Bcc header. `onSuccessUpdateEmail` moves the copy from Drafts to Sent
    and clears `$draft`. Without a Sent folder the copy stays where it was stored, without `$draft`.
 3. Once the server accepts the message, one `Email/set` destroys the draft's earlier copy and sets
@@ -257,7 +285,9 @@ submission destroys the copy the request stored and keeps the earlier one in Dra
 ### Schedule send
 
 The ⋯ menu offers **Schedule send** only where the account's submission capability has a
-`maxDelayedSend` above 0 (RFC 8621, section 7). The **Send later** sheet offers This evening at
+`maxDelayedSend` above 0 and lists `FUTURERELEASE` in its `submissionExtensions` (RFC 8621,
+sections 1.3.2 and 7), since the send carries an RFC 4865 `HOLDUNTIL` parameter. The Undo hold on
+the server needs the same. The **Send later** sheet offers This evening at
 18:00 before 17:00, Tomorrow morning at 8:00, Monday morning at 8:00 from Friday to Sunday, and
 Pick date and time, within the server's limit. Choosing one only picks the time: the sheet closes,
 the page stays open, and a notice above the bar says "Scheduled for Mon 19 Oct, 8:00" with Change,
@@ -266,7 +296,7 @@ then reads "Sends to" with the schedule-send symbol. Send sends with an explicit
 carries `HOLDUNTIL` (RFC 4865), closes the page, and shows "Scheduled for Mon 19 Oct, 8:00" with Undo.
 The scheduled copy stays in Drafts without `$draft` until the server sends it. Undo sets the
 submission's `undoStatus` to `canceled`. Only after the server confirms cancellation does Mail
-mark the copy `$draft` again and open it. If restoring the draft fails, Mail reports that the
+mark the copy `$draft` again, take back the original's mark as for a held send, and open it. If restoring the draft fails, Mail reports that the
 send was canceled but the draft could not be restored.
 
 ## Limits
@@ -289,8 +319,9 @@ send was canceled but the draft could not be restored.
   the From address changed, or record the address in `recentFrom`.
 - Scheduled messages show only in Drafts. A Scheduled view with Send now and Cancel is not built;
   it waits for a decision.
-- Rotating the device or the system ending the app returns to the page that opened the draft.
-  The saved copy is kept in Drafts, but the page does not reopen it, and edits made in the last
+- Recreating the activity, as on rotation or a theme, language, or window size change, or the
+  system ending the app returns to the page that opened the draft. The saved copy is kept in
+  Drafts, but the page does not reopen it. When the system ends the app, edits made in the last
   two seconds can be lost.
 - Opening a saved draft from the Drafts folder is not built.
 - iOS has no image picker for signatures yet, so Add image is hidden there.
@@ -306,8 +337,8 @@ send was canceled but the draft could not be restored.
 ## Validation
 
 `DraftStartTest` and `RecipientTextTest` cover starting drafts and the recipient text format.
-`JmapDraftSenderTest` checks the send requests against a mock server: the stored copy and its
-submission in one request, filing in Sent, wildcard identities, the marks on the original, and
+`JmapDraftSenderTest` checks the send requests against a mock server: the stored copy, reported
+before its submission by id, filing in Sent, wildcard identities, the marks on the original, and
 cleanup after a refusal. `ComposeSendTest` covers when Send is enabled, waiting for a save in
 progress, committing a typed address on Send, and failure notices. `ComposeStateTest` covers
 delayed saves, saving on close, discard and its later delete, failure notices, keeping the stored

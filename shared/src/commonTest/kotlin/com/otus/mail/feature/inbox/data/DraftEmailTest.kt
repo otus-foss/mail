@@ -11,6 +11,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 class DraftEmailTest {
     private val quote = "On 2026-10-11 12:30, Grace wrote:\n> Noon?\n> <ok>"
@@ -30,6 +32,17 @@ class DraftEmailTest {
         assertTrue(html.startsWith("<p><b>Thursday</b> works.</p><br>On 2026-10-11 12:30, Grace wrote:<br>"))
         assertTrue(html.endsWith("<blockquote>Noon?<br>&lt;ok&gt;</blockquote>"))
         assertEquals("Thursday works.\n\n$quote", email.part("text"))
+    }
+
+    @Test
+    fun aLongQuoteBuildsItsHtmlInLinearTime() {
+        val lines = 40_000
+        val long = (1..lines).joinToString("\n", prefix = "Grace wrote:\n") { "> line $it" }
+        val started = TimeSource.Monotonic.markNow()
+        val html = Draft("a1", body = "Yes.", html = "<p>Yes.</p>", quote = long).htmlContent().orEmpty()
+        assertTrue(started.elapsedNow() < 2.seconds, "Copying the run at each line took ${started.elapsedNow()}")
+        assertEquals(1, html.split("<blockquote>").size - 1, "The quoted lines form one blockquote")
+        assertTrue(html.endsWith("line $lines</blockquote>"))
     }
 
     private fun kotlinx.serialization.json.JsonObject.part(id: String): String =

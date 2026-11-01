@@ -101,7 +101,7 @@ class JmapFolderRuleRepositoryTest {
             val account = repository.accounts().single()
             assertEquals(null, account.script?.scriptId)
             assertEquals(RuleOutcome.Saved, repository.save(account, mapOf("P" to listOf(fromJana))))
-            assertTrue(uploaded.startsWith("# BEGIN otus-rules\r\n"), uploaded)
+            assertTrue(uploaded.startsWith("$REQUIRE\r\n# BEGIN otus-rules\r\n"), uploaded)
             assertTrue("""fileinto :mailboxid "P" "Clients/Projects";""" in uploaded, uploaded)
             val methods = calls.map { Regex("\"(SieveScript/\\w+|Mailbox/get)\"").find(it)?.groupValues?.get(1) }
             assertEquals(listOf("SieveScript/validate", "SieveScript/set"), methods.takeLast(2))
@@ -124,8 +124,9 @@ class JmapFolderRuleRepositoryTest {
             assertFalse(account.script?.hasBlock == true)
             assertEquals(RuleOutcome.Saved, repository.save(account, mapOf("P" to listOf(fromJana))))
             val block = blockText(uploaded).orEmpty()
-            assertEquals(handWritten, uploaded.replace(block, ""))
-            assertTrue(uploaded.startsWith("require \"vacation\";\n# BEGIN otus-rules"), uploaded)
+            assertEquals(handWritten, uploaded.replace(block, "").replace("$REQUIRE\r\n", ""))
+            assertTrue(uploaded.startsWith("require \"vacation\";\n$REQUIRE\r\nif header"), uploaded)
+            assertTrue(uploaded.endsWith(block), "The block goes last, so the script's own rules run first")
             val set = calls.last()
             assertTrue("\"update\":{\"S1\":{\"blobId\":\"U1\"}}" in set && "onSuccessActivateScript" !in set, set)
         }
@@ -237,6 +238,8 @@ class JmapFolderRuleRepositoryTest {
     private fun validateReply(error: String) = """["SieveScript/validate", {"error": $error}, "c0"]"""
 
     private companion object {
+        const val REQUIRE = """require ["fileinto", "mailboxid"]; # otus-rules"""
+
         const val UPLOADED = """{"blobId": "U1", "type": "application/sieve", "size": 1}"""
         const val MAILBOXES =
             """[{"id": "I", "name": "Inbox", "role": "inbox"}, {"id": "A", "name": "Archive", "role": "archive"},

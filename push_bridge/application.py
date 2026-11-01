@@ -106,7 +106,7 @@ class Application:
         payload = self.body(env)
         if len(payload) < MIN_PUSH_BODY or payload[KEY_ID_LENGTH_OFFSET] != SENDER_KEY_LENGTH:
             raise Problem(400)
-        message = self.store.save(route_id, payload, max(1, ttl))
+        message = self.store.save(route_id, payload, max(1, ttl), active=bool(route["active"]))
         if route["active"]:
             try:
                 accepted = self.apns.send(route, message)

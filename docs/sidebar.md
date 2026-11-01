@@ -80,8 +80,9 @@ fills the sidebar for the chosen scope.
   from the pills it replaced, so a saved choice still reads.
 
 Only one item is selected across the inbox row, tiles, and rows. Each page, including each folder,
-keeps its saved state, such as a search, while another page is shown. Settings subpages stay under
-Settings; see [Settings](settings.md) and [Folders and rules](folders.md).
+keeps its saved state, such as a search and the list's scroll position, while another page is
+shown. The list goes back to the top only when its search, pill, or filters change. Settings
+subpages stay under Settings; see [Settings](settings.md) and [Folders and rules](folders.md).
 
 ## Show mail from
 

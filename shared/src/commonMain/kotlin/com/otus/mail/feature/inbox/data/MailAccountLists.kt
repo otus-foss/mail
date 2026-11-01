@@ -37,31 +37,60 @@ internal class MailAccountLists(
     }
 
     /**
-     * Adds the next page to each list of [listingsOf] that has more. Lists the cache does not
-     * hold yet load with [refresh] instead.
+     * Adds the next page to each list of [listingsOf] that has more, after its last row still in
+     * its mailbox (see [nextPages]). A list the cache does not hold, such as one dropped to make
+     * room for newer ones, loads its first page. Only a login without cached mailboxes refreshes.
      */
     suspend fun more(listingsOf: ListingsOf) {
         val queries = listingsOf(cache.mailboxes(loginId))
+        if (queries.isEmpty()) return refresh(listingsOf)
         val saved = cache.listings(loginId, queries)
-        if (queries.isEmpty() || saved.size < queries.size) return refresh(listingsOf)
-        val growing = queries.filter { saved.getValue(it.key).hasMore }
-        val requests = growing.map { PageRequest(it, position = saved.getValue(it.key).ids.size, limit = page) }
-        val added = growing.map { it.key }.zip(connection.queryPages(accountId, requests)).toMap()
-        // New mail moves every row down, so a page can repeat rows the list already has.
-        // The ids only follow later changes when the page came from the same query state.
-        val listings =
-            added.mapValues { (key, next) ->
-                val before = saved.getValue(key)
-                Listing(
-                    (before.ids + next.ids).distinct(),
-                    next.hasMore,
-                    next.queryState.takeIf {
-                        it ==
-                            before.queryState
-                    },
-                )
-            }
-        store(listings, added.values.flatMap { it.ids }.toSet(), changes = null)
+        val growing = queries.filter { saved[it.key]?.hasMore != false }
+        val listings = growing.map { it.key }.zip(nextPages(growing, saved)).toMap()
+        val added = listings.flatMap { (key, listing) -> listing.ids - saved[key]?.ids.orEmpty().toSet() }
+        store(listings, added.toSet(), changes = null)
+    }
+
+    /**
+     * Each of [queries] with its next page. A page starts after the list's last row the cache
+     * still holds in the list's mailbox, so moving loaded rows away skips none. When no row is
+     * left, or the server no longer finds it in the list, the list loads again from the start with
+     * a page more; a list [saved] lacks loads its first page.
+     */
+    private suspend fun nextPages(
+        queries: List<ListingQuery>,
+        saved: Map<String, Listing>,
+    ): List<Listing> {
+        val anchors = lastKept(queries, saved)
+        val anchored = queries.filter { it.key in anchors }
+        val requests = anchored.map { PageRequest(it, limit = page, anchor = anchors.getValue(it.key)) }
+        val appended =
+            anchored
+                .zip(connection.queryPagesOrNull(accountId, requests)) { query, next ->
+                    next?.let { query.key to saved.getValue(query.key).appended(it) }
+                }.filterNotNull()
+                .toMap()
+        val restarted = queries.filter { it.key !in appended }
+        val reloads = restarted.map { PageRequest(it, limit = page + (saved[it.key]?.ids?.size ?: 0)) }
+        val reloaded = restarted.map { it.key }.zip(connection.queryPages(accountId, reloads)).toMap()
+        return queries.map { appended[it.key] ?: reloaded.getValue(it.key) }
+    }
+
+    /**
+     * The last row of each saved listing of [queries] whose cached email is still in the list's
+     * mailbox, looked for among the listing's last page of rows.
+     */
+    private suspend fun lastKept(
+        queries: List<ListingQuery>,
+        saved: Map<String, Listing>,
+    ): Map<String, String> {
+        val rowIds = queries.flatMap { saved[it.key]?.ids.orEmpty().takeLast(page) }.toSet()
+        val held = cache.objects(loginId, CacheKind.Email, EmailObject.serializer(), rowIds)
+        return queries
+            .mapNotNull { query ->
+                val kept = saved[query.key]?.ids?.lastOrNull { query.mailboxId in held[it]?.boxes.orEmpty() }
+                kept?.let { query.key to it }
+            }.toMap()
     }
 
     /** Fetches what [rowIds] need and saves it with [listings] and [changes] in one write. */
@@ -121,3 +150,11 @@ internal class MailAccountLists(
         ids: Set<String>,
     ): Set<String> = if (ids.isEmpty()) emptySet() else cache.read(loginId, kind, ids).keys
 }
+
+/**
+ * This listing with [next], the page after one of its rows, added. The page repeats rows the
+ * listing has when its anchor was not the last row, such as after a move the server has not taken
+ * yet. The ids only follow later changes when the page came from the same query state.
+ */
+private fun Listing.appended(next: Listing): Listing =
+    Listing((ids + next.ids).distinct(), next.hasMore, next.queryState.takeIf { it == queryState })

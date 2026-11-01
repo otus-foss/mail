@@ -81,8 +81,7 @@ fun App(
             SharedSettings(dateFormatState, themeState, animationState, appIconState)
         }
     val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
-    // Messages an earlier run could not hand to the server go now, or wait in a toast for the user.
-    LaunchedEffect(states) { states.outgoing.resume { navigation.go(MailPage.Compose(it)) } }
+    PageRequestEffects(services, states) { page = it }
     OtusTheme(themeState.palette) {
         CompositionLocalProvider(
             LocalMotionScale provides animationState.speed.scale,
@@ -123,9 +122,24 @@ fun App(
 }
 
 /**
+ * Opens with [show] the pages toasts ask for, including ones shown before the activity was
+ * recreated. Messages an earlier run could not hand to the server go now, or wait in a toast.
+ */
+@Composable
+private fun PageRequestEffects(
+    services: MailServices,
+    states: MailStates,
+    show: (MailPage) -> Unit,
+) {
+    LaunchedEffect(services) { services.pageRequests.collect { show(it) } }
+    LaunchedEffect(states) { states.outgoing.resume { states.pageRequests.show(MailPage.Compose(it)) } }
+}
+
+/**
  * Shows mail that arrives or changes elsewhere without a pull: each push reloads the folders, and
- * the inbox while [inboxShown]. Other pages reload when shown. A push often follows the user's own
- * action, so the inbox keeps a notice about that action's failure.
+ * the inbox while [inboxShown]. Other pages reload when shown. While Mail is off screen, pushes
+ * wait, and one reload follows when it comes back. A push often follows the user's own action, so
+ * the inbox keeps a notice about that action's failure.
  */
 @Composable
 private fun ServerChangeEffects(
@@ -134,7 +148,7 @@ private fun ServerChangeEffects(
     inboxShown: () -> Boolean,
 ) {
     LaunchedEffect(states) {
-        services.serverChanges.changes.collect {
+        reloadWhileShown(services.serverChanges.changes, services.visibility.shown) {
             states.folders.refresh()
             if (inboxShown()) states.feed.refresh(keepReport = true)
         }

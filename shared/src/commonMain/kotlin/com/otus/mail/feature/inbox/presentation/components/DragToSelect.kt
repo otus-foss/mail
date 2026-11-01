@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
  * Long-press a row, then drag up or down to give every row passed the pressed row's new state. The
  * row's own long press toggles it and holds the touch, so the list neither scrolls nor swipes; this
  * only follows the finger, and scrolls the list while the finger is near its top or bottom edge.
+ * Only the rows of [ids] take part; other items, such as a notice or the loading footer, do not.
  */
 internal fun Modifier.dragToSelect(
     listState: LazyListState,
@@ -32,9 +34,9 @@ internal fun Modifier.dragToSelect(
         coroutineScope {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                val anchor = listState.rowAt(down.position.y, clamp = false)
+                val anchor = listState.rowAt(down.position.y, ids(), clamp = false)
                 if (anchor == null || !awaitHold(down)) return@awaitEachGesture
-                val drag = RowDrag(listState, anchor, { DragSelection(ids(), anchor, selectedIds()) }, onSelect)
+                val drag = RowDrag(listState, anchor, ids, { DragSelection(ids(), anchor, selectedIds()) }, onSelect)
                 var scroll: Job? = null
                 while (true) {
                     val change =
@@ -51,7 +53,8 @@ internal fun Modifier.dragToSelect(
 /** Where the finger is during one drag, and how fast the list scrolls under it. */
 private class RowDrag(
     private val listState: LazyListState,
-    private val anchor: Int,
+    private val anchor: String,
+    private val ids: () -> List<String>,
     private val start: () -> DragSelection,
     private val onSelect: (Set<String>) -> Unit,
 ) {
@@ -79,15 +82,15 @@ private class RowDrag(
     }
 
     private fun follow() {
-        val index = listState.rowAt(y, clamp = true) ?: return
+        val id = listState.rowAt(y, ids(), clamp = true) ?: return
         // The row's long press toggles the anchor, so read the selection once the finger leaves it.
-        if (selection == null && index == anchor) return
+        if (selection == null && id == anchor) return
         var active = selection
         if (active == null) {
             active = start()
             selection = active
         }
-        onSelect(active.through(index))
+        onSelect(active.through(id))
     }
 }
 
@@ -105,18 +108,29 @@ private suspend fun AwaitPointerEventScope.awaitHold(down: PointerInputChange): 
         false
     } ?: true
 
-/**
- * The index of the row at [y], measured from the list's top. With [clamp], a point above or below
- * the rows picks the nearest one, so a drag into the padding still reaches the end rows.
- */
+/** The id of the message row at [y], measured from the list's top; see [messageAt]. */
 private fun LazyListState.rowAt(
     y: Float,
+    ids: List<String>,
     clamp: Boolean,
-): Int? {
-    val itemY = y + layoutInfo.viewportStartOffset
-    val rows = layoutInfo.visibleItemsInfo
-    val row = rows.firstOrNull { itemY >= it.offset && itemY < it.offset + it.size }
-    return row?.index ?: if (!clamp) null else (rows.lastOrNull { it.offset <= itemY } ?: rows.firstOrNull())?.index
+): String? = layoutInfo.visibleItemsInfo.messageAt(y + layoutInfo.viewportStartOffset, ids, clamp)
+
+/**
+ * The id of the row of [ids] at [itemY], in item offsets. Items that are not one of [ids], such as
+ * a notice above the rows or the loading footer below them, are left out. With [clamp], a point
+ * outside the rows picks the nearest one, so a drag into the padding or onto the footer still
+ * reaches the end rows.
+ */
+internal fun List<LazyListItemInfo>.messageAt(
+    itemY: Float,
+    ids: List<String>,
+    clamp: Boolean,
+): String? {
+    val rows = filter { item -> item.key.let { it is String && it in ids } }
+    val row =
+        rows.firstOrNull { itemY >= it.offset && itemY < it.offset + it.size }
+            ?: (rows.lastOrNull { it.offset <= itemY } ?: rows.firstOrNull()).takeIf { clamp }
+    return row?.key as? String
 }
 
 /** Pixels to scroll each frame: faster the deeper the finger sits in the top or bottom [edge]. */

@@ -55,13 +55,21 @@ more.
   of what the server sent.
 - A change the server refuses is dropped, and its email leaves the cache, so the next refresh
   reads it again. A server that is down for now (`serverUnavailable`, `serverFail`, or
-  `serverPartialFail`, RFC 8620, section 3.6.2) refuses nothing: the change waits.
+  `serverPartialFail`, RFC 8620, section 3.6.2) refuses nothing: the change waits. So does an
+  email the server will not change for now (`rateLimit`, RFC 8620, section 5.3).
 - Every login's changes share one stored value, so one lock covers each read and rewrite of it,
   and changes made on two accounts at once both stay.
 - Android keeps the queue in the `otus_mail_pending_changes` shared preferences file, written at
   once, and `OutboxWorker` sends it once the network is back. iOS keeps it in user defaults.
-- Removing an account drops its changes. Deleting, muting, and newsletter cleanup still need the
-  server at once.
+- Removing an account drops its changes, before its login is deleted and again after, so a change
+  made in between does not wait for the same account to be added again. Deleting, muting, and
+  newsletter cleanup still need the server at once.
+
+Contact changes wait in `ContactSync` the same way. A new card is kept as sent before it goes.
+When that request gets no answer, the server may have stored the card anyway, so the next try
+first looks in the book for a card with its uid (`ContactCard/query`, RFC 9610, section 3.3),
+leaving out cards that other waiting changes are about. When it finds one, it updates that card
+with any change made since instead of creating a second card.
 
 ## Retention and removal
 

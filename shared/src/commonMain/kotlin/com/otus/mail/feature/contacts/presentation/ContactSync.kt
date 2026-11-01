@@ -102,7 +102,12 @@ internal class ContactSync(
     ): Boolean =
         try {
             inFlight = edit.id
-            val created = send(edit)
+            val created =
+                when (edit) {
+                    is ContactEdit.Create -> create(edit)
+                    is ContactEdit.Update -> repository.sendUpdate(edit)
+                    is ContactEdit.Delete -> repository.sendDelete(edit)
+                }
             edits = edits.filterNot { it.id == edit.id }
             if (created != null) {
                 renamed = renamed + (edit.key to created)
@@ -149,13 +154,23 @@ internal class ContactSync(
         save()
     }
 
-    /** Returns the new card's key for a creation, else null. */
-    private suspend fun send(edit: ContactEdit): CardKey? =
-        when (edit) {
-            is ContactEdit.Create -> repository.create(edit.book, edit.card)
-            is ContactEdit.Update -> repository.sendUpdate(edit)
-            is ContactEdit.Delete -> repository.sendDelete(edit)
+    /**
+     * Creates [edit]'s card, unless a try whose answer was lost stored it already: that card then
+     * takes the changes made since, and is the new card. The card is kept as sent before it goes,
+     * so a lost answer is looked into on the next try, even after a restart.
+     */
+    private suspend fun create(edit: ContactEdit.Create): CardKey {
+        val sent = edit.sent
+        val others = edits.filter { it.id != edit.id }.map { it.key }.toSet()
+        val earlier = sent?.let { repository.findCreated(edit.book, it, ignore = others) }
+        if (sent != null && earlier != null) {
+            repository.update(earlier, sent, edit.card)
+            return earlier
         }
+        edits = edits.map { if (it.id == edit.id) edit.copy(sent = edit.card) else it }
+        save()
+        return repository.create(edit.book, edit.card)
+    }
 
     private fun save() {
         // A write replaces every saved value, so the others, such as the frequent scores, are kept.

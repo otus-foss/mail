@@ -185,7 +185,8 @@ internal class MailStates(
                 services.uploads,
                 services.pickers.attachmentFiles,
             ),
-            scope,
+            // The process's scope, so saves and a discarded copy's deletion outlive a recreated activity.
+            services.work,
             request,
             ComposeOrigin(
                 account.id,
@@ -217,11 +218,11 @@ internal class MailStates(
     /** Moves messages between folders and in and out of Read later. */
     val filing = MessageFiling(services, folders, folderColors, scope)
 
-    /**
-     * The toasts that offer to undo moves; they outlive the page a move closed, such as the open
-     * message, and the activity, since the process holds them.
-     */
-    val moveToasts = MoveToasts(services.toasts)
+    /** The toasts that offer to undo moves; the process holds them, see [MailServices.work]. */
+    val moveToasts: MoveToasts get() = services.moveToasts
+
+    /** Pages that work outliving this composition, such as a toast's, opens. */
+    val pageRequests: PageRequests get() = services.pageRequests
 
     /** The Read view's services, folders, and privacy setting; its toasts join the move toasts. */
     val reading =
