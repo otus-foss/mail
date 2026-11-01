@@ -10,6 +10,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 
 /**
  * The avatars of a feed's senders and accounts. Local images come back before a load shows, and
@@ -54,8 +55,9 @@ internal class FeedAvatars(
     }
 
     /**
-     * Resolves the senders and accounts of [messages] and applies each result with [edit] while
-     * [isCurrent] says the load that asked is still the newest.
+     * Resolves the senders and accounts of [messages] and applies the results with [edit] while
+     * [isCurrent] says the load that asked is still the newest. Results that arrive together, such
+     * as images read from the device, go in one [edit], so the list changes once for them.
      */
     suspend fun resolve(
         messages: List<MailMessage>,
@@ -64,9 +66,10 @@ internal class FeedAvatars(
         edit: ((MailMessage) -> MailMessage) -> Unit,
     ) {
         val avatars = service ?: return
+        val batch = AvatarBatch(isCurrent, edit)
         coroutineScope {
-            launch { resolveAccounts(avatars, messages, options, isCurrent, edit) }
-            resolveSenders(avatars, messages, options, isCurrent, edit)
+            launch { resolveAccounts(avatars, messages, options, isCurrent, batch::add) }
+            resolveSenders(avatars, messages, options, isCurrent, batch::add)
         }
     }
 
@@ -76,7 +79,7 @@ internal class FeedAvatars(
         messages: List<MailMessage>,
         options: AvatarOptions,
         isCurrent: () -> Boolean,
-        edit: ((MailMessage) -> MailMessage) -> Unit,
+        edit: suspend ((MailMessage) -> MailMessage) -> Unit,
     ) {
         coroutineScope {
             messages
@@ -100,7 +103,7 @@ internal class FeedAvatars(
         messages: List<MailMessage>,
         options: AvatarOptions,
         isCurrent: () -> Boolean,
-        edit: ((MailMessage) -> MailMessage) -> Unit,
+        edit: suspend ((MailMessage) -> MailMessage) -> Unit,
     ) {
         coroutineScope {
             messages
@@ -115,6 +118,27 @@ internal class FeedAvatars(
                     }
                 }
         }
+    }
+}
+
+/**
+ * Collects the edits of avatars that arrive while the feed's thread is busy, and applies them with
+ * [apply] in one change once it is free, while [isCurrent]. The feed's scope runs on one thread.
+ */
+private class AvatarBatch(
+    private val isCurrent: () -> Boolean,
+    private val apply: ((MailMessage) -> MailMessage) -> Unit,
+) {
+    private val pending = mutableListOf<(MailMessage) -> MailMessage>()
+
+    suspend fun add(edit: (MailMessage) -> MailMessage) {
+        pending += edit
+        // The first edit of a batch waits for the others that are ready, then applies them all.
+        if (pending.size > 1) return
+        yield()
+        val edits = pending.toList()
+        pending.clear()
+        if (isCurrent()) apply { message -> edits.fold(message) { edited, next -> next(edited) } }
     }
 }
 

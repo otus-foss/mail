@@ -4,6 +4,7 @@ import com.otus.mail.core.mail.ARCHIVE_ROLE
 import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.JUNK_ROLE
 import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStep
@@ -36,26 +37,35 @@ internal class MessageFiling(
     private val colors: FolderColorsState,
     private val scope: CoroutineScope,
 ) {
-    /** [messages] with the other folders each one is in, for its row. Each account's tree is built once. */
-    fun labeled(messages: List<MailMessage>): List<MailMessage> {
-        val trees = folders.accounts.associate { it.accountId to it.folderTree() }
-        return messages.map { message ->
-            message.copy(
-                labels =
-                    trees[message.location.accountId]
-                        ?.labelFolders(message.location.mailboxIds, message.location.mailboxId)
-                        ?.map {
-                            RowFolder(
-                                it.folder.id,
-                                it.folder.name,
-                                if (it.folder.role == INBOX_ROLE) FolderKind.Inbox else FolderKind.Folder,
-                                colors.colorOf(it.folder),
-                                it.readLater,
-                            )
-                        }.orEmpty(),
-            )
-        }
+    /**
+     * [messages] with the other folders each one is in, for its row. Each account's tree is built
+     * once. A message [copies] already labeled keeps that copy, so its row can skip redrawing.
+     */
+    fun labeled(
+        messages: List<MailMessage>,
+        copies: LabeledCopies = LabeledCopies(),
+    ): List<MailMessage> {
+        val trees by lazy { folders.accounts.associate { it.accountId to it.folderTree() } }
+        val labeled = messages.map { message -> copies.of(message) ?: message.labeled(trees) }
+        copies.keep(messages, labeled)
+        return labeled
     }
+
+    private fun MailMessage.labeled(trees: Map<String, List<FolderNode>>): MailMessage =
+        copy(
+            labels =
+                trees[location.accountId]
+                    ?.labelFolders(location.mailboxIds, location.mailboxId)
+                    ?.map {
+                        RowFolder(
+                            it.folder.id,
+                            it.folder.name,
+                            if (it.folder.role == INBOX_ROLE) FolderKind.Inbox else FolderKind.Folder,
+                            colors.colorOf(it.folder),
+                            it.readLater,
+                        )
+                    }.orEmpty(),
+        )
 
     /**
      * Folders of the message's account that accept mail, except the one it is in. The user's own
@@ -207,3 +217,22 @@ private fun shortcutFor(role: String?): FolderShortcut? =
         TRASH_ROLE -> FolderShortcut.Trash
         else -> null
     }
+
+/**
+ * The copies [MessageFiling.labeled] made, by message id. Keep one only while the folders and their
+ * colors stay: a message passed again unchanged, as when another sender's avatar arrives, then
+ * keeps its copy.
+ */
+internal class LabeledCopies {
+    private var copies = emptyMap<String, Pair<MailMessage, MailMessage>>()
+
+    /** The copy made of this very [message] last time, if any. */
+    fun of(message: MailMessage): MailMessage? = copies[message.id]?.takeIf { it.first === message }?.second
+
+    fun keep(
+        messages: List<MailMessage>,
+        labeled: List<MailMessage>,
+    ) {
+        copies = messages.zip(labeled).associateBy { it.first.id }
+    }
+}
