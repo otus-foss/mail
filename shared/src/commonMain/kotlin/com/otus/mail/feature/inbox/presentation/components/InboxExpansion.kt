@@ -100,7 +100,7 @@ internal class ExpandedInbox(
 internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
     val position = { inbox.expansion.position }
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.graphicsLayer { alpha = quickAlpha(position()) }) {
+        Box(Modifier.graphicsLayer { alpha = if (inbox.expansion.skipping) 0f else quickAlpha(position()) }) {
             if (rememberSearchShown(inbox)) SearchRoomContent(inbox.room) else QuickViewContent(inbox)
         }
         val filters = inbox.sources.filters
