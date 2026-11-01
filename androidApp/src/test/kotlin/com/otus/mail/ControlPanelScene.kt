@@ -3,6 +3,7 @@ package com.otus.mail
 import android.view.ViewGroup
 import androidx.activity.compose.setContent
 import androidx.compose.material.ProvideTextStyle
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.geometry.Offset
@@ -25,6 +26,7 @@ import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
+import com.otus.mail.feature.inbox.presentation.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
 
@@ -40,15 +42,17 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(palette: O
             val scope = rememberCoroutineScope()
             val filters = remember { InboxFilterState(scope = scope, counter = { 33 }) }
             OtusTheme(palette) {
-                InboxScreen(
-                    ControlPanelFixtures.messages,
-                    context =
-                        InboxContext(
-                            filters = filters,
-                            filterOptions = FilterPanelFixtures.options,
-                            scope = ControlPanelFixtures.scope(),
-                        ),
-                )
+                CompositionLocalProvider(LocalToday provides PinnedToday) {
+                    InboxScreen(
+                        ControlPanelFixtures.messages,
+                        context =
+                            InboxContext(
+                                filters = filters,
+                                filterOptions = FilterPanelFixtures.options,
+                                scope = ControlPanelFixtures.scope(),
+                            ),
+                    )
+                }
             }
         }
     }
