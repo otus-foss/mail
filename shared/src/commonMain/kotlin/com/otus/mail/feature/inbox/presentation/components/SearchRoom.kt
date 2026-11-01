@@ -22,6 +22,7 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_calendar_today
+import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_notes
 import com.otus.designsystem.shared.controls.elements.Chip
@@ -89,6 +90,12 @@ private fun NarrowRow(room: SearchRoom) {
             }
         },
     ) {
+        // A person picked from the faces narrows the search until their chip is tapped away.
+        search.senders.forEach { address ->
+            Chip(address, { room.state.update(search.copy(senders = search.senders - address)) }, selected = true) {
+                Symbol(Res.drawable.symbol_close)
+            }
+        }
         Chip(
             "In subject",
             { room.state.update(search.copy(inSubject = !search.inSubject)) },

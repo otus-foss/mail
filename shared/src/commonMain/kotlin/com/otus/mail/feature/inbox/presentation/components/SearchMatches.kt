@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -63,7 +64,20 @@ internal fun SearchMatches(
             state.matching,
             applied,
         ) { searchMessages(sources.messages, state.matching, applied) }
-    val people = remember(hits, query) { matchingPeople(hits, query, limit = Int.MAX_VALUE) }
+    val own = sources.page.rowLook.own
+    val accounts =
+        sources.page.scope
+            ?.accounts
+            .orEmpty()
+    // The user is no one to search for, even where they sent themselves mail: neither their sending
+    // identities nor any address their accounts list.
+    val people =
+        remember(hits, query, own, accounts) {
+            val addresses = accounts.flatMap { it.addresses }.map(String::lowercase).toSet()
+            matchingPeople(hits, query, limit = Int.MAX_VALUE).filterNot {
+                own.isMineAnywhere(it.address) || it.address.lowercase() in addresses
+            }
+        }
     val fold = rememberSectionFold()
     Column(modifier.nestedScroll(fold.connection)) {
         if (people.isNotEmpty()) SearchPeople(room, people, looksLikeAddress(query), fold)
@@ -120,7 +134,14 @@ private fun SearchMail(
             contentPadding = PaddingValues(horizontal = InboxTokens.pageInset),
             verticalArrangement = Arrangement.spacedBy(EntryTokens.gap),
         ) {
-            if (hits.isEmpty()) item(key = EMPTY_KEY) { PageNote("No matching mail") }
+            if (hits.isEmpty()) {
+                // In line with the captions, which sit further in than the rows.
+                item(key = EMPTY_KEY) {
+                    Box(
+                        Modifier.padding(horizontal = SheetTokens.inset - InboxTokens.pageInset),
+                    ) { PageNote("No matching mail") }
+                }
+            }
             items(hits, key = { it.id }) { message ->
                 rows[message.id]?.let { ConversationRow(message, it) { room.gestures.tap(message) } }
             }
