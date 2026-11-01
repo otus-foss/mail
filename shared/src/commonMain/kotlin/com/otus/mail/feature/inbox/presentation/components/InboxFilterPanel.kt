@@ -70,7 +70,9 @@ internal fun InboxFilterBar(
     state: InboxFilterState,
     onApply: () -> Unit,
 ) {
-    val count = state.count
+    // The last count stays while the next one is counted, so the label rolls from one to the other.
+    var count by remember { mutableStateOf(state.count) }
+    state.count.takeIf { it != FilterCount.Counting }?.let { count = it }
     FilterShowBar(
         count.showLabel,
         onApply,
