@@ -67,14 +67,16 @@ internal fun rememberInboxExpansion(
     FollowSearch(expansion, searchRoom != null, onLeaveSearch)
     val focus = LocalFocusManager.current
     LaunchedEffect(expansion) {
-        // Past the first stop the panel heads for every filter: the keyboard goes first, or the page
-        // scrolls to keep the focused field in view as the panel grows under the keyboard.
-        snapshotFlow { expansion.position > 1f }.distinctUntilChanged().collect { past -> if (past) focus.clearFocus() }
+        // Moved past the first stop, the panel heads for every filter: the keyboard goes first, or the
+        // page scrolls to keep the focused field in view. A stop the keyboard moves is not a move.
+        snapshotFlow { expansion.moving && expansion.position > 1f }
+            .distinctUntilChanged()
+            .collect { past -> if (past) focus.clearFocus() }
     }
     LaunchedEffect(expansion, filters) {
         snapshotFlow { expansion.position >= FILTERS_FROM }.distinctUntilChanged().collect { full ->
             when {
-                full && !filters.isOpen -> filters.open()
+                full && !filters.isOpen && expansion.moving -> filters.open()
                 !full && filters.isOpen -> filters.close()
             }
         }
