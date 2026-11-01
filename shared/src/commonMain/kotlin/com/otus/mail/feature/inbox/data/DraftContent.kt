@@ -40,17 +40,12 @@ private fun String.quoteHtml(): String =
             }
         }
 
-/** Runs of neighboring lines that agree on [key], in order. */
-private fun List<String>.chunkedBy(key: (String) -> Boolean): List<Pair<Boolean, List<String>>> =
-    fold(emptyList<Pair<Boolean, List<String>>>()) { runs, line ->
-        val quoted = key(line)
-        val last = runs.lastOrNull()
-        if (last?.first == quoted) {
-            runs.dropLast(1) + (quoted to last.second + line)
-        } else {
-            runs + (quoted to listOf(line))
-        }
-    }
+/** Runs of neighboring lines that agree on [key], in order, found in one pass. */
+private fun List<String>.chunkedBy(key: (String) -> Boolean): List<Pair<Boolean, List<String>>> {
+    val keys = map(key)
+    val starts = indices.filter { it == 0 || keys[it] != keys[it - 1] }
+    return starts.mapIndexed { run, start -> keys[start] to subList(start, starts.getOrElse(run + 1) { size }) }
+}
 
 private fun String.escapeHtml(): String =
     replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
