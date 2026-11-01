@@ -1,7 +1,12 @@
 package com.otus.mail.app
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 
 /**
@@ -10,10 +15,11 @@ import androidx.compose.runtime.setValue
  */
 internal class MailNavigation(
     private val show: (MailPage) -> Unit,
+    found: MutableState<FoundSetting?>,
     val openSidebar: () -> Unit,
 ) {
     /** The page settings search opened last, and the setting it found there, until the user moves on. */
-    var found: FoundSetting? by mutableStateOf(null)
+    var found: FoundSetting? by found
         private set
 
     fun go(page: MailPage) {
@@ -39,8 +45,31 @@ internal class MailNavigation(
     fun finder(page: MailPage): (String?) -> Unit = { find(page, it) }
 }
 
+/** [MailNavigation] whose found setting survives recreation, as the page it belongs to does. */
+@Composable
+internal fun rememberMailNavigation(
+    show: (MailPage) -> Unit,
+    openSidebar: () -> Unit,
+): MailNavigation {
+    val found = rememberSaveable(stateSaver = FoundSetting.Saver) { mutableStateOf<FoundSetting?>(null) }
+    return remember(found) { MailNavigation(show, found, openSidebar) }
+}
+
 /** A [page] that settings search opened, and the [setting] it found there. */
 internal data class FoundSetting(
     val page: MailPage,
     val setting: String?,
-)
+) {
+    companion object {
+        /** Saves the setting first, empty for none, then the page as [MailPage.Saver] does. */
+        val Saver: Saver<FoundSetting?, List<String>> =
+            Saver(
+                save = { found ->
+                    found?.let { listOf(it.setting.orEmpty()) + with(MailPage.Saver) { save(it.page) }.orEmpty() }
+                },
+                restore = { saved ->
+                    MailPage.Saver.restore(saved.drop(1))?.let { FoundSetting(it, saved.first().ifEmpty { null }) }
+                },
+            )
+    }
+}
