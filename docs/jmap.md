@@ -43,8 +43,10 @@ user started may have no email elsewhere. Needs my reply keeps threads whose new
 someone else's, sent to the user directly or in a thread the user wrote in, and not from a list.
 Conversations keeps threads with emails both in and outside Sent, and Calendar invites keeps mail
 with a `text/calendar` or `application/ics` attachment or an `.ics` or `.ifb` file. With any of
-these on, the panel shows no count. The same check gives a row the calendar mark: a conversation
-with an invitation shows it, and the paperclip appears only for its other files.
+these on, the panel shows no count, and since a page can then show only a few rows, the list loads
+up to four more pages on its own after a new filter or scope; scrolling loads the rest. Lists the
+server filters alone load only as they scroll. The same check gives a row the calendar mark: a
+conversation with an invitation shows it, and the paperclip appears only for its other files.
 Otherwise its count is the same query with `limit: 0`, `calculateTotal: true`, and
 `collapseThreads`, one per login, summed; each panel session reads each login's mailboxes once.
 The From and To lines also search beyond the loaded rows as the user types: `Email/query` with a `from`, or `to` and
