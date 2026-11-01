@@ -212,7 +212,7 @@ private fun Matches(
     )
 }
 
-internal fun matchingPeople(
+private fun matchingPeople(
     hits: List<MailMessage>,
     query: String,
 ): List<MailSender> =
