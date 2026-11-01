@@ -29,6 +29,7 @@ import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.components.PanelSearchField
 import com.otus.designsystem.shared.panels.components.PanelSearchPill
+import com.otus.designsystem.shared.panels.components.pullDown
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
 import com.otus.designsystem.shared.panels.elements.PanelTitle
@@ -61,6 +62,7 @@ fun InboxPanel(
     val railShown = searching || context.pills.shown.isNotEmpty()
     val scope = context.scope.takeIf { !searching }
     ContextPanel(
+        modifier = Modifier.pullDown(actions.opens.onOpenQuickView.takeIf { !searching }),
         // Without pills, the filter button moves into the header and the list gets the row's space.
         placement = if (railShown) ChipPlacement.Overlapping else ChipPlacement.None,
         navigation = {
