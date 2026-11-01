@@ -132,8 +132,8 @@ class InboxFilterState(
 val FilterCount.showLabel: String
     get() =
         when {
-            this !is FilterCount.Known -> "Show conversations"
-            messages == 0L -> "No conversations"
-            messages == 1L -> "Show 1 conversation"
-            else -> "Show $messages conversations"
+            this !is FilterCount.Known -> "Show mails"
+            messages == 0L -> "No mails"
+            messages == 1L -> "Show 1 mail"
+            else -> "Show $messages mails"
         }

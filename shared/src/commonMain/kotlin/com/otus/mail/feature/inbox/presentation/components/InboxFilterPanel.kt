@@ -16,6 +16,7 @@ import com.otus.designsystem.shared.filters.components.FilterPanel
 import com.otus.designsystem.shared.filters.components.FilterPanelFooter
 import com.otus.designsystem.shared.filters.components.FilterPanelTitle
 import com.otus.designsystem.shared.filters.components.FilterResetAction
+import com.otus.designsystem.shared.filters.components.FilterShowBar
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -55,7 +56,7 @@ fun InboxFilterPanel(
                 state::close,
             ) { FilterResetAction(state::reset, enabled = !shown.isDefault) }
         },
-        footer = { InboxFilterFooter(state, state::show) },
+        footer = { InboxFilterFooter(state) },
         modifier = modifier,
     ) {
         val searches = PeopleSearches(state.senders, state.recipients, people)
@@ -63,16 +64,27 @@ fun InboxFilterPanel(
     }
 }
 
-/** The Show button for [state]'s count, which runs [onApply]. */
+/** [state]'s Show button in place of the action bar, which runs [onApply]. */
 @Composable
-internal fun InboxFilterFooter(
+internal fun InboxFilterBar(
     state: InboxFilterState,
     onApply: () -> Unit,
 ) {
     val count = state.count
+    FilterShowBar(
+        count.showLabel,
+        onApply,
+        applyEnabled = count != FilterCount.Known(0),
+        counting = count == FilterCount.Counting,
+    )
+}
+
+@Composable
+private fun InboxFilterFooter(state: InboxFilterState) {
+    val count = state.count
     FilterPanelFooter(
         count.showLabel,
-        onApply = onApply,
+        onApply = state::show,
         applyEnabled = count != FilterCount.Known(0),
         counting = count == FilterCount.Counting,
     )
