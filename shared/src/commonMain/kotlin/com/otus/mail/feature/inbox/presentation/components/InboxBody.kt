@@ -73,12 +73,12 @@ private fun ConversationList(
             conversationRows(messages, frame.look, dateFormatter, today, mixed)
         }
     val ids = remember(messages) { messages.map { it.id } }
-    val currentMessages by rememberUpdatedState(messages)
+    val currentIds by rememberUpdatedState(ids)
     val currentGestures by rememberUpdatedState(gestures)
     LazyColumn(
         Modifier.fillMaxSize().dragToSelect(
             listState,
-            ids = { currentMessages.map { it.id } },
+            ids = { currentIds },
             selectedIds = { currentGestures.selectedIds },
         ) { currentGestures.onSelect(it) },
         state = listState,
