@@ -50,8 +50,9 @@ internal class FakeMailServer(
     /** Whether requests fail as if the network were down. */
     var down = false
 
-    /** Emails whose `Email/set` updates the server refuses. */
+    /** Emails whose `Email/set` updates the server refuses, with a `SetError` of [updateRefusal]. */
     var refusedUpdates: Set<String> = emptySet()
+    var updateRefusal = "forbidden"
 
     /** The most ids a `/get` may ask for; more are refused with `requestTooLarge`. */
     var maxIdsInGet = Int.MAX_VALUE
@@ -261,15 +262,8 @@ internal class FakeMailServer(
         return buildJsonObject {
             put("newState", JsonPrimitive("e$state"))
             put("updated", JsonObject(updates.associate { it.key to JsonNull }))
-            put(
-                "notUpdated",
-                JsonObject(
-                    refusals.associate {
-                        it.key to
-                            buildJsonObject { put("type", JsonPrimitive("forbidden")) }
-                    },
-                ),
-            )
+            val error = buildJsonObject { put("type", JsonPrimitive(updateRefusal)) }
+            put("notUpdated", JsonObject(refusals.associate { it.key to error }))
         }
     }
 
