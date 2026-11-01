@@ -80,7 +80,7 @@ fun App(
         remember(dateFormatState, themeState, animationState, appIconState) {
             SharedSettings(dateFormatState, themeState, animationState, appIconState)
         }
-    val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
+    val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
     // Messages an earlier run could not hand to the server go now, or wait in a toast for the user.
     LaunchedEffect(states) { states.outgoing.resume { navigation.go(MailPage.Compose(it)) } }
     OtusTheme(themeState.palette) {
@@ -109,7 +109,7 @@ fun App(
                     footer = { build?.let { UpdatingFooter(it, nightly, states.moveToasts.toasts) } },
                     onChooseScope = states.chooseScope,
                     onSelect = {
-                        page = it
+                        navigation.go(it)
                         scope.launch { sidebar.close() }
                     },
                 )
