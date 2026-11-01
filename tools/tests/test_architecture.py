@@ -153,6 +153,7 @@ class ArchitectureTests(unittest.TestCase):
             "suspend fun go() { pager.animateScrollToPage(it) }",
             "suspend fun go() { pager.animateScrollToPage(f(1, 2), pageOffsetFraction = 0f) }",
             "suspend fun go() { list.animateScrollBy(10f) }",
+            "suspend fun go() { list.animateScrollToItem(index) }",
             'val a by animateFloatAsState(if (open) 1f else 0f, label = "fade")',
         ):
             with self.subTest(body=body):
@@ -163,6 +164,7 @@ class ArchitectureTests(unittest.TestCase):
             "suspend fun go() { pager.animateScrollToPage(it, animationSpec = turn) }",
             "suspend fun go() { pager.animateScrollToPage(it, 0f, turn) }",
             "suspend fun go() { list.animateScrollBy(10f, motionTween()) }",
+            "suspend fun go() { list.animateScrollToItem(index, turn) }",
             "val a by animateFloatAsState(if (open) 1f else 0f, motionTween()) { done() }",
         ):
             with self.subTest(body=body):
