@@ -13,6 +13,13 @@ class SignatureTest {
     }
 
     @Test
+    fun anImageWidthOutOfRangeIsClampedInsteadOfFailing() {
+        val html = """<p>Alex</p><div><img src="data:image/png;base64,iVBORw0KGgo=" width="99999999999"></div>"""
+        assertEquals(listOf(SignatureImages.MAX_WIDTH), parseSignature(html).images.map { it.width })
+        assertEquals(listOf(1), parseSignature(html.replace("99999999999", "0")).images.map { it.width })
+    }
+
+    @Test
     fun theStartOfASignatureReadsOnOneLine() {
         val signature = Signature(text = "Alex Rivera\n\nProduct lead · Company A\ncompanya.com")
         assertEquals("Alex Rivera · Product lead · Company A", signature.preview)
