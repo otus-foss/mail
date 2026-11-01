@@ -19,7 +19,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
-import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_search
@@ -67,7 +66,7 @@ private fun ConversationList(
     status: InboxStatus,
     mixed: Boolean,
 ) {
-    val today = currentLocalDate()
+    val today = mailToday()
     val rows =
         remember(messages, frame.look, dateFormatter, today, mixed) {
             conversationRows(messages, frame.look, dateFormatter, today, mixed)

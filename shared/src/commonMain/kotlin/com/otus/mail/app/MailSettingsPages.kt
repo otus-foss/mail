@@ -21,7 +21,7 @@ internal fun SettingsPageContent(
     back: () -> Unit,
 ) {
     when (page) {
-        MailPage.Settings -> SettingsIndex(states, navigation)
+        MailPage.Settings -> SettingsIndex(states, settings, navigation)
         MailPage.EmailAccounts -> EmailAccountsPage(states, back)
         MailPage.Appearance -> AppearancePage(states, settings, navigation, back)
         MailPage.Behavior -> MailBehaviorPage(states, navigation, back)
@@ -39,12 +39,10 @@ internal fun SettingsPageContent(
 @Composable
 private fun SettingsIndex(
     states: MailStates,
+    settings: SharedSettings,
     navigation: MailNavigation,
 ) {
-    SettingsScreen(
-        entries = mailSettingsEntries(states.accounts.accounts.size, states.notifications, navigation),
-        onOpenNavigation = navigation.openSidebar,
-    )
+    SettingsScreen(mailSettingsIndex(states, settings, navigation), onOpenNavigation = navigation.openSidebar)
 }
 
 @Composable
