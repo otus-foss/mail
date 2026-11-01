@@ -179,7 +179,10 @@ remembers the new Email id. Saves run one at a time, so each save knows the copy
 closing the page, or a discard during a save lets that save finish and keep its new id, so the
 next save replaces that copy and a discard deletes it. A failed save keeps the previous copy and
 its id, so the next save replaces it, and shows a notice under the header until a later save
-succeeds. The notice says why: no Drafts folder, no permission, or an unreachable server.
+succeeds. The notice says why: no Drafts folder, no permission, or an unreachable server. Each
+copy gets its own Message-ID. A save that gets no answer may still have stored its copy, so while
+the app runs it remembers that Message-ID, and the next save in that account looks for it in
+Drafts with the `header` filter and destroys what it finds, other than the copy it just stored.
 
 ### Sending
 

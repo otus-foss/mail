@@ -131,7 +131,7 @@ private suspend fun MailAccount.findSent(
 }
 
 /** The mail whose Message-ID header holds [messageId]. */
-private fun messageIdFilter(messageId: String) =
+internal fun messageIdFilter(messageId: String) =
     condition("header", JsonArray(listOf(JsonPrimitive("Message-ID"), JsonPrimitive(messageId))))
 
 private val FOUND_PROPERTIES = listOf("id", "keywords", "receivedAt")
