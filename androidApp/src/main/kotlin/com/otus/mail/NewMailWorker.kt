@@ -29,9 +29,12 @@ class NewMailWorker(
         val app = applicationContext as OtusMailApplication
         // A periodic run and a pushed one can overlap. Running both from the same saved state
         // would post the same mail twice and bring back notifications the user dismissed.
-        checking.withLock { app.services.newMail(AndroidMailStateStore(app)).check(MailNotifications(app)) }
+        val pushed = inputData.getBoolean(PUSHED, false)
+        checking.withLock {
+            if (pushes.start(pushed)) app.services.newMail(AndroidMailStateStore(app)).check(MailNotifications(app))
+        }
         // The periodic run also renews push subscriptions and registers new accounts.
-        if (!inputData.getBoolean(PUSHED, false)) PushSyncWorker.enqueue(app)
+        if (!pushed) PushSyncWorker.enqueue(app)
         return Result.success()
     }
 
@@ -46,6 +49,7 @@ class NewMailWorker(
         private const val PERIOD_MINUTES = 15L
 
         private val checking = Mutex()
+        private val pushes = PushedChecks()
 
         /** Keeps an existing schedule, so each app start does not restart the period. */
         fun schedule(context: Context) {
@@ -62,9 +66,11 @@ class NewMailWorker(
 
         /**
          * Checks at once after a push. Expedited work runs within seconds, even in Doze. A push
-         * during a check queues another, so mail delivered mid-check is not missed.
+         * during a check queues another, so mail delivered mid-check is not missed; however many
+         * pushes arrive during one check, only one more check runs after it.
          */
         fun runNow(context: Context) {
+            pushes.received()
             WorkManager
                 .getInstance(context)
                 .enqueueUniqueWork(
