@@ -70,7 +70,17 @@ class JmapMailSource(
     override suspend fun count(
         scope: MailScope,
         query: MailQuery,
-    ): Long? = counts.count(selected(scope), scope, query)
+    ): Long? =
+        if (query.filters.clientOnly) {
+            // The server cannot tell these, so count the mail on the device, unless none of it is there yet.
+            cached(scope, query)
+                .takeIf { it.messages.isNotEmpty() || !it.hasMore }
+                ?.messages
+                ?.size
+                ?.toLong()
+        } else {
+            counts.count(selected(scope), scope, query)
+        }
 
     override suspend fun cached(
         scope: MailScope,
