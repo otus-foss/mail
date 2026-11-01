@@ -101,7 +101,7 @@ internal class MessageSorting(
         catches,
         person,
         undo = {
-            moved.forEach { filing.moveBack(feed, it, target) }
+            moved.forEach { message -> scope.launch { filing.moveBack(feed, message, target) } }
             rules.submit(accountId, onFailed = { feed.report("Couldn't delete the rule. $it") }) {
                 it.withRemoved(target.folderId, it[target.folderId].orEmpty().lastIndexOf(rule))
             }

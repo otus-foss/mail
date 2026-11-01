@@ -18,11 +18,15 @@ internal const val BLOCK_BEGIN = "# BEGIN otus-rules"
 internal const val BLOCK_END = "# END otus-rules"
 private const val NOTE = "# Otus Mail writes this block. Change these rules in Otus Mail; edits here are replaced."
 private const val METADATA_PREFIX = "# otus-rules-v2 "
-private const val CRLF = "\r\n"
+internal const val CRLF = "\r\n"
+
+/** Ends the `require` line the app writes, so it can find that line again. */
+internal const val REQUIRE_MARK = "# otus-rules"
 
 /**
- * The whole block, from [BLOCK_BEGIN] to [BLOCK_END] with CRLF line ends. Its own `require` comes
- * first inside it, and the JSON line before that lets the app read the rules back.
+ * The whole block, from [BLOCK_BEGIN] to [BLOCK_END] with CRLF line ends. The JSON line before the
+ * Sieve lets the app read the rules back. The extensions it uses are in [encodeRequire], since a
+ * `require` must come before every other command.
  */
 internal fun encodeBlock(
     block: RuleBlock,
@@ -36,10 +40,20 @@ internal fun encodeBlock(
         add(BLOCK_END)
     }.joinToString(CRLF, postfix = CRLF)
 
+/** The `require` line, with its CRLF, for the extensions [block] uses; null when it uses none. */
+internal fun encodeRequire(
+    block: RuleBlock,
+    support: RuleSupport,
+): String? =
+    blockExtensions(block.folders, support)
+        .takeIf { it.isNotEmpty() }
+        ?.let { "require ${sieveList(it)}; $REQUIRE_MARK$CRLF" }
+
 /**
  * Reads the rules from a block's text. The Sieve is regenerated from its JSON and compared, so an
  * edit made in another app is reported instead of being silently replaced. A block without a
- * readable JSON line yields no rules and counts as changed elsewhere.
+ * readable JSON line yields no rules and counts as changed elsewhere. A block written before the
+ * `require` moved out of it still holds one; that line is left out of the comparison.
  */
 internal fun decodeBlock(
     text: String,
@@ -56,7 +70,12 @@ internal fun decodeBlock(
 }
 
 /** Servers may store other line ends or trailing spaces; neither is an edit. */
-private fun normalized(text: String): String = text.lines().joinToString("\n") { it.trimEnd() }.trimEnd()
+private fun normalized(text: String): String =
+    text
+        .lines()
+        .filterNot { it.startsWith("$REQUIRE ") }
+        .joinToString("\n") { it.trimEnd() }
+        .trimEnd()
 
 /** Where the block sits in a script: [start] is its first character, [end] the one after its last line end. */
 internal data class BlockSpan(
@@ -77,28 +96,10 @@ internal fun findBlock(script: String): BlockSpan? {
     }
 }
 
-/**
- * [script] with [block] in place of its Otus block. Without one, the block goes after the
- * script's leading `require` commands, because RFC 5228 (section 3.2) allows a `require` only
- * before every other command; a script without them gets the block at the very top. Nothing
- * outside the block changes, byte for byte.
- */
-internal fun spliceBlock(
-    script: String,
-    block: String,
-): String {
-    val span = findBlock(script)
-    if (span != null) return script.substring(0, span.start) + block + script.substring(span.end)
-    val at = afterLeadingRequires(script)
-    // A last require line without a line end needs one before the block.
-    val separator = if (at > 0 && !script.substring(0, at).endsWith('\n')) CRLF else ""
-    return script.substring(0, at) + separator + block + script.substring(at)
-}
-
 /** The text of the block in [script], or null. */
 internal fun blockText(script: String): String? = findBlock(script)?.let { script.substring(it.start, it.end) }
 
-private fun lineStarts(text: String): Sequence<Int> =
+internal fun lineStarts(text: String): Sequence<Int> =
     generateSequence(0) { start ->
         text
             .indexOf('\n', start)
@@ -107,7 +108,7 @@ private fun lineStarts(text: String): Sequence<Int> =
             ?.takeIf { it < text.length }
     }
 
-private fun String.lineAt(start: Int): String {
+internal fun String.lineAt(start: Int): String {
     val end = indexOf('\n', start).let { if (it < 0) length else it }
     return substring(start, end).trimEnd('\r', ' ', '\t')
 }

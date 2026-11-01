@@ -60,8 +60,16 @@ class JmapNewMailChecker(
             }
         val saved = withContext(Dispatchers.IO) { states.read() }
         val showing = alerts.showing().groupBy({ it.loginId }, { it.emailId })
-        val checked =
+        val results =
             coroutineScope { logins.map { async { check(it, saved[it.id], showing[it.id].orEmpty()) } }.awaitAll() }
+        // An account removed while its check ran gets no alert, and its state is not written back.
+        val remaining =
+            try {
+                accounts.logins().map { it.id }.toSet()
+            } catch (_: LoginStoreException) {
+                return
+            }
+        val checked = results.filter { it.loginId in remaining }
         // Clearing first: Android may not list an alert it was just asked to show, so clearing after
         // could take an account for empty and remove its summary along with the new alert.
         checked

@@ -14,29 +14,29 @@ import com.otus.mail.feature.folders.domain.TextOperator
  * folder's rules become one `if anyof (…)` that files the message and stops, so the first folder
  * that matches wins. With `mailboxid` (RFC 9042) a folder is filed by id and its [BlockFolder.path]
  * is the fallback the server uses when the id no longer exists; without it, by that path alone.
- * [zone] is the UTC offset, such as `+0200`, that day and time conditions use.
+ * [zone] is the UTC offset, such as `+0200`, that day and time conditions use. The extensions the
+ * lines use come from [blockExtensions], since a `require` must open the script.
  */
 internal fun sieveLines(
     folders: List<BlockFolder>,
     support: RuleSupport,
     zone: String,
-): List<String> {
-    val filled =
-        folders
-            .map { folder -> folder.copy(rules = folder.rules.filter { it.conditions.isNotEmpty() }) }
-            .filter { it.rules.isNotEmpty() }
-    val required = requiredExtensions(filled.flatMap { it.rules }, support)
-    return buildList {
-        if (required.isNotEmpty()) add("require ${sieveList(required)};")
-        filled.forEach { folder ->
-            val tests = folder.rules.map { it.test(zone) }
-            add("if ${tests.singleOrNull() ?: anyOf(tests)} {")
-            add("    ${fileInto(folder, support)};")
-            add("    stop;")
-            add("}")
-        }
+): List<String> =
+    filled(folders).flatMap { folder ->
+        val tests = folder.rules.map { it.test(zone) }
+        listOf(
+            "if ${tests.singleOrNull() ?: anyOf(tests)} {",
+            "    ${fileInto(folder, support)};",
+            "    stop;",
+            "}",
+        )
     }
-}
+
+/** [folders] with only the rules that have conditions, and only the folders left with rules. */
+internal fun filled(folders: List<BlockFolder>): List<BlockFolder> =
+    folders
+        .map { folder -> folder.copy(rules = folder.rules.filter { it.conditions.isNotEmpty() }) }
+        .filter { it.rules.isNotEmpty() }
 
 /** A folder in the block: its rules, and the path of names a server without `mailboxid` files into. */
 internal data class BlockFolder(
@@ -61,33 +61,6 @@ private fun fileInto(
     } else {
         "fileinto ${sieveString(folder.path)}"
     }
-
-private fun requiredExtensions(
-    rules: List<FolderRule>,
-    support: RuleSupport,
-): List<String> {
-    val conditions = rules.flatMap { it.conditions }
-    val extensions = support.extensions
-    return buildSet {
-        if (rules.isEmpty()) return@buildSet
-        add("fileinto")
-        if (support.filesById) {
-            add("mailboxid")
-            // Stalwart refuses `:mailboxid` unless "mailbox" (RFC 5490) is declared too.
-            if ("mailbox" in extensions) add("mailbox")
-        }
-        if (conditions.any { it is RuleCondition.Text && it.field == TextField.Body }) add("body")
-        conditions.filterIsInstance<RuleCondition.When>().forEach {
-            add("date")
-            if (it.range != null) add("relational")
-        }
-        if (conditions.any { it is RuleCondition.Spam }) {
-            add(if ("spamtest" in extensions) "spamtest" else "spamtestplus")
-            add("relational")
-            add("comparator-i;ascii-numeric")
-        }
-    }.sorted()
-}
 
 private fun FolderRule.test(zone: String): String {
     val tests = conditions.map { it.test(zone) }

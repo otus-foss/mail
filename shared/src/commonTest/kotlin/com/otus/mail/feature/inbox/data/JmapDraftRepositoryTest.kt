@@ -14,10 +14,12 @@ import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -36,8 +38,10 @@ class JmapDraftRepositoryTest {
                 calls += body
                 api(body)
             }
-        return JmapDraftRepository(JmapConnections(JmapClient(engine), store), store)
+        return JmapDraftRepository(JmapConnections(JmapClient(engine), store), store) { "m${++saves}@otus.mail" }
     }
+
+    private var saves = 0
 
     /** Answers the `Email/set` that creates a draft with [created], and any other one with [destroyed]. */
     private fun server(
@@ -81,7 +85,7 @@ class JmapDraftRepositoryTest {
                 """{"mailboxIds": {"dr": true}, "keywords": {"${'$'}draft": true, "${'$'}seen": true},
                 "from": [{"name": "Ada Lovelace", "email": "ada@example.org"}],
                 "to": [{"email": "grace@example.org"}], "subject": "Re: Compiler draft",
-                "inReplyTo": ["m1@example.org"], "references": ["m0@example.org", "m1@example.org"],
+                "messageId": ["m1@otus.mail"], "inReplyTo": ["m1@example.org"], "references": ["m0@example.org", "m1@example.org"],
                 "bodyValues": {"text": {"value": "Looks good."}},
                 "textBody": [{"partId": "text", "type": "text/plain"}]}"""
             assertEquals(Json.parseToJsonElement(expected), set.getValue("create").jsonObject.getValue("draft"))
@@ -100,7 +104,7 @@ class JmapDraftRepositoryTest {
                     .jsonObject
                     .getValue("draft")
                     .jsonObject
-            assertEquals(setOf("mailboxIds", "keywords", "subject", "bodyValues", "textBody"), email.keys)
+            assertEquals(setOf("mailboxIds", "keywords", "subject", "messageId", "bodyValues", "textBody"), email.keys)
         }
 
     @Test
@@ -149,6 +153,35 @@ class JmapDraftRepositoryTest {
                     destroyed = emailSet(""""notDestroyed": {"old": {"type": "forbidden"}}"""),
                 ).discard("ada", "old")
             assertEquals(DraftFailure.NotPermitted, refused.failure())
+        }
+
+    @Test
+    fun aCopyWhoseSaveLostItsAnswerIsFoundAndDestroyedByTheNextSave() =
+        runTest {
+            var lost = true
+            val drafts =
+                repository { body ->
+                    when {
+                        "Mailbox/query" in body -> """{"methodResponses": [["Mailbox/query", {"ids": ["dr"]}, "c0"]]}"""
+                        lost && "\"create\"" in body -> throw IOException("The answer was lost")
+                        "\"create\"" in body -> emailSet(""""created": {"draft": {"id": "e2"}}""")
+                        "Email/query" in body -> """{"methodResponses": [["Email/query", $FOUND, "c0"]]}"""
+                        else -> emailSet(""""destroyed": ["e1"]""")
+                    }
+                }
+            assertEquals(DraftFailure.Unreachable, drafts.save(reply.copy(emailId = null)).failure())
+            lost = false
+            assertEquals("e2", drafts.save(reply.copy(emailId = null)).getOrThrow())
+            val query = method(calls.single { "Email/query" in it }).getValue("filter").toString()
+            assertTrue("m1@otus.mail" in query && "\"inMailbox\":\"dr\"" in query, query)
+            assertEquals(
+                listOf("e1"),
+                method(calls.last()).getValue("destroy").jsonArray.map { it.jsonPrimitive.content },
+            )
+
+            calls.clear()
+            drafts.save(reply.copy(emailId = null)).getOrThrow()
+            assertTrue(calls.none { "Email/query" in it }, "A copy found once is not looked for again")
         }
 
     @Test
@@ -202,4 +235,9 @@ class JmapDraftRepositoryTest {
             .jsonObject
 
     private fun Result<*>.failure(): DraftFailure? = (exceptionOrNull() as? DraftException)?.failure
+
+    private companion object {
+        /** The lost copy `e1` and the new copy `e2`, which share nothing but the Drafts folder. */
+        const val FOUND = """{"queryState": "q", "ids": ["e1", "e2"], "position": 0}"""
+    }
 }

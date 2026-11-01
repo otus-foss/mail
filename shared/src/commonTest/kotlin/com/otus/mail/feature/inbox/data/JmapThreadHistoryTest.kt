@@ -49,6 +49,18 @@ class JmapThreadHistoryTest {
             assertTrue("\"Thread/get\"" in calls.single(), "The thread loads in one request")
         }
 
+    @Test
+    fun timesWithAndWithoutFractionsCompareAsInstants() =
+        runTest {
+            val emails =
+                listOf(
+                    email("m1", "Radia Perlman", "2026-10-11T08:59:59.900Z", "Just before"),
+                    email("m3", "Grace Hopper", "2026-10-11T09:00:00Z", "The original"),
+                    email("m4", "Margaret Knuth", "2026-10-11T09:00:00.500Z", "Half a second later"),
+                ).joinToString()
+            assertEquals(listOf("m3", "m1"), history(emails).earlier("ada", "m3").map { it.emailId })
+        }
+
     private fun email(
         id: String,
         name: String,

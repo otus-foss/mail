@@ -63,7 +63,6 @@ class RuleBlockTest {
         assertTrue(lines[2].startsWith("# otus-rules-v2 {"), lines[2])
         assertEquals(
             listOf(
-                """require ["fileinto", "mailbox", "mailboxid"];""",
                 """if anyof (address :all :is "from" "jana@website-agency.example", allof (address :domain :is """ +
                     """"from" "website-agency.example", header :contains "subject" "Invoice", size :over 1048576)) {""",
                 """    fileinto :mailboxid "M7" "Clients/Projects";""",
@@ -78,6 +77,8 @@ class RuleBlockTest {
             ),
             lines.drop(3),
         )
+        val require = """require ["fileinto", "mailbox", "mailboxid"]; # otus-rules""" + "\r\n"
+        assertEquals(require, encodeRequire(block, support), "The require goes at the top of the script")
     }
 
     @Test
@@ -113,7 +114,7 @@ class RuleBlockTest {
     fun theRequireLineDeclaresWhatTheConditionsUse() {
         val body = RuleCondition.Text(TextField.Body, TextOperator.Contains, "x")
         val rules = listOf(FolderRule(listOf(RuleCondition.Spam(5), body)))
-        val text = encodeBlock(RuleBlock(listOf(BlockFolder("F", "F", rules))), support)
+        val text = encodeRequire(RuleBlock(listOf(BlockFolder("F", "F", rules))), support).orEmpty()
         assertTrue(
             """require ["body", "comparator-i;ascii-numeric", "fileinto", "mailbox", "mailboxid", """ +
                 """"relational", "spamtest"];""" in text,
@@ -124,7 +125,8 @@ class RuleBlockTest {
     @Test
     fun withoutMailboxIdFoldersAreFiledByTheirPath() {
         val text = encodeBlock(RuleBlock(listOf(projects)), RuleSupport(setOf("fileinto")))
-        assertTrue("""require ["fileinto"];""" in text, text)
+        val require = encodeRequire(RuleBlock(listOf(projects)), RuleSupport(setOf("fileinto"))).orEmpty()
+        assertTrue("""require ["fileinto"];""" in require, require)
         assertTrue("""    fileinto "Clients/Projects";""" in text, text)
         assertFalse(":mailboxid" in text)
     }
@@ -134,6 +136,7 @@ class RuleBlockTest {
         val lines = encodeBlock(RuleBlock(emptyList()), support).trimEnd().lines()
         assertEquals(listOf("# BEGIN otus-rules", "# END otus-rules"), listOf(lines.first(), lines.last()))
         assertEquals(4, lines.size)
+        assertEquals(null, encodeRequire(RuleBlock(emptyList()), support), "Nothing to require")
     }
 
     @Test
@@ -143,6 +146,14 @@ class RuleBlockTest {
         assertEquals(block, read.block)
         assertFalse(read.changedElsewhere)
         assertFalse(decodeBlock(text.replace("\r\n", "\n"), support).changedElsewhere, "Line ends are no edit")
+    }
+
+    @Test
+    fun aBlockWrittenWithItsRequireInsideReadsBackUnchanged() {
+        val text = encodeBlock(block, support)
+        val metadata = text.lines().first { it.startsWith("# otus-rules-v2 ") }
+        val old = text.replace(metadata, metadata + "\r\n" + """require ["fileinto", "mailbox", "mailboxid"];""")
+        assertFalse(decodeBlock(old, support).changedElsewhere)
     }
 
     @Test

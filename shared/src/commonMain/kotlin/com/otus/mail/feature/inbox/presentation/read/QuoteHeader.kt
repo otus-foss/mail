@@ -15,16 +15,20 @@ data class QuoteHeader(
 /**
  * The header in an attribution line, "On <date>, <name> wrote:" as Apple Mail and Thunderbird
  * write it, "On <date> at <time> <name> <address> wrote:" as Gmail does, or German
- * "Am <date> schrieb <name>:". Null for any other line.
+ * "Am <date> schrieb <name>:". Null for any other line, and for one longer than
+ * [MAX_ATTRIBUTION_LENGTH], which is message text rather than a header.
  */
 internal fun attributionHeader(line: String): QuoteHeader? {
     val text = line.trim().replace(SPACES, " ")
-    ENGLISH.matchEntire(text)?.let { return dateThenPerson(it.groupValues[1]) }
-    return GERMAN.matchEntire(text)?.let { match ->
+    if (text.length > MAX_ATTRIBUTION_LENGTH) return null
+    return ENGLISH.matchEntire(text)?.let { dateThenPerson(it.groupValues[1]) } ?: germanHeader(text)
+}
+
+private fun germanHeader(text: String): QuoteHeader? =
+    GERMAN.matchEntire(text)?.let { match ->
         val date = match.groupValues[1].replace(GERMAN_TIME, "")
         person(match.groupValues[2], date)
     }
-}
 
 /**
  * The header in the fields Outlook writes above a quote, "From:" and "Sent:" or "Date:" lines,
@@ -90,6 +94,11 @@ private val GERMAN_TIME = Regex(""",? um \d{1,2}:\d{2}.*$""")
 private val FIELD = Regex("""^(From|Von|Sent|Date|Gesendet|Datum|To|An|Cc|Subject|Betreff):\s*(.*)$""")
 private val FROM_FIELDS = listOf("from", "von")
 private val DATE_FIELDS = listOf("sent", "date", "gesendet", "datum")
-private val ADDRESS = Regex("""<([^<>\s]+@[^<>\s]+)>""")
+
+/** One `@` splits the address, so a run of them is not tried at every one. */
+private val ADDRESS = Regex("""<([^<>\s@]+@[^<>\s]+)>""")
 private val MAILTO = Regex("""\[mailto:([^\]\s]+)]""")
+
+/** Longer than any real attribution line, which names a date, a person, and an address. */
+private const val MAX_ATTRIBUTION_LENGTH = 1_000
 private val ZONE = Regex("""^\s*(?:[+-]\d{4}(?:\s*\([A-Z]{2,5}\))?|\([A-Z]{2,5}\)|UTC|GMT)(?=[\s,])""")

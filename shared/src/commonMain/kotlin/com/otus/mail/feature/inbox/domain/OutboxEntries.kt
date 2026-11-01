@@ -18,13 +18,24 @@ internal class OutboxEntries(
 
     suspend fun all(): List<OutboxEntry> {
         val saved = store ?: return memory
-        return withContext(io) { OutboxEntry.decode(saved.read()[OutboxStore.ENTRIES]) }
+        return withContext(io) {
+            val values = saved.read()
+            val text = values[OutboxStore.ENTRIES]
+            val entries = text?.let(OutboxEntry::decodeOrNull)
+            // Saving over messages that no longer read would lose them, so they are set aside first,
+            // under a key of their own, beside any set aside before.
+            if (text != null && entries == null) {
+                val aside = OutboxStore.unreadableKeys().first { it !in values }
+                saved.write(values - OutboxStore.ENTRIES + (aside to text))
+            }
+            entries.orEmpty()
+        }
     }
 
     suspend fun save(entries: List<OutboxEntry>) {
         memory = entries
         val saved = store ?: return
-        withContext(io) { saved.write(mapOf(OutboxStore.ENTRIES to OutboxEntry.encode(entries))) }
+        withContext(io) { saved.write(saved.read() + (OutboxStore.ENTRIES to OutboxEntry.encode(entries))) }
     }
 
     suspend fun replace(entry: OutboxEntry) = save(all().map { if (it.id == entry.id) entry else it })

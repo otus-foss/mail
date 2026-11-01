@@ -15,6 +15,7 @@ import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.presentation.OutgoingDraft
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -185,6 +186,8 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             val failed = toasts.messages.single()
             assertEquals("Couldn't send", failed.text)
             assertNotNull(failed.action).onAction()
+            // Open runs in the process scope, so it outlives the page that showed the toast.
+            runCurrent()
             assertEquals("e9", (opened.single() as ComposeRequest.Resume).draft.emailId)
         }
 
@@ -235,5 +238,32 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             assertNull(reopened.messageId, "An edited message is a new one")
             assertTrue(restarted.offers().isEmpty())
             assertEquals(1, runs.size, "A refused message never goes again by itself")
+        }
+
+    @Test
+    fun anOfferedMessageLeavesTheOutboxOnlyOnceAPageShowsIt() =
+        runTest {
+            val store = object : MemoryMapStore(), OutboxStore {}
+            val earlier = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
+            failure = SendFailure.Recipients
+            earlier.send(earlier.add(draft, null, NOW))
+            val pages = PageRequests(backgroundScope)
+
+            val restarted = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
+            OutgoingMail(backgroundScope, toasts, scheduled, restarted) { hold }
+                .resume { pages.show(MailPage.Compose(it)) }
+            runCurrent()
+            // The user taps Open while no activity shows pages, as during a rotation.
+            assertNotNull(toasts.messages.single().action).onAction()
+            runCurrent()
+
+            suspend fun kept() = MailOutbox(store, sender, checker, io = EmptyCoroutineContext).offers()
+            assertEquals(1, kept().size, "The message stays until a page has it")
+            val shown = mutableListOf<MailPage>()
+            backgroundScope.launch { pages.collect { shown += it } }
+            runCurrent()
+            val request = (shown.single() as MailPage.Compose).request as ComposeRequest.Resume
+            assertEquals("Lunch", request.draft.subject)
+            assertTrue(kept().isEmpty())
         }
 }

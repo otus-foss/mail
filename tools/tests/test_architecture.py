@@ -129,6 +129,45 @@ class ArchitectureTests(unittest.TestCase):
             self.check("feature.inbox.presentation.components", "val c = OtusColors.text1")
         )
 
+    def test_raw_animation_specs_are_rejected(self):
+        for body in (
+            "val spec = tween<Float>(300)",
+            "val spec = spring<Float>()",
+            "val curve = CubicBezierEasing(0.2f, 0f, 0f, 1f)",
+        ):
+            with self.subTest(body=body):
+                self.assertTrue(self.check("feature.inbox.presentation.components", body))
+
+    def test_motion_specs_are_allowed(self):
+        self.assertFalse(
+            self.check(
+                "feature.inbox.presentation.components",
+                "val a = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)\n"
+                "val b = Motion.tween<Float>(speed, curve, scale)\n"
+                '// tween(300)\nval text = "spring()"',
+            )
+        )
+
+    def test_default_animation_specs_are_rejected(self):
+        for body in (
+            "suspend fun go() { pager.animateScrollToPage(it) }",
+            "suspend fun go() { pager.animateScrollToPage(f(1, 2), pageOffsetFraction = 0f) }",
+            "suspend fun go() { list.animateScrollBy(10f) }",
+            'val a by animateFloatAsState(if (open) 1f else 0f, label = "fade")',
+        ):
+            with self.subTest(body=body):
+                self.assertTrue(self.check("feature.inbox.presentation.components", body))
+
+    def test_explicit_animation_specs_are_allowed(self):
+        for body in (
+            "suspend fun go() { pager.animateScrollToPage(it, animationSpec = turn) }",
+            "suspend fun go() { pager.animateScrollToPage(it, 0f, turn) }",
+            "suspend fun go() { list.animateScrollBy(10f, motionTween()) }",
+            "val a by animateFloatAsState(if (open) 1f else 0f, motionTween()) { done() }",
+        ):
+            with self.subTest(body=body):
+                self.assertFalse(self.check("feature.inbox.presentation.components", body))
+
     def test_central_ui_rejects_app_tokens_and_elements(self):
         for layer in ("elements", "components", "theme"):
             path = Path(

@@ -56,11 +56,18 @@ fun parseSignature(html: String): SignatureParts {
     val images =
         imagePattern.findAll(html).map { match ->
             val (type, data, width) = match.destructured
-            SignatureImage(type, data, width.toInt())
+            SignatureImage(type, data, shownWidth(width))
         }
     val text = imageBlockPattern.replace(html, "").replace(imagePattern, "")
     return SignatureParts(text, images.toList())
 }
+
+/**
+ * The width [digits] give, within what a signature image may be, so a huge width another client
+ * wrote cannot overflow.
+ */
+private fun shownWidth(digits: String): Int =
+    digits.toIntOrNull()?.coerceIn(1, SignatureImages.MAX_WIDTH) ?: SignatureImages.MAX_WIDTH
 
 /** The image widths the signature editor offers by name. */
 enum class SignatureImageSize(

@@ -3,7 +3,9 @@ package com.otus.mail.feature.inbox.domain
 /**
  * Copies the segments that draw a JPEG [image], up to its end marker, and keeps only the
  * orientation of its EXIF. Color profiles stay; EXIF, XMP, multi-picture indexes, IPTC, vendor
- * segments, comments, and data after the image go.
+ * segments, comments, and data after the image go. A file cut off once its first scan began, as by
+ * an interrupted write, ends where its data does, with an end marker added; one cut off before
+ * that is [MalformedImage].
  */
 internal class JpegCleaner(
     private val image: ImageBytes,
@@ -11,13 +13,27 @@ internal class JpegCleaner(
     private val kept = mutableListOf<ByteArray>()
     private var orientation = UPRIGHT
     private var orientationAt = 1
+    private var scanStarted = false
 
     fun cleaned(): ByteArray {
         kept += image.slice(0, MARKER_BYTES)
         var at: Int? = MARKER_BYTES
-        while (at != null) at = next(at)
+        while (at != null) at = nextOrEnd(at)
         return joined(withOrientation())
     }
+
+    /**
+     * [next], or null at a cut once a scan began: what was kept so far holds no metadata, so the
+     * image ends there.
+     */
+    private fun nextOrEnd(at: Int): Int? =
+        try {
+            next(at)
+        } catch (cut: MalformedImage) {
+            if (!scanStarted) throw cut
+            kept += byteArrayOf(MARKER.toByte(), END_OF_IMAGE.toByte())
+            null
+        }
 
     /** Copies the marker at [at] and what belongs to it; where the next one starts, or null after the end. */
     private fun next(at: Int): Int? {
@@ -72,15 +88,26 @@ internal class JpegCleaner(
             else -> true
         }
 
-    /** Copies the entropy-coded data after a scan header ending at [from]; where the next marker starts. */
+    /**
+     * Copies the entropy-coded data after a scan header ending at [from]; where the next marker
+     * starts, or the end of the file when it was cut off inside the scan.
+     */
     private fun scanned(from: Int): Int {
+        scanStarted = true
         var at = from
-        // 0xFF00 is a stuffed 0xFF byte, and restart markers belong to the scan.
-        while (image.u8(at) != MARKER || image.u8(at + 1).let { it == 0 || it in FIRST_RESTART..LAST_RESTART }) {
-            at++
-        }
+        while (at < image.size && !endsScan(at)) at++
         kept += image.slice(from, at)
         return at
+    }
+
+    /**
+     * Whether a marker that ends the scan starts at [at]. 0xFF00 is a stuffed 0xFF byte, and
+     * restart markers belong to the scan.
+     */
+    private fun endsScan(at: Int): Boolean {
+        if (image.u8(at) != MARKER || at + 1 >= image.size) return false
+        val code = image.u8(at + 1)
+        return code != 0 && code !in FIRST_RESTART..LAST_RESTART
     }
 
     /** The kept segments with an EXIF segment that records only the orientation, when it is not upright. */

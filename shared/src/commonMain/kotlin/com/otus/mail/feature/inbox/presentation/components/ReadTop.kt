@@ -17,6 +17,9 @@ import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.PanelMotion
 import com.otus.designsystem.shared.panels.components.PanelScrim
+import com.otus.designsystem.theme.motion.MotionCurve
+import com.otus.designsystem.theme.motion.MotionSpeed
+import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.ReadQuickModule
@@ -60,9 +63,10 @@ internal fun ReadTop(
     val page = text.page
     val expansion = quick.expansion
     val scope = rememberCoroutineScope()
+    val turn = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
     val room =
         ReadRoom(parts.state, page, parts.context.rowLook.own, expansion, parts, quick.look) { index ->
-            scope.launch { quick.pager.animateScrollToPage(index) }
+            scope.launch { quick.pager.animateScrollToPage(index, animationSpec = turn) }
         }
     PanelScrim(expansion)
     Column(

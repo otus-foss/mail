@@ -18,7 +18,10 @@ import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.testing.stalwartLike
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -67,8 +70,11 @@ class ReadPageChangesTest {
         emailId = id,
     )
 
-    /** The changes for a feed that lists [row]; each load of the feed counts. */
-    private fun TestScope.changes(): Pair<ReadPageChanges, InboxFeedState> {
+    /**
+     * The changes for a feed that lists [row], made in [composition]; each load of the feed counts.
+     * Toasts run their work in the test's scope, as in the process's.
+     */
+    private fun TestScope.changes(composition: CoroutineScope = this): Pair<ReadPageChanges, InboxFeedState> {
         val services = adaServices(stalwartLike(api = server::answer))
         val source =
             object : MailSource {
@@ -81,7 +87,7 @@ class ReadPageChangesTest {
         feed.refresh()
         runCurrent()
         val folders = testFolders(services) { emptyList() }
-        return ReadPageChanges(services, folders, MoveToasts(toasts), this, feed) to feed
+        return ReadPageChanges(services, folders, MoveToasts(toasts, this), composition, feed) to feed
     }
 
     private fun updates(): List<JsonObject> = server.calls("Email/set").map { it.getValue("update").jsonObject }
@@ -162,6 +168,24 @@ class ReadPageChangesTest {
             assertEquals(json("""{"e1": {"mailboxIds/tr": null, "mailboxIds/a": true}}"""), updates().last())
             assertEquals(1, back)
             assertTrue(feed.messages.isNotEmpty())
+        }
+
+    @Test
+    fun undoAfterTheActivityWasRecreatedStillPutsTheEmailBack() =
+        runTest {
+            // The scope of the composition that deleted the page, which a rotation ends.
+            val composition = CoroutineScope(coroutineContext + Job(coroutineContext[Job]))
+            val (changes, _) = changes(composition)
+            changes.trash(row, email("e1"), TRASH) {}
+            settle { false }
+            composition.cancel()
+            toasts.messages
+                .single()
+                .action
+                ?.onAction
+                ?.invoke()
+            settle { updates().size > 1 }
+            assertEquals(json("""{"e1": {"mailboxIds/tr": null, "mailboxIds/a": true}}"""), updates().last())
         }
 
     private fun json(text: String): JsonObject = Json.parseToJsonElement(text).jsonObject

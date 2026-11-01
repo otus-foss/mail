@@ -24,6 +24,7 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.JsonObject
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
@@ -109,6 +110,7 @@ class EmailChangeQueue(
         if (waiting.isEmpty()) return emptySet()
         var left = waiting
         var refused = emptySet<String>()
+        var limited = false
         try {
             val account = mailAccount(connections, logins, loginId)
             if (account == null) {
@@ -117,6 +119,7 @@ class EmailChangeQueue(
             } else {
                 waiting.entries.chunked(account.session.setBatch).forEach { batch ->
                     val (answered, notTaken) = account.sendBatch(batch.associate { it.toPair() })
+                    limited = limited || answered.size < batch.size
                     left = left - answered
                     refused = refused + notTaken
                 }
@@ -127,7 +130,8 @@ class EmailChangeQueue(
             // The login cannot be read now; its changes wait.
         }
         write(loginId, left)
-        if (left.isNotEmpty()) wake(now())
+        // A server that asked to slow down gets the next try only after a while.
+        if (left.isNotEmpty()) wake(if (limited) now() + RATE_LIMIT_WAIT else now())
         if (cache != null && refused.isNotEmpty()) cache.forgetEmails(loginId, refused)
         return refused
     }
@@ -146,11 +150,16 @@ class EmailChangeQueue(
     }
 }
 
-/** Sends one batch; returns the emails the server answered for and those it refused. */
+/**
+ * Sends one batch; returns the emails the server answered for and those it refused. An email the
+ * server would not change for now, such as with `rateLimit` (RFC 8620, section 5.3), is neither,
+ * so its change waits for the next try.
+ */
 private suspend fun MailAccount.sendBatch(batch: Map<String, JsonObject>): Pair<Set<String>, Set<String>> =
     try {
         val result = connection.call(SetMethod(EmailType, id, update = batch))
-        result.updated.keys + result.notUpdated.keys to result.notUpdated.keys
+        val refused = result.notUpdated.filterValues { it.type !in TEMPORARY_SET_ERRORS }.keys
+        result.updated.keys + refused to refused
     } catch (error: JmapException.MethodError) {
         // A server down for now may take the batch later; any other refusal of the call would recur.
         if (error.type in TEMPORARY_METHOD_ERRORS) throw error
@@ -206,6 +215,11 @@ private suspend fun MailCache.forgetEmails(
         }
     }
 }
+
+/** `SetError` types that may not recur when the same change is sent again later. */
+private val TEMPORARY_SET_ERRORS = setOf("rateLimit")
+
+private val RATE_LIMIT_WAIT = 1.minutes
 
 private val CHANGES = MapSerializer(String.serializer(), JsonObject.serializer())
 

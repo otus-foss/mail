@@ -59,16 +59,22 @@ A Dockerfile is included. Build it from the repository root with
 volume at `/data`. The container runs as UID 10001. Publish its port on localhost behind TLS.
 
 The reverse proxy is part of the deployment. It must limit registration requests, cap request
-bodies at 4096 bytes and disable access logs containing capability URLs. The service limits each
-APNs token to 32 routes, the database to 10,000 routes, and each route to 32 pending messages.
-An example Nginx configuration is in `push_bridge/nginx.conf`; supply your certificate paths and
-domain. Do not expose the backend port directly. Public registration has no account login or
-Apple App Attest check; configure ingress limits before making it publicly reachable.
+bodies at 4096 bytes and disable access logs containing capability URLs. Limit per IPv4 address
+and per IPv6 /64, since one host can usually use every address in its /64. The service limits each
+APNs token to 32 routes, the database to 10,000 routes, each active route to 32 pending messages,
+and each inactive route to 4. An example Nginx configuration is in `push_bridge/nginx.conf`; it
+keys both limits on the IPv4 address or the IPv6 /64. Supply your certificate paths and domain.
+Do not expose the backend port directly. Public registration has no account login or Apple App
+Attest check; configure ingress limits before making it publicly reachable.
 
-Routes expire after eight days without upkeep. Ciphertext expires after at most one hour, or
+A route that is not active, such as a new one waiting for its verification push, expires one hour
+after its last update, so registrations nobody completes free their quota slot quickly. Active
+routes expire after eight days without upkeep. Ciphertext expires after at most one hour, or
 sooner when acknowledged. Deleting a route deletes its pending messages. APNs rejects an invalid
-device token with a permanent error; the bridge revokes that route. Transient APNs errors return
-503 so the JMAP sender can retry. SQLite state survives restarts; prune runs on incoming requests.
+device token with a permanent error; the bridge revokes that route. Transient APNs errors, and
+APNs errors whose body cannot be read, return 503 so the JMAP sender can retry. SQLite state
+survives restarts. Expired routes and messages are never served; deleting them uses an index on
+the expiry time and runs at most once a minute, when a route is registered or a push is stored.
 No email content is decrypted by the bridge. It can see device tokens, opaque route identifiers,
 message sizes, delivery timing and source IP addresses.
 
@@ -96,9 +102,11 @@ Normal mail credentials keep their existing storage and names.
 
 ## Lifecycle and limits
 
-Mail registers the device token again on foreground activation and replaces routes after a token
-change. It polls pending verification while foregrounded and requests background refresh roughly
-twice daily for renewal. iOS decides whether and when background refresh runs; this is not a
+Mail registers the device token again on foreground activation, renews its routes, and replaces
+routes after a token change. While foregrounded it polls the bridge every 15 seconds only while an
+account waits for verification or the last attempt failed; once every account is settled it only
+watches for added or removed accounts. It requests background refresh roughly twice daily for
+renewal. iOS decides whether and when background refresh runs; this is not a
 15-minute polling promise. Open Mail regularly. If refresh is denied for longer than the server's
 subscription lifetime, delivery stops until Mail opens and renews or replaces the subscription.
 

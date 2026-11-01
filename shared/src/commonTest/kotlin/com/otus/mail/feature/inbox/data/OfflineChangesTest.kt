@@ -129,6 +129,21 @@ class OfflineChangesTest {
         }
 
     @Test
+    fun aChangeTheServerTakesOnlyLaterWaitsForTheNextSync() =
+        runTest {
+            val message = message()
+            server.refusedUpdates = setOf("m1")
+            server.updateRefusal = "rateLimit"
+            assertEquals(setOf(message.id), marker.mark(listOf(message), MessageFlag.Read, on = true))
+            assertTrue(changes.saved.isNotEmpty(), "It waits")
+
+            server.refusedUpdates = emptySet()
+            source.messages(MailScope.Inbox, MailQuery())
+            assertEquals(2, server.calls("Email/set").size)
+            assertTrue(changes.saved.isEmpty())
+        }
+
+    @Test
     fun changesOfTwoLoginsMadeAtOnceBothWait() =
         runTest {
             store.save(GRACE_LOGIN, "secret")

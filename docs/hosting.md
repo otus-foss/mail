@@ -18,7 +18,8 @@ night that main changes; see [nightly builds](nightly.md).
 
 Mail downloads its pinned Meta release from GitHub Packages at
 `https://maven.pkg.github.com/reazndev/otus-meta`. CI reads a GitHub token with `read:packages`
-from the `OTUS_META_PACKAGES_TOKEN` secret. See [shared libraries](shared-libraries.md) for local
+from the `OTUS_META_PACKAGES_TOKEN` secret, only in the step of the paused `ios` job that compiles
+the app; the other quality jobs and the nightly build Meta from source. See [shared libraries](shared-libraries.md) for local
 credentials, and the
 [suite hosting guide](https://github.com/reazndev/otus-meta/blob/main/docs/hosting.md) for package
 publishing.

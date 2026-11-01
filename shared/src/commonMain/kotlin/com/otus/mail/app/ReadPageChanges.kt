@@ -67,17 +67,15 @@ internal class ReadPageChanges(
                 moved
             }
         toasts.moved(target) {
-            scope.launch {
-                move.join()
-                if (!moved) return@launch
-                if (services.mover.moveBack(email, target.folderId, leaving)) {
-                    onBack()
-                    feed.refresh()
-                    folders.refresh()
-                } else {
-                    feed.report("Couldn't move the message back from ${target.label}. Try again.")
-                }
+            move.join()
+            if (!moved) return@moved
+            val done = services.mover.moveBack(email, target.folderId, leaving)
+            // After a recreated activity, onBack and feed belong to the old page; movedBack reaches the new one.
+            if (done) {
+                onBack()
+                feed.refresh()
             }
+            services.movedBack(done)
         }
     }
 

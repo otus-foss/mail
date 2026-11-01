@@ -61,8 +61,17 @@ class Apns:
                 "otusMessage": message_id,
             },
         )
-        reason = response.json().get("reason") if response.status_code != 200 else None
+        reason = rejection(response) if response.status_code != 200 else None
         if response.status_code == 410 or reason in ("BadDeviceToken", "DeviceTokenNotForTopic"):
             return False
         response.raise_for_status()
         return True
+
+
+def rejection(response):
+    """The `reason` of an APNs error response; None when its body is not the documented JSON."""
+    try:
+        body = response.json()
+    except ValueError:
+        return None
+    return body.get("reason") if isinstance(body, dict) else None

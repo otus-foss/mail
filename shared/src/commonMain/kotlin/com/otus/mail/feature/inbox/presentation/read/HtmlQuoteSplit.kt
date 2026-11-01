@@ -34,7 +34,7 @@ private fun withoutTrailingSeparator(main: String): String {
 
 /** Gmail: the attribution line and the blockquote sit together in one `gmail_quote` div. */
 private fun gmailQuote(html: String): HtmlQuoteSplit? {
-    val start = GMAIL.find(html)?.range?.first ?: return null
+    val start = startTags(html, "div", GMAIL).firstOrNull() ?: return null
     val (closeStart, end) = elementEnd(html, start, "div")
     val inner = innerHtml(html, start, closeStart)
     val blockquote = BLOCKQUOTE.find(inner)?.range?.first
@@ -48,9 +48,10 @@ private fun gmailQuote(html: String): HtmlQuoteSplit? {
  * quoted message in the next one; then both go and the line becomes the header.
  */
 private fun citeQuote(html: String): HtmlQuoteSplit? {
-    val start = CITE.find(html)?.range?.first ?: return null
+    val start = startTags(html, "blockquote", CITE).firstOrNull() ?: return null
     val header = attributionIn(innerBlockquote(html, start))
-    val next = header?.let { CITE.find(html, elementEnd(html, start, "blockquote").second) }?.range?.first
+    val afterFirst = elementEnd(html, start, "blockquote").second
+    val next = header?.let { startTags(html, "blockquote", CITE, afterFirst).firstOrNull() }
     return if (next == null) {
         blockquoteSplit(html, start)
     } else {
@@ -66,16 +67,22 @@ private fun lastBlockquote(html: String): HtmlQuoteSplit? {
     return blockquoteSplit(html, start).takeIf { markupText(html.substring(end)).isBlank() }
 }
 
-/** The blockquote at [start] as the quote, with an attribution line right above it as the header. */
+/**
+ * The blockquote at [start] as the quote, with an attribution line right above it as the header: one that
+ * starts at most [ATTRIBUTION_REACH] characters before it, with no visible text in between.
+ */
 private fun blockquoteSplit(
     html: String,
     start: Int,
 ): HtmlQuoteSplit {
     val (_, end) = elementEnd(html, start, "blockquote")
     val before = html.substring(0, start)
+    // Only the last line can have nothing visible after it; the few before it cover markup that hides text.
     val attribution =
         ATTRIBUTION
-            .findAll(before)
+            .findAll(before, (start - ATTRIBUTION_REACH).coerceAtLeast(0))
+            .toList()
+            .takeLast(ATTRIBUTION_TRIES)
             .lastOrNull { markupText(before.substring(it.range.last + 1)).isBlank() }
     val cut = attribution?.let { openingTagBefore(before, it.range.first) } ?: start
     val header = attribution?.let { attributionIn(it.value) }
@@ -94,17 +101,31 @@ private fun innerBlockquote(
 private fun openingTagBefore(
     html: String,
     index: Int,
-): Int = OPENING_TAG_END.find(html.substring(0, index))?.range?.first ?: index
+): Int = startTagBefore(html, index, OPENING_TAG) ?: index
 
-private val GMAIL = Regex("""<div\b[^>]*\bclass\s*=\s*["'][^"']*\bgmail_quote""", RegexOption.IGNORE_CASE)
+/** In a `<div>` start tag: Gmail's quote class. */
+private val GMAIL = Regex("""\bclass\s*=\s*["'][^"']*\bgmail_quote""", RegexOption.IGNORE_CASE)
 private val BLOCKQUOTE = Regex("""<blockquote\b""", RegexOption.IGNORE_CASE)
-private val CITE = Regex("""<blockquote\b[^>]*\btype\s*=\s*["']?cite""", RegexOption.IGNORE_CASE)
-private val OPENING_TAG_END = Regex("""<(?:div|p|span)\b[^>]*>\s*$""", RegexOption.IGNORE_CASE)
 
-/** "On … wrote:" or "Am … schrieb …:" with inline tags such as a mailto link, but no block tags. */
+/** In a `<blockquote>` start tag: the cite type. */
+private val CITE = Regex("""\btype\s*=\s*["']?cite""", RegexOption.IGNORE_CASE)
+private val OPENING_TAG = Regex("""<(?:div|p|span)\b""", RegexOption.IGNORE_CASE)
+
+/**
+ * "On … wrote:" or "Am … schrieb …:" with inline tags such as a mailto link, but no block tags. Every part
+ * is bounded and no tag runs past a `<`, so a search never rescans the rest of the message.
+ */
 private val ATTRIBUTION =
     Regex(
         """\b(?:On|Am)\s(?:(?!</?(?:div|p|blockquote|br)\b)[\s\S]){1,500}?""" +
-            """(?:wrote|schrieb[^<:]{0,200})(?:<[^>]*>)*:""",
+            """(?:wrote|schrieb[^<:]{0,200})(?:<[^<>]{0,2000}>)*:""",
     )
-private val SEPARATOR = Regex(ORIGINAL_MESSAGE, RegexOption.IGNORE_CASE)
+
+/** Starts only at the first dash of a run, so a long run of dashes is not searched again from each dash. */
+private val SEPARATOR = Regex("""(?<!-)$ORIGINAL_MESSAGE""", RegexOption.IGNORE_CASE)
+
+/** How far before a blockquote its attribution line may start, markup included. */
+private const val ATTRIBUTION_REACH = 4_000
+
+/** How many of the last attribution lines before a blockquote are tried. */
+private const val ATTRIBUTION_TRIES = 4

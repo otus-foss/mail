@@ -57,6 +57,7 @@ class InboxFeedState(
         set(value) {
             if (value == field) return
             field = value
+            autoPages = 0
             val shown = recent.of(mailScope, value)
             if (shown != null) messages = shown
             refresh(cachedFirst = shown == null)
@@ -82,6 +83,7 @@ class InboxFeedState(
         private set
     private var job: Job? = null
     private var request = 0
+    private var autoPages = 0
     private val pending = PendingChanges()
     private val avatars = FeedAvatars(avatars)
     private val recent = RecentLists()
@@ -145,6 +147,7 @@ class InboxFeedState(
         val next = scope ?: defaultScope
         if (next == mailScope) return
         mailScope = next
+        autoPages = 0
         val shown = recent.of(next, query)
         messages = shown.orEmpty()
         refresh(cachedFirst = shown == null)
@@ -198,10 +201,11 @@ class InboxFeedState(
                 } finally {
                     if (load.number == request) onEnd()
                 }
-                // A filtered list goes on loading pages while the server has more, so matches past
-                // the first pages show without scrolling. A new filter or scope replaces the search,
-                // a failed page stops it until the next refresh, and the next load resolves avatars.
-                if (load.number == request && load.served && query.filters.activeCount > 0) loadMore()
+                // A failed page stops the pages loading on their own, and the next load resolves avatars.
+                if (load.number == request && load.served && continuesOnItsOwn) {
+                    autoPages++
+                    loadMore()
+                }
                 if (load.number == request) {
                     avatars.resolve(messages, load.options, { load.number == request }) { edit ->
                         messages = messages.map(edit)
@@ -209,6 +213,9 @@ class InboxFeedState(
                 }
             }
     }
+
+    /** A list the device narrows shows few rows a page, so [MAX_AUTO_PAGES] more load on their own, then on scroll. */
+    private val continuesOnItsOwn get() = query.filters.clientOnly && autoPages < MAX_AUTO_PAGES
 
     private suspend fun showCached(load: FeedLoad) {
         try {
@@ -248,6 +255,8 @@ class InboxFeedState(
         }
     }
 }
+
+private const val MAX_AUTO_PAGES = 4
 
 /** One load's request number and inputs. [served] once the server's snapshot shows. */
 private class FeedLoad(

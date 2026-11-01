@@ -1,11 +1,13 @@
 package com.otus.mail.feature.inbox.domain
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
@@ -113,9 +115,17 @@ class MailOutbox(
     ): Result<SentMessage?> {
         val earlier = if (entry.attempted) earlierTry(entry) else null
         if (earlier != null) return earlier
-        entries.replace(entry.copy(attempted = true, problem = null))
+        var trying = entry.copy(attempted = true, problem = null, storedCopy = null)
+        entries.replace(trying)
         val time = entry.sendAt?.let(SendTime::Scheduled) ?: holdUntil?.let(SendTime::Held) ?: SendTime.Now
-        val result = sender.send(entry.draft, entry.answered, time)
+        val result =
+            failSafe {
+                sender.send(entry.draft, entry.answered, time) { emailId ->
+                    // Kept before the copy is submitted, so a lost answer is looked up by this id.
+                    trying = trying.copy(storedCopy = StoredCopy(emailId, now().toEpochMilliseconds()))
+                    entries.replace(trying)
+                }
+            }
         val failure = (result.exceptionOrNull() as? SendException)?.failure
         when {
             result.isSuccess -> entries.removeIf { it.id == entry.id }
@@ -124,7 +134,7 @@ class MailOutbox(
 
             // A clear refusal left nothing on the server, so the next try needs no lookup. A server
             // problem, such as a gateway error, may hide a lost answer, so that try looks first.
-            else -> entries.fail(entry.copy(attempted = failure.mayHaveSent()), OutboxProblem.Refused)
+            else -> entries.fail(trying.copy(attempted = failure.mayHaveSent()), OutboxProblem.Refused)
         }
         return if (result.isSuccess || failure != null) result else sendFailure(SendFailure.ServerProblem)
     }
@@ -132,37 +142,70 @@ class MailOutbox(
     /**
      * What the server says of an earlier try decides the outcome; null when the message can go. A
      * withdrawn message never goes: it leaves once the server answers, holding no copy to cancel.
+     * A try that stored its copy is asked about only [SETTLE_TIME] after that, so a submission the
+     * server is still working on when the answer was lost is not taken for a missing one. A
+     * withdrawn one is asked at once, so a hold is canceled before its time comes.
      */
     private suspend fun earlierTry(entry: OutboxEntry): Result<SentMessage?>? {
-        val check = checker.check(entry.draft, entry.answered, cancelHeld = entry.withdrawn)
-        return when {
-            check == SendCheck.Unreachable -> {
-                wake(now())
-                sendFailure(SendFailure.Unreachable)
-            }
-
-            check == SendCheck.Sent || entry.withdrawn -> {
-                entries.removeIf { it.id == entry.id }
-                Result.success(null)
-            }
-
-            check == SendCheck.NotSent -> {
-                null
-            }
-
-            else -> {
-                entries.fail(entry, OutboxProblem.Unconfirmed)
-                sendFailure(SendFailure.Unconfirmed)
-            }
+        val unsettled =
+            entry.storedCopy
+                ?.takeUnless { entry.withdrawn }
+                ?.let { Instant.fromEpochMilliseconds(it.atMillis) + SETTLE_TIME }
+                ?.takeIf { now() < it }
+        val check = if (unsettled != null) SendCheck.Unreachable else checker.lookUp(entry)
+        if (check == SendCheck.Unreachable) wake(unsettled ?: now())
+        return when (check) {
+            SendCheck.Unreachable -> sendFailure(SendFailure.Unreachable)
+            SendCheck.Sent -> entries.gone(entry)
+            SendCheck.NotSent -> if (entry.withdrawn) entries.gone(entry) else null
+            SendCheck.Unconfirmable -> if (entry.withdrawn) entries.gone(entry) else entries.unconfirmed(entry)
         }
     }
 }
+
+/** What this checker says of [entry]'s earlier try; one that cannot tell for anything it throws. */
+private suspend fun SendChecker.lookUp(entry: OutboxEntry): SendCheck =
+    try {
+        check(entry.draft, entry.answered, cancelHeld = entry.withdrawn, storedCopy = entry.storedCopy?.emailId)
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        SendCheck.Unconfirmable
+    }
+
+/** Forgets [entry], whose earlier try settled its outcome. */
+private suspend fun OutboxEntries.gone(entry: OutboxEntry): Result<SentMessage?> {
+    removeIf { it.id == entry.id }
+    return Result.success(null)
+}
+
+/** Keeps [entry] for the user, since nobody can tell whether its earlier try went. */
+private suspend fun OutboxEntries.unconfirmed(entry: OutboxEntry): Result<SentMessage?> {
+    fail(entry, OutboxProblem.Unconfirmed)
+    return sendFailure(SendFailure.Unconfirmed)
+}
+
+/**
+ * [send]'s result, or a server problem for anything it throws but cancellation, so a message that
+ * keeps failing waits for the user rather than crashing every start of the app.
+ */
+private suspend fun failSafe(send: suspend () -> Result<SentMessage>): Result<SentMessage> =
+    try {
+        send()
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        Result.failure(SendException(SendFailure.ServerProblem))
+    }
 
 private fun SendFailure?.mayHaveSent() = this == null || this == SendFailure.ServerProblem
 
 private fun sendFailure(failure: SendFailure) = Result.failure<SentMessage?>(SendException(failure))
 
 private val BACKGROUND_DELAY = 30.seconds
+
+/** Longer than a request may take, so the server has finished a submission whose answer was lost. */
+private val SETTLE_TIME = 2.minutes
 
 @OptIn(ExperimentalUuidApi::class)
 private fun newOutboxId(): String = Uuid.random().toString()

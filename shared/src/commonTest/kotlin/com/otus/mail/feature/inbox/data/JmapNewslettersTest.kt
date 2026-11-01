@@ -71,7 +71,7 @@ class JmapNewslettersTest {
                     if ("Email/query" in body) OLDER else FIRST
                 }.list(newsletter)
             assertEquals("Sentry weekly digest", list?.name)
-            assertEquals(listOf("n4", "n3"), list?.olderIds, "Mail in Trash does not count")
+            assertEquals(listOf("n4", "n3"), list?.olderIds, "Mail in Trash or of another list does not count")
             assertEquals(1.0, list?.perWeek)
             assertEquals(2, requests.size)
             val query = requests.last()
@@ -80,6 +80,7 @@ class JmapNewslettersTest {
                     """{"before":"2026-10-15T08:00:00Z"}]}"""
             assertTrue("\"filter\":$filter" in query, query)
             assertTrue("\"limit\":100" in query, query)
+            assertTrue("\"from\",\"header:List-Id:asText\"]" in query, "The older mail is checked: $query")
         }
 
     @Test
@@ -96,7 +97,7 @@ class JmapNewslettersTest {
                     if ("Email/query" in body) OLDER else first
                 }.list(newsletter)
             assertEquals("Sentry", list?.name)
-            assertEquals(listOf("n4", "n3"), list?.olderIds)
+            assertEquals(listOf("n4", "n3"), list?.olderIds, "Mail only named after the sender does not count")
             assertEquals(1.0, list?.perWeek)
             assertEquals(2, requests.size)
             val query = requests.last()
@@ -223,12 +224,18 @@ class JmapNewslettersTest {
             ["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"}, {"id": "t", "role": "trash"}]}, "c1"]]}"""
         val WITHOUT_LIST_ID =
             FIRST.replace(", \"header:List-Id:asText\": \"Sentry weekly digest <weekly.sentry.io>\"", "")
+        const val SENTRY = """"from": [{"email": "weekly@sentry.io"}], "header:List-Id:asText": "<weekly.sentry.io>""""
+
+        // The server matched y loosely: its list id holds Sentry's, and its sender's name is Sentry's address.
         const val OLDER = """{"methodResponses": [
-            ["Email/query", {"queryState": "q", "ids": ["n4", "x", "n3"]}, "c0"],
+            ["Email/query", {"queryState": "q", "ids": ["n4", "x", "y", "n3"]}, "c0"],
             ["Email/get", {"state": "e", "list": [
-              {"id": "n4", "receivedAt": "2026-10-08T08:00:00Z", "mailboxIds": {"a": true}},
-              {"id": "x", "receivedAt": "2026-10-05T08:00:00Z", "mailboxIds": {"t": true}},
-              {"id": "n3", "receivedAt": "2026-10-01T08:00:00Z", "mailboxIds": {"a": true}}]}, "c1"]]}"""
+              {"id": "n4", "receivedAt": "2026-10-08T08:00:00Z", "mailboxIds": {"a": true}, $SENTRY},
+              {"id": "x", "receivedAt": "2026-10-05T08:00:00Z", "mailboxIds": {"t": true}, $SENTRY},
+              {"id": "y", "receivedAt": "2026-10-03T08:00:00Z", "mailboxIds": {"a": true},
+               "from": [{"name": "weekly@sentry.io", "email": "news@shop.example"}],
+               "header:List-Id:asText": "<news.weekly.sentry.io>"},
+              {"id": "n3", "receivedAt": "2026-10-01T08:00:00Z", "mailboxIds": {"a": true}, $SENTRY}]}, "c1"]]}"""
         const val ARCHIVE_LOOKUP = """{"methodResponses": [
             ["Mailbox/query", {"queryState": "q", "ids": ["arch"]}, "c0"],
             ["Email/get", {"state": "e", "list": [

@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from file_length import file_length_violations
+from motion_specs import motion_violations
 
 ROOT = Path(__file__).resolve().parents[1]
 SKIP = {"build", ".gradle", ".git", ".venv"}
@@ -138,6 +139,7 @@ def violations(path: Path, text: str, base: str, *, central_ui: bool = False) ->
         errors.append("wildcard imports are prohibited")
     if not production:
         return errors
+    errors += motion_violations(code)
     suffix = package.group(1).removeprefix(base).strip(".")
     location = suffix.split(".") if suffix else []
     if "shared" in parts and "commonMain" in parts:

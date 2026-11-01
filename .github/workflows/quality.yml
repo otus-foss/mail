@@ -12,11 +12,6 @@ on:
 permissions:
   contents: read
 
-# The shared Otus libraries download from otus-meta's GitHub Packages registry.
-env:
-  ORG_GRADLE_PROJECT_otusMetaUsername: ${{ github.repository_owner }}
-  ORG_GRADLE_PROJECT_otusMetaPassword: ${{ secrets.OTUS_META_PACKAGES_TOKEN }}
-
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -100,6 +95,11 @@ jobs:
       - run: mint run swiftformat --lint iosApp
       - run: mint run swiftlint lint --strict
       - name: Compile iOS simulator app
+        # Only this step downloads the shared Otus libraries from otus-meta's GitHub Packages
+        # registry; the other jobs build Meta from source, so no other step sees the token.
+        env:
+          ORG_GRADLE_PROJECT_otusMetaUsername: ${{ github.repository_owner }}
+          ORG_GRADLE_PROJECT_otusMetaPassword: ${{ secrets.OTUS_META_PACKAGES_TOKEN }}
         run: >-
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug -sdk
           iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 CODE_SIGNING_ALLOWED=NO

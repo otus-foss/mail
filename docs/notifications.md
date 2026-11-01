@@ -42,8 +42,11 @@ Choosing a service registers each account as its own instance, keyed by login id
    "Instant".
 4. Each push tells the open app, through `MailServices.serverChanges`, to reload the folders and,
    while it shows, the inbox, so new mail and read changes from elsewhere show without a pull.
+   While Mail is off screen, pushes reload nothing; one reload follows when Mail shows again.
    Each push also requests expedited `NewMailWorker` work. Android can still delay it when
    expedited-work quotas are exhausted. The check below then finds and posts the new mail.
+   Pushes that arrive during a check queue one more check after it, not one each; a check covers
+   every push that arrived before it started.
 
 The UnifiedPush connector decrypts pushes from either service. A push holds only account ids
 and state strings, never mail, so the push app and its server see encrypted change notices only. A server that

@@ -8,7 +8,6 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.QueryResult
 import com.otus.jmap.SetMethod
-import com.otus.jmap.SetResult
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DRAFTS_ROLE
@@ -29,6 +28,8 @@ import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
+import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
@@ -37,31 +38,53 @@ import kotlinx.serialization.json.putJsonObject
 
 /**
  * Sends a draft with `EmailSubmission/set` (RFC 8621, section 7.5). One request stores the draft
- * as written and submits that copy; on success the server moves it to Sent and clears `$draft`.
- * Without an envelope, the server takes the recipients from To, Cc, and Bcc, and strips Bcc.
+ * as written, and a second submits that copy by its id; on success the server moves it to Sent and
+ * clears `$draft`. Without an envelope, the server takes the recipients from To, Cc, and Bcc, and
+ * strips Bcc.
  */
 class JmapDraftSender(
     private val connections: JmapConnections,
     private val logins: LoginStore,
+    private val unanswered: UnansweredDrafts = UnansweredDrafts(),
 ) : DraftSender,
     ScheduledSends {
+    // Signature images upload once, not at every send.
+    private val images = InlineImageUploads()
+
     override suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
         time: SendTime,
+    ): Result<SentMessage> = send(draft, answered, time) {}
+
+    override suspend fun send(
+        draft: Draft,
+        answered: AnsweredMessage?,
+        time: SendTime,
+        stored: suspend (emailId: String) -> Unit,
     ): Result<SentMessage> =
         try {
             val account = mailAccount(connections, logins, draft.accountId) ?: failSend(SendFailure.ServerProblem)
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
-            val sent = account.submit(draft, account.route(from ?: failSend(SendFailure.NoIdentity)), time)
+            val route = account.route(from ?: failSend(SendFailure.NoIdentity))
+            val sent = account.submit(draft, route, time, stored)
+            // Undo or a cancel can still stop a held or scheduled send, so it takes back a mark it added.
+            val marked = if (time == SendTime.Now) null else answered?.let { account.unmarked(it) }
             account.tidySent(draft.emailId, answered)
-            Result.success(sent)
+            // A save whose answer was lost may have left a copy that no later save will remove.
+            route.drafts?.let { unanswered.destroy(account, it, kept = sent.emailId) }
+            Result.success(sent.copy(marked = marked))
         } catch (error: SendException) {
             Result.failure(error)
         } catch (error: JmapException) {
             Result.failure(SendException(error.toSendFailure(), error))
         } catch (error: LoginStoreException) {
             Result.failure(SendException(SendFailure.ServerProblem, error))
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            // Anything else, such as content that cannot be encoded, fails the send rather than the app.
+            Result.failure(SendException(SendFailure.ServerProblem))
         }
 
     /** The identity that sends as [from], and the folders the sent copy moves between. */
@@ -83,54 +106,44 @@ class JmapDraftSender(
     }
 
     /**
-     * Stores the draft and submits it in one request. A refused submission destroys the copy the
-     * request stored, so Drafts keeps only the draft's earlier copy.
+     * Stores the draft, tells [stored] the copy's id, and then submits that copy, so a submission
+     * whose answer is lost can be looked up by the id. A refused submission destroys the copy, so
+     * Drafts keeps only the draft's earlier copy.
      */
     private suspend fun MailAccount.submit(
         draft: Draft,
         route: SendRoute,
         time: SendTime,
+        stored: suspend (emailId: String) -> Unit,
     ): SentMessage {
         val folder = route.drafts ?: route.sent ?: failSend(SendFailure.ServerProblem)
-        val email = draft.toEmail(folder, inlineImages(draft.htmlContent()))
-        lateinit var stored: JmapCall<SetResult>
-        lateinit var submitted: JmapCall<SetResult>
-        val response =
-            connection.send {
-                stored = call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
-                submitted = call(submission(route, folder, draft, time))
-            }
-        val created = response[stored]
+        val email = draft.toEmail(folder, inlineImages(draft.htmlContent(), images))
+        val created = connection.call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
         val creationFailure = created.notCreated[EMAIL]
         if (creationFailure != null) failSend(creationFailure.toSendFailure())
         val copy = created.createdId(EMAIL) ?: failSend(SendFailure.ServerProblem)
-        val refusal =
+        stored(copy)
+        val submitted =
             try {
-                response[submitted].notCreated[SUBMISSION]?.toSendFailure()
+                connection.call(submission(route, folder, copy, draft, time))
             } catch (error: JmapException.MethodError) {
-                error.toSendFailure()
+                refused(copy, error.toSendFailure())
             }
-        if (refusal != null) {
-            bestEffort { connection.call(SetMethod(EmailType, id, destroy = listOf(copy))) }
-            failSend(refusal)
-        }
-        return SentMessage(
-            draft.accountId,
-            copy,
-            response[submitted].createdId(SUBMISSION) ?: failSend(SendFailure.ServerProblem),
-            route.drafts,
-            route.identityId,
-        )
+        val refusal = submitted.notCreated[SUBMISSION]
+        if (refusal != null) refused(copy, refusal.toSendFailure())
+        val submissionId = submitted.createdId(SUBMISSION) ?: failSend(SendFailure.ServerProblem)
+        return SentMessage(draft.accountId, copy, submissionId, route.drafts, route.identityId)
     }
 
     /**
-     * The submission of the stored copy in [folder]. A held or scheduled one carries an envelope
+     * The submission of the stored [copy] in [folder]. A held or scheduled one carries an envelope
      * with its time. A scheduled copy stays in [folder], only losing `$draft`, since the server
      * sends it much later; any other moves to Sent at once.
      */
     private fun MailAccount.submission(
         route: SendRoute,
         folder: String,
+        copy: String,
         draft: Draft,
         time: SendTime,
     ) = SetMethod(
@@ -140,7 +153,7 @@ class JmapDraftSender(
             mapOf(
                 SUBMISSION to
                     buildJsonObject {
-                        put("emailId", "#$EMAIL")
+                        put("emailId", copy)
                         put("identityId", route.identityId)
                         when (time) {
                             SendTime.Now -> Unit
@@ -165,14 +178,7 @@ class JmapDraftSender(
         mailCallOr(0L) {
             mailAccount(connections, logins, accountId)
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
-                ?.let { account ->
-                    account.session.accounts[account.id]
-                        ?.capabilityObjects
-                        ?.get(JmapCapability.SUBMISSION)
-                        ?.get("maxDelayedSend")
-                        ?.jsonPrimitive
-                        ?.longOrNull
-                } ?: 0L
+                ?.delayedSendSeconds() ?: 0L
         }
 
     override suspend fun cancel(message: SentMessage): Result<Unit> =
@@ -227,7 +233,10 @@ class JmapDraftSender(
             Result.failure(SendException(SendFailure.ServerProblem, error))
         }
 
-    /** Marks the copy of a canceled [message] as a draft again, back in Drafts if it moved to Sent. */
+    /**
+     * Marks the copy of a canceled [message] as a draft again, back in Drafts if it moved to Sent,
+     * and takes back the mark its send gave the original it answered.
+     */
     private suspend fun MailAccount.restoreCanceledDraft(message: SentMessage) {
         val emailId = message.emailId
         val patch =
@@ -235,8 +244,14 @@ class JmapDraftSender(
                 put("keywords/$DRAFT_KEYWORD", true)
                 if (message.draftsId != null) putJsonObject("mailboxIds") { put(message.draftsId, true) }
             }
+        val unmarked =
+            listOfNotNull(message.marked).associate {
+                it.emailId to
+                    membershipPatch("keywords", it.keyword, member = false)
+            }
         try {
-            val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch)))
+            // Only the copy decides: an original deleted since then keeps nothing to take back.
+            val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch) + unmarked))
             if (emailId !in restored.updated || emailId in restored.notUpdated) throw DraftRestoreException()
         } catch (error: JmapException) {
             throw DraftRestoreException(error)
@@ -248,3 +263,26 @@ class JmapDraftSender(
         const val SUBMISSION = "send"
     }
 }
+
+/** Destroys the [copy] a refused submission left, and fails the send with [failure]. */
+private suspend fun MailAccount.refused(
+    copy: String,
+    failure: SendFailure,
+): Nothing {
+    bestEffort { connection.call(SetMethod(EmailType, id, destroy = listOf(copy))) }
+    failSend(failure)
+}
+
+/**
+ * How far ahead this account's server holds mail: its `maxDelayedSend`, but only while its
+ * `submissionExtensions` offer FUTURERELEASE (RFC 8621, section 1.3.2), whose HOLDUNTIL parameter
+ * (RFC 4865) a held or scheduled send puts in its envelope.
+ */
+private fun MailAccount.delayedSendSeconds(): Long? {
+    val submission = session.accounts[id]?.capabilityObjects?.get(JmapCapability.SUBMISSION) ?: return null
+    val extensions = (submission["submissionExtensions"] as? JsonObject)?.keys.orEmpty()
+    val holds = extensions.any { it.equals(FUTURE_RELEASE, ignoreCase = true) }
+    return submission["maxDelayedSend"]?.jsonPrimitive?.longOrNull?.takeIf { holds }
+}
+
+private const val FUTURE_RELEASE = "FUTURERELEASE"

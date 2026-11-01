@@ -16,8 +16,11 @@ internal data class ScriptPlan(
     val changedElsewhere: Boolean = false,
     val migrated: Boolean = false,
 ) {
-    /** The new script: [block] in place of the old one, everything else as it was. */
-    fun withBlock(block: String): String = spliceBlock(text, block)
+    /** The new script: [block] at its end and [require] at its top, everything else as it was. */
+    fun withBlock(
+        block: String,
+        require: String?,
+    ): String = spliceBlock(text, block, require)
 }
 
 /**
@@ -28,7 +31,7 @@ internal data class ScriptPlan(
  * The block goes into the active script. Without one, it goes into "Otus Mail", which is created
  * when missing. An account that still runs the old "Otus Mail" script (`# otus-rules-v1`) has its
  * rules converted. When that script kept another one running through `include`, the block moves
- * to the top of that kept script, which becomes the active one; otherwise "Otus Mail" becomes just
+ * to the end of that kept script, which becomes the active one; otherwise "Otus Mail" becomes just
  * the block. An old script that is not the one running holds rules that were off, so they stay.
  */
 internal suspend fun planScript(

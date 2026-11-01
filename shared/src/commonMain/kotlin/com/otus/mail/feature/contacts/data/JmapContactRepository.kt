@@ -17,7 +17,6 @@ import com.otus.jmap.contacts.toCreation
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jscontact.Card
-import com.otus.jscontact.JsContactJson
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactBook
@@ -32,10 +31,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Address books and cards over JMAP (RFC 9610). Each login may hold contacts in several JMAP
@@ -78,6 +76,26 @@ internal class JmapContactRepository(
         if (error != null) throw refused(error.type)
         val id = result.createdId(NEW_CARD) ?: throw ContactWriteException(ContactWriteFailure.Refused)
         return CardKey(book.loginId, book.accountId, id)
+    }
+
+    override suspend fun findCreated(
+        book: BookKey,
+        card: Card,
+        ignore: Set<CardKey>,
+    ): CardKey? {
+        val uid = card.uid ?: return null
+        val found =
+            try {
+                write(book.loginId) { it.cardsWithUid(book, uid) }
+            } catch (refusal: ContactWriteException) {
+                // A server that cannot look cards up by uid gets the create again, as it would have.
+                if (refusal.failure == ContactWriteFailure.Offline) throw refusal
+                emptyList()
+            }
+        return found
+            .mapNotNull { it.id }
+            .map { CardKey(book.loginId, book.accountId, it) }
+            .firstOrNull { it !in ignore }
     }
 
     override suspend fun update(
@@ -247,49 +265,20 @@ private fun refused(
 ): ContactWriteException =
     ContactWriteException(if (type == "forbidden") ContactWriteFailure.ReadOnly else ContactWriteFailure.Refused, cause)
 
-/**
- * A PatchObject that sets each top-level property that differs between [before] and [after], and
- * removes the ones [after] dropped. Whole properties keep the patch valid on any server, since a
- * path into a property needs its parent to exist there.
- */
-internal fun patch(
-    before: Card,
-    after: Card,
-): JsonObject {
-    val old = before.json()
-    val new = after.json()
-    return JsonObject(
-        (old.keys + new.keys)
-            .filter { it != "id" && old[it] != new[it] }
-            .associateWith { new[it] ?: JsonNull },
-    )
-}
-
-private fun Card.json(): JsonObject = JsContactJson.encodeToJsonElement(Card.serializer(), this).jsonObject
-
-/**
- * A book's name without the account in brackets that some servers append, such as Stalwart's
- * "Address Book (ada@example.org)" or "Address Book (ada.lovelace)" with the JMAP [account]'s
- * name: the row already says which login the book comes from.
- */
-internal fun bookName(
-    name: String,
-    login: JmapLogin,
-    account: String,
-): String {
-    val own = setOf(login.username, login.name, login.username.substringBefore('@'), account).map { it.lowercase() }
-    val bracket = Regex("""\s*\(([^()]*)\)\s*$""").find(name)
-    val inside =
-        bracket
-            ?.groupValues
-            ?.get(1)
-            ?.trim()
-            .orEmpty()
-    // An account in brackets: the login's or account's own name, or anything shaped like a
-    // username or address, such as "ada.lovelace" or "ada@example.org".
-    val isAccount = inside.lowercase() in own || (' ' !in inside && ('@' in inside || '.' in inside))
-    val trimmed = if (bracket != null && isAccount) name.removeRange(bracket.range) else name
-    return trimmed.trim().ifBlank { "Contacts" }
+/** The cards in [book] with [uid] (RFC 9610, section 3.3). */
+private suspend fun JmapConnection.cardsWithUid(
+    book: BookKey,
+    uid: String,
+): List<Card> {
+    val filter =
+        buildJsonObject {
+            put("inAddressBook", book.bookId)
+            put("uid", uid)
+        }
+    return request {
+        val query = call(QueryMethod(ContactCardType, book.accountId, filter))
+        call(GetMethod(ContactCardType, book.accountId, JmapIds.Result(query.resultOf("/ids"))))
+    }.list
 }
 
 /** Where a page of cards starts, how many it holds, and the properties it asks for; null asks for all. */

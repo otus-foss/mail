@@ -47,7 +47,7 @@ private fun PageContent(
         }
 
         is MailPage.Compose -> {
-            ComposePage(page, states, navigation, back)
+            ComposePage(page, states, back)
         }
 
         MailPage.Signatures -> {
@@ -199,7 +199,7 @@ internal fun rememberLabeled(
 ): List<MailMessage> {
     val scope = states.mailScope
     val colors = states.folderColors.colors to states.behavior.behavior.sidebar.folderColors
-    return remember(feed.messages, states.folders.accounts, scope, colors) {
-        states.filing.labeled(feed.messages.within(scope))
-    }
+    // A message that did not change, as when another sender's avatar arrives, keeps its copy.
+    val copies = remember(states.folders.accounts, colors) { LabeledCopies() }
+    return remember(feed.messages, scope, copies) { states.filing.labeled(feed.messages.within(scope), copies) }
 }

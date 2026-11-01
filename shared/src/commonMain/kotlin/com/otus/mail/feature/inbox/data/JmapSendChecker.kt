@@ -12,6 +12,7 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.condition
@@ -20,13 +21,18 @@ import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendCheck
 import com.otus.mail.feature.inbox.domain.SendChecker
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * Finds a sent draft by its Message-ID with the `header` filter of `Email/query` (RFC 8621,
- * section 4.4.1). A send stores a copy and submits it in one request, and a submission the server
- * takes clears the copy's `$draft`. So a copy without `$draft` went; one that kept it was refused,
- * and is destroyed so the next send leaves no second copy. A copy the server holds, whose
+ * Finds what became of a send whose answer was lost. A try that stored its copy before submitting
+ * it is looked up by the copy's id: a submission of it that nobody canceled (RFC 8621, section 7.3)
+ * means it went, and so does a copy without `$draft` whose submission the server no longer keeps.
+ * Otherwise the draft is found by its Message-ID with the `header` filter of `Email/query`
+ * (section 4.4.1): a copy without `$draft` went, and one that kept it was refused. A copy that did
+ * not go is destroyed so the next send leaves no second copy. A copy the server holds, whose
  * submission is canceled after Undo, is destroyed too. A copy that went is tidied up as a send
  * would have: the saved draft is deleted and the answered message marked.
  */
@@ -38,11 +44,22 @@ class JmapSendChecker(
         draft: Draft,
         answered: AnsweredMessage?,
         cancelHeld: Boolean,
-    ): SendCheck {
-        val messageId = draft.messageId ?: return SendCheck.Unconfirmable
-        return try {
-            mailAccount(connections, logins, draft.accountId)?.findSent(messageId, cancelHeld, draft.emailId, answered)
-                ?: SendCheck.Unconfirmable
+    ): SendCheck = check(draft, answered, cancelHeld, storedCopy = null)
+
+    override suspend fun check(
+        draft: Draft,
+        answered: AnsweredMessage?,
+        cancelHeld: Boolean,
+        storedCopy: String?,
+    ): SendCheck =
+        try {
+            val account = mailAccount(connections, logins, draft.accountId)
+            when {
+                account == null -> SendCheck.Unconfirmable
+                storedCopy != null -> account.findCopy(storedCopy, cancelHeld, draft.emailId, answered)
+                draft.messageId != null -> account.findSent(draft.messageId, cancelHeld, draft.emailId, answered)
+                else -> SendCheck.Unconfirmable
+            }
         } catch (error: JmapException.MethodError) {
             // A server down for now can be asked later; one that cannot look the message up, as with
             // `unsupportedFilter`, never can.
@@ -52,7 +69,40 @@ class JmapSendChecker(
         } catch (expected: LoginStoreException) {
             SendCheck.Unreachable
         }
-    }
+}
+
+/** What became of the [copy] an earlier try stored, by its id rather than a search. */
+private suspend fun MailAccount.findCopy(
+    copy: String,
+    cancelHeld: Boolean,
+    draftId: String?,
+    answered: AnsweredMessage?,
+): SendCheck {
+    lateinit var query: JmapCall<QueryResult>
+    lateinit var submissions: JmapCall<GetResult<JsonObject>>
+    lateinit var found: JmapCall<GetResult<EmailObject>>
+    val ofCopy = condition("emailIds", JsonArray(listOf(JsonPrimitive(copy))))
+    val response =
+        connection.send {
+            query = call(QueryMethod(EmailSubmissionType, id, ofCopy))
+            val ids = JmapIds.Result(query.resultOf("/ids"))
+            submissions = call(GetMethod(EmailSubmissionType, id, ids, listOf("id", "undoStatus")))
+            found = call(GetMethod(EmailType, id, JmapIds.Of(listOf(copy)), KEYWORD_PROPERTIES))
+        }
+    response[query]
+    val all = response[submissions].list
+    val live = all.filter { it["undoStatus"]?.jsonPrimitive?.contentOrNull != "canceled" }
+    val stored = response[found].list.singleOrNull()
+    // `$draft` goes only when a submission was made, so a copy without it whose submission the
+    // server has since dropped went.
+    val sentAndForgotten = all.isEmpty() && stored != null && DRAFT_KEYWORD !in stored.keywords
+    val went = if (live.isEmpty()) sentAndForgotten else !(cancelHeld && cancelHeld(listOf(copy)))
+    // Neither a copy nor a submission: the user may have deleted what went, so only they can tell.
+    val nothingLeft = stored == null && all.isEmpty()
+    if (!went && nothingLeft && !cancelHeld) return SendCheck.Unconfirmable
+    if (!went && stored != null) connection.call(SetMethod(EmailType, id, destroy = listOf(copy)))
+    if (went) tidySent(draftId?.takeIf { it != copy }, answered)
+    return if (went) SendCheck.Sent else SendCheck.NotSent
 }
 
 private suspend fun MailAccount.findSent(
@@ -81,7 +131,7 @@ private suspend fun MailAccount.findSent(
 }
 
 /** The mail whose Message-ID header holds [messageId]. */
-private fun messageIdFilter(messageId: String) =
+internal fun messageIdFilter(messageId: String) =
     condition("header", JsonArray(listOf(JsonPrimitive("Message-ID"), JsonPrimitive(messageId))))
 
 private val FOUND_PROPERTIES = listOf("id", "keywords", "receivedAt")

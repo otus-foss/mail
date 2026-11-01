@@ -62,6 +62,7 @@ import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
 import com.otus.mail.feature.inbox.data.ServerSites
+import com.otus.mail.feature.inbox.data.UnansweredDrafts
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
@@ -120,8 +121,11 @@ class MailServices(
     /** The screen and keyboard protections this platform can apply. */
     internal val devicePrivacy: DevicePrivacy get() = host.devicePrivacy
 
-    /** Pushed changes, which reload the open inbox and folders. */
+    /** Pushed changes, which reload the open inbox and folders while Mail is in [visibility]. */
     val serverChanges = ServerChanges()
+
+    /** Whether Mail is on screen; the platform reports it. */
+    val visibility = MailVisibility()
 
     /** The device's copy of each login's mail; see docs/storage.md. */
     private val accountCache = AccountMailCache(RecoveringMailCache(stores.cache))
@@ -153,7 +157,8 @@ class MailServices(
                 AccountService.Mail,
                 onAccountChanged = { loginId ->
                     val connected = withContext(Dispatchers.IO) { logins.logins().any { it.id == loginId } }
-                    if (connected) accountCache.connected(loginId)
+                    // A change queued while the login was being removed must not wait for it to come back.
+                    if (connected) accountCache.connected(loginId) else changes.forget(loginId)
                     avatars.removeAccount(loginId)
                 },
                 beforeRemove = { loginId ->
@@ -183,8 +188,9 @@ class MailServices(
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
     internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache, changes) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
-    internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins) }
-    private val jmapSender by lazy { JmapDraftSender(connections, logins) }
+    private val unansweredDrafts = UnansweredDrafts()
+    internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins, unansweredDrafts) }
+    private val jmapSender by lazy { JmapDraftSender(connections, logins, unansweredDrafts) }
     internal val sender: DraftSender get() = jmapSender
     internal val scheduled: ScheduledSends get() = jmapSender
 
@@ -216,12 +222,13 @@ class MailServices(
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
 
     /**
-     * Toasts and the work their closing starts, such as an unsubscribe sent once its Undo window
-     * ends. They belong to the process, so a toast shown before the activity was recreated, as on
-     * rotation, still shows and still finishes its work.
+     * Toasts and the work their actions and closing start, such as an unsubscribe sent once its Undo
+     * window ends. They belong to the process, so a toast shown before the activity was recreated, as
+     * on rotation, still shows and still finishes its work. Pages it opens go through [pageRequests].
      */
-    internal val toasts = ToastState()
     internal val work: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
+    internal val moveToasts by lazy { MoveToasts(ToastState(), work) }
+    internal val pageRequests by lazy { PageRequests(work) }
 
     /** Each newsletter strip's step while the process runs, so a reopened message shows it. */
     internal val newsletterSteps = NewsletterSteps()

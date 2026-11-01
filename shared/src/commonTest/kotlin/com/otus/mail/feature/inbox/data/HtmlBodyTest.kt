@@ -57,11 +57,20 @@ class HtmlBodyTest {
             "<style>@import'//cdn.example/a.css';</style>",
             "<svg><image width=\"10\" href=\"https://cdn.example/a.png\"/></svg>",
             "<svg><image xlink:href=\"https://cdn.example/a.png\"/></svg>",
+            "<svg><use width=\"9\" href=\"https://cdn.example/icons.svg#i\"/></svg>",
             "<video poster=\"https://cdn.example/p.jpg\"></video>",
             "<object data=\"https://cdn.example/a.svg\"></object>",
         ).forEach { assertTrue(html("text/html" to EmailBodyValue(it))!!.remoteContent, it) }
         assertFalse(html("text/html" to EmailBodyValue("<img src=\"data:image/png;base64,AA\">"))!!.remoteContent)
         assertFalse(html("text/html" to EmailBodyValue("<p data-href=\"https://otus.example\">Hi</p>"))!!.remoteContent)
+    }
+
+    @Test
+    fun hugeUnclosedSvgTagsAreReadInOnePass() {
+        // Each `<use` was searched to the end of the body again, which takes minutes for a large one.
+        listOf("<use ", "<image href=").forEach {
+            assertFalse(html("text/html" to EmailBodyValue(it.repeat(100_000)))!!.remoteContent, it)
+        }
     }
 
     @Test

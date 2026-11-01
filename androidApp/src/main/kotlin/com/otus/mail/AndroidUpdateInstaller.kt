@@ -54,7 +54,12 @@ class AndroidUpdateInstaller(
         session: PackageInstaller.Session,
         onProgress: (Float) -> Unit,
     ) {
-        val connection = URL(download).openConnection()
+        val connection =
+            URL(download).openConnection().apply {
+                // A stalled download fails, so the footer's progress ring does not stay up for good.
+                connectTimeout = CONNECT_TIMEOUT_MILLIS
+                readTimeout = READ_TIMEOUT_MILLIS
+            }
         val total = connection.contentLengthLong
         connection.getInputStream().use { input ->
             session.openWrite(APK_NAME, 0, total).use { output ->
@@ -98,5 +103,7 @@ class AndroidUpdateInstaller(
         const val APK_NAME = "update.apk"
         const val BUFFER_SIZE = 64 * 1024
         const val PERCENT = 100L
+        const val CONNECT_TIMEOUT_MILLIS = 15_000
+        const val READ_TIMEOUT_MILLIS = 30_000
     }
 }
