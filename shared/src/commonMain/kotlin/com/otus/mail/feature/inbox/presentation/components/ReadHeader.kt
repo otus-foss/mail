@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +38,8 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.dates.elements.DatePill
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.elements.PanelNavigation
+import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.DropdownRow
@@ -63,11 +66,7 @@ internal fun ReadHeader(
 ) {
     ContextPanel(
         placement = ChipPlacement.Overlapping,
-        navigation = {
-            IconButton("Back", actions.onBack, look = IconButtonLook.Plain) {
-                Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
-            }
-        },
+        navigation = { PanelNavigation("Back", actions.onBack) },
         trailingAction = { OptionsButton(actions.menu, "More actions") },
         chips = {
             BoxWithConstraints(Modifier.fillRail()) {
@@ -89,27 +88,28 @@ internal fun ReadHeader(
 }
 
 /**
- * The whole subject; when it takes more than one line, a tap folds it to one, shrinking the panel
- * on the layout-change motion, and another tap shows all of it again.
+ * The subject beside the chevron, up to [FOLDED_LINES] lines; when it is longer, a tap shows all of
+ * it, growing the panel on the layout-change motion, and another tap folds it again.
  */
 @Composable
 private fun ExpandableSubject(subject: String) {
-    var expanded by remember(subject) { mutableStateOf(true) }
+    var expanded by remember(subject) { mutableStateOf(false) }
     var long by remember(subject) { mutableStateOf(false) }
-    Text(
+    PanelTitle(
         subject,
         Modifier
+            .padding(start = PanelTokens.titleStart)
             .animateContentSize(motionTween())
             .clickable(
                 enabled = long,
                 onClickLabel = if (expanded) "Show less" else "Show the whole subject",
-            ) { expanded = !expanded }
-            .semantics { heading() },
-        maxLines = if (expanded) Int.MAX_VALUE else 1,
-        overflow = TextOverflow.Ellipsis,
-        onTextLayout = { long = if (expanded) it.lineCount > 1 else it.hasVisualOverflow },
+            ) { expanded = !expanded },
+        maxLines = if (expanded) Int.MAX_VALUE else FOLDED_LINES,
+        onTextLayout = { long = if (expanded) it.lineCount > FOLDED_LINES else it.hasVisualOverflow },
     )
 }
+
+private const val FOLDED_LINES = 2
 
 @Composable
 private fun SenderPill(

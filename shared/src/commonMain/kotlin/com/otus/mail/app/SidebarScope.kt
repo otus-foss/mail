@@ -5,6 +5,7 @@ import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.addressCount
 import com.otus.mail.feature.inbox.presentation.components.MailScopeSheet
+import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
 
 /** Each account's sign-in and sending addresses, for "Show mail from". */
 internal fun MailStates.accountAddresses(): List<AccountAddresses> =
@@ -31,6 +32,19 @@ internal fun MailStates.scopeCount(choice: MailScopeChoice): String? {
 }
 
 /** "Show mail from", choosing [chosen] for every mail page and pinning addresses as the user asks. */
+internal fun MailStates.scopeSwitch(
+    chosen: MailScopeChoice,
+    onChoose: (MailScopeChoice) -> Unit,
+): MailScopeSwitch =
+    MailScopeSwitch(
+        accountAddresses(),
+        chosen,
+        addressPins.pins,
+        count = ::scopeCount,
+        onChoose = onChoose,
+        onTogglePin = addressPins::toggle,
+    )
+
 @Composable
 internal fun SidebarScopeSheet(
     states: MailStates,
@@ -38,13 +52,5 @@ internal fun SidebarScopeSheet(
     onChoose: (MailScopeChoice) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    MailScopeSheet(
-        states.accountAddresses(),
-        chosen,
-        states.addressPins.pins,
-        count = states::scopeCount,
-        onChoose = onChoose,
-        onTogglePin = states.addressPins::toggle,
-        onDismiss = onDismiss,
-    )
+    MailScopeSheet(states.scopeSwitch(chosen, onChoose), onDismiss)
 }

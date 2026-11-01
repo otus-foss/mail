@@ -54,7 +54,7 @@ class InboxPickerTest {
     @Before
     fun showMessages() {
         compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(fixtures, dateFormatter) } } }
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
     }
 
     @Test
@@ -134,7 +134,7 @@ class InboxPickerTest {
     fun draftAndPickerQuerySurviveActivityRecreation() {
         // Re-enter the production composition so saveable keys match across recreation.
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("kept query")
         compose.onNodeWithText("People").performClick()
         compose.onNodeWithContentDescription("Search people…").performTextInput("Alex")
@@ -209,7 +209,7 @@ class InboxPickerTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("People").performClick()
         compose.onNodeWithContentDescription("Search people…").performTextInput("unknown")
         compose.onNodeWithText("No matches. Try another search.").assertIsDisplayed()

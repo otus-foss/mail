@@ -28,6 +28,7 @@ import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Rule
@@ -59,18 +60,24 @@ class PanelRailViewportTest {
         val action = compose.onNodeWithContentDescription("More filters").fetchSemanticsNode().boundsInRoot
         val rail = compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange))
         val viewport = rail.fetchSemanticsNode().boundsInRoot
-        assertEquals(panel.left, if (direction == LayoutDirection.Ltr) viewport.left else action.left, 0.5f)
-        assertEquals(panel.right, if (direction == LayoutDirection.Rtl) viewport.right else action.right, 0.5f)
+        // The trailing action keeps the panel's side inset; the scrolling rail reaches the edge.
+        val inset = PanelTokens.panelInset.value * compose.activity.resources.displayMetrics.density
+        assertEquals(panel.left, if (direction == LayoutDirection.Ltr) viewport.left else action.left - inset, 0.5f)
+        assertEquals(panel.right, if (direction == LayoutDirection.Rtl) viewport.right else action.right + inset, 0.5f)
 
-        rail.performSemanticsAction(SemanticsActions.ScrollBy) { it(24f, 0f) }
+        // Past the rail's inset, which scrolls with the pills.
+        rail.performSemanticsAction(SemanticsActions.ScrollBy) { it(24f + inset, 0f) }
         val pill = compose.onNodeWithText("Sender filters").fetchSemanticsNode().boundsInRoot
-        val x = if (direction == LayoutDirection.Ltr) panel.left + 4f else panel.right - 4f
+        // Just past the edge fade, where the scrolled pill shows at full strength.
+        val density = compose.activity.resources.displayMetrics.density
+        val past = PanelTokens.fadeWidth.value * density + 4f
+        val x = if (direction == LayoutDirection.Ltr) panel.left + past else panel.right - past
         val bitmap = snapshot(direction)
         assertNotEquals(
-            "A scrolled pill must remain visible inside the first 8 dp of the panel",
+            "A scrolled pill must run under the edge fade instead of stopping at the rail inset",
             OtusColors.bgRegular.toArgb(),
-            // Above the label, so an anti-aliased glyph edge cannot match the page color.
-            bitmap.getPixel(x.toInt(), (pill.top + 4f).toInt()),
+            // Inside the pill above its label, clear of glyph edges and of the ring around the pill.
+            bitmap.getPixel(x.toInt(), (pill.center.y - LABEL_CLEARANCE * density).toInt()),
         )
         bitmap.recycle()
         assertEquals(action, compose.onNodeWithContentDescription("More filters").fetchSemanticsNode().boundsInRoot)
@@ -110,3 +117,6 @@ class PanelRailViewportTest {
         return bitmap
     }
 }
+
+/** How far above a pill's middle its fill shows clear of the label, in dp. */
+private const val LABEL_CLEARANCE = 11f

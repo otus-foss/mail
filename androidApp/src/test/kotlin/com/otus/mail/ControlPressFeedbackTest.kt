@@ -14,7 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
-import com.otus.designsystem.shared.input.elements.SearchPrompt
+import com.otus.designsystem.shared.panels.components.PanelSearchPill
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
 import org.junit.Assert.assertEquals
@@ -40,16 +40,16 @@ class ControlPressFeedbackTest {
     fun iconFeedbackStaysInsideCircleWhenTouchPaddingIsPressed() = checkFeedback(icon = true)
 
     @Test
-    fun searchPromptKeepsItsBackgroundWhenPressed() {
+    fun searchPillKeepsItsBackgroundWhenPressed() {
         var clicks = 0
-        show { SearchPrompt("Tap to search", onClick = { clicks++ }) }
-        val prompt = compose.onNodeWithText("Tap to search")
+        show { PanelSearchPill("Search Inbox", onClick = { clicks++ }) }
+        val prompt = compose.onNodeWithText("Search Inbox")
         val before = screenshot()
         prompt.performTouchInput { down(center) }
         val pressed = screenshot()
         prompt.performTouchInput { up() }
         assertEquals(1, clicks)
-        assertTrue("The search prompt should not change while pressed", before.sameAs(pressed))
+        assertTrue("The search pill should not change while pressed", before.sameAs(pressed))
     }
 
     private fun checkFeedback(icon: Boolean) {

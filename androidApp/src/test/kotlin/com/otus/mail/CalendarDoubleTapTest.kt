@@ -66,7 +66,7 @@ class CalendarDoubleTapTest {
     }
 
     private fun openCalendar() {
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("Date").performClick()
     }
 }

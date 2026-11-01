@@ -46,7 +46,7 @@ class MailboxPickerTest {
     fun showInbox() {
         val context = InboxContext(mailboxSearch = MailboxSearch(listOf("Inbox", "Archive", "Sent")) { loaded += it })
         compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(fixtures, context = context) } } }
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose
             .onNodeWithContentDescription("All accounts, Inbox")
             .performScrollTo()
