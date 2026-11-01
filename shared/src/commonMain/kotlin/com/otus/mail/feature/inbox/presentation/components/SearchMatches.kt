@@ -137,8 +137,10 @@ private fun SearchMail(
 internal fun SearchResultsBar(
     listed: ListedMail,
     state: InboxState,
+    roomOpen: () -> Boolean,
 ) {
-    if (keyboardHolds()) return
+    // Only once the room is open and still, not while it opens, such as right after the field is tapped.
+    if (keyboardHolds() || !roomOpen()) return
     val count =
         remember(listed, state.matching) { searchMessages(listed.messages, state.matching, listed.filters).size }
     ActionBar(
