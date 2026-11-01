@@ -69,7 +69,7 @@ fun InboxScreen(
     val unreadCount = rememberUnreadCount(listed, status.loading)
     val anchor = rememberFilterAnchor(filters, context.filterOptions, messages, dateFormatter)
     val page = shownPage(state, context)
-    val headerActions = InboxHeaderActions(searchCloser(state), onOpenNavigation, overlays)
+    val headerActions = InboxHeaderActions(searchCloser(state), onOpenNavigation, overlays, context.quick != null)
     val selecting = rows.panelSelection(listed.messages)
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
@@ -152,6 +152,7 @@ private class InboxHeaderActions(
     val closeSearch: () -> Unit,
     val onOpenNavigation: () -> Unit,
     val overlays: InboxOverlays,
+    val quickView: Boolean = false,
 )
 
 @Composable
@@ -174,10 +175,18 @@ private fun inboxPanelActions(
         onSubmit = { focus.clearFocus() },
         onFolder = state::showFolder,
         opens =
-            PanelOpens(actions.onOpenNavigation) {
-                focus.clearFocus()
-                actions.overlays.accountsOpen = true
-            },
+            PanelOpens(
+                actions.onOpenNavigation,
+                onOpenAccounts = {
+                    focus.clearFocus()
+                    actions.overlays.accountsOpen = true
+                },
+                onOpenQuickView =
+                    {
+                        focus.clearFocus()
+                        actions.overlays.quickOpen = true
+                    }.takeIf { actions.quickView },
+            ),
     )
 }
 

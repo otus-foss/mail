@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.folders.domain.CombinedFolder
 import com.otus.mail.feature.inbox.domain.INBOX_MAILBOX
@@ -13,6 +14,8 @@ import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
+import com.otus.mail.feature.inbox.presentation.QuickJumpTarget
+import com.otus.mail.feature.inbox.presentation.QuickViewContext
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.status
 
@@ -63,6 +66,7 @@ internal fun InboxPage(
                 nudge = rememberListNudge(states, labeled),
                 onLoadMore = feed::loadMore,
                 scope = states.scopeSwitch(states.mailScope, states.chooseScope),
+                quick = rememberQuickView(states, navigation),
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )
@@ -87,3 +91,24 @@ private fun InboxContents.mailboxNames(): List<String> = if (ownFolders) emptyLi
 
 private fun roleName(role: String): String =
     CombinedFolder.entries.firstOrNull { it.role == role }?.title ?: INBOX_MAILBOX
+
+/**
+ * What pulling the Inbox's control panel down shows: the modules picked in settings, and Jump to
+ * with the sidebar's pins in their order, leaving out the Inbox the page already is.
+ */
+@Composable
+private fun rememberQuickView(
+    states: MailStates,
+    navigation: MailNavigation,
+): QuickViewContext {
+    val behavior = states.behavior.behavior
+    val folders = states.folders.accounts.inScope(states.mailScope)
+    val pinned =
+        remember(folders, behavior.inbox, behavior.sidebar) {
+            sidebarMailboxes(folders, behavior.inbox, behavior.sidebar).filterNot { it.page == MailPage.Inbox }
+        }
+    return QuickViewContext(
+        behavior.quickView,
+        pinned.map { mailbox -> QuickJumpTarget(mailbox.title, mailbox.icon) { navigation.go(mailbox.page) } },
+    )
+}
