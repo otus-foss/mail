@@ -45,22 +45,23 @@ import com.otus.mail.feature.inbox.presentation.QuickViewContext
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
- * How far the inbox's control panel is dragged open: its usual height, the quick view, or the search
- * room while [searching], and every filter. Past halfway to the filters the panel opens the
- * [filters] draft, and back below it drops it. Back steps down to the usual height. Null for a page
- * without [quick].
+ * How far the inbox's control panel is dragged open: its usual height, the quick view, or the
+ * search room [searchRoom] tall while a search is in it, and every filter. Past halfway to the
+ * filters the panel opens the [filters] draft, and back below it drops it. Back steps down to the
+ * usual height. Null for a page without [quick].
  */
 @Composable
 internal fun rememberInboxExpansion(
     quick: QuickViewContext?,
     filters: InboxFilterState,
-    searching: Boolean,
+    searchRoom: Dp?,
     onLeaveSearch: () -> Unit,
 ): PanelExpansion? {
     val modules = quick?.modules?.size ?: 0
-    val first = if (searching) searchRoomHeight() else quickHeight(modules)
-    val expansion = rememberPanelExpansion(listOf(first, filtersHeight()))
-    FollowSearch(expansion, searching, onLeaveSearch)
+    val full = filtersHeight()
+    val first = searchRoom?.coerceAtMost(full) ?: quickHeight(modules)
+    val expansion = rememberPanelExpansion(listOf(first, full))
+    FollowSearch(expansion, searchRoom != null, first, onLeaveSearch)
     LaunchedEffect(expansion, filters) {
         snapshotFlow { expansion.position >= FILTERS_FROM }.distinctUntilChanged().collect { full ->
             when {
