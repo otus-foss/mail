@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -20,8 +19,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -35,37 +32,39 @@ import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.ReadQuickModule
 import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.ReadState
-import com.otus.mail.feature.inbox.presentation.components.PageNotice
 import com.otus.mail.feature.inbox.presentation.components.ReadActionBar
 import com.otus.mail.feature.inbox.presentation.components.ReadBottomStack
-import com.otus.mail.feature.inbox.presentation.components.ReadHeader
-import com.otus.mail.feature.inbox.presentation.components.ReadHeaderActions
 import com.otus.mail.feature.inbox.presentation.components.ReadPageLook
 import com.otus.mail.feature.inbox.presentation.components.ReadPages
 import com.otus.mail.feature.inbox.presentation.components.ReadParts
+import com.otus.mail.feature.inbox.presentation.components.ReadQuickView
 import com.otus.mail.feature.inbox.presentation.components.ReadSheets
 import com.otus.mail.feature.inbox.presentation.components.ReadStripActions
 import com.otus.mail.feature.inbox.presentation.components.ReadStripSource
 import com.otus.mail.feature.inbox.presentation.components.ReadThreadOverlay
+import com.otus.mail.feature.inbox.presentation.components.ReadTop
+import com.otus.mail.feature.inbox.presentation.components.ReadTopText
 import com.otus.mail.feature.inbox.presentation.components.StripFolds
 import com.otus.mail.feature.inbox.presentation.components.StripGestures
 import com.otus.mail.feature.inbox.presentation.components.SwipeFeel
+import com.otus.mail.feature.inbox.presentation.components.hiddenWhen
 import com.otus.mail.feature.inbox.presentation.components.openLink
+import com.otus.mail.feature.inbox.presentation.components.readDetailsHeight
 import com.otus.mail.feature.inbox.presentation.components.rememberFoldSwipe
 import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
 import com.otus.mail.feature.inbox.presentation.components.rememberPageLook
 import com.otus.mail.feature.inbox.presentation.components.rememberPageSwipe
 import com.otus.mail.feature.inbox.presentation.components.rememberReadBar
+import com.otus.mail.feature.inbox.presentation.components.rememberReadExpansion
 import com.otus.mail.feature.inbox.presentation.components.rememberReadMenu
 import com.otus.mail.feature.inbox.presentation.components.rememberStripFolds
 import com.otus.mail.feature.inbox.presentation.components.rememberUnfoldDrag
-import com.otus.mail.feature.inbox.presentation.read.fullLabel
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -172,8 +171,11 @@ private fun ReadLayout(
     var stripsHeight by remember { mutableStateOf(0.dp) }
     // Zen hides the strips but keeps their room, so the text does not move and reload.
     val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
-    val density = LocalDensity.current
-    var headerHeight by remember { mutableStateOf(0.dp) }
+    val headerHeight = remember { mutableStateOf(0.dp) }
+    val modules = parts.actions?.behavior()?.readQuickView ?: ReadQuickModule.Defaults
+    val expansion = rememberReadExpansion(modules.size, readDetailsHeight(headerHeight.value, padding))
+    // A screen reader finds only the grown panel, not the page and strips it covers.
+    val covered = expansion.expanded
     Box(Modifier.fillMaxSize()) {
         val swipe = rememberPageSwipe(layout.pager)
         ReadPages(
@@ -181,19 +183,10 @@ private fun ReadLayout(
             layout.pager,
             layout.look,
             parts.context.loadContent,
-            Modifier.fillMaxSize().then(swipe),
-            PaddingValues(top = headerHeight, bottom = bottomInset),
+            Modifier.fillMaxSize().then(swipe).hiddenWhen(covered),
+            PaddingValues(top = headerHeight.value, bottom = bottomInset),
         )
-        Column(
-            Modifier.onSizeChanged { size ->
-                val height = with(density) { size.height.toDp() }
-                // The room stays the tallest header, so folding the subject does not move the text.
-                if (height > headerHeight) headerHeight = height
-            },
-        ) {
-            ReadHeader(parts.row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
-            notice?.let { Box(Modifier.padding(PageTokens.pageInset)) { PageNotice(it) } }
-        }
+
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)
         val threadSwipe =
@@ -214,44 +207,15 @@ private fun ReadLayout(
                 .align(Alignment.BottomCenter)
                 .padding(padding)
                 .padding(PageTokens.pageInset)
-                .holdsSpace(zen),
+                .holdsSpace(zen)
+                .hiddenWhen(covered),
             onFoldedHeight = { stripsHeight = it },
         )
+        ReadTop(
+            parts,
+            ReadTopText(page, date, notice, layout.menu),
+            ReadQuickView(expansion, modules, layout.look, layout.pager),
+            headerHeight,
+        )
     }
-}
-
-private fun headerActions(
-    parts: ReadParts,
-    menu: List<OptionsItem>,
-): ReadHeaderActions {
-    val actions = parts.actions
-    val read = parts.read
-    return ReadHeaderActions(
-        onBack = parts::close,
-        senderOpen = parts.state.details,
-        onSender = { parts.state.details = !parts.state.details },
-        zen = read.display.zen(),
-        onZen = {
-            val on = !read.display.zen()
-            // Zen hides the strips, so their message list and files fold first.
-            if (on) {
-                parts.state.threadOpen = false
-                parts.state.filesOpenOn = null
-            }
-            read.display.setZen(on)
-        },
-        // A change that takes the message off this list closes the page first, as filing does.
-        readLater =
-            actions?.readLater(parts.row)?.takeIf { actions.behavior().readLater }?.let { change ->
-                if (change.leaves) {
-                    ReadLaterChange(change.saves, leaves = true) {
-                        parts.close()
-                        change.apply()
-                    }
-                } else {
-                    change
-                }
-            },
-        menu = menu,
-    )
 }

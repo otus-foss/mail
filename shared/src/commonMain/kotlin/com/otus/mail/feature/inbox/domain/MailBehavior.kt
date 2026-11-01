@@ -16,7 +16,8 @@ import com.otus.mail.core.avatar.IconSource
  * from all accounts sends from. [signatureInReplies] adds the identity's signature to replies and
  * forwards too; new messages always get it. [undoSendSeconds] holds each sent message that long
  * so Undo can stop it, on the server where it can; 0 sends at once. [filters] arranges the filter panel,
- * and [quickView] picks the modules the control panel shows when pulled down. [list] sets
+ * and [quickView] and [readQuickView] pick the modules the inbox's and the Read view's control
+ * panels show when pulled down. [list] sets
  * how the mail list's rows read. [remoteImages] decides when a message loads images from other
  * servers, and [allowedSenders] are the lowercase addresses whose images always load.
  * [showQuotes] shows a reply's quoted text even when earlier messages of its conversation are a
@@ -46,6 +47,7 @@ data class MailBehavior(
     val inbox: InboxContents = InboxContents(),
     val filters: FilterLayout = FilterLayout(),
     val quickView: List<QuickViewModule> = QuickViewModule.Defaults,
+    val readQuickView: List<ReadQuickModule> = ReadQuickModule.Defaults,
     val list: MailListLayout = MailListLayout(),
     val remoteImages: RemoteImages = RemoteImages.Known,
     val allowedSenders: List<String> = emptyList(),
