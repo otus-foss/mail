@@ -53,6 +53,12 @@ The From and To lines also search beyond the loaded rows as the user types: `Ema
 `cc`, text condition and `collapseThreads`, the newest 20, then each distinct address, plus the
 address book's contacts.
 
+A newsletter's older mail (`JmapNewsletters`) is the newest 100 emails before it with a `header`
+condition on its `List-Id`, or, without one, a `from` condition on its sender. A server may match
+these loosely, by substring or word, and `from` matches names too (RFC 8621, section 4.4.1), so
+the device reads each match's `List-Id` and `from` and keeps only mail with the same list id, or
+from the same address, ignoring case. Archive older moves only those.
+
 Folders use `Mailbox/get` and `Mailbox/set`; rules manage one Sieve script with `SieveScript/get`
 and `SieveScript/set` (RFC 9661, `JmapCapability.SIEVE`) after uploading it as a blob. Messages move
 with `Email/set` patches. See [Folders and rules](folders.md).
