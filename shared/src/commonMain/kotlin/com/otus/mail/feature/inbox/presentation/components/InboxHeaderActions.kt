@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalFocusManager
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.panels.components.PanelExpansion
@@ -10,12 +11,20 @@ import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 
-/** Closes [state]'s search and the keyboard, also on system back while searching. */
+/**
+ * Closes [state]'s search and the keyboard, also on system back while searching, and turns off the
+ * page filters the search's [changes] turned on.
+ */
 @Composable
-private fun searchCloser(state: InboxState): () -> Unit {
+private fun searchCloser(
+    state: InboxState,
+    filters: InboxFilterState,
+    changes: SearchFilterChanges,
+): () -> Unit {
     val focus = LocalFocusManager.current
     val closeSearch = {
         state.closeSearch()
+        changes.undo(filters)
         focus.clearFocus()
     }
     BackHandler(state.searching, closeSearch)
@@ -80,7 +89,8 @@ internal fun rememberHeaderActions(
     dateFormatter: DateFormatter,
 ): InboxHeaderActions {
     val focus = LocalFocusManager.current
-    val closeSearch = searchCloser(state)
+    val changes = remember { SearchFilterChanges() }
+    val closeSearch = searchCloser(state, filters, changes)
     val roomHeight = if (state.searchSurfaceOpen) searchRoomHeight(state.search.query.isNotBlank()) else null
     val typed = state.search.query.isNotBlank()
     val expansion = rememberInboxExpansion(page.quick, filters, roomHeight, typed) { leaveSearch(state, closeSearch) }
@@ -90,7 +100,7 @@ internal fun rememberHeaderActions(
     val overlays = rememberInboxOverlays(filters, filtersInPanel = expansion != null)
     val sources = QuickSources(filters, page, messages, rows.gestures.onOpen) { expansion?.collapse() }
     val room =
-        SearchRoom(state, sources, rows.gestures, dateFormatter) {
+        SearchRoom(state, sources, rows.gestures, dateFormatter, changes) {
             focus.clearFocus()
             expansion?.expandTo(Int.MAX_VALUE)
         }
