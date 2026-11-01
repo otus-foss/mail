@@ -140,6 +140,7 @@ fun MailBehaviorSettings(
             info = InfoText("Show quoted text", "Swipe through the conversation to read earlier messages."),
             icon = Res.drawable.symbol_forum,
         )
+        ReadQuickViewSetting(state)
     }
     SendingSettings(state)
     val side = choosing ?: return

@@ -1,7 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -11,16 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.otus.designsystem.shared.feedback.components.PullToRefresh
 import com.otus.designsystem.shared.panels.components.PanelExpansion
-import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.designsystem.shared.panels.components.PanelScrim
 
 /**
  * A [panel] drawn over a pull-to-refresh [list], so the list shows behind the panel's pills. The
@@ -61,16 +56,7 @@ internal fun PanelOverList(
         ) {
             list(panelHeight, collapse)
         }
-        if (expansion != null && expansion.expanded) {
-            // Taps only: the scrim is not a control screen readers should stop on.
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { alpha = expansion.position.coerceAtMost(1f) }
-                    .background(OtusColors.scrim.copy(alpha = SheetTokens.SCRIM_ALPHA))
-                    .pointerInput(expansion) { detectTapGestures { expansion.collapse() } },
-            )
-        }
+        expansion?.let { PanelScrim(it) }
         panel(
             collapse::progress,
             Modifier.onSizeChanged {
