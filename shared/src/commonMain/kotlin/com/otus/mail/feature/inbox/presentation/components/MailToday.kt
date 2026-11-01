@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation
+package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal

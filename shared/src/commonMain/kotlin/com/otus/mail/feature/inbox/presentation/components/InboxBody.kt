@@ -35,7 +35,6 @@ import com.otus.mail.feature.inbox.presentation.ConversationRowModel
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.ListFrame
 import com.otus.mail.feature.inbox.presentation.conversationRows
-import com.otus.mail.feature.inbox.presentation.mailToday
 
 @Composable
 internal fun InboxBody(

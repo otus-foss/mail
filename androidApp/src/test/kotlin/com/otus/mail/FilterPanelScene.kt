@@ -21,7 +21,7 @@ import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.LocalToday
+import com.otus.mail.feature.inbox.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 
 /**

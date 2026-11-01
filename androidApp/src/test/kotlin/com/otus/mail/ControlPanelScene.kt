@@ -26,7 +26,7 @@ import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.LocalToday
+import com.otus.mail.feature.inbox.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
 
