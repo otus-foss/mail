@@ -15,7 +15,6 @@ import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
-import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_calendar_today
@@ -144,7 +143,8 @@ private fun NarrowChips(
     search: InboxSearch,
     onChange: (InboxSearch) -> Unit,
 ) {
-    val since = remember { currentLocalDate().minus(RECENT_DAYS, DateTimeUnit.DAY).toString() }
+    val today = mailToday()
+    val since = remember(today) { today.minus(RECENT_DAYS, DateTimeUnit.DAY).toString() }
     val recent = search.dateStart == since && search.dateEnd == null
     Column {
         SectionCaption("Narrow it")
@@ -196,7 +196,7 @@ private fun Matches(
     }
     Column {
         SectionCaption("Messages")
-        val today = remember { currentLocalDate() }
+        val today = mailToday()
         hits.take(FIRST_HITS).forEach { message ->
             SearchHitRow(
                 message.subject.ifBlank { "(No subject)" },

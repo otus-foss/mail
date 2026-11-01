@@ -33,6 +33,7 @@ import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.inboxSummary
+import com.otus.mail.feature.inbox.presentation.sectionSummary
 import com.otus.mail.feature.inbox.presentation.summary
 import org.jetbrains.compose.resources.DrawableResource
 
@@ -46,11 +47,10 @@ fun MailLookSettings(
     onSidebar: () -> Unit,
     onMailList: () -> Unit,
 ) {
-    val sections = behavior.sidebar.shown.size
     SettingPageRow(
         "Sidebar",
         onSidebar,
-        description = if (sections == 1) "1 section" else "$sections sections",
+        description = behavior.sidebar.sectionSummary,
         icon = Res.drawable.symbol_menu,
     )
     SettingPageRow(
@@ -168,7 +168,7 @@ private fun SwipeChoice(
     )
 }
 
-private enum class SwipeSide {
+internal enum class SwipeSide {
     StartToEnd,
     EndToStart,
     ;
@@ -199,5 +199,5 @@ private enum class SwipeSide {
 }
 
 /** A swipe's name in settings; no action is "Nothing". */
-private val MailAction?.swipeLabel: String
+internal val MailAction?.swipeLabel: String
     get() = this?.label ?: "Nothing"
