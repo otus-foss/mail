@@ -204,11 +204,14 @@ gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
 - A failed send that may hide a lost answer, such as a gateway error, is looked up before Retry
   sends it. Only a clear refusal, such as an unknown recipient, lets Retry skip the lookup.
 - A refused message stays too. After a restart a "Couldn't send" toast offers to open it, and
-  opening it takes it out of the outbox.
+  opening it takes it out of the outbox once its page shows.
 - On Android, `OutboxWorker` runs the outbox 30 seconds after a message is due, and again once the
   network is back after a lost connection. So a message the device held for Undo still goes if
   the app closed during the window. The app sends due messages when it starts too.
 - Removing an account drops its messages.
+- Toasts and their work belong to the process, so Undo and Open still work after the activity is
+  recreated, as on rotation or a theme, language, or window size change. The draft they open goes
+  through `PageRequests` to the activity on screen, and waits for one while none is.
 
 The server holds the message for the Undo window wherever it can: when the account's
 `maxDelayedSend` covers the delay plus 2 seconds, the message goes to the server at once with a
@@ -289,8 +292,9 @@ send was canceled but the draft could not be restored.
   the From address changed, or record the address in `recentFrom`.
 - Scheduled messages show only in Drafts. A Scheduled view with Send now and Cancel is not built;
   it waits for a decision.
-- Rotating the device or the system ending the app returns to the page that opened the draft.
-  The saved copy is kept in Drafts, but the page does not reopen it, and edits made in the last
+- Recreating the activity, as on rotation or a theme, language, or window size change, or the
+  system ending the app returns to the page that opened the draft. The saved copy is kept in
+  Drafts, but the page does not reopen it. When the system ends the app, edits made in the last
   two seconds can be lost.
 - Opening a saved draft from the Drafts folder is not built.
 - iOS has no image picker for signatures yet, so Add image is hidden there.

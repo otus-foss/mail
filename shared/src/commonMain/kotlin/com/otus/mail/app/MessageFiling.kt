@@ -25,7 +25,6 @@ import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.ownFolders
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 /**
  * Files messages into folders and in and out of Read later. Each change shows at once and is
@@ -120,22 +119,21 @@ internal class MessageFiling(
     /**
      * Puts [message] back in every folder a move to [target] took it out of, such as the inbox
      * after an archive or all its folders after a trash, then reloads [feed] so it shows again. It
-     * waits for [after], the move itself, so the two cannot cross.
+     * waits for [after], the move itself, so the two cannot cross. The caller's scope runs it, which
+     * for a toast's Undo outlives the activity.
      */
-    fun moveBack(
+    suspend fun moveBack(
         feed: InboxFeedState,
         message: MailMessage,
         target: MoveTarget,
         after: Job? = null,
     ) {
-        scope.launch {
-            after?.join()
-            if (services.mover.moveBack(message, target.folderId, leaving(message, target.shortcut))) {
-                feed.refresh()
-                folders.refresh()
-            } else {
-                feed.report("Couldn't move the message back from ${target.label}. Try again.")
-            }
+        after?.join()
+        if (services.mover.moveBack(message, target.folderId, leaving(message, target.shortcut))) {
+            feed.refresh()
+            folders.refresh()
+        } else {
+            feed.report("Couldn't move the message back from ${target.label}. Try again.")
         }
     }
 

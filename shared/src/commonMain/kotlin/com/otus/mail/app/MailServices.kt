@@ -217,12 +217,13 @@ class MailServices(
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
 
     /**
-     * Toasts and the work their closing starts, such as an unsubscribe sent once its Undo window
-     * ends. They belong to the process, so a toast shown before the activity was recreated, as on
-     * rotation, still shows and still finishes its work.
+     * Toasts and the work their actions and closing start, such as an unsubscribe sent once its Undo
+     * window ends. They belong to the process, so a toast shown before the activity was recreated, as
+     * on rotation, still shows and still finishes its work. Pages it opens go through [pageRequests].
      */
-    internal val toasts = ToastState()
     internal val work: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
+    internal val moveToasts by lazy { MoveToasts(ToastState(), work) }
+    internal val pageRequests by lazy { PageRequests(work) }
 
     /** Each newsletter strip's step while the process runs, so a reopened message shows it. */
     internal val newsletterSteps = NewsletterSteps()

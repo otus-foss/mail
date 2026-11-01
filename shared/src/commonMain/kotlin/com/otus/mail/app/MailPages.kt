@@ -30,7 +30,7 @@ internal fun MailPageContent(
         }
 
         is MailPage.Compose -> {
-            ComposePage(page, states, navigation, back)
+            ComposePage(page, states, back)
         }
 
         MailPage.Signatures -> {

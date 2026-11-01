@@ -28,11 +28,14 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-/** A draft handed over for sending, and [open], which shows [reopen] for Undo. */
+/**
+ * A draft handed over for sending, and [open], which shows [reopen] for Undo. [open] returns once a
+ * page has taken the draft, so a message leaves the outbox only then; see [PageRequests].
+ */
 internal class Outgoing(
     val draft: OutgoingDraft,
     val reopen: ComposeRequest.Resume,
-    val open: (ComposeRequest) -> Unit,
+    val open: suspend (ComposeRequest) -> Unit,
 )
 
 /**
@@ -108,9 +111,9 @@ internal class OutgoingMail(
     /**
      * Sends what the outbox kept from an earlier run, such as a message held on the device when
      * the app closed, and offers each message that needs the user, which [open] shows. Opening
-     * one takes it out of the outbox.
+     * one takes it out of the outbox once [open] returns, as a page has taken it.
      */
-    fun resume(open: (ComposeRequest) -> Unit) {
+    fun resume(open: suspend (ComposeRequest) -> Unit) {
         scope.launch {
             outbox.resume()
             outbox.offers().forEach { entry ->
@@ -118,8 +121,8 @@ internal class OutgoingMail(
                 val action =
                     ToastAction("Open") {
                         scope.launch {
-                            outbox.drop(entry.id)
                             open(ComposeRequest.Resume(draft, ComposeRequest.New(draft.accountId)))
+                            outbox.drop(entry.id)
                         }
                     }
                 toasts.show(ToastMessage(entry.problem.offerText(), action, sticky = true))
@@ -200,7 +203,10 @@ internal class OutgoingMail(
             return
         }
         val reopen = outgoing.reopen
-        val open = ToastAction("Open") { outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = held.emailId))) }
+        val open =
+            ToastAction("Open") {
+                scope.launch { outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = held.emailId))) }
+            }
         toasts.show(ToastMessage("Couldn't send", open, group, sticky = true))
     }
 
@@ -233,8 +239,8 @@ internal class OutgoingMail(
             if (unconfirmed) {
                 ToastAction("Open") {
                     scope.launch {
-                        outbox.drop(id)
                         outgoing.open(outgoing.reopen)
+                        outbox.drop(id)
                     }
                 }
             } else {

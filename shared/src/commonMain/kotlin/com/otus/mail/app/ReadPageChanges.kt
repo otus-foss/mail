@@ -67,16 +67,14 @@ internal class ReadPageChanges(
                 moved
             }
         toasts.moved(target) {
-            scope.launch {
-                move.join()
-                if (!moved) return@launch
-                if (services.mover.moveBack(email, target.folderId, leaving)) {
-                    onBack()
-                    feed.refresh()
-                    folders.refresh()
-                } else {
-                    feed.report("Couldn't move the message back from ${target.label}. Try again.")
-                }
+            move.join()
+            if (!moved) return@moved
+            if (services.mover.moveBack(email, target.folderId, leaving)) {
+                onBack()
+                feed.refresh()
+                folders.refresh()
+            } else {
+                feed.report("Couldn't move the message back from ${target.label}. Try again.")
             }
         }
     }

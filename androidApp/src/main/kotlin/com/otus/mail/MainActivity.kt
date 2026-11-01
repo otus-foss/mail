@@ -18,7 +18,6 @@ import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
 import com.otus.mail.app.IncognitoKeyboard
 import com.otus.mail.app.MailServices
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel
 import com.otus.settings.data.AndroidAnimationPreferenceStore
@@ -45,7 +44,7 @@ class MainActivity : ComponentActivity() {
         app.printer.attach(this)
         val services = app.services
         if (savedInstanceState == null) askForNotifications(services)
-        val behaviorState = MailBehaviorState(AndroidMailBehaviorStore(this))
+        val behaviorState = app.behavior
         themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))
         appIconState = AppIconSettingsState(AndroidAppIconPreferenceStore(this))
         // Until Compose draws, the window shows the theme's color behind the launch animation.

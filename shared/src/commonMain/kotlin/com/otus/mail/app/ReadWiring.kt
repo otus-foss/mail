@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
  * Connects the Read view to the app: the services behind its pages, strips, and menu, the saved
  * privacy setting, and the folders of each account. Folder and page changes show on the list at
  * once and are undone with a notice if the server refuses them; deleting one page offers Undo in
- * [moveToasts]. Its toasts and their work belong to the process, see [MailServices.toasts].
+ * [moveToasts]. Its toasts and their work belong to the process, see [MailServices.work].
  * [folderActions] make the folders that the folders sheet starts. One per [MailStates].
  */
 internal class ReadWiring(
