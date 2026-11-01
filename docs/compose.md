@@ -162,7 +162,9 @@ and 300 px and snaps to Small (96), Medium (132), or Large (200) within 6 px. Th
 it names the preset or the pixel size. When a draft is saved or sent, each image is uploaded and
 the HTML points at it by `cid:`, inside `multipart/related`, so the message carries it. Only the
 `src` of an `<img>` element changes: text that looks like a `data:` URI, as in a quote, and an
-image whose data is not valid base64 stay as written.
+image whose data is not valid base64 stay as written. Saving and sending each remember an image's upload for 30 minutes,
+up to 16 images, and reuse it, so typing does not upload the signature's images at every save.
+The server keeps an upload that nothing uses yet for at least an hour (RFC 8620, section 6.1).
 
 **Copy signature** copies from one other address, which needs a signature, to this one, or from
 this one to several others, and shows "Signature copied".

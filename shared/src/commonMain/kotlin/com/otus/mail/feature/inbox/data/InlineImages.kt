@@ -7,11 +7,18 @@ import kotlin.io.encoding.Base64
  * Uploads the `data:` image each `<img>` element of [html] shows (RFC 8620, section 6.1) and points
  * the element at its part with a `cid:` URI instead, so the message carries the image rather than
  * linking to it (RFC 2392). Only an element's `src` changes: the same text anywhere else, as in a
- * quote, stays as written, and so does a `data:` URI that is not valid base64. Null [html] stays null.
+ * quote, stays as written, and so does a `data:` URI that is not valid base64. [uploads] reuses an
+ * image uploaded before. Null [html] stays null.
  */
-internal suspend fun MailAccount.inlineImages(html: String?): EmailHtml? = html?.let { uploaded(it) }
+internal suspend fun MailAccount.inlineImages(
+    html: String?,
+    uploads: InlineImageUploads,
+): EmailHtml? = html?.let { uploaded(it, uploads) }
 
-private suspend fun MailAccount.uploaded(html: String): EmailHtml {
+private suspend fun MailAccount.uploaded(
+    html: String,
+    uploads: InlineImageUploads,
+): EmailHtml {
     val found =
         imageSource
             .findAll(html)
@@ -21,7 +28,7 @@ private suspend fun MailAccount.uploaded(html: String): EmailHtml {
             .toList()
     val images =
         found.mapIndexed { index, image ->
-            val upload = connection.upload(id, image.bytes, image.type)
+            val upload = uploads.upload(this, image)
             image.uri to InlineImage("image$index@otus.mail", upload.blobId, upload.type.ifBlank { image.type })
         }
     val cids = images.associate { (uri, image) -> uri to "cid:${image.cid}" }
@@ -34,7 +41,7 @@ private suspend fun MailAccount.uploaded(html: String): EmailHtml {
 }
 
 /** A `data:` image [uri] and the [bytes] of [type] it holds. */
-private class DataImage(
+internal class DataImage(
     val uri: String,
     val type: String,
     val bytes: ByteArray,

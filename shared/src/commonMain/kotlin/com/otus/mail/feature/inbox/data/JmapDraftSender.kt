@@ -46,6 +46,9 @@ class JmapDraftSender(
     private val logins: LoginStore,
 ) : DraftSender,
     ScheduledSends {
+    // Signature images upload once, not at every send.
+    private val images = InlineImageUploads()
+
     override suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
@@ -98,7 +101,7 @@ class JmapDraftSender(
         time: SendTime,
     ): SentMessage {
         val folder = route.drafts ?: route.sent ?: failSend(SendFailure.ServerProblem)
-        val email = draft.toEmail(folder, inlineImages(draft.htmlContent()))
+        val email = draft.toEmail(folder, inlineImages(draft.htmlContent(), images))
         lateinit var stored: JmapCall<SetResult>
         lateinit var submitted: JmapCall<SetResult>
         val response =

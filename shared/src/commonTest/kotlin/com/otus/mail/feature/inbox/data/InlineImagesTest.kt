@@ -101,6 +101,19 @@ class InlineImagesTest {
             assertTrue("See data:image/png;base64,iVBORw0K" in html, "The body's text is not an image")
         }
 
+    @Test
+    fun aSignatureImageUploadsOnceForEverySaveThatShowsIt() =
+        runTest {
+            val signature = Signature(html = """<img src="data:image/png;base64,iVBORw0KGgo=" width="96">""")
+            val drafts = repository()
+            drafts.save(Draft("ada", body = "Hi", signature = signature)).getOrThrow()
+            drafts.save(Draft("ada", body = "Hi there", signature = signature)).getOrThrow()
+            assertEquals(1, uploads.size, "The second save reuses the upload")
+            assertTrue("cid:image0@otus.mail" in createdHtml())
+            val parts = created.last().substringAfter("\"multipart/related\"")
+            assertTrue("\"blobId\":\"B1\"" in parts, parts)
+        }
+
     private fun createdHtml(): String =
         Json
             .parseToJsonElement(created.last())

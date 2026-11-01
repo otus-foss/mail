@@ -31,6 +31,9 @@ class JmapDraftRepository(
     private val connections: JmapConnections,
     private val logins: LoginStore,
 ) : DraftRepository {
+    // Signature images upload once, not at every save.
+    private val images = InlineImageUploads()
+
     override suspend fun identities(accountId: String): List<SendIdentity> =
         mailCallOr(emptyList()) {
             mailAccount(connections, logins, accountId)
@@ -53,13 +56,8 @@ class JmapDraftRepository(
     override suspend fun save(draft: Draft): Result<String> =
         attempt(draft.accountId) { account ->
             val drafts = draftsFolder(account) ?: throw DraftException(DraftFailure.NoDraftsFolder)
-            val create =
-                SetMethod(
-                    EmailType,
-                    account.id,
-                    create =
-                        mapOf(CREATION_ID to draft.toEmail(drafts, account.inlineImages(draft.htmlContent()))),
-                )
+            val email = draft.toEmail(drafts, account.inlineImages(draft.htmlContent(), images))
+            val create = SetMethod(EmailType, account.id, create = mapOf(CREATION_ID to email))
             val result = account.connection.call(create)
             val failure = result.notCreated[CREATION_ID]
             if (failure != null) throw DraftException(failure.toDraftFailure())
