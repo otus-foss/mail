@@ -16,6 +16,7 @@ import com.otus.designsystem.shared.filters.components.FilterPanel
 import com.otus.designsystem.shared.filters.components.FilterPanelFooter
 import com.otus.designsystem.shared.filters.components.FilterPanelTitle
 import com.otus.designsystem.shared.filters.components.FilterResetAction
+import com.otus.designsystem.shared.filters.components.FilterShowBar
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -61,6 +62,24 @@ fun InboxFilterPanel(
         val searches = PeopleSearches(state.senders, state.recipients, people)
         FilterSections(shown, options, dateFormatter, state::edit, searches)
     }
+}
+
+/** [state]'s Show and Reset in an action bar of their own; Show runs [onApply]. */
+@Composable
+internal fun InboxFilterBar(
+    state: InboxFilterState,
+    onApply: () -> Unit,
+) {
+    // The last count stays while the next one is counted, so the label rolls from one to the other.
+    var count by remember { mutableStateOf(state.count) }
+    state.count.takeIf { it != FilterCount.Counting }?.let { count = it }
+    FilterShowBar(
+        count.showLabel,
+        onApply,
+        state::reset,
+        applyEnabled = count != FilterCount.Known(0),
+        resetEnabled = state.draft?.isDefault == false,
+    )
 }
 
 @Composable

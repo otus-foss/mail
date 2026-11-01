@@ -88,6 +88,14 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
+        // The dev app for daily use on a phone: debug's id and key, so it installs over a debug build,
+        // but not debuggable, so Compose runs near release speed. Unshrunk, so it builds about as fast.
+        create("dev") {
+            initWith(getByName("debug"))
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "debug"
+        }
         // Its own app id, so it installs beside a debug build signed with a different key.
         create("nightly") {
             initWith(getByName("release"))

@@ -197,7 +197,7 @@ internal fun InboxEmptyState(
         title =
             when {
                 searching && !hasMessages -> "Nothing to search yet"
-                filtered -> "No matching messages"
+                filtered -> "No matching mail"
                 else -> emptyTitle
             },
         description =

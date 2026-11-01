@@ -53,7 +53,7 @@ class InboxHeaderActionsTest {
             }
         }
         compose.openSearchResults()
-        compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused()
+        compose.searchField().assertIsFocused()
         compose.onNodeWithText("People").assertIsDisplayed()
         compose.onNodeWithText("Date").assertIsDisplayed()
         compose.onNodeWithText("All accounts").performScrollTo().assertIsDisplayed()
@@ -65,9 +65,9 @@ class InboxHeaderActionsTest {
     fun defaultFilterButtonOpensFiltersWithoutStartingSearch() {
         compose.onNodeWithContentDescription("Open filters").assertIsDisplayed().performClick()
         compose.filterTab("Unread").performClick()
-        compose.onNodeWithText("Show conversations").performClick()
+        compose.onNodeWithContentDescription("Show ", substring = true).performClick()
         compose.onNodeWithText("Search Inbox").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Search your mailbox…").assertDoesNotExist()
+        compose.searchField().assertDoesNotExist()
         compose.onNodeWithText("Unread").assertIsOn()
         compose.onNodeWithContentDescription("Open filters, 1 active").assertIsDisplayed()
     }
