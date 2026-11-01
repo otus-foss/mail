@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.mail.quickview.components.QuickFace
@@ -24,7 +25,10 @@ import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.pages.components.PageNote
+import com.otus.designsystem.shared.rows.components.FoldingSection
 import com.otus.designsystem.shared.rows.components.LocalEntriesOnRaised
+import com.otus.designsystem.shared.rows.components.SectionFold
+import com.otus.designsystem.shared.rows.components.rememberSectionFold
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
@@ -40,8 +44,9 @@ import com.otus.mail.feature.inbox.presentation.conversationRows
 import com.otus.mail.feature.inbox.presentation.showLabel
 
 /**
- * What a typed search finds: the people whose name or address matches in a row of faces, which
- * stays put, and every hit under it as the list shows them.
+ * What a typed search finds: the people whose name or address matches in a row of faces, and every
+ * hit under it as the list shows them. Scrolling the hits on folds the faces away under their
+ * caption, and back at the top they unfold.
  */
 @Composable
 internal fun SearchMatches(
@@ -59,8 +64,9 @@ internal fun SearchMatches(
             applied,
         ) { searchMessages(sources.messages, state.matching, applied) }
     val people = remember(hits, query) { matchingPeople(hits, query, limit = Int.MAX_VALUE) }
-    Column(modifier) {
-        if (people.isNotEmpty()) SearchPeople(room, people, byAddress = looksLikeAddress(query))
+    val fold = rememberSectionFold()
+    Column(modifier.nestedScroll(fold.connection)) {
+        if (people.isNotEmpty()) SearchPeople(room, people, looksLikeAddress(query), fold)
         SectionCaption("Mail", Modifier.padding(horizontal = SheetTokens.inset))
         SearchMail(room, hits, Modifier.weight(1f))
     }
@@ -76,23 +82,25 @@ private fun SearchPeople(
     room: SearchRoom,
     people: List<MailSender>,
     byAddress: Boolean,
+    fold: SectionFold,
 ) {
     val state = room.state
-    SectionCaption("People", Modifier.padding(horizontal = SheetTokens.inset))
-    ScrollingFaces(
-        people.map { person ->
-            QuickFace(
-                if (byAddress) person.address else person.firstName,
-                "Mail from ${person.shownName}",
-                QuickFaceLook.Person(person.chipAvatar),
-                {
-                    state.update(state.search.copy(query = "", senders = setOf(person.address)))
-                    state.showResults()
-                },
-            )
-        },
-        Modifier.padding(horizontal = InboxTokens.pageInset),
-    )
+    FoldingSection("People", fold, Modifier.padding(horizontal = SheetTokens.inset)) {
+        ScrollingFaces(
+            people.map { person ->
+                QuickFace(
+                    if (byAddress) person.address else person.firstName,
+                    "Mail from ${person.shownName}",
+                    QuickFaceLook.Person(person.chipAvatar),
+                    {
+                        state.update(state.search.copy(query = "", senders = setOf(person.address)))
+                        state.showResults()
+                    },
+                )
+            },
+            Modifier.padding(horizontal = InboxTokens.pageInset),
+        )
+    }
 }
 
 /** Every hit as the list draws it, on the page's color so the rows stand out from the raised panel. */
