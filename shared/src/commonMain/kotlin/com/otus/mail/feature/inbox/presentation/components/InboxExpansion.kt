@@ -82,7 +82,8 @@ internal fun rememberInboxExpansion(
             }
         }
     }
-    BackHandler(expansion.expanded) { expansion.collapse() }
+    // While a search is in the panel, back ends the search, which closes the panel too.
+    BackHandler(expansion.expanded && searchRoom == null) { expansion.collapse() }
     return expansion.takeIf { quick != null }
 }
 

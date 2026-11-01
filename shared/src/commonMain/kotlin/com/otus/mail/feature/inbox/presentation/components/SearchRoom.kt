@@ -37,6 +37,7 @@ import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -50,8 +51,33 @@ internal class SearchRoom(
     val sources: QuickSources,
     val gestures: RowGestures,
     val dateFormatter: DateFormatter,
+    val changes: SearchFilterChanges,
     val onAllFilters: () -> Unit,
 )
+
+/**
+ * Which of the page's filters a search turned on: Has files and Past 30 days. Closing the search
+ * turns them off again with [undo]; showing its results keeps them. A filter that was on before
+ * the search is the page's, not the search's.
+ */
+internal class SearchFilterChanges {
+    var files = false
+    var recent = false
+
+    fun undo(filters: InboxFilterState) {
+        val applied = filters.applied
+        val files = files && applied.has(QuickFacet.Attachments)
+        val recent = recent && applied.date == DateFilter.Last30
+        this.files = false
+        this.recent = false
+        if (!files && !recent) return
+        filters.update(
+            applied
+                .with(QuickFacet.Attachments, on = applied.has(QuickFacet.Attachments) && !files)
+                .copy(date = if (recent) DateFilter.Any else applied.date),
+        )
+    }
+}
 
 /**
  * The room the inbox panel grows for a search: a row of ways to narrow it, then, once a query is
@@ -103,12 +129,22 @@ private fun NarrowRow(room: SearchRoom) {
         ) {
             Symbol(Res.drawable.symbol_notes)
         }
-        Chip("Has files", { filters.update(applied.with(QuickFacet.Attachments, !files)) }, selected = files) {
+        Chip(
+            "Has files",
+            {
+                filters.update(applied.with(QuickFacet.Attachments, !files))
+                room.changes.files = !files
+            },
+            selected = files,
+        ) {
             Symbol(Res.drawable.symbol_attach_file)
         }
         Chip(
             "Past 30 days",
-            { filters.update(applied.copy(date = if (recent) DateFilter.Any else DateFilter.Last30)) },
+            {
+                filters.update(applied.copy(date = if (recent) DateFilter.Any else DateFilter.Last30))
+                room.changes.recent = !recent
+            },
             selected = recent,
         ) { Symbol(Res.drawable.symbol_calendar_today) }
     }
