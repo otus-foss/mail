@@ -38,6 +38,7 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.dates.elements.DatePill
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.components.PanelMotion
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.shared.people.components.PersonAvatar
@@ -53,8 +54,9 @@ import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 
 /**
  * The Read view's control panel: Back and the [subject] alone, over pills for the [page]'s sender
- * and date, the bookmark, zen mode, and ⋯. The date reads [dateLabel] and opens [fullDate]; the
- * sender's name gives way first, so the date never shortens.
+ * and date, the bookmark, zen mode, and ⋯. Its [motion] grows it into the quick view and details.
+ * The date reads [dateLabel] and opens [fullDate]; the sender's name gives way first, so the date
+ * never shortens.
  */
 @Composable
 internal fun ReadHeader(
@@ -63,6 +65,7 @@ internal fun ReadHeader(
     dateLabel: String,
     fullDate: String,
     actions: ReadHeaderActions,
+    motion: PanelMotion = PanelMotion(),
 ) {
     ContextPanel(
         placement = ChipPlacement.Overlapping,
@@ -84,6 +87,7 @@ internal fun ReadHeader(
                 }
             }
         },
+        motion = motion,
     ) { ExpandableSubject(subject.ifBlank { "(No subject)" }) }
 }
 

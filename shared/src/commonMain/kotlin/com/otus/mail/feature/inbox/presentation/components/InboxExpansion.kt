@@ -30,7 +30,10 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.mail.quickview.components.QuickJump
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
@@ -149,7 +152,13 @@ private fun QuickViewContent(inbox: ExpandedInbox) {
                 QuickViewModule.RecentFiles -> QuickFilesModule(sources)
             }
         }
-        QuickJump({ inbox.expansion.expandTo(FILTERS_STOP) }) {
+        val allFilters = @Composable {
+            IconButton(
+                "All filters",
+                { inbox.expansion.expandTo(FILTERS_STOP) },
+            ) { Symbol(Res.drawable.symbol_filter_list) }
+        }
+        QuickJump(allFilters) {
             quick.targets.forEach { target ->
                 Chip(target.title, {
                     sources.close()
@@ -203,30 +212,3 @@ private fun filtersHeight(): Dp {
     val bar = ActionBarTokens.height + ActionBarTokens.barInset * 2
     return window - top - PanelTokens.headerRowHeight - bottom - bar
 }
-
-/** The quick view's height with [modules] picked: the modules, Jump to, and the grab handle. */
-private fun quickHeight(modules: Int): Dp =
-    QuickViewTokens.moduleGap +
-        (QuickViewTokens.moduleHeight + QuickViewTokens.moduleGap) * modules +
-        QuickViewTokens.jumpHeight +
-        PanelTokens.handlePadding * 2 +
-        PanelTokens.handleHeight
-
-private fun quickAlpha(position: Float): Float =
-    when {
-        position <= QUICK_FROM -> 0f
-        position <= 1f -> (position - QUICK_FROM) / (1f - QUICK_FROM)
-        else -> (1f - (position - 1f) / (FILTERS_FROM - 1f)).coerceAtLeast(0f)
-    }
-
-private fun filtersAlpha(position: Float): Float =
-    ((position - FILTERS_FROM) / (FILTERS_STOP - FILTERS_FROM)).coerceIn(0f, 1f)
-
-/** The stop that shows every filter. */
-private const val FILTERS_STOP = 2
-
-/** Where the quick view starts to show, as the panel leaves its usual height. */
-private const val QUICK_FROM = 0.3f
-
-/** Where the filters take over from the quick view, halfway to their stop. */
-private const val FILTERS_FROM = 1.5f
