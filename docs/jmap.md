@@ -128,7 +128,10 @@ A refresh (`messages`) takes these requests per login:
    cached email that changed, each with `Thread/get` of their threads and an `Email/get` of those
    threads' emails by back-reference (RFC 8621, sections 3 and 4.4); `Thread/get` of cached rows'
    threads that are missing or changed, with their emails; and `Email/get` of changed or missing
-   thread emails. A refused thread call leaves each row standing for its own email.
+   thread emails. When the server refuses the back-referenced emails, such as with
+   `requestTooLarge` because the threads hold more than `maxObjectsInGet`, the threads are kept and
+   their emails follow in one more request, split at `maxObjectsInGet`. A refused `Thread/get`
+   leaves each row standing for its own email.
 
 An unchanged refresh therefore takes two requests and reads no email. Calls share requests up to the
 session's `maxCallsInRequest` (16 when the server does not say), and `/get` ids are split at

@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.STALWART_SESSION
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,8 +12,9 @@ import kotlin.test.assertTrue
 /** Conversation rows as the list loads them. */
 class JmapMailSourceThreadsTest {
     private val login = ADA_LOGIN
+    private val store = InMemoryLoginStore().apply { save(login, "secret") }
     private val server = FakeMailServer(MAILBOXES, THREAD)
-    private val source = server.source(InMemoryLoginStore().apply { save(login, "secret") })
+    private val source = server.source(store)
 
     @Test
     fun theThreadLoadsWithItsRowsAndCountsSentButNotTrash() =
@@ -44,6 +46,25 @@ class JmapMailSourceThreadsTest {
         }
 
     @Test
+    fun threadsTooLargeForOneGetArriveInSmallerOnesAndStay() =
+        runTest {
+            val server = FakeMailServer(MAILBOXES, "$THREAD, $SECOND_THREAD").apply { maxIdsInGet = 2 }
+            val session = STALWART_SESSION.replace("\"$CORE\": {}", "\"$CORE\": {\"maxObjectsInGet\": 2}")
+            val source = server.source(store, session = session)
+            val rows = source.messages(MailScope.Inbox).messages.associateBy { it.emailId }
+            assertEquals(3, rows.getValue("r2").conversation!!.messageCount)
+            assertEquals(2, rows.getValue("o2").conversation!!.messageCount, "The other thread keeps its emails too")
+            assertEquals(1, server.fetchedIds().count { it.size > 2 }, "Only the back-reference asks for too many")
+            val calls = server.calls.size
+            source.messages(MailScope.Inbox)
+            val threadReads =
+                server.calls
+                    .drop(calls)
+                    .filter { (name, arguments) -> name == "Thread/get" && !arguments.ids().isNullOrEmpty() }
+            assertTrue(threadReads.isEmpty(), "The threads are not read again")
+        }
+
+    @Test
     fun aThreadInTwoChosenFoldersIsOneRowUnderItsNewestEmail() =
         runTest {
             val row = source.messages(MailScope.Roles(mapOf("inbox" to "Inbox", "sent" to "Sent"))).messages.single()
@@ -68,5 +89,13 @@ class JmapMailSourceThreadsTest {
              "from": $ADA, "to": $GRACE, "subject": "Re: Plans", "receivedAt": "2026-10-04T09:00:00Z"},
             {"id": "x1", "threadId": "t1", "mailboxIds": {"t": true}, "keywords": {},
              "from": $GRACE, "to": $ADA, "receivedAt": "2026-10-05T09:00:00Z"}"""
+
+        val SECOND_THREAD = """
+            {"id": "o1", "threadId": "t2", "mailboxIds": {"a": true}, "keywords": {},
+             "from": $GRACE, "to": $ADA, "receivedAt": "2026-09-01T09:00:00Z"},
+            {"id": "o2", "threadId": "t2", "mailboxIds": {"a": true}, "keywords": {},
+             "from": $GRACE, "to": $ADA, "receivedAt": "2026-09-02T09:00:00Z"}"""
+
+        const val CORE = "urn:ietf:params:jmap:core"
     }
 }

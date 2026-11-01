@@ -53,6 +53,9 @@ internal class FakeMailServer(
     /** Emails whose `Email/set` updates the server refuses. */
     var refusedUpdates: Set<String> = emptySet()
 
+    /** The most ids a `/get` may ask for; more are refused with `requestTooLarge`. */
+    var maxIdsInGet = Int.MAX_VALUE
+
     /** Whether `Email/query` offers `Email/queryChanges` for its results. */
     var followsQueries = false
 
@@ -120,8 +123,9 @@ internal class FakeMailServer(
     private fun respond(
         method: String,
         arguments: JsonObject,
-    ): JsonObject? =
-        when (method) {
+    ): JsonObject? {
+        if ((arguments.ids()?.size ?: 0) > maxIdsInGet) return null
+        return when (method) {
             "Mailbox/get" -> listResult("m", mailboxes.filter { arguments.ids()?.contains(it.id) ?: true })
             "Mailbox/changes" -> mailboxChanges(arguments)
             "Email/queryChanges" -> queryChanges(arguments)
@@ -133,6 +137,7 @@ internal class FakeMailServer(
             "Email/set" -> set(arguments)
             else -> null
         }
+    }
 
     private fun emailGet(arguments: JsonObject): JsonObject {
         val properties = (arguments["properties"] as? JsonArray)?.strings()?.toSet()
