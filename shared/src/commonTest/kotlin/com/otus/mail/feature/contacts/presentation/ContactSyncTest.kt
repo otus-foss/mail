@@ -92,9 +92,66 @@ class ContactSyncTest {
             assertTrue(sync.edits.isEmpty())
         }
 
+    @Test
+    fun aCreateWhoseAnswerWasLostIsFoundInsteadOfStoredTwice() =
+        runTest {
+            val repository = LostAnswerRepository()
+            val sync = sync(repository)
+            val create = ContactEdit.Create("1", book, card("Ada", uid = "urn:uuid:1"))
+            sync.add(listOf(create)) {}
+            runCurrent()
+            assertEquals(listOf("1"), sync.edits.map { it.id }, "It waits after the lost answer")
+
+            val later = card("Ada Lovelace", uid = "urn:uuid:1")
+            sync.add(listOf(ContactEdit.Update("2", create.key, create.card, later))) {}
+            runCurrent()
+            assertEquals(1, repository.creates, "The card the lost answer hid is used")
+            assertEquals(listOf("Ada Lovelace"), repository.updates.map { it.name?.full }, "It takes the later change")
+            assertTrue(sync.edits.isEmpty())
+            assertEquals(CardKey("ada", "a", "server"), sync.renamed[create.key])
+        }
+
     private fun TestScope.sync(repository: ContactRepository) = ContactSync(repository, null, this)
 
-    private fun card(name: String) = Card(name = Name(full = name))
+    private fun card(
+        name: String,
+        uid: String? = null,
+    ) = Card(name = Name(full = name), uid = uid)
+
+    /** Stores the first card it is sent but loses the answer, as a timeout would. */
+    private class LostAnswerRepository : ContactRepository {
+        var creates = 0
+        val updates = mutableListOf<Card>()
+        private val stored = mutableSetOf<String?>()
+
+        override suspend fun load() = ContactsSnapshot(emptyList(), emptyList(), true)
+
+        override suspend fun create(
+            book: BookKey,
+            card: Card,
+        ): CardKey {
+            creates++
+            stored += card.uid
+            if (creates == 1) throw ContactWriteException(ContactWriteFailure.Offline)
+            return CardKey(book.loginId, book.accountId, "other")
+        }
+
+        override suspend fun findCreated(
+            book: BookKey,
+            card: Card,
+            ignore: Set<CardKey>,
+        ): CardKey? = CardKey(book.loginId, book.accountId, "server").takeIf { card.uid in stored }
+
+        override suspend fun update(
+            key: CardKey,
+            before: Card,
+            after: Card,
+        ) {
+            updates += after
+        }
+
+        override suspend fun delete(keys: List<CardKey>) = Unit
+    }
 
     /**
      * Holds every change until [release] completes, then records it or throws [failure], or

@@ -65,6 +65,12 @@ more.
   made in between does not wait for the same account to be added again. Deleting, muting, and
   newsletter cleanup still need the server at once.
 
+Contact changes wait in `ContactSync` the same way. A new card is kept as sent before it goes.
+When that request gets no answer, the server may have stored the card anyway, so the next try
+first looks in the book for a card with its uid (`ContactCard/query`, RFC 9610, section 3.3),
+leaving out cards that other waiting changes are about. When it finds one, it updates that card
+with any change made since instead of creating a second card.
+
 ## Retention and removal
 
 At each start the app removes cached bodies of mail received more than 90 days ago

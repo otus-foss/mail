@@ -15,6 +15,16 @@ interface ContactRepository {
         card: Card,
     ): CardKey
 
+    /**
+     * The card in [book] with [card]'s uid, other than those in [ignore], that a create of [card]
+     * whose answer was lost may have stored; null when there is none, so the create goes again.
+     */
+    suspend fun findCreated(
+        book: BookKey,
+        card: Card,
+        ignore: Set<CardKey>,
+    ): CardKey? = null
+
     /** Replaces the properties that differ between [before] and [after]; others stay as the server has them. */
     suspend fun update(
         key: CardKey,
