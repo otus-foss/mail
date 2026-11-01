@@ -51,7 +51,8 @@ private fun splitQuote(
     nested: Boolean,
 ): PlainQuote? {
     val lines = text.lines()
-    val start = lines.indices.firstNotNullOfOrNull { lines.quoteAt(it) } ?: return null
+    val markedFrom = lines.indexOfLast { !isMarkedOrBlank(it) } + 1
+    val start = lines.indices.firstNotNullOfOrNull { lines.quoteAt(it, markedFrom) } ?: return null
     val body = lines.take(start.index).joinToString("\n").trimEnd()
     val quoted =
         lines
@@ -70,7 +71,11 @@ private class QuoteStart(
     val contentFrom: Int,
 )
 
-private fun List<String>.quoteAt(index: Int): QuoteStart? {
+/** The quote starting at line [index]; `>` lines quote only from [markedFrom], after which no other line comes. */
+private fun List<String>.quoteAt(
+    index: Int,
+    markedFrom: Int,
+): QuoteStart? {
     val line = this[index].trim()
     val header = attributionHeader(line)
     val wrappedHeader = getOrNull(index + 1)?.let { attributionHeader("$line ${it.trim()}") }
@@ -78,8 +83,8 @@ private fun List<String>.quoteAt(index: Int): QuoteStart? {
         line.isEmpty() -> null
         header != null -> QuoteStart(index, header, index + 1)
         wrappedHeader != null -> QuoteStart(index, wrappedHeader, index + 2)
-        ORIGINAL.matches(line) -> originalAt(index)
-        line.startsWith('>') && drop(index).all(::isMarkedOrBlank) -> QuoteStart(index, null, index)
+        ORIGINAL.matches(line) -> originalAt(index, markedFrom)
+        line.startsWith('>') && index >= markedFrom -> QuoteStart(index, null, index)
         else -> null
     }
 }
@@ -88,10 +93,13 @@ private fun List<String>.quoteAt(index: Int): QuoteStart? {
  * An Outlook quote: the separator, then header fields up to the first other line. Without fields,
  * an "On … wrote:" line right after it names the quote instead, as Proton Mail writes it.
  */
-private fun List<String>.originalAt(index: Int): QuoteStart {
+private fun List<String>.originalAt(
+    index: Int,
+    markedFrom: Int,
+): QuoteStart {
     val fields = drop(index + 1).takeWhile(::isHeaderField)
     val next = (index + 1 until size).firstOrNull { this[it].isNotBlank() }
-    val attribution = next?.takeIf { fields.isEmpty() }?.let(::quoteAt)?.takeIf { it.header != null }
+    val attribution = next?.takeIf { fields.isEmpty() }?.let { quoteAt(it, markedFrom) }?.takeIf { it.header != null }
     return attribution?.let { QuoteStart(index, it.header, it.contentFrom) }
         ?: QuoteStart(index, fieldsHeader(fields), index + 1 + fields.size)
 }

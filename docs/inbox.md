@@ -8,7 +8,9 @@ the server's answer. A copy read after the server answered is dropped. Each mail
 conversations first, and scrolling within 10 rows of the end loads the next 50 of each mailbox that
 has more, with the pull-to-refresh spinner under the last row while it loads. A refresh keeps every
 page already loaded. An opened message's body comes from the device when it has one, so it opens
-again at once and offline.
+again at once and offline. Reading the body and splitting off its quote run off the main thread,
+in time that grows only with the body's length, so markup made to stall a parser cannot freeze
+the app.
 
 ## Implemented
 
