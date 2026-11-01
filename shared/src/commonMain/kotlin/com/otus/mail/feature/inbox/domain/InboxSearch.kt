@@ -109,3 +109,6 @@ data class MailboxScope(
     fun matches(location: MailLocation): Boolean =
         location.mailbox == name && (account == null || location.accountId == account)
 }
+
+/** Whether [query] is being typed as an email address: one word with an @ in it. */
+fun looksLikeAddress(query: String): Boolean = query.trim().let { '@' in it && it.none(Char::isWhitespace) }

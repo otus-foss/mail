@@ -21,12 +21,13 @@ import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
+import com.otus.mail.feature.inbox.domain.MailScopeChoice
 
 /**
  * The account switcher, unfolded from the inbox's control panel [collapsedHeight] tall: All mail,
- * the pinned addresses, and each account with its addresses. A choice applies at once and the
- * panel stays open, as in the sidebar's "Show mail from"; back, the chevron, the stack, a tap
- * outside, or a swipe up closes it.
+ * the pinned addresses, and each account with its addresses. A choice applies at once; All mail
+ * or an address also closes the panel, while an account keeps it open, since its row also opens
+ * its addresses. Back, the chevron, the stack, a tap outside, or a swipe up closes it.
  */
 @Composable
 internal fun InboxAccountSwitcher(
@@ -65,6 +66,13 @@ internal fun InboxAccountSwitcher(
                 ).verticalScroll(rememberScrollState())
                 .padding(horizontal = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
-        ) { MailScopeChoices(scope) }
+        ) { MailScopeChoices(scope.closingOnPick(onDismiss)) }
     }
 }
+
+/** This switch, closing the switcher through [onDismiss] once a choice that is no account is made. */
+private fun MailScopeSwitch.closingOnPick(onDismiss: () -> Unit): MailScopeSwitch =
+    MailScopeSwitch(accounts, chosen, pins, count, { choice ->
+        onChoose(choice)
+        if (choice !is MailScopeChoice.Account) onDismiss()
+    }, onTogglePin)

@@ -53,7 +53,7 @@ class ContextPanelTest {
         saveScreenshot("inbox")
         compose.onNodeWithContentDescription("Search mailbox").performClick()
         compose.onNodeWithText("People").performClick().assertIsOn()
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("meeting")
+        compose.searchField().performTextInput("meeting")
         val searchImage = saveScreenshot("search")
         val people = compose.onNodeWithText("People").fetchSemanticsNode().boundsInRoot
         val density = compose.activity.resources.displayMetrics.density

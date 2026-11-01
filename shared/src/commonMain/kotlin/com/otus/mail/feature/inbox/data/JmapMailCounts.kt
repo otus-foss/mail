@@ -44,15 +44,14 @@ internal class JmapMailCounts(
     }
 
     /**
-     * Sums each of [logins]' totals; null when none could be counted, or when a choice only the
-     * loaded threads can tell is on. Each login's mailboxes load once until [begin].
+     * Sums each of [logins]' totals; null when none could be counted. Each login's mailboxes load
+     * once until [begin].
      */
     suspend fun count(
         logins: List<JmapLogin>,
         scope: MailScope,
         query: MailQuery,
     ): Long? {
-        if (query.filters.clientOnly) return null
         val now = clock.now()
         val totals =
             coroutineScope {

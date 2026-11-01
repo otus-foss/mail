@@ -6,7 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_alternate_email
+import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_folder
+import com.otus.designsystem.resources.symbol_grid_on
+import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_swap_vert
@@ -15,12 +19,14 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.feature.inbox.domain.QuickViewModule
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
  * Rows for the filter panel in the Inbox settings: which sections it shows and in what order,
- * and which Quick filters, each chosen in an ordered sheet.
+ * which Quick filters, and the modules of the quick view the control panel opens to when pulled
+ * down, each chosen in an ordered sheet.
  */
 @Composable
 internal fun FilterPanelSettings(state: MailBehaviorState) {
@@ -36,9 +42,16 @@ internal fun FilterPanelSettings(state: MailBehaviorState) {
         { choosing = FilterSetting.Quick },
         icon = Res.drawable.symbol_mark_email_unread,
     ) { ValueButton(shownCount(layout.quick.size)) }
+    SettingRow(
+        "Quick view",
+        { choosing = FilterSetting.QuickView },
+        icon = Res.drawable.symbol_grid_on,
+        description = "Pull the top panel down to see it",
+    ) { ValueButton(shownCount(state.behavior.quickView.size)) }
     when (choosing) {
         FilterSetting.Sections -> SectionChoices(state) { choosing = null }
         FilterSetting.Quick -> QuickChoices(state) { choosing = null }
+        FilterSetting.QuickView -> QuickViewChoices(state) { choosing = null }
         null -> Unit
     }
 }
@@ -73,7 +86,41 @@ private fun QuickChoices(
     )
 }
 
-private enum class FilterSetting { Sections, Quick }
+@Composable
+private fun QuickViewChoices(
+    state: MailBehaviorState,
+    onDismiss: () -> Unit,
+) {
+    OrderedChoiceSheet(
+        "Quick view",
+        state.behavior.quickView,
+        QuickViewModule.entries.map { OrderedChoice(it, it.storageValue, it.title, it.icon, "Modules") },
+        QuickViewModule::storageValue,
+        onApply = { modules -> state.update { it.copy(quickView = modules) } },
+        onDismiss = onDismiss,
+        limit = QuickViewModule.LIMIT,
+    )
+}
+
+private enum class FilterSetting { Sections, Quick, QuickView }
+
+private val QuickViewModule.title: String
+    get() =
+        when (this) {
+            QuickViewModule.Counts -> "Counts"
+            QuickViewModule.People -> "People"
+            QuickViewModule.Addresses -> "Addresses"
+            QuickViewModule.RecentFiles -> "Recent files"
+        }
+
+private val QuickViewModule.icon: DrawableResource
+    get() =
+        when (this) {
+            QuickViewModule.Counts -> Res.drawable.symbol_grid_on
+            QuickViewModule.People -> Res.drawable.symbol_group
+            QuickViewModule.Addresses -> Res.drawable.symbol_alternate_email
+            QuickViewModule.RecentFiles -> Res.drawable.symbol_attach_file
+        }
 
 /** How many of a list's choices show, as a settings row's value. */
 internal fun shownCount(count: Int): String = if (count == 0) "None" else "$count shown"
