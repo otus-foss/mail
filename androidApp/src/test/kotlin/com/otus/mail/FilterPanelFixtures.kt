@@ -20,16 +20,13 @@ import com.otus.mail.feature.inbox.presentation.FilterFolder
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderKey
 import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
-import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.DrawableResource
-import kotlin.time.Clock
 
 /** Demo mail and folders for filter panel tests: names repeat, and Work nests five levels deep. */
 internal object FilterPanelFixtures {
-    /** Mail dates count back from the day the test runs, so rows read the same any day. */
-    private val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    /** Mail dates count back from [PinnedToday], which the scenes give the inbox too. */
+    private val today = PinnedToday
 
     private val folders =
         listOf(

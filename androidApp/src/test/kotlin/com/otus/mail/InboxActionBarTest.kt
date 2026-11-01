@@ -38,7 +38,7 @@ class InboxActionBarTest {
         start()
         listOf("Search", "Filters", "Mark all read", "New mail").forEach { button(it).assertIsEnabled() }
         button("Search").performClick()
-        compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused()
+        compose.searchField().assertIsFocused()
         button("New mail").assertDoesNotExist()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         button("New mail").assertIsEnabled()
@@ -48,8 +48,8 @@ class InboxActionBarTest {
     fun filtersOpensTheFilterPanel() {
         start()
         button("Filters").performClick()
-        // The Show button reads "Show conversations" while it counts and "Show 1 conversation" after.
-        compose.onNodeWithText("conversation", substring = true).assertExists()
+        // The Show button in the bar reads "Show mails" while it counts and "Show 1 mail" after.
+        compose.onNodeWithContentDescription("Show ", substring = true).assertExists()
     }
 
     @Test

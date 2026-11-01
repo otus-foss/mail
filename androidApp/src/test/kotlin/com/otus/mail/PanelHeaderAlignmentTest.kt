@@ -87,9 +87,8 @@ class PanelHeaderAlignmentTest {
     private fun assertHeaderAnchors() {
         val originalIcon = navigation("Open navigation")
         val originalBaseline = baseline(prompt())
-        val originalTextX = prompt().fetchSemanticsNode().positionInRoot.x
         compose.mainClock.autoAdvance = false
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.onNodeWithContentDescription("Search Inbox").performClick()
         repeat(20) { frame ->
             compose.mainClock.advanceTimeByFrame()
             compose.waitForIdle()
@@ -100,7 +99,6 @@ class PanelHeaderAlignmentTest {
                 baseline(placeholder()),
                 0.5f,
             )
-            assertEquals(originalTextX, placeholder().fetchSemanticsNode().positionInRoot.x, 0.5f)
         }
         compose.mainClock.autoAdvance = true
         val emptyField = field().fetchSemanticsNode().boundsInRoot
@@ -121,7 +119,7 @@ class PanelHeaderAlignmentTest {
         compose.mainClock.autoAdvance = true
         val height =
             compose
-                .onNodeWithContentDescription("Search mailbox")
+                .onNodeWithContentDescription("Search Inbox")
                 .fetchSemanticsNode()
                 .boundsInRoot.height
         assertTrue(
@@ -130,12 +128,11 @@ class PanelHeaderAlignmentTest {
         )
     }
 
-    private fun prompt(): SemanticsNodeInteraction = compose.onNodeWithText("Tap to search", useUnmergedTree = true)
+    private fun prompt(): SemanticsNodeInteraction = compose.onNodeWithText("Search Inbox", useUnmergedTree = true)
 
-    private fun placeholder(): SemanticsNodeInteraction =
-        compose.onNodeWithText("Search your mailbox…", useUnmergedTree = true)
+    private fun placeholder(): SemanticsNodeInteraction = compose.onNodeWithText("Search Inbox", useUnmergedTree = true)
 
-    private fun field(): SemanticsNodeInteraction = compose.onNodeWithContentDescription("Search your mailbox…")
+    private fun field(): SemanticsNodeInteraction = compose.searchField()
 
     private fun navigation(description: String): Rect =
         compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot

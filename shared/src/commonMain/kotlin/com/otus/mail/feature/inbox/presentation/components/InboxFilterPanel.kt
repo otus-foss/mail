@@ -14,6 +14,9 @@ import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.filters.components.FilterPanel
 import com.otus.designsystem.shared.filters.components.FilterPanelFooter
+import com.otus.designsystem.shared.filters.components.FilterPanelTitle
+import com.otus.designsystem.shared.filters.components.FilterResetAction
+import com.otus.designsystem.shared.filters.components.FilterShowBar
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -23,9 +26,10 @@ import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.showLabel
 
 /**
- * The filter panel of a message list, growing out of its control panel [collapsedHeight] tall.
- * It has no header: every section sits on one scrolling page, and Account, Folders, and Date open
- * popups over it. Back, a tap on the scrim, a swipe up, and Show close it, and it keeps one height.
+ * The filter panel of a message list, growing out of its control panel [collapsedHeight] tall
+ * under the page's [title]. Every section sits on one scrolling page, and Account, Folders, and
+ * Date open popups over it. Back, the chevron, a tap on the scrim, a swipe up, and Show close it,
+ * and it keeps one height.
  */
 @Composable
 fun InboxFilterPanel(
@@ -34,6 +38,7 @@ fun InboxFilterPanel(
     messages: List<MailMessage>,
     dateFormatter: DateFormatter,
     collapsedHeight: Dp,
+    title: String,
     modifier: Modifier = Modifier,
 ) {
     // The last draft stays on screen while the panel closes.
@@ -45,10 +50,13 @@ fun InboxFilterPanel(
         open = state.isOpen,
         collapsedHeight = collapsedHeight,
         onDismiss = state::close,
-        // No visible title: a header-tall gap that holds the panel's ✕ above the first section and
-        // still names the pane to screen readers.
-        header = { Spacer(Modifier.height(FilterTokens.headerHeight).semantics { paneTitle = "Filters" }) },
-        footer = { InboxFilterFooter(state, shown) },
+        header = {
+            FilterPanelTitle(
+                title,
+                state::close,
+            ) { FilterResetAction(state::reset, enabled = !shown.isDefault) }
+        },
+        footer = { InboxFilterFooter(state) },
         modifier = modifier,
     ) {
         val searches = PeopleSearches(state.senders, state.recipients, people)
@@ -56,18 +64,31 @@ fun InboxFilterPanel(
     }
 }
 
+/** [state]'s Show and Reset in an action bar of their own; Show runs [onApply]. */
 @Composable
-private fun InboxFilterFooter(
+internal fun InboxFilterBar(
     state: InboxFilterState,
-    draft: InboxFilters,
+    onApply: () -> Unit,
 ) {
+    // The last count stays while the next one is counted, so the label rolls from one to the other.
+    var count by remember { mutableStateOf(state.count) }
+    state.count.takeIf { it != FilterCount.Counting }?.let { count = it }
+    FilterShowBar(
+        count.showLabel,
+        onApply,
+        state::reset,
+        applyEnabled = count != FilterCount.Known(0),
+        resetEnabled = state.draft?.isDefault == false,
+    )
+}
+
+@Composable
+private fun InboxFilterFooter(state: InboxFilterState) {
     val count = state.count
     FilterPanelFooter(
         count.showLabel,
         onApply = state::show,
-        onReset = state::reset,
         applyEnabled = count != FilterCount.Known(0),
-        resetEnabled = !draft.isDefault,
         counting = count == FilterCount.Counting,
     )
 }

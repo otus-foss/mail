@@ -18,6 +18,8 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.input.elements.SearchField
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.elements.PanelNavigation
+import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.contacts.presentation.icon
 
@@ -41,7 +43,7 @@ internal fun ContactsPanel(
     ContextPanel(
         modifier,
         placement = if (books.size > 1) ChipPlacement.Below else ChipPlacement.None,
-        navigation = { PanelNavigation(selected, onOpenNavigation, onClearSelection) },
+        navigation = { ContactsNavigation(selected, onOpenNavigation, onClearSelection) },
         trailingAction = {
             if (books.size > 1 && selected == 0) {
                 IconButton(
@@ -76,21 +78,15 @@ internal fun ContactsPanel(
 
 /** The header's leading button: clear the selection while one is on, or else open navigation. */
 @Composable
-private fun PanelNavigation(
+private fun ContactsNavigation(
     selected: Int,
     onOpenNavigation: () -> Unit,
     onClearSelection: () -> Unit,
 ) {
     if (selected > 0) {
-        IconButton(
-            "Clear selection",
-            onClearSelection,
-            look = IconButtonLook.Plain,
-        ) { Symbol(Res.drawable.symbol_close) }
+        PanelNavigation("Clear selection", onClearSelection, icon = PanelNavigationIcon.Close)
     } else {
-        IconButton("Open navigation", onOpenNavigation, look = IconButtonLook.Plain) {
-            Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
-        }
+        PanelNavigation("Open navigation", onOpenNavigation)
     }
 }
 

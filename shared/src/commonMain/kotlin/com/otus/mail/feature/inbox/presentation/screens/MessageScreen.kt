@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.Surface
@@ -31,6 +30,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.overlays.components.LocalSheetPull
 import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.motion.MotionCurve
@@ -122,7 +122,8 @@ fun MessageScreen(
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
             bar = bar.layout?.let { { ReadActionBar(bar, page, parts::perform) } },
-            Modifier.safeDrawingPadding(),
+            // The control panel draws behind the status bar and pads itself.
+            Modifier.belowControlPanel(),
         ) { padding ->
             SideEffect { barPadding = padding }
             ReadLayout(parts, ReadLayoutState(pager, index, look, menu, today, folds, source), notice, padding)
@@ -189,14 +190,14 @@ private fun ReadLayout(
             PaddingValues(top = headerHeight, bottom = bottomInset),
         )
         Column(
-            Modifier.padding(PageTokens.pageInset).onSizeChanged { size ->
+            Modifier.onSizeChanged { size ->
                 val height = with(density) { size.height.toDp() }
                 // The room stays the tallest header, so folding the subject does not move the text.
                 if (height > headerHeight) headerHeight = height
             },
         ) {
             ReadHeader(parts.row.subject, page, date, page.received.fullLabel(), headerActions(parts, layout.menu))
-            notice?.let { PageNotice(it) }
+            notice?.let { Box(Modifier.padding(PageTokens.pageInset)) { PageNotice(it) } }
         }
         val pager = layout.pager
         val stripSwipe = rememberPageSwipe(pager, SwipeFeel.Strip)

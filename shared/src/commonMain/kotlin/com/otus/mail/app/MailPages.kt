@@ -1,10 +1,12 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.shared.settings.components.LocalFoundSetting
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.within
@@ -15,6 +17,7 @@ import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.status
 
+/** The page for [page], which flashes the setting a settings search found there, if any. */
 @Composable
 internal fun MailPageContent(
     page: MailPage,
@@ -23,7 +26,21 @@ internal fun MailPageContent(
     settings: SharedSettings,
     navigation: MailNavigation,
 ) {
-    val back = { navigation.go(page.parent ?: page) }
+    val found = navigation.found?.takeIf { it.page == page }?.setting
+    CompositionLocalProvider(LocalFoundSetting provides found) {
+        PageContent(page, states, dateFormatter, settings, navigation)
+    }
+}
+
+@Composable
+private fun PageContent(
+    page: MailPage,
+    states: MailStates,
+    dateFormatter: DateFormatter,
+    settings: SharedSettings,
+    navigation: MailNavigation,
+) {
+    val back = { navigation.back(page) }
     when (page) {
         MailPage.Inbox -> {
             InboxPage(states, dateFormatter, navigation)

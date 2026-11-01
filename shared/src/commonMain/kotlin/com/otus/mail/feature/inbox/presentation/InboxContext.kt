@@ -5,6 +5,7 @@ import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageContent
+import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
 
 /**
  * What a message list shows by default, how it names itself, which other mailboxes its search
@@ -14,7 +15,8 @@ import com.otus.mail.feature.inbox.domain.MessageContent
  */
 data class InboxContext(
     val defaultSearch: InboxSearch = InboxSearch(),
-    val searchPrompt: String = "Tap to search",
+    /** The page's name, such as "Inbox" or a folder's, which its search prompt and account switcher show. */
+    val title: String = "Inbox",
     val emptyTitle: String = "Your inbox is empty",
     val mailboxSearch: MailboxSearch = MailboxSearch(),
     val pills: InboxPills = InboxPills(),
@@ -34,7 +36,14 @@ data class InboxContext(
     val onLoadMore: () -> Unit = {},
     /** What an open message's Read view needs beyond [loadContent]; null shows the message alone. */
     val read: ReadContext? = null,
+    /** Whose mail the page shows, which the account stack opens; null shows no stack. */
+    val scope: MailScopeSwitch? = null,
+    /** What pulling the control panel down shows; null keeps the panel from opening that way. */
+    val quick: QuickViewContext? = null,
 ) {
+    val searchPrompt: String
+        get() = "Search $title"
+
     val allowsMailboxSelection: Boolean
         get() = folderPill == null && defaultSearch.mailboxes.isNotEmpty()
 
@@ -46,7 +55,7 @@ data class InboxContext(
         ): InboxContext =
             InboxContext(
                 defaultSearch = InboxSearch(mailboxes = emptySet()),
-                searchPrompt = "Search $name",
+                title = name,
                 emptyTitle = "$name is empty",
                 pills = InboxPills(pills.filterIsInstance<InboxPill.Filter>()),
             )

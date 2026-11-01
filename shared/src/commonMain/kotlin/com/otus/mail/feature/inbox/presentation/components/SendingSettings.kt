@@ -40,4 +40,4 @@ internal fun SendingSettings(state: MailBehaviorState) {
     }
 }
 
-private val Int.undoLabel: String get() = if (this == 0) "Off" else "$this seconds"
+internal val Int.undoLabel: String get() = if (this == 0) "Off" else "$this seconds"

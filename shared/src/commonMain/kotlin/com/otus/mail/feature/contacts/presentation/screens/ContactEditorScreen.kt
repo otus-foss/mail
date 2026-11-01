@@ -25,8 +25,15 @@ import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.pages.components.belowControlPanel
+import com.otus.designsystem.shared.pages.components.pageSideInset
+import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.elements.PanelNavigation
+import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
+import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactBook
@@ -94,9 +101,9 @@ internal fun ContactEditorScreen(
                     onDiscard = onClose,
                 )
             },
-            Modifier.fillMaxSize().safeDrawingPadding().imePadding(),
+            Modifier.fillMaxSize().belowControlPanel(),
         ) { barPadding ->
-            Column(Modifier.fillMaxSize().padding(horizontal = PageTokens.pageInset)) {
+            Column(Modifier.fillMaxSize()) {
                 EditorPanel(isNew = existing == null, onClose)
                 ContactForm(
                     draft,
@@ -106,6 +113,7 @@ internal fun ContactEditorScreen(
                     modifier =
                         Modifier
                             .weight(1f)
+                            .pageSideInset()
                             .verticalScroll(rememberScrollState())
                             .padding(barPadding)
                             .padding(vertical = PageTokens.contentInset),
@@ -122,11 +130,9 @@ private fun EditorPanel(
     onClose: () -> Unit,
 ) {
     ContextPanel(
-        Modifier.padding(top = PageTokens.pageInset),
-        navigation = {
-            IconButton("Discard", onClose, look = IconButtonLook.Plain) { Symbol(Res.drawable.symbol_close) }
-        },
-    ) { Text(if (isNew) "New contact" else "Edit contact") }
+        placement = ChipPlacement.None,
+        navigation = { PanelNavigation("Discard", onClose, icon = PanelNavigationIcon.Close) },
+    ) { PanelTitle(if (isNew) "New contact" else "Edit contact", Modifier.padding(start = PanelTokens.titleStart)) }
 }
 
 /** The draft the editor opens with: the card's own fields, else a prefill handed over once, else blank. */

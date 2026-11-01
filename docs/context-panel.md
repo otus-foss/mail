@@ -8,32 +8,24 @@ networking, storage, or navigation services are implemented by these controls.
 
 ## Composition
 
-`ContextPanel` accepts optional navigation and trailing-action slots, main content, and a chip
-builder. Wrap each pill in `item(stableKey) { Chip(...) }` so its position drives a cutout.
-Keys must be unique within a panel. Use `ChipPlacement.Below` for detached pills,
-`ChipPlacement.Overlapping` for pills embedded in the lower edge, or `ChipPlacement.None` when
-there are no pills. `None` drops the pill row, so the panel is only as tall as its header, and the
-trailing action moves to the header's end. The row grows and shrinks over the mode transition
-while the action fades between its two places. Placement does not depend on
-whether the content is a title, a search field, or metadata. Use `transition(expanded) { mode -> ... }`
-inside the chip builder when replacing a two-mode pill group. Place each pill inside `item(...)`
-within that group so its cutout follows the animated layout.
+`ContextPanel` runs edge to edge, draws behind the status bar, and pads its content below it. Its
+one 56 dp header row holds the navigation slot, a `PanelNavigation` chevron whose glyph sits at
+the start of its 48 dp target, the main content, and an `actions` slot at the end. Pages pad
+themselves with `belowControlPanel()` and their bodies with `pageSideInset()`.
 
-The main row has a 48 dp content slot and 8 dp top and bottom padding. Its 64 dp minimum height is
-derived from those shared tokens. Plain titles, the search prompt, and search input use the same
-centered content slot, so their text baselines and the leading icon stay fixed across modes and when
-the clear button appears. Prompt text stays on one line; larger text can grow the shared header.
-Chips use a horizontally scrolling
-row; the trailing action remains outside the scrolling viewport. Detached and overlapping pill rows
-span the panel's full width, aligned with its outer edges. The scrolling viewport has no fixed
-8 dp side inset, so pills and their cutouts reach the panel edge while scrolling. The trailing
-action stays fixed at the opposite edge. The surface subtracts rounded pill shapes from its path,
-clipped horizontally to the viewport. The holes reveal the
-actual background. Scroll-edge
-fades use an alpha mask rather than a painted background color. RTL reverses the fades and mirrors
-the back chevron. Overscroll stretch is disabled on the chip rail: stretching that layer independently
-would move the pills away from the panel cutouts during a held edge drag. Normal scrolling and
-fling remain enabled.
+Wrap each pill in `item(stableKey) { Chip(...) }` so its position drives a cutout. Keys must be
+unique within a panel. Use `ChipPlacement.Overlapping` for pills across the bottom edge,
+`ChipPlacement.Below` for pills under it, or `ChipPlacement.None` when there are no pills; `None`
+moves the trailing action into the header row. Use `transition(expanded) { mode -> ... }` inside
+the chip builder when replacing a two-mode pill group. The rail scrolls horizontally with an 8 dp
+inset that scrolls with it, so pills reach the screen edge when scrolled. Cutouts are pill shapes
+subtracted from the surface with a 4 dp ring.
+
+Pass `collapse` a `PanelCollapse.progress` from `rememberPanelCollapse(list)` and attach its
+`connection` to the list. The panel then follows the scroll: it shortens by 30 dp over
+60 dp, and the pills rise, shrink, and fade out by 0.6. `PanelSearchPill` and `AccountStack`
+take the same reading. `PanelSheet` unfolds the panel for a task, such as search, filters, or the
+account switcher. `PageScaffold` takes a `search`, whose button grows into a field over the title.
 
 ## Intentional differences from the reference
 

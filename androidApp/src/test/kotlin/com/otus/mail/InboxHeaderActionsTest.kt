@@ -52,8 +52,8 @@ class InboxHeaderActionsTest {
                 }
             }
         }
-        compose.onNodeWithText("Tap to search").assertIsDisplayed().performClick()
-        compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused()
+        compose.openSearchResults()
+        compose.searchField().assertIsFocused()
         compose.onNodeWithText("People").assertIsDisplayed()
         compose.onNodeWithText("Date").assertIsDisplayed()
         compose.onNodeWithText("All accounts").performScrollTo().assertIsDisplayed()
@@ -65,9 +65,9 @@ class InboxHeaderActionsTest {
     fun defaultFilterButtonOpensFiltersWithoutStartingSearch() {
         compose.onNodeWithContentDescription("Open filters").assertIsDisplayed().performClick()
         compose.filterTab("Unread").performClick()
-        compose.onNodeWithText("Show conversations").performClick()
-        compose.onNodeWithText("Tap to search").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Search your mailbox…").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Show ", substring = true).performClick()
+        compose.onNodeWithText("Search Inbox").assertIsDisplayed()
+        compose.searchField().assertDoesNotExist()
         compose.onNodeWithText("Unread").assertIsOn()
         compose.onNodeWithContentDescription("Open filters, 1 active").assertIsDisplayed()
     }
@@ -83,7 +83,7 @@ class InboxHeaderActionsTest {
 
         fun bounds(node: SemanticsNodeInteraction) = node.fetchSemanticsNode().boundsInRoot
         show(InboxPill.defaults(readLater = false))
-        val prompt = bounds(compose.onNodeWithText("Tap to search"))
+        val prompt = bounds(compose.onNodeWithText("Search Inbox"))
         assertTrue("With pills, the button ends their row", bounds(filters()).top >= prompt.bottom)
         val listWithPills = bounds(compose.onNodeWithText("Your inbox is empty")).top
         show(emptyList())
@@ -91,7 +91,7 @@ class InboxHeaderActionsTest {
         assertTrue("Without pills, it sits beside the prompt", abs(button.center.y - prompt.center.y) < 2f)
         assertTrue(bounds(compose.onNodeWithText("Your inbox is empty")).top < listWithPills)
         // Search still lists its filters, and the button stays available.
-        compose.onNodeWithText("Tap to search").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("People").assertIsDisplayed()
         filters().assertIsDisplayed()
     }
@@ -101,9 +101,9 @@ class InboxHeaderActionsTest {
     @Test
     fun navigationChevronIsAvailableAndSearchBackReturnsToPrompt() {
         compose.onNodeWithContentDescription("Open navigation").assertIsDisplayed().assertIsEnabled()
-        compose.onNodeWithText("Tap to search").performClick()
+        compose.openSearchResults()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
-        compose.onNodeWithText("Tap to search").assertIsDisplayed()
+        compose.onNodeWithText("Search Inbox").assertIsDisplayed()
         compose.onNodeWithContentDescription("Open navigation").assertIsEnabled()
     }
 }

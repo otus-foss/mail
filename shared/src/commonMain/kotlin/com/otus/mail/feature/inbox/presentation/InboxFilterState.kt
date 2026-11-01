@@ -91,6 +91,14 @@ class InboxFilterState(
         close()
     }
 
+    /** How many conversations [filters] would show; null while the count is not known. */
+    suspend fun countOf(filters: InboxFilters): Long? =
+        try {
+            counter(filters)
+        } catch (expected: InboxStorageException) {
+            null
+        }
+
     /** Applies [filters] at once, as a quick pill does. */
     fun update(filters: InboxFilters) {
         if (filters == applied) return
@@ -110,13 +118,7 @@ class InboxFilterState(
         counting =
             launcher.launch {
                 delay(COUNT_DELAY_MILLIS)
-                val total =
-                    try {
-                        counter(filters)
-                    } catch (expected: InboxStorageException) {
-                        null
-                    }
-                count = total?.let(FilterCount::Known) ?: FilterCount.Unknown
+                count = countOf(filters)?.let(FilterCount::Known) ?: FilterCount.Unknown
             }
     }
 
@@ -130,8 +132,8 @@ class InboxFilterState(
 val FilterCount.showLabel: String
     get() =
         when {
-            this !is FilterCount.Known -> "Show conversations"
-            messages == 0L -> "No conversations"
-            messages == 1L -> "Show 1 conversation"
-            else -> "Show $messages conversations"
+            this !is FilterCount.Known -> "Show mails"
+            messages == 0L -> "No mails"
+            messages == 1L -> "Show 1 mail"
+            else -> "Show $messages mails"
         }

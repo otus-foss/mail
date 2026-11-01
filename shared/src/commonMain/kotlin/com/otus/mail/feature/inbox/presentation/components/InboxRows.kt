@@ -9,12 +9,13 @@ import androidx.compose.runtime.setValue
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
 
-/** The open message, the selected rows, and the row gestures that change them. */
+/** The open message, the selected rows, and the row gestures that change them; [selectAll] selects the rows given. */
 internal class InboxRows(
     val opened: MailMessage?,
     val selected: List<MailMessage>,
     val gestures: RowGestures,
     val clearSelection: () -> Unit,
+    val selectAll: (List<MailMessage>) -> Unit,
     val close: () -> Unit,
 )
 
@@ -36,5 +37,15 @@ internal fun rememberInboxRows(
             onToggle = { selectedIds = selectedIds.toggled(it.id) },
             onSelect = { selectedIds = it.toList() },
         ) { openId = it.id }
-    return InboxRows(messages.firstOrNull { it.id == openId }, selected, gestures, clearSelection) { openId = null }
+    return InboxRows(
+        messages.firstOrNull { it.id == openId },
+        selected,
+        gestures,
+        clearSelection,
+        selectAll = { rows -> selectedIds = rows.map { it.id } },
+    ) { openId = null }
 }
+
+/** The selection the control panel shows while rows are selected, with Select all taking [shown]; null otherwise. */
+internal fun InboxRows.panelSelection(shown: List<MailMessage>): PanelSelection? =
+    selected.size.takeIf { it > 0 }?.let { count -> PanelSelection(count, clearSelection) { selectAll(shown) } }

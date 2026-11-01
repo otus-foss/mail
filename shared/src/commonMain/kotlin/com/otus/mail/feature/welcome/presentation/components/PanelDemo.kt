@@ -11,6 +11,7 @@ import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 
 @Composable
@@ -25,11 +26,7 @@ fun PanelDemo(
 ) {
     ContextPanel(
         placement = if (overlap) ChipPlacement.Overlapping else ChipPlacement.Below,
-        navigation = {
-            IconButton("Back to inbox", { onAction(PanelDemoAction.Back) }, look = IconButtonLook.Plain) {
-                Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
-            }
-        },
+        navigation = { PanelNavigation("Back to inbox", { onAction(PanelDemoAction.Back) }) },
         trailingAction = {
             val search = mode == PanelDemoMode.Inbox
             IconButton(

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.screens
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,8 @@ import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.input.elements.isKeyboardUp
 import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.designsystem.shared.pages.components.belowControlPanel
+import com.otus.designsystem.shared.pages.components.pageSideInset
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.inbox.domain.ComposeRequest
@@ -89,7 +92,7 @@ fun ComposeScreen(
                     onChangeSchedule = { schedulingAt = true },
                 )
             },
-            Modifier.safeDrawingPadding(),
+            Modifier.belowControlPanel(),
         ) { padding ->
             ComposePage(
                 state,
@@ -126,7 +129,7 @@ private fun ComposePage(
     options: List<OptionsItem>,
     padding: PaddingValues,
 ) {
-    Column(Modifier.fillMaxSize().padding(PageTokens.pageInset)) {
+    Column(Modifier.fillMaxSize()) {
         ComposePanel(
             state,
             state.request.title,
@@ -135,8 +138,8 @@ private fun ComposePage(
             onAddCc = onAddCc,
             options = options,
         )
-        state.notice?.let { PageNotice(it) }
-        ComposeContent(state, shown, Modifier.weight(1f), padding)
+        state.notice?.let { Box(Modifier.pageSideInset()) { PageNotice(it) } }
+        ComposeContent(state, shown, Modifier.weight(1f).pageSideInset(), padding)
     }
 }
 

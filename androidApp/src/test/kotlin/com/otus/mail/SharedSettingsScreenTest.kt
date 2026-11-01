@@ -7,8 +7,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.settings.presentation.SettingsEntry
 import com.otus.settings.presentation.screens.SettingsScreen
+import com.otus.settings.presentation.settingsIndex
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -29,14 +29,7 @@ class SharedSettingsScreenTest {
             compose.activity.setContent {
                 OtusTheme {
                     SettingsScreen(
-                        entries =
-                            listOf(
-                                SettingsEntry(
-                                    "Preferences",
-                                    "Choose your defaults",
-                                    icon = null,
-                                ) { opened++ },
-                            ),
+                        settingsIndex { page("Preferences", { opened++ }, summary = "Choose your defaults") },
                         onOpenNavigation = { navigation++ },
                     )
                 }

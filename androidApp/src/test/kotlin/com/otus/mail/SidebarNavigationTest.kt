@@ -59,8 +59,8 @@ class SidebarNavigationTest {
 
     @Test
     fun choosingSettingsShowsItAndInboxKeepsItsSearch() {
-        compose.onNodeWithText("Tap to search").performClick()
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("invoice")
+        compose.openSearchResults()
+        compose.searchField().performTextInput("invoice")
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
@@ -72,7 +72,7 @@ class SidebarNavigationTest {
                 hasContentDescription("Inbox", substring = true) and isSelectable(),
             ).assertIsNotSelected()
             .performClick()
-        compose.onNodeWithText("Tap to search").assertIsDisplayed()
+        compose.onNodeWithText("Search Inbox").assertIsDisplayed()
     }
 
     @Test
@@ -88,7 +88,7 @@ class SidebarNavigationTest {
         compose.onNodeWithText("All mail").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("All mail").assertDoesNotExist()
-        compose.onNodeWithText("Tap to search").assertIsDisplayed()
+        compose.onNodeWithText("Search Inbox").assertIsDisplayed()
     }
 
     @Test
@@ -110,8 +110,8 @@ class SidebarNavigationTest {
 
     @Test
     fun openingTheSidebarFromSearchClosesTheKeyboard() {
-        compose.onNodeWithText("Tap to search").performClick()
-        val search = compose.onNodeWithContentDescription("Search your mailbox…")
+        compose.openSearch()
+        val search = compose.searchField()
         search.assertIsFocused()
         swipeOpenAt(2f)
         compose.onNodeWithText("No accounts yet").assertIsDisplayed()

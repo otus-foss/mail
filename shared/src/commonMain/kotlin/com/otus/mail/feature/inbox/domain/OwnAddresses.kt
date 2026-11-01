@@ -13,4 +13,7 @@ class OwnAddresses(
         loginId: String,
         address: String,
     ): Boolean = address.trim().lowercase() in addresses[loginId].orEmpty()
+
+    /** Whether [address] is the user's own on any login, such as mail they sent themselves. */
+    fun isMineAnywhere(address: String): Boolean = addresses.values.any { address.trim().lowercase() in it }
 }

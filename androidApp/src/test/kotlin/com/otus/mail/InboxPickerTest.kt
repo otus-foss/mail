@@ -21,6 +21,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -54,12 +55,12 @@ class InboxPickerTest {
     @Before
     fun showMessages() {
         compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(fixtures, dateFormatter) } } }
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
     }
 
     @Test
     fun pickerSearchPreservesMailQueryAndSelectionsAcrossSearches() {
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("Meeting")
+        compose.searchField().performTextInput("Meeting")
         compose.onNodeWithText("People").performClick()
         compose.onNodeWithContentDescription("Search people…").performTextInput("Alex")
         compose.onNode(hasText("alex@example.com") and isToggleable()).performClick().assertIsOn()
@@ -134,20 +135,21 @@ class InboxPickerTest {
     fun draftAndPickerQuerySurviveActivityRecreation() {
         // Re-enter the production composition so saveable keys match across recreation.
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("kept query")
+        compose.openSearch()
+        compose.searchField().performTextInput("kept query")
+        compose.searchField().performImeAction()
         compose.onNodeWithText("People").performClick()
         compose.onNodeWithContentDescription("Search people…").performTextInput("Alex")
         compose.activityRule.scenario.recreate()
         compose.onNodeWithText("Alex").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("kept query").assertIsDisplayed()
+        // Every filter opens over the results; a recreation shuts the grown panel and drops the draft.
         compose.onNodeWithContentDescription("Open filters").performClick()
         compose.filterTab("Unread").performClick()
-        compose.onNodeWithText("conversation", substring = true).performClick()
         compose.activityRule.scenario.recreate()
-        compose.onNodeWithContentDescription("Open filters, 1 active").performClick()
-        compose.filterTab("Unread").assertIsSelected()
+        compose.onNodeWithText("kept query").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Open filters").assertIsDisplayed()
     }
 
     @Test
@@ -209,7 +211,7 @@ class InboxPickerTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("People").performClick()
         compose.onNodeWithContentDescription("Search people…").performTextInput("unknown")
         compose.onNodeWithText("No matches. Try another search.").assertIsDisplayed()

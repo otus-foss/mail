@@ -49,7 +49,7 @@ fun NotificationsScreen(
                     current?.let { "Through ${it.name}" }
                         ?: if (state.periodicChecks) "Off, checks about every 15 minutes" else "New-mail alerts off",
             ) {
-                ValueButton(current?.let { if (it.isGoogle) "Google" else it.name } ?: "Off")
+                ValueButton(state.deliveryLabel)
             }
         }
         state.previews?.let { PreviewsSection(state, it, accounts, onOpenOverrides) }
@@ -198,3 +198,7 @@ private fun NotificationSettingsState.deliveryNote(): String =
 
 /** Enough lines for the longest description on a narrow phone. */
 private const val PREVIEW_LINES = 3
+
+/** The Instant delivery row's value: the distributor that delivers new mail, or Off. */
+internal val NotificationSettingsState.deliveryLabel: String
+    get() = current?.let { if (it.isGoogle) "Google" else it.name } ?: "Off"

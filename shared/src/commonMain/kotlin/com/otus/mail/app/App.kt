@@ -61,7 +61,10 @@ fun App(
         mutableStateOf<MailScopeChoice>(MailScopeChoice.All)
     }
     val scope = rememberCoroutineScope()
-    val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) { chosenScope } }
+    val states =
+        remember(services, behaviorState) {
+            MailStates(services, scope, behaviorState, { chosenScope }) { chosenScope = it }
+        }
     val nightly = rememberNightlyUpdate(services, build)
     // Rules decide whether an open message offers to start one.
     LaunchedEffect(states) { states.rules.refresh() }
@@ -77,11 +80,8 @@ fun App(
         remember(dateFormatState, themeState, animationState, appIconState) {
             SharedSettings(dateFormatState, themeState, animationState, appIconState)
         }
-    val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
-    // Pages that toasts open, which may have been shown before the activity was recreated.
-    LaunchedEffect(services) { services.pageRequests.collect { page = it } }
-    // Messages an earlier run could not hand to the server go now, or wait in a toast for the user.
-    LaunchedEffect(states) { states.outgoing.resume { states.pageRequests.show(MailPage.Compose(it)) } }
+    val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
+    PageRequestEffects(services, states) { page = it }
     OtusTheme(themeState.palette) {
         CompositionLocalProvider(
             LocalMotionScale provides animationState.speed.scale,
@@ -106,9 +106,9 @@ fun App(
                     states,
                     states.mailScope,
                     footer = { build?.let { UpdatingFooter(it, nightly, states.moveToasts.toasts) } },
-                    onChooseScope = { chosenScope = it },
+                    onChooseScope = states.chooseScope,
                     onSelect = {
-                        page = it
+                        navigation.go(it)
                         scope.launch { sidebar.close() }
                     },
                 )
@@ -119,6 +119,20 @@ fun App(
             SenderRuleSheets(states)
         }
     }
+}
+
+/**
+ * Opens with [show] the pages toasts ask for, including ones shown before the activity was
+ * recreated. Messages an earlier run could not hand to the server go now, or wait in a toast.
+ */
+@Composable
+private fun PageRequestEffects(
+    services: MailServices,
+    states: MailStates,
+    show: (MailPage) -> Unit,
+) {
+    LaunchedEffect(services) { services.pageRequests.collect { show(it) } }
+    LaunchedEffect(states) { states.outgoing.resume { states.pageRequests.show(MailPage.Compose(it)) } }
 }
 
 /**

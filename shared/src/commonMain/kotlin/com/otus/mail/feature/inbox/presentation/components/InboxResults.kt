@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -14,6 +15,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.shared.panels.components.rememberPanelCollapse
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
@@ -41,11 +43,14 @@ internal fun InboxResults(
     val results = remember(messages, matching, filters) { searchMessages(messages, matching, filters) }
     val inboxScroll = rememberLazyListState()
     val searchScroll = rememberLazyListState()
-    val listState = if (state.searching) searchScroll else inboxScroll
-    TopForNewResults(listState, Triple(state.search, state.folderPill, filters))
+    // Under a search surface the inbox stays as it was; the search's own list starts with its results.
+    val listState = if (state.resultsShown) searchScroll else inboxScroll
+    TopForNewResults(listState, listOf(state.search, state.folderPill, filters, state.resultsShown))
     StayAtTop(listState, results.firstOrNull()?.id)
     LoadMoreNearEnd(listState, status.hasMore && !status.loading && !status.loadingMore, frame.onLoadMore)
-    Box(Modifier.fillMaxSize().nestedScroll(rememberCompactOnScroll(listState, frame.onCompactChange))) {
+    val collapse = rememberPanelCollapse(listState)
+    SideEffect { frame.collapse.source = collapse }
+    Box(Modifier.fillMaxSize().nestedScroll(collapse.connection)) {
         InboxBody(
             results,
             listState,
