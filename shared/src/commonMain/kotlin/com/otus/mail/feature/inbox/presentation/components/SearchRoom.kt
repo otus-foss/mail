@@ -126,20 +126,18 @@ internal fun searchRoomHeight(typed: Boolean): Dp {
 }
 
 /**
- * Grows [expansion] into the search room while [searching], and again as typing changes the room's
- * [height], and brings the panel back once the search leaves it. Pushing the room shut leaves the
- * search through [onLeave].
+ * Grows [expansion] into the search room while [searching], and brings the panel back once the
+ * search leaves it. Pushing the room shut leaves the search through [onLeave].
  */
 @Composable
 internal fun FollowSearch(
     expansion: PanelExpansion,
     searching: Boolean,
-    height: Dp,
     onLeave: () -> Unit,
 ) {
     val leave by rememberUpdatedState(onLeave)
     val inRoom by rememberUpdatedState(searching)
-    LaunchedEffect(searching, height) {
+    LaunchedEffect(searching) {
         when {
             searching -> if (expansion.stop <= 1) expansion.expandTo(1)
             expansion.expanded -> expansion.collapse()
