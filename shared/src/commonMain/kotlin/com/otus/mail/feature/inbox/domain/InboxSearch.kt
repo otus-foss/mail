@@ -7,6 +7,10 @@ data class InboxSearch(
     val dateEnd: String? = null,
     val mailboxes: Set<MailboxScope> = setOf(MailboxScope(null, INBOX_MAILBOX)),
     val accounts: Set<String> = emptySet(),
+    /** Terms match only the subject, rather than the subject, body, and sender. */
+    val inSubject: Boolean = false,
+    /** Only mail with attachments. */
+    val withFiles: Boolean = false,
 )
 
 /**
@@ -31,17 +35,20 @@ fun searchMessages(
             matchesFilters(message, search) &&
                 message.passes(filters) &&
                 terms.all { term ->
-                    listOf(message.subject, message.body, message.sender.name, message.sender.address)
-                        .any { it.contains(term, ignoreCase = true) }
+                    message.searchedText(search.inSubject).any { it.contains(term, ignoreCase = true) }
                 }
         }.sortedWith(if (filters.sort == FilterSort.NewestFirst) newestFirst else newestFirst.reversed())
 }
+
+private fun MailMessage.searchedText(inSubject: Boolean): List<String> =
+    if (inSubject) listOf(subject) else listOf(subject, body, sender.name, sender.address)
 
 private fun matchesFilters(
     message: MailMessage,
     search: InboxSearch,
 ): Boolean =
     (search.senders.isEmpty() || message.sender.address in search.senders) &&
+        (!search.withFiles || message.attributes.attachments.isNotEmpty()) &&
         (search.dateStart == null || message.received.date >= search.dateStart) &&
         (search.dateEnd == null || message.received.date <= search.dateEnd) &&
         (search.mailboxes.isEmpty() || search.mailboxes.any { it.matches(message.location) }) &&

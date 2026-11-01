@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
@@ -17,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
@@ -86,6 +88,12 @@ class ContextPanelTest {
         compose.onNodeWithContentDescription("Search mailbox").performClick()
         assertEdgePullUnchanged("start", 80f)
         compose.onNodeWithText("Mails").performScrollTo().assertIsDisplayed()
+        // Past the rail's end inset too, so the pull starts at the true end.
+        compose
+            .onNode(
+                SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange) and
+                    hasAnyDescendant(hasText("People")),
+            ).performSemanticsAction(SemanticsActions.ScrollBy) { it(SCROLL_TO_END, 0f) }
         assertEdgePullUnchanged("end", -80f)
     }
 
@@ -101,7 +109,8 @@ class ContextPanelTest {
         val bounds = rail.fetchSemanticsNode().boundsInRoot
         val before = saveScreenshot("edge-$name-before")
         rail.performTouchInput {
-            down(center)
+            // In the rail's inset at the edge being pulled, so no pill shows press feedback.
+            down(if (distance > 0) centerLeft + Offset(1f, 0f) else centerRight - Offset(1f, 0f))
             moveBy(Offset(distance, 0f), delayMillis = 200)
         }
         val held = saveScreenshot("edge-$name-held")
@@ -142,3 +151,6 @@ class ContextPanelTest {
         return bitmap
     }
 }
+
+/** Further than any rail scrolls, so a scroll by it ends at the rail's end. */
+private const val SCROLL_TO_END = 10_000f

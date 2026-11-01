@@ -45,7 +45,7 @@ class InboxScreenTest {
         compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
         compose.onNodeWithText("Context panel playground").assertDoesNotExist()
         screenshot("empty-inbox")
-        compose.onNodeWithText("Tap to search").performClick()
+        compose.openSearchResults()
         compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused().performTextInput("hello")
         compose.onNodeWithText("Nothing to search yet").assertIsDisplayed()
         screenshot("empty-search")
@@ -59,20 +59,19 @@ class InboxScreenTest {
         // The launch animation covers the inbox and would take the first tap.
         compose.waitForIdle()
         compose.mainClock.autoAdvance = false
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.onNodeWithContentDescription("Search Inbox").performClick()
         compose.mainClock.advanceTimeBy(96)
         compose.onNodeWithContentDescription("Search your mailbox…").assertExists()
-        compose.onNodeWithContentDescription("Search mailbox").assertExists()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.mainClock.advanceTimeBy(48)
-        compose.onNodeWithContentDescription("Search mailbox").performSemanticsAction(SemanticsActions.OnClick) { it() }
+        compose.onNodeWithContentDescription("Search Inbox").performSemanticsAction(SemanticsActions.OnClick) { it() }
         compose.mainClock.advanceTimeBy(320)
         compose.onNodeWithContentDescription("Search your mailbox…").assertIsFocused()
-        compose.onNodeWithContentDescription("Search mailbox").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Search Inbox").assertDoesNotExist()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.mainClock.advanceTimeBy(320)
         compose.onNodeWithContentDescription("Search your mailbox…").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Search mailbox").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Search Inbox").assertIsDisplayed()
         compose.mainClock.autoAdvance = true
     }
 
@@ -85,7 +84,7 @@ class InboxScreenTest {
             .assertIsDisplayed()
         compose.onNode(hasText("Weekend plans")).assertIsDisplayed()
         screenshot("inbox-fixtures")
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("prototype")
         compose.onNodeWithText("Design review").assertIsDisplayed()
         compose.onNodeWithText("Weekend plans").assertDoesNotExist()
@@ -95,7 +94,7 @@ class InboxScreenTest {
         compose.onNodeWithText("Clear search and filters").performClick()
         compose.onNodeWithText("Weekend plans").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.onNodeWithContentDescription("Search mailbox").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Search Inbox").assertIsDisplayed()
     }
 
     @Test
@@ -104,7 +103,7 @@ class InboxScreenTest {
         showFixtures()
         compose.onNodeWithText("Unread").performClick().assertIsOn()
         compose.onNodeWithText("Weekend plans").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("People").performClick()
         compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
         compose.onNodeWithText("Done").performClick()
@@ -118,7 +117,7 @@ class InboxScreenTest {
 
     @Test
     fun searchInputSurvivesActivityRecreation() {
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("saved query")
         compose.activityRule.scenario.recreate()
         compose.onNodeWithText("saved query").assertIsDisplayed()
@@ -137,7 +136,7 @@ class InboxScreenTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("hello")
         compose.onNodeWithText("Clear search and filters").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Clear search").assertDoesNotExist()

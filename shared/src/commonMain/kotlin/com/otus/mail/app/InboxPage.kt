@@ -62,6 +62,7 @@ internal fun InboxPage(
                 rowLook = rememberRowLook(states),
                 nudge = rememberListNudge(states, labeled),
                 onLoadMore = feed::loadMore,
+                scope = states.scopeSwitch(states.mailScope, states.chooseScope),
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )

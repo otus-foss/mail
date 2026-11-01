@@ -16,6 +16,8 @@ import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.contacts.components.LetterIndex
 import com.otus.designsystem.shared.contacts.components.LetterIndexState
 import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
+import com.otus.designsystem.shared.pages.components.belowControlPanel
+import com.otus.designsystem.shared.pages.components.pageSideInset
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey
@@ -56,11 +58,11 @@ internal fun ContactsScreen(
         LetterIndex(letterIndex, Modifier.fillMaxSize()) {
             ActionBarHost(
                 bar = { ContactsPageBar(state, view, chosen, navigation) },
-                Modifier.fillMaxSize().safeDrawingPadding().imePadding(),
+                Modifier.fillMaxSize().belowControlPanel(),
             ) { barPadding ->
-                Column(Modifier.fillMaxSize().padding(horizontal = PageTokens.pageInset)) {
+                Column(Modifier.fillMaxSize()) {
                     ContactsHeader(state, view, navigation.onOpenNavigation)
-                    Box(Modifier.weight(1f)) {
+                    Box(Modifier.weight(1f).pageSideInset()) {
                         ContactsBody(state, view, navigation.onOpen, barPadding, letterIndex)
                     }
                 }
@@ -85,9 +87,7 @@ private fun ContactsHeader(
         view.selected.size,
         onOpenNavigation,
         view::clearSelection,
-        Modifier
-            .padding(top = PageTokens.pageInset)
-            .onSizeChanged { view.panelHeight = with(density) { it.height.toDp() } },
+        Modifier.onSizeChanged { view.panelHeight = with(density) { it.height.toDp() } },
     )
 }
 

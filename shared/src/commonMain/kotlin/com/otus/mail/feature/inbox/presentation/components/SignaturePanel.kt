@@ -22,6 +22,7 @@ import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
+import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.editing.SignatureTokens
@@ -46,11 +47,7 @@ internal fun SignaturePanel(
     val scope = rememberCoroutineScope()
     ContextPanel(
         placement = ChipPlacement.Overlapping,
-        navigation = {
-            IconButton("Back", onBack, look = IconButtonLook.Plain) {
-                Symbol(Res.drawable.symbol_chevron_left, mirrorInRtl = true, size = PanelTokens.navigationIconSize)
-            }
-        },
+        navigation = { PanelNavigation("Back", onBack) },
         chips = {
             item(ADDRESS) { AddressChoice(signatures, editor) }
             signatures.images?.let {

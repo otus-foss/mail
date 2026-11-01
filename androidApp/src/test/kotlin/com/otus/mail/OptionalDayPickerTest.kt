@@ -79,7 +79,7 @@ class OptionalDayPickerTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Search mailbox").performClick()
+        compose.openSearchResults()
         compose.onNodeWithText("Date").performClick()
         compose.onNodeWithText("Today").performClick()
         compose.onNodeWithText(todayHeading()).performClick()

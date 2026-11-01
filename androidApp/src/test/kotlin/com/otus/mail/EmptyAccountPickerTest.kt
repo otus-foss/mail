@@ -53,7 +53,7 @@ class EmptyAccountPickerTest {
     @Test
     fun savedAccountsWithNoMailCanBeChosenAndRemainNamed() {
         show()
-        compose.onNodeWithText("Tap to search").performClick()
+        compose.openSearchResults()
         compose.onNodeWithContentDescription("All accounts, Inbox").performScrollTo().performClick()
         row("Empty").performClick()
         compose.onNodeWithText("Done").performClick()
@@ -76,7 +76,7 @@ class EmptyAccountPickerTest {
         val option = FolderPillOption(pill, "Read later", Res.drawable.symbol_folder, scope, "Folders")
         show(InboxPills(listOf(pill), listOf(option)))
         row("Read later", dialog = false).performClick()
-        compose.onNodeWithText("Search Read later").performClick()
+        compose.openSearchResults("Search Read later")
         compose.onNodeWithText("All accounts").performScrollTo().performClick()
         compose.onNodeWithText("Inboxes").assertDoesNotExist()
         row("Empty").performClick()

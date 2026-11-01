@@ -61,7 +61,10 @@ fun App(
         mutableStateOf<MailScopeChoice>(MailScopeChoice.All)
     }
     val scope = rememberCoroutineScope()
-    val states = remember(services, behaviorState) { MailStates(services, scope, behaviorState) { chosenScope } }
+    val states =
+        remember(services, behaviorState) {
+            MailStates(services, scope, behaviorState, { chosenScope }) { chosenScope = it }
+        }
     val nightly = rememberNightlyUpdate(services, build)
     // Rules decide whether an open message offers to start one.
     LaunchedEffect(states) { states.rules.refresh() }
@@ -104,7 +107,7 @@ fun App(
                     states,
                     states.mailScope,
                     footer = { build?.let { UpdatingFooter(it, nightly, states.moveToasts.toasts) } },
-                    onChooseScope = { chosenScope = it },
+                    onChooseScope = states.chooseScope,
                     onSelect = {
                         page = it
                         scope.launch { sidebar.close() }
