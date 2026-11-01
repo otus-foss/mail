@@ -39,7 +39,8 @@ internal fun InboxResults(
     val results = remember(messages, matching, filters) { searchMessages(messages, matching, filters) }
     val inboxScroll = rememberLazyListState()
     val searchScroll = rememberLazyListState()
-    val listState = if (state.searching) searchScroll else inboxScroll
+    // Under a search surface the inbox stays as it was; the search's own list starts with its results.
+    val listState = if (state.resultsShown) searchScroll else inboxScroll
     LaunchedEffect(state.search, state.folderPill, filters) { listState.scrollToItem(0) }
     StayAtTop(listState, results.firstOrNull()?.id)
     LoadMoreNearEnd(listState, status.hasMore && !status.loading && !status.loadingMore, frame.onLoadMore)
