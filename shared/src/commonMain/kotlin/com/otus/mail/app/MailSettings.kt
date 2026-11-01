@@ -11,6 +11,7 @@ import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_visibility_off
+import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.components.mailBehaviorIndex
 import com.otus.mail.feature.inbox.presentation.components.mailLookIndex
 import com.otus.mail.feature.inbox.presentation.components.privacyIndex
@@ -18,8 +19,8 @@ import com.otus.mail.feature.notifications.presentation.NotificationSettingsStat
 import com.otus.mail.feature.notifications.presentation.screens.deliveryLabel
 import com.otus.settings.presentation.SettingsIndexScope
 import com.otus.settings.presentation.SettingsItem
-import com.otus.settings.presentation.screens.appIconIndex
-import com.otus.settings.presentation.screens.appearanceIndex
+import com.otus.settings.presentation.appIconIndex
+import com.otus.settings.presentation.appearanceIndex
 import com.otus.settings.presentation.settingsIndex
 
 /**
@@ -44,22 +45,7 @@ internal fun mailSettingsIndex(
             summary = accountsSummary(states.accounts.accounts.size),
         )
         states.notifications?.let { notifications(it, open) }
-        page(
-            "Appearance",
-            open(MailPage.Appearance),
-            Res.drawable.symbol_palette,
-            summary = "Theme, sidebar, dates, and animations",
-        ) {
-            appearanceIndex(settings.dateFormat, settings.theme, settings.animation, open(MailPage.ThemeSettings)) {
-                settings.appIcon?.let { appIconIndex(it) }
-                mailLookIndex(
-                    behavior,
-                    open(MailPage.SidebarSettings),
-                    open(MailPage.PinnedSettings),
-                    open(MailPage.MailListSettings),
-                )
-            }
-        }
+        appearance(settings, behavior, open)
         page(
             "Mail behavior",
             open(MailPage.Behavior),
@@ -89,6 +75,30 @@ internal fun mailSettingsIndex(
             summary = "One for each address you send from",
         ) {
             toggle("Add to replies", behavior.signatureInReplies)
+        }
+    }
+}
+
+/** The Appearance page, with Mail's Sidebar and Mail list rows among the shared ones. */
+private fun SettingsIndexScope.appearance(
+    settings: SharedSettings,
+    behavior: MailBehavior,
+    open: (MailPage) -> (String?) -> Unit,
+) {
+    page(
+        "Appearance",
+        open(MailPage.Appearance),
+        Res.drawable.symbol_palette,
+        summary = "Theme, sidebar, dates, and animations",
+    ) {
+        appearanceIndex(settings.dateFormat, settings.theme, settings.animation, open(MailPage.ThemeSettings)) {
+            settings.appIcon?.let { appIconIndex(it) }
+            mailLookIndex(
+                behavior,
+                open(MailPage.SidebarSettings),
+                open(MailPage.PinnedSettings),
+                open(MailPage.MailListSettings),
+            )
         }
     }
 }

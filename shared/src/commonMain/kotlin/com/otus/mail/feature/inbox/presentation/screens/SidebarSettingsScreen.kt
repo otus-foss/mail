@@ -8,7 +8,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.shared.feedback.components.InfoText
@@ -25,9 +24,9 @@ import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.inbox.domain.MailboxStyle
 import com.otus.mail.feature.inbox.domain.SidebarCount
 import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.SidebarSection
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
+import com.otus.mail.feature.inbox.presentation.icon
 import com.otus.mail.feature.inbox.presentation.label
 import com.otus.mail.feature.inbox.presentation.title
 
@@ -128,10 +127,3 @@ private fun LayoutChoiceSheet(
 private enum class LayoutChoice { Mailboxes, Counts }
 
 private fun pinnedSummary(count: Int): String = if (count == 0) "Nothing pinned" else "$count pinned"
-
-internal val SidebarSection.icon
-    get() =
-        when (this) {
-            SidebarSection.Mailboxes -> Res.drawable.symbol_inbox
-            SidebarSection.Folders -> Res.drawable.symbol_folder
-        }

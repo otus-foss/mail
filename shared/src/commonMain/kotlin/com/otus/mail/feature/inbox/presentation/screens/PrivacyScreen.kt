@@ -26,6 +26,8 @@ import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.AvatarSettings
+import com.otus.mail.feature.inbox.presentation.description
+import com.otus.mail.feature.inbox.presentation.title
 
 /**
  * Settings › Privacy: when mail loads images from other servers, chosen in a sheet, who may always
@@ -113,38 +115,6 @@ private fun DeviceSection(
         }
     }
 }
-
-internal val RemoteImages.title: String
-    get() =
-        when (this) {
-            RemoteImages.Always -> "Always"
-            RemoteImages.Known -> "In your contacts"
-            RemoteImages.Never -> "Never"
-        }
-
-private val RemoteImages.description: String
-    get() =
-        when (this) {
-            RemoteImages.Always -> "Senders can see when you open their mail"
-            RemoteImages.Known -> "Contacts and senders you allowed"
-            RemoteImages.Never -> "Always ask"
-        }
-
-internal val PhotoCleaning.title: String
-    get() =
-        when (this) {
-            PhotoCleaning.Ask -> "Ask each time"
-            PhotoCleaning.Always -> "Always remove details"
-            PhotoCleaning.Never -> "Keep details"
-        }
-
-private val PhotoCleaning.description: String
-    get() =
-        when (this) {
-            PhotoCleaning.Ask -> "Choose for each photo"
-            PhotoCleaning.Always -> "Removes location, time, and camera"
-            PhotoCleaning.Never -> "Photos go out as they are"
-        }
 
 private val ImagesInfo =
     InfoText(

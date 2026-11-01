@@ -31,10 +31,9 @@ import com.otus.mail.feature.inbox.domain.UNDO_SEND_CHOICES
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.icon
 import com.otus.mail.feature.inbox.presentation.inboxSummary
 import com.otus.mail.feature.inbox.presentation.label
-import com.otus.mail.feature.inbox.presentation.screens.icon
-import com.otus.mail.feature.inbox.presentation.screens.title
 import com.otus.mail.feature.inbox.presentation.sectionSummary
 import com.otus.mail.feature.inbox.presentation.summary
 import com.otus.mail.feature.inbox.presentation.title
