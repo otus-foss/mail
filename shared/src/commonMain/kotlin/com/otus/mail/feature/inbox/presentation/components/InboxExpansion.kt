@@ -24,6 +24,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
@@ -62,8 +63,11 @@ internal fun rememberInboxExpansion(
     val first = searchRoom?.coerceAtMost(full) ?: quickHeight(modules)
     val expansion = rememberPanelExpansion(listOf(first, full))
     FollowSearch(expansion, searchRoom != null, first, onLeaveSearch)
+    val focus = LocalFocusManager.current
     LaunchedEffect(expansion, filters) {
         snapshotFlow { expansion.position >= FILTERS_FROM }.distinctUntilChanged().collect { full ->
+            // Every filter takes the screen: the keyboard goes, so the page does not scroll to keep the field in view.
+            if (full) focus.clearFocus()
             when {
                 full && !filters.isOpen -> filters.open()
                 !full && filters.isOpen -> filters.close()
