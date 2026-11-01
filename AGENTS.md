@@ -194,7 +194,7 @@ feat(inbox): add avatars
 ```
 
 Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
-formatting, and `commit-msg` checks the message and removes AI attribution lines. No hook runs
+formatting, and `commit-msg` checks the message. No hook runs
 `checkAll`, and CI checks only pull requests, so run `./gradlew checkAll` yourself before a push
 that needs it, such as a direct push to `main`.
 
