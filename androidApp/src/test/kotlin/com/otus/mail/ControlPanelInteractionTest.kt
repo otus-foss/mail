@@ -2,6 +2,7 @@ package com.otus.mail
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -28,26 +29,26 @@ class ControlPanelInteractionTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun theSearchPillTightensWithTheScrollAndReversesExactly() {
+    fun thePanelCollapsesWithTheScrollAndReversesExactly() {
         compose.showControlInbox()
-        assertPillHeight(PanelTokens.searchPillHeight)
+        assertCollapsed(false)
         compose.holdScrolledBy(PanelTokens.collapseDistance)
-        assertPillHeight(PanelTokens.compactSearchPillHeight)
+        assertCollapsed(true)
         compose.onRoot().performTouchInput { up() }
         compose.waitForIdle()
-        assertPillHeight(PanelTokens.compactSearchPillHeight)
+        assertCollapsed(true)
         compose.onRoot().performTouchInput { swipeDown() }
         compose.waitForIdle()
-        assertPillHeight(PanelTokens.searchPillHeight)
+        assertCollapsed(false)
     }
 
     @Test
     fun aReleaseHalfwaySettlesOnTheNearerState() {
         compose.showControlInbox()
         slowDrag(PanelTokens.collapseDistance / 4)
-        assertPillHeight(PanelTokens.searchPillHeight)
+        assertCollapsed(false)
         slowDrag(PanelTokens.collapseDistance * 3 / 4)
-        assertPillHeight(PanelTokens.compactSearchPillHeight)
+        assertCollapsed(true)
     }
 
     @Test
@@ -82,10 +83,15 @@ class ControlPanelInteractionTest {
         compose.waitForIdle()
     }
 
-    private fun assertPillHeight(expected: Dp) {
-        val bounds = compose.onNodeWithContentDescription("Search Inbox").fetchSemanticsNode().boundsInRoot
-        val density = compose.activity.resources.displayMetrics.density
-        assertEquals(expected.value, bounds.height / density, HEIGHT_TOLERANCE)
+    /** Collapsed, the filter button sits inside the search pill rather than in the pill row below it. */
+    private fun assertCollapsed(expected: Boolean) {
+        val pill = compose.onNodeWithContentDescription("Search Inbox").fetchSemanticsNode().boundsInRoot
+        val inPill =
+            compose
+                .onAllNodesWithContentDescription("Open filters")
+                .fetchSemanticsNodes()
+                .any { pill.contains(it.boundsInRoot.center) }
+        assertEquals(expected, inPill)
     }
 
     private fun fieldLeft(): Float =
@@ -99,6 +105,5 @@ class ControlPanelInteractionTest {
 
         /** Slow enough to fling little, and quick enough past the slop not to count as a long press. */
         const val SLOW_DRAG_MILLIS = 600L
-        const val HEIGHT_TOLERANCE = 1f
     }
 }

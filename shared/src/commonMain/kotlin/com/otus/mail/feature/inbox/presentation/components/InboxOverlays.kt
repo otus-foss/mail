@@ -25,6 +25,13 @@ internal class InboxOverlays(
 
     /** Whether one of them, or [state]'s search surface, covers the list. */
     fun cover(state: InboxState): Boolean = filters.isOpen || accountsOpen || state.searchSurfaceOpen
+
+    /**
+     * Whether one of them covers the whole page, the control panel and action bar too: the account
+     * switcher, and the filters or search surface where they do not grow inside the panel.
+     */
+    fun coverPage(state: InboxState): Boolean =
+        accountsOpen || (!filtersInPanel && (filters.isOpen || state.searchSurfaceOpen))
 }
 
 @Composable
