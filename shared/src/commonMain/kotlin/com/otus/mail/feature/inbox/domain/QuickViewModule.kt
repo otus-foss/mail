@@ -31,10 +31,22 @@ enum class QuickViewModule(
 
         /** Values this version does not know are left out, and only the first [LIMIT] count. */
         fun decode(saved: String): List<QuickViewModule> =
-            saved
-                .split(",")
-                .mapNotNull { value -> entries.firstOrNull { it.storageValue == value } }
-                .distinct()
-                .take(LIMIT)
+            decodeModules(saved, entries, QuickViewModule::storageValue, LIMIT)
     }
 }
+
+/**
+ * The [entries] a saved list of modules names in order, such as `counts,people`: values this
+ * version does not know are left out, repeats count once, and only the first [limit] count.
+ */
+fun <T> decodeModules(
+    saved: String,
+    entries: List<T>,
+    storageValue: (T) -> String,
+    limit: Int,
+): List<T> =
+    saved
+        .split(",")
+        .mapNotNull { value -> entries.firstOrNull { storageValue(it) == value } }
+        .distinct()
+        .take(limit)

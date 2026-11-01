@@ -17,6 +17,7 @@ import com.otus.mail.feature.inbox.domain.MailBehaviorStore
 import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.QuickViewModule
+import com.otus.mail.feature.inbox.domain.ReadQuickModule
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.decodeAddresses
 import com.otus.mail.feature.inbox.domain.decodeRemoteImages
@@ -56,6 +57,7 @@ class KeyValueMailBehaviorStore(
                 inbox = decoded(INBOX, defaults.inbox, InboxContents::decode),
                 filters = decoded(FILTERS, defaults.filters, FilterLayout::decode),
                 quickView = decoded(QUICK_VIEW, defaults.quickView, QuickViewModule::decode),
+                readQuickView = decoded(READ_QUICK_VIEW, defaults.readQuickView, ReadQuickModule::decode),
                 list = decoded(LIST, defaults.list, MailListLayout::decode),
                 remoteImages = savedRemoteImages() ?: defaults.remoteImages,
                 allowedSenders = decodeAddresses(string(ALLOWED_SENDERS)),
@@ -88,6 +90,7 @@ class KeyValueMailBehaviorStore(
             put(INBOX, InboxContents.encode(behavior.inbox))
             put(FILTERS, FilterLayout.encode(behavior.filters))
             put(QUICK_VIEW, QuickViewModule.encode(behavior.quickView))
+            put(READ_QUICK_VIEW, ReadQuickModule.encode(behavior.readQuickView))
             put(LIST, MailListLayout.encode(behavior.list))
             put(REMOTE_IMAGES, behavior.remoteImages.storageValue)
             put(ALLOWED_SENDERS, encodeAddresses(behavior.allowedSenders))
@@ -112,6 +115,7 @@ class KeyValueMailBehaviorStore(
         const val MARK_READ_ON_OPEN = "mark_read_on_open"
         const val READ_LATER = "read_later"
         const val QUICK_VIEW = "quick_view_modules"
+        const val READ_QUICK_VIEW = "read_quick_view_modules"
         const val PILLS = "inbox_pills"
         const val SIDEBAR = "sidebar_layout"
         const val ACTION_BAR_MODE = "action_bar_mode"
