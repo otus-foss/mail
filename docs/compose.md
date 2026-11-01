@@ -109,7 +109,9 @@ an incorrect size. Settings › Privacy › **Photos you attach** decides whethe
 photos attach as `PickedFile.cleaned()`: without their metadata (`withoutImageMetadata` drops
 EXIF, with GPS position, capture time, and camera model, plus XMP, IPTC, comments, and trailing
 data, while pixels, color profiles, and a JPEG's orientation stay) and under a random name such as
-`photo-3f9a2c41.jpg`. **Ask each time**, the default, shows a sheet when photos are picked, with
+`photo-3f9a2c41.jpg`. A photo cut off part way, as by an interrupted write, loses its metadata
+too and ends where its data does. One too damaged to tell its metadata apart says "Couldn't
+upload" rather than going with it. **Ask each time**, the default, shows a sheet when photos are picked, with
 **Remove details** checked; closing it removes them too. **Always remove details** and **Keep
 details** attach without asking. Other files, including HEIC, attach unchanged. A file larger than this limit
 says "File is too large"; any other failure says "Couldn't upload", and tapping the chip

@@ -56,7 +56,8 @@ class PickedFile(
 
     /**
      * This photo without its metadata, see [withoutImageMetadata], under a random name that keeps
-     * only its extension, so recipients learn neither where, when, nor with what it was taken.
+     * only its extension, so recipients learn neither where, when, nor with what it was taken. A
+     * photo whose metadata cannot be told apart fails to read rather than going with it.
      */
     fun cleaned(): PickedFile {
         val extension =
@@ -66,7 +67,7 @@ class PickedFile(
                 .takeIf { it.length in 1..MAX_EXTENSION && it.all(Char::isLetterOrDigit) }
         val random = (1..NAME_DIGITS).joinToString("") { Random.nextInt(HEX).toString(HEX) }
         return PickedFile("photo-$random" + extension?.let { ".$it" }.orEmpty(), type, size) { maxBytes ->
-            withoutImageMetadata(readBytes(maxBytes))
+            withoutImageMetadata(readBytes(maxBytes)) ?: throw UploadException(UploadFailure.Failed)
         }
     }
 }
