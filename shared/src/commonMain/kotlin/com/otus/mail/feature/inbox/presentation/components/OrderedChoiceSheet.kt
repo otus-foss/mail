@@ -27,7 +27,8 @@ import com.otus.mail.feature.inbox.presentation.nestedByPath
  * Chooses an ordered list. The chosen values come first, in order: drag a handle to move one, or tap
  * it to take it out. Each group of the other [choices] follows, with nested folders indented under
  * their parents, and tapping one adds it to the end. Values in [selected] without a choice, such as
- * a folder that failed to load, stay saved after the shown ones. [keyOf] gives a value's key.
+ * a folder that failed to load, stay saved after the shown ones. [keyOf] gives a value's key. At
+ * most [limit] show: once that many are chosen, the others wait until one is taken out.
  */
 @Composable
 internal fun <T> OrderedChoiceSheet(
@@ -37,6 +38,7 @@ internal fun <T> OrderedChoiceSheet(
     keyOf: (T) -> String,
     onApply: (List<T>) -> Unit,
     onDismiss: () -> Unit,
+    limit: Int = Int.MAX_VALUE,
 ) {
     var draft by rememberSaveable { mutableStateOf(selected.map(keyOf)) }
     val shown = draft.mapNotNull { key -> choices.firstOrNull { it.key == key } }
@@ -65,7 +67,9 @@ internal fun <T> OrderedChoiceSheet(
             ) { choice ->
                 ShownChoice(choice) { draft = draft - choice.key }
             }
-            AvailableChoices(choices.filter { it.key !in draft }) { key -> draft = draft + key }
+            val full = shown.size >= limit
+            if (full && choices.size > shown.size) SheetCaption("Take one out to add another.", heading = false)
+            AvailableChoices(choices.filter { it.key !in draft }) { key -> if (!full) draft = draft + key }
         }
     }
 }

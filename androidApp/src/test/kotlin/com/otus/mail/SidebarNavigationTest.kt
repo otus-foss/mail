@@ -60,7 +60,7 @@ class SidebarNavigationTest {
     @Test
     fun choosingSettingsShowsItAndInboxKeepsItsSearch() {
         compose.openSearchResults()
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("invoice")
+        compose.searchField().performTextInput("invoice")
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
@@ -110,8 +110,8 @@ class SidebarNavigationTest {
 
     @Test
     fun openingTheSidebarFromSearchClosesTheKeyboard() {
-        compose.openSearchResults()
-        val search = compose.onNodeWithContentDescription("Search your mailbox…")
+        compose.openSearch()
+        val search = compose.searchField()
         search.assertIsFocused()
         swipeOpenAt(2f)
         compose.onNodeWithText("No accounts yet").assertIsDisplayed()

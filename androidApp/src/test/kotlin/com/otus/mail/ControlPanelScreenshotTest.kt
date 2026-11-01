@@ -52,7 +52,7 @@ class ControlPanelScreenshotTest {
     fun search() {
         compose.showControlInbox()
         compose.onNodeWithContentDescription("Search Inbox").performClick()
-        compose.onNodeWithContentDescription("Search your mailbox…").performTextInput("launch")
+        compose.searchField().performTextInput("launch")
         compose.waitForIdle()
         compose.panelShot("search")
     }

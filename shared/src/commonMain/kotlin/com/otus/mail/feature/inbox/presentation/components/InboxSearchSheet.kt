@@ -42,7 +42,8 @@ import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.listDateLabel
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
 
 /**
  * Search, grown out of the control panel [collapsedHeight] tall over the dimmed list: the field,
@@ -143,8 +144,8 @@ private fun NarrowChips(
     onChange: (InboxSearch) -> Unit,
 ) {
     val today = mailToday()
-    val monthStart = remember(today) { today.monthStart() }
-    val thisMonth = search.dateStart == monthStart && search.dateEnd == null
+    val since = remember(today) { today.minus(RECENT_DAYS, DateTimeUnit.DAY).toString() }
+    val recent = search.dateStart == since && search.dateEnd == null
     Column {
         SectionCaption("Narrow it")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(FilterTokens.chipGap)) {
@@ -155,9 +156,9 @@ private fun NarrowChips(
                 Symbol(Res.drawable.symbol_attach_file, size = FilterTokens.chipIconSize)
             }
             FilterChip(
-                "This month",
-                thisMonth,
-                { onChange(search.copy(dateStart = monthStart.takeIf { !thisMonth }, dateEnd = null)) },
+                "Past 30 days",
+                recent,
+                { onChange(search.copy(dateStart = since.takeIf { !recent }, dateEnd = null)) },
             ) { Symbol(Res.drawable.symbol_calendar_today, size = FilterTokens.chipIconSize) }
         }
     }
@@ -190,7 +191,7 @@ private fun Matches(
         }
     }
     if (hits.isEmpty()) {
-        PageNote("No matching messages")
+        PageNote("No matching mail")
         return
     }
     Column {
@@ -211,9 +212,11 @@ private fun Matches(
     )
 }
 
-private fun matchingPeople(
+/** The senders of [hits] whose name or address holds every term of [query], at most [limit] of them. */
+internal fun matchingPeople(
     hits: List<MailMessage>,
     query: String,
+    limit: Int = FIRST_PEOPLE,
 ): List<MailSender> =
     hits
         .map { it.sender }
@@ -224,9 +227,9 @@ private fun matchingPeople(
                 .split(
                     Regex("\\s+"),
                 ).all { sender.name.contains(it, true) || sender.address.contains(it, true) }
-        }.take(FIRST_PEOPLE)
+        }.take(limit)
 
-private fun LocalDate.monthStart(): String = LocalDate(year, month, 1).toString()
+private const val RECENT_DAYS = 30
 
 private const val FIRST_HITS = 3
 private const val FIRST_PEOPLE = 2

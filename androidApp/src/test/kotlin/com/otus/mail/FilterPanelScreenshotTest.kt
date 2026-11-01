@@ -94,7 +94,7 @@ class FilterPanelScreenshotTest {
     @Test
     fun noConversations() {
         compose.showFilterPanel(InboxFilters(quick = setOf(QuickFacet.Flagged)), total = 0)
-        compose.onNodeWithText("No conversations").assertIsNotEnabled()
+        compose.onNodeWithText("No mails").assertIsNotEnabled()
         compose.filterShot("filter_panel_no_conversations")
     }
 }

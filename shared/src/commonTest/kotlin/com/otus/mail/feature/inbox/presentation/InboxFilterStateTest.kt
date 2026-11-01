@@ -144,11 +144,11 @@ class InboxFilterStateTest {
 
     @Test
     fun showLabelsFollowTheCount() {
-        assertEquals("Show conversations", FilterCount.Counting.showLabel)
-        assertEquals("Show conversations", FilterCount.Unknown.showLabel)
-        assertEquals("No conversations", FilterCount.Known(0).showLabel)
-        assertEquals("Show 1 conversation", FilterCount.Known(1).showLabel)
-        assertEquals("Show 12 conversations", FilterCount.Known(12).showLabel)
+        assertEquals("Show mails", FilterCount.Counting.showLabel)
+        assertEquals("Show mails", FilterCount.Unknown.showLabel)
+        assertEquals("No mails", FilterCount.Known(0).showLabel)
+        assertEquals("Show 1 mail", FilterCount.Known(1).showLabel)
+        assertEquals("Show 12 mails", FilterCount.Known(12).showLabel)
     }
 
     @Test

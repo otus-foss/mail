@@ -130,10 +130,9 @@ class PanelHeaderAlignmentTest {
 
     private fun prompt(): SemanticsNodeInteraction = compose.onNodeWithText("Search Inbox", useUnmergedTree = true)
 
-    private fun placeholder(): SemanticsNodeInteraction =
-        compose.onNodeWithText("Search your mailbox…", useUnmergedTree = true)
+    private fun placeholder(): SemanticsNodeInteraction = compose.onNodeWithText("Search Inbox", useUnmergedTree = true)
 
-    private fun field(): SemanticsNodeInteraction = compose.onNodeWithContentDescription("Search your mailbox…")
+    private fun field(): SemanticsNodeInteraction = compose.searchField()
 
     private fun navigation(description: String): Rect =
         compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot
