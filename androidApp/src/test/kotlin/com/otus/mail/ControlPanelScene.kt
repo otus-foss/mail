@@ -7,6 +7,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -113,9 +115,18 @@ internal fun AndroidComposeTestRule<*, MainActivity>.holdScrolledBy(distance: Dp
 internal fun AndroidComposeTestRule<*, MainActivity>.panelShot(name: String) =
     onRoot().captureRoboImage("src/test/screenshots/control_panel/$name.png")
 
+/** Taps the search pill, which focuses the field, and on the inbox grows its search room. */
+internal fun ComposeTestRule.openSearch(prompt: String = "Search Inbox") {
+    onNodeWithContentDescription(prompt).performClick()
+    waitForIdle()
+}
+
 /** Opens the page's search by its [prompt] and shows all results, so the list and the search pills show. */
 internal fun ComposeTestRule.openSearchResults(prompt: String = "Search Inbox") {
     onNodeWithContentDescription(prompt).performClick()
-    onNodeWithContentDescription("Search your mailbox…").performImeAction()
+    searchField().performImeAction()
     waitForIdle()
 }
+
+/** The search field on screen: the inbox's pill itself, or the field a page without a search room opens. */
+internal fun ComposeTestRule.searchField(): SemanticsNodeInteraction = onNode(hasSetTextAction())

@@ -25,7 +25,8 @@ internal fun BackHandler(
 /**
  * The bar under the list: the selection's while rows are selected, none while searching, and the
  * list's otherwise. A minimized bar stays while searching, so it can sink under the keyboard
- * instead of vanishing. Without [actions] there is no bar.
+ * instead of vanishing. Without [actions] there is no bar. While the [header] panel shows every
+ * filter, its Show button takes the bar's place, and while it shows a typed search, the search's.
  */
 internal fun inboxBar(
     listed: ListedMail,
@@ -33,13 +34,32 @@ internal fun inboxBar(
     rows: InboxRows,
     actions: MessageActions?,
     onCompose: (ComposeRequest) -> Unit,
-    onFilters: () -> Unit,
+    header: InboxHeaderActions,
 ): (@Composable () -> Unit)? =
     when {
-        actions == null || (state.searching && !actions.behavior().minimizedBar) -> null
-        rows.selected.isNotEmpty() -> selectionBarContent(rows, actions)
-        else -> inboxBarContent(listed, state, actions, onFilters, onCompose)
+        header.showsFilters -> {
+            filterBarContent(header)
+        }
+
+        header.showsSearchBar(state) -> {
+            { SearchResultsBar(listed, state) { header.expansion?.let { !it.moving && it.position >= 1f } == true } }
+        }
+
+        actions == null || (state.searching && !actions.behavior().minimizedBar) -> {
+            null
+        }
+
+        rows.selected.isNotEmpty() -> {
+            selectionBarContent(rows, actions)
+        }
+
+        else -> {
+            inboxBarContent(listed, state, actions, header::openFilters, onCompose)
+        }
     }
+
+private fun filterBarContent(header: InboxHeaderActions): @Composable () -> Unit =
+    { InboxFilterBar(header.overlays.filters, header::showFiltered) }
 
 private fun selectionBarContent(
     rows: InboxRows,

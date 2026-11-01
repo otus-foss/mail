@@ -18,11 +18,20 @@ internal fun InboxLayers(
     overlays: InboxOverlays,
     rows: InboxRows,
 ) {
-    InboxFilterLayer(overlays.filters, listed.messages, dates.formatter, anchor, page.title)
+    if (!overlays.filtersInPanel) {
+        InboxFilterLayer(
+            overlays.filters,
+            listed.messages,
+            dates.formatter,
+            anchor,
+            page.title,
+        )
+    }
     page.scope?.let {
         InboxAccountSwitcher(it, page.title, overlays.accountsOpen, anchor.height()) { overlays.accountsOpen = false }
     }
-    InboxSearchLayer(state, listed, anchor.height(), dates) { rows.gestures.onOpen(it) }
+    // A page whose panel grows searches in it; others keep the search surface over the panel.
+    if (!overlays.filtersInPanel) InboxSearchLayer(state, listed, anchor.height(), dates) { rows.gestures.onOpen(it) }
     overlays.filter?.let { selected ->
         InboxFilterSheet(selected, listed.messages, state.search, page, dates.formatter, state::update) {
             overlays.filter = null
