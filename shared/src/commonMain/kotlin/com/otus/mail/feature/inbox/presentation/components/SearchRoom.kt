@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
@@ -108,7 +109,8 @@ private fun NarrowRow(room: SearchRoom) {
 
 /**
  * The search room's height: its row of choices and the grab handle until something is [typed], then
- * the window below the header row and above the keyboard, less a gap.
+ * the window below the header row and above the keyboard, or the action bar while the keyboard is
+ * down, less a gap.
  */
 @Composable
 internal fun searchRoomHeight(typed: Boolean): Dp {
@@ -122,8 +124,13 @@ internal fun searchRoomHeight(typed: Boolean): Dp {
                 .toDp()
         }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val keyboard = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
-    return window - top - PanelTokens.headerRowHeight - keyboard - ActionBarTokens.barInset
+    val keyboard = WindowInsets.ime.asPaddingValues().calculateBottomPadding() + ActionBarTokens.barInset
+    // With the keyboard down, the action bar's place stays clear for the search's Show button.
+    val bar =
+        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
+            ActionBarTokens.height +
+            ActionBarTokens.barInset * 2
+    return window - top - PanelTokens.headerRowHeight - maxOf(keyboard, bar)
 }
 
 /**

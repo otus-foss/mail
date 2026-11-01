@@ -3,7 +3,9 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,10 +13,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.mail.quickview.components.QuickFace
 import com.otus.designsystem.mail.quickview.components.QuickFaceLook
 import com.otus.designsystem.mail.quickview.components.ScrollingFaces
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_search
+import com.otus.designsystem.shared.actionbar.components.ActionBar
+import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.rows.components.LocalEntriesOnRaised
 import com.otus.designsystem.shared.rows.elements.SectionCaption
@@ -26,7 +33,10 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.looksLikeAddress
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.feature.inbox.presentation.FilterCount
+import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.conversationRows
+import com.otus.mail.feature.inbox.presentation.showLabel
 
 /**
  * What a typed search finds: the people whose name or address matches in a row of faces, which
@@ -107,6 +117,28 @@ private fun SearchMail(
             }
         }
     }
+}
+
+/**
+ * With the keyboard down, the bar under a typed search: Show and how many of the [listed] mail
+ * match, which puts them in the list.
+ */
+@Composable
+internal fun SearchResultsBar(
+    listed: ListedMail,
+    state: InboxState,
+) {
+    if (WindowInsets.ime.getBottom(LocalDensity.current) > 0) return
+    val count =
+        remember(listed, state.matching) { searchMessages(listed.messages, state.matching, listed.filters).size }
+    ActionBar(
+        BarAction(
+            FilterCount.Known(count.toLong()).showLabel,
+            Res.drawable.symbol_search,
+            enabled = count > 0,
+            onClick = state::showResults,
+        ),
+    )
 }
 
 private const val EMPTY_KEY = "empty"
