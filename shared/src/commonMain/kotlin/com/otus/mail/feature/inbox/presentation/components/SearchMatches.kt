@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -120,15 +121,16 @@ private fun SearchMail(
 }
 
 /**
- * With the keyboard down, the bar under a typed search: Show and how many of the [listed] mail
- * match, which puts them in the list.
+ * Unless the keyboard is up, the bar under a typed search: Show and how many of the [listed] mail
+ * match, which puts them in the list. It comes as soon as the keyboard starts to close, riding on
+ * its edge, so it is in place the moment the keyboard is gone.
  */
 @Composable
 internal fun SearchResultsBar(
     listed: ListedMail,
     state: InboxState,
 ) {
-    if (WindowInsets.ime.getBottom(LocalDensity.current) > 0) return
+    if (keyboardHolds()) return
     val count =
         remember(listed, state.matching) { searchMessages(listed.messages, state.matching, listed.filters).size }
     ActionBar(
@@ -139,6 +141,16 @@ internal fun SearchResultsBar(
             onClick = state::showResults,
         ),
     )
+}
+
+/** Whether the keyboard is up or rising, rather than down or closing. */
+@Composable
+private fun keyboardHolds(): Boolean {
+    val keyboard = WindowInsets.ime.getBottom(LocalDensity.current)
+    val last = remember { IntArray(1) }
+    val holds = keyboard > 0 && keyboard >= last[0]
+    SideEffect { last[0] = keyboard }
+    return holds
 }
 
 private const val EMPTY_KEY = "empty"
