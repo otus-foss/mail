@@ -44,7 +44,7 @@ internal fun mailSettingsIndex(
             Res.drawable.symbol_alternate_email,
             summary = accountsSummary(states.accounts.accounts.size),
         )
-        states.notifications?.let { notifications(it, open) }
+        states.notifications?.let { notifications(it, states.accounts.accounts.isNotEmpty(), open) }
         appearance(settings, behavior, open)
         page(
             "Mail behavior",
@@ -103,9 +103,10 @@ private fun SettingsIndexScope.appearance(
     }
 }
 
-/** The Notifications page, which shows only where pushes are available. */
+/** The Notifications page, which shows only where pushes are available. [hasAccounts] gates its overrides. */
 private fun SettingsIndexScope.notifications(
     state: NotificationSettingsState,
+    hasAccounts: Boolean,
     open: (MailPage) -> (String?) -> Unit,
 ) {
     val summary =
@@ -113,7 +114,10 @@ private fun SettingsIndexScope.notifications(
             ?: if (state.periodicChecks) "New mail every 15 minutes" else "New-mail alerts off"
     page("Notifications", open(MailPage.Notifications), Res.drawable.symbol_notifications, summary = summary) {
         section("New mail") { setting("Instant delivery", state.deliveryLabel) }
-        section("Previews") { page("Accounts and addresses", open(MailPage.NotificationOverrides)) }
+        // The page shows previews only where they can be saved, and their overrides only with accounts.
+        if (state.previews != null && hasAccounts) {
+            section("Previews") { page("Accounts and addresses", open(MailPage.NotificationOverrides)) }
+        }
     }
 }
 

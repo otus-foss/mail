@@ -9,9 +9,13 @@ import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_image
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_mark_email_read
+import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_menu
+import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_photo_camera
+import com.otus.designsystem.resources.symbol_public
 import com.otus.designsystem.resources.symbol_schedule_send
+import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.resources.symbol_view_agenda
 import com.otus.designsystem.resources.symbol_visibility_off
@@ -77,9 +81,10 @@ private fun SettingsIndexScope.sidebarIndex(
 /** Mirrors MailListSettingsScreen. */
 private fun SettingsIndexScope.mailListIndex(list: MailListLayout) {
     section("Rows") {
-        setting("Order", list.order.label, ListOrder.entries.map { it.label })
+        // Order and Preview show only while the sender does, as on the page.
+        if (list.showSender) setting("Order", list.order.label, ListOrder.entries.map { it.label })
         toggle("Show sender", list.showSender)
-        setting("Preview", list.preview.label, PreviewLines.entries.map { it.label })
+        if (list.showSender) setting("Preview", list.preview.label, PreviewLines.entries.map { it.label })
         toggle("Folder icons", list.folderIcons)
     }
     section("Dates") {
@@ -103,8 +108,12 @@ fun SettingsIndexScope.mailBehaviorIndex(
             shownCount(InboxPills(behavior.pills, folderPills).shown.size),
             icon = Res.drawable.symbol_filter_list,
         )
-        setting("Filter panel", shownCount(behavior.filters.sections.size), icon = Res.drawable.symbol_filter_list)
-        setting("Quick filters", shownCount(behavior.filters.quick.size), icon = Res.drawable.symbol_filter_list)
+        setting("Filter panel", shownCount(behavior.filters.sections.size), icon = Res.drawable.symbol_tune)
+        setting(
+            "Quick filters",
+            shownCount(behavior.filters.quick.size),
+            icon = Res.drawable.symbol_mark_email_unread,
+        )
         toggle("Read later", behavior.readLater, Res.drawable.symbol_bookmark)
     }
     section("Actions") {
@@ -159,9 +168,9 @@ fun SettingsIndexScope.privacyIndex(
         )
     }
     section("Avatars") {
-        toggle("Website icons", behavior.websiteIcons)
-        setting("Icons from", behavior.iconSource.title)
-        toggle("Photos from all accounts", behavior.allAccountPhotos)
+        toggle("Website icons", behavior.websiteIcons, Res.drawable.symbol_person)
+        if (behavior.websiteIcons) setting("Icons from", behavior.iconSource.title, icon = Res.drawable.symbol_public)
+        toggle("Photos from all accounts", behavior.allAccountPhotos, Res.drawable.symbol_person)
     }
     section("This device") {
         if (device.screen) toggle("Screen security", behavior.screenSecurity, Res.drawable.symbol_visibility_off)
