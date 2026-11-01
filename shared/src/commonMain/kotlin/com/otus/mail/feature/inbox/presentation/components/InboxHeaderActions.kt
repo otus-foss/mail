@@ -32,6 +32,9 @@ internal class InboxHeaderActions(
     /** Whether an overlay or the grown panel covers the list. */
     fun covers(state: InboxState): Boolean = overlays.cover(state) || expansion?.expanded == true
 
+    /** Whether the panel has grown to every filter, whose own Show button stands in for the action bar. */
+    val showsFilters: Boolean get() = overlays.filtersInPanel && overlays.filters.isOpen
+
     /** Every filter: grown inside the panel when it can grow, else the filter panel's own sheet. */
     fun openFilters() {
         expansion?.expandTo(Int.MAX_VALUE) ?: overlays.filters.open()
