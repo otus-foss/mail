@@ -153,7 +153,16 @@ private fun inboxPanelActions(
 ): InboxPanelActions {
     val focus = LocalFocusManager.current
     return InboxPanelActions(
-        onChange = state::update,
+        onChange = { search ->
+            state.update(search)
+            // A page whose panel grows shows a query's results in the list at once, and its room again once cleared.
+            if (actions.expansion != null) {
+                when {
+                    search.query.isNotBlank() && state.searchSurfaceOpen -> state.showResults()
+                    search.query.isBlank() && state.resultsShown -> state.editSearch()
+                }
+            }
+        },
         onSearchingChange = { searching -> if (searching) state.startSearch() else actions.closeSearch() },
         onFilter = {
             focus.clearFocus()
@@ -169,8 +178,8 @@ private fun inboxPanelActions(
                     focus.clearFocus()
                     if (state.searchSurfaceOpen) state.showResults()
                 },
-                // Over the results, a page whose panel grows opens the search room again.
-                onFocus = { if (actions.expansion != null) state.editSearch() },
+                // Over results with nothing typed, a page whose panel grows opens the search room again.
+                onFocus = { if (actions.expansion != null && state.search.query.isBlank()) state.editSearch() },
             ),
         onFolder = state::showFolder,
         opens =

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -59,10 +58,9 @@ internal fun rememberInboxExpansion(
     onLeaveSearch: () -> Unit,
 ): PanelExpansion? {
     val modules = quick?.modules?.size ?: 0
-    val full = filtersHeight()
-    val first = if (searching) minOf(searchHeight(), full) else quickHeight(modules)
-    val expansion = rememberPanelExpansion(listOf(first, full))
-    FollowSearch(expansion, searching, first, onLeaveSearch)
+    val first = if (searching) searchRoomHeight() else quickHeight(modules)
+    val expansion = rememberPanelExpansion(listOf(first, filtersHeight()))
+    FollowSearch(expansion, searching, onLeaveSearch)
     LaunchedEffect(expansion, filters) {
         snapshotFlow { expansion.position >= FILTERS_FROM }.distinctUntilChanged().collect { full ->
             when {
@@ -187,19 +185,6 @@ private fun filtersHeight(): Dp {
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val bar = ActionBarTokens.height + ActionBarTokens.barInset * 2
     return window - top - PanelTokens.headerRowHeight - bottom - bar
-}
-
-/** The search room's height: the window below the header row and above the keyboard, less a gap. */
-@Composable
-private fun searchHeight(): Dp {
-    val window =
-        with(LocalDensity.current) {
-            LocalWindowInfo.current.containerSize.height
-                .toDp()
-        }
-    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val keyboard = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
-    return window - top - PanelTokens.headerRowHeight - keyboard - ActionBarTokens.barInset
 }
 
 /** The quick view's height with [modules] picked: the modules, Jump to, and the grab handle. */
