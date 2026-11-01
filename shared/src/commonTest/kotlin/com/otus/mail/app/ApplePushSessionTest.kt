@@ -6,6 +6,7 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.feature.notifications.data.ApplePushRoute
 import com.otus.mail.feature.notifications.data.AppleRegistration
+import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -15,6 +16,7 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ApplePushSessionTest {
     private fun savedRoute() =
@@ -57,4 +59,31 @@ class ApplePushSessionTest {
             assertFalse(host.removed)
             http.close()
         }
+
+    @Test
+    fun aSettledDeviceSendsTheBridgeNothingUntilTheLoginsChange() =
+        runTest {
+            val host = TestApplePlatform()
+            host.saved["enabled"] = "true"
+            val paths = mutableListOf<String>()
+            val http = fakeBridge(paths)
+            val logins = adaLogins()
+            val jmap = fakePushServer()
+            val session =
+                ApplePushSession(host, "https://push.example", http) { MailServices(logins, createClient = { jmap }) }
+            assertTrue(session.syncSafely())
+            assertEquals(PushDeliveryStatus.Active, session.results["ada"])
+            val settled = paths.size
+            // An hour in the foreground, checked every 15 seconds.
+            repeat(FOREGROUND_CHECKS) { assertTrue(session.checkSafely()) }
+            assertEquals(emptyList<String>(), paths.drop(settled))
+            logins.remove("ada")
+            session.checkSafely()
+            assertTrue("DELETE /v1/routes/$FAKE_ROUTE" in paths.drop(settled), "A removed login is revoked")
+            http.close()
+        }
+
+    private companion object {
+        const val FOREGROUND_CHECKS = 240
+    }
 }

@@ -102,9 +102,11 @@ Normal mail credentials keep their existing storage and names.
 
 ## Lifecycle and limits
 
-Mail registers the device token again on foreground activation and replaces routes after a token
-change. It polls pending verification while foregrounded and requests background refresh roughly
-twice daily for renewal. iOS decides whether and when background refresh runs; this is not a
+Mail registers the device token again on foreground activation, renews its routes, and replaces
+routes after a token change. While foregrounded it polls the bridge every 15 seconds only while an
+account waits for verification or the last attempt failed; once every account is settled it only
+watches for added or removed accounts. It requests background refresh roughly twice daily for
+renewal. iOS decides whether and when background refresh runs; this is not a
 15-minute polling promise. Open Mail regularly. If refresh is denied for longer than the server's
 subscription lifetime, delivery stops until Mail opens and renews or replaces the subscription.
 

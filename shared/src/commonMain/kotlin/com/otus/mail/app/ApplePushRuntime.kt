@@ -47,11 +47,13 @@ open class ApplePushRuntime(
     fun resume() {
         if (session.enabled) host.requestRegistration()
         if (watching?.isActive == true) return
+        // Each foreground activation syncs once; then the bridge is polled only while a login waits.
         watching =
             scope.launch {
+                session.syncSafely()
                 while (true) {
-                    session.syncSafely()
                     delay(REFRESH_INTERVAL)
+                    session.checkSafely()
                 }
             }
     }

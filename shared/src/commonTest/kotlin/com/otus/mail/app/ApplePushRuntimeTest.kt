@@ -1,17 +1,7 @@
 package com.otus.mail.app
 
-import com.otus.jmap.JmapClient
-import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.jmap.login.JmapLogin
 import com.otus.mail.feature.notifications.data.ApplePushPlatform
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
-import com.otus.mail.testing.stalwartLike
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.TextContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -32,76 +22,9 @@ class ApplePushRuntimeTest {
             try {
                 val host = TestApplePlatform()
                 val paths = mutableListOf<String>()
-                val route = "r".repeat(43)
-                val message = "m".repeat(43)
-                var acknowledged = false
-                val http =
-                    HttpClient(
-                        MockEngine { request ->
-                            val path = request.url.encodedPath
-                            paths += "${request.method.value} $path"
-                            when {
-                                request.method == HttpMethod.Post -> {
-                                    respond("""{"id":"$route","secret":"secret"}""", HttpStatusCode.Created)
-                                }
-
-                                path == "/v1/routes/$route/messages" -> {
-                                    respond(if (acknowledged) "[]" else """["$message"]""")
-                                }
-
-                                path == "/v1/messages/$message" -> {
-                                    respond("ciphertext")
-                                }
-
-                                path.endsWith("/messages/$message") -> {
-                                    acknowledged = true
-                                    respond("", HttpStatusCode.NoContent)
-                                }
-
-                                request.method == HttpMethod.Patch -> {
-                                    val expected = if (acknowledged) "true" else "false"
-                                    assertEquals("{\"active\":$expected}", (request.body as TextContent).text)
-                                    respond("", HttpStatusCode.NoContent)
-                                }
-
-                                else -> {
-                                    respond("", HttpStatusCode.NoContent)
-                                }
-                            }
-                        },
-                    ) { followRedirects = false }
-                val logins =
-                    InMemoryLoginStore().apply {
-                        save(
-                            JmapLogin("ada", "https://mail.example.org/jmap/session", "ada@example.org", "Ada"),
-                            "secret",
-                        )
-                    }
-                val jmap =
-                    JmapClient(
-                        stalwartLike(api = { body ->
-                            when {
-                                "PushSubscription/get" in body -> {
-                                    """{"methodResponses":[["PushSubscription/get",{"list":[]},"c0"]]}"""
-                                }
-
-                                "\"create\"" in body -> {
-                                    """{"methodResponses":[["PushSubscription/set",
-                        {"created":{"push":{"id":"ps1","expires":"2030-01-01T00:00:00Z"}}},"c0"]]}"""
-                                }
-
-                                "\"destroy\"" in body -> {
-                                    """{"methodResponses":[["PushSubscription/set",
-                        {"destroyed":["ps1"]},"c0"]]}"""
-                                }
-
-                                else -> {
-                                    """{"methodResponses":[["PushSubscription/set",
-                        {"updated":{"ps1":null}},"c0"]]}"""
-                                }
-                            }
-                        }),
-                    )
+                val http = fakeBridge(paths)
+                val logins = adaLogins()
+                val jmap = fakePushServer()
                 val runtime =
                     ApplePushRuntime(host, "https://push.example", { push ->
                         MailServices(logins, instantPush = push, createClient = { jmap })
@@ -111,7 +34,7 @@ class ApplePushRuntimeTest {
                 assertFalse(runtime.periodicChecks)
                 assertEquals(0, host.shown)
                 runtime.forget("ada")
-                assertTrue("DELETE /v1/routes/$route" in paths)
+                assertTrue("DELETE /v1/routes/$FAKE_ROUTE" in paths)
                 assertTrue(host.removed)
                 assertEquals(emptyMap(), runtime.statuses())
                 http.close()
