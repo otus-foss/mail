@@ -15,9 +15,14 @@ motion code and adopts `Motion` when it moves to Meta's design system.
 | Outgoing text | `Fast`, 160 ms | Exit |
 | Context panel modes, inbox search mode, row selection, swipe flash, list item changes | `Normal`, 240 ms | Standard |
 | Sheet and incoming text | `Normal`, 240 ms | Enter |
+| Read view page turn, swiped or picked in the thread list | `Normal`, 240 ms | Enter |
 | Sheet and sidebar closing | `Normal`, 240 ms | Exit |
 | Sidebar opening | `Relaxed`, 300 ms | Enter |
 | Swiped row settling | `Relaxed`, 300 ms | Standard |
+
+`tools/check_architecture.py` rejects `tween(`, `spring(`, and `CubicBezierEasing(` in Mail's
+production Kotlin, and `animateScrollToPage`, `animateScrollBy`, and `animate*AsState` calls that
+leave their spec on the Compose default. `Motion.tween` and `motionTween` are allowed.
 
 The [sidebar](sidebar.md) uses one progress value for its slide and scrim, so reversing mid-way
 stays continuous.

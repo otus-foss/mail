@@ -33,6 +33,9 @@ import com.otus.designsystem.shared.overlays.components.LocalSheetPull
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.motion.MotionCurve
+import com.otus.designsystem.theme.motion.MotionSpeed
+import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.withContent
@@ -112,6 +115,8 @@ fun MessageScreen(
     val today = remember { read.display.today() }
     var barPadding by remember { mutableStateOf(PaddingValues()) }
     val scope = rememberCoroutineScope()
+    // A tapped message's page arrives like a swiped one, on the design system's easing.
+    val turn = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
     val folds = rememberStripFolds(state)
     val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
@@ -125,7 +130,7 @@ fun MessageScreen(
         // Over the bar too, which dims with the page while the grown list sits above it.
         if (!read.display.zen()) {
             ReadThreadOverlay(state, index, source, context.rowLook.own, barPadding, folds.thread) {
-                scope.launch { pager.animateScrollToPage(it) }
+                scope.launch { pager.animateScrollToPage(it, animationSpec = turn) }
             }
         }
     }
