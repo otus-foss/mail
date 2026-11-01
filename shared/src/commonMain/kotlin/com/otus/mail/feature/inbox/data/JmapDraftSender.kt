@@ -29,6 +29,7 @@ import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
 import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
@@ -174,14 +175,7 @@ class JmapDraftSender(
         mailCallOr(0L) {
             mailAccount(connections, logins, accountId)
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
-                ?.let { account ->
-                    account.session.accounts[account.id]
-                        ?.capabilityObjects
-                        ?.get(JmapCapability.SUBMISSION)
-                        ?.get("maxDelayedSend")
-                        ?.jsonPrimitive
-                        ?.longOrNull
-                } ?: 0L
+                ?.delayedSendSeconds() ?: 0L
         }
 
     override suspend fun cancel(message: SentMessage): Result<Unit> =
@@ -275,3 +269,17 @@ private suspend fun MailAccount.refused(
     bestEffort { connection.call(SetMethod(EmailType, id, destroy = listOf(copy))) }
     failSend(failure)
 }
+
+/**
+ * How far ahead this account's server holds mail: its `maxDelayedSend`, but only while its
+ * `submissionExtensions` offer FUTURERELEASE (RFC 8621, section 1.3.2), whose HOLDUNTIL parameter
+ * (RFC 4865) a held or scheduled send puts in its envelope.
+ */
+private fun MailAccount.delayedSendSeconds(): Long? {
+    val submission = session.accounts[id]?.capabilityObjects?.get(JmapCapability.SUBMISSION) ?: return null
+    val extensions = (submission["submissionExtensions"] as? JsonObject)?.keys.orEmpty()
+    val holds = extensions.any { it.equals(FUTURE_RELEASE, ignoreCase = true) }
+    return submission["maxDelayedSend"]?.jsonPrimitive?.longOrNull?.takeIf { holds }
+}
+
+private const val FUTURE_RELEASE = "FUTURERELEASE"
