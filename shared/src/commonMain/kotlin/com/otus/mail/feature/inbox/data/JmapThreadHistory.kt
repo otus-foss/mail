@@ -34,12 +34,15 @@ class JmapThreadHistory(
                 }.orEmpty()
         }
 
-    /** The messages received no later than [emailId], newest first, without drafts. */
+    /**
+     * The messages received no later than [emailId], newest first, without drafts. Times compare as
+     * instants, since a server may write some with fractions of a second and others without.
+     */
     private fun List<EmailObject>.upTo(emailId: String): List<EmailObject> {
-        val cutoff = firstOrNull { it.id == emailId }?.receivedAt ?: return emptyList()
-        return filter {
-            it.keywords[DRAFT_KEYWORD] != true && it.receivedAt <= cutoff
-        }.sortedByDescending { it.receivedAt }
+        val received = associate { it.id to Instant.parse(it.receivedAt) }
+        val cutoff = received[emailId] ?: return emptyList()
+        return filter { it.keywords[DRAFT_KEYWORD] != true && received.getValue(it.id) <= cutoff }
+            .sortedByDescending { received.getValue(it.id) }
     }
 
     private fun EmailObject.threadMessage(): ThreadMessage {
