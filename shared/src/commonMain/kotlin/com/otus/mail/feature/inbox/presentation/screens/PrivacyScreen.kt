@@ -114,7 +114,7 @@ private fun DeviceSection(
     }
 }
 
-private val RemoteImages.title: String
+internal val RemoteImages.title: String
     get() =
         when (this) {
             RemoteImages.Always -> "Always"
@@ -130,7 +130,7 @@ private val RemoteImages.description: String
             RemoteImages.Never -> "Always ask"
         }
 
-private val PhotoCleaning.title: String
+internal val PhotoCleaning.title: String
     get() =
         when (this) {
             PhotoCleaning.Ask -> "Ask each time"

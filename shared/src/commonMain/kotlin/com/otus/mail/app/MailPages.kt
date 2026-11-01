@@ -23,7 +23,7 @@ internal fun MailPageContent(
     settings: SharedSettings,
     navigation: MailNavigation,
 ) {
-    val back = { navigation.go(page.parent ?: page) }
+    val back = { navigation.back(page) }
     when (page) {
         MailPage.Inbox -> {
             InboxPage(states, dateFormatter, navigation)

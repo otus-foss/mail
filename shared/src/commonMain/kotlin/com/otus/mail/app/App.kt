@@ -22,6 +22,7 @@ import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.designsystem.shared.pages.components.BottomClearance
 import com.otus.designsystem.shared.pages.components.LocalBottomClearance
 import com.otus.designsystem.shared.pages.components.SlidingPages
+import com.otus.designsystem.shared.settings.components.LocalFoundSetting
 import com.otus.designsystem.shared.sidebar.components.SidebarSwipeArea
 import com.otus.designsystem.shared.sidebar.components.rememberSidebarState
 import com.otus.designsystem.theme.OtusTheme
@@ -80,7 +81,8 @@ fun App(
         remember(dateFormatState, themeState, animationState, appIconState) {
             SharedSettings(dateFormatState, themeState, animationState, appIconState)
         }
-    val navigation = remember { MailNavigation(go = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
+    val navigation =
+        remember { MailNavigation(show = { page = it }, openSidebar = { scope.launch { sidebar.open() } }) }
     // Messages an earlier run could not hand to the server go now, or wait in a toast for the user.
     LaunchedEffect(states) { states.outgoing.resume { navigation.go(MailPage.Compose(it)) } }
     OtusTheme(themeState.palette) {
@@ -96,7 +98,10 @@ fun App(
                 SidebarSwipeArea(sidebar, enabled = page.parent == null) {
                     SlidingPages(page, depth = MailPage::depth) { shown ->
                         pages.SaveableStateProvider(shown.toString()) {
-                            MailPageContent(shown, states, dateFormatter, settings, navigation)
+                            val found = navigation.found?.takeIf { it.page == shown }?.setting
+                            CompositionLocalProvider(LocalFoundSetting provides found) {
+                                MailPageContent(shown, states, dateFormatter, settings, navigation)
+                            }
                         }
                     }
                 }
@@ -109,7 +114,7 @@ fun App(
                     footer = { build?.let { UpdatingFooter(it, nightly, states.moveToasts.toasts) } },
                     onChooseScope = states.chooseScope,
                     onSelect = {
-                        page = it
+                        navigation.go(it)
                         scope.launch { sidebar.close() }
                     },
                 )
