@@ -4,9 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -21,7 +25,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.mail.quickview.components.QuickJump
 import com.otus.designsystem.shared.controls.elements.Chip
@@ -31,6 +34,7 @@ import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
+import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -50,14 +54,8 @@ internal fun rememberInboxExpansion(
     quick: QuickViewContext?,
     filters: InboxFilterState,
 ): PanelExpansion? {
-    val density = LocalDensity.current
-    val window =
-        with(density) {
-            LocalWindowInfo.current.containerSize.height
-                .toDp()
-        }
     val modules = quick?.modules?.size ?: 0
-    val expansion = rememberPanelExpansion(listOf(quickHeight(modules), window - FILTERS_CLEARANCE))
+    val expansion = rememberPanelExpansion(listOf(quickHeight(modules), filtersHeight()))
     LaunchedEffect(expansion, filters) {
         snapshotFlow { expansion.position >= FILTERS_FROM }.distinctUntilChanged().collect { full ->
             when {
@@ -149,6 +147,23 @@ private fun FiltersContent(
     }
 }
 
+/**
+ * The most the panel grows for every filter: the window below the header row, less the Show button
+ * in the action bar's place and the gap above it, so the filters scroll instead of running under it.
+ */
+@Composable
+private fun filtersHeight(): Dp {
+    val window =
+        with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height
+                .toDp()
+        }
+    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val bar = ActionBarTokens.height + ActionBarTokens.barInset * 2
+    return window - top - PanelTokens.headerRowHeight - bottom - bar
+}
+
 /** The quick view's height with [modules] picked: the modules, Jump to, and the grab handle. */
 private fun quickHeight(modules: Int): Dp =
     QuickViewTokens.moduleGap +
@@ -175,6 +190,3 @@ private const val QUICK_FROM = 0.3f
 
 /** Where the filters take over from the quick view, halfway to their stop. */
 private const val FILTERS_FROM = 1.5f
-
-/** Room the full panel leaves below it, for the scrim and the screen's bottom. */
-private val FILTERS_CLEARANCE = 200.dp
