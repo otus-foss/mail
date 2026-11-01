@@ -17,12 +17,8 @@ class InboxPanelActions(
     val opens: PanelOpens,
 )
 
-/**
- * What the header's ends open: the chevron the sidebar, and the account stack the account switcher.
- * Pulling the panel down opens [onOpenQuickView], when the page has one.
- */
+/** What the header's ends open: the chevron the sidebar, and the account stack the account switcher. */
 class PanelOpens(
     val onOpenNavigation: () -> Unit,
     val onOpenAccounts: () -> Unit,
-    val onOpenQuickView: (() -> Unit)? = null,
 )

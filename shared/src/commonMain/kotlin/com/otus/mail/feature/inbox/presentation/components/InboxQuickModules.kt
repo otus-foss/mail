@@ -37,7 +37,7 @@ internal fun QuickCountsModule(sources: QuickSources) {
             QuickFacet.Flagged,
             if (sources.page.filterOptions.readLater) QuickFacet.ReadLater else QuickFacet.Attachments,
         )
-    val filters = sources.overlays.filters
+    val filters = sources.filters
     val counts by produceState(emptyMap<QuickFacet, Long>(), filters, sources.page.scope?.chosen) {
         value = facets.associateWith { filters.countOf(InboxFilters(quick = setOf(it))) ?: 0L }
     }

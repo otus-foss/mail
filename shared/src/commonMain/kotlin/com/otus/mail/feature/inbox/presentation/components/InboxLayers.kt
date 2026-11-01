@@ -18,11 +18,18 @@ internal fun InboxLayers(
     overlays: InboxOverlays,
     rows: InboxRows,
 ) {
-    InboxFilterLayer(overlays.filters, listed.messages, dates.formatter, anchor, page.title)
+    if (!overlays.filtersInPanel) {
+        InboxFilterLayer(
+            overlays.filters,
+            listed.messages,
+            dates.formatter,
+            anchor,
+            page.title,
+        )
+    }
     page.scope?.let {
         InboxAccountSwitcher(it, page.title, overlays.accountsOpen, anchor.height()) { overlays.accountsOpen = false }
     }
-    InboxQuickView(overlays, page, listed.messages, anchor.height(), { rows.gestures.onOpen(it) }, state::startSearch)
     InboxSearchLayer(state, listed, anchor.height(), dates) { rows.gestures.onOpen(it) }
     overlays.filter?.let { selected ->
         InboxFilterSheet(selected, listed.messages, state.search, page, dates.formatter, state::update) {
