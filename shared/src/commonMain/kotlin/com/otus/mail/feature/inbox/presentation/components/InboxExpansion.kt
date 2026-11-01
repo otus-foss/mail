@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,7 +27,6 @@ import com.otus.designsystem.mail.quickview.components.QuickJump
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FilterResetAction
-import com.otus.designsystem.shared.filters.components.FloatingFooter
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
@@ -78,8 +79,8 @@ internal class ExpandedInbox(
 
 /**
  * The inbox panel's grown room: the quick view's modules and Jump to around the first stop, and
- * the filter sections with their Show button toward the last, each fading with how far the panel
- * is open.
+ * the filter sections toward the last, each fading with how far the panel is open. The action
+ * bar's place holds the filters' Show button meanwhile.
  */
 @Composable
 internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
@@ -89,7 +90,7 @@ internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
         val filters = inbox.sources.filters
         if (filters.isOpen) {
             Box(Modifier.fillMaxSize().graphicsLayer { alpha = filtersAlpha(position()) }) {
-                FiltersContent(filters, inbox) { inbox.expansion.collapse() }
+                FiltersContent(filters, inbox)
             }
         }
     }
@@ -126,7 +127,6 @@ private fun QuickViewContent(inbox: ExpandedInbox) {
 private fun FiltersContent(
     state: InboxFilterState,
     inbox: ExpandedInbox,
-    onDone: () -> Unit,
 ) {
     // The last draft stays on screen while the panel closes.
     var shown by remember { mutableStateOf(InboxFilters()) }
@@ -137,24 +137,14 @@ private fun FiltersContent(
         Row(Modifier.fillMaxWidth().padding(end = PanelTokens.panelInset), horizontalArrangement = Arrangement.End) {
             FilterResetAction(state::reset, enabled = !shown.isDefault)
         }
-        FloatingFooter(
-            footer = {
-                InboxFilterFooter(state) {
-                    onDone()
-                    state.show()
-                }
-            },
-            Modifier.weight(1f),
-        ) {
-            Column(Modifier.padding(horizontal = SheetTokens.inset)) {
-                FilterSections(
-                    shown,
-                    options,
-                    inbox.dateFormatter,
-                    state::edit,
-                    PeopleSearches(state.senders, state.recipients, people),
-                )
-            }
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = SheetTokens.inset)) {
+            FilterSections(
+                shown,
+                options,
+                inbox.dateFormatter,
+                state::edit,
+                PeopleSearches(state.senders, state.recipients, people),
+            )
         }
     }
 }

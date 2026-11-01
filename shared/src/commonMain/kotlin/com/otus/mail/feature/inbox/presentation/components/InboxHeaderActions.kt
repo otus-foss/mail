@@ -39,6 +39,12 @@ internal class InboxHeaderActions(
     fun openFilters() {
         expansion?.expandTo(Int.MAX_VALUE) ?: overlays.filters.open()
     }
+
+    /** Shows the mail the panel's filters pick and brings the panel back to its usual height. */
+    fun showFiltered() {
+        expansion?.collapse()
+        overlays.filters.show()
+    }
 }
 
 /**
