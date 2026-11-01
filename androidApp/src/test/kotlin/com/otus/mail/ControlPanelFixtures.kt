@@ -10,15 +10,12 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
 import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
-import kotlinx.datetime.todayIn
-import kotlin.time.Clock
 
 /** The control panel design's inbox: enough mail to scroll, and two accounts for the stack. */
 internal object ControlPanelFixtures {
-    /** Mail dates count back from the day the test runs, so rows read the same any day. */
-    private val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    /** Mail dates count back from [PinnedToday], which the scenes give the inbox too. */
+    private val today = PinnedToday
 
     val messages: List<MailMessage> =
         listOf(
