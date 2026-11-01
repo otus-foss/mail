@@ -3,7 +3,6 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +28,6 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.mail.quickview.components.QuickJump
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.filters.components.FilterResetAction
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
@@ -78,7 +76,7 @@ internal class ExpandedInbox(
 /**
  * The inbox panel's grown room: the quick view's modules and Jump to around the first stop, and
  * the filter sections toward the last, each fading with how far the panel is open. The action
- * bar's place holds the filters' Show button meanwhile.
+ * bar's place holds the filters' Reset and Show buttons meanwhile.
  */
 @Composable
 internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
@@ -131,19 +129,20 @@ private fun FiltersContent(
     state.draft?.let { shown = it }
     val options = inbox.sources.page.filterOptions
     val people = rememberFilterPeople(state, options, inbox.sources.messages)
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(end = PanelTokens.panelInset), horizontalArrangement = Arrangement.End) {
-            FilterResetAction(state::reset, enabled = !shown.isDefault)
-        }
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = SheetTokens.inset)) {
-            FilterSections(
-                shown,
-                options,
-                inbox.dateFormatter,
-                state::edit,
-                PeopleSearches(state.senders, state.recipients, people),
-            )
-        }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = SheetTokens.inset)
+            .padding(top = QuickViewTokens.moduleGap),
+    ) {
+        FilterSections(
+            shown,
+            options,
+            inbox.dateFormatter,
+            state::edit,
+            PeopleSearches(state.senders, state.recipients, people),
+        )
     }
 }
 

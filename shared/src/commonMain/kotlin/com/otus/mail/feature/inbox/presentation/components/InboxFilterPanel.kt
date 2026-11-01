@@ -64,7 +64,7 @@ fun InboxFilterPanel(
     }
 }
 
-/** [state]'s Show button in place of the action bar, which runs [onApply]. */
+/** [state]'s Reset and Show buttons in place of the action bar; Show runs [onApply]. */
 @Composable
 internal fun InboxFilterBar(
     state: InboxFilterState,
@@ -74,7 +74,9 @@ internal fun InboxFilterBar(
     FilterShowBar(
         count.showLabel,
         onApply,
+        state::reset,
         applyEnabled = count != FilterCount.Known(0),
+        resetEnabled = state.draft?.isDefault == false,
         counting = count == FilterCount.Counting,
     )
 }
