@@ -57,7 +57,8 @@ internal class SearchRoom(
  */
 @Composable
 internal fun SearchRoomContent(room: SearchRoom) {
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(FilterTokens.sectionGap)) {
+    // The captions below bring their own space, so the sections need no gap of their own.
+    Column(Modifier.fillMaxSize()) {
         NarrowRow(room)
         if (room.state.search.query
                 .isNotBlank()

@@ -15,7 +15,6 @@ import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.mail.quickview.components.QuickFace
 import com.otus.designsystem.mail.quickview.components.QuickFaceLook
 import com.otus.designsystem.mail.quickview.components.ScrollingFaces
-import com.otus.designsystem.mail.quickview.components.VISIBLE_FACES
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.rows.components.LocalEntriesOnRaised
 import com.otus.designsystem.shared.rows.elements.SectionCaption
@@ -57,9 +56,9 @@ internal fun SearchMatches(
 }
 
 /**
- * The matching [people] as faces, five across and the rest a scroll away; the caption counts the
- * ones past the row. Each face is named by its address while the query is one [byAddress], else
- * by first name. A face shows that person's mail.
+ * The matching [people] as faces in a row that scrolls, counting the ones still to the right.
+ * Each face is named by its address while the query is one [byAddress], else by first name, and
+ * shows that person's mail.
  */
 @Composable
 private fun SearchPeople(
@@ -68,11 +67,7 @@ private fun SearchPeople(
     byAddress: Boolean,
 ) {
     val state = room.state
-    val more = people.size - VISIBLE_FACES
-    SectionCaption(
-        if (more > 0) "People · $more more" else "People",
-        Modifier.padding(horizontal = SheetTokens.inset),
-    )
+    SectionCaption("People", Modifier.padding(horizontal = SheetTokens.inset))
     ScrollingFaces(
         people.map { person ->
             QuickFace(
