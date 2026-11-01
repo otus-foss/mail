@@ -34,7 +34,8 @@ class ScreenSecurityTest {
             .clear()
             .apply()
         assertFalse(secure())
-        AndroidMailBehaviorStore(context).write(MailBehavior(screenSecurity = true))
+        // The app holds one behavior state for the process, so a setting changes through it, as in Settings.
+        (context as OtusMailApplication).behavior.update { it.copy(screenSecurity = true) }
         assertTrue(secure())
     }
 

@@ -186,6 +186,8 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             val failed = toasts.messages.single()
             assertEquals("Couldn't send", failed.text)
             assertNotNull(failed.action).onAction()
+            // Open runs in the process scope, so it outlives the page that showed the toast.
+            runCurrent()
             assertEquals("e9", (opened.single() as ComposeRequest.Resume).draft.emailId)
         }
 
