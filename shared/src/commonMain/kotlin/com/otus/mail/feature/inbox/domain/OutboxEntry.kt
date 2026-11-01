@@ -64,12 +64,17 @@ enum class OutboxProblem {
 
 /**
  * Where the outbox keeps its messages, under [ENTRIES]. It must survive the process. Messages that
- * no longer read, as after a change of their format, move to [UNREADABLE] rather than being lost.
+ * no longer read, as after a change of their format, move to [UNREADABLE], or the next free key of
+ * [unreadableKeys] when an earlier set is there, rather than being lost.
  */
 interface OutboxStore : StringMapStore {
     companion object {
         const val ENTRIES = "entries"
         const val UNREADABLE = "unreadable"
+
+        /** [UNREADABLE], then "unreadable-1", "unreadable-2", and so on. */
+        fun unreadableKeys(): Sequence<String> =
+            generateSequence(0) { it + 1 }.map { if (it == 0) UNREADABLE else "$UNREADABLE-$it" }
     }
 }
 

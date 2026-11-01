@@ -45,6 +45,7 @@ import kotlinx.serialization.json.putJsonObject
 class JmapDraftSender(
     private val connections: JmapConnections,
     private val logins: LoginStore,
+    private val unanswered: UnansweredDrafts = UnansweredDrafts(),
 ) : DraftSender,
     ScheduledSends {
     // Signature images upload once, not at every send.
@@ -70,6 +71,8 @@ class JmapDraftSender(
             // Undo or a cancel can still stop a held or scheduled send, so it takes back a mark it added.
             val marked = if (time == SendTime.Now) null else answered?.let { account.unmarked(it) }
             account.tidySent(draft.emailId, answered)
+            // A save whose answer was lost may have left a copy that no later save will remove.
+            route.drafts?.let { unanswered.destroy(account, it, kept = sent.emailId) }
             Result.success(sent.copy(marked = marked))
         } catch (error: SendException) {
             Result.failure(error)

@@ -22,9 +22,11 @@ internal class OutboxEntries(
             val values = saved.read()
             val text = values[OutboxStore.ENTRIES]
             val entries = text?.let(OutboxEntry::decodeOrNull)
-            // Saving over messages that no longer read would lose them, so they are set aside first.
+            // Saving over messages that no longer read would lose them, so they are set aside first,
+            // under a key of their own, beside any set aside before.
             if (text != null && entries == null) {
-                saved.write(values - OutboxStore.ENTRIES + (OutboxStore.UNREADABLE to text))
+                val aside = OutboxStore.unreadableKeys().first { it !in values }
+                saved.write(values - OutboxStore.ENTRIES + (aside to text))
             }
             entries.orEmpty()
         }

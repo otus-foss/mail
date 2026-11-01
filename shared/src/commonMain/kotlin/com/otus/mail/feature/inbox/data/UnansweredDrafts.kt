@@ -14,13 +14,14 @@ import kotlinx.serialization.json.JsonPrimitive
  * Draft copies a save may have stored though its answer was lost, by login, under the Message-ID
  * that save gave them. A later save of that login finds them in Drafts by that header (RFC 8621,
  * section 4.4.1) and destroys them, so a lost answer leaves no copy behind for good. At most
- * [MAX_KEPT] per login are remembered, for as long as the process runs.
+ * [MAX_KEPT] per login are remembered, for as long as the process runs. Saving and sending share
+ * one, since a send is often the next thing after a save.
  */
-internal class UnansweredDrafts {
+class UnansweredDrafts {
     private val lock = Mutex()
     private val lost = mutableMapOf<String, List<String>>()
 
-    suspend fun remember(
+    internal suspend fun remember(
         loginId: String,
         messageId: String,
     ) {
@@ -28,7 +29,7 @@ internal class UnansweredDrafts {
     }
 
     /** Destroys the copies remembered for [account] that are in [drafts], but [kept], the copy just stored. */
-    suspend fun destroy(
+    internal suspend fun destroy(
         account: MailAccount,
         drafts: String,
         kept: String,

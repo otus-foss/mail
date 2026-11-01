@@ -50,3 +50,11 @@ internal fun movedText(
         FolderShortcut.Inbox, null -> if (count == 1) "Moved to ${target.name}" else "$mail moved to ${target.name}"
     }
 }
+
+/**
+ * Shows the outcome of an Undo that may outlive the activity that offered it: the screen on show
+ * reloads its folders and inbox, as after a push, and a failure shows as a toast.
+ */
+internal fun MailServices.movedBack(done: Boolean) {
+    if (done) serverChanges.changed() else moveToasts.toasts.show(ToastMessage("Couldn't undo the move"))
+}

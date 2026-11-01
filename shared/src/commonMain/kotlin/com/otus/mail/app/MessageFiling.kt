@@ -130,7 +130,7 @@ internal class MessageFiling(
      * Puts [message] back in every folder a move to [target] took it out of, such as the inbox
      * after an archive or all its folders after a trash, then reloads [feed] so it shows again. It
      * waits for [after], the move itself, so the two cannot cross. The caller's scope runs it, which
-     * for a toast's Undo outlives the activity.
+     * for a toast's Undo outlives the activity, so the outcome goes through [movedBack] too.
      */
     suspend fun moveBack(
         feed: InboxFeedState,
@@ -139,12 +139,9 @@ internal class MessageFiling(
         after: Job? = null,
     ) {
         after?.join()
-        if (services.mover.moveBack(message, target.folderId, leaving(message, target.shortcut))) {
-            feed.refresh()
-            folders.refresh()
-        } else {
-            feed.report("Couldn't move the message back from ${target.label}. Try again.")
-        }
+        val done = services.mover.moveBack(message, target.folderId, leaving(message, target.shortcut))
+        if (done) feed.refresh()
+        services.movedBack(done)
     }
 
     /** Read later for a loaded message shown in [feed]; supplied messages have no server id. */

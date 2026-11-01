@@ -34,11 +34,11 @@ import kotlin.uuid.Uuid
 class JmapDraftRepository(
     private val connections: JmapConnections,
     private val logins: LoginStore,
+    private val unanswered: UnansweredDrafts = UnansweredDrafts(),
     private val newMessageId: () -> String = ::draftMessageId,
 ) : DraftRepository {
     // Signature images upload once, not at every save.
     private val images = InlineImageUploads()
-    private val unanswered = UnansweredDrafts()
 
     override suspend fun identities(accountId: String): List<SendIdentity> =
         mailCallOr(emptyList()) {

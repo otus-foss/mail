@@ -69,13 +69,13 @@ internal class ReadPageChanges(
         toasts.moved(target) {
             move.join()
             if (!moved) return@moved
-            if (services.mover.moveBack(email, target.folderId, leaving)) {
+            val done = services.mover.moveBack(email, target.folderId, leaving)
+            // After a recreated activity, onBack and feed belong to the old page; movedBack reaches the new one.
+            if (done) {
                 onBack()
                 feed.refresh()
-                folders.refresh()
-            } else {
-                feed.report("Couldn't move the message back from ${target.label}. Try again.")
             }
+            services.movedBack(done)
         }
     }
 

@@ -109,8 +109,9 @@ private fun MessageText(
 }
 
 /**
- * The message's HTML with its quote folded. Splitting a long message takes a while, so it runs off the
- * main thread, and the page shows once it is done.
+ * The message's HTML with its quote folded. A short message splits at once; a long one takes a
+ * while, so it splits off the main thread, and the page shows once it is done. A fold made for
+ * other HTML never shows.
  */
 @Composable
 private fun HtmlBody(
@@ -121,10 +122,11 @@ private fun HtmlBody(
     modifier: Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
-    val fold by produceState<HtmlFold?>(null, html.html) {
-        value = withContext(Dispatchers.Default) { htmlFold(html.html) }
+    val quick = remember(html.html) { html.html.takeIf { it.length <= QUICK_FOLD_CHARS }?.let(::htmlFold) }
+    val slow by produceState<Pair<String, HtmlFold>?>(null, html.html) {
+        if (quick == null) value = html.html to withContext(Dispatchers.Default) { htmlFold(html.html) }
     }
-    val shown = fold ?: return
+    val shown = quick ?: slow?.takeIf { it.first == html.html }?.second ?: return
     HtmlView(
         shown.main,
         images.load,
@@ -193,3 +195,6 @@ private val spacing = Arrangement.spacedBy(InboxTokens.itemGap)
 
 private const val TOP = "top"
 private const val BODY = "body"
+
+/** HTML up to this many characters splits on the main thread, too quickly to show a blank page. */
+private const val QUICK_FOLD_CHARS = 16_000
