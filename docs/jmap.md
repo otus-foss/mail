@@ -134,9 +134,14 @@ session's `maxCallsInRequest` (16 when the server does not say), and `/get` ids 
 states, is saved in one cache write. Destroyed and changed objects leave the cache in that write,
 and the changed ones that were read again replace them.
 
-`more` asks each listing that has more for the next 50 rows from `position` equal to the rows
-loaded, adds the ids it does not have yet, reads the objects the cache lacks, and saves them in one
-write. A login whose listings are not cached yet refreshes instead. `cached` builds the same list
+`more` asks each listing that has more for the 50 rows after its last row whose cached email is
+still in the mailbox, with `anchor` and `anchorOffset: 1` (RFC 8620, section 5.5), so rows moved
+or deleted since the listing loaded skip nothing. It adds the ids it does not have yet, reads the
+objects the cache lacks, and saves them in one write. When none of the listing's last 50 rows is
+left, or the server refuses the anchor (`anchorNotFound`, such as after the row left on another
+device), that listing loads again from position 0 with 50 more rows than it had. A listing the
+cache does not hold, such as one dropped for newer ones, loads its first page; `more` never
+refreshes, except for a login whose mailboxes are not cached yet. `cached` builds the same list
 from the cache alone, without a request, so the inbox shows the device's copy at once.
 
 Rows are mapped the same way from the cache in all three: a row whose email has left the mailbox,
