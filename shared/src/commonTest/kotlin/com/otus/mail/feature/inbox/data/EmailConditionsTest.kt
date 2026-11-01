@@ -173,8 +173,8 @@ class EmailConditionsTest {
     @Test
     fun datesAreWholeUtcSecondsFromTheLocalDay() {
         assertEquals("""[{"after":"2026-10-17T22:00:00Z"}]""", dated(DateFilter.Today))
-        assertEquals("""[{"after":"2026-10-11T10:30:15Z"}]""", dated(DateFilter.Last7))
-        assertEquals("""[{"after":"2026-09-18T10:30:15Z"}]""", dated(DateFilter.Last30))
+        assertEquals("""[{"after":"2026-10-11T22:00:00Z"}]""", dated(DateFilter.Last7))
+        assertEquals("""[{"after":"2026-09-18T22:00:00Z"}]""", dated(DateFilter.Last30))
         assertEquals("""[{"after":"2025-12-31T23:00:00Z"}]""", dated(DateFilter.ThisYear))
         val range = DateFilter.Range(LocalDate(2026, 10, 12), LocalDate(2026, 10, 18))
         assertEquals("""[{"after":"2026-10-11T22:00:00Z"},{"before":"2026-10-18T22:00:00Z"}]""", dated(range))

@@ -27,7 +27,9 @@ conditions over every address of the chosen people. The user's own addresses (Se
 recipients (To) become an `OR` of `to`, `cc`, and `bcc` conditions in the chosen Received in
 fields, To and Cc by default; when only the fields differ from the default, the login's own
 addresses stand in. Size is `minSize`, and dates are `after` and `before`, counted from local
-midnight (This year from 1 January) and sent as UTC. Chosen folders, with their subfolders unless
+midnight (Last 7 and Last 30 days from midnight six or 29 days before today, This year from
+1 January) and sent as UTC. Every bound is a day's start, so a list's filter, and with it the key
+of its saved listing, stays the same all day. Chosen folders, with their subfolders unless
 "Only this folder" is on, replace the page's mailboxes; no filter leaves a folder out with `NOT`.
 A login whose account, own addresses, folders, or Read later folder are not chosen is not asked at
 all. Oldest first sorts `receivedAt` ascending.
