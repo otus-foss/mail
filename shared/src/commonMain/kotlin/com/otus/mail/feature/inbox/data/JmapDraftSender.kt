@@ -8,7 +8,6 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.QueryResult
 import com.otus.jmap.SetMethod
-import com.otus.jmap.SetResult
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DRAFTS_ROLE
@@ -38,8 +37,9 @@ import kotlinx.serialization.json.putJsonObject
 
 /**
  * Sends a draft with `EmailSubmission/set` (RFC 8621, section 7.5). One request stores the draft
- * as written and submits that copy; on success the server moves it to Sent and clears `$draft`.
- * Without an envelope, the server takes the recipients from To, Cc, and Bcc, and strips Bcc.
+ * as written, and a second submits that copy by its id; on success the server moves it to Sent and
+ * clears `$draft`. Without an envelope, the server takes the recipients from To, Cc, and Bcc, and
+ * strips Bcc.
  */
 class JmapDraftSender(
     private val connections: JmapConnections,
@@ -53,11 +53,19 @@ class JmapDraftSender(
         draft: Draft,
         answered: AnsweredMessage?,
         time: SendTime,
+    ): Result<SentMessage> = send(draft, answered, time) {}
+
+    override suspend fun send(
+        draft: Draft,
+        answered: AnsweredMessage?,
+        time: SendTime,
+        stored: suspend (emailId: String) -> Unit,
     ): Result<SentMessage> =
         try {
             val account = mailAccount(connections, logins, draft.accountId) ?: failSend(SendFailure.ServerProblem)
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
-            val sent = account.submit(draft, account.route(from ?: failSend(SendFailure.NoIdentity)), time)
+            val route = account.route(from ?: failSend(SendFailure.NoIdentity))
+            val sent = account.submit(draft, route, time, stored)
             // Undo or a cancel can still stop a held or scheduled send, so it takes back a mark it added.
             val marked = if (time == SendTime.Now) null else answered?.let { account.unmarked(it) }
             account.tidySent(draft.emailId, answered)
@@ -94,54 +102,44 @@ class JmapDraftSender(
     }
 
     /**
-     * Stores the draft and submits it in one request. A refused submission destroys the copy the
-     * request stored, so Drafts keeps only the draft's earlier copy.
+     * Stores the draft, tells [stored] the copy's id, and then submits that copy, so a submission
+     * whose answer is lost can be looked up by the id. A refused submission destroys the copy, so
+     * Drafts keeps only the draft's earlier copy.
      */
     private suspend fun MailAccount.submit(
         draft: Draft,
         route: SendRoute,
         time: SendTime,
+        stored: suspend (emailId: String) -> Unit,
     ): SentMessage {
         val folder = route.drafts ?: route.sent ?: failSend(SendFailure.ServerProblem)
         val email = draft.toEmail(folder, inlineImages(draft.htmlContent(), images))
-        lateinit var stored: JmapCall<SetResult>
-        lateinit var submitted: JmapCall<SetResult>
-        val response =
-            connection.send {
-                stored = call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
-                submitted = call(submission(route, folder, draft, time))
-            }
-        val created = response[stored]
+        val created = connection.call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
         val creationFailure = created.notCreated[EMAIL]
         if (creationFailure != null) failSend(creationFailure.toSendFailure())
         val copy = created.createdId(EMAIL) ?: failSend(SendFailure.ServerProblem)
-        val refusal =
+        stored(copy)
+        val submitted =
             try {
-                response[submitted].notCreated[SUBMISSION]?.toSendFailure()
+                connection.call(submission(route, folder, copy, draft, time))
             } catch (error: JmapException.MethodError) {
-                error.toSendFailure()
+                refused(copy, error.toSendFailure())
             }
-        if (refusal != null) {
-            bestEffort { connection.call(SetMethod(EmailType, id, destroy = listOf(copy))) }
-            failSend(refusal)
-        }
-        return SentMessage(
-            draft.accountId,
-            copy,
-            response[submitted].createdId(SUBMISSION) ?: failSend(SendFailure.ServerProblem),
-            route.drafts,
-            route.identityId,
-        )
+        val refusal = submitted.notCreated[SUBMISSION]
+        if (refusal != null) refused(copy, refusal.toSendFailure())
+        val submissionId = submitted.createdId(SUBMISSION) ?: failSend(SendFailure.ServerProblem)
+        return SentMessage(draft.accountId, copy, submissionId, route.drafts, route.identityId)
     }
 
     /**
-     * The submission of the stored copy in [folder]. A held or scheduled one carries an envelope
+     * The submission of the stored [copy] in [folder]. A held or scheduled one carries an envelope
      * with its time. A scheduled copy stays in [folder], only losing `$draft`, since the server
      * sends it much later; any other moves to Sent at once.
      */
     private fun MailAccount.submission(
         route: SendRoute,
         folder: String,
+        copy: String,
         draft: Draft,
         time: SendTime,
     ) = SetMethod(
@@ -151,7 +149,7 @@ class JmapDraftSender(
             mapOf(
                 SUBMISSION to
                     buildJsonObject {
-                        put("emailId", "#$EMAIL")
+                        put("emailId", copy)
                         put("identityId", route.identityId)
                         when (time) {
                             SendTime.Now -> Unit
@@ -267,4 +265,13 @@ class JmapDraftSender(
         const val EMAIL = "draft"
         const val SUBMISSION = "send"
     }
+}
+
+/** Destroys the [copy] a refused submission left, and fails the send with [failure]. */
+private suspend fun MailAccount.refused(
+    copy: String,
+    failure: SendFailure,
+): Nothing {
+    bestEffort { connection.call(SetMethod(EmailType, id, destroy = listOf(copy))) }
+    failSend(failure)
 }

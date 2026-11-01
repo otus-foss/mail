@@ -10,7 +10,8 @@ import kotlin.time.Instant
  * A message handed over for sending, kept on the device until the server has it. It goes once
  * [dueMillis] has passed, or at [sendAtMillis], a time the user chose, which the server holds it
  * for. [attempted] once a send started: the server may have taken it even if no answer came, so it
- * is looked for before it goes again. [problem] when it needs the user. [withdrawn] after Undo
+ * is looked for before it goes again. [storedCopy] once the server stored the copy that try
+ * submits, so the lookup goes by its id. [problem] when it needs the user. [withdrawn] after Undo
  * of a message the server may hold: it never goes, and stays only until a hold found there is
  * canceled.
  */
@@ -24,6 +25,7 @@ data class OutboxEntry(
     val attempted: Boolean = false,
     val problem: OutboxProblem? = null,
     val withdrawn: Boolean = false,
+    val storedCopy: StoredCopy? = null,
 ) {
     /** The time the message was given, or null when it goes as soon as it is due. */
     val sendAt: Instant? get() = sendAtMillis?.let(Instant::fromEpochMilliseconds)
@@ -40,6 +42,13 @@ data class OutboxEntry(
             text?.let { runCatching { json.decodeFromString(serializer, it) }.getOrNull() }.orEmpty()
     }
 }
+
+/** The Email [emailId] a send stored on the server at [atMillis], before it submitted that copy. */
+@Serializable
+data class StoredCopy(
+    val emailId: String,
+    val atMillis: Long,
+)
 
 /** Why a message in the outbox waits for the user instead of the network. */
 enum class OutboxProblem {
@@ -84,4 +93,12 @@ fun interface SendChecker {
         answered: AnsweredMessage?,
         cancelHeld: Boolean,
     ): SendCheck
+
+    /** [check], by the id of the [storedCopy] the earlier try submitted when the server named it. */
+    suspend fun check(
+        draft: Draft,
+        answered: AnsweredMessage?,
+        cancelHeld: Boolean,
+        storedCopy: String?,
+    ): SendCheck = check(draft, answered, cancelHeld)
 }

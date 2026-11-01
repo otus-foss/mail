@@ -198,12 +198,21 @@ app or losing the network loses no mail. Android keeps it in the `otus_mail_outb
 preferences file and writes it before the send starts; iOS keeps it in user defaults. Each message
 gets its own Message-ID, `<id>@otus.mail`, which every try reuses.
 
-- A send that got no answer may have reached the server. Before it goes again, `JmapSendChecker`
-  looks the message up with the `header` filter of `Email/query` (RFC 8621, section 4.4.1). A
-  copy without `$draft` went, so nothing goes twice. A copy that kept `$draft` was refused, so
-  it is destroyed and the message goes again. Without a copy, the message goes again. A copy
-  that went is tidied up as after a send: the saved draft is deleted and the message it answered
-  gets its mark.
+- A send that got no answer may have reached the server. The sender stores the copy first and
+  submits it in a second request, and the outbox keeps the copy's id and the time it was stored
+  before the submission starts. Before the message goes again, `JmapSendChecker` looks that copy
+  up by its id, so no search index that may lag behind decides: a submission of it that nobody
+  canceled (`EmailSubmission/query` with `emailIds`, RFC 8621, section 7.3) means it went, and
+  so does a copy without `$draft` whose submission the server no longer keeps. A copy that kept
+  `$draft` without a submission is destroyed and the message goes again. With neither a copy nor
+  a submission, only the user can tell. The lookup waits until 2 minutes after the copy was
+  stored, so a submission the server is still working on is not taken for a missing one.
+- When no copy was stored, the submission never started. A copy whose storing lost its answer is
+  found with the `header` filter of `Email/query` (section 4.4.1) and destroyed, and the message
+  goes again. Messages saved by an older version, which stored and submitted in one request, are
+  still looked up this way: a copy without `$draft` went, so nothing goes twice. A copy that went
+  is tidied up as after a send: the saved draft is deleted and the message it answered gets its
+  mark.
 - A server that cannot run that lookup leaves the message to the user: a "Couldn't confirm
   sending" toast offers to open it, at once or after the next start. A server down for now is
   asked again later.
@@ -247,13 +256,13 @@ online" toast shows and Mail tries again after 5 seconds, doubling the wait up t
 while the app runs. Trying again is safe: when a cancel's answer was lost, Mail asks whether a
 submission that nobody canceled is left. If one is, the server sends it at its time; if none is,
 the cancel arrived and the copy is submitted again. On the device hold, the swipe ends the
-wait. The sender makes three requests (RFC 8621, section 7.5):
+wait. The sender makes four requests (RFC 8621, section 7.5):
 
 1. `Identity/get` and two `Mailbox/query` calls find the identity for the From address and the
    Drafts and Sent folders. An identity matches by exact address, or by a wildcard such as
    `*@example.org` for any address in its domain.
-2. One request stores the draft as written with `Email/set` and submits that copy with
-   `EmailSubmission/set`. It sends no envelope, so the server takes the recipients from To, Cc,
+2. One request stores the draft as written with `Email/set`, and a second submits that copy by
+   its id with `EmailSubmission/set`. It sends no envelope, so the server takes the recipients from To, Cc,
    and Bcc, and removes the Bcc header. `onSuccessUpdateEmail` moves the copy from Drafts to Sent
    and clears `$draft`. Without a Sent folder the copy stays where it was stored, without `$draft`.
 3. Once the server accepts the message, one `Email/set` destroys the draft's earlier copy and sets
@@ -320,8 +329,8 @@ send was canceled but the draft could not be restored.
 ## Validation
 
 `DraftStartTest` and `RecipientTextTest` cover starting drafts and the recipient text format.
-`JmapDraftSenderTest` checks the send requests against a mock server: the stored copy and its
-submission in one request, filing in Sent, wildcard identities, the marks on the original, and
+`JmapDraftSenderTest` checks the send requests against a mock server: the stored copy, reported
+before its submission by id, filing in Sent, wildcard identities, the marks on the original, and
 cleanup after a refusal. `ComposeSendTest` covers when Send is enabled, waiting for a save in
 progress, committing a typed address on Send, and failure notices. `ComposeStateTest` covers
 delayed saves, saving on close, discard and its later delete, failure notices, keeping the stored

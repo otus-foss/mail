@@ -55,10 +55,11 @@ class JmapDraftSenderTest {
                     }
 
                     "EmailSubmission/set" in body -> {
-                        responses(
-                            """["Email/set", {"newState": "e2", "created": {"draft": {"id": "e9"}}}, "c0"]""",
-                            """["EmailSubmission/set", {"newState": "s2", $submitted}, "c1"]""",
-                        )
+                        responses("""["EmailSubmission/set", {"newState": "s2", $submitted}, "c0"]""")
+                    }
+
+                    "Email/set" in body && "\"create\"" in body -> {
+                        responses("""["Email/set", {"newState": "e2", "created": {"draft": {"id": "e9"}}}, "c0"]""")
                     }
 
                     "Email/set" in body -> {
@@ -93,14 +94,15 @@ class JmapDraftSenderTest {
         )
 
     @Test
-    fun sendingStoresAndSubmitsTheDraftInOneRequestAndFilesItInSent() =
+    fun sendingStoresTheDraftThenSubmitsThatCopyByIdAndFilesItInSent() =
         runTest {
             assertTrue(sender().send(reply, AnsweredMessage("m1", forwarded = false), SendTime.Now).isSuccess)
-            val (route, send, tidy) = calls.map(::methods)
+            val (route, store, submit, tidy) = calls.map(::methods)
             assertEquals(listOf("Identity/get", "Mailbox/query", "Mailbox/query"), route.map { it.name })
-            assertEquals(listOf("Email/set", "EmailSubmission/set"), send.map { it.name })
+            assertEquals(listOf("Email/set"), store.map { it.name })
+            assertEquals(listOf("EmailSubmission/set"), submit.map { it.name })
 
-            val email = send[0].arguments.at("create", "draft")
+            val email = store[0].arguments.at("create", "draft")
             assertEquals(Json.parseToJsonElement("""{"dr": true}"""), email["mailboxIds"])
             assertEquals(
                 "babbage@example.org",
@@ -110,8 +112,8 @@ class JmapDraftSenderTest {
                     .jsonObject
                     .text("email"),
             )
-            val submission = send[1].arguments
-            val expected = """{"send": {"emailId": "#draft", "identityId": "i1"}}"""
+            val submission = submit[0].arguments
+            val expected = """{"send": {"emailId": "e9", "identityId": "i1"}}"""
             assertEquals(Json.parseToJsonElement(expected), submission["create"])
             val filed = """{"#send": {"mailboxIds/dr": null, "mailboxIds/se": true, "keywords/${'$'}draft": null}}"""
             assertEquals(Json.parseToJsonElement(filed), submission["onSuccessUpdateEmail"])
@@ -134,7 +136,15 @@ class JmapDraftSenderTest {
 
             calls.clear()
             sender().send(reply.copy(emailId = null), answered = null, SendTime.Now).getOrThrow()
-            assertEquals(2, calls.size, "Without a saved copy or an original, nothing is left to tidy")
+            assertEquals(3, calls.size, "Without a saved copy or an original, nothing is left to tidy")
+        }
+
+    @Test
+    fun theStoredCopyIsReportedBeforeItIsSubmitted() =
+        runTest {
+            val reported = mutableListOf<Pair<String, Int>>()
+            sender().send(reply, answered = null, SendTime.Now) { reported += it to calls.size }.getOrThrow()
+            assertEquals(listOf("e9" to 2), reported, "After the copy is stored, before the submission request")
         }
 
     @Test
@@ -142,7 +152,7 @@ class JmapDraftSenderTest {
         runTest {
             val wildcard = """{"id": "w1", "email": "*@EXAMPLE.org"}, {"id": "o1", "email": "ada@other.org"}"""
             sender(identities = wildcard).send(reply, answered = null, SendTime.Now).getOrThrow()
-            assertEquals("w1", methods(calls[1])[1].arguments.at("create", "send").text("identityId"))
+            assertEquals("w1", methods(calls[2])[0].arguments.at("create", "send").text("identityId"))
         }
 
     @Test
@@ -162,7 +172,7 @@ class JmapDraftSenderTest {
     fun withoutASentFolderTheSentCopyOnlyLosesDraft() =
         runTest {
             sender(sent = false).send(reply, answered = null, SendTime.Now).getOrThrow()
-            val patch = methods(calls[1])[1].arguments.at("onSuccessUpdateEmail", "#send")
+            val patch = methods(calls[2])[0].arguments.at("onSuccessUpdateEmail", "#send")
             assertEquals(setOf("keywords/${'$'}draft"), patch.keys)
         }
 
@@ -227,7 +237,7 @@ class JmapDraftSenderTest {
             val at = kotlin.time.Instant.parse("2026-10-19T06:00:00.500Z")
             val sent = sender().send(reply, answered = null, SendTime.Scheduled(at)).getOrThrow()
             assertEquals(SentMessage("ada", "e9", "s1", draftsId = "dr", identityId = "i1"), sent)
-            val submission = methods(calls[1])[1].arguments
+            val submission = methods(calls[2])[0].arguments
             val envelope = submission.at("create", "send").getValue("envelope").jsonObject
             val expected =
                 """{"mailFrom": {"email": "ada@example.org", "parameters": {"HOLDUNTIL": "2026-10-19T06:00:00Z"}},
@@ -242,7 +252,7 @@ class JmapDraftSenderTest {
         runTest {
             val at = kotlin.time.Instant.parse("2026-10-19T06:00:17Z")
             sender().send(reply, answered = null, SendTime.Held(at)).getOrThrow()
-            val submission = methods(calls[1])[1].arguments
+            val submission = methods(calls[2])[0].arguments
             val envelope = submission.at("create", "send", "envelope", "mailFrom", "parameters")
             assertEquals("2026-10-19T06:00:17Z", envelope.text("HOLDUNTIL"))
             val filed = """{"#send": {"mailboxIds/dr": null, "mailboxIds/se": true, "keywords/${'$'}draft": null}}"""
@@ -256,7 +266,7 @@ class JmapDraftSenderTest {
             val answered = AnsweredMessage("m1", forwarded = false)
             val held = sender().send(reply, answered, SendTime.Held(at)).getOrThrow()
             assertEquals(answered, held.marked)
-            assertTrue("Email/get" in calls[2], "The original is looked at before it is marked")
+            assertTrue("Email/get" in calls[3], "The original is looked at before it is marked")
 
             val marked = """{"${'$'}answered": true}"""
             val before = sender(originalKeywords = marked).send(reply, answered, SendTime.Held(at)).getOrThrow()

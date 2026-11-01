@@ -8,6 +8,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -135,6 +136,77 @@ class MailOutboxTest {
             check = SendCheck.Sent
             assertNull(outbox.send(id).getOrThrow())
             assertEquals(1, sent.size, "The gateway error hid a send that went")
+        }
+
+    @Test
+    fun aLostSubmissionIsLookedUpByItsStoredCopyOnceTheServerHadTimeToFinishIt() =
+        runTest {
+            val copies = mutableListOf<String?>()
+            val woken = mutableListOf<Instant>()
+            val outbox = MailOutbox(store, storing, recordingCopies(copies), wake = { woken += it }, now = { now })
+            val id = outbox.add(draft, null, NOW)
+            failure = SendFailure.Unreachable
+            outbox.send(id)
+            assertEquals(
+                "e9",
+                OutboxEntry
+                    .decode(store.saved[OutboxStore.ENTRIES])
+                    .single()
+                    .storedCopy
+                    ?.emailId,
+            )
+
+            failure = null
+            check = SendCheck.Sent
+            now = NOW + 30.seconds
+            assertEquals(SendFailure.Unreachable, (outbox.send(id).exceptionOrNull() as SendException).failure)
+            assertTrue(copies.isEmpty(), "The server may still be working on the submission")
+            assertEquals(NOW + 2.minutes, woken.last())
+
+            now = NOW + 2.minutes
+            assertNull(outbox.send(id).getOrThrow(), "The first submission went")
+            assertEquals(listOf<String?>("e9"), copies)
+            assertEquals(1, sent.size, "Nothing goes twice")
+        }
+
+    /** [sender], storing the copy `e9` before it submits it. */
+    private val storing =
+        object : DraftSender {
+            override suspend fun send(
+                draft: Draft,
+                answered: AnsweredMessage?,
+                time: SendTime,
+            ) = sender.send(draft, answered, time)
+
+            override suspend fun send(
+                draft: Draft,
+                answered: AnsweredMessage?,
+                time: SendTime,
+                stored: suspend (emailId: String) -> Unit,
+            ): Result<SentMessage> {
+                stored("e9")
+                return sender.send(draft, answered, time)
+            }
+        }
+
+    /** [checker], recording the stored copy each lookup goes by in [copies]. */
+    private fun recordingCopies(copies: MutableList<String?>) =
+        object : SendChecker {
+            override suspend fun check(
+                draft: Draft,
+                answered: AnsweredMessage?,
+                cancelHeld: Boolean,
+            ) = checker.check(draft, answered, cancelHeld)
+
+            override suspend fun check(
+                draft: Draft,
+                answered: AnsweredMessage?,
+                cancelHeld: Boolean,
+                storedCopy: String?,
+            ): SendCheck {
+                copies += storedCopy
+                return checker.check(draft, answered, cancelHeld)
+            }
         }
 
     @Test

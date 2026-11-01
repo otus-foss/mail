@@ -90,6 +90,18 @@ fun interface DraftSender {
         answered: AnsweredMessage?,
         time: SendTime,
     ): Result<SentMessage>
+
+    /**
+     * [send], telling [stored] the id of the copy the server stored before that copy is submitted,
+     * so a send whose answer is lost can be checked by that id. A sender that stores and submits
+     * in one step never calls it.
+     */
+    suspend fun send(
+        draft: Draft,
+        answered: AnsweredMessage?,
+        time: SendTime,
+        stored: suspend (emailId: String) -> Unit,
+    ): Result<SentMessage> = send(draft, answered, time)
 }
 
 /** Sending at a later time (RFC 8621, `maxDelayedSend`, with the RFC 4865 HOLDUNTIL parameter). */
