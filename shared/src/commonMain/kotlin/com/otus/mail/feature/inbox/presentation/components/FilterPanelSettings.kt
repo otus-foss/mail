@@ -15,7 +15,9 @@ import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_swap_vert
 import com.otus.designsystem.resources.symbol_tune
+import com.otus.designsystem.shared.settings.components.DependentSettings
 import com.otus.designsystem.shared.settings.components.SettingRow
+import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.inbox.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.QuickFacet
@@ -24,30 +26,39 @@ import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
- * Rows for the filter panel in the Inbox settings: which sections it shows and in what order,
- * which Quick filters, and the modules of the quick view the control panel opens to when pulled
- * down, each chosen in an ordered sheet.
+ * The filter panel's page: which sections the panel shows and in what order, which Quick filters
+ * its Quick filters section offers, and the modules of the quick view it opens to when pulled
+ * down, each chosen in an ordered sheet. Quick filters waits until the panel shows its section, so
+ * the row stays in place but disabled until then.
  */
 @Composable
 internal fun FilterPanelSettings(state: MailBehaviorState) {
     var choosing by rememberSaveable { mutableStateOf<FilterSetting?>(null) }
     val layout = state.behavior.filters
-    SettingRow(
-        "Filter panel",
-        { choosing = FilterSetting.Sections },
-        icon = Res.drawable.symbol_tune,
-    ) { ValueButton(shownCount(layout.sections.size)) }
-    SettingRow(
-        "Quick filters",
-        { choosing = FilterSetting.Quick },
-        icon = Res.drawable.symbol_mark_email_unread,
-    ) { ValueButton(shownCount(layout.quick.size)) }
-    SettingRow(
-        "Quick view",
-        { choosing = FilterSetting.QuickView },
-        icon = Res.drawable.symbol_grid_on,
-        description = "Pull the top panel down to see it",
-    ) { ValueButton(shownCount(state.behavior.quickView.size)) }
+    val quickShown = FilterSection.Quick in layout.sections
+    SettingsSection("Panel") {
+        SettingRow(
+            "Sections",
+            { choosing = FilterSetting.Sections },
+            icon = Res.drawable.symbol_tune,
+        ) { ValueButton(shownCount(layout.sections.size)) }
+        DependentSettings(enabled = quickShown) {
+            SettingRow(
+                "Quick filters",
+                { choosing = FilterSetting.Quick },
+                description = QUICK_FILTERS_UNAVAILABLE.takeUnless { quickShown },
+                icon = Res.drawable.symbol_mark_email_unread,
+            ) { ValueButton(shownCount(layout.quick.size)) }
+        }
+    }
+    SettingsSection("Pull down") {
+        SettingRow(
+            "Quick view",
+            { choosing = FilterSetting.QuickView },
+            icon = Res.drawable.symbol_grid_on,
+            description = "Pull the top panel down to see it",
+        ) { ValueButton(shownCount(state.behavior.quickView.size)) }
+    }
     when (choosing) {
         FilterSetting.Sections -> SectionChoices(state) { choosing = null }
         FilterSetting.Quick -> QuickChoices(state) { choosing = null }
@@ -56,13 +67,16 @@ internal fun FilterPanelSettings(state: MailBehaviorState) {
     }
 }
 
+/** Why Quick filters is disabled while the panel leaves out its section; search shows it too. */
+internal const val QUICK_FILTERS_UNAVAILABLE = "Show the Quick filters section to choose them"
+
 @Composable
 private fun SectionChoices(
     state: MailBehaviorState,
     onDismiss: () -> Unit,
 ) {
     OrderedChoiceSheet(
-        "Filter panel",
+        "Sections",
         state.behavior.filters.sections,
         FilterSection.entries.map { OrderedChoice(it, it.storageValue, it.title, it.icon, "Sections") },
         FilterSection::storageValue,

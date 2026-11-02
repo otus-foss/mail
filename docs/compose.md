@@ -105,7 +105,7 @@ Attach opens the system document picker for any number of files of any type. Eac
 at once to the draft's account (RFC 8620, section 6.1) and shows as a chip under the body with
 its name and "Uploading…", then its size. Reads and uploads run one file at a time. The reader
 stops at the smaller of 20 MiB and the session's `maxSizeUpload`, including when the picker reports
-an incorrect size. Settings › Privacy › **Photos you attach** decides whether JPEG, PNG, and WebP
+an incorrect size. Settings › Privacy & security › **Photos you attach** decides whether JPEG, PNG, and WebP
 photos attach as `PickedFile.cleaned()`: without their metadata (`withoutImageMetadata` drops
 EXIF, with GPS position, capture time, and camera model, plus XMP, IPTC, comments, and trailing
 data, while pixels, color profiles, and a JPEG's orientation stay) and under a random name such as
@@ -187,7 +187,7 @@ Drafts with the `header` filter and destroys what it finds, other than the copy 
 ### Sending
 
 Send closes the page at once and hands the draft to `OutgoingMail`. A "Sending…" toast with Undo
-stays for the **Undo send** delay in Appearance & behavior: 5, 10, 15, or 30 seconds, 15 by
+stays for the **Undo send** delay in Settings › Mail behavior › Writing: 5, 10, 15, or 30 seconds, 15 by
 default, with the toast's ring draining over that time. With Undo send off, the message goes at
 once. The send waits for any save in progress, so it knows the draft's saved copy, puts the
 draft in the outbox, and sends it through `JmapDraftSender`. The toast turns into "Sent", or into

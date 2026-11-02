@@ -36,7 +36,7 @@ data class MessageFolder(
     val system: Boolean get() = role != null
 }
 
-/** When remote images in a message load. See Settings › Privacy. */
+/** When remote images in a message load. See Settings › Privacy & security. */
 enum class RemoteImages { Always, Known, Never }
 
 /** Loads every message of a conversation, for the Read view's pages. */

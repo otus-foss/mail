@@ -12,9 +12,6 @@ import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.ChoiceSheet
-import com.otus.designsystem.shared.selection.components.PickMark
-import com.otus.designsystem.shared.selection.components.PickRow
-import com.otus.designsystem.shared.selection.components.PickRowLayout
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
@@ -27,6 +24,7 @@ import com.otus.mail.feature.notifications.presentation.NotificationSettingsStat
 import com.otus.mail.feature.notifications.presentation.PreviewsInfo
 import com.otus.mail.feature.notifications.presentation.description
 import com.otus.mail.feature.notifications.presentation.overrideSummary
+import com.otus.mail.feature.notifications.presentation.short
 import com.otus.mail.feature.notifications.presentation.title
 
 /** Delivery choices, registration status, and, where alerts can show mail, what they show. */
@@ -69,7 +67,10 @@ fun NotificationsScreen(
     }
 }
 
-/** What alerts show for all mail, and the page that sets it per account and address. */
+/**
+ * What alerts show for all mail, chosen in a sheet as the page's other choices are, and the page
+ * that sets it per account and address.
+ */
 @Composable
 private fun PreviewsSection(
     state: NotificationSettingsState,
@@ -77,19 +78,23 @@ private fun PreviewsSection(
     accounts: List<ConnectedAccount>,
     onOpenOverrides: () -> Unit,
 ) {
+    var choosing by rememberSaveable { mutableStateOf(false) }
     SettingsSection("Previews", info = PreviewsInfo) {
-        NotificationPreviews.entries.forEach { choice ->
-            PickRow(
-                choice.title,
-                choice.description,
-                PickMark(choice == previews.all, atStart = true),
-                { state.choosePreviews { it.copy(all = choice) } },
-                layout = PickRowLayout(subtitleLines = PREVIEW_LINES),
-            )
+        SettingRow("All mail", { choosing = true }, description = previews.all.description) {
+            ValueButton(previews.all.short)
+        }
+        if (accounts.isNotEmpty()) {
+            SettingPageRow("Accounts and addresses", onOpenOverrides, description = previews.overrideSummary(accounts))
         }
     }
-    if (accounts.isNotEmpty()) {
-        SettingPageRow("Accounts and addresses", onOpenOverrides, description = previews.overrideSummary(accounts))
+    if (choosing) {
+        ChoiceSheet(
+            "All mail",
+            ChoiceOptions(NotificationPreviews.entries, selected = previews.all, default = PreviewChoices().all),
+            row = { ChoiceRow(it.title, it.description) },
+            onSelect = { choice -> state.choosePreviews { it.copy(all = choice) } },
+            onDismiss = { choosing = false },
+        )
     }
 }
 
@@ -195,9 +200,6 @@ private fun NotificationSettingsState.deliveryNote(): String =
             "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy."
         }
     }
-
-/** Enough lines for the longest description on a narrow phone. */
-private const val PREVIEW_LINES = 3
 
 /** The Instant delivery row's value: the distributor that delivers new mail, or Off. */
 internal val NotificationSettingsState.deliveryLabel: String

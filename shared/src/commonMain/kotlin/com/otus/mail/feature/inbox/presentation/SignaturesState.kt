@@ -20,9 +20,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Every identity's signature for Settings › Signatures. Changes show at once and save to the
- * server; a failed save puts the old signature back and shows a [notice], as does an image that
- * can't be used. [images] picks images where the platform can.
+ * Every identity's signature for Settings › Mail behavior › Signatures. Changes show at once and
+ * save to the server; a failed save puts the old signature back and shows a [notice], as does an
+ * image that can't be used. [images] picks images where the platform can.
  */
 class SignaturesState(
     private val drafts: DraftRepository,
