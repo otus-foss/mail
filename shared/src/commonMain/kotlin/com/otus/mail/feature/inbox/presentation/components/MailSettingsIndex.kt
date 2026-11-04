@@ -6,6 +6,7 @@ import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_format_list_bulleted
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_grid_on
+import com.otus.designsystem.resources.symbol_home
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
@@ -32,6 +33,7 @@ import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.PINNED_UNAVAILABLE
 import com.otus.mail.feature.inbox.presentation.SENDER_UNAVAILABLE
+import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.icon
 import com.otus.mail.feature.inbox.presentation.inboxSummary
 import com.otus.mail.feature.inbox.presentation.label
@@ -86,10 +88,14 @@ class BehaviorIndexPages(
     val signatures: (String?) -> Unit,
 )
 
-/** Mirrors the Mail behavior page; [rtl] names the swipes as the screen does. */
+/**
+ * Mirrors the Mail behavior page; [rtl] names the swipes as the screen does, and [startPages] are
+ * the mailboxes Start page offers.
+ */
 fun SettingsIndexScope.mailBehaviorIndex(
     state: MailBehaviorState,
     folderPills: List<FolderPillOption>,
+    startPages: List<SidebarPinOption>,
     rtl: Boolean,
     pages: BehaviorIndexPages,
 ) {
@@ -109,26 +115,7 @@ fun SettingsIndexScope.mailBehaviorIndex(
         )
         toggle("Read later", behavior.readLater, Res.drawable.symbol_bookmark, keywords = listOf("Save for later"))
     }
-    section("Panels") {
-        page(
-            "Sidebar",
-            pages.sidebar,
-            Res.drawable.symbol_menu,
-            value = behavior.sidebar.sectionSummary,
-        ) {
-            keywords("Navigation", "Drawer")
-            sidebarIndex(behavior.sidebar, pages.pinned)
-        }
-        page(
-            "Filter panel",
-            pages.filterPanel,
-            Res.drawable.symbol_tune,
-            value = filterPanelSummary(behavior.filters.sections.size),
-        ) {
-            keywords("Control panel", "Filters")
-            filterPanelIndex(behavior.filters, behavior.quickView.size)
-        }
-    }
+    panelsIndex(behavior, startPages, pages)
     actionsIndex(behavior, rtl, pages.actionBar)
     section("Reading") {
         toggle("Mark as read when opened", behavior.markReadOnOpen, Res.drawable.symbol_mark_email_read)
@@ -149,6 +136,41 @@ fun SettingsIndexScope.mailBehaviorIndex(
             Res.drawable.symbol_signature,
             summary = "One for each address you send from",
         ) { toggle("Add to replies", behavior.signatureInReplies) }
+    }
+}
+
+/** The Panels section of the Mail behavior page: Start page among [startPages], and the panels' pages. */
+private fun SettingsIndexScope.panelsIndex(
+    behavior: MailBehavior,
+    startPages: List<SidebarPinOption>,
+    pages: BehaviorIndexPages,
+) {
+    section("Panels") {
+        setting(
+            "Start page",
+            startPageLabel(behavior.startPage, startPages),
+            startPages.map { it.path },
+            Res.drawable.symbol_home,
+            keywords = listOf("Open on", "Launch", "Home"),
+        )
+        page(
+            "Sidebar",
+            pages.sidebar,
+            Res.drawable.symbol_menu,
+            value = behavior.sidebar.sectionSummary,
+        ) {
+            keywords("Navigation", "Drawer")
+            sidebarIndex(behavior.sidebar, pages.pinned)
+        }
+        page(
+            "Filter panel",
+            pages.filterPanel,
+            Res.drawable.symbol_tune,
+            value = filterPanelSummary(behavior.filters.sections.size),
+        ) {
+            keywords("Control panel", "Filters")
+            filterPanelIndex(behavior.filters, behavior.quickView.size)
+        }
     }
 }
 

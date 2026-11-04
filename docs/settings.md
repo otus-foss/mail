@@ -44,8 +44,11 @@ left, the control on the right, and large section titles. Search covers every pa
     (see [Inbox contents](inbox.md#inbox-contents)); **Pills** opens `InboxPillsSheet`, where the
     shown pills are reordered by their handles and others are added; the **Read later** switch
     gives each account a Read later folder (see [Read later](folders.md#read-later)).
-  - **Panels**: **Sidebar** and **Filter panel** open their pages. The sidebar is a way around
-    Mail, not a look, so it lives here rather than on Appearance.
+  - **Panels**: **Start page** opens a `ChoiceSheet` of the page Mail opens on: **Inbox** (the
+    default, alone at the top), then every mailbox the sidebar can pin, such as Read later,
+    Convos, **Contacts**, a combined system folder like Sent, or one of the user's folders shared
+    across accounts. **Sidebar** and **Filter panel** open their pages. The sidebar is a way
+    around Mail, not a look, so it lives here rather than on Appearance.
   - **Actions**: **Swipe right** and **Swipe left** open a `ChoiceSheet` of message actions, and
     **Action bar** opens its page.
   - **Reading**: **Mark as read when opened**, **Show quoted text**, and the Read view's
@@ -128,6 +131,19 @@ still finds it. The same reason is passed to the index through `unavailable(reas
 search results say it too. Settings that do this today: Order and Preview (wait on Show sender),
 Quick filters (wait on the panel's Quick filters section), Mailboxes and folders (wait on the
 Pinned section), and Icons from (waits on Website icons).
+
+## Start page
+
+The choice is saved as its `SidebarPin` under `start_page` with the other Mail behavior settings,
+and is read once per launch, so a change applies the next time Mail starts. `launchPage` opens the
+chosen page at once, before the folders load. Once the first folder load of the launch finishes,
+`startPage` looks the choice up among `pinnableMailboxes`. When no account has it any more, such as
+a renamed or deleted folder or Read later while it is off, Mail opens the Inbox instead, as
+`MailPage.Shared` already does for a folder that goes away. The choice stays saved, so it applies
+again once the folder exists, and the row reads Inbox meanwhile. If an account failed to load, the
+page stays, since that account may still hold the folder. Leaving the start page before the folders
+load also cancels the fallback. `StartPageTest` covers the resolution and fallback, and
+`StartPageStorageTest` the saved value.
 
 ## Search
 

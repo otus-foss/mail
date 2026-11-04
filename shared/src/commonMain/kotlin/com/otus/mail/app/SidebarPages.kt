@@ -42,7 +42,8 @@ internal fun SidebarSettingsPage(
     }
 }
 
-private fun sidebarPinOptions(
+/** Every mailbox the sidebar can show, as Settings lists it; [colorOf] names a folder's icon color. */
+internal fun sidebarPinOptions(
     accounts: List<AccountFolders>,
     colorOf: (SharedFolder) -> String?,
 ): List<SidebarPinOption> =

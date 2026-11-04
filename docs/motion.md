@@ -50,8 +50,9 @@ Physical-device motion review and iOS runtime validation remain separate from lo
 Each launch opens on Meta's `MailLaunch`: the envelope pops up, the owl rises behind it, and tilts
 upright. The inbox starts loading underneath at once, and the animation ends as soon as the inbox
 shows mail, usually the device's copy before the server answers, or when the first load ends for an
-empty inbox. It does not wait for the owl to arrive, and a tap ends it early. Then the owl shrinks
-and fades out. Rotating the phone does not replay it.
+empty inbox. When the [start page](settings.md#start-page) is not the Inbox, the inbox does not
+load, so the animation waits for nothing. It does not wait for the owl to arrive, and a tap ends it
+early. Then the owl shrinks and fades out. Rotating the phone does not replay it.
 
 The animation follows the theme: the owl is in the accent color, or in the text color when App
 icon is set to Monochrome, on the theme's `bgDark`. The window takes that color before Compose

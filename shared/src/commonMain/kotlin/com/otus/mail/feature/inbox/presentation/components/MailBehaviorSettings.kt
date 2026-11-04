@@ -21,6 +21,7 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.inboxSummary
 import com.otus.mail.feature.inbox.presentation.sectionSummary
 import com.otus.mail.feature.inbox.presentation.summary
@@ -82,16 +83,21 @@ fun InboxBehaviorSettings(
 }
 
 /**
- * The Mail behavior page's Panels section: the sidebar's page, opened with [onSidebar], and the
- * filter panel's, opened with [onFilterPanel]. Each names what its panel shows.
+ * The Mail behavior page's Panels section: the page Mail opens on, chosen in a sheet among
+ * [startPages], the sidebar's page, opened with [onSidebar], and the filter panel's, opened with
+ * [onFilterPanel]. Each names what its panel shows.
  */
 @Composable
 fun PanelSettings(
-    behavior: MailBehavior,
+    state: MailBehaviorState,
+    startPages: List<SidebarPinOption>,
     onSidebar: () -> Unit,
     onFilterPanel: () -> Unit,
 ) {
+    var choosingStart by rememberSaveable { mutableStateOf(false) }
+    val behavior = state.behavior
     SettingsSection("Panels") {
+        StartPageRow(behavior.startPage, startPages) { choosingStart = true }
         SettingPageRow(
             "Sidebar",
             onSidebar,
@@ -105,6 +111,7 @@ fun PanelSettings(
             icon = Res.drawable.symbol_tune,
         )
     }
+    if (choosingStart) StartPageSheet(state, startPages) { choosingStart = false }
 }
 
 /** The Filter panel row's summary: how many sections the panel shows. */

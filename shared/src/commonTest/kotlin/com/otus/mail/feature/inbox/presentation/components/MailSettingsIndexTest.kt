@@ -32,7 +32,7 @@ class MailSettingsIndexTest {
                 mailLookIndex(behavior) { opened += "Mail list: $it" }
             }
             page("Mail behavior", { opened += "Mail behavior: $it" }) {
-                mailBehaviorIndex(MailBehaviorState(initial = behavior), emptyList(), rtl = false, pages)
+                mailBehaviorIndex(MailBehaviorState(initial = behavior), emptyList(), emptyList(), rtl = false, pages)
             }
             page("Privacy & security", { opened += "Privacy: $it" }) {
                 privacyIndex(behavior, DevicePrivacy(screen = true, keyboard = true)) { opened += "Allowed: $it" }
@@ -47,6 +47,7 @@ class MailSettingsIndexTest {
     fun theSidebarAndSignaturesLiveUnderMailBehavior() {
         val found = index()
         assertEquals(listOf("Mail behavior"), found.path("Sidebar"))
+        assertEquals(listOf("Mail behavior"), found.path("Start page"))
         assertEquals(listOf("Mail behavior", "Sidebar", "Mailboxes and folders"), found.path("Show as"))
         assertEquals(listOf("Mail behavior", "Signatures"), found.path("Add to replies"))
         assertEquals(listOf("Appearance", "Mail list"), found.path("Show sender"))
