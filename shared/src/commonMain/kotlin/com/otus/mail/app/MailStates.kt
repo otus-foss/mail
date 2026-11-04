@@ -115,7 +115,7 @@ internal class MailStates(
     /** Addresses pinned in "Show mail from". */
     val addressPins = AddressPinsState(services.stores.addressPins)
 
-    /** The screen and keyboard protections Settings › Privacy offers on this platform. */
+    /** The screen and keyboard protections Settings › Privacy & security offers on this platform. */
     val devicePrivacy: DevicePrivacy get() = services.devicePrivacy
 
     /** Rules keep only addresses, so senders take their names from the inbox's loaded mail. */
@@ -203,7 +203,7 @@ internal class MailStates(
         )
     }
 
-    /** Every address's signature, for Settings › Signatures. */
+    /** Every address's signature, for Settings › Mail behavior › Signatures. */
     val signatures =
         SignaturesState(services.drafts, services.signatures, services.pickers.signatureImages, scope) {
             accounts.accounts.map { ComposeAccount(it.id, it.name) }

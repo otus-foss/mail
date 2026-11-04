@@ -14,7 +14,7 @@ import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.components.MailBehaviorSettings
+import com.otus.mail.feature.inbox.presentation.components.WritingSettings
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -23,7 +23,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** The Undo send delay in Appearance & behavior. */
+/** The Undo send delay in Mail behavior's Writing section. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w360dp-h780dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -39,7 +39,7 @@ class UndoSendSettingTest {
                     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
                         Column(
                             Modifier.verticalScroll(rememberScrollState()),
-                        ) { MailBehaviorSettings(state, onOpenActionBar = {}) }
+                        ) { WritingSettings(state, onOpenSignatures = {}) }
                     }
                 }
             }

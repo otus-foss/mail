@@ -53,7 +53,7 @@ internal fun ComposePage(
     ComposeScreen(compose, states.behavior.behavior, exits)
 }
 
-/** Settings › Signatures; tapping an address opens its signature. */
+/** Settings › Mail behavior › Signatures; tapping an address opens its signature. */
 @Composable
 internal fun SignaturesPage(
     states: MailStates,

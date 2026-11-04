@@ -60,7 +60,7 @@ brings the owl in itself instead of replacing a static icon.
 
 ## App icon
 
-Appearance & behavior has an App icon row: Accent or Monochrome. The manifest declares one
+Appearance has an App icon row: Accent or Monochrome. The manifest declares one
 launcher alias per icon, Monochrome plus one per preset accent, all opening `MainActivity`.
 `showLauncherIcon` enables the one that matches the setting and the accent, using the closest
 preset for a custom accent. It runs when Mail goes to the background, because some launchers

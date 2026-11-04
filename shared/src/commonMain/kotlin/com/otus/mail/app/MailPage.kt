@@ -44,7 +44,11 @@ internal sealed interface MailPage {
     }
 
     data object SidebarSettings : MailPage {
-        override val parent = Appearance
+        override val parent = Behavior
+    }
+
+    data object FilterPanelSettings : MailPage {
+        override val parent = Behavior
     }
 
     data object PinnedSettings : MailPage {
@@ -82,7 +86,7 @@ internal sealed interface MailPage {
     }
 
     data object Signatures : MailPage {
-        override val parent = Settings
+        override val parent = Behavior
     }
 
     /** Edits the signature of the identity [identityId] of [accountId]. */
@@ -161,6 +165,7 @@ internal sealed interface MailPage {
                 Contacts,
                 SidebarSettings,
                 PinnedSettings,
+                FilterPanelSettings,
                 ThemeSettings,
                 MailListSettings,
                 Privacy,

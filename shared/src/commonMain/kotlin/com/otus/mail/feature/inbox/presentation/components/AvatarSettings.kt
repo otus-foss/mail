@@ -9,17 +9,20 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_public
 import com.otus.designsystem.shared.feedback.components.InfoText
+import com.otus.designsystem.shared.settings.components.DependentSettings
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.core.avatar.IconSource
 import com.otus.mail.core.avatar.bulwarkBase
+import com.otus.mail.feature.inbox.presentation.ICONS_UNAVAILABLE
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
- * Whether avatars load website icons and contacts from every account. While icons are on, Icons
- * from names where they come from and who sees the device, and opens [IconSourceSheet].
+ * Whether avatars load website icons and contacts from every account. Icons from names where the
+ * icons come from and opens [IconSourceSheet]; it stays disabled below the switch while icons are
+ * off.
  */
 @Composable
 internal fun AvatarSettings(state: MailBehaviorState) {
@@ -33,13 +36,13 @@ internal fun AvatarSettings(state: MailBehaviorState) {
             icon = Res.drawable.symbol_person,
             info = IconSourceInfo,
         )
-        if (behavior.websiteIcons) {
-            // The only line under the row says why no icons load, since nothing else would.
-            val unset = behavior.iconSource == IconSource.Bulwark && bulwarkBase(behavior.bulwarkAddress) == null
+        // The only line under the row says why no icons load, since nothing else would.
+        val unset = behavior.iconSource == IconSource.Bulwark && bulwarkBase(behavior.bulwarkAddress) == null
+        DependentSettings(enabled = behavior.websiteIcons) {
             SettingRow(
                 "Icons from",
                 { choosing = true },
-                description = "No Bulwark address, so no icons load".takeIf { unset },
+                description = iconsNote(behavior.websiteIcons, unset),
                 icon = Res.drawable.symbol_public,
             ) { ValueButton(behavior.iconSource.title) }
         }
@@ -64,6 +67,16 @@ internal fun AvatarSettings(state: MailBehaviorState) {
         )
     }
 }
+
+private fun iconsNote(
+    on: Boolean,
+    unset: Boolean,
+): String? =
+    when {
+        !on -> ICONS_UNAVAILABLE
+        unset -> "No Bulwark address, so no icons load"
+        else -> null
+    }
 
 private val IconSourceInfo =
     InfoText(

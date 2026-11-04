@@ -26,6 +26,6 @@ internal fun PhotoCleaningSheet(
         },
         onSelect = onAnswer,
         onDismiss = { onAnswer(true) },
-        footnote = "Change the default in Settings › Privacy.",
+        footnote = "Change the default in Settings › Privacy & security.",
     )
 }

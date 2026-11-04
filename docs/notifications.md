@@ -83,8 +83,9 @@ Each run calls `JmapNewMailChecker`:
 
 `MailNotifications` posts one notification per message on the "New mail" channel: the sender as
 the title, the subject as the text, and the subject and preview when expanded. Messages are
-grouped by account with a summary. Settings › Notifications › **Previews** decides what they show,
-saved by `AndroidNotificationPreviewStore`:
+grouped by account with a summary. Settings › Notifications › **Previews** › **All mail** decides
+what they show, in a `ChoiceSheet` that applies a choice at once, saved by
+`AndroidNotificationPreviewStore`:
 
 - **Use device setting**, the default, posts them with `VISIBILITY_PRIVATE` and a public version
   that says only "New mail". Unlocked, the alert shows the sender and subject. On the lock screen,

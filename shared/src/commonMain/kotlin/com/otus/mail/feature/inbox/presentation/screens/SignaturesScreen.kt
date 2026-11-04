@@ -19,8 +19,8 @@ import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.inbox.presentation.components.chipAvatar
 
 /**
- * Settings › Signatures: whether replies get a signature, then every address by account with the
- * start of its signature. Tapping one runs [onEdit].
+ * Settings › Mail behavior › Signatures: whether replies get a signature, then every address by
+ * account with the start of its signature. Tapping one runs [onEdit].
  */
 @Composable
 fun SignaturesScreen(

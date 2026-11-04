@@ -15,25 +15,28 @@ import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
-import com.otus.designsystem.shared.selection.components.RadioChoiceSheet
+import com.otus.designsystem.shared.selection.components.ChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
+import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.PRIVACY_TITLE
+import com.otus.mail.feature.inbox.presentation.allowedSummary
 import com.otus.mail.feature.inbox.presentation.components.AvatarSettings
 import com.otus.mail.feature.inbox.presentation.description
 import com.otus.mail.feature.inbox.presentation.title
 
 /**
- * Settings › Privacy: when mail loads images from other servers, chosen in a sheet, who may always
- * show them ([onOpenAllowed] opens that list), whether avatars load website icons, and the screen
- * and keyboard protections that [device] offers. Each switch saves at once, and each sheet saves
- * on Done. Website icons are off by default, so avatars reach only the user's servers.
+ * Settings › Privacy & security: when mail loads images from other servers, chosen in a sheet, who
+ * may always show them ([onOpenAllowed] opens that list), whether avatars load website icons, and
+ * the screen and keyboard protections that [device] offers. Each switch and each choice saves at
+ * once. Website icons are off by default, so avatars reach only the user's servers.
  */
 @Composable
 fun PrivacyScreen(
@@ -45,7 +48,7 @@ fun PrivacyScreen(
     val behavior = state.behavior
     var choosingImages by rememberSaveable { mutableStateOf(false) }
     var choosingPhotos by rememberSaveable { mutableStateOf(false) }
-    Subpage("Privacy", onBack) {
+    Subpage(PRIVACY_TITLE, onBack) {
         SettingsSection("Load remote images", info = ImagesInfo) {
             SettingRow("Load images", { choosingImages = true }, icon = Res.drawable.symbol_image) {
                 ValueButton(behavior.remoteImages.title)
@@ -54,7 +57,7 @@ fun PrivacyScreen(
             SettingPageRow(
                 "Allowed senders",
                 onOpenAllowed,
-                description = if (count == 1) "1 sender" else "$count senders",
+                description = allowedSummary(count, behavior.remoteImages),
                 icon = Res.drawable.symbol_verified_user,
             )
         }
@@ -66,21 +69,22 @@ fun PrivacyScreen(
         AvatarSettings(state)
         if (device.screen || device.keyboard) DeviceSection(state, device)
     }
+    val defaults = MailBehavior()
     if (choosingImages) {
-        RadioChoiceSheet(
-            "Load remote images",
-            ChoiceOptions(RemoteImages.entries, behavior.remoteImages),
+        ChoiceSheet(
+            "Load images",
+            ChoiceOptions(RemoteImages.entries, behavior.remoteImages, defaults.remoteImages),
             row = { ChoiceRow(it.title, it.description) },
-            onSave = { choice -> state.update { it.copy(remoteImages = choice) } },
+            onSelect = { choice -> state.update { it.copy(remoteImages = choice) } },
             onDismiss = { choosingImages = false },
         )
     }
     if (choosingPhotos) {
-        RadioChoiceSheet(
-            "Photos you attach",
-            ChoiceOptions(PhotoCleaning.entries, behavior.photoCleaning),
+        ChoiceSheet(
+            "Photo details",
+            ChoiceOptions(PhotoCleaning.entries, behavior.photoCleaning, defaults.photoCleaning),
             row = { ChoiceRow(it.title, it.description) },
-            onSave = { choice -> state.update { it.copy(photoCleaning = choice) } },
+            onSelect = { choice -> state.update { it.copy(photoCleaning = choice) } },
             onDismiss = { choosingPhotos = false },
         )
     }

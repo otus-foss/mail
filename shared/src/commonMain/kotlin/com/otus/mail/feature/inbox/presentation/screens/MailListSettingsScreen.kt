@@ -11,6 +11,7 @@ import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.ChoiceSheet
+import com.otus.designsystem.shared.settings.components.DependentSettings
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
@@ -20,13 +21,15 @@ import com.otus.mail.feature.inbox.domain.ListOrder
 import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.PreviewLines
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.SENDER_UNAVAILABLE
 import com.otus.mail.feature.inbox.presentation.dateStyleExample
 import com.otus.mail.feature.inbox.presentation.label
 
 /**
  * How the mail list's rows read, with [preview] showing a row in the current layout at the top.
- * Order and Preview apply only while the sender shows, so they hide while Show sender is off.
- * Date styles show a sample date in [dateFormatter]'s format. Each change is saved at once.
+ * Order and Preview apply only while the sender shows, so they stay below Show sender but disabled
+ * while it is off. Date styles show a sample date in [dateFormatter]'s format. Each change is
+ * saved at once.
  */
 @Composable
 fun MailListSettingsScreen(
@@ -44,16 +47,19 @@ fun MailListSettingsScreen(
     Subpage("Mail list", onBack) {
         preview(list)
         SettingsSection("Rows") {
-            if (list.showSender) {
-                SettingRow("Order", { choosing = ListChoice.Order }) { ValueButton(list.order.label) }
-            }
             SettingToggleRow(
                 "Show sender",
                 checked = list.showSender,
                 onCheckedChange = { on -> change { it.copy(showSender = on) } },
             )
-            if (list.showSender) {
-                SettingRow("Preview", { choosing = ListChoice.Preview }) { ValueButton(list.preview.label) }
+            val waiting = SENDER_UNAVAILABLE.takeUnless { list.showSender }
+            DependentSettings(enabled = list.showSender) {
+                SettingRow("Order", { choosing = ListChoice.Order }, description = waiting) {
+                    ValueButton(list.order.label)
+                }
+                SettingRow("Preview", { choosing = ListChoice.Preview }, description = waiting) {
+                    ValueButton(list.preview.label)
+                }
             }
             SettingToggleRow(
                 "Folder icons",
