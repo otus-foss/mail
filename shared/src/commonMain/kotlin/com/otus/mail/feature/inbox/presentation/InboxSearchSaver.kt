@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.saveable.mapSaver
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.feature.inbox.domain.SearchField
 
 internal val InboxSearchSaver =
     mapSaver(
@@ -15,7 +16,7 @@ internal val InboxSearchSaver =
                 "mailboxNames" to it.mailboxes.map { scope -> scope.name },
                 "mailboxAccounts" to it.mailboxes.map { scope -> scope.account },
                 "accounts" to it.accounts.toList(),
-                "inSubject" to it.inSubject,
+                "field" to it.field.name,
                 "withFiles" to it.withFiles,
             )
         },
@@ -29,7 +30,7 @@ internal val InboxSearchSaver =
                 dateEnd = values["end"] as String?,
                 mailboxes = names.zip(accounts) { name, account -> MailboxScope(account, name) }.toSet(),
                 accounts = (values["accounts"] as List<*>).map { it as String }.toSet(),
-                inSubject = values["inSubject"] as Boolean,
+                field = SearchField.valueOf(values["field"] as String),
                 withFiles = values["withFiles"] as Boolean,
             )
         },
