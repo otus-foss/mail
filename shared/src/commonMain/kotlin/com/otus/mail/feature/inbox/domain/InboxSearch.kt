@@ -7,11 +7,18 @@ data class InboxSearch(
     val dateEnd: String? = null,
     val mailboxes: Set<MailboxScope> = setOf(MailboxScope(null, INBOX_MAILBOX)),
     val accounts: Set<String> = emptySet(),
-    /** Terms match only the subject, rather than the subject, body, and sender. */
-    val inSubject: Boolean = false,
+    /** Where the terms must match. */
+    val field: SearchField = SearchField.Anywhere,
     /** Only mail with attachments. */
     val withFiles: Boolean = false,
 )
+
+/** The part of a message a search looks in. */
+enum class SearchField { Anywhere, Subject, Body }
+
+/** Looks only in [only], or anywhere again when it already does. */
+fun InboxSearch.toggled(only: SearchField): InboxSearch =
+    copy(field = if (field == only) SearchField.Anywhere else only)
 
 /**
  * All whitespace-separated terms must match; terms can match different message fields. The
@@ -35,13 +42,17 @@ fun searchMessages(
             matchesFilters(message, search) &&
                 message.passes(filters) &&
                 terms.all { term ->
-                    message.searchedText(search.inSubject).any { it.contains(term, ignoreCase = true) }
+                    message.searchedText(search.field).any { it.contains(term, ignoreCase = true) }
                 }
         }.sortedWith(if (filters.sort == FilterSort.NewestFirst) newestFirst else newestFirst.reversed())
 }
 
-private fun MailMessage.searchedText(inSubject: Boolean): List<String> =
-    if (inSubject) listOf(subject) else listOf(subject, body, sender.name, sender.address)
+private fun MailMessage.searchedText(field: SearchField): List<String> =
+    when (field) {
+        SearchField.Anywhere -> listOf(subject, body, sender.name, sender.address)
+        SearchField.Subject -> listOf(subject)
+        SearchField.Body -> listOf(body)
+    }
 
 private fun matchesFilters(
     message: MailMessage,

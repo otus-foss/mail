@@ -18,7 +18,6 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_calendar_today
-import com.otus.designsystem.resources.symbol_notes
 import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.elements.FilterChip
@@ -37,9 +36,11 @@ import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.SearchField
 import com.otus.mail.feature.inbox.domain.lastReceived
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.feature.inbox.domain.toggled
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.listDateLabel
 import kotlinx.datetime.DateTimeUnit
@@ -149,8 +150,10 @@ private fun NarrowChips(
     Column {
         SectionCaption("Narrow it")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(FilterTokens.chipGap)) {
-            FilterChip("In subject", search.inSubject, { onChange(search.copy(inSubject = !search.inSubject)) }) {
-                Symbol(Res.drawable.symbol_notes, size = FilterTokens.chipIconSize)
+            fieldChoices.forEach { choice ->
+                FilterChip(choice.label, search.field == choice.field, { onChange(search.toggled(choice.field)) }) {
+                    Symbol(choice.symbol, size = FilterTokens.chipIconSize)
+                }
             }
             FilterChip("Has files", search.withFiles, { onChange(search.copy(withFiles = !search.withFiles)) }) {
                 Symbol(Res.drawable.symbol_attach_file, size = FilterTokens.chipIconSize)
@@ -175,7 +178,10 @@ private fun Matches(
     dates: HitDates,
     actions: SearchSheetActions,
 ) {
-    val people = remember(hits, search.query) { matchingPeople(hits, search.query) }
+    val people =
+        remember(hits, search.query, search.field) {
+            if (search.field == SearchField.Anywhere) matchingPeople(hits, search.query) else emptyList()
+        }
     if (people.isNotEmpty()) {
         Column {
             SectionCaption("People")
@@ -195,7 +201,7 @@ private fun Matches(
         return
     }
     Column {
-        SectionCaption("Messages")
+        if (people.isNotEmpty()) SectionCaption("Messages")
         val today = mailToday()
         hits.take(FIRST_HITS).forEach { message ->
             SearchHitRow(
