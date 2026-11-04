@@ -38,8 +38,11 @@ final class ApplePushDelegate: NSObject, UIApplicationDelegate, UNUserNotificati
     func scheduleRefresh() {
         let request = BGAppRefreshTaskRequest(identifier: refreshIdentifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: 12 * 60 * 60)
-        do { try BGTaskScheduler.shared.submit(request) }
-        catch { /* Background refresh is best effort; foreground activation also renews. */ }
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            // Background refresh is best effort; foreground activation also renews.
+        }
     }
 
     func userNotificationCenter(
