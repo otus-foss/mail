@@ -89,7 +89,8 @@ internal class JmapContactRepository(
                 write(book.loginId) { it.cardsWithUid(book, uid) }
             } catch (refusal: ContactWriteException) {
                 // A server that cannot look cards up by uid gets the create again, as it would have.
-                if (refusal.failure == ContactWriteFailure.Offline) throw refusal
+                // Without an answer the create waits instead, since the card may be there.
+                if (refusal.failure in setOf(ContactWriteFailure.Offline, ContactWriteFailure.Failing)) throw refusal
                 emptyList()
             }
         return found
@@ -225,8 +226,9 @@ internal class JmapContactRepository(
             }.list
 
     /**
-     * Runs a change. A missing connection, a sign-in the server rejects, or a server error is
-     * [ContactWriteFailure.Offline], so the change waits and goes again later instead of failing.
+     * Runs a change. A missing connection or a sign-in the server rejects is
+     * [ContactWriteFailure.Offline], so the change waits and goes again later; [writeFailure] tells
+     * those apart from a refusal of this change alone.
      */
     private suspend fun <T> write(
         loginId: String,
@@ -238,10 +240,7 @@ internal class JmapContactRepository(
         return try {
             block(connections.connection(login))
         } catch (error: JmapException) {
-            throw when (error) {
-                is JmapException.MethodError -> refused(error.type, error)
-                else -> ContactWriteException(ContactWriteFailure.Offline, error)
-            }
+            throw ContactWriteException(error.writeFailure(), error)
         }
     }
 
@@ -258,12 +257,6 @@ internal class JmapContactRepository(
         const val MAX_CARDS = 10_000
     }
 }
-
-private fun refused(
-    type: String,
-    cause: Throwable? = null,
-): ContactWriteException =
-    ContactWriteException(if (type == "forbidden") ContactWriteFailure.ReadOnly else ContactWriteFailure.Refused, cause)
 
 /** The cards in [book] with [uid] (RFC 9610, section 3.3). */
 private suspend fun JmapConnection.cardsWithUid(

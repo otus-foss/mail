@@ -56,6 +56,13 @@ enum class ContactWriteFailure {
 
     /** The server refused the change for another reason. */
     Refused,
+
+    /**
+     * The server's answer did not say whether it took the change, such as an internal error or an
+     * answer the app cannot read. The change goes again a few times, then it is set aside like a
+     * refusal, so it does not hold up the changes after it.
+     */
+    Failing,
 }
 
 class ContactWriteException(

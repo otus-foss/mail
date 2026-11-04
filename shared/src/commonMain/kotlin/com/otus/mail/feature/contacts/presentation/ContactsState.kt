@@ -133,7 +133,7 @@ internal class ContactsState(
         plan: ImportPlan,
         mode: ImportMode,
     ) {
-        sync.add(plan.edits(mode) { newId() }, ::sent)
+        sync.add(plan.edits(mode, id = ::newId, uid = ::newUid), ::sent)
         importing = null
     }
 

@@ -222,4 +222,5 @@ private fun ContactWriteFailure.text(): String =
         ContactWriteFailure.ReadOnly -> "This address book stopped allowing changes."
         ContactWriteFailure.Refused -> "The server refused the change."
         ContactWriteFailure.Offline -> "It syncs when you’re back online."
+        ContactWriteFailure.Failing -> "The server kept failing to save the change."
     }

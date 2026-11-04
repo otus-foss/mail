@@ -14,7 +14,7 @@ enum class ImportMode(
 
 /**
  * An import of [cards] read from a file into [book]: which are new, and which match a card in
- * [book] by address. [failures] are the file's cards that could not be read, by position.
+ * [book] by uid or address. [failures] are the file's cards that could not be read, by position.
  */
 data class ImportPlan(
     val cards: List<Card>,
@@ -28,12 +28,26 @@ data class ImportPlan(
             .flatMap { card -> card.emails.map { it.value.lowercase() to card } }
             .toMap()
 
-    /** The existing card [card] matches, if any. */
+    private val inBook: Map<String, ContactCard> =
+        existing
+            .filter { book in it.books }
+            .mapNotNull { card -> card.card.uid?.let { it to card } }
+            .toMap()
+
+    // The uids the target account holds already, in any of its books.
+    private val accountUids: Set<String> =
+        existing
+            .filter { it.key.loginId == book.loginId && it.key.accountId == book.accountId }
+            .mapNotNull { it.card.uid }
+            .toSet()
+
+    /** The existing card [card] matches, if any: the one in [book] with its uid, else with one of its addresses. */
     fun match(card: Card): ContactCard? =
-        card.emails
-            .orEmpty()
-            .values
-            .firstNotNullOfOrNull { byAddress[it.address.lowercase()] }
+        card.uid?.let(inBook::get)
+            ?: card.emails
+                .orEmpty()
+                .values
+                .firstNotNullOfOrNull { byAddress[it.address.lowercase()] }
 
     val newCards: List<Card> get() = cards.filter { match(it) == null }
     val matched: List<Card> get() = cards.filter { match(it) != null }
@@ -41,14 +55,21 @@ data class ImportPlan(
     /** How many cards [mode] changes. */
     fun count(mode: ImportMode): Int = if (mode == ImportMode.Skip) newCards.size else cards.size
 
-    /** The changes [mode] makes, with [id] naming each. */
+    /**
+     * The changes [mode] makes, with [id] naming each. A new card keeps the file's uid unless the
+     * account holds it already, in any book, or an earlier card of the file has it; then, or when it
+     * has none, it gets one from [uid]. A server may allow a uid once per account, and refuses a
+     * second card with it.
+     */
     fun edits(
         mode: ImportMode,
         id: () -> String,
+        uid: () -> String,
     ): List<ContactEdit> {
         val creates =
             cards
                 .filter { mode == ImportMode.AddAsNew || match(it) == null }
+                .withFreeUids(accountUids, uid)
                 .map { ContactEdit.Create(id(), book, it.copy(id = null, addressBookIds = mapOf(book.bookId to true))) }
         // Every file card that matches one card merges into a single change, so none is lost.
         val merges =
@@ -63,6 +84,20 @@ data class ImportPlan(
                 emptyList()
             }
         return creates + merges
+    }
+}
+
+/** These cards, each with a uid neither [taken] nor used by an earlier one; [uid] makes a new one. */
+private fun List<Card>.withFreeUids(
+    taken: Set<String>,
+    uid: () -> String,
+): List<Card> {
+    val used = taken.toMutableSet()
+    return map { card ->
+        val own = card.uid
+        val free = if (own != null && own !in used) own else uid()
+        used += free
+        card.copy(uid = free)
     }
 }
 
