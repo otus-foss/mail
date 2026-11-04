@@ -37,6 +37,9 @@ jobs:
             tasks: checkTests -Potus.testShard=1/2
           - part: tests 2 of 2
             tasks: checkTests -Potus.testShard=2/2
+          # Not part of checkAll: builds the release APK so the apk-size job can compare it.
+          - part: apk size
+            tasks: :androidApp:assembleNightly
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -76,6 +79,42 @@ jobs:
       - run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
       - run: python3 -m pip install -r requirements-quality.txt
       - run: ./gradlew ${{ matrix.tasks }} --console=plain -Potus.meta.path="$RUNNER_TEMP/otus-meta"
+      - name: Record the APK size
+        if: matrix.part == 'apk size'
+        run: |
+          set -- androidApp/build/outputs/apk/nightly/*.apk
+          stat -c %s "$1" > apk-size.txt
+      - if: matrix.part == 'apk size'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: apk-size
+          path: apk-size.txt
+
+  # Comments the release APK's size next to the latest nightly's. Only this job can write to the
+  # pull request, so no build step gets that token.
+  apk-size:
+    needs: check
+    if: always() && github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: ubicloud-standard-2
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: apk-size
+      - name: Comment the size
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          size=$(cat apk-size.txt)
+          nightly=$(gh release view -R reazndev/otus-mail-nightly --json assets \
+            --jq '.assets[] | select(.name | endswith(".apk")) | .size')
+          awk -v s="$size" -v n="$nightly" 'BEGIN {
+            printf "Release APK: %.2f MB, %+.1f kB against the latest nightly (%.2f MB).\n",
+              s / 1e6, (s - n) / 1e3, n / 1e6 }' > comment.md
+          cat comment.md >> "$GITHUB_STEP_SUMMARY"
+          gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body-file comment.md
 
   ios:
     if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
