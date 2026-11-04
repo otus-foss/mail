@@ -18,7 +18,8 @@ import com.otus.mail.feature.inbox.domain.barLayout
 /**
  * Any screen's bar for [layout]. [offer] gives each action as it applies on this screen; one it
  * cannot offer stays in its slot, disabled, so the buttons never move. All actions opens
- * [everyAction] in a menu, and stays disabled while there is none. [context] describes what the
+ * [everyAction] in a menu, and stays disabled while there is none; a drag up on the buttons opens
+ * it too. [context] describes what the
  * primary applies to, such as a reply's recipient. A [minimized] bar shows only the primary;
  * without one the bar is full. An action that asks to be confirmed reaches [onAction] only once
  * the user confirms it.
@@ -61,6 +62,7 @@ internal fun MailActionBar(
         secondary = if (minimized != null) emptyList() else layout.secondary.map { barAction(it, primary = false) },
         context = context,
         minimized = minimized?.let { BarMinimized(it.hidden, menuOf(it.more)) },
+        allActions = menuOf(everyAction),
     )
     confirmation.Dialog()
 }
