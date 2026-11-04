@@ -245,7 +245,7 @@ internal class MailStates(
             behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
         }
     private val cleaning = FolderCleaning(services, folders, scope)
-    private val marking = MessageMarking(services, folders, scope)
+    private val marking = MessageMarking(services, folders, moveToasts, scope)
 
     /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
     val sorting = MessageSorting(rules, services.rules, folders, filing, scope)
@@ -269,6 +269,7 @@ internal class MailStates(
                 ),
             canMark = ::canMark,
             onMark = { messages, flag, on -> marking.mark(feed, messages, flag, on) },
+            markOpened = { marking.mark(feed, listOf(it), MessageFlag.Read, on = true, undoable = false) },
             ruleForSender = senderRules::start,
             readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },

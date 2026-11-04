@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -20,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MessageMarkingTest {
@@ -28,18 +30,21 @@ class MessageMarkingTest {
     private var messageLoads = 0
     private var refused = emptySet<String>()
     private var folderLoads = 0
+    private val toasts = ToastState()
 
-    private fun message(id: String) =
-        MailMessage(
-            id,
-            MailSender("Grace", "grace@example.org"),
-            "Subject",
-            "Body",
-            ReceivedAt("2026-10-01", "12:00"),
-            MailLocation("Inbox", "Ada", "ada", mailboxId = "i"),
-            MailAttributes(unread = true),
-            emailId = id,
-        )
+    private fun message(
+        id: String,
+        unread: Boolean = true,
+    ) = MailMessage(
+        id,
+        MailSender("Grace", "grace@example.org"),
+        "Subject",
+        "Body",
+        ReceivedAt("2026-10-01", "12:00"),
+        MailLocation("Inbox", "Ada", "ada", mailboxId = "i"),
+        MailAttributes(unread = unread),
+        emailId = id,
+    )
 
     /** Marking for a feed holding [messages], and the feed. Each folder refresh counts a load. */
     private fun TestScope.marking(vararg messages: MailMessage): Pair<MessageMarking, InboxFeedState> {
@@ -65,14 +70,18 @@ class MessageMarkingTest {
         val feed = InboxFeedState(source, this)
         feed.refresh()
         runCurrent()
-        return MessageMarking(services, folders, this) to feed
+        return MessageMarking(services, folders, MoveToasts(toasts, this), this) to feed
     }
 
-    /** Updates every id the `Email/set` call names, except [refused] ones. */
+    /** Sets or clears `$seen` on every id the `Email/set` call names, except [refused] ones. */
     private fun setReply(body: String): String {
-        val (kept, changed) = UPDATE.findAll(body).map { it.groupValues[1] }.partition { it in refused }
+        val patches = UPDATE.findAll(body).associate { it.groupValues[1] to (it.groupValues[2] == "true") }
+        val (kept, changed) = patches.keys.partition { it in refused }
         serverMessages.update { rows ->
-            rows.map { if (it.emailId in changed) it.copy(attributes = it.attributes.copy(unread = false)) else it }
+            rows.map { row ->
+                val seen = patches[row.emailId]?.takeIf { row.emailId in changed } ?: return@map row
+                row.copy(attributes = row.attributes.copy(unread = !seen))
+            }
         }
         val updated = changed.joinToString { "\"$it\": null" }
         val notUpdated = kept.joinToString { "\"$it\": {\"type\": \"forbidden\"}" }
@@ -82,12 +91,23 @@ class MessageMarkingTest {
 
     private fun InboxFeedState.unread(): List<String> = messages.filter { it.attributes.unread }.map { it.id }
 
+    /** Each id an `Email/set` [body] patches, with the `$seen` value it sends. */
+    private fun patched(body: String): List<Pair<String, String>> =
+        UPDATE.findAll(body).map { it.groupValues[1] to it.groupValues[2] }.toList()
+
+    /** Runs the action of the toast that says [text]. */
+    private fun tap(text: String) {
+        val toast = toasts.messages.single { it.text == text }
+        toast.action?.onAction?.invoke()
+    }
+
     @Test
     fun markingManyMessagesSendsOneUpdateAndRefreshesFoldersOnce() =
         runTest {
             val (marking, feed) = marking(message("m1"), message("m2"), message("m3"))
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
             assertEquals(emptyList(), feed.unread(), "Every message shows read at once")
+            assertEquals(listOf("3 emails marked as read"), toasts.messages.map { it.text })
             settle { folderLoads > 0 }
             // Another refresh would follow here; give it the chance.
             settle { false }
@@ -98,35 +118,69 @@ class MessageMarkingTest {
         }
 
     @Test
-    fun onlyTheRefusedMessagesGoBackWithANotice() =
+    fun onlyTheRefusedMessagesGoBackAndRetrySendsOnlyThose() =
         runTest {
             refused = setOf("m2")
             val (marking, feed) = marking(message("m1"), message("m2"), message("m3"))
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
-            settle { feed.notice != null }
+            val failure = "Couldn't mark 1 email as read"
+            settle { toasts.messages.any { it.text == failure } }
             assertEquals(listOf("m2"), feed.unread())
             assertEquals(2, messageLoads)
-            assertEquals("Couldn't finish changing 1 message. Try again.", feed.notice)
+            assertTrue(toasts.messages.single { it.text == failure }.sticky, "Retry waits for the user")
+            assertNull(feed.notice)
             settle { folderLoads > 0 }
             assertEquals(1, folderLoads, "The marked messages still change the unread counts")
+
+            refused = emptySet()
+            sent.value = emptyList()
+            tap(failure)
+            settle { feed.unread().isEmpty() && sent.value.isNotEmpty() }
+            settle { false }
+            assertEquals(listOf(listOf("m2" to "true")), sent.value.filter { "Email/set" in it }.map(::patched))
+            assertEquals(emptyList(), feed.unread())
         }
 
     @Test
-    fun aRefusedSingleMarkRefreshesFoldersAndKeepsTheFailureNotice() =
+    fun aRefusedSingleMarkGoesBackWithRetry() =
         runTest {
             refused = setOf("m1")
             val (marking, feed) = marking(message("m1"))
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
             assertEquals(emptyList(), feed.unread())
-            settle { feed.notice != null }
+            settle { toasts.messages.any { it.text == "Couldn't mark the email as read" } }
             settle { false }
             assertEquals(listOf("m1"), feed.unread())
-            assertEquals("Couldn't finish changing the message. Try again.", feed.notice)
             assertEquals(1, folderLoads)
             assertEquals(2, messageLoads)
         }
 
+    @Test
+    fun undoSetsBackOnlyTheMessagesThatChanged() =
+        runTest {
+            val (marking, feed) = marking(message("m1", unread = false), message("m2"), message("m3"))
+            marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
+            assertEquals(listOf("2 emails marked as read"), toasts.messages.map { it.text })
+            settle { sent.value.isNotEmpty() }
+            sent.value = emptyList()
+            tap("2 emails marked as read")
+            settle { feed.unread().size == 2 }
+            settle { false }
+            assertEquals(listOf("m2", "m3"), feed.unread(), "m1 was read before, so it stays read")
+            val undo = sent.value.single { "Email/set" in it }
+            assertEquals(listOf("m2" to "null", "m3" to "null"), patched(undo))
+        }
+
+    @Test
+    fun openingAMessageMarksItReadWithoutUndo() =
+        runTest {
+            val (marking, feed) = marking(message("m1"))
+            marking.mark(feed, feed.messages, MessageFlag.Read, on = true, undoable = false)
+            settle { sent.value.isNotEmpty() }
+            assertEquals(emptyList(), toasts.messages)
+        }
+
     private companion object {
-        val UPDATE = Regex("\"(m\\d)\":\\{\"keywords/")
+        val UPDATE = Regex("\"(m\\d)\":\\{\"keywords/\\\$seen\":(true|null)")
     }
 }
