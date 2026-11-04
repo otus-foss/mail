@@ -23,6 +23,13 @@ pull request a week for GitHub Actions and one for Gradle, leaving the pinned Ot
 The `quality` workflow also builds the release APK and comments its size against the latest
 nightly.
 
+Each `quality` run first lists the changed files: workflow-only and Markdown-only pull requests skip
+the build, and pull requests that change only Android code skip the macOS `ios` job. The
+`pull request` workflow labels each pull request by size (`size:XS` to `size:XL`, tests left
+out), comments the screenshots it adds or changes beside the old ones, and warns when UI code
+changes without a screenshot. In Mail it also adds a `needs meta` label when Otus Meta has a branch with the same name,
+since that pair has to land together, Meta first.
+
 Mail downloads its pinned Meta release from GitHub Packages at
 `https://maven.pkg.github.com/reazndev/otus-meta`. CI reads a GitHub token with `read:packages`
 from the `OTUS_META_PACKAGES_TOKEN` secret for local use; while Meta publishing is paused, every
