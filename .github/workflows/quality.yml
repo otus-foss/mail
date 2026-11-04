@@ -146,11 +146,22 @@ jobs:
           size=$(cat apk-size.txt)
           nightly=$(gh release view -R reazndev/otus-mail-nightly --json assets \
             --jq '.assets[] | select(.name | endswith(".apk")) | .size')
-          awk -v s="$size" -v n="$nightly" 'BEGIN {
-            printf "Release APK: %.2f MB, %+.1f kB against the latest nightly (%.2f MB).\n",
-              s / 1e6, (s - n) / 1e3, n / 1e6 }' > comment.md
-          cat comment.md >> "$GITHUB_STEP_SUMMARY"
-          gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body-file comment.md
+          marker="<!-- otus-apk-size -->"
+          {
+            echo "$marker"
+            awk -v s="$size" -v n="$nightly" 'BEGIN {
+              printf "Release APK: %.2f MB, %+.1f kB against the latest nightly (%.2f MB).\n",
+                s / 1e6, (s - n) / 1e3, n / 1e6 }'
+          } > comment.md
+          tail -n 1 comment.md >> "$GITHUB_STEP_SUMMARY"
+          # One comment per pull request, updated by later runs.
+          comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)
+          if [ -n "$comment" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment" -F body=@comment.md > /dev/null
+          else
+            gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body-file comment.md
+          fi
 
   ios:
     needs: changes
