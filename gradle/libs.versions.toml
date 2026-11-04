@@ -1,29 +1,29 @@
 [versions]
 otus-meta = "0.10.0"
-agp = "9.1.1"
-kotlin = "2.4.10"
-compose-multiplatform = "1.11.1"
+agp = "9.5.0"
+kotlin = "2.4.21"
+compose-multiplatform = "1.12.2"
 android-compileSdk = "37"
 android-targetSdk = "37"
 android-minSdk = "24"
 androidx-activity = "1.13.0"
-androidx-work = "2.11.0"
+androidx-work = "2.12.0"
 unifiedpush = "3.3.5"
 unifiedpush-fcm = "3.1.0"
 
 robolectric = "4.17"
-roborazzi = "1.76.0"
+roborazzi = "1.77.0"
 androidx-compose-test = "1.11.2"
 
-navigation-event = "1.0.1"
-kotlinx-datetime = "0.7.1"
-ktor = "3.6.0"
-kotlinx-serialization = "1.11.0"
+navigation-event = "1.1.0"
+kotlinx-datetime = "0.8.0"
+ktor = "3.6.1"
+kotlinx-serialization = "1.12.0"
 kotlinx-coroutines = "1.11.0"
-kotlinx-io = "0.9.1"
-sqldelight = "2.4.0"
+kotlinx-io = "0.9.2"
+sqldelight = "2.4.1"
 
-kover = "0.9.9"
+kover = "0.9.11"
 
 [libraries]
 otus-jmap = { module = "com.otus:jmap", version.ref = "otus-meta" }
