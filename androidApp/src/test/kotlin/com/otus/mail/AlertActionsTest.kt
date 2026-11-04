@@ -9,7 +9,9 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.WorkManager
 import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
@@ -23,15 +25,23 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import kotlin.time.Instant
 
-/** A tapped alert opens its message, its buttons change it without Mail, and mailto: intents start drafts. */
+/**
+ * A tapped alert opens its message, its chosen buttons change it without Mail or open a reply, a
+ * failed change brings the alert back, and mailto: intents start drafts.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class AlertActionsTest {
     private val app = ApplicationProvider.getApplicationContext<OtusMailApplication>()
     private val manager = app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-    private fun mail(id: String) =
-        NewMail("ada", "Ada", id, "Grace", "Order shipped", "On its way", Instant.parse("2026-10-14T08:00:00Z"))
+    private fun mail(
+        id: String,
+        roles: Set<String> = setOf("inbox", "archive", "trash"),
+    ) = NewMail("ada", "Ada", id, "Grace", "Order shipped", "On its way", Instant.parse("2026-10-14T08:00:00Z"))
+        .copy(mailboxRoles = roles, canSend = true)
+
+    private fun titles(notification: Notification): List<String> = notification.actions.map { it.title.toString() }
 
     private fun posted(): Map<String, Notification> =
         manager.activeNotifications.associate { it.tag to it.notification }
@@ -58,10 +68,45 @@ class AlertActionsTest {
     fun onlyAnAlertThatShowsTheMessageOffersButtons() {
         MailNotifications(app) { PreviewChoices() }.show(listOf(mail("m1")))
         val shown = posted().getValue("ada/m1")
-        assertEquals(listOf("Archive", "Mark read"), shown.actions.map { it.title.toString() })
+        assertEquals(listOf("Delete", "Archive", "Mark read"), titles(shown))
         assertNull(shown.publicVersion.actions)
         MailNotifications(app) { PreviewChoices(all = NotificationPreviews.Hidden) }.show(listOf(mail("m2")))
         assertNull(posted().getValue("ada/m2").actions)
+    }
+
+    @Test
+    fun alertsShowTheChosenButtonsInOrderThatTheAccountCanRun() {
+        val chosen = listOf(MailAction.Reply, MailAction.Archive, MailAction.Flag)
+        MailNotifications(app, { chosen }) { PreviewChoices() }.show(listOf(mail("m1", roles = setOf("inbox"))))
+        assertEquals(listOf("Reply", "Flag"), titles(posted().getValue("ada/m1")))
+        MailNotifications(app, { emptyList() }) { PreviewChoices() }.show(listOf(mail("m2")))
+        assertNull(posted().getValue("ada/m2").actions)
+    }
+
+    @Test
+    fun replyOpensMailOnAReplyAndClearsTheAlert() {
+        MailNotifications(app, { listOf(MailAction.Reply) }) { PreviewChoices() }.show(listOf(mail("m1")))
+        val reply = posted().getValue("ada/m1").actions.single()
+        val opened = shadowOf(reply.actionIntent).savedIntent
+        assertEquals(MainActivity::class.java.name, opened.component?.className)
+        assertEquals(AlertedMail("ada", "m1"), opened.repliedAlert())
+        assertNull(shadowOf(posted().getValue("ada/m1").contentIntent).savedIntent.repliedAlert())
+    }
+
+    @Test
+    fun aFailedChangeBringsTheAlertBackAndSaysSo() {
+        MailNotifications(app) { PreviewChoices() }.showFailed(mail("m1"), AlertAction.Archive)
+        val back = posted().getValue("ada/m1")
+        assertEquals("Archive didn't work", back.extras.getCharSequence(Notification.EXTRA_SUB_TEXT).toString())
+        assertEquals(listOf("Delete", "Archive", "Mark read"), titles(back))
+        assertEquals(setOf("ada/m1", "ada"), posted().keys)
+    }
+
+    @Test
+    fun aButtonCarriesItsAlertSoItCanComeBack() {
+        MailNotifications(app) { PreviewChoices() }.show(listOf(mail("m1")))
+        val delete = posted().getValue("ada/m1").actions.first()
+        assertEquals(mail("m1"), shadowOf(delete.actionIntent).savedIntent.mail())
     }
 
     @Test

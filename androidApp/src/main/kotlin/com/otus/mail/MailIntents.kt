@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.mailtoRequest
 import com.otus.mail.feature.inbox.domain.parseRecipients
+import com.otus.mail.feature.notifications.domain.AlertedMail
 
 /** The login of the message an alert or its button is about. */
 internal const val EXTRA_LOGIN_ID = "com.otus.mail.extra.LOGIN_ID"
@@ -15,10 +16,14 @@ internal const val EXTRA_LOGIN_ID = "com.otus.mail.extra.LOGIN_ID"
 /** The server's Email id of the message an alert or its button is about. */
 internal const val EXTRA_EMAIL_ID = "com.otus.mail.extra.EMAIL_ID"
 
+/** Set by an alert's Reply button: Mail answers the message rather than opening it. */
+private const val EXTRA_REPLY = "com.otus.mail.extra.REPLY"
+
 /**
- * Hands what [intent] opens Mail with to [MailRequests]: the message of a tapped alert, or a draft
- * for a `mailto:` link that another app viewed or sent to. An intent the recent apps list gives
- * back asks for nothing new, so it opens nothing again.
+ * Hands what [intent] opens Mail with to [MailRequests]: the message of a tapped alert, a reply to
+ * it from the alert's Reply button, or a draft for a `mailto:` link that another app viewed or
+ * sent to. An intent the recent apps list gives back asks for nothing new, so it opens nothing
+ * again.
  */
 internal fun MailRequests.take(intent: Intent) {
     if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
@@ -26,6 +31,7 @@ internal fun MailRequests.take(intent: Intent) {
     val emailId = intent.getStringExtra(EXTRA_EMAIL_ID)
     val draft = intent.mailtoDraft()
     when {
+        loginId != null && emailId != null && intent.replies -> reply(loginId, emailId)
         loginId != null && emailId != null -> openMessage(loginId, emailId)
         draft != null -> compose(draft)
     }
@@ -48,6 +54,20 @@ internal fun Intent.mailtoDraft(): ComposeRequest.New? {
     )
 }
 
+private val Intent.replies: Boolean get() = getBooleanExtra(EXTRA_REPLY, false)
+
+/**
+ * The alert a Reply button answered, which goes once Mail opens the reply; null for every other
+ * intent. Android leaves an alert showing after a button that opens an app.
+ */
+internal fun Intent.repliedAlert(): AlertedMail? {
+    val loginId = getStringExtra(EXTRA_LOGIN_ID)
+    val emailId = getStringExtra(EXTRA_EMAIL_ID)
+    val fromHistory = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+    if (!replies || fromHistory || loginId == null || emailId == null) return null
+    return AlertedMail(loginId, emailId)
+}
+
 private fun Intent.addresses(extra: String): List<MailSender> =
     getStringArrayExtra(extra).orEmpty().flatMap(::parseRecipients)
 
@@ -66,6 +86,23 @@ internal fun Context.openMessage(
         Intent(this, MainActivity::class.java)
             .putExtra(EXTRA_LOGIN_ID, loginId)
             .putExtra(EXTRA_EMAIL_ID, emailId)
+            .addFlags(IN_PLACE),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
+/** Opens Mail on a reply to the message [emailId] of [loginId], for the alert button with request [code]. */
+internal fun Context.replyTo(
+    loginId: String,
+    emailId: String,
+    code: Int,
+): PendingIntent =
+    PendingIntent.getActivity(
+        this,
+        code,
+        Intent(this, MainActivity::class.java)
+            .putExtra(EXTRA_LOGIN_ID, loginId)
+            .putExtra(EXTRA_EMAIL_ID, emailId)
+            .putExtra(EXTRA_REPLY, true)
             .addFlags(IN_PLACE),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )

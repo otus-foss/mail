@@ -23,8 +23,10 @@ left, the control on the right, and large section titles. Search covers every pa
   authentication, such as Stalwart; no provider-specific behavior exists.
 - **Notifications** chooses Google Play services or a UnifiedPush app for instant delivery. Under
   **Previews**, **All mail** shows what alerts show in a `ValueButton` and opens a `ChoiceSheet`,
-  and **Accounts and addresses** sets it per account and address. **Not instant** lists only
-  accounts whose push failed; see [notifications](notifications.md).
+  and **Accounts and addresses** sets it per account and address. Under **Buttons**, **Alert buttons**
+  shows how many alert buttons are chosen and opens an `OrderedChoiceSheet` that picks up to three
+  and their order (Android only, since iOS alerts show no message). **Not instant** lists only
+  accounts whose push failed; see [notifications](notifications.md#buttons).
 - **Appearance** (`AppearanceSettingsScreen` from `com.otus.settings`) holds only how Otus looks,
   in one **Look** section: **Theme** (its page), **App icon**, **Mail list** (its page),
   **Date format**, and **Animations**. Nothing on it changes what Mail does.
@@ -113,7 +115,8 @@ Every setting is one of a few kinds, so each kind reads and behaves the same on 
 - **Ordered list**: a `SettingRow` that shows how many are chosen, such as "4 shown", and opens
   `OrderedChoiceSheet`, a `SelectionSheet` where chosen items are dragged by their handles or
   tapped out and others are added; Done saves. Pills, the filter panel's Sections and Quick
-  filters, and both Quick views use it.
+  filters, both Quick views, and the alert buttons use it. A list with a limit, such as the three
+  alert buttons, says "Take one out to add another." once it is full.
 - **Page**: `SettingPageRow`, which ends in a chevron and names the page's value or contents
   under the title. A page holds a setting that needs room of its own, such as the theme cards,
   action bar previews, or the pinned tile editor.

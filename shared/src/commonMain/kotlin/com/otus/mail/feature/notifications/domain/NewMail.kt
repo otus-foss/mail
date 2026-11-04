@@ -17,6 +17,10 @@ data class NewMail(
      * for Bcc and list mail, for previews chosen per address.
      */
     val recipients: List<String> = emptyList(),
+    /** The lowercase roles of its account's mailboxes, such as `archive`, which decide the alert's buttons. */
+    val mailboxRoles: Set<String> = emptySet(),
+    /** Whether its account can send, so the alert can offer Reply. */
+    val canSend: Boolean = false,
 )
 
 /** Each login's Email state from the last check, keyed by login id. */

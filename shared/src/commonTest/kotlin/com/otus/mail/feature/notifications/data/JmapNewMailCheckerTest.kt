@@ -11,6 +11,8 @@ import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.STALWART_SESSION
+import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -51,10 +53,11 @@ class JmapNewMailCheckerTest {
     private suspend fun check(
         states: States,
         alerts: Alerts = Alerts(),
+        session: String = STALWART_SESSION,
         reply: (String) -> String,
     ): List<NewMail> {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(api = reply)), store), store, states)
+        JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store, states)
             .check(alerts)
         return alerts.shown
     }
@@ -95,7 +98,8 @@ class JmapNewMailCheckerTest {
                 }
             assertEquals(
                 listOf(
-                    NewMail("ada", "Ada", "m1", "Grace", "Hello m1", "Preview", Instant.parse("2026-10-14T08:00:00Z")),
+                    NewMail("ada", "Ada", "m1", "Grace", "Hello m1", "Preview", Instant.parse("2026-10-14T08:00:00Z"))
+                        .copy(mailboxRoles = setOf("inbox", "archive")),
                 ),
                 shown,
             )
@@ -103,10 +107,10 @@ class JmapNewMailCheckerTest {
         }
 
     @Test
-    fun aSenderWithoutANameShowsTheAddress() =
+    fun aSenderWithoutANameShowsTheAddressAndAnAccountThatSendsCanReply() =
         runTest {
             val shown =
-                check(States(mapOf("ada" to "e1"))) { body ->
+                check(States(mapOf("ada" to "e1")), session = SUBMISSION_SESSION) { body ->
                     if ("Email/changes" in body) {
                         """{"methodResponses": [["Email/changes", {"oldState": "e1", "newState": "e2",
                            "hasMoreChanges": false, "created": ["m1"]}, "c0"]]}"""
@@ -117,6 +121,7 @@ class JmapNewMailCheckerTest {
                     }
                 }
             assertEquals("grace@example.org", shown.single().sender)
+            assertTrue(shown.single().canSend)
         }
 
     @Test

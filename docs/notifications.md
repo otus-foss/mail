@@ -132,23 +132,56 @@ When "Show mail from" hides the message's account, the pages show that account. 
 left the inbox or was deleted since the alert, on this device or another, is not listed any more,
 so a toast says so and the Inbox stays.
 
-### Archive and Mark read
+### Buttons
 
-An alert that shows its message offers **Archive** and **Mark read**. A "New mail only" alert and
-the locked version of an alert offer neither, because the user cannot see which message they would
-change. A button acts without opening Mail: `AlertActionReceiver` removes the alert at once, and
-the account's summary with its last alert, then queues expedited `AlertActionWorker` work for
-when the device has a network. The worker calls `EmailShortcuts`:
+An alert that shows its message offers up to three buttons. A "New mail only" alert and the
+locked version of an alert offer none, because the user cannot see which message they would
+change. Settings › Notifications › **Buttons** › **Alert buttons** picks them and their order in the
+same `OrderedChoiceSheet` the Quick views use; see [settings](settings.md#kinds-of-setting). The
+choice is `MailBehavior.notificationActions`, saved with the other behavior settings under
+`notification_actions`. The default is **Delete**, **Archive**, **Mark read**, in that order.
+Taking every button out leaves alerts without buttons.
 
-- Mark read adds `$seen` with `Email/set` (RFC 8621, section 4.6).
-- Archive reads the account's mailbox roles with `Mailbox/get` and moves the email out of every
-  mailbox with the `inbox` role into the one with the `archive` role.
+The sheet offers every action that can run from an alert without seeing the message:
 
-Like the list's own marks and moves, the change goes into the device's copy at once and waits in
-the change queue when the server cannot be reached. A refused change tries again, up to five runs
-in all. An account without an Archive folder keeps the message in its inbox; the alert is gone
-either way. The buttons also name their meaning to Android (`SEMANTIC_ACTION_ARCHIVE` and
-`SEMANTIC_ACTION_MARK_AS_READ`), for watches and cars.
+| Button | `MailAction` | What it does | The account needs |
+| --- | --- | --- | --- |
+| Delete | `Trash` | Moves the email out of every mailbox into Trash, as the list's Delete does | A `trash` mailbox |
+| Archive | `Archive` | Moves the email out of its inboxes into Archive, keeping its other mailboxes | An `archive` mailbox |
+| Mark read | `Read` | Adds `$seen` | Nothing |
+| Flag | `Flag` | Adds `$flagged` | Nothing |
+| Spam | `Spam` | Moves the email out of every mailbox into Spam, as the list's Spam does | A `junk` mailbox |
+| Reply | `Reply` | Opens Mail on a reply to the message | Submission (RFC 8621, section 7) |
+
+Mark unread is left out, since alerts are about unread mail. Reply all, Forward, Move, and
+Read later need the message or a folder choice on screen, so they are left out too.
+
+`alertButtons` in the inbox domain resolves the choice for each alert: it keeps the chosen
+actions an alert can run, drops those the message's account cannot run, keeps the user's order,
+and stops at three. It does not fill a dropped button's place with another. `JmapNewMailChecker`
+already reads the account's mailbox roles to find its inboxes, so each `NewMail` carries those
+roles and whether the account may use submission. An account without an Archive folder never shows
+Archive, rather than a button that fails.
+
+Every button but Reply acts without opening Mail: `AlertActionReceiver` removes the alert at
+once, and the account's summary with its last alert, then queues expedited `AlertActionWorker`
+work for when the device has a network. The worker calls `EmailShortcuts` (`Email/set`, RFC 8621,
+section 4.6). Delete, Archive, and Spam first read the account's mailbox roles with
+`Mailbox/get`. Like the list's own marks and moves, each change goes into the device's copy at
+once and waits in the change queue when the server cannot be reached. A refused change tries again,
+up to five runs in all. When the last run fails too, the alert comes back with the same buttons,
+alerting again, and says which button failed, such as "Archive didn't work", in place of the
+account name. Each button carries its alert's contents for that. Delete and Spam only move the
+email, never destroy it, so it can be restored from Trash or Spam; alerts have no Undo button.
+
+Reply opens Mail as tapping the alert does, with `MailRequests.reply` instead of `openMessage`.
+The Inbox finds the message's row, loads its full body, and opens a reply to it on the compose
+page. The alert goes once Mail takes the request, since Android keeps an alert after a button that
+opens an app.
+
+The buttons also name their meaning to Android, for watches and cars: `SEMANTIC_ACTION_DELETE`,
+`SEMANTIC_ACTION_ARCHIVE`, and `SEMANTIC_ACTION_MARK_AS_READ`. Reply names none, because
+`SEMANTIC_ACTION_REPLY` promises an inline reply and this one opens the composer.
 
 On Android 13 and later, the app asks for the notification permission at launch when an account
 is saved. Without it, the check still runs and saves state but posts nothing.
@@ -156,11 +189,12 @@ is saved. Without it, the check still runs and saves state but posts nothing.
 ## Not built yet
 
 - Removing a notification when the message is read elsewhere.
-- Opening the tapped message and the Archive and Mark read buttons on iOS. Apple alerts would need
-  the ids in the APNs payload, a notification category with these actions, and the app's
-  `UNUserNotificationCenter` delegate handing them to `MailRequests` and `EmailShortcuts`.
-- Telling the user when a button's change fails, such as Archive on an account without an
-  Archive folder.
+- Opening the tapped message and the alert buttons on iOS. Apple alerts would need the ids in the
+  APNs payload, a notification category per set of chosen buttons, built with the same
+  `alertButtons`, and the app's `UNUserNotificationCenter` delegate handing them to `MailRequests`
+  and `EmailShortcuts`.
+- Undo for Delete and Spam from an alert. The email can be restored from Trash or Spam.
+- Telling the user why a button's change failed. The alert that comes back names the button only.
 - A device test of Google delivery against a server advertising RFC 9749, including Doze, key
   rotation, and measured delivery delay.
 - A device test of instant delivery with ntfy and Stalwart, with measured delay and battery use.
@@ -172,10 +206,14 @@ is saved. Without it, the check still runs and saves state but posts nothing.
 
 ## Validation
 
-`AlertActionsTest` checks that tapping an alert names its message and a summary names none, that
-only alerts that show the message have buttons, and that a button clears its alert and queues the
-change. `JmapEmailShortcutsTest` checks the `Email/set` patches against a mock server, an account
-without an Archive folder, and a removed login. `MessageListingTest` checks finding the row of a
+`NotificationActionsTest` checks the default buttons, the limit of three, that actions an account
+cannot run are dropped and the rest keep their order, that no choice gives no buttons, and saving
+the choice. `AlertActionsTest` checks that tapping an alert names its message and a summary names
+none, that only alerts that show the message have buttons, that they are the chosen ones the
+account can run, that Reply opens Mail on a reply, that a button clears its alert and queues the
+change, and that a failed change brings the alert back saying so. `JmapEmailShortcutsTest` checks
+the `Email/set` patches against a mock server, an account without an Archive, Trash, or Spam
+folder, and a removed login. `MessageListingTest` checks finding the row of a
 message inside a conversation. Opening the message in the running app, on a cold start, and after
 the message was deleted needs a device check.
 

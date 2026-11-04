@@ -41,6 +41,31 @@ class JmapEmailShortcutsTest {
         }
 
     @Test
+    fun flagAddsFlaggedToTheEmail() =
+        runTest {
+            assertTrue(shortcuts().flag("ada", "m1"))
+            assertTrue("\"update\":{\"m1\":{\"keywords/\$flagged\":true}}" in sent.single(), sent.single())
+        }
+
+    @Test
+    fun trashAndSpamPutTheEmailInTheirMailboxAlone() =
+        runTest {
+            assertTrue(shortcuts().trash("ada", "m1"))
+            assertTrue("\"update\":{\"m1\":{\"mailboxIds\":{\"t\":true}}}" in sent[1], sent[1])
+            assertTrue(shortcuts().reportSpam("ada", "m1"))
+            assertTrue("\"update\":{\"m1\":{\"mailboxIds\":{\"j\":true}}}" in sent[3], sent[3])
+        }
+
+    @Test
+    fun anAccountWithoutTrashOrSpamKeepsTheEmail() =
+        runTest {
+            val inboxOnly = """{"state": "m", "list": [{"id": "i", "role": "inbox"}]}"""
+            assertFalse(shortcuts(inboxOnly).trash("ada", "m1"))
+            assertFalse(shortcuts(inboxOnly).reportSpam("ada", "m1"))
+            assertEquals(2, sent.size)
+        }
+
+    @Test
     fun anAccountWithoutArchiveKeepsTheEmail() =
         runTest {
             val noArchive = """{"state": "m", "list": [{"id": "i", "role": "inbox"}]}"""
@@ -58,7 +83,8 @@ class JmapEmailShortcutsTest {
 
     private companion object {
         const val MAILBOXES =
-            """{"state": "m", "list": [{"id": "i", "role": "inbox"}, {"id": "a", "role": "archive"}, {"id": "p"}]}"""
+            """{"state": "m", "list": [{"id": "i", "role": "inbox"}, {"id": "a", "role": "archive"}, """ +
+                """{"id": "t", "role": "trash"}, {"id": "j", "role": "Junk"}, {"id": "p"}]}"""
         const val UPDATED =
             """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
     }
