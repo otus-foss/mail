@@ -74,7 +74,7 @@ shards that split the test classes by name. Its `ios` job runs Swift formatting/
 Multiplatform links symbols from the iOS 26 SDK, so Xcode 16 cannot link the app. The simulator
 build verifies compilation without device signing and targets `arm64`, matching the configured Apple Silicon simulator framework.
 JMAP iOS storage tests live in otus-meta as `:jmap:iosSimulatorArm64Test`. Meta's publish job
-does not run them, and its macOS `ios` job is paused, so they run only when started by hand on a Mac.
+does not run them; Meta's macOS `ios` job runs them on each ready pull request in Meta.
 Android setup installs `platform-tools`
 and the pinned platform/build-tools packages rather than the removed legacy `tools` package.
 
@@ -210,5 +210,5 @@ Inbox UI screenshots are written to `androidApp/build/reports/inbox/`.
 
 ## Runners
 
-Linux jobs run on Ubicloud's `ubicloud-standard-2` runners. The `ios` job is paused with
-`if: false`. See [hosting and CI](hosting.md).
+Linux jobs run on Ubicloud's `ubicloud-standard-2` runners. The `ios` job runs on GitHub's
+`macos-15` runners, because Ubicloud has no macOS runners. See [hosting and CI](hosting.md).

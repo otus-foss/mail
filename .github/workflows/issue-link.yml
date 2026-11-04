@@ -1,0 +1,26 @@
+name: issue link
+
+# Warns when a pull request closes no issue, so the issue stays open by accident after the merge.
+# It never fails: some changes have no issue.
+on:
+  pull_request:
+    types: [opened, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  issue-link:
+    runs-on: ubicloud-standard-2
+    steps:
+      - name: Look for a closing keyword
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        # The template's own example sits in an HTML comment, so comments are dropped first.
+        run: |
+          if printf '%s' "$BODY" | perl -0pe 's/<!--.*?-->//gs' |
+            grep -qiE '\b(close[sd]?|fix(e[sd])?|resolve[sd]?):? +([a-z0-9_.-]+/[a-z0-9_.-]+)?#[0-9]+'; then
+            echo "Closes an issue."
+          else
+            echo "::warning title=No linked issue::Add 'Closes #123' to the description if this pull request finishes an issue."
+          fi

@@ -12,8 +12,10 @@ on:
 permissions:
   contents: read
 
+# A draft and a ready run go in separate groups. Opening a pull request and marking it ready at
+# once starts both, and the skipped draft run would otherwise cancel the ready one.
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}
+  group: quality-${{ github.workflow }}-${{ github.ref }}-${{ github.event.pull_request.draft }}
   cancel-in-progress: true
 
 jobs:
@@ -76,13 +78,34 @@ jobs:
       - run: ./gradlew ${{ matrix.tasks }} --console=plain -Potus.meta.path="$RUNNER_TEMP/otus-meta"
 
   ios:
-    # macOS checks are paused; delete this condition to run them again.
-    if: false
+    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    # Ubicloud has no macOS runners, so this job runs on GitHub's.
     runs-on: macos-15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          fetch-depth: 0
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
+      # Xcode's build phase starts Gradle itself, so the Meta path goes in the user's Gradle
+      # properties rather than on a command line.
+      - name: Use the Meta branch with this branch's name, if there is one
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          mv otus-meta "$RUNNER_TEMP/otus-meta"
+          cd "$RUNNER_TEMP/otus-meta"
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
+          mkdir -p ~/.gradle
+          echo "otus.meta.path=$RUNNER_TEMP/otus-meta" >> ~/.gradle/gradle.properties
       # Compose Multiplatform links iOS 26 SDK symbols, so the app needs Xcode 26.
       - run: sudo xcode-select -s /Applications/Xcode_26.3.app && xcodebuild -version
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
@@ -95,11 +118,6 @@ jobs:
       - run: mint run swiftformat --lint iosApp
       - run: mint run swiftlint lint --strict
       - name: Compile iOS simulator app
-        # Only this step downloads the shared Otus libraries from otus-meta's GitHub Packages
-        # registry; the other jobs build Meta from source, so no other step sees the token.
-        env:
-          ORG_GRADLE_PROJECT_otusMetaUsername: ${{ github.repository_owner }}
-          ORG_GRADLE_PROJECT_otusMetaPassword: ${{ secrets.OTUS_META_PACKAGES_TOKEN }}
         run: >-
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug -sdk
           iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 CODE_SIGNING_ALLOWED=NO
