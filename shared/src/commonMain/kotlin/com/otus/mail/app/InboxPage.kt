@@ -67,6 +67,7 @@ internal fun InboxPage(
                 onLoadMore = feed::loadMore,
                 scope = states.scopeSwitch(states.mailScope, states.chooseScope),
                 quick = rememberQuickView(states, navigation),
+                opening = states.requests.row,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )

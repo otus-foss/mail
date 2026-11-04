@@ -69,7 +69,7 @@ fun InboxScreen(
     messageActions: MessageActions? = null,
 ) {
     val state = rememberInboxState(context.defaultSearch)
-    val rows = rememberInboxRows(messages, messageActions)
+    val rows = rememberInboxRows(messages, messageActions, context.opening)
     val filters = context.filters ?: remember { InboxFilterState() }
     val listed = ListedMail(messages, filters.applied)
     val unreadCount = rememberUnreadCount(listed, status.loading)

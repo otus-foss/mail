@@ -40,6 +40,8 @@ data class InboxContext(
     val scope: MailScopeSwitch? = null,
     /** What pulling the control panel down shows; null keeps the panel from opening that way. */
     val quick: QuickViewContext? = null,
+    /** A row the app asks the list to open, such as a tapped notification's message; null for none. */
+    val opening: OpenRequest? = null,
 ) {
     val searchPrompt: String
         get() = "Search $title"
@@ -61,3 +63,9 @@ data class InboxContext(
             )
     }
 }
+
+/** Asks a list to open the row [id] as if it were tapped; [taken] runs once the list has. */
+class OpenRequest(
+    val id: String,
+    val taken: () -> Unit,
+)

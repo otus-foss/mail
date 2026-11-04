@@ -50,6 +50,7 @@ import com.otus.mail.feature.inbox.data.JmapConversationMessages
 import com.otus.mail.feature.inbox.data.JmapConversationMute
 import com.otus.mail.feature.inbox.data.JmapDraftRepository
 import com.otus.mail.feature.inbox.data.JmapDraftSender
+import com.otus.mail.feature.inbox.data.JmapEmailShortcuts
 import com.otus.mail.feature.inbox.data.JmapKnownPeople
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import com.otus.mail.feature.inbox.data.JmapMessageBodies
@@ -72,6 +73,7 @@ import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
+import com.otus.mail.feature.inbox.domain.EmailShortcuts
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.MailSource
@@ -190,6 +192,9 @@ class MailServices(
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache, changes) }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
     internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache, changes) }
+
+    /** Marks and archives for a notification's buttons, which act without opening Mail. */
+    val shortcuts: EmailShortcuts by lazy { JmapEmailShortcuts(connections, logins, cache, changes) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
     private val unansweredDrafts = UnansweredDrafts()
     internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins, unansweredDrafts) }
@@ -232,11 +237,11 @@ class MailServices(
     /**
      * Toasts and the work their actions and closing start, such as an unsubscribe sent once its Undo
      * window ends. They belong to the process, so a toast shown before the activity was recreated, as
-     * on rotation, still shows and still finishes its work. Pages it opens go through [pageRequests].
+     * on rotation, still shows and still finishes its work. Pages it opens go through [requests].
      */
     internal val work: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
     internal val moveToasts by lazy { MoveToasts(ToastState(), work) }
-    internal val pageRequests by lazy { PageRequests(work) }
+    val requests by lazy { MailRequests(work) }
 
     /** Each newsletter strip's step while the process runs, so a reopened message shows it. */
     internal val newsletterSteps = NewsletterSteps()

@@ -118,7 +118,7 @@ already in the target book counts as that card, like a matching address.
 ## Retention and removal
 
 At each start the app removes cached bodies of mail received more than 90 days ago
-(`MailServices.trimCache`). Opening such a message fetches its body again. The other kinds stay
+(`trimCache` in `app/CacheUpkeep.kt`). Opening such a message fetches its body again. The other kinds stay
 until sync replaces or destroys them.
 
 The same start-up trim, `AttachmentRetention.trim`, deletes `.partial` files that an earlier process left, and downloaded

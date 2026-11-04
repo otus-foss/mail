@@ -1,6 +1,7 @@
 package com.otus.mail
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -43,7 +44,11 @@ class MainActivity : ComponentActivity() {
         app.attachmentFiles.attach(this)
         app.printer.attach(this)
         val services = app.services
-        if (savedInstanceState == null) askForNotifications(services)
+        if (savedInstanceState == null) {
+            askForNotifications(services)
+            // A recreated activity gets its first intent again, which it has already handled.
+            services.requests.take(intent)
+        }
         val behaviorState = app.behavior
         themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))
         appIconState = AppIconSettingsState(AndroidAppIconPreferenceStore(this))
@@ -86,6 +91,13 @@ class MainActivity : ComponentActivity() {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setRecentsScreenshotEnabled(!on)
+    }
+
+    /** A tapped alert or a `mailto:` link while Mail runs comes here instead of to a new activity. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        (application as OtusMailApplication).services.requests.take(intent)
     }
 
     override fun onStart() {
