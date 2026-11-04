@@ -1,6 +1,7 @@
 package com.otus.mail.feature.contacts.domain
 
 import com.otus.jscontact.Card
+import com.otus.jscontact.Media
 
 /**
  * Every login's address books and cards (RFC 9610). Logins whose server has no contacts are left
@@ -33,6 +34,12 @@ interface ContactRepository {
     )
 
     suspend fun delete(keys: List<CardKey>)
+
+    /** The image of [photo], a photo of the card [key] that the server keeps as a blob; null when it cannot be read. */
+    suspend fun photo(
+        key: CardKey,
+        photo: Media,
+    ): ByteArray? = null
 }
 
 /**
