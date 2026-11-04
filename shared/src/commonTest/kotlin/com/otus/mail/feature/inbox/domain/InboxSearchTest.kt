@@ -48,6 +48,17 @@ class InboxSearchTest {
     }
 
     @Test
+    fun aFieldLimitsWhereTermsMatchAndTogglesBackToAnywhere() {
+        val subject = InboxSearch(query = "design").toggled(SearchField.Subject)
+        assertEquals(listOf("older"), results(subject))
+        assertTrue(results(subject.copy(query = "prototype")).isEmpty())
+        val body = subject.toggled(SearchField.Body)
+        assertEquals(listOf("older"), results(body.copy(query = "prototype")))
+        assertTrue(results(body.copy(query = "alex")).isEmpty())
+        assertEquals(SearchField.Anywhere, body.toggled(SearchField.Body).field)
+    }
+
+    @Test
     fun allTermsAndAllFiltersMustMatch() {
         assertTrue(results(InboxSearch(query = "Alex lake")).isEmpty())
         val unreadWithFiles = InboxFilters(status = ReadStatus.Unread, quick = setOf(QuickFacet.Attachments))

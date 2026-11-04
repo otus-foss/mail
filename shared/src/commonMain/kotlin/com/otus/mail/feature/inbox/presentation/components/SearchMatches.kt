@@ -37,6 +37,7 @@ import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.SearchField
 import com.otus.mail.feature.inbox.domain.looksLikeAddress
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.domain.shownName
@@ -72,8 +73,11 @@ internal fun SearchMatches(
             .orEmpty()
     // The user is no one to search for, even where they sent themselves mail: neither their sending
     // identities nor any address their accounts list.
+    val field = state.search.field
     val people =
-        remember(hits, query, own, accounts) {
+        remember(hits, query, own, accounts, field) {
+            // A search in the subject or body is not looking for anyone.
+            if (field != SearchField.Anywhere) return@remember emptyList()
             val addresses = accounts.flatMap { it.addresses }.map(String::lowercase).toSet()
             matchingPeople(hits, query, limit = Int.MAX_VALUE).filterNot {
                 own.isMineAnywhere(it.address) || it.address.lowercase() in addresses
@@ -81,8 +85,11 @@ internal fun SearchMatches(
         }
     val fold = rememberSectionFold()
     Column(modifier.nestedScroll(fold.connection)) {
-        if (people.isNotEmpty()) SearchPeople(room, people, looksLikeAddress(query), fold)
-        SectionCaption("Mail", Modifier.padding(horizontal = SheetTokens.inset))
+        // Mail needs its caption only to set it apart from the people above it.
+        if (people.isNotEmpty()) {
+            SearchPeople(room, people, looksLikeAddress(query), fold)
+            SectionCaption("Mail", Modifier.padding(horizontal = SheetTokens.inset))
+        }
         SearchMail(room, hits, Modifier.weight(1f))
     }
 }
