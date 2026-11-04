@@ -222,6 +222,9 @@ When the pull request finishes an issue, end the body with `Closes #123`, or
 Write `Part of #123` for a step that leaves the issue open. Search the open issues before you open
 the pull request. The `issue link` workflow warns about a pull request that closes no issue.
 
+CI runs once, when the pull request is marked ready. To check later pushes too, add the
+`ci on every push` label; each push then runs CI again.
+
 ## Agent workflow
 
 During development, prefer `./gradlew spotlessCheck detekt ruffCheck ruffFormatCheck` and run

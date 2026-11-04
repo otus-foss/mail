@@ -1,22 +1,29 @@
 name: pull request
 
-# Advisory facts about a pull request, kept current on every push: a size label, a comment with the
-# screenshots it adds or changes, and a warning when UI code changes without new screenshots.
-# Nothing here fails a pull request.
+# Advisory facts about a pull request: a size label, a comment with the screenshots it adds or
+# changes, and a warning when UI code changes without new screenshots. Nothing here fails a pull
+# request. Runs when quality does.
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, ready_for_review, synchronize, labeled]
 
 permissions:
   contents: read
 
+# Each kind of event gets its own group, so a run that skips everything cannot cancel a real one.
 concurrency:
-  group: pull-request-${{ github.event.pull_request.number }}
+  group: pull-request-${{ github.event.pull_request.number }}-${{ github.event.action }}
   cancel-in-progress: true
 
 jobs:
   # Counts changed lines outside tests and screenshots, unless the pull request changes only those.
   size:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !github.event.pull_request.draft && (
+        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
+        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
+        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
     runs-on: ubicloud-standard-2
     permissions:
       issues: write
@@ -52,6 +59,12 @@ jobs:
   # Shows each screenshot the pull request adds or changes, old beside new, from the commits
   # themselves, so the images stay put after a merge.
   screenshots:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !github.event.pull_request.draft && (
+        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
+        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
+        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
     runs-on: ubicloud-standard-2
     permissions:
       pull-requests: write
@@ -104,6 +117,12 @@ jobs:
   # Quality builds against the Meta branch with this branch's name when there is one, so the pair has
   # to land together, Meta first. The label says so before anyone merges this alone.
   meta-partner:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !github.event.pull_request.draft && (
+        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
+        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
+        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
     runs-on: ubicloud-standard-2
     permissions:
       issues: write
