@@ -8,15 +8,19 @@ import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.resources.symbol_palette
-import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.feature.inbox.presentation.PRIVACY_TITLE
+import com.otus.mail.feature.inbox.presentation.components.BehaviorIndexPages
 import com.otus.mail.feature.inbox.presentation.components.mailBehaviorIndex
 import com.otus.mail.feature.inbox.presentation.components.mailLookIndex
 import com.otus.mail.feature.inbox.presentation.components.privacyIndex
+import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.mail.feature.notifications.presentation.screens.deliveryLabel
+import com.otus.mail.feature.notifications.presentation.short
+import com.otus.mail.feature.notifications.presentation.title
 import com.otus.settings.presentation.SettingsIndexScope
 import com.otus.settings.presentation.SettingsItem
 import com.otus.settings.presentation.appIconIndex
@@ -43,23 +47,24 @@ internal fun mailSettingsIndex(
             open(MailPage.EmailAccounts),
             Res.drawable.symbol_alternate_email,
             summary = accountsSummary(states.accounts.accounts.size),
-        )
+        ) { keywords("JMAP", "Server", "Sign in") }
         states.notifications?.let { notifications(it, states.accounts.accounts.isNotEmpty(), open) }
         appearance(settings, behavior, open)
         page(
             "Mail behavior",
             open(MailPage.Behavior),
             Res.drawable.symbol_tune,
-            summary = "Inbox, swipes, action bar, and reading",
+            summary = "Inbox, sidebar, swipes, reading, and writing",
         ) {
-            mailBehaviorIndex(states.behavior, folderPills, rtl, open(MailPage.ActionBarSettings))
+            mailBehaviorIndex(states.behavior, folderPills, rtl, behaviorPages(open))
         }
         page(
-            "Privacy",
+            PRIVACY_TITLE,
             open(MailPage.Privacy),
             Res.drawable.symbol_visibility_off,
-            summary = "Remote images and website icons",
+            summary = "Remote images, avatars, and this device",
         ) {
+            keywords("Security")
             privacyIndex(behavior, states.devicePrivacy, open(MailPage.AllowedSenders))
         }
         page(
@@ -67,19 +72,20 @@ internal fun mailSettingsIndex(
             open(MailPage.Folders),
             Res.drawable.symbol_folder,
             summary = "Nest folders and file arriving mail",
-        )
-        page(
-            "Signatures",
-            open(MailPage.Signatures),
-            Res.drawable.symbol_signature,
-            summary = "One for each address you send from",
-        ) {
-            toggle("Add to replies", behavior.signatureInReplies)
-        }
+        ) { keywords("Filters", "Labels") }
     }
 }
 
-/** The Appearance page, with Mail's Sidebar and Mail list rows among the shared ones. */
+private fun behaviorPages(open: (MailPage) -> (String?) -> Unit): BehaviorIndexPages =
+    BehaviorIndexPages(
+        sidebar = open(MailPage.SidebarSettings),
+        pinned = open(MailPage.PinnedSettings),
+        filterPanel = open(MailPage.FilterPanelSettings),
+        actionBar = open(MailPage.ActionBarSettings),
+        signatures = open(MailPage.Signatures),
+    )
+
+/** The Appearance page, with Mail's App icon and Mail list rows among the shared ones. */
 private fun SettingsIndexScope.appearance(
     settings: SharedSettings,
     behavior: MailBehavior,
@@ -89,16 +95,11 @@ private fun SettingsIndexScope.appearance(
         "Appearance",
         open(MailPage.Appearance),
         Res.drawable.symbol_palette,
-        summary = "Theme, sidebar, dates, and animations",
+        summary = "Theme, app icon, mail list, dates, and animations",
     ) {
         appearanceIndex(settings.dateFormat, settings.theme, settings.animation, open(MailPage.ThemeSettings)) {
             settings.appIcon?.let { appIconIndex(it) }
-            mailLookIndex(
-                behavior,
-                open(MailPage.SidebarSettings),
-                open(MailPage.PinnedSettings),
-                open(MailPage.MailListSettings),
-            )
+            mailLookIndex(behavior, open(MailPage.MailListSettings))
         }
     }
 }
@@ -113,10 +114,18 @@ private fun SettingsIndexScope.notifications(
         state.current?.let { "Delivery through ${it.name}" }
             ?: if (state.periodicChecks) "New mail every 15 minutes" else "New-mail alerts off"
     page("Notifications", open(MailPage.Notifications), Res.drawable.symbol_notifications, summary = summary) {
+        keywords("Push", "Alerts")
         section("New mail") { setting("Instant delivery", state.deliveryLabel) }
         // The page shows previews only where they can be saved, and their overrides only with accounts.
-        if (state.previews != null && hasAccounts) {
-            section("Previews") { page("Accounts and addresses", open(MailPage.NotificationOverrides)) }
+        val previews = state.previews ?: return@page
+        section("Previews") {
+            setting(
+                "All mail",
+                previews.all.short,
+                NotificationPreviews.entries.map { it.title },
+                keywords = listOf("Lock screen", "Previews"),
+            )
+            if (hasAccounts) page("Accounts and addresses", open(MailPage.NotificationOverrides))
         }
     }
 }

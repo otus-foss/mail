@@ -60,7 +60,8 @@ private fun PageContent(
 
         MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
         MailPage.NotificationOverrides, MailPage.SidebarSettings, MailPage.PinnedSettings, MailPage.ThemeSettings,
-        MailPage.MailListSettings, MailPage.ActionBarSettings, MailPage.Folders, is MailPage.FolderDetail,
+        MailPage.MailListSettings, MailPage.ActionBarSettings, MailPage.FilterPanelSettings, MailPage.Folders,
+        is MailPage.FolderDetail,
         -> {
             SettingsPageContent(page, states, settings, dateFormatter, navigation, back)
         }

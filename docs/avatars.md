@@ -11,7 +11,7 @@ with its MPL 2.0 notice in `public_suffix_list_MPL-2.0.txt`. Android and iOS ent
 
 ## Website icons
 
-The **Website icons** switch under Settings › Privacy decides whether
+The **Website icons** switch under Settings › Privacy & security decides whether
 avatars may load images from servers other than the user's own. It is off by default and is saved
 with the other behavior settings in `MailBehavior.websiteIcons`, under a key of its own since it
 turned off by default: the earlier key held on for anyone who saved any setting. `mailAvatarOptions`

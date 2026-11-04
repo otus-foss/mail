@@ -29,6 +29,9 @@ val DateStyle.label: String
             DateStyle.FullMonths -> "Full with months"
         }
 
-/** The Mail list row's summary on the appearance page. */
+/** The Mail list row's summary on the Appearance page. */
 val MailListLayout.summary: String
     get() = if (showSender) order.label else "Preview instead of sender"
+
+/** Why Order and Preview are disabled while rows leave out the sender; search shows it too. */
+const val SENDER_UNAVAILABLE = "Turn on Show sender to change this"

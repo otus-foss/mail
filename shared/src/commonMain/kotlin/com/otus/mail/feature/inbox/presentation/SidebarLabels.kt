@@ -31,7 +31,7 @@ val SidebarCount.label: String
             SidebarCount.None -> "Off"
         }
 
-/** The Sidebar row's summary on the appearance page: how many sections it shows. */
+/** The Sidebar row's summary on the Mail behavior page: how many sections it shows. */
 val SidebarLayout.sectionSummary: String
     get() = if (shown.size == 1) "1 section" else "${shown.size} sections"
 
@@ -41,3 +41,12 @@ val SidebarSection.icon: DrawableResource
             SidebarSection.Mailboxes -> Res.drawable.symbol_inbox
             SidebarSection.Folders -> Res.drawable.symbol_folder
         }
+
+/** The Pinned row's summary: how the pins show and how many there are, as "Grid, 3 pinned". */
+fun pinnedSummary(
+    style: MailboxStyle,
+    count: Int,
+): String = "${style.label}, ${if (count == 0) "nothing pinned" else "$count pinned"}"
+
+/** Why the Pinned row is disabled while the sidebar hides its Pinned section; search shows it too. */
+const val PINNED_UNAVAILABLE = "Turn on the Pinned section to arrange it"

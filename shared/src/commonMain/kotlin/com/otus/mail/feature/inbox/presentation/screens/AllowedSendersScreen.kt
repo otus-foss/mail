@@ -10,8 +10,8 @@ import com.otus.mail.feature.inbox.domain.withoutSender
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 
 /**
- * Settings › Privacy › Allowed senders: everyone whose remote images always load, added with
- * Always after showing a mail's images. Remove makes a sender ask first again.
+ * Settings › Privacy & security › Allowed senders: everyone whose remote images always load, added
+ * with Always after showing a mail's images. Remove makes a sender ask first again.
  */
 @Composable
 fun AllowedSendersScreen(

@@ -30,7 +30,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Choosing the action bar's buttons on the appearance page, and the open message using them. */
+/** Choosing the action bar's buttons on the Mail behavior page, and the open message using them. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

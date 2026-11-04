@@ -10,94 +10,135 @@ Meta 0.7.0 includes the connection sheet and sending-address list described belo
 
 ## Pages
 
-Each page has one subject, and no page is more than two levels below Settings except a folder's
-own page.
+Each top-level page has one subject, named by what the user wants to change rather than by where
+the code lives. Settings home lists **Email accounts**, **Notifications**, **Appearance**, **Mail
+behavior**, **Privacy & security**, and **Folders & rules**, each a `SettingPageRow` with an icon,
+a summary, and a chevron. Settings pages follow Notion's layout: title and description on the
+left, the control on the right, and large section titles. Search covers every page; see
+[Search](#search).
 
-- **Settings** lists its subpages as `SettingPageRow`s, each with an icon, a summary, and a
-  chevron, separated by hairlines: **Email accounts**, **Notifications**, **Appearance**, **Mail
-  behavior**, **Privacy**, **Folders & rules**, and **Signatures**. Settings pages follow Notion's layout: title and
-  description on the left, the control on the right, and large section titles.
 - **Email accounts** (`com.otus.accounts`) lists connected accounts as flat rows with a Remove
-  button, under large section titles, and connects new ones with a JMAP
-  server, username, and password or app password. It supports compatible JMAP mail servers with
-  HTTP Basic authentication, such as Stalwart; no provider-specific behavior exists.
-- **Notifications** chooses Google Play services or a UnifiedPush app for instant delivery, sets
-  what alerts show under **Previews**, and lists only accounts whose push failed under **Not
-  instant**; see [notifications](notifications.md).
-- **Appearance** (`AppearanceSettingsScreen` from `com.otus.settings`) holds only visual choices,
-  in one **Look** section, and every row has an icon. Rows that open a page are Meta's `SettingPageRow`s: they end in a
-  chevron and name the page's value under the title. **Theme** names the theme and opens the Theme
-  page. Mail adds `MailLookSettings` through the screen's `look` slot:
-  **Sidebar** names how many sections the sidebar shows, such as "2 sections", and opens the
-  Sidebar page, which arranges the sidebar's sections, mailboxes, and counts (see
-  [Mail destinations](sidebar.md#mail-destinations)). Its **Folder colors** switch, on by default,
-  hides folder icon colors without deleting them, with the caption "Only changes the folder icon";
-  its info button adds that colors stay on this device. **Date format** shows the pattern in a `ValueButton`, with an
-  example date below the title. Tapping the row opens a `ChoiceSheet` with every format and its
-  example; choosing one applies it at once and moves the check, and Done, the scrim, Back, or
-  swiping down anywhere on the sheet closes it. A short, slow pull springs back. **Animations**
-  chooses Instant, Slow, Regular, or Fast.
-- **Mail behavior** (`MailBehaviorScreen`) holds how Mail acts. Under **Inbox**, **Inbox shows**
-  names what the Inbox lists in a `ValueButton`: **Inbox**, **Inbox + Spam**, **Inbox + Trash**, or
-  **All mail**, and opens a sheet with
-  **Spam** and **Trash** switches; see
-  [Inbox contents](inbox.md#inbox-contents). **Pills** shows how many pills the inbox row shows and
-  opens `InboxPillsSheet`, a `SelectionSheet` where the shown pills are reordered by their drag
-  handles and others are added; Done saves the row. The **Read later** switch, off by default,
-  gives each account a Read later folder and adds its pill, swipe, and button; see
-  [Read later](folders.md#read-later). Under **Actions**, **Swipe right** and **Swipe left** open
-  a `ChoiceSheet` of message actions, shown in a `ValueButton`, and **Action bar**, also a
-  `SettingPageRow`, opens its page; it names no mode, since the page shows it first. Under **Reading**, **Mark as read
-  when opened** is a switch. Each change is saved before it is shown. See
-  [inbox pills](inbox.md#inbox-pills) and [swipe actions](inbox.md#swipe-actions).
-- **Privacy** (`PrivacyScreen`) decides what mail and avatars load from other servers. Under
-  **Load remote images**, the **Load images** row shows the current choice and opens a sheet of
-  radio rows: **Always**, **In your contacts** (the default: contacts, people the user wrote
-  to, and allowed senders), or **Never**. Done saves the choice; closing the sheet any other way
-  discards it. Every Privacy choice sheet is a Meta `RadioChoiceSheet`. The section's info button explains each choice and says that images inside the mail
-  itself always show and that mail in Spam never loads remote images. Mail in a folder the app has not loaded yet waits as if it were in Spam. **Allowed senders** names how many there are and opens their page
-  (`AllowedSendersScreen`), which lists each address with a **Remove** button, or says how to add
-  one. The Read view adds a sender with "Always for" on its image banner. Under **Avatars**, the
-  **Website icons** switch, off by default, lets avatars load website icons and photos that contact
-  cards link to. The Avatars rows show no descriptions. While it is on, **Icons from** shows the
-  current source, or that a Bulwark address is missing, and opens one sheet with **Sender websites** (the default), **DuckDuckGo**, and
-  **Bulwark** as radio rows. Picking Bulwark shows its address field under them. Done saves both,
-  and stays off while the address is not a public HTTPS one. See
-  [website icons](avatars.md#website-icons). The choice and the
-  list are saved in `MailBehavior.remoteImages` and `allowedSenders` before they are shown.
-  Under **Photos you attach**, the **Photo details** row opens the same kind of sheet with **Ask
-  each time** (the default), **Always remove details**, or **Keep details** for the location, time, camera, and file name of attached photos, saved in
-  `MailBehavior.photoCleaning`; see [attachments](compose.md).
-  On Android, **This device** adds **Screen security**, off by default, which sets `FLAG_SECURE`
-  so screenshots, screen recordings, casting, and the recent apps preview show nothing, and
-  **Incognito keyboard**, on by default, which adds `IME_FLAG_NO_PERSONALIZED_LEARNING` to every
-  text field through `IncognitoKeyboard`, so the keyboard is asked not to learn from what is typed.
-  `DevicePrivacy` names the protections a platform offers; iOS offers neither yet. The
-  setting moved to a new key when this default returned; from the keys before it, only Never
-  carries over, since those held their default for anyone who saved any setting.
-- **Theme** (`ThemeSettingsScreen` from `com.otus.settings`), a subpage of Appearance, previews
-  the inbox in the current colors with `ThemeInboxPreview`, then offers the
-  **Otus**, **Light**, **Graphite** (warm grey, after Notion), and **Black** (true black, after
-  the X app) themes as cards and seven accent swatches. The plus swatch opens a **Custom color**
-  sheet with hue and intensity sliders, a hex field, and the shades in each theme; Done applies
-  it. Otus derives each accent's fill, outline, and text shades for the theme and shows them with
-  their hex codes. **Reset to Otus** restores the default. Every choice applies to the whole app
-  at once and is saved by `AndroidThemePreferenceStore` or `IosThemePreferenceStore`.
-- **Action bar** (`ActionBarSettingsScreen`), a subpage of Mail behavior, starts with a
-  **Layout** row whose `ChoiceSheet` picks **Per screen** or **Same everywhere**, then the
-  **Minimize** switch, which shrinks every bar to a round button for its main action. **Per
-  screen** shows a card for **Message list**, **Selected messages**, **Open message**, and
+  button, under large section titles, and connects new ones with a JMAP server, username, and
+  password or app password. It supports compatible JMAP mail servers with HTTP Basic
+  authentication, such as Stalwart; no provider-specific behavior exists.
+- **Notifications** chooses Google Play services or a UnifiedPush app for instant delivery. Under
+  **Previews**, **All mail** shows what alerts show in a `ValueButton` and opens a `ChoiceSheet`,
+  and **Accounts and addresses** sets it per account and address. **Not instant** lists only
+  accounts whose push failed; see [notifications](notifications.md).
+- **Appearance** (`AppearanceSettingsScreen` from `com.otus.settings`) holds only how Otus looks,
+  in one **Look** section: **Theme** (its page), **App icon**, **Mail list** (its page),
+  **Date format**, and **Animations**. Nothing on it changes what Mail does.
+  - **Theme** previews the inbox in the current colors with `ThemeInboxPreview`, then offers the
+    **Otus**, **Light**, **Graphite** (warm grey, after Notion), and **Black** (true black, after
+    the X app) themes as cards and seven accent swatches. The plus swatch opens a **Custom color**
+    sheet with hue and intensity sliders, a hex field, and the shades in each theme; Done applies
+    it. **Reset to Otus** restores the default. Every choice applies to the whole app at once and
+    is saved by `AndroidThemePreferenceStore` or `IosThemePreferenceStore`.
+  - **Mail list** previews a row, then sets **Show sender**, **Order**, **Preview**, and **Folder
+    icons** under **Rows**, and the date **Style** and **Show this year** under **Dates**. Order and
+    Preview only apply while the sender shows, so they wait, disabled, below Show sender.
+  - **Date format** shows the pattern in a `ValueButton`, with an example date below the title,
+    and **Animations** chooses Instant, Slow, Regular, or Fast; both open a `ChoiceSheet`.
+- **Mail behavior** (`MailBehaviorScreen`) holds how Mail acts, in the order the user meets it:
+  - **Inbox**: **Inbox shows** opens a sheet with Archive, Your folders, Spam, and Trash switches
+    (see [Inbox contents](inbox.md#inbox-contents)); **Pills** opens `InboxPillsSheet`, where the
+    shown pills are reordered by their handles and others are added; the **Read later** switch
+    gives each account a Read later folder (see [Read later](folders.md#read-later)).
+  - **Panels**: **Sidebar** and **Filter panel** open their pages. The sidebar is a way around
+    Mail, not a look, so it lives here rather than on Appearance.
+  - **Actions**: **Swipe right** and **Swipe left** open a `ChoiceSheet` of message actions, and
+    **Action bar** opens its page.
+  - **Reading**: **Mark as read when opened**, **Show quoted text**, and the Read view's
+    **Quick view**, which opens an ordered sheet.
+  - **Writing**: **Undo send** opens a `ChoiceSheet`, and **Signatures** opens its page, which
+    has **Add to replies** and one signature for each address the user sends from.
+- **Sidebar** (`SidebarSettingsScreen`), under Mail behavior, arranges the sidebar for every
+  account: drag a section's handle to move it, or switch it off to hide it. **Mailboxes and
+  folders** opens the Pinned page; it waits, disabled, while the Pinned section is off, since
+  nothing would show the pins. **Counts** and **Folder colors** follow. See
+  [Mail destinations](sidebar.md#mail-destinations).
+- **Pinned** (`PinnedSettingsScreen`) starts with **Show as**, Grid or Rows, and shows only the
+  editor for that style. Grid edits like Control Center: hold a tile to move it, drag its corner
+  to resize it, or tap its minus to unpin it. Rows have no sizes, so each pin is a row with a drag
+  handle and a remove button. Below, each group of the other mailboxes and folders lists what can
+  be pinned.
+- **Filter panel** (`FilterPanelSettingsScreen`), under Mail behavior, picks the panel's
+  **Sections** and their order, its **Quick filters**, and under **Pull down** the modules of its
+  **Quick view**, each in an ordered sheet. Quick filters waits, disabled, until the panel shows
+  its Quick filters section.
+- **Action bar** (`ActionBarSettingsScreen`), under Mail behavior, starts with a **Layout** row
+  whose `ChoiceSheet` picks **Per screen** or **Same everywhere**, then the **Minimize** switch.
+  **Per screen** shows a card for **Message list**, **Selected messages**, **Open message**, and
   **Writing**; **Same everywhere** shows one **Every screen** card. Each card previews the saved
-  bar and opens its editor. Each change is saved at once. See [action bar](action-bar.md).
-- **Folders & rules** lists every account's folders, or one account's
-  through the account picker, as
-  trees. Dragging a folder's handle moves it to a new place or into another folder, holding a folder
-  opens quick actions (Rename, Move into, Color, Delete), and a plus button
-  creates a folder: on each account's row, or beside the hint when one account is shown. Tapping a folder opens its page: a summary line, then **Name**, **Move into**, **Color**
-  (kept on this device), **Rules** (the chips that sort new mail into it, and **Add rule**), and
-  **Delete folder**, which waits until the folder is empty. Rules live only on folder pages;
-  there is no separate Rules page, because Otus writes only rules that file mail into a folder, and
-  each folder row on this page shows its rules. See [Folders and rules](folders.md#the-folder-page).
+  bar and opens its editor. See [action bar](action-bar.md).
+- **Privacy & security** (`PrivacyScreen`) decides what mail and avatars load from other servers
+  and how the device protects Mail.
+  - Under **Load remote images**, **Load images** opens a `ChoiceSheet`: **In your contacts**
+    (the default: contacts, people the user wrote to, and allowed senders), **Always**, or
+    **Never**. The section's info button says that images inside the mail itself always show and
+    that mail in Spam never loads remote images. **Allowed senders** names how many there are and
+    opens their page (`AllowedSendersScreen`); while Load images is not In your contacts, its
+    summary says the list only counts with that choice. The page stays open so senders can still
+    be removed.
+  - Under **Photos you attach**, **Photo details** opens a `ChoiceSheet`: **Ask each time** (the
+    default), **Always remove details**, or **Keep details**; see [attachments](compose.md).
+  - Under **Avatars**, the **Website icons** switch, off by default, lets avatars load website
+    icons and photos that contact cards link to. **Icons from** waits, disabled, while it is off;
+    it opens one sheet with **Sender websites**, **DuckDuckGo**, and **Bulwark** as radio rows and
+    Bulwark's address field under them. Done saves both, and stays off while the address is not a
+    public HTTPS one, which is why this is the one settings choice saved on Done. See
+    [website icons](avatars.md#website-icons).
+  - On Android, **This device** adds **Screen security**, off by default, which sets
+    `FLAG_SECURE`, and **Incognito keyboard**, on by default, which adds
+    `IME_FLAG_NO_PERSONALIZED_LEARNING` to every text field through `IncognitoKeyboard`.
+    `DevicePrivacy` names the protections a platform offers; iOS offers neither yet. The keyboard
+    setting moved to a new key when this default returned; from the keys before it, only Never
+    carries over.
+- **Folders & rules** lists every account's folders, or one account's through the account picker,
+  as trees. Dragging a folder's handle moves it, holding a folder opens quick actions (Rename,
+  Move into, Color, Delete), and a plus button creates a folder. Tapping a folder opens its page:
+  a summary line, then **Name**, **Move into**, **Color** (kept on this device), **Rules**, and
+  **Delete folder**. See [Folders and rules](folders.md#the-folder-page).
+
+## Kinds of setting
+
+Every setting is one of a few kinds, so each kind reads and behaves the same on every page.
+
+- **Switch**: `SettingToggleRow`. The whole row toggles, and the change saves at once.
+- **Choice**: a `SettingRow` that shows the current value in a `ValueButton` and opens a
+  `ChoiceSheet`. Choosing applies at once and moves the check; Done, the scrim, Back, or a swipe
+  down closes it, and the default sits alone at the top. A choice is never a list of radio rows on
+  the page itself. Only **Icons from** uses a `RadioChoiceSheet`, which saves on Done, because its
+  Bulwark choice needs an address that has to be valid first.
+- **Ordered list**: a `SettingRow` that shows how many are chosen, such as "4 shown", and opens
+  `OrderedChoiceSheet`, a `SelectionSheet` where chosen items are dragged by their handles or
+  tapped out and others are added; Done saves. Pills, the filter panel's Sections and Quick
+  filters, and both Quick views use it.
+- **Page**: `SettingPageRow`, which ends in a chevron and names the page's value or contents
+  under the title. A page holds a setting that needs room of its own, such as the theme cards,
+  action bar previews, or the pinned tile editor.
+- **Arranged in place**: the only settings edited on the page itself, because what they arrange
+  is the page's content: the sidebar's sections (switches with drag handles) and the Pinned
+  editors.
+
+A setting that only applies while another one is set stays where it is inside Meta's
+`DependentSettings`: dimmed, ignoring taps, with a description that says what it waits on, such
+as "Turn on Show sender to change this". It is not hidden, so the page keeps its shape and search
+still finds it. The same reason is passed to the index through `unavailable(reason) { ... }`, so
+search results say it too. Settings that do this today: Order and Preview (wait on Show sender),
+Quick filters (wait on the panel's Quick filters section), Mailboxes and folders (wait on the
+Pinned section), and Icons from (waits on Website icons).
+
+## Search
+
+The settings home searches `mailSettingsIndex` in `app/MailSettings.kt`, which mirrors each page:
+`mailBehaviorIndex`, `mailLookIndex`, and `privacyIndex` in the inbox feature list what their
+screens show, in the same sections. A search finds a page, setting, option, or keyword, such as
+"Dark mode" for Theme, "drawer" for Sidebar, or "screenshots" for Screen security, and a query of
+several words finds a setting that holds each word somewhere, such as "swipe archive". Opening a
+result opens its page with the row flashed, and Back returns to the results. When a setting moves
+between pages, move its index entry with it; `MailSettingsIndexTest` checks where the moved ones
+live.
 
 ## Reusable pieces
 

@@ -34,3 +34,21 @@ internal val PhotoCleaning.description: String
             PhotoCleaning.Always -> "Removes location, time, and camera"
             PhotoCleaning.Never -> "Photos go out as they are"
         }
+
+/** The privacy page's title, which the settings home and search also show. */
+const val PRIVACY_TITLE = "Privacy & security"
+
+/**
+ * The Allowed senders row's summary: how many there are, and that the list only counts while
+ * [images] load for contacts. The row stays open, so senders can still be taken out.
+ */
+fun allowedSummary(
+    count: Int,
+    images: RemoteImages,
+): String {
+    val senders = if (count == 1) "1 sender" else "$count senders"
+    return if (images == RemoteImages.Known) senders else "$senders, used only with In your contacts"
+}
+
+/** Why Icons from is disabled while Website icons is off; search shows it too. */
+const val ICONS_UNAVAILABLE = "Turn on Website icons to choose"

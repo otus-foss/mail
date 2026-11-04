@@ -3,6 +3,8 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
@@ -29,7 +31,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Settings › Privacy: when remote images load, the allowed senders, and website icons. */
+/** Settings › Privacy & security: when remote images load, the allowed senders, and website icons. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -47,24 +49,26 @@ class PrivacySettingsTest {
         }
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Remote images and website icons").assertIsDisplayed()
-        compose.onNodeWithText("Privacy").performClick()
+        compose.onNodeWithText("Remote images, avatars, and this device").assertIsDisplayed()
+        compose.onNodeWithText("Privacy & security").performClick()
         compose.onNodeWithText("Load remote images").assertIsDisplayed()
     }
 
     @Test
-    fun knownPeopleIsTheDefaultAndDoneSavesAChoice() {
+    fun knownPeopleIsTheDefaultAndAChoiceAppliesAtOnce() {
         openPrivacy()
         compose.screenshot("2026-10-19-feat-read-view-privacy")
         compose.onNodeWithText("Load images").performClick()
         compose.onNode(hasText("In your contacts") and isSelectable()).assertIsSelected()
         compose.onNode(hasText("Never") and isSelectable()).performClick()
-        assertEquals("Nothing is saved before Done", RemoteImages.Known, behavior.behavior.remoteImages)
-        compose.onNodeWithText("Done").performClick()
-        // Done saves once the sheet has finished closing.
-        compose.waitForIdle()
+        // Like every other choice sheet in settings, picking applies at once and moves the check.
         assertEquals(RemoteImages.Never, behavior.behavior.remoteImages)
+        compose.onNode(hasText("Never") and isSelectable()).assertIsSelected()
+        compose.onNodeWithText("Done").performClick()
+        compose.waitForIdle()
         compose.onNodeWithText("Never").assertIsDisplayed()
+        // Allowed senders only count while images load for contacts, which their row now says.
+        compose.onNodeWithText("2 senders, used only with In your contacts").assertIsDisplayed()
     }
 
     @Test
@@ -84,13 +88,19 @@ class PrivacySettingsTest {
     }
 
     @Test
-    fun iconSourcesShowOnlyWithWebsiteIconsAndBulwarkAsksForItsAddress() {
+    fun iconSourcesWaitForWebsiteIconsAndBulwarkAsksForItsAddress() {
         openPrivacy()
-        compose.onNodeWithText("Icons from").assertDoesNotExist()
+        // The row stays in place while icons are off, disabled with the reason below it.
+        compose.onNodeWithText("Icons from").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Turn on Website icons to choose").assertIsDisplayed()
         // The row's info button sits mid-row, so the switch is flipped by its action, not a tap at the center.
         compose.onNode(hasText("Website icons") and isToggleable()).performSemanticsAction(SemanticsActions.OnClick)
         assertTrue(behavior.behavior.websiteIcons)
-        compose.onNodeWithText("Icons from").performScrollTo().performClick()
+        compose
+            .onNodeWithText("Icons from")
+            .performScrollTo()
+            .assertIsEnabled()
+            .performClick()
         compose.onNodeWithText("Bulwark").performClick()
         assertEquals("Nothing is saved before Done", IconSource.Websites, behavior.behavior.iconSource)
         compose.onNodeWithContentDescription("Bulwark address").performTextInput("mail.example.net")

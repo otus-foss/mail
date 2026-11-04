@@ -119,7 +119,7 @@ class FolderColorsUiTest {
         compose.onNode(hasText("Purple") and isSelectable()).performClick()
         closeSheet()
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("Appearance").performClick()
+        compose.onNodeWithText("Mail behavior").performClick()
         compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
         compose
             .onNode(hasText("Folder colors") and isToggleable())

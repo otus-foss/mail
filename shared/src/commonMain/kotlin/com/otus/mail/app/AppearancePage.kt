@@ -9,13 +9,14 @@ import com.otus.mail.feature.inbox.presentation.components.MailListPreview
 import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.AllowedSendersScreen
+import com.otus.mail.feature.inbox.presentation.screens.BehaviorPage
 import com.otus.mail.feature.inbox.presentation.screens.MailBehaviorScreen
 import com.otus.mail.feature.inbox.presentation.screens.MailListSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.PrivacyScreen
 import com.otus.settings.presentation.components.AppIconSetting
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
-/** Appearance, where Mail adds its sidebar row to the shared page. */
+/** Appearance, where Mail adds its app icon and mail list rows to the shared page. */
 @Composable
 internal fun AppearancePage(
     states: MailStates,
@@ -31,11 +32,7 @@ internal fun AppearancePage(
         onBack = back,
         look = {
             settings.appIcon?.let { AppIconSetting(it) }
-            MailLookSettings(
-                states.behavior.behavior,
-                onSidebar = { navigation.go(MailPage.SidebarSettings) },
-                onMailList = { navigation.go(MailPage.MailListSettings) },
-            )
+            MailLookSettings(states.behavior.behavior) { navigation.go(MailPage.MailListSettings) }
         },
     )
 }
@@ -55,7 +52,7 @@ internal fun MailListSettingsPage(
     )
 }
 
-/** Mail behavior, whose Action bar row opens its own page. */
+/** Mail behavior, whose Sidebar, Filter panel, Action bar, and Signatures rows open their own pages. */
 @Composable
 internal fun MailBehaviorPage(
     states: MailStates,
@@ -65,12 +62,21 @@ internal fun MailBehaviorPage(
     MailBehaviorScreen(
         states.behavior,
         rememberFolderPills(states),
-        onOpenActionBar = { navigation.go(MailPage.ActionBarSettings) },
+        open = { page -> navigation.go(page.mailPage) },
         onBack = back,
     )
 }
 
-/** Settings › Privacy, or its Allowed senders page. */
+private val BehaviorPage.mailPage: MailPage
+    get() =
+        when (this) {
+            BehaviorPage.Sidebar -> MailPage.SidebarSettings
+            BehaviorPage.FilterPanel -> MailPage.FilterPanelSettings
+            BehaviorPage.ActionBar -> MailPage.ActionBarSettings
+            BehaviorPage.Signatures -> MailPage.Signatures
+        }
+
+/** Settings › Privacy & security, or its Allowed senders page. */
 @Composable
 internal fun PrivacyPage(
     page: MailPage,

@@ -73,11 +73,14 @@ fills the sidebar for the chosen scope.
   switch on the Sidebar page hides every tint without deleting the stored colors. See
   [folder colors](folders.md#folder-colors).
 - A hairline divider separates the two sections, in the order the user chose.
-- Settings › Appearance › Sidebar arranges the sidebar for every account. Dragging a
+- Settings › Mail behavior › Sidebar arranges the sidebar for every account. Dragging a
   section's handle moves it, and its switch hides it, except for the last section shown.
-  **Mailboxes** chooses Grid or Rows, and **Counts** chooses Unread, Total, or Off. Each change is
-  saved at once in `MailBehavior.sidebar` (`SidebarLayout`). Grid keeps the stored value `chips`
-  from the pills it replaced, so a saved choice still reads.
+  **Mailboxes and folders** opens the Pinned page, and waits, disabled, while the Pinned section is
+  off. The Pinned page starts with **Show as**, Grid or Rows, and shows only the editor for that
+  style: Grid's tiles move, resize, and unpin like Control Center; Rows have no sizes, so each pin
+  is a row with a drag handle and a remove button. **Counts** chooses Unread, Total, or Off. Each
+  change is saved at once in `MailBehavior.sidebar` (`SidebarLayout`). Grid keeps the stored value
+  `chips` from the pills it replaced, so a saved choice still reads.
 
 Only one item is selected across the inbox row, tiles, and rows. Each page, including each folder,
 keeps its saved state, such as a search and the list's scroll position, while another page is

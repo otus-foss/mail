@@ -32,7 +32,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Swiping inbox rows, and choosing what each swipe does on the appearance page. */
+/** Swiping inbox rows, and choosing what each swipe does on the Mail behavior page. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -135,8 +135,8 @@ class SwipeActionsTest {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Mail behavior").performClick()
-        compose.onNodeWithText("Delete").assertIsDisplayed()
-        compose.onNodeWithText("Swipe left").performClick()
+        compose.onNodeWithText("Delete").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Swipe left").performScrollTo().performClick()
         compose.onNodeWithText("Archive").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Archive").assertIsDisplayed()
