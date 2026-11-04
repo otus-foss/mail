@@ -1,26 +1,61 @@
 name: quality
 
-# Runs once per pull request, when it is ready to merge: on opening a pull request that is not a
-# draft, or on marking a draft ready for review. Later pushes do not start it again, so open a
-# draft and mark it ready once every commit is pushed. Start it by hand to check again.
+# Runs once a pull request is ready: when it opens as ready, or when a draft is marked ready. Later
+# pushes start it again only while the pull request has the "ci on every push" label, and adding that
+# label starts it at once. Draft pull requests never run it.
 on:
   pull_request:
-    types: [opened, ready_for_review]
+    types: [opened, ready_for_review, synchronize, labeled]
     paths-ignore: ["**/*.md"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Each kind of event gets its own group. Most events start a run that skips every job, such as an
+# unlabeled push, and that run must not cancel a real one started by another kind of event.
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}
+  group: quality-${{ github.workflow }}-${{ github.ref }}-${{ github.event.action }}
   cancel-in-progress: true
 
 jobs:
+  # Decides which jobs this change needs. Workflow-only and Markdown-only changes skip the build,
+  # except a change to this workflow, and changes that touch only Android code skip the macOS job.
+  # A run started by hand runs everything.
+  changes:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !github.event.pull_request.draft && (
+        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
+        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
+        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
+    runs-on: ubicloud-standard-2
+    permissions:
+      pull-requests: read
+    outputs:
+      build: ${{ steps.files.outputs.build }}
+      ios: ${{ steps.files.outputs.ios }}
+    steps:
+      - id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "$PR" ]; then
+            printf 'build=true\nios=true\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename' > files.txt
+          touched() { if grep -qvE "$1" files.txt || grep -qx '.github/workflows/quality.yml' files.txt; then echo true; else echo false; fi; }
+          echo "build=$(touched '^\.github/|\.md$')" >> "$GITHUB_OUTPUT"
+          echo "ios=$(touched '^\.github/|\.md$|^docs/|^androidApp/|(^|/)src/(androidMain|androidHostTest|androidUnitTest|androidTest|test)/')" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
   # Each job runs one part of checkAll, so the parts run at the same time. The tests run in two
   # shards; each test class runs in exactly one of them.
   check:
-    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     name: check (${{ matrix.part }})
     runs-on: ubicloud-standard-2
     strategy:
@@ -35,6 +70,9 @@ jobs:
             tasks: checkTests -Potus.testShard=1/2
           - part: tests 2 of 2
             tasks: checkTests -Potus.testShard=2/2
+          # Not part of checkAll: builds the release APK so the apk-size job can compare it.
+          - part: apk size
+            tasks: :androidApp:assembleNightly
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -74,15 +112,87 @@ jobs:
       - run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
       - run: python3 -m pip install -r requirements-quality.txt
       - run: ./gradlew ${{ matrix.tasks }} --console=plain -Potus.meta.path="$RUNNER_TEMP/otus-meta"
+      - name: Record the APK size
+        if: matrix.part == 'apk size'
+        run: |
+          set -- androidApp/build/outputs/apk/nightly/*.apk
+          stat -c %s "$1" > apk-size.txt
+      - if: matrix.part == 'apk size'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: apk-size
+          path: apk-size.txt
+
+  # Comments the release APK's size next to the latest nightly's. Only this job can write to the
+  # pull request, so no build step gets that token.
+  apk-size:
+    needs: check
+    if: always() && github.event_name == 'pull_request' && needs.check.result != 'skipped'
+    runs-on: ubicloud-standard-2
+    permissions:
+      pull-requests: write
+    steps:
+      # The apk size part may have failed, and then there is nothing to compare.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        continue-on-error: true
+        with:
+          name: apk-size
+      - name: Comment the size
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ ! -f apk-size.txt ]; then exit 0; fi
+          size=$(cat apk-size.txt)
+          nightly=$(gh release view -R reazndev/otus-mail-nightly --json assets \
+            --jq '.assets[] | select(.name | endswith(".apk")) | .size')
+          marker="<!-- otus-apk-size -->"
+          {
+            echo "$marker"
+            awk -v s="$size" -v n="$nightly" 'BEGIN {
+              printf "Release APK: %.2f MB, %+.1f kB against the latest nightly (%.2f MB).\n",
+                s / 1e6, (s - n) / 1e3, n / 1e6 }'
+          } > comment.md
+          tail -n 1 comment.md >> "$GITHUB_STEP_SUMMARY"
+          # One comment per pull request, updated by later runs.
+          comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)
+          if [ -n "$comment" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment" -F body=@comment.md > /dev/null
+          else
+            gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body-file comment.md
+          fi
 
   ios:
-    # macOS checks are paused; delete this condition to run them again.
-    if: false
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
+    # Ubicloud has no macOS runners, so this job runs on GitHub's.
     runs-on: macos-15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          fetch-depth: 0
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
+      # Xcode's build phase starts Gradle itself, so the Meta path goes in the user's Gradle
+      # properties rather than on a command line.
+      - name: Use the Meta branch with this branch's name, if there is one
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          mv otus-meta "$RUNNER_TEMP/otus-meta"
+          cd "$RUNNER_TEMP/otus-meta"
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
+          mkdir -p ~/.gradle
+          echo "otus.meta.path=$RUNNER_TEMP/otus-meta" >> ~/.gradle/gradle.properties
       # Compose Multiplatform links iOS 26 SDK symbols, so the app needs Xcode 26.
       - run: sudo xcode-select -s /Applications/Xcode_26.3.app && xcodebuild -version
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
@@ -94,12 +204,9 @@ jobs:
       - run: mint bootstrap
       - run: mint run swiftformat --lint iosApp
       - run: mint run swiftlint lint --strict
+      # Xcode's Kotlin build phase downloads Gradle with a 10 second timeout, so fetch it first.
+      - run: ./gradlew --version
       - name: Compile iOS simulator app
-        # Only this step downloads the shared Otus libraries from otus-meta's GitHub Packages
-        # registry; the other jobs build Meta from source, so no other step sees the token.
-        env:
-          ORG_GRADLE_PROJECT_otusMetaUsername: ${{ github.repository_owner }}
-          ORG_GRADLE_PROJECT_otusMetaPassword: ${{ secrets.OTUS_META_PACKAGES_TOKEN }}
         run: >-
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug -sdk
           iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 CODE_SIGNING_ALLOWED=NO

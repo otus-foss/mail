@@ -1,0 +1,4 @@
+# Ubicloud's runner label, which actionlint does not know.
+self-hosted-runner:
+  labels:
+    - ubicloud-standard-2

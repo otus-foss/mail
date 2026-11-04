@@ -1,0 +1,53 @@
+name: issue report
+
+# Each Monday, lists open issues that a merged pull request names with Closes, Fixes, Resolves, or
+# Part of. Such an issue may be finished and left open by accident. The list goes into one issue,
+# "Open issues with merged work", which closes itself when the list is empty.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  report:
+    runs-on: ubicloud-standard-2
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TITLE: Open issues with merged work
+    steps:
+      - name: Find open issues named by merged pull requests
+        run: |
+          report=$(gh issue list --state all --search "in:title \"$TITLE\"" --json number,title \
+            --jq "map(select(.title == env.TITLE))[0].number // empty")
+          gh issue list --state open --limit 500 --json number --jq '.[].number' | sort > open.txt
+          # The jq filter's $pr belongs to jq, not the shell.
+          # shellcheck disable=SC2016
+          gh pr list --state merged --limit 500 --json number,body --jq '
+            .[] | .number as $pr | (.body // "") | gsub("<!--[\\s\\S]*?-->"; "")
+            | [scan("(?i)\\b(?:part of|close[sd]?|fix(?:e[sd])?|resolve[sd]?):? +#([0-9]+)")[0]]
+            | unique[] | "\(.) #\($pr)"' | sort -k1,1 > named.txt
+          join open.txt named.txt | awk -v report="$report" '
+            $1 != report { prs[$1] = prs[$1] ? prs[$1] ", " $2 : $2 }
+            END { for (n in prs) print "- [ ] #" n ", named by " prs[n] }' | sort -t'#' -k2,2n > list.md
+          if [ ! -s list.md ]; then
+            echo "No open issue is named by a merged pull request."
+            if [ -n "$report" ]; then gh issue close "$report" --comment "Nothing left to check."; fi
+            exit 0
+          fi
+          {
+            echo "Merged pull requests name these open issues. Close each one that is done, or narrow it to what is left."
+            echo
+            cat list.md
+          } > body.md
+          cat body.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$report" ]; then
+            gh issue edit "$report" --body-file body.md
+            gh issue reopen "$report" 2>/dev/null || true
+          else
+            gh issue create --title "$TITLE" --body-file body.md
+          fi

@@ -44,7 +44,7 @@ Meta publishing is paused. Tags do not upload packages, and manual publisher run
 uploading. The release flow needs to resume before 0.10.0 becomes a downloadable version.
 Mail's quality workflow uses a Meta branch with the same name as the branch it checks when one exists,
 otherwise Meta main. Versions 0.3.1 to 0.5.0 are not on GitHub Packages.
-iOS linking against the artifacts is unverified while the macOS `ios` job is paused.
+The macOS `ios` job links the app against Meta's source, so iOS linking against the artifacts is unverified.
 See [hosting and CI](hosting.md).
 
 ## Design-system package migration

@@ -1,0 +1,27 @@
+# Opens one grouped pull request a week per ecosystem. Titles follow the commit rules, such as
+# "build(deps): bump the gradle group". Mark a pull request ready to run CI, as with any other.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+      include: scope
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gradle:
+        patterns: ["*"]
+    # com.otus libraries come from otus-meta's own releases, which the apps pin by hand.
+    ignore:
+      - dependency-name: "com.otus:*"
+    commit-message:
+      prefix: build
+      include: scope
