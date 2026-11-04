@@ -138,8 +138,8 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug 
 ```
 
 The Swift tests and Xcode build need macOS and Xcode. Linux Kotlin iOS compilation does not
-validate the Swift bridge, app signing or extension embedding. The existing macOS CI job is
-paused, so run these commands on a Mac before marking the PR ready.
+validate the Swift bridge, app signing or extension embedding. The macOS CI job compiles the
+simulator app but runs no Swift tests, so run these commands on a Mac before marking the PR ready.
 
 On a signed device build, test permission denial and re-enabling, initial verification without
 an alert, new mail while locked, notification taps, bridge outages, token changes, expired
