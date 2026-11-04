@@ -4,24 +4,25 @@ import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import com.otus.mail.feature.inbox.domain.SavedFiles
+import com.otus.mail.feature.inbox.domain.StoredFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
  * Saves received files to the device's Downloads through MediaStore, which needs no storage
- * permission from Android 10 on; older versions cannot save. Opening writes the file to the app's
- * cache and lends it to the app that shows its type through a [FileProvider].
+ * permission from Android 10 on; older versions cannot save. Opening lends the downloaded file to
+ * the app that shows its type through a [FileProvider], read-only, without another copy.
  */
 class AndroidSavedFiles(
     private val context: Context,
@@ -30,21 +31,31 @@ class AndroidSavedFiles(
         name: String,
         type: String,
         bytes: ByteArray,
+    ): Boolean = saveAs(name, type) { it.write(bytes) }
+
+    override suspend fun save(file: StoredFile): Boolean =
+        saveAs(file.name, file.type) { output -> File(file.path).inputStream().use { it.copyTo(output) } }
+
+    /** True once [copy] wrote the file to Downloads as [name]; a large file streams through. */
+    private suspend fun saveAs(
+        name: String,
+        type: String,
+        copy: (OutputStream) -> Unit,
     ): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
         return withContext(Dispatchers.IO) {
             // MediaStore numbers a name that is taken, "name (1)", but gives up after a few dozen;
             // then the file goes in under the time instead.
-            write(safeName(name), type, bytes) ?: write(timedName(safeName(name)), type, bytes) ?: false
+            write(safeName(name), type, copy) ?: write(timedName(safeName(name)), type, copy) ?: false
         }
     }
 
-    /** True once [bytes] are in Downloads as [name]; null when MediaStore could not take the name. */
+    /** True once [copy] wrote the file to Downloads as [name]; null when MediaStore could not take the name. */
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun write(
         name: String,
         type: String,
-        bytes: ByteArray,
+        copy: (OutputStream) -> Unit,
     ): Boolean? {
         val resolver = context.contentResolver
         val details =
@@ -63,7 +74,7 @@ class AndroidSavedFiles(
                 null
             } ?: return null
         return try {
-            resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: throw IOException("No output for $uri")
+            resolver.openOutputStream(uri)?.use(copy) ?: throw IOException("No output for $uri")
             resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
             true
         } catch (expected: IOException) {
@@ -76,16 +87,18 @@ class AndroidSavedFiles(
         }
     }
 
-    override suspend fun open(
-        name: String,
-        type: String,
-        bytes: ByteArray,
-    ): Boolean {
-        val uri = sharedCopy(name, bytes) ?: return false
+    override suspend fun open(file: StoredFile): Boolean {
+        val uri =
+            try {
+                FileProvider.getUriForFile(context, "${context.packageName}.files", File(file.path))
+            } catch (expected: IllegalArgumentException) {
+                // A file outside the shared folder, which a FileProvider refuses to lend.
+                return false
+            }
         return try {
             context.startActivity(
                 Intent(Intent.ACTION_VIEW)
-                    .setDataAndType(uri, type)
+                    .setDataAndType(uri, file.type)
                     .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
             )
             true
@@ -97,50 +110,7 @@ class AndroidSavedFiles(
         }
     }
 
-    /**
-     * [bytes] written to the app's cache under [name], as a content address other apps may read;
-     * null when the disk is full or the share is refused, which must not crash the app.
-     */
-    private suspend fun sharedCopy(
-        name: String,
-        bytes: ByteArray,
-    ): Uri? =
-        try {
-            val file =
-                withContext(Dispatchers.IO) {
-                    val opened = File(context.cacheDir, OPENED_DIRECTORY)
-                    pruneOpened(opened)
-                    // A folder per file keeps its own name, so two files with one name never clash.
-                    File(opened, System.nanoTime().toString())
-                        .apply { mkdirs() }
-                        .resolve(safeName(name))
-                        .apply { writeBytes(bytes) }
-                }
-            FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-        } catch (expected: IOException) {
-            null
-        } catch (expected: IllegalArgumentException) {
-            null
-        }
-
-    /**
-     * Deletes files opened more than a day ago. The app that shows a file reads it soon after, so
-     * older copies only take space.
-     */
-    private fun pruneOpened(opened: File) {
-        val cutoff = System.currentTimeMillis() - OPENED_KEEP_MILLIS
-        opened
-            .listFiles()
-            .orEmpty()
-            .filter { it.lastModified() < cutoff }
-            .forEach { it.deleteRecursively() }
-    }
-
     private companion object {
-        /** Matches the `cache-path` in `res/xml/shared_files.xml`. */
-        const val OPENED_DIRECTORY = "opened"
-        const val OPENED_KEEP_MILLIS = 24L * 60 * 60 * 1000
-
         /** The sender picks the name, so path separators and dot names cannot leave the folder. */
         fun safeName(name: String): String =
             name

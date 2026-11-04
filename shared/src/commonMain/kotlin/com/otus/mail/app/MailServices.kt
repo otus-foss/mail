@@ -23,10 +23,10 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.jmap.push.PushStateStore
 import com.otus.jmap.push.PushSubscriptions
 import com.otus.mail.core.cache.AccountMailCache
-import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
+import com.otus.mail.core.files.DownloadFolderException
 import com.otus.mail.core.mail.ServerChanges
 import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.contacts.data.JmapContactRepository
@@ -40,6 +40,8 @@ import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.forgetAccount
+import com.otus.mail.feature.inbox.data.AttachmentCache
+import com.otus.mail.feature.inbox.data.AttachmentRetention
 import com.otus.mail.feature.inbox.data.EmailChangeQueue
 import com.otus.mail.feature.inbox.data.JmapAddressBook
 import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
@@ -64,7 +66,6 @@ import com.otus.mail.feature.inbox.data.JmapThreadHistory
 import com.otus.mail.feature.inbox.data.ServerSites
 import com.otus.mail.feature.inbox.data.UnansweredDrafts
 import com.otus.mail.feature.inbox.domain.AddressBook
-import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
@@ -98,9 +99,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Instant
 
 /**
  * Connects data implementations to feature contracts. Create one per process: it owns the HTTP
@@ -174,6 +172,11 @@ class MailServices(
                     } catch (error: CacheStorageException) {
                         throw AccountStorageException(error)
                     }
+                    try {
+                        retention.forget(loginId)
+                    } catch (error: DownloadFolderException) {
+                        throw AccountStorageException(error)
+                    }
                 },
             )
         CacheAccountRepository(repository, logins, accountCache)
@@ -212,7 +215,12 @@ class MailServices(
     internal val conversationMessages: ConversationMessages by lazy {
         JmapConversationMessages(connections, logins, cache, sites = serverSites)
     }
-    internal val downloads: AttachmentDownloads by lazy { JmapAttachmentDownloads(connections, logins) }
+
+    /** Attachments streamed to the device, the ones kept offline, and when the others go; see docs/storage.md. */
+    internal val retention by lazy { AttachmentRetention(stores.downloads) }
+    internal val attachments by lazy {
+        AttachmentCache(JmapAttachmentDownloads(connections, logins), stores.downloads, retention)
+    }
     internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, logins) }
     internal val newsletters: Newsletters by lazy {
         JmapNewsletters(connections, logins, drafts, sender, cache)
@@ -260,14 +268,6 @@ class MailServices(
         )
 
     /**
-     * Drops cached bodies of mail received more than [BODY_RETENTION] before [now], so the cache
-     * does not grow without bound. Call it once at start; it runs off the main thread.
-     */
-    suspend fun trimCache(now: Instant = Clock.System.now()) {
-        cache.trim(CacheKind.Body, (now - BODY_RETENTION).toEpochMilliseconds())
-    }
-
-    /**
      * Sends the messages the outbox kept that are due, and the marks and moves that wait, as from
      * a background job after the app closed. True when some still wait for the network, so the job
      * should run again.
@@ -292,9 +292,6 @@ class MailServices(
             emptyList()
         }
 }
-
-/** How long a cached body stays after its mail arrived. Opening older mail fetches it again. */
-private val BODY_RETENTION = 90.days
 
 @OptIn(ExperimentalResourceApi::class)
 private suspend fun avatarSuffixRules(): String = Res.readBytes("files/public_suffix_list.dat").decodeToString()

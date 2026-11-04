@@ -127,6 +127,7 @@ private fun FilesStrip(
     val unfold = rememberUnfold(open)
     LaunchedEffect(open) { unfold.animateTo(open) }
     val drag = rememberUnfoldDrag(unfold) { if (it != state.filesOpen(page)) state.toggleFiles(page) }
+    LaunchedEffect(page.id, files) { actions.loadKept(page, files) }
     ReadAttachmentStrip(
         files,
         unfold,
@@ -134,6 +135,7 @@ private fun FilesStrip(
         actions.files(page, files),
         { state.thumbnails.of(page, it) },
         rememberFoldSwipe(drag),
+        kept = { actions.isKept(page, it) },
     )
 }
 

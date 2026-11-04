@@ -49,6 +49,11 @@ class AttachmentLabelsTest {
     }
 
     @Test
+    fun detailOfAKeptFileSaysItIsOffline() {
+        assertEquals("PDF · 240 KB · Offline", pdf.detail(kept = true))
+    }
+
+    @Test
     fun detailOfOtherFilesNamesTheExtension() {
         assertEquals("ZIP · 1 MB", MailAttachment("a.zip", "application/zip", 1024 * 1024L, "b").detail())
         assertEquals("File · 12 bytes", MailAttachment("README", "application/octet-stream", 12, "b").detail())

@@ -23,7 +23,7 @@ import com.otus.mail.feature.inbox.presentation.read.kind
 
 /**
  * A message's [files] in the attachment strip, unfolded in place as far as [unfold] is, each with
- * its [thumbnail] once it has one.
+ * its [thumbnail] once it has one. A file [kept] offline says so after its size.
  */
 @Composable
 internal fun ReadAttachmentStrip(
@@ -33,9 +33,10 @@ internal fun ReadAttachmentStrip(
     actions: AttachmentActions,
     thumbnail: (MailAttachment) -> ImageBitmap?,
     modifier: Modifier = Modifier,
+    kept: (MailAttachment) -> Boolean = { false },
 ) {
     AttachmentStrip(
-        files.map { AttachmentFile(it.name, it.detail(), it.kind().shown, thumbnail(it)) },
+        files.map { AttachmentFile(it.name, it.detail(kept(it)), it.kind().shown, thumbnail(it)) },
         attachmentSummary(files),
         unfold,
         onToggle,

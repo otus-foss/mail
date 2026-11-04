@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.FolderChange
@@ -166,7 +165,7 @@ internal object ReadViewFixtures {
         privacy = ReadPrivacy({ RemoteImages.Known }, known = KnownPeople { team.map { it.address }.toSet() }),
         files =
             ReadFiles(
-                downloads = AttachmentDownloads { _, file -> photo().takeIf { file.type.startsWith("image/") } },
+                downloads = PhotoAttachments(::photo),
                 printer = MessagePrinter { _, _ -> },
             ),
         services =
