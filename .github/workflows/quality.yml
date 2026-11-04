@@ -1,21 +1,21 @@
 name: quality
 
-# Runs once per pull request, when it is ready to merge: on opening a pull request that is not a
-# draft, or on marking a draft ready for review. Later pushes do not start it again, so open a
-# draft and mark it ready once every commit is pushed. Start it by hand to check again.
+# Runs once a pull request is ready: when it opens as ready, or when a draft is marked ready. Later
+# pushes start it again only while the pull request has the "ci on every push" label, and adding that
+# label starts it at once. Draft pull requests never run it.
 on:
   pull_request:
-    types: [opened, ready_for_review]
+    types: [opened, ready_for_review, synchronize, labeled]
     paths-ignore: ["**/*.md"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# A draft and a ready run go in separate groups. Opening a pull request and marking it ready at
-# once starts both, and the skipped draft run would otherwise cancel the ready one.
+# Each kind of event gets its own group. Most events start a run that skips every job, such as an
+# unlabeled push, and that run must not cancel a real one started by another kind of event.
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}-${{ github.event.pull_request.draft }}
+  group: quality-${{ github.workflow }}-${{ github.ref }}-${{ github.event.action }}
   cancel-in-progress: true
 
 jobs:
@@ -23,7 +23,12 @@ jobs:
   # except a change to this workflow, and changes that touch only Android code skip the macOS job.
   # A run started by hand runs everything.
   changes:
-    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !github.event.pull_request.draft && (
+        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
+        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
+        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
     runs-on: ubicloud-standard-2
     permissions:
       pull-requests: read

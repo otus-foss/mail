@@ -1,9 +1,9 @@
 name: actionlint
 
-# Lints the workflows in pull requests that change them. Runs once per pull request, like quality.
+# Lints the workflows in pull requests that change them. Runs when quality does.
 on:
   pull_request:
-    types: [opened, ready_for_review]
+    types: [opened, ready_for_review, synchronize, labeled]
     paths: [".github/**"]
   workflow_dispatch:
 
@@ -12,7 +12,12 @@ permissions:
 
 jobs:
   actionlint:
-    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      !github.event.pull_request.draft && (
+        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
+        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
+        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
     runs-on: ubicloud-standard-2
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
