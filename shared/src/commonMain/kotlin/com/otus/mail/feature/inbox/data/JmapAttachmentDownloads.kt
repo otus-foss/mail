@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
+import com.otus.jmap.downloadStream
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.mailCallOr
 import com.otus.mail.feature.inbox.domain.MailAttachment
