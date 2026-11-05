@@ -16,14 +16,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Decides whether this run checks anything; see otus-meta's .github/actions/ready-gate.
+  gate:
+    runs-on: ubicloud-standard-2
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          sparse-checkout: .github/actions
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
+      - id: gate
+        uses: ./otus-meta/.github/actions/ready-gate
+
   # Counts changed lines outside tests and screenshots, unless the pull request changes only those.
   size:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !github.event.pull_request.draft && (
-        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
-        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
-        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
     runs-on: ubicloud-standard-2
     permissions:
       issues: write
@@ -59,12 +71,8 @@ jobs:
   # Shows each screenshot the pull request adds or changes, old beside new, from the commits
   # themselves, so the images stay put after a merge.
   screenshots:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !github.event.pull_request.draft && (
-        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
-        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
-        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
     runs-on: ubicloud-standard-2
     permissions:
       pull-requests: write
@@ -117,12 +125,8 @@ jobs:
   # Quality builds against the Meta branch with this branch's name when there is one, so the pair has
   # to land together, Meta first. The label says so before anyone merges this alone.
   meta-partner:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !github.event.pull_request.draft && (
-        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
-        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
-        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
     runs-on: ubicloud-standard-2
     permissions:
       issues: write
@@ -133,21 +137,17 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
       BRANCH: ${{ github.head_ref }}
     steps:
-      - name: Look for a Meta branch with this branch's name
-        id: meta
-        env:
-          DEPLOY_KEY: ${{ secrets.OTUS_META_DEPLOY_KEY }}
-        run: |
-          key="$RUNNER_TEMP/meta_key"
-          printf '%s\n' "$DEPLOY_KEY" > "$key"
-          chmod 600 "$key"
-          export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
-          if git ls-remote --exit-code --heads git@github.com:reazndev/otus-meta.git "$BRANCH" > /dev/null; then
-            echo "partner=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "partner=false" >> "$GITHUB_OUTPUT"
-          fi
-          rm -f "$key"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          fetch-depth: 0
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
+      - id: meta
+        uses: ./otus-meta/.github/actions/meta-partner
+        with:
+          branch: ${{ github.head_ref }}
       - name: Label the pull request
         env:
           PARTNER: ${{ steps.meta.outputs.partner }}
