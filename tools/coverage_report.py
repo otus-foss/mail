@@ -52,6 +52,8 @@ LAYERS = [
     (re.compile(r"/(domain|data|presentation)/"), "{module} · {0}"),
 ]
 LEAST_COVERED = 15
+# A share at or above a limit gets its dot, so readers see weak spots before reading numbers.
+RATINGS = [(80, "🟢"), (50, "🟡"), (0, "🔴")]
 
 
 @dataclass
@@ -89,6 +91,15 @@ class Composable:
 
 def percent(counter: Counter) -> str:
     return f"{100 * counter.covered / counter.total:.1f}%" if counter.total else "–"
+
+
+def dot(counter: Counter) -> str:
+    share = 100 * counter.covered / counter.total if counter.total else 0
+    return next(mark for limit, mark in RATINGS if share >= limit)
+
+
+def rated(counter: Counter) -> str:
+    return f"{dot(counter)} {percent(counter)}" if counter.total else "–"
 
 
 def is_main_source(path: str) -> bool:
@@ -281,7 +292,7 @@ def totals_section(files: dict[str, SourceFile]) -> list[str]:
         total = Counter()
         for source in files.values():
             total.add(source.counters[kind].missed, source.counters[kind].covered)
-        rows.append([COUNTER_LABELS[kind], *cells(total)])
+        rows.append([COUNTER_LABELS[kind], str(total.covered), str(total.total), rated(total)])
     return table(["", "Covered", "Total", "%"], rows) + [""]
 
 
@@ -319,7 +330,8 @@ def ui_section(items: list[Composable]) -> list[str]:
         rendered = sum(1 for item in group if item.rendered)
         unmatched = sum(1 for item in group if item.rendered is None)
         note = f" ({unmatched} not found in the bytecode)" if unmatched else ""
-        out.append(f"- {label} rendered by a test: {rendered} of {len(group)}{note}")
+        mark = dot(Counter(len(group) - rendered, rendered))
+        out.append(f"- {mark} {label} rendered by a test: {rendered} of {len(group)}{note}")
         if kind == "screens":
             unrendered_screens = [item for item in group if item.rendered is False]
     out.append("")
@@ -348,11 +360,11 @@ def pull_request_section(
         for nr in touched:
             branches_total.add(data[nr][2], data[nr][3])
         ranges = line_ranges(uncovered, instrumented) or "–"
-        rows.append([f"`{path}`", f"{len(covered)} of {len(touched)}", percent(file_lines), ranges])
+        rows.append([f"`{path}`", f"{len(covered)} of {len(touched)}", rated(file_lines), ranges])
     if not rows:
         return out + ["No changed line in main Kotlin sources has bytecode to cover.", ""]
     out.append(
-        f"Changed lines covered: {lines_total.covered} of {lines_total.total} "
+        f"{dot(lines_total)} Changed lines covered: {lines_total.covered} of {lines_total.total} "
         f"({percent(lines_total)}) · changed branches covered: {branches_total.covered} of "
         f"{branches_total.total} ({percent(branches_total)})"
     )

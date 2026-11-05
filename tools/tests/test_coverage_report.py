@@ -90,16 +90,16 @@ class CoverageReportTests(unittest.TestCase):
 
     def test_totals_count_only_handwritten_sources(self):
         text = self.report()
-        self.assertIn("| lines | 3 | 9 | 33.3% |", text)
-        self.assertIn("| branches | 1 | 2 | 50.0% |", text)
-        self.assertIn("| instructions | 10 | 30 | 33.3% |", text)
-        self.assertIn("| methods | 3 | 7 | 42.9% |", text)
-        self.assertIn("| classes | 2 | 3 | 66.7% |", text)
+        self.assertIn("| lines | 3 | 9 | 🔴 33.3% |", text)
+        self.assertIn("| branches | 1 | 2 | 🟡 50.0% |", text)
+        self.assertIn("| instructions | 10 | 30 | 🔴 33.3% |", text)
+        self.assertIn("| methods | 3 | 7 | 🔴 42.9% |", text)
+        self.assertIn("| classes | 2 | 3 | 🟡 66.7% |", text)
         self.assertNotIn("MailDatabaseImpl", text)
 
     def test_ui_counts_rendered_screens_and_skips_previews(self):
         text = self.report()
-        self.assertIn("- Screens rendered by a test: 1 of 2", text)
+        self.assertIn("- 🟡 Screens rendered by a test: 1 of 2", text)
         self.assertIn(f"- `EmptyScreen` in `{SCREEN}`", text)
         self.assertNotIn("InboxScreenPreview", text)
         self.assertNotIn("This pull request", text)
@@ -140,11 +140,11 @@ class CoverageReportTests(unittest.TestCase):
         )
         text = self.report(base)
         self.assertIn(
-            "Changed lines covered: 1 of 2 (50.0%) · changed branches covered: 1 of 2 (50.0%)",
+            "🟡 Changed lines covered: 1 of 2 (50.0%) · changed branches covered: 1 of 2 (50.0%)",
             text,
         )
-        self.assertIn(f"| `{SCREEN}` | 0 of 1 | 0.0% | 12 |", text)
-        self.assertIn(f"| `{COUNT}` | 1 of 1 | 100.0% | – |", text)
+        self.assertIn(f"| `{SCREEN}` | 0 of 1 | 🔴 0.0% | 12 |", text)
+        self.assertIn(f"| `{COUNT}` | 1 of 1 | 🟢 100.0% | – |", text)
         self.assertNotIn(TEST, text)
         touched = text[text.index("Touched composables") : text.index("### UI")]
         self.assertIn("`EmptyScreen`", touched)
