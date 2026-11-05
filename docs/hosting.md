@@ -26,6 +26,7 @@ nightly.
 Pull request workflows run once, when a pull request opens as ready or a draft is marked ready.
 Drafts run nothing. Later pushes run them again only while the pull request has the
 `ci on every push` label, and adding the label runs them at once.
+`quality` also runs on every push to `main`, so each merge is checked again.
 
 Each `quality` run first lists the changed files: workflow-only and Markdown-only pull requests skip
 the build, and pull requests that change only Android code skip the macOS `ios` job. The
