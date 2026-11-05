@@ -46,6 +46,6 @@ class CategoryPersistenceTest {
     fun showingEveryCategoryIsKept() {
         val saved = MailBehavior(categories = InboxCategories(enabled = true, hidden = emptySet()))
         AndroidMailBehaviorStore(context).write(saved)
-        assertEquals(emptySet(), AndroidMailBehaviorStore(context).read().categories.hidden)
+        assertEquals(emptySet<MailCategory>(), AndroidMailBehaviorStore(context).read().categories.hidden)
     }
 }
