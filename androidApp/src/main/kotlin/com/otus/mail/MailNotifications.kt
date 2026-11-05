@@ -88,7 +88,7 @@ class MailNotifications(
     override fun show(mail: List<NewMail>) = post(mail, failed = null)
 
     /** [mail]'s alert again, saying that its [failed] button's change did not reach the server. */
-    fun showFailed(
+    internal fun showFailed(
         mail: NewMail,
         failed: AlertAction,
     ) = post(listOf(mail), failed)
