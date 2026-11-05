@@ -8,7 +8,14 @@ import com.otus.jscontact.Media
  * out; a login that failed to load is named in [ContactsSnapshot.failedLogins].
  */
 interface ContactRepository {
+    /**
+     * Brings the contacts up to date with every server and returns them. A login whose server does
+     * not answer is named in [ContactsSnapshot.failedLogins] and shows what the device kept of it.
+     */
     suspend fun load(): ContactsSnapshot
+
+    /** What the device kept from the last load, without asking any server; null when it kept nothing. */
+    suspend fun cached(): ContactsSnapshot? = null
 
     /** Adds [card] to [book] and returns where it was saved. */
     suspend fun create(

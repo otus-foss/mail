@@ -16,6 +16,12 @@ enum class CacheKind {
 
     /** An email's text and HTML body values. Emails never change, so a body stays valid. */
     Body,
+
+    /** AddressBook objects (RFC 9610, section 2), by account id and book id. */
+    AddressBook,
+
+    /** ContactCard objects (RFC 9610, section 3), by account id and card id. */
+    ContactCard,
 }
 
 /**

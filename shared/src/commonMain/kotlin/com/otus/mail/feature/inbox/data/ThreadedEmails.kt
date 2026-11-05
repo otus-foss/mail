@@ -15,6 +15,7 @@ import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.core.mail.putObject
+import com.otus.mail.core.mail.unlessRefused
 import kotlin.time.Instant
 
 /**

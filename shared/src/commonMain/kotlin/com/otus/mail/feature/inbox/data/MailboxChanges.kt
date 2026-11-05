@@ -16,6 +16,7 @@ import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.replaceMailboxes
+import com.otus.mail.core.mail.unlessRefused
 
 /** A login's mailboxes and the `Mailbox` state they match; null when the server gave none. */
 internal class MailboxList(

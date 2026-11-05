@@ -5,6 +5,7 @@ import com.otus.jmap.JmapResponse
 import com.otus.jmap.QueryChangesMethod
 import com.otus.jmap.QueryChangesResult
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.unlessRefused
 import kotlinx.serialization.json.JsonPrimitive
 
 /**

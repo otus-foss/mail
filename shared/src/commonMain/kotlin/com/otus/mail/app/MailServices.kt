@@ -204,7 +204,7 @@ class MailServices(
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
     internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
     internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
-    internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, logins) }
+    internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, logins, cache) }
 
     /** Each login's recent mail, for the people the user deals with most. */
     internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections, logins) }
