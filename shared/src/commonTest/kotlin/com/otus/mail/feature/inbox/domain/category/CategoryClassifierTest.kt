@@ -16,13 +16,13 @@ class CategoryClassifierTest {
                 ShippingNotice to MailCategory.Transactions,
                 NumberedInvoice to MailCategory.Transactions,
                 KnownShopOrder to MailCategory.Transactions,
-                KnownShopSale to MailCategory.Promotions,
-                SaleMail to MailCategory.Promotions,
+                KnownShopSale to MailCategory.Newsletters,
+                SaleMail to MailCategory.Newsletters,
                 Newsletter to MailCategory.Newsletters,
-                SocialNotification to MailCategory.Social,
-                CiFailure to MailCategory.Updates,
-                AccountNotice to MailCategory.Updates,
-                SecurityCode to MailCategory.Updates,
+                SocialNotification to MailCategory.Notifications,
+                CiFailure to MailCategory.Notifications,
+                AccountNotice to MailCategory.Notifications,
+                SecurityCode to MailCategory.Notifications,
             )
         expected.forEach { (signals, category) ->
             assertEquals(category, classify(signals).category, signals.subject)
@@ -42,7 +42,7 @@ class CategoryClassifierTest {
     @Test
     fun salesWordsWinOverOrderWordsInListMail() {
         val verdict = classify(SaleWithOrderWords)
-        assertEquals(MailCategory.Promotions, verdict.category)
+        assertEquals(MailCategory.Newsletters, verdict.category)
         assertEquals(CategoryReason(ReasonKind.Keywords, "% off"), verdict.reasons.last())
     }
 
@@ -76,7 +76,7 @@ class CategoryClassifierTest {
     fun codesAndPasswordResetsAreTimeSensitive() {
         listOf(SecurityCode, CodeInSubject, ShopPasswordReset).forEach { signals ->
             val verdict = classify(signals)
-            assertEquals(MailCategory.Updates, verdict.category, signals.subject)
+            assertEquals(MailCategory.Notifications, verdict.category, signals.subject)
             assertTrue(verdict.timeSensitive, signals.subject)
         }
         val code = classify(SecurityCode).reasons.single()
@@ -104,7 +104,7 @@ class CategoryClassifierTest {
         assertEquals(MailCategory.Transactions, verdict.category)
         assertEquals(listOf(CategoryReason(ReasonKind.StructuredData, "Order")), verdict.reasons)
         val offer = PersonalMail.copy(markup = setOf("DiscountOffer"))
-        assertEquals(MailCategory.Promotions, classify(offer).category)
+        assertEquals(MailCategory.Newsletters, classify(offer).category)
     }
 
     @Test
@@ -123,7 +123,7 @@ class CategoryClassifierTest {
     @Test
     fun theSenderListCoversSubdomains() {
         val verdict = classify(SocialNotification.copy(senderAddress = "messages-noreply@bounce.linkedin.com"))
-        assertEquals(MailCategory.Social, verdict.category)
+        assertEquals(MailCategory.Notifications, verdict.category)
         assertEquals(listOf(CategoryReason(ReasonKind.KnownSender, "linkedin.com")), verdict.reasons)
     }
 
@@ -160,7 +160,7 @@ class CategoryClassifierTest {
     fun withoutTheSenderListKnownSendersFallBackToTheirHeaders() {
         val classifier = CategoryClassifier(SenderDirectory.Empty)
         val ci = classifier.classify(CiFailure)
-        assertEquals(MailCategory.Updates, ci.category)
+        assertEquals(MailCategory.Notifications, ci.category)
         assertEquals(CategoryReason(ReasonKind.Automated, "notifications@github.com"), ci.reasons.last())
         assertEquals(MailCategory.Primary, classifier.classify(KnownShopOrder).category)
     }

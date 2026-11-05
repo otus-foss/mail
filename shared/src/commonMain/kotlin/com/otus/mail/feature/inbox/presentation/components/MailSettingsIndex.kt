@@ -112,7 +112,7 @@ fun SettingsIndexScope.mailBehaviorIndex(
             "Categories",
             categoriesSummary(behavior.categories),
             icon = Res.drawable.symbol_all_inbox,
-            keywords = listOf("Primary", "Promotions", "Newsletters", "Transactions", "Updates", "Social", "Sort"),
+            keywords = listOf("Primary", "Transactions", "Notifications", "Newsletters", "Promotions", "Tabs", "Sort"),
         )
         toggle("Read later", behavior.readLater, Res.drawable.symbol_bookmark, keywords = listOf("Save for later"))
     }

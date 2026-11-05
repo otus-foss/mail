@@ -44,7 +44,7 @@ enum class ReasonKind(
     /** `List-Post`: a discussion list where people write to each other. */
     DiscussionList("discussion"),
 
-    /** `List-Unsubscribe`, `List-Id`, or `Precedence: bulk`/`list`. */
+    /** `List-Unsubscribe`, `List-Id`, or `Precedence: bulk`, `list`, or `junk`. */
     ListHeaders("list"),
 
     /** `Auto-Submitted: auto-replied`, such as an out-of-office reply from a person. */

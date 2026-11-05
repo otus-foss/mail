@@ -12,14 +12,14 @@ class CategoryLabelsTest {
     fun theExplanationNamesTheCategoryAndEachReason() {
         val placement =
             CategoryPlacement(
-                MailCategory.Promotions,
+                MailCategory.Newsletters,
                 listOf(
                     CategoryReason(ReasonKind.ListHeaders, "List-Unsubscribe, Precedence: bulk"),
                     CategoryReason(ReasonKind.Keywords, "% off"),
                 ),
             )
         assertEquals(
-            "In Promotions. It has mailing list headers: List-Unsubscribe, Precedence: bulk. " +
+            "In Newsletters & promotions. It has mailing list headers: List-Unsubscribe, Precedence: bulk. " +
                 "Its subject or text says “% off”.",
             placement.explanation(),
         )
@@ -31,7 +31,8 @@ class CategoryLabelsTest {
             mapOf(
                 CategoryReason(ReasonKind.SenderChoice, "a@b.example") to
                     "You chose this category for mail from a@b.example.",
-                CategoryReason(ReasonKind.HiddenCategory, "social") to "Social is hidden, so Primary shows it.",
+                CategoryReason(ReasonKind.HiddenCategory, "notifications") to
+                    "Notifications is hidden, so Primary shows it.",
                 CategoryReason(ReasonKind.StructuredData, "Order") to "It has schema.org Order markup.",
                 CategoryReason(ReasonKind.KnownSender, "github.com") to
                     "github.com is on Mail's list of known senders.",
@@ -47,12 +48,12 @@ class CategoryLabelsTest {
     fun timeSensitiveMailSaysPrimaryShowsItToo() {
         val chosen =
             CategoryPlacement(
-                MailCategory.Promotions,
+                MailCategory.Transactions,
                 listOf(CategoryReason(ReasonKind.SenderChoice, "a@b.example")),
                 timeSensitive = true,
             )
         assertEquals(
-            "In Promotions. You chose this category for mail from a@b.example. Primary shows it too.",
+            "In Transactions. You chose this category for mail from a@b.example. Primary shows it too.",
             chosen.explanation(),
         )
     }

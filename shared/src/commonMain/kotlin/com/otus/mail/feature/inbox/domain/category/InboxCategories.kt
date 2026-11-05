@@ -78,8 +78,8 @@ data class InboxCategories(
     }
 
     companion object {
-        /** Social is off until the user turns it on, so a new Inbox starts with fewer pills. */
-        val DEFAULT_HIDDEN: Set<MailCategory> = setOf(MailCategory.Social)
+        /** A new Inbox shows every category. */
+        val DEFAULT_HIDDEN: Set<MailCategory> = emptySet()
 
         /** [categories]' hidden set as one stored value, one category per line. */
         fun encodeHidden(categories: InboxCategories): String =

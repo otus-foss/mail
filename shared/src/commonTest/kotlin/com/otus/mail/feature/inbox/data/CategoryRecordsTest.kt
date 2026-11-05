@@ -46,9 +46,9 @@ class CategoryRecordsTest {
     fun verdictsAreSavedBesideTheEmail() =
         runTest {
             val verdicts = records().verdicts(cache, LOGIN, listOf(sale, receipt))
-            assertEquals(MailCategory.Promotions, verdicts["e1"]?.category)
+            assertEquals(MailCategory.Newsletters, verdicts["e1"]?.category)
             val automated = verdicts["e2"]?.category
-            assertEquals(MailCategory.Updates, automated, "orders@ is automated, and the subject names no order")
+            assertEquals(MailCategory.Notifications, automated, "orders@ is automated, and the subject names no order")
             val saved = cache.objects(LOGIN, CacheKind.Category, StoredCategory.serializer(), listOf("e1", "e2"))
             assertEquals(verdicts, saved.mapValues { (_, stored) -> stored.verdict("$CLASSIFIER_VERSION.0") })
         }
@@ -68,7 +68,7 @@ class CategoryRecordsTest {
         runTest {
             val unknown = StoredCategory("$CLASSIFIER_VERSION.0", "forums")
             cache.write(LOGIN) { putObject(CacheKind.Category, "e1", StoredCategory.serializer(), unknown) }
-            assertEquals(MailCategory.Promotions, records().verdicts(cache, LOGIN, listOf(sale))["e1"]?.category)
+            assertEquals(MailCategory.Newsletters, records().verdicts(cache, LOGIN, listOf(sale))["e1"]?.category)
         }
 
     @Test

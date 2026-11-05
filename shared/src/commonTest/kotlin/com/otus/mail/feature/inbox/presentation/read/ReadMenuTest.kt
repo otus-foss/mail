@@ -152,10 +152,10 @@ class ReadMenuTest {
     @Test
     fun categoryEntriesShowOnlyWhileCategoriesAreOn() {
         val sent = message(sender = alex, to = listOf(grace, ada))
-        val promotions = CategoryPlacement(MailCategory.Promotions, emptyList())
+        val promotions = CategoryPlacement(MailCategory.Newsletters, emptyList())
         val labels = { page: ReadPage -> readMenu(page).map { section -> section.entries.map { it.label() } } }
         val on = labels(ReadPage(message(), own, category = promotions))
-        assertEquals("Why is this in Promotions?", on.first()[on.first().indexOf("View details") + 1])
+        assertEquals("Why is this in Newsletters & promotions?", on.first()[on.first().indexOf("View details") + 1])
         assertEquals("Categorize sender\u2026", on[1].last())
         val off = labels(ReadPage(message(), own)).flatten()
         assertEquals(emptyList(), off.filter { "categor" in it.lowercase() })

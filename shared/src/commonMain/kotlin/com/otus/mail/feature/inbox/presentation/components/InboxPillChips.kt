@@ -2,11 +2,9 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forum
-import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_label
 import com.otus.designsystem.resources.symbol_mark_email_unread
@@ -140,10 +138,8 @@ private val MailCategory.icon: DrawableResource
         when (this) {
             MailCategory.Primary -> Res.drawable.symbol_inbox
             MailCategory.Transactions -> Res.drawable.symbol_label
-            MailCategory.Updates -> Res.drawable.symbol_notifications
-            MailCategory.Social -> Res.drawable.symbol_group
+            MailCategory.Notifications -> Res.drawable.symbol_notifications
             MailCategory.Newsletters -> Res.drawable.symbol_newspaper
-            MailCategory.Promotions -> Res.drawable.symbol_all_inbox
         }
 
 /** Counts above 99 read "99+", so the badge stays small. */

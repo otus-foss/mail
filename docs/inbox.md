@@ -317,7 +317,7 @@ header; search still shows its own filters.
 ## Categories
 
 With **Mail behavior › Inbox › Categories** on, the pill row starts with the category pills:
-Primary, Transactions, Updates, Social, Newsletters, and Promotions, each with its unread count.
+Primary, Transactions, Notifications, and Newsletters & promotions, each with its unread count.
 Mail sorts every message on the device from its headers, the sender, and the text it has, and the
 ⋯ menu says why a message is where it is and can put all of a sender's mail in another category.
 See [categories](categories.md).

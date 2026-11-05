@@ -67,7 +67,7 @@ fun InboxBehaviorSettings(
         SettingRow(
             "Categories",
             { choosingCategories = true },
-            description = "Sorts the Inbox into Primary, Transactions, and more",
+            description = "Primary, Transactions, Notifications, and Newsletters",
             icon = Res.drawable.symbol_all_inbox,
         ) { ValueButton(categoriesSummary(behavior.categories)) }
         SettingToggleRow(

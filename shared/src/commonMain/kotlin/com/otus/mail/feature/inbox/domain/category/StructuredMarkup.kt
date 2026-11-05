@@ -33,7 +33,7 @@ val TRANSACTION_TYPES =
         "FoodEstablishmentReservation",
     )
 
-/** schema.org types that mark an offer made to sell something. */
+/** schema.org types that mark an offer made to sell something, which bulk mail carries. */
 val PROMOTION_TYPES = setOf("DiscountOffer", "PromotionCard")
 
 private val KNOWN_TYPES = TRANSACTION_TYPES + PROMOTION_TYPES

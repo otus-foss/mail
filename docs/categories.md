@@ -11,21 +11,21 @@ nothing is written to the server. The feature is off until the user turns it on 
 | --- | --- |
 | Primary | People, discussion lists, and anything Mail is unsure of. Always shown. |
 | Transactions | Receipts, orders, bookings, bills, deliveries, and payments. |
-| Updates | Account, security, and service notices, such as CI results. |
-| Social | Social networks and community notifications. |
-| Newsletters | Lists and newsletters the user signed up for, when they do not sell. |
-| Promotions | Marketing and sales. |
+| Notifications | Automated mail that does not sell: account and security alerts, CI, and social networks. |
+| Newsletters & promotions | All other bulk mail. |
 
-The set matches Proton's, and is Apple's plus Social and Newsletters. Apple folds newsletters
-into Updates and has no Social, which leaves a busy Updates; Gmail has no Transactions, which buries
-receipts in Updates. Keeping newsletters apart from promotions follows Proton: mail the user asked
-for reads differently from mail that sells. Social starts hidden, as most people get little of it
-and a hidden category's mail simply stays in Primary.
+Each category rests on one or two signals that rules tell apart reliably, so the rules alone stay
+precise (#239). Proton splits bulk mail into Newsletters and Promotions, and Gmail and Proton keep
+Social apart; rules cannot do either well, since the same headers and senders send both kinds.
+Those splits wait for the classifier that learns from the user's corrections in #239. Apple's
+Updates holds both notifications and newsletters, so account alerts sit among marketing; keeping
+Notifications apart from bulk mail follows Proton.
 
 The set is the `MailCategory` enum. Its order is the pills' order, and its `storageValue` is what
 settings and the cache save, so renaming an entry keeps saved data. Adding a category means an
 entry, a label and description in `CategoryLabels.kt`, an icon in `InboxPillChips.kt`, and the
-rules that fill it.
+rules that fill it. The user can hide any category but Primary; a hidden category's mail shows in
+Primary.
 
 ## How a message is sorted
 
@@ -38,22 +38,22 @@ clear, and the first step that decides wins:
    stored in the verdict, so changing it takes effect at once (`InboxCategories.placement`).
 2. **schema.org markup** in an opened body, JSON-LD `@type` or microdata `itemtype`: `Order`,
    `Invoice`, `ParcelDelivery`, and the `Reservation` types are Transactions; `DiscountOffer` and
-   `PromotionCard` are Promotions. Only the first 200,000 characters are read.
+   `PromotionCard` are Newsletters & promotions. Only the first 200,000 characters are read.
 3. **Time-sensitive mail**: a sign-in or verification code, a password reset, a sign-in link, or a
-   new sign-in alert, in the subject or the text, from mail without list headers. It goes to Updates
-   and Primary shows it as well, like Apple does, so a code is never one tap away.
+   new sign-in alert, in the subject or the text, from mail without list headers. It goes to
+   Notifications and Primary shows it as well, like Apple does, so a code is never one tap away.
 4. **The curated sender list** (`files/sender_categories.txt`): social networks, CI and account
    services, shops, payment providers, carriers, travel, and newsletter platforms. A listed shop's
-   list mail without an order in its subject is Promotions; its receipts stay Transactions.
+   list mail without an order in its subject is bulk mail; its receipts stay Transactions.
 5. **`List-Post`**: a discussion list, where people write to each other, stays in Primary.
 6. **List headers** (`List-Unsubscribe`, `List-Id`, `Precedence: bulk`, `list`, or `junk`): an
-   order, delivery, or booking in the subject makes it a transaction, sales words a promotion, a
-   `notifications@` or `alerts@` sender an update, and anything else a newsletter.
+   order, delivery, or booking in the subject without sales words makes it a transaction, a
+   `notifications@` or `alerts@` sender a notification, and anything else bulk mail.
 7. **`Auto-Submitted: auto-replied`**: an out-of-office reply from a person stays in Primary.
 8. **Other automation**: `Auto-Submitted`, `Feedback-ID`, a bulk platform's header (Mailchimp,
    SendGrid, Amazon SES, Mailgun, Certified Senders Alliance), or a no-reply, orders, or billing
-   address. An order or delivery in the subject or text makes it a transaction, anything else an
-   update.
+   address. An order or delivery in the subject or text makes it a transaction, anything else a
+   notification.
 9. Anything left is **Primary**.
 
 Keywords never decide alone. They only choose between categories once a header or the sender
@@ -64,9 +64,10 @@ in `CategoryWords.kt` and are English only.
 
 Every verdict keeps its reasons as `CategoryReason`s, a kind and the fact it rests on, such as the
 header names, the schema.org type, the listed domain, or the words found. The Read view's ⋯ menu
-offers **Why is this in Promotions?**, which opens a sheet with the reasons as sentences, for
-example "In Promotions. It has mailing list headers: List-Unsubscribe. Its subject or text says
-“% off”." The same sheet is **Categorize sender…**: Automatic, or one of the shown categories.
+offers **Why is this in Transactions?**, which opens a sheet with the reasons as sentences, for
+example "In Newsletters & promotions. It has mailing list headers: List-Unsubscribe. Its subject
+or text says “% off”." The same sheet is **Categorize sender…**: Automatic, or one of the shown
+categories.
 
 ## What the device reads
 
@@ -110,9 +111,10 @@ category is that of its newest email in the Inbox.
   real one's category. Categories never mark mail as trusted; the brand avatar still needs a DMARC
   pass.
 - English words only. Mail in other languages falls back on headers and the sender list, which
-  makes it Newsletters or Updates more often than Transactions or Promotions.
-- Shops that send receipts with `List-Unsubscribe` and no order number in the subject read as
-  newsletters or promotions until their markup is read or the user categorizes them.
+  makes it bulk mail or a notification more often than a transaction.
+- Shops that send receipts with `List-Unsubscribe` and no order number in the subject read as bulk
+  mail until their markup is read or the user categorizes them.
+- Newsletters and promotions share a category, and social networks are notifications, until #239.
 - Replying to automated mail does not move it to Primary.
 - A verdict follows the email the row shows; older emails of the conversation are not sorted.
 - Unread counts cover the loaded pages, like the Unread pill.
@@ -122,6 +124,8 @@ category is that of its newest email in the Inbox.
 - Sync sender choices through settings export and import, once Mail has it (#20).
 - Store categories as JMAP keywords so other devices agree. Not done here, since no keyword is
   registered for it and other clients would show the raw keyword.
+- Learn from the user's corrections on the device, and split Newsletters from Promotions and
+  Social from Notifications once that is accurate (#239).
 - Share the extraction with #28's message facts and let saved views (#4) and filters (#23) match on
   a category.
 

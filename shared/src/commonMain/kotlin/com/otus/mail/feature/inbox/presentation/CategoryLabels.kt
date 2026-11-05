@@ -11,10 +11,8 @@ val MailCategory.label: String
         when (this) {
             MailCategory.Primary -> "Primary"
             MailCategory.Transactions -> "Transactions"
-            MailCategory.Updates -> "Updates"
-            MailCategory.Social -> "Social"
-            MailCategory.Newsletters -> "Newsletters"
-            MailCategory.Promotions -> "Promotions"
+            MailCategory.Notifications -> "Notifications"
+            MailCategory.Newsletters -> "Newsletters & promotions"
         }
 
 /** What the category holds, under its name in settings. */
@@ -23,10 +21,8 @@ val MailCategory.description: String
         when (this) {
             MailCategory.Primary -> "People, and anything Mail is unsure of"
             MailCategory.Transactions -> "Receipts, orders, bookings, bills, and deliveries"
-            MailCategory.Updates -> "Account, security, and service notices"
-            MailCategory.Social -> "Social networks and communities"
-            MailCategory.Newsletters -> "Lists and newsletters you signed up for"
-            MailCategory.Promotions -> "Marketing and sales"
+            MailCategory.Notifications -> "Account alerts, CI, and social networks"
+            MailCategory.Newsletters -> "Newsletters, marketing, and other bulk mail"
         }
 
 /** One reason as a sentence, for "Why is this here?". */

@@ -9,9 +9,9 @@ internal val TestSenders =
         """
         # A small list in the shipped file's format.
         version 3
-        social facebookmail.com
-        social linkedin.com
-        updates github.com
+        notifications facebookmail.com
+        notifications linkedin.com
+        notifications github.com
         transactions amazon.com
         transactions paypal.com
         newsletters substack.com

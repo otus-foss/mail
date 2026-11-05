@@ -8,7 +8,7 @@ LIST = (
     Path(__file__).resolve().parents[2]
     / "shared/src/commonMain/composeResources/files/sender_categories.txt"
 )
-CATEGORIES = {"social", "updates", "transactions", "newsletters", "promotions"}
+CATEGORIES = {"transactions", "notifications", "newsletters"}
 DOMAIN = re.compile(r"^(?:[a-z0-9-]+\.)+[a-z]{2,}$")
 
 

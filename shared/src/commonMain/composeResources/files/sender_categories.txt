@@ -1,48 +1,48 @@
 # Otus Mail's curated sender list for Inbox categories. See docs/categories.md.
 #
-# One "category domain" pair per line. The category is one of social, updates, transactions,
-# newsletters, or promotions. A domain also covers its subdomains, so list the narrowest domain
-# that only sends that kind of mail, such as accounts.google.com rather than google.com.
-# A shop or payment provider's list mail without an order in its subject goes to Promotions.
+# One "category domain" pair per line. The category is one of transactions, notifications, or
+# newsletters. A domain also covers its subdomains, so list the narrowest domain that only sends
+# that kind of mail, such as accounts.google.com rather than google.com.
+# A shop or payment provider's list mail without an order in its subject goes to Newsletters.
 #
 # Bump the version whenever an entry changes, so mail is classified again.
 version 1
 
-# Social networks and communities
-social facebookmail.com
-social facebook.com
-social instagram.com
-social linkedin.com
-social x.com
-social twitter.com
-social pinterest.com
-social redditmail.com
-social reddit.com
-social tiktok.com
-social snapchat.com
-social tumblr.com
-social quora.com
-social meetup.com
-social nextdoor.com
-social discord.com
-social strava.com
-social goodreads.com
-social mastodon.social
+# Social networks and communities, which are notifications for now (#239)
+notifications facebookmail.com
+notifications facebook.com
+notifications instagram.com
+notifications linkedin.com
+notifications x.com
+notifications twitter.com
+notifications pinterest.com
+notifications redditmail.com
+notifications reddit.com
+notifications tiktok.com
+notifications snapchat.com
+notifications tumblr.com
+notifications quora.com
+notifications meetup.com
+notifications nextdoor.com
+notifications discord.com
+notifications strava.com
+notifications goodreads.com
+notifications mastodon.social
 
 # Account, security, and service notices
-updates github.com
-updates gitlab.com
-updates bitbucket.org
-updates atlassian.net
-updates circleci.com
-updates travis-ci.com
-updates sentry.io
-updates vercel.com
-updates netlify.com
-updates slack.com
-updates accounts.google.com
-updates appleid.apple.com
-updates accountprotection.microsoft.com
+notifications github.com
+notifications gitlab.com
+notifications bitbucket.org
+notifications atlassian.net
+notifications circleci.com
+notifications travis-ci.com
+notifications sentry.io
+notifications vercel.com
+notifications netlify.com
+notifications slack.com
+notifications accounts.google.com
+notifications appleid.apple.com
+notifications accountprotection.microsoft.com
 
 # Shops, payment providers, carriers, and travel
 transactions amazon.com
@@ -82,5 +82,5 @@ newsletters buttondown.email
 newsletters ghost.io
 newsletters medium.com
 
-# Deal sites
-promotions groupon.com
+# Deal sites, which are bulk mail
+newsletters groupon.com

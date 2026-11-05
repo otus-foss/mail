@@ -7,15 +7,15 @@ package com.otus.mail.feature.inbox.domain.category
  *
  * 1. schema.org markup in a downloaded body: an Order, Invoice, ParcelDelivery, or Reservation.
  * 2. A subject asking for quick action, such as a sign-in code, from mail that is not a list. It goes
- *    to Updates and stays in Primary too.
+ *    to Notifications and stays in Primary too.
  * 3. A sender domain on the curated [senders] list. A listed shop's list mail without an order in
- *    its subject is a promotion.
+ *    its subject is bulk mail.
  * 4. `List-Post`: a discussion list, where people write, stays in Primary.
- * 5. List headers: an order or delivery in the subject is a transaction, sales words a promotion,
- *    mail from a `notifications@` address an update, anything else a newsletter.
+ * 5. List headers: an order or delivery in the subject, without sales words, is a transaction,
+ *    mail from a `notifications@` address a notification, anything else a newsletter.
  * 6. `Auto-Submitted: auto-replied` from a person stays in Primary.
  * 7. Other automation, such as `Auto-Submitted`, a bulk platform's header, or a no-reply address:
- *    an order or delivery in the subject or text is a transaction, anything else an update.
+ *    an order or delivery in the subject or text is a transaction, anything else a notification.
  *
  * The user's own choice for a sender comes before all of this; see [InboxCategories.placement].
  */
@@ -44,14 +44,14 @@ class CategoryClassifier(
         val promotion = PROMOTION_TYPES.firstOrNull { it in signals.markup }
         return when {
             transaction != null -> verdict(MailCategory.Transactions, ReasonKind.StructuredData, transaction)
-            promotion != null -> verdict(MailCategory.Promotions, ReasonKind.StructuredData, promotion)
+            promotion != null -> verdict(MailCategory.Newsletters, ReasonKind.StructuredData, promotion)
             else -> null
         }
     }
 
     private fun timeSensitive(signals: CategorySignals): CategoryVerdict? {
         val found = urgentWords(signals).takeUnless { signals.headers.fromList } ?: return null
-        return verdict(MailCategory.Updates, ReasonKind.TimeSensitive, found).copy(timeSensitive = true)
+        return verdict(MailCategory.Notifications, ReasonKind.TimeSensitive, found).copy(timeSensitive = true)
     }
 
     private fun urgentWords(signals: CategorySignals): String? =
@@ -64,7 +64,7 @@ class CategoryClassifier(
         val known = CategoryReason(ReasonKind.KnownSender, domain)
         val headers = signals.headers
         return if (category == MailCategory.Transactions && headers.fromList && transaction(signals.subject) == null) {
-            CategoryVerdict(MailCategory.Promotions, listOf(known, listReason(headers)))
+            CategoryVerdict(MailCategory.Newsletters, listOf(known, listReason(headers)))
         } else {
             CategoryVerdict(category, listOf(known))
         }
@@ -81,10 +81,11 @@ class CategoryClassifier(
         val promotion = firstPhrase(signals.subject, PROMOTION_WORDS)
         val ordered = transaction(signals.subject)?.takeIf { promotion == null }
         val listed = listReason(headers)
+        val sender = signals.senderAddress
         return when {
             ordered != null -> CategoryVerdict(MailCategory.Transactions, listOf(keywords(ordered), listed))
-            promotion != null -> CategoryVerdict(MailCategory.Promotions, listOf(listed, keywords(promotion)))
-            notifier(signals.senderAddress) -> CategoryVerdict(MailCategory.Updates, listOf(listed, notice(signals)))
+            promotion != null -> CategoryVerdict(MailCategory.Newsletters, listOf(listed, keywords(promotion)))
+            notifier(sender) -> CategoryVerdict(MailCategory.Notifications, listOf(listed, notice(sender)))
             else -> CategoryVerdict(MailCategory.Newsletters, listOf(listed))
         }
     }
@@ -106,7 +107,7 @@ class CategoryClassifier(
         return if (transaction != null) {
             CategoryVerdict(MailCategory.Transactions, listOf(automation, keywords(transaction)))
         } else {
-            CategoryVerdict(MailCategory.Updates, listOf(automation))
+            CategoryVerdict(MailCategory.Notifications, listOf(automation))
         }
     }
 
@@ -132,7 +133,7 @@ private fun codeInSubject(subject: String): Boolean =
 private fun listReason(headers: BulkHeaders): CategoryReason =
     CategoryReason(ReasonKind.ListHeaders, headers.listFields.joinToString(", "))
 
-private fun notice(signals: CategorySignals) = CategoryReason(ReasonKind.Automated, signals.senderAddress)
+private fun notice(sender: String) = CategoryReason(ReasonKind.Automated, sender)
 
 private fun keywords(found: String) = CategoryReason(ReasonKind.Keywords, found)
 

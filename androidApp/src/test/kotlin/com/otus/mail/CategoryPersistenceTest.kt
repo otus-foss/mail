@@ -17,7 +17,7 @@ class CategoryPersistenceTest {
     private val context = RuntimeEnvironment.getApplication()
 
     @Test
-    fun categoriesStartOffWithSocialHidden() {
+    fun categoriesStartOffWithEveryCategoryShown() {
         context
             .getSharedPreferences("otus_mail_behavior", Context.MODE_PRIVATE)
             .edit()
@@ -34,7 +34,7 @@ class CategoryPersistenceTest {
                 categories =
                     InboxCategories(
                         enabled = true,
-                        hidden = setOf(MailCategory.Updates),
+                        hidden = setOf(MailCategory.Notifications),
                         senders = mapOf("news@shop.example" to MailCategory.Primary),
                     ),
             )
