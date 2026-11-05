@@ -1,8 +1,7 @@
 # Shared libraries
 
 Code that Mail and Calendar both use lives in
-[otus-meta](https://github.com/reazndev/otus-meta) and arrives here as a pinned release. Mail
-uses:
+[otus-meta](https://github.com/reazndev/otus-meta). Mail uses:
 
 | Library | Version catalog entry |
 | --- | --- |
@@ -16,89 +15,34 @@ uses:
 | `com.otus:jscontact` | `libs.otus.jscontact` |
 | `com.otus:jmap-contacts` | `libs.otus.jmap.contacts` |
 
-Mail pins Meta 0.10.0 for all Otus libraries. While Meta publishing is paused, builds use Meta's
-source through `otus.meta.path`, as [Changing shared code](#changing-shared-code) describes.
 See [the component inventory](component-inventory.md) for historical ownership decisions.
 
-All otus-meta libraries share one version, `otus-meta` in `gradle/libs.versions.toml`.
+## Building against Meta
 
-## Token setup
+Mail builds otus-meta from source: the checkout next to it, `../otus-meta`, or the one the
+`otus.meta.path` Gradle property names, for example in `~/.gradle/gradle.properties` or with
+`-Potus.meta.path=../meta-worktree`. Gradle replaces each `com.otus:<module>` with the matching
+project of that checkout, and the build also takes Meta's convention plugins, its version catalog
+as `libs`, its tools, and its detekt configuration from it. Nothing is downloaded from GitHub
+Packages and no Meta version is pinned. See
+[otus-meta's consuming guide](https://github.com/reazndev/otus-meta/blob/main/docs/consuming.md).
 
-The release registry is `https://maven.pkg.github.com/reazndev/otus-meta`. `settings.gradle.kts`
-declares it as exclusive content for the `com.otus` group, so Gradle never resolves a `com.otus`
-artifact from Maven Central or Google. GitHub Packages needs a token for every download. Create a classic personal access token with the `read:packages` scope.
-
-On a development machine, add credentials to `~/.gradle/gradle.properties`, never to this repository:
-
-```properties
-otusMetaUsername=<GitHub username>
-otusMetaPassword=<GitHub token with read:packages>
-```
-
-In Mail's GitHub Actions settings, store the token as the `OTUS_META_PACKAGES_TOKEN` secret.
-SSH Git credentials do not authenticate Maven downloads.
-
-## Package status
-
-Meta publishing is paused. Tags do not upload packages, and manual publisher runs validate without
-uploading. The release flow needs to resume before 0.10.0 becomes a downloadable version.
-Mail's quality workflow uses a Meta branch with the same name as the branch it checks when one exists,
-otherwise Meta main. Versions 0.3.1 to 0.5.0 are not on GitHub Packages.
-The macOS `ios` job links the app against Meta's source, so iOS linking against the artifacts is unverified.
-See [hosting and CI](hosting.md).
-
-## Design-system package migration
-
-Meta keeps one `designsystem` artifact. Its UI now lives in
-`com.otus.designsystem.shared.<group>.<elements|components>` and
-`com.otus.designsystem.mail.<feature>.<elements|components>`. Update the imports using
-[Meta's declaration map](https://github.com/reazndev/otus-meta/blob/main/docs/ui-package-migration.md).
-Theme imports also move by responsibility, for example to `theme.colors.OtusColors`,
-`theme.motion.Motion`, and `theme.tokens.rows.InboxTokens`. `theme.OtusTheme` and generated
-resource identifiers keep their packages. Token values and the app's feature layers are unchanged.
-
-The nightly builds Mail main against Meta main, so merge a Meta package move and Mail's import
-update one after the other, away from the nightly's 00:00 UTC run.
+`gradle/app.versions.toml` holds the versions only Mail uses, SQLDelight, WorkManager, and
+UnifiedPush, as the `appLibs` catalog. Every other version comes from Meta's catalog.
 
 ## Changing shared code
 
-1. Change the library in otus-meta.
-2. Try it here with `./gradlew checkAll -Potus.meta.path=../otus-meta`. Gradle then builds the
-   library from that checkout instead of downloading it.
-3. Release the library from otus-meta.
-4. Update `otus-meta` in `gradle/libs.versions.toml` and run `./gradlew checkAll` without the
-   property.
+1. Change the library in otus-meta on a branch, and make the matching Mail change on a branch
+   with the same name.
+2. Build Mail against that Meta branch locally. CI does the same: it checks out the Meta branch
+   with this branch's name when there is one, else Meta's `main`, and the `pull request`
+   workflow labels the pull request `needs meta`.
+3. Merge the Meta pull request first, then Mail's, so Mail's `main` always builds against
+   Meta's `main`.
 
-`main` must always build from a released version. See
-[otus-meta's consuming guide](https://github.com/reazndev/otus-meta/blob/main/docs/consuming.md)
-for details.
+The nightly builds Mail's `main` against Meta's `main`, so merge such a pair one after the other,
+away from the nightly's 00:00 UTC run.
 
-Meta is the central owner of visual elements, reusable components, tokens, and symbols.
-Mail retains feature screens and adapters. Message, folder, and rule rows and empty states
-use shared `ContentRow`, `DetailRow`, and `EmptyState`; all symbols and `InboxTokens` come
-from `designsystem`. These additions are included in Meta 0.3.0.
-
-## Checking a release candidate without source substitution
-
-Publish Meta into a temporary Maven repository from its own checkout:
-
-```sh
-./gradlew publishToMavenLocal -Dmaven.repo.local=/tmp/otus-meta-candidate
-```
-
-Then run Mail against those artifacts from this checkout:
-
-```sh
-./gradlew checkAll -Potus.meta.repository=file:///tmp/otus-meta-candidate
-./gradlew :shared:compileKotlinIosSimulatorArm64 :shared:compileKotlinIosArm64 -Potus.meta.repository=file:///tmp/otus-meta-candidate
-```
-
-`otus.meta.repository` is an explicit development override. It resolves only `com.otus` from
-that repository and disables composite substitution, even if `otus.meta.path` is set in your
-machine's Gradle properties. Other dependencies keep their existing repositories. No remote
-package credentials are required for a file repository. The pinned version still applies.
-
-This checks artifact metadata, transitive dependencies, compilation, and Android resource
-packaging independently of a sibling source build. Kotlin iOS compilation on Linux does not
-verify Xcode linking or simulator resource loading. After the remote release, repeat the build
-without either override to verify GitHub Packages access and the released artifacts.
+Meta is the central owner of visual elements, reusable components, tokens, and symbols. Add new
+ones there, even when Mail is their only consumer. Mail keeps feature screens and the adapters
+that map mail data into shared renderers.

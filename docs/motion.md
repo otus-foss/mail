@@ -5,8 +5,7 @@ Meta's `Motion` API: `MotionSpeed`, `MotionCurve`, and the global speed multipli
 `LocalMotionScale`. Meta's
 [design system guide](https://github.com/reazndev/otus-meta/blob/main/docs/designsystem.md#motion)
 explains the curves, the speeds, how durations are computed, and how to call it. The rules for
-choosing a speed and a curve are in [AGENTS.md](../AGENTS.md#motion). Calendar still has its own
-motion code and adopts `Motion` when it moves to Meta's design system.
+choosing a speed and a curve are in [AGENTS.md](../AGENTS.md#motion).
 
 | Animation | Speed | Curve |
 | --- | --- | --- |
@@ -20,8 +19,8 @@ motion code and adopts `Motion` when it moves to Meta's design system.
 | Sidebar opening | `Relaxed`, 300 ms | Enter |
 | Swiped row settling | `Relaxed`, 300 ms | Standard |
 
-`tools/check_architecture.py` rejects `tween(`, `spring(`, and `CubicBezierEasing(` in Mail's
-production Kotlin, and `animateScrollToPage`, `animateScrollBy`, and `animate*AsState` calls that
+Meta's `tools/check_architecture.py` rejects `tween(`, `spring(`, and `CubicBezierEasing(` in
+Mail's production Kotlin, and `animateScrollToPage`, `animateScrollBy`, and `animate*AsState` calls that
 leave their spec on the Compose default. `Motion.tween` and `motionTween` are allowed.
 
 The [sidebar](sidebar.md) uses one progress value for its slide and scrim, so reversing mid-way

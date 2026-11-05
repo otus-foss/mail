@@ -7,10 +7,11 @@ GitHub. See [hosting and CI](docs/hosting.md).
 
 ## Required reading and commands
 
-Read `docs/architecture.md` and `docs/quality.md` before changing code. Install the Python tools as described
-in the quality guide, then run `./gradlew checkAll` before handing work back. Use
-`./gradlew formatAll` for formatting. On macOS also run the
-pinned Swift tools described in the quality guide. Never report an unrun check as passing.
+Read `docs/architecture.md` and `docs/quality.md` before changing code. Mail builds otus-meta from
+source, so keep a checkout at `../otus-meta` or set `otus.meta.path`; see `docs/shared-libraries.md`.
+Install the Python tools as described in the quality guide, then run `./gradlew checkAll` before
+handing work back. Use `./gradlew formatAll` for formatting. On macOS also run the pinned Swift
+tools described in the quality guide. Never report an unrun check as passing.
 
 ## Platform priority
 
@@ -54,8 +55,8 @@ The user picks the theme and accent on the Theme page; the device's light or dar
 change it, and there are no dynamic device colors. Use colors only through `OtusColors` and
 `OtusTheme`, which follow the picked theme, and read them when drawing; never copy a token into a
 stored value. Default text is `text1` at full opacity. `text2`/`text3` require an explicit semantic
-choice. Check new UI in the Light and Black themes too. See
-[decision 0005](docs/decisions/0005-user-themes.md).
+choice. Check new UI in the Light and Black themes too. See Meta's
+[decision 0014](https://github.com/reazndev/otus-meta/blob/main/docs/decisions/0014-user-themes.md).
 
 ## Motion
 
@@ -102,8 +103,8 @@ rules. It changes only the size limit, never other checks.
 
 Do not add blanket suppressions, formatter-off markers, lint baselines, skipped checks, or
 failure-tolerant CI to make a change pass. Fix violations. A rule change needs an explicit rationale
-in `docs/decisions/` and a corresponding check/test update; do not silently weaken policy. Tool
-versions must be pinned.
+in Meta's `docs/decisions/` and a corresponding update of Meta's checks and tests; do not silently
+weaken policy. Tool versions must be pinned, in Meta's version catalog.
 
 ## Readable code
 
@@ -194,7 +195,7 @@ feat(inbox): add avatars
 ```
 
 Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
-formatting, and `commit-msg` checks the message and removes AI attribution lines. No hook runs
+formatting, and `commit-msg` checks the message with Meta's checker. No hook runs
 `checkAll`, and CI checks only pull requests, so run `./gradlew checkAll` yourself before a push
 that needs it, such as a direct push to `main`.
 
@@ -206,8 +207,8 @@ Run the command from this repository's root. The `commit-msg` hook needs Python 
 title syntax, missing separators, and bodies outside the 1–8 bullet limit. Review wording,
 imperative verbs, breaking-change explanations, and the
 72-character target manually. Git-generated merge messages and temporary autosquash messages are
-exempt; the final squash message must follow the rules. CI tests the checker but does not inspect
-commit history. See [the decision](docs/decisions/0004-commit-messages.md).
+exempt; the final squash message must follow the rules. Meta's CI tests the checker; nothing
+inspects commit history. See [the decision](https://github.com/reazndev/otus-meta/blob/main/docs/decisions/0004-commit-messages.md).
 
 ## Pull requests
 
@@ -239,8 +240,9 @@ environment blockers precisely. Add behavior tests for new logic and regression 
 not add tests that merely repeat constants or implementation details. Update architecture docs when
 boundaries change.
 
-Each app is a separate Git repository. Never assume a sibling checkout or parent docs are available
-in CI. Code shared with Calendar lives in otus-meta and arrives here as a pinned release; see
-`docs/shared-libraries.md`. Change shared code there, release it, then update the pinned version
-here. Check JMAP specifications and advertised server capabilities before implementing protocol
-behavior.
+Each app is a separate Git repository. Never assume the unversioned parent docs are available.
+Code shared with Calendar lives in otus-meta, which Mail builds from source; CI checks it out beside
+Mail. Change shared code there on a branch with the same name as Mail's, and merge Meta's pull
+request first; see `docs/shared-libraries.md`. Suite docs, decisions, and review prompts live only
+in otus-meta. Check JMAP specifications and advertised server capabilities before implementing
+protocol behavior.

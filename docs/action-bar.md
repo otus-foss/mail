@@ -309,8 +309,7 @@ at 256. Emptying first pages through the folder with `Email/query` and `Email/ge
 
 ## Validation
 
-The bar needs the Meta release that adds `ActionBar`, `ContentRow` selection, and
-`symbol_more_horiz`; Mail still pins Meta 0.7.0. `ActionBarTest` renders the bar's states and
+`ActionBarTest` renders the bar's states and
 checks that the main button's icon stays put through the transition, that a disabled action keeps
 every slot in place, that the shell is one button naming its context, and that large text grows
 the shell but not the group. `ActionBarLayoutTest` and `MailBehaviorTest` cover the layout model,

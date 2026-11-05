@@ -5,9 +5,10 @@ Development, pull requests, and issues use
 
 Kotlin Multiplatform + Compose app for Android and iOS, intended as the mail client in the Otus JMAP
 suite. Mail starts with an empty inbox and working local search/filter UI over supplied messages.
-No sample mail is shipped. JMAP account connection and a limited inbox snapshot are implemented.
-Persistent synchronization, sending, contact management, and calendar operations remain unimplemented.
-Read-only JMAP contact-photo lookup is available for sender avatars. Folders (JMAP mailboxes) can
+No sample mail is shipped. JMAP account connection, a cached inbox kept in sync with the server,
+and sending are implemented; see [storage](docs/storage.md) and [compose](docs/compose.md).
+Calendar operations remain unimplemented. Read-only JMAP contact-photo lookup is available for
+sender avatars. Folders (JMAP mailboxes) can
 be browsed and managed, and Sieve rules (RFC 9661) file arriving mail into them on servers that
 support it; see [Folders and rules](docs/folders.md).
 See [JMAP](docs/jmap.md) for supported behavior and test coverage.
@@ -28,8 +29,9 @@ Use JDK 21 and Android Studio with the Kotlin Multiplatform plugin. Install Andr
 `ANDROID_HOME` or add `sdk.dir=/your/android/sdk` to untracked `local.properties`. Open this
 directory in Android Studio and run `androidApp`.
 
-The build downloads shared Otus libraries from GitHub Packages, which needs a GitHub token. See
-[Shared libraries](docs/shared-libraries.md) for the one-time setup.
+The build compiles the shared Otus libraries from an otus-meta checkout next to this one,
+`../otus-meta`, or from the checkout the `otus.meta.path` Gradle property names. See
+[Shared libraries](docs/shared-libraries.md).
 
 ```sh
 ./gradlew :androidApp:assembleDebug
@@ -52,7 +54,8 @@ See [Apple push delivery](docs/apple-push.md) for APNs bridge deployment, signin
 
 ## Toolchain and attribution
 
-Versions are pinned in `gradle/libs.versions.toml`. The Gradle wrapper includes a distribution
+Versions are pinned in otus-meta's `gradle/libs.versions.toml`, the suite catalog, and in
+`gradle/app.versions.toml` for what only Mail uses. The Gradle wrapper includes a distribution
 checksum. Derived from [Kotlin/KMP-App-Template](https://github.com/Kotlin/KMP-App-Template) at
 commit `6b6d09e4f3f5e845116422d59b658791ed6149c6`; its Apache 2.0 license is retained in `LICENSE`.
 Sample museum code and unrelated platform targets were removed.
@@ -82,7 +85,7 @@ of at most 72 characters without a final period. Apply the unslop skill to the e
 when available. Keep the wording plain and describe only changes in the commit.
 
 Enable the versioned Git hooks once per checkout, including new clones. `pre-commit` checks
-formatting, and `commit-msg` checks the message and removes AI attribution lines. Run this from the
+formatting, and `commit-msg` checks the message with otus-meta's checker. Run this from the
 repository root with Python 3.11+ installed:
 
 ```sh
@@ -91,9 +94,10 @@ git config --local core.hooksPath .githooks
 
 The `commit-msg` hook rejects invalid title syntax, missing separators, and bodies outside the 1–8 bullet
 limit. Review wording and the title-length target manually. Git-generated merge messages and
-temporary autosquash messages are exempt; final squash messages follow the rules. CI tests the
-checker but does not inspect commit history or install local hooks.
-See [the full commit rules](AGENTS.md#commit-messages) and [hook details](docs/quality.md#commit-message-review).
+temporary autosquash messages are exempt; final squash messages follow the rules. otus-meta's CI
+tests the checker; nothing inspects commit history or installs local hooks.
+See [the full commit rules](AGENTS.md#commit-messages) and
+[hook details](https://github.com/reazndev/otus-meta/blob/main/docs/quality.md#commit-messages).
 
 ## Inbox and reusable controls
 

@@ -232,11 +232,6 @@ Folder colors use the unreleased `FolderColor`, `FolderColorSwatch`, `LocalIconT
 - `avatar` owns photo/icon lookup, caches, domain resolution, and generated initials.
 - Every visual token, Figtree, and all symbols are in otus-meta. Settings and accounts use the same public design-system resource bundle.
 
-## Release state
-
-Mail pins all six libraries to Meta 0.7.0 and normally downloads its Maven artifacts from GitHub
-Packages. Local source substitution through `otus.meta.path` remains optional.
-
 ## Central UI policy
 
 All branded elements, reusable components, tokens, and symbols live in Meta. Mail retains
