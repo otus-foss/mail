@@ -155,7 +155,6 @@ private fun ServerChangeEffects(
     }
 }
 
-/** Keeps sender avatars in step with the avatar settings and the contacts' photos. */
 /** What changing an avatar or category setting reloads. */
 @Composable
 private fun SettingEffects(
@@ -167,6 +166,7 @@ private fun SettingEffects(
     CategoryEffects(services, states, behaviorState)
 }
 
+/** Keeps sender avatars in step with the avatar settings and the contacts' photos. */
 @Composable
 private fun AvatarEffects(
     states: MailStates,
