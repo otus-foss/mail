@@ -66,10 +66,7 @@ fun App(
             MailStates(services, scope, behaviorState, { chosenScope }) { chosenScope = it }
         }
     val nightly = rememberNightlyUpdate(services, build)
-    // Rules decide whether an open message offers to start one.
-    LaunchedEffect(states) { states.rules.refresh() }
-    // Folders fill the sidebar. Turning Read later on finds or creates its folders; off unmarks them.
-    LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
+    FolderEffects(states, behaviorState)
     // Reload whenever the inbox is shown, including at launch.
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
     ServerChangeEffects(services, states) { page == MailPage.Inbox }
@@ -120,6 +117,19 @@ fun App(
             SenderRuleSheets(states)
         }
     }
+}
+
+/**
+ * Loads the folders and rules. Rules decide whether an open message offers to start one. Folders
+ * fill the sidebar; turning Read later on finds or creates its folders, and off unmarks them.
+ */
+@Composable
+private fun FolderEffects(
+    states: MailStates,
+    behaviorState: MailBehaviorState,
+) {
+    LaunchedEffect(states) { states.rules.refresh() }
+    LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
 }
 
 /**
