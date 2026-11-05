@@ -176,9 +176,11 @@ jobs:
             gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body-file comment.md
           fi
 
+  # Runs only while the repository variable IOS_CI is "on" (Settings > Secrets and variables >
+  # Actions > Variables), so macOS minutes stay off until someone turns it back on.
   ios:
     needs: changes
-    if: needs.changes.outputs.ios == 'true'
+    if: needs.changes.outputs.ios == 'true' && vars.IOS_CI == 'on'
     # Ubicloud has no macOS runners, so this job runs on GitHub's.
     runs-on: macos-15
     steps:
