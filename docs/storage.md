@@ -11,6 +11,9 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 - Emails with the properties a list row shows, and the smaller member emails a conversation counts.
 - Threads, as lists of email ids.
 - Bodies of opened messages: their text and HTML body values.
+- Address books and contact cards (RFC 9610), under `<account>/<id>`, since one login may reach
+  several contacts accounts. Each account's entry keeps its name, whether it is shared, and the
+  `AddressBook` and `ContactCard` states the cached objects match.
 - Sync values per login, such as the `Email` and `Thread` states and the loaded listings.
 
 ## Where it lives
@@ -70,6 +73,11 @@ Each refresh brings the cache up to date with as little as the server allows:
   asks `Email/queryChanges` (RFC 8620, section 5.6) up to the list's last row and splices the
   removed and added ids into it. A list without a state, one whose changes the server refuses, or
   one left with less than a page while the server has more, runs `Email/query` again.
+- Contacts follow `AddressBook/changes` and `ContactCard/changes` in one request, with a `/get`
+  of the created and updated objects by result reference. A type without a saved state, whose
+  changes the server refuses (such as `cannotCalculateChanges`), or with more changes than one
+  call returns, is read anew: every book, or every card a page at a time. When the server cannot
+  be reached, the cached contacts show and the login counts as failed.
 - A full refresh saves its time under `synced:at`. When an account cannot load, the inbox notice
   adds when its mail was last updated, such as "Last updated 14:32".
 

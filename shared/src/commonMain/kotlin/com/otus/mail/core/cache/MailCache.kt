@@ -16,6 +16,15 @@ enum class CacheKind {
 
     /** An email's text and HTML body values. Emails never change, so a body stays valid. */
     Body,
+
+    /** One JMAP account that holds contacts, with the states its cached books and cards match. */
+    ContactAccount,
+
+    /** AddressBook objects (RFC 9610, section 2), under their account and id. */
+    AddressBook,
+
+    /** ContactCard objects (RFC 9610, section 3), under their account and id. */
+    ContactCard,
 }
 
 /**
