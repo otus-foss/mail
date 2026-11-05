@@ -40,21 +40,25 @@ clear, and the first step that decides wins:
    `Invoice`, `ParcelDelivery`, and the `Reservation` types are Transactions; `DiscountOffer` and
    `PromotionCard` are Newsletters & promotions. Only the first 200,000 characters are read.
 3. **Time-sensitive mail**: a sign-in or verification code, a password reset, a sign-in link, or a
-   new sign-in alert, in the subject or the text, from mail without list headers. It goes to
-   Notifications and Primary shows it as well, like Apple does, so a code is never one tap away.
+   new sign-in alert, in the subject or the text. Mail with list headers counts only with the words
+   in its subject and a machine behind them, a no-reply address or a code in the subject, so a
+   bulk sender's code counts and a newsletter about passwords does not. It goes to Notifications,
+   and Primary always shows it as well, whatever the user chose for the sender or hid (#239).
 4. **The curated sender list** (`files/sender_categories.txt`): social networks, CI and account
    services, shops, payment providers, carriers, travel, and newsletter platforms. A listed shop's
    list mail without an order in its subject is bulk mail; its receipts stay Transactions.
-5. **`List-Post`**: a discussion list, where people write to each other, stays in Primary.
-6. **List headers** (`List-Unsubscribe`, `List-Id`, `Precedence: bulk`, `list`, or `junk`): an
+5. **A code forge's header**: `X-GitHub-Reason`, `X-GitLab-Project`, `X-Gitea-Reason`, or
+   `X-Forgejo-Reason` makes a notification, so self-hosted forges need no list entry.
+6. **`List-Post`**: a discussion list, where people write to each other, stays in Primary.
+7. **List headers** (`List-Unsubscribe`, `List-Id`, `Precedence: bulk`, `list`, or `junk`): an
    order, delivery, or booking in the subject without sales words makes it a transaction, a
    `notifications@` or `alerts@` sender a notification, and anything else bulk mail.
-7. **`Auto-Submitted: auto-replied`**: an out-of-office reply from a person stays in Primary.
-8. **Other automation**: `Auto-Submitted`, `Feedback-ID`, a bulk platform's header (Mailchimp,
+8. **`Auto-Submitted: auto-replied`**: an out-of-office reply from a person stays in Primary.
+9. **Other automation**: `Auto-Submitted`, `Feedback-ID`, a bulk platform's header (Mailchimp,
    SendGrid, Amazon SES, Mailgun, Certified Senders Alliance), or a no-reply, orders, or billing
    address. An order or delivery in the subject or text makes it a transaction, anything else a
    notification.
-9. Anything left is **Primary**.
+10. Anything left is **Primary**.
 
 Keywords never decide alone. They only choose between categories once a header or the sender
 already marks the mail as automated, so a friend's mail about "the invoice from the painter" stays
@@ -73,8 +77,8 @@ categories.
 
 The list already fetches each row's headers with `Email/get` (RFC 8621, section 4.1.3), so sorting
 adds a few header properties to the same call and nothing else: `List-Post`, `Precedence`,
-`Auto-Submitted`, `Feedback-ID`, and one header each of the bulk platforms above
-(`CATEGORY_HEADER_PROPERTIES`). The text is the server's preview, or the body once the message was
+`Auto-Submitted`, `Feedback-ID`, one header each of the bulk platforms above, and the forge
+headers (`CATEGORY_HEADER_PROPERTIES`). The text is the server's preview, or the body once the message was
 opened. Mail never downloads a body to sort it. Mail without these headers, from a server that does
 not return them, or cached before they were requested, is sorted from what it has.
 
@@ -132,7 +136,8 @@ category is that of its newest email in the Inbox.
 ## Tests
 
 `CategoryClassifierTest` runs realistic and adversarial samples from `CategoryFixtures`: a
-newsletter that reads like a receipt, a person on a discussion list, a security code, an
+newsletter that reads like a receipt, a person on a discussion list, security codes and password
+resets with and without list headers, a newsletter about passwords, a self-hosted GitLab, an
 out-of-office reply, a lookalike domain, and personal mail full of shop words. `InboxCategoriesTest`
 covers the order of the user's choice, hidden categories, time-sensitive mail, unread counts, and
 saving. `SenderDirectoryTest`, `StructuredMarkupTest`, and `CategoryLabelsTest` cover the sender

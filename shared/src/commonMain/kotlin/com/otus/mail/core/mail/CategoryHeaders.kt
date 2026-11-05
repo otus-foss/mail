@@ -3,7 +3,8 @@ package com.otus.mail.core.mail
 /**
  * The header fields the Inbox's categories read beside the list headers: `List-Post` (RFC 2369),
  * `Precedence`, `Auto-Submitted` (RFC 3834), `Feedback-ID`, and one header each of Mailchimp,
- * SendGrid, Amazon SES, Mailgun, and the Certified Senders Alliance, which bulk senders add.
+ * SendGrid, Amazon SES, Mailgun, and the Certified Senders Alliance, which bulk senders add, and
+ * the headers GitHub, GitLab, Gitea, and Forgejo mark their notifications with.
  */
 val CATEGORY_HEADER_PROPERTIES =
     listOf(
@@ -16,6 +17,10 @@ val CATEGORY_HEADER_PROPERTIES =
         AMAZON_SES_PROPERTY,
         MAILGUN_PROPERTY,
         CSA_PROPERTY,
+        GITHUB_PROPERTY,
+        GITLAB_PROPERTY,
+        GITEA_PROPERTY,
+        FORGEJO_PROPERTY,
     )
 
 const val LIST_POST_PROPERTY = "header:List-Post:asText"
@@ -27,3 +32,7 @@ const val SENDGRID_PROPERTY = "header:X-SG-EID:asText"
 const val AMAZON_SES_PROPERTY = "header:X-SES-Outgoing:asText"
 const val MAILGUN_PROPERTY = "header:X-Mailgun-Sid:asText"
 const val CSA_PROPERTY = "header:X-CSA-Complaints:asText"
+const val GITHUB_PROPERTY = "header:X-GitHub-Reason:asText"
+const val GITLAB_PROPERTY = "header:X-GitLab-Project:asText"
+const val GITEA_PROPERTY = "header:X-Gitea-Reason:asText"
+const val FORGEJO_PROPERTY = "header:X-Forgejo-Reason:asText"

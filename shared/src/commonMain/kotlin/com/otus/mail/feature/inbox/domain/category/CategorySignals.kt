@@ -18,7 +18,8 @@ data class CategorySignals(
  * (RFC 2919), [listUnsubscribe] (RFC 2369), and [listPost] mark mailing lists; [precedence] is the
  * informal `Precedence` field; [autoSubmitted] is RFC 3834's field; [feedbackId] is the loop id
  * bulk senders add for mailbox providers. [platforms] names the mail platforms whose own header
- * the message carries, such as "Mailchimp".
+ * the message carries, such as "Mailchimp", and [forge] the code forge header it carries, such as
+ * `X-GitHub-Reason`.
  */
 data class BulkHeaders(
     val listId: String? = null,
@@ -28,6 +29,7 @@ data class BulkHeaders(
     val autoSubmitted: String? = null,
     val feedbackId: String? = null,
     val platforms: List<String> = emptyList(),
+    val forge: String? = null,
 ) {
     /** The list header names present, in a fixed order, for a reason's detail. */
     val listFields: List<String>

@@ -166,6 +166,30 @@ internal val CodeInSubject =
 internal val ShopPasswordReset =
     CategorySignals(senderAddress = "account-update@amazon.com", subject = "Reset your password")
 
+/** A password reset that a service sends through its bulk platform, with list headers. */
+internal val BulkPasswordReset =
+    CategorySignals(
+        senderAddress = "no-reply@service.example",
+        subject = "Reset your password",
+        headers = BulkHeaders(listUnsubscribe = true, platforms = listOf("SendGrid")),
+    )
+
+/** A sign-in code from a bulk sender's ordinary address, with the code in the subject. */
+internal val BulkCodeInSubject =
+    CategorySignals(
+        senderAddress = "hello@app.example",
+        subject = "Your login code is 731942",
+        headers = BulkHeaders(listId = "<app.example>", listUnsubscribe = true),
+    )
+
+/** A pipeline result from a self-hosted GitLab, which no sender list knows. */
+internal val SelfHostedGitLab =
+    CategorySignals(
+        senderAddress = "gitlab@git.company.example",
+        subject = "otus | Failed pipeline for main | 4b1c2d3e",
+        headers = BulkHeaders(listId = "otus <otus.git.company.example>", forge = "X-GitLab-Project"),
+    )
+
 /** A newsletter about passwords, which is not time-sensitive. */
 internal val PasswordNewsletter =
     CategorySignals(

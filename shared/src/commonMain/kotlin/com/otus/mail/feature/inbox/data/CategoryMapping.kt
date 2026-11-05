@@ -45,6 +45,13 @@ private val EmailObject.bulkHeaders: BulkHeaders
                     "Mailgun".takeIf { mailgun != null },
                     "a certified bulk sender".takeIf { certifiedSender != null },
                 ),
+            forge =
+                listOfNotNull(
+                    "X-GitHub-Reason".takeIf { githubReason != null },
+                    "X-GitLab-Project".takeIf { gitlabProject != null },
+                    "X-Gitea-Reason".takeIf { giteaReason != null },
+                    "X-Forgejo-Reason".takeIf { forgejoReason != null },
+                ).firstOrNull(),
         )
 
 private fun EmailObject.partValues(parts: List<EmailBodyPart>): List<String> =

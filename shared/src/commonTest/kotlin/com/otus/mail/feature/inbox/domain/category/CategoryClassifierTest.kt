@@ -91,6 +91,26 @@ class CategoryClassifierTest {
     }
 
     @Test
+    fun codesAndResetsFromBulkSendersStayTimeSensitive() {
+        listOf(BulkPasswordReset, BulkCodeInSubject).forEach { signals ->
+            val verdict = classify(signals)
+            assertTrue(verdict.timeSensitive, signals.subject)
+            assertEquals(MailCategory.Notifications, verdict.category, signals.subject)
+        }
+        val textOnly = BulkPasswordReset.copy(subject = "Account news", text = "Reset your password any time.")
+        assertFalse(classify(textOnly).timeSensitive, "List mail needs the words in its subject")
+    }
+
+    @Test
+    fun aForgeHeaderMakesANotificationOnAnyServer() {
+        val verdict = classify(SelfHostedGitLab)
+        assertEquals(MailCategory.Notifications, verdict.category)
+        assertEquals(listOf(CategoryReason(ReasonKind.Automated, "X-GitLab-Project")), verdict.reasons)
+        val withoutForge = SelfHostedGitLab.copy(headers = SelfHostedGitLab.headers.copy(forge = null))
+        assertEquals(MailCategory.Newsletters, classify(withoutForge).category, "List mail from gitlab@ alone is bulk")
+    }
+
+    @Test
     fun listMailAboutPasswordsIsNotTimeSensitive() {
         val verdict = classify(PasswordNewsletter)
         assertFalse(verdict.timeSensitive)

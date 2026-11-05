@@ -6,15 +6,17 @@ package com.otus.mail.feature.inbox.domain.category
  * decides only when its evidence is clear, and anything left is Primary:
  *
  * 1. schema.org markup in a downloaded body: an Order, Invoice, ParcelDelivery, or Reservation.
- * 2. A subject asking for quick action, such as a sign-in code, from mail that is not a list. It goes
- *    to Notifications and stays in Primary too.
+ * 2. A subject or text asking for quick action, such as a sign-in code or a password reset. List
+ *    mail counts only with it in the subject, from a no-reply address or with a code beside it.
+ *    It goes to Notifications and always stays in Primary too.
  * 3. A sender domain on the curated [senders] list. A listed shop's list mail without an order in
  *    its subject is bulk mail.
- * 4. `List-Post`: a discussion list, where people write, stays in Primary.
- * 5. List headers: an order or delivery in the subject, without sales words, is a transaction,
+ * 4. A code forge's own header, such as `X-GitHub-Reason`, from any server: a notification.
+ * 5. `List-Post`: a discussion list, where people write, stays in Primary.
+ * 6. List headers: an order or delivery in the subject, without sales words, is a transaction,
  *    mail from a `notifications@` address a notification, anything else a newsletter.
- * 6. `Auto-Submitted: auto-replied` from a person stays in Primary.
- * 7. Other automation, such as `Auto-Submitted`, a bulk platform's header, or a no-reply address:
+ * 7. `Auto-Submitted: auto-replied` from a person stays in Primary.
+ * 8. Other automation, such as `Auto-Submitted`, a bulk platform's header, or a no-reply address:
  *    an order or delivery in the subject or text is a transaction, anything else a notification.
  *
  * The user's own choice for a sender comes before all of this; see [InboxCategories.placement].
@@ -31,6 +33,7 @@ class CategoryClassifier(
             markup(signals)
                 ?: timeSensitive(signals)
                 ?: knownSender(signals)
+                ?: forge(signals.headers)
                 ?: discussion(signals.headers)
                 ?: list(signals)
                 ?: autoReply(signals.headers)
@@ -50,14 +53,23 @@ class CategoryClassifier(
     }
 
     private fun timeSensitive(signals: CategorySignals): CategoryVerdict? {
-        val found = urgentWords(signals).takeUnless { signals.headers.fromList } ?: return null
+        val found = urgentWords(signals) ?: return null
         return verdict(MailCategory.Notifications, ReasonKind.TimeSensitive, found).copy(timeSensitive = true)
     }
 
-    private fun urgentWords(signals: CategorySignals): String? =
-        firstPhrase(signals.subject, TIME_SENSITIVE_PHRASES)
-            ?: CODE_WORD.takeIf { codeInSubject(signals.subject) }
-            ?: firstPhrase(signals.text.take(MAX_TEXT_CHARS), TIME_SENSITIVE_PHRASES)
+    /**
+     * The words that make [signals] time-sensitive. A bulk sender's mail counts only with them in
+     * the subject and a machine behind it, so a newsletter about passwords is not urgent.
+     */
+    private fun urgentWords(signals: CategorySignals): String? {
+        val subject =
+            firstPhrase(signals.subject, TIME_SENSITIVE_PHRASES) ?: CODE_WORD.takeIf { codeInSubject(signals.subject) }
+        if (signals.headers.fromList) return subject?.takeIf { machineSent(signals) }
+        return subject ?: firstPhrase(signals.text.take(MAX_TEXT_CHARS), TIME_SENSITIVE_PHRASES)
+    }
+
+    private fun forge(headers: BulkHeaders): CategoryVerdict? =
+        headers.forge?.let { verdict(MailCategory.Notifications, ReasonKind.Automated, it) }
 
     private fun knownSender(signals: CategorySignals): CategoryVerdict? {
         val (domain, category) = senders.find(signals.senderAddress) ?: return null
@@ -126,6 +138,10 @@ const val CLASSIFIER_VERSION = 1
 private fun transaction(subject: String): String? =
     firstPhrase(subject, TRANSACTION_PHRASES)
         ?: firstPhrase(subject, TRANSACTION_WORDS)?.takeIf { REFERENCE.containsMatchIn(subject) }
+
+/** A no-reply address, or a code in the subject: no person wrote this. */
+private fun machineSent(signals: CategorySignals): Boolean =
+    automatedAddress(signals.senderAddress) || DIGIT_CODE.containsMatchIn(signals.subject)
 
 private fun codeInSubject(subject: String): Boolean =
     firstPhrase(subject, listOf("code")) != null && DIGIT_CODE.containsMatchIn(subject)

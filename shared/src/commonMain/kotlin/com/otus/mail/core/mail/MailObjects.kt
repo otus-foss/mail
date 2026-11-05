@@ -154,6 +154,14 @@ data class EmailObject(
     val mailgun: String? = null,
     @SerialName(CSA_PROPERTY)
     val certifiedSender: String? = null,
+    @SerialName(GITHUB_PROPERTY)
+    val githubReason: String? = null,
+    @SerialName(GITLAB_PROPERTY)
+    val gitlabProject: String? = null,
+    @SerialName(GITEA_PROPERTY)
+    val giteaReason: String? = null,
+    @SerialName(FORGEJO_PROPERTY)
+    val forgejoReason: String? = null,
 ) {
     /** Whether a mailing list or newsletter sent it. */
     val fromList: Boolean
