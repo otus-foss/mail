@@ -15,7 +15,8 @@ palette rules.
 iOS view controller create it with `AndroidThemePreferenceStore` or `IosThemePreferenceStore`, and
 `MainActivity` darkens the system bar icons in the Light theme. `MailPage.ThemeSettings` shows
 Meta's `ThemeSettingsScreen` with `ThemeInboxPreview`. `ThemeSettingsTest` covers picking,
-saving, resetting, and a custom hex color.
+saving, resetting, and a custom hex color. Below the preview, `LowContrastWarning` names the
+user's colors that fall below WCAG contrast; see [the color theme](../design.md#low-contrast-warning).
 
 ## Consequences
 

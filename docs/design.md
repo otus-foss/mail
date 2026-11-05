@@ -30,3 +30,16 @@ Android's starting window mirrors the default theme's background/text/accent tok
 resources. `MainActivity` switches the system bar icons to their dark appearance in the Light theme.
 Keep those native resource values aligned with the default palette. The iOS host still requests a
 dark appearance, so its status bar keeps light icons in the Light theme.
+
+## Low-contrast warning
+
+When the user's own colors are hard to read, the Theme page shows a warning strip below the inbox
+preview, such as "Low contrast: Muted text on page" over "2.1:1, needs 4.5:1 · 2 more". It uses
+WCAG contrast ratios. Text, secondary text, muted text, and accent text need 4.5:1 on the page
+and on raised surfaces, and text needs 4.5:1 on controls and on the accent fill. The accent
+outline marks controls rather than spelling words, so it needs 3:1 on the page and raised surfaces.
+Borders are not checked. A pair counts only when the user picked one of its colors, a color of the
+custom theme or an accent that is no preset, so built-in themes with a preset accent never warn.
+The warning names the worst pair and counts the rest, rounding ratios down so a pair just below
+its minimum never reads as passing. `feature/theme/presentation/ThemeContrast` finds the pairs and
+`LowContrastWarning` shows them with Meta's `InfoStrip`.

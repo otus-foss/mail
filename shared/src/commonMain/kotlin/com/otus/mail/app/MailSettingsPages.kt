@@ -1,14 +1,20 @@
 package com.otus.mail.app
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.theme.tokens.settings.ThemeTokens
 import com.otus.mail.feature.inbox.presentation.components.NotificationActionsSetting
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
 import com.otus.mail.feature.inbox.presentation.screens.FilterPanelSettingsScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
+import com.otus.mail.feature.theme.presentation.components.LowContrastWarning
+import com.otus.mail.feature.theme.presentation.lowContrast
+import com.otus.settings.presentation.ThemeSettingsState
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
 
@@ -29,13 +35,22 @@ internal fun SettingsPageContent(
         MailPage.Behavior -> MailBehaviorPage(states, navigation, back)
         MailPage.Notifications, MailPage.NotificationOverrides -> NotificationPages(page, states, navigation, back)
         MailPage.SidebarSettings, MailPage.PinnedSettings -> SidebarSettingsPage(page, states, navigation, back)
-        MailPage.ThemeSettings -> ThemeSettingsScreen(settings.theme, onBack = back) { ThemeInboxPreview() }
+        MailPage.ThemeSettings -> ThemeSettingsScreen(settings.theme, onBack = back) { ThemePreview(settings.theme) }
         MailPage.ActionBarSettings -> ActionBarSettingsPage(states, back)
         MailPage.FilterPanelSettings -> FilterPanelSettingsScreen(states.behavior, onBack = back)
         MailPage.MailListSettings -> MailListSettingsPage(states, dateFormatter, back)
         MailPage.Folders -> FoldersPage(states, navigation, back)
         is MailPage.FolderDetail -> FolderDetailPage(page, states, navigation, back)
         else -> Unit
+    }
+}
+
+/** The inbox in the picked colors, and below it a warning while some of the user's colors are hard to read. */
+@Composable
+private fun ThemePreview(theme: ThemeSettingsState) {
+    Column(verticalArrangement = Arrangement.spacedBy(ThemeTokens.previewGap)) {
+        ThemeInboxPreview()
+        LowContrastWarning(theme.choice.lowContrast())
     }
 }
 
