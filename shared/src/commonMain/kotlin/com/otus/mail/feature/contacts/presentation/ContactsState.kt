@@ -164,7 +164,7 @@ internal class ContactsState(
 }
 
 /** How many of the most frequent people the list shows above everyone. */
-internal const val FREQUENT_SHOWN = 5
+internal const val FREQUENT_SHOWN = 4
 
 @OptIn(ExperimentalUuidApi::class)
 internal fun newId(): String = Uuid.random().toString()
