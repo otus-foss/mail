@@ -34,7 +34,7 @@ COMPOSABLE = re.compile(
 )
 UI_KINDS = [
     ("screens", "Screens", re.compile(r"/presentation/screens/")),
-    ("components", "Feature components", re.compile(r"/presentation/components/")),
+    ("components", "Presentation components", re.compile(r"/presentation/components/")),
     ("elements", "Design-system elements", re.compile(r"/designsystem/[^/]+/[^/]+/elements/")),
     (
         "ds-components",
@@ -42,11 +42,14 @@ UI_KINDS = [
         re.compile(r"/designsystem/[^/]+/[^/]+/components/"),
     ),
 ]
+# Each pattern labels the files it matches; {module} is the Gradle module. The first match wins.
 LAYERS = [
     (re.compile(r"/feature/([^/]+)/presentation/(screens|components)/"), "{0} · presentation/{1}"),
     (re.compile(r"/feature/([^/]+)/(domain|data|presentation)/"), "{0} · {1}"),
     (re.compile(r"/designsystem/[^/]+/[^/]+/(elements|components)/"), "designsystem · {0}"),
     (re.compile(r"/com/otus/mail/(app|core)/"), "{0}"),
+    (re.compile(r"/presentation/(screens|components)/"), "{module} · presentation/{0}"),
+    (re.compile(r"/(domain|data|presentation)/"), "{module} · {0}"),
 ]
 LEAST_COVERED = 15
 
@@ -250,12 +253,12 @@ def line_ranges(lines: list[int], instrumented: set[int]) -> str:
 
 
 def layer(path: str) -> str:
-    module = path.split("/src/")[0] if "/src/" in path else "."
+    module = path.split("/src/")[0]
     for pattern, label in LAYERS:
         match = pattern.search(path)
         if match:
-            return label.format(*match.groups())
-    return f"{module} (other)"
+            return label.format(*match.groups(), module=module)
+    return module
 
 
 def table(header: list[str], rows: list[list[str]]) -> list[str]:

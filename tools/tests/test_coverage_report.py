@@ -112,6 +112,18 @@ class CoverageReportTests(unittest.TestCase):
         self.assertIn("| androidApp | 0 | 2 | 0.0% |", text)
         self.assertIn("| shared | 3 | 7 | 42.9% |", text)
 
+    def test_layers_fall_back_to_the_module(self):
+        meta = "designsystem/src/commonMain/kotlin/com/otus/designsystem"
+        self.assertEqual(
+            "designsystem · elements", coverage_report.layer(f"{meta}/shared/rows/elements/Row.kt")
+        )
+        self.assertEqual("designsystem", coverage_report.layer(f"{meta}/theme/OtusColors.kt"))
+        settings = "settings/src/commonMain/kotlin/com/otus/settings/presentation/screens/Screen.kt"
+        self.assertEqual("settings · presentation/screens", coverage_report.layer(settings))
+        self.assertEqual(
+            "jmap", coverage_report.layer("jmap/src/commonMain/kotlin/com/otus/jmap/Session.kt")
+        )
+
     def test_least_covered_files_rank_by_uncovered_lines(self):
         text = self.report()
         least = text[text.index("Least-covered files") :]
