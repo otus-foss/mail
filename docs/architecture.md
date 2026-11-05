@@ -62,6 +62,12 @@ behind `core/cache/MailCache`, and downloaded attachments as files behind `core/
 which each platform implements. See [storage](storage.md) for what they hold, where the files
 live, and how long they keep them.
 
+## Network destinations
+
+Every host the app may contact, when it does, what it sends, and which setting turns it off is
+listed in [network destinations](network.md). Update it with any change that adds a network
+client, a host, or a new trigger for an existing one.
+
 ## Avatar service
 
 The portable account-scoped avatar resolver comes from the `com.otus:avatar` library. App wiring
