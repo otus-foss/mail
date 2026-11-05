@@ -81,11 +81,10 @@ internal suspend fun MailCache.cachedPages(
     }
 }
 
-/** A list row, with when its [email] arrived, which orders rows across lists. */
+/** A list row, with when its email arrived, which orders rows across lists. */
 internal class ListedRow(
     val message: MailMessage,
     val receivedAt: Instant,
-    val email: EmailObject? = null,
 )
 
 /** The mailbox a list shows, and what its rows are mapped with. */
@@ -127,7 +126,7 @@ private class HeldMail(
             row
                 .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId, list.serverSite)
                 .inConversation(row, thread, list.mailboxId, list.view, list.zone)
-        return ListedRow(message, Instant.parse(row.receivedAt), row)
+        return ListedRow(message, Instant.parse(row.receivedAt))
     }
 }
 

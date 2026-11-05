@@ -17,10 +17,10 @@ import kotlin.coroutines.CoroutineContext
 
 /**
  * Sorts listed emails into the Inbox's categories on the device and keeps each verdict in the
- * cache beside the email, as [CacheKind.Category]. Each list read from the cache, which every sync
- * ends with, takes the saved verdicts of its rows and classifies the rest, at most [MAX_PER_READ]
- * at a time on [work], from what the device already holds: the row's headers and preview, and the
- * body when the message was opened. It downloads nothing. A verdict of an older classifier or sender list counts as missing, so a new
+ * cache beside the email, as [CacheKind.Category]. Each list read takes the saved verdicts of its
+ * rows and classifies the rest, at most [MAX_PER_READ] at a time on [work], from what the device
+ * already holds: the row's headers and preview, and the body when the message was opened. It
+ * downloads nothing. A verdict of an older classifier or sender list counts as missing, so a new
  * version classifies again. While [enabled] is false nothing new is classified. The [senders] list
  * loads once, on the first classification.
  */
@@ -31,18 +31,6 @@ class CategoryRecords(
 ) {
     private val loading = Mutex()
     private var loaded: CategoryClassifier? = null
-
-    /** [pages] with each row's Inbox category, from [verdicts]. */
-    internal suspend fun sorted(
-        cache: MailCache,
-        loginId: String,
-        pages: List<ListingPage<ListedRow>>,
-    ): List<ListingPage<ListedRow>> {
-        val emails = pages.flatMap { page -> page.rows.mapNotNull { it.email } }.distinctBy { it.id }
-        val verdicts = verdicts(cache, loginId, emails)
-        if (verdicts.isEmpty()) return pages
-        return pages.map { page -> ListingPage(page.rows.map { it.sortedBy(verdicts) }, page.hasMore) }
-    }
 
     /** The verdict of each of [rows] by email id; rows past the batch limit get theirs on a later read. */
     internal suspend fun verdicts(
@@ -107,9 +95,4 @@ class CategoryRecords(
         /** How many emails one list read classifies, so a first read of a large cache stays short. */
         const val MAX_PER_READ = 300
     }
-}
-
-private fun ListedRow.sortedBy(verdicts: Map<String, CategoryVerdict>): ListedRow {
-    val verdict = email?.let { verdicts[it.id] } ?: return this
-    return ListedRow(message.copy(category = verdict), receivedAt, email)
 }

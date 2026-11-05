@@ -59,12 +59,13 @@ internal class ReadMenuActions(
                 mark(page, MessageFlag.Flagged, on = !entry.flagged)
             }
 
-            ReadMenuEntry.ViewDetails, ReadMenuEntry.SenderContact, is ReadMenuEntry.People -> {
-                state.sheet = sheet(entry, page)
-            }
-
-            ReadMenuEntry.CategorizeSender, is ReadMenuEntry.WhyCategory -> {
-                state.sheet = ReadSheet.Category(row)
+            ReadMenuEntry.ViewDetails,
+            ReadMenuEntry.SenderContact,
+            is ReadMenuEntry.People,
+            ReadMenuEntry.CategorizeSender,
+            is ReadMenuEntry.WhyCategory,
+            -> {
+                state.sheet = sheet(entry, page, row)
             }
 
             ReadMenuEntry.Print -> {
@@ -114,7 +115,6 @@ internal class ReadMenuActions(
             is ReadMenuEntry.MoveTo -> offer(MailAction.Move) != null
             ReadMenuEntry.DeleteConversation -> offer(MailAction.Trash) != null
             ReadMenuEntry.SenderContact, is ReadMenuEntry.People -> read.services.person != null
-            ReadMenuEntry.CategorizeSender, is ReadMenuEntry.WhyCategory -> read.categories != null
             else -> true
         }
 
@@ -188,13 +188,18 @@ private fun printable(
             .replace(">", "&gt;")
             .replace("\n", "<br>")
 
-/** The sheet an entry opens over [page]: its headers, the sender's contact, or everyone in it. */
+/**
+ * The sheet an entry opens over [page]: its headers, the sender's contact, everyone in it, or the
+ * Inbox category of the conversation [row].
+ */
 private fun sheet(
     entry: ReadMenuEntry,
     page: MailMessage,
+    row: MailMessage,
 ): ReadSheet? =
     when (entry) {
         ReadMenuEntry.ViewDetails -> ReadSheet.Details(page)
+        ReadMenuEntry.CategorizeSender, is ReadMenuEntry.WhyCategory -> ReadSheet.Category(row)
         ReadMenuEntry.SenderContact -> ReadSheet.Person(page.sender)
         is ReadMenuEntry.People -> ReadSheet.People(entry.people)
         else -> null

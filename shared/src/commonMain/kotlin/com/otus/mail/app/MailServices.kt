@@ -39,6 +39,7 @@ import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.forgetAccount
+import com.otus.mail.feature.inbox.data.CategorizedMailSource
 import com.otus.mail.feature.inbox.data.EmailChangeQueue
 import com.otus.mail.feature.inbox.data.JmapAddressBook
 import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
@@ -182,8 +183,8 @@ class MailServices(
     /** Sorts the Inbox into categories on the device; see docs/categories.md. */
     internal val categories = MailCategorySorting()
     internal val mail: MailSource by lazy {
-        val sorting = categories.records
-        JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes, categories = sorting)
+        val jmap = JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes)
+        CategorizedMailSource(jmap, cache, categories.records)
     }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache, changes) }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }

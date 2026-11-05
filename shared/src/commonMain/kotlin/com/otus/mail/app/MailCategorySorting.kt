@@ -33,14 +33,17 @@ internal class MailCategorySorting {
 }
 
 /**
- * Turning categories on sorts the mail already listed, which only a new list read does, so the
- * inbox loads again. Turning them off needs nothing: the pills go and rows keep their order.
+ * Ties [services]' sorting to the saved setting while composing, before any load starts. Turning
+ * categories on sorts the mail already listed, which only a new list read does, so the inbox loads
+ * again. Turning them off needs nothing: the pills go and rows keep their order.
  */
 @Composable
 internal fun CategoryEffects(
+    services: MailServices,
     states: MailStates,
     behavior: MailBehaviorState,
 ) {
+    remember(services, behavior) { services.categories.follow(behavior) }
     LaunchedEffect(states, behavior) {
         snapshotFlow { behavior.behavior.categories.enabled }
             .drop(1)

@@ -28,9 +28,8 @@ import kotlin.time.Clock
 /**
  * What the Read view needs beyond the list's actions: the conversation's [pages], the folders of a
  * message, the privacy setting for remote images, files, the services behind its strips and menu,
- * [effects] for toasts and work that outlives the page, how its pages [display], and the Inbox's
- * [categories]. Null in [InboxContext] keeps the screen to the message alone, as for supplied
- * messages.
+ * [effects] for toasts and work that outlives the page, and how its pages [display]. Null in
+ * [InboxContext] keeps the screen to the message alone, as for supplied messages.
  */
 class ReadContext(
     val pages: ConversationMessages = ConversationMessages { null },
@@ -40,7 +39,6 @@ class ReadContext(
     val services: ReadServices = ReadServices(),
     val effects: ReadEffects = ReadEffects(),
     val display: ReadDisplay = ReadDisplay(),
-    val categories: ReadCategories? = null,
 )
 
 /**
@@ -106,8 +104,8 @@ class ReadFiles(
 
 /**
  * The services behind the newsletter strip and the ⋯ menu, including [changes] to one page's email,
- * and [person], what tapping a person or the menu's contact entries open; each is null where none
- * is wired, and without [person] the pills stay plain.
+ * [person], what tapping a person or the menu's contact entries open, and the Inbox's [categories];
+ * each is null where none is wired, and without [person] the pills stay plain.
  */
 class ReadServices(
     val newsletters: Newsletters? = null,
@@ -116,6 +114,7 @@ class ReadServices(
     val blocks: SenderBlocks? = null,
     val changes: PageChanges? = null,
     val person: PersonSheet? = null,
+    val categories: ReadCategories? = null,
 )
 
 /**

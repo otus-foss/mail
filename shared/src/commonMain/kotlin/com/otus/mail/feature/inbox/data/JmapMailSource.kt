@@ -37,7 +37,6 @@ import kotlin.time.Instant
  * server domain, which a sender's DMARC result must come from to show a brand logo; a load finds
  * it, and the cached list reads only what is already known. Marks and moves waiting in [queue] go
  * to the server before a sync, and still show after it when the server could not take them.
- * [categories] sorts the listed rows into the Inbox's categories; see docs/categories.md.
  */
 class JmapMailSource(
     private val connections: JmapConnections,
@@ -47,7 +46,6 @@ class JmapMailSource(
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     private val sites: ServerSites = ServerSites { null },
     private val queue: EmailChangeQueue? = null,
-    private val categories: CategoryRecords? = null,
 ) : MailSource {
     private val clock: Clock = Clock.System
 
@@ -165,8 +163,20 @@ class JmapMailSource(
         val local = zone()
         val pages =
             coroutineScope {
-                selected.map { login -> async { cachedPagesOf(login, scope, query, now, local, siteOf) } }.awaitAll()
-            }.flatten()
+                selected
+                    .map { login ->
+                        async {
+                            emailConditions(query, login.id, now, local)
+                                ?.let { conditions ->
+                                    val check = localCheck(query, login.id, now, local)
+                                    cache.withAccount(login.id) {
+                                        it.cachedPages(login, scope, query, conditions, local, siteOf(login), check)
+                                    }
+                                }.orEmpty()
+                        }
+                    }.awaitAll()
+                    .flatten()
+            }
         val merged = pages.merged(query.filters.sort) { it.receivedAt }
         val messages =
             merged.rows
@@ -176,23 +186,6 @@ class JmapMailSource(
                 .flatMap { it.mergedByThread() }
                 .filter(query.filters::keepsLoaded)
         return InboxSnapshot(messages, unavailable, merged.hasMore)
-    }
-
-    /** [login]'s cached pages of [scope], or none when the query reads none of its mail. */
-    private suspend fun cachedPagesOf(
-        login: JmapLogin,
-        scope: MailScope,
-        query: MailQuery,
-        now: Instant,
-        local: TimeZone,
-        siteOf: suspend (JmapLogin) -> String,
-    ): List<ListingPage<ListedRow>> {
-        val conditions = emailConditions(query, login.id, now, local) ?: return emptyList()
-        val check = localCheck(query, login.id, now, local)
-        return cache.withAccount(login.id) { account ->
-            val pages = account.cachedPages(login, scope, query, conditions, local, siteOf(login), check)
-            categories?.sorted(account, login.id, pages) ?: pages
-        }
     }
 
     private companion object {

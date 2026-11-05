@@ -95,27 +95,7 @@ fun SettingsIndexScope.mailBehaviorIndex(
     pages: BehaviorIndexPages,
 ) {
     val behavior = state.behavior
-    section("Inbox") {
-        setting(
-            "Inbox shows",
-            inboxSummary(behavior.inbox),
-            icon = Res.drawable.symbol_inbox,
-            keywords = listOf("Archive", "Spam", "Trash", "All mail"),
-        )
-        setting(
-            "Pills",
-            shownCount(InboxPills(behavior.pills, folderPills).shown.size),
-            icon = Res.drawable.symbol_filter_list,
-            keywords = listOf("Chips", "Tabs"),
-        )
-        setting(
-            "Categories",
-            categoriesSummary(behavior.categories),
-            icon = Res.drawable.symbol_all_inbox,
-            keywords = listOf("Primary", "Transactions", "Notifications", "Newsletters", "Promotions", "Tabs", "Sort"),
-        )
-        toggle("Read later", behavior.readLater, Res.drawable.symbol_bookmark, keywords = listOf("Save for later"))
-    }
+    inboxIndex(behavior, folderPills)
     section("Panels") {
         page(
             "Sidebar",
@@ -213,5 +193,33 @@ private fun SettingsIndexScope.filterPanelIndex(
     }
     section("Pull down") {
         setting("Quick view", shownCount(quickViewCount), icon = Res.drawable.symbol_grid_on)
+    }
+}
+
+/** Mirrors Mail behavior's Inbox section. */
+private fun SettingsIndexScope.inboxIndex(
+    behavior: MailBehavior,
+    folderPills: List<FolderPillOption>,
+) {
+    section("Inbox") {
+        setting(
+            "Inbox shows",
+            inboxSummary(behavior.inbox),
+            icon = Res.drawable.symbol_inbox,
+            keywords = listOf("Archive", "Spam", "Trash", "All mail"),
+        )
+        setting(
+            "Pills",
+            shownCount(InboxPills(behavior.pills, folderPills).shown.size),
+            icon = Res.drawable.symbol_filter_list,
+            keywords = listOf("Chips", "Tabs"),
+        )
+        setting(
+            "Categories",
+            categoriesSummary(behavior.categories),
+            icon = Res.drawable.symbol_all_inbox,
+            keywords = listOf("Primary", "Transactions", "Notifications", "Newsletters", "Promotions", "Sort"),
+        )
+        toggle("Read later", behavior.readLater, Res.drawable.symbol_bookmark, keywords = listOf("Save for later"))
     }
 }
