@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
@@ -7,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.hasFlag
 import com.otus.mail.feature.inbox.domain.withFlag
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.LocalChange
+import com.otus.mail.feature.inbox.presentation.MessageMarks
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 
@@ -23,6 +25,20 @@ internal class MessageMarking(
     private val toasts: MoveToasts,
     private val scope: CoroutineScope,
 ) {
+    /** Marks for messages [feed] shows: the user's own offer Undo, the mark on opening does not. */
+    fun marks(feed: InboxFeedState): MessageMarks =
+        MessageMarks(
+            can = ::canMark,
+            set = { messages, flag, on -> mark(feed, messages, flag, on) },
+            opened = { mark(feed, listOf(it), MessageFlag.Read, on = true, undoable = false) },
+        )
+
+    /** Supplied messages have no server id, so only loaded mail can change its marks. */
+    private fun canMark(
+        message: MailMessage,
+        flag: MessageFlag,
+    ): Boolean = message.emailId.isNotEmpty() && folders.rightsOf(message).allow(flag)
+
     /** Sets [flag] to [on] for [messages] that [feed] shows; [undoable] offers the Undo toast. */
     fun mark(
         feed: InboxFeedState,
@@ -95,3 +111,9 @@ internal class MessageMarking(
         services.serverChanges.changed()
     }
 }
+
+private fun FolderRights.allow(flag: MessageFlag): Boolean =
+    when (flag) {
+        MessageFlag.Read -> maySetSeen
+        MessageFlag.Flagged -> maySetKeywords
+    }

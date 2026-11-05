@@ -10,7 +10,6 @@ import com.otus.mail.feature.contacts.presentation.ContactPickers
 import com.otus.mail.feature.contacts.presentation.ContactSync
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.FrequentContacts
-import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderNudgeState
@@ -25,7 +24,6 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.MessageContent
-import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.AddressPinsState
@@ -267,9 +265,7 @@ internal class MailStates(
                     suggested = filing::suggestedTarget,
                     futureSorting = { sorting.futureSorting(it, feed) },
                 ),
-            canMark = ::canMark,
-            onMark = { messages, flag, on -> marking.mark(feed, messages, flag, on) },
-            markOpened = { marking.mark(feed, listOf(it), MessageFlag.Read, on = true, undoable = false) },
+            marks = marking.marks(feed),
             ruleForSender = senderRules::start,
             readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },
@@ -284,16 +280,4 @@ internal class MailStates(
 
     /** The full body of an open message. */
     suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)
-
-    /** Supplied messages have no server id, so only loaded mail can change its marks. */
-    private fun canMark(
-        message: MailMessage,
-        flag: MessageFlag,
-    ): Boolean = message.emailId.isNotEmpty() && folders.rightsOf(message).allow(flag)
 }
-
-private fun FolderRights.allow(flag: MessageFlag): Boolean =
-    when (flag) {
-        MessageFlag.Read -> maySetSeen
-        MessageFlag.Flagged -> maySetKeywords
-    }

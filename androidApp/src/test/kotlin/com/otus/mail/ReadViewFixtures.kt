@@ -30,6 +30,7 @@ import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.MessageMarks
 import com.otus.mail.feature.inbox.presentation.MessageMoves
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.PageChanges
@@ -207,8 +208,7 @@ internal object ReadViewFixtures {
         targets: List<MoveTarget> = emptyList(),
     ) = MessageActions(
         moves = MessageMoves(targets = { targets }, onMove = { _, _ -> }, suggested = { null }) { null },
-        canMark = { _, _ -> true },
-        onMark = { _, _, _ -> },
+        marks = MessageMarks(can = { _, _ -> true }, set = { _, _, _ -> }),
         ruleForSender = { null },
         readLater = { null },
         behavior = { behavior },
