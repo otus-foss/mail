@@ -20,8 +20,8 @@ import com.otus.mail.feature.inbox.presentation.ComposeAccount
 
 /**
  * The addresses a message can be sent from, under the Send-from pill: the [recent] ones first,
- * then the rest by account. A search field filters them once there are [SEARCH_THRESHOLD] or more.
- * Choosing one runs [onSelect] and closes the list.
+ * then the rest by account. Once there are [SEARCH_THRESHOLD] or more, a search field above the
+ * scrolling list filters them. Choosing one runs [onSelect] and closes the list.
  */
 @Composable
 internal fun FromDropdown(
@@ -40,15 +40,22 @@ internal fun FromDropdown(
         onDismiss()
         onSelect(identity)
     }
-    Dropdown(onDismiss) {
-        if (identities.size >= SEARCH_THRESHOLD) {
-            PickerSearch(
-                query,
-                { query = it },
-                "Search ${identities.size} addresses",
-                Modifier.padding(MenuTokens.inset),
-            )
-        }
+    Dropdown(
+        onDismiss,
+        header =
+            if (identities.size >= SEARCH_THRESHOLD) {
+                {
+                    PickerSearch(
+                        query,
+                        { query = it },
+                        "Search ${identities.size} addresses",
+                        Modifier.padding(MenuTokens.inset),
+                    )
+                }
+            } else {
+                null
+            },
+    ) {
         IdentitySection("Recent", recentShown, selected, choose)
         accounts.forEach { account ->
             IdentitySection(
