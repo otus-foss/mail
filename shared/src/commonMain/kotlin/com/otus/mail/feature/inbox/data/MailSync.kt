@@ -6,7 +6,6 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.GetResult
 import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapConnection
-import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.JmapResponse
 import com.otus.jmap.JmapType
@@ -17,6 +16,7 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.ThreadType
+import com.otus.mail.core.mail.unlessRefused
 import kotlin.time.Instant
 
 /**
@@ -139,14 +139,6 @@ private suspend fun JmapConnection.followChanges(
     }
     return changes.takeUnless { page.hasMoreChanges }
 }
-
-/** [read]'s result, or null when the server refused that call. */
-internal inline fun <T> unlessRefused(read: () -> T): T? =
-    try {
-        read()
-    } catch (expected: JmapException.MethodError) {
-        null
-    }
 
 /** When [loginId]'s cache last matched the server; null before the first sync or when unreadable. */
 internal suspend fun MailCache.syncedAt(loginId: String): Instant? =

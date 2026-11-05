@@ -1,12 +1,9 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.jmap.ChangesMethod
-import com.otus.jmap.ChangesResult
 import com.otus.jmap.GetMethod
 import com.otus.jmap.GetResult
 import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapConnection
-import com.otus.jmap.JmapIds
 import com.otus.jmap.JmapRequestBuilder
 import com.otus.jmap.JmapResponse
 import com.otus.mail.core.cache.CacheWrite
@@ -14,7 +11,9 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.ObjectChangeCalls
 import com.otus.mail.core.mail.mailboxes
+import com.otus.mail.core.mail.objectChangeCalls
 import com.otus.mail.core.mail.replaceMailboxes
 
 /** A login's mailboxes and the `Mailbox` state they match; null when the server gave none. */
@@ -41,15 +40,13 @@ internal sealed interface MailboxCalls {
 
     class Changes(
         private val cached: List<MailboxObject>,
-        private val changes: JmapCall<ChangesResult>,
-        private val created: JmapCall<GetResult<MailboxObject>>,
-        private val updated: JmapCall<GetResult<MailboxObject>>,
+        private val changes: ObjectChangeCalls<MailboxObject>,
     ) : MailboxCalls {
         override fun read(response: JmapResponse): MailboxList? {
-            val found = unlessRefused { response[changes] }?.takeUnless { it.hasMoreChanges } ?: return null
-            val fetched = (response[created].list + response[updated].list).associateBy { it.id }
-            val gone = found.destroyed.toSet() + fetched.keys
-            return MailboxList(cached.filterNot { it.id in gone } + fetched.values, found.newState)
+            val patch = changes.read(response) ?: return null
+            val fetched = patch.fetched.associateBy { it.id }
+            val gone = patch.destroyed + fetched.keys
+            return MailboxList(cached.filterNot { it.id in gone } + fetched.values, patch.state)
         }
     }
 }
@@ -60,12 +57,9 @@ internal fun JmapRequestBuilder.mailboxCalls(
     saved: MailboxList?,
 ): MailboxCalls {
     val state = saved?.state ?: return MailboxCalls.All(call(everyMailbox(accountId)))
-    val changes = call(ChangesMethod(MailboxType, accountId, state, MAX_MAILBOX_CHANGES))
     return MailboxCalls.Changes(
         saved.mailboxes,
-        changes,
-        call(GetMethod(MailboxType, accountId, JmapIds.Result(changes.resultOf("/created")), MAILBOX_PROPERTIES)),
-        call(GetMethod(MailboxType, accountId, JmapIds.Result(changes.resultOf("/updated")), MAILBOX_PROPERTIES)),
+        objectChangeCalls(MailboxType, accountId, state, MAX_MAILBOX_CHANGES, MAILBOX_PROPERTIES),
     )
 }
 
