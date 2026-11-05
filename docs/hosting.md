@@ -21,7 +21,8 @@ pull request closes no issue, and `issue report` lists each Monday the open issu
 requests name, in an issue called "Open issues with merged work". Dependabot opens one grouped
 pull request a week for GitHub Actions and one for Gradle, leaving the pinned Otus libraries alone.
 The `quality` workflow also builds the release APK and comments its size against the latest
-nightly.
+nightly. The `coverage` workflow runs the JVM tests with Kover and comments a coverage
+summary; see [coverage](quality.md#coverage).
 
 Pull request workflows run once, when a pull request opens as ready or a draft is marked ready.
 Drafts run nothing. Later pushes run them again only while the pull request has the
