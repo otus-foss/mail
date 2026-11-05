@@ -76,10 +76,7 @@ fun App(
     AvatarEffects(states, behaviorState)
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
-    val settings =
-        remember(dateFormatState, themeState, animationState, appIconState) {
-            SharedSettings(dateFormatState, themeState, animationState, appIconState)
-        }
+    val settings = rememberSharedSettings(dateFormatState, themeState, animationState, appIconState)
     val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
     PageRequestEffects(services, states) { page = it }
     MessageOpenEffects(states, navigation::go)
