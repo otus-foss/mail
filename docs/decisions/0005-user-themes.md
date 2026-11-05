@@ -17,6 +17,9 @@ iOS view controller create it with `AndroidThemePreferenceStore` or `IosThemePre
 Meta's `ThemeSettingsScreen` with `ThemeInboxPreview`. `ThemeSettingsTest` covers picking,
 saving, resetting, and a custom hex color. Below the preview, `LowContrastWarning` names the
 user's colors that fall below WCAG contrast; see [the color theme](../design.md#low-contrast-warning).
+Below it, `ThemeRampPicker` makes a custom theme from one hue with a port of RampenSau's color
+ramps; see [colors from one hue](../design.md#colors-from-one-hue). Both live in Meta's preview
+slot, the one part of the page Mail fills.
 
 ## Consequences
 

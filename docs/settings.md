@@ -35,7 +35,9 @@ left, the control on the right, and large section titles. Search covers every pa
     the X app) themes as cards and seven accent swatches. The plus swatch opens a **Custom color**
     sheet with hue and intensity sliders, a hex field, and the shades in each theme; Done applies
     it. **Reset to Otus** restores the default. Every choice applies to the whole app at once and
-    is saved by `AndroidThemePreferenceStore` or `IosThemePreferenceStore`.
+    is saved by `AndroidThemePreferenceStore` or `IosThemePreferenceStore`. Below the preview, a
+    warning names custom colors that are hard to read, and **Colors from one hue** generates a
+    custom theme from a hue; see [the color theme](design.md#colors-from-one-hue).
   - **Mail list** previews a row, then sets **Show sender**, **Order**, **Preview**, and **Folder
     icons** under **Rows**, and the date **Style** and **Show this year** under **Dates**. Order and
     Preview only apply while the sender shows, so they wait, disabled, below Show sender.

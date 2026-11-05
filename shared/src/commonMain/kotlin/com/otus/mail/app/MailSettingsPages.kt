@@ -13,6 +13,7 @@ import com.otus.mail.feature.inbox.presentation.screens.FilterPanelSettingsScree
 import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import com.otus.mail.feature.theme.presentation.components.LowContrastWarning
+import com.otus.mail.feature.theme.presentation.components.ThemeRampPicker
 import com.otus.mail.feature.theme.presentation.lowContrast
 import com.otus.settings.presentation.ThemeSettingsState
 import com.otus.settings.presentation.screens.SettingsScreen
@@ -45,12 +46,16 @@ internal fun SettingsPageContent(
     }
 }
 
-/** The inbox in the picked colors, and below it a warning while some of the user's colors are hard to read. */
+/**
+ * The inbox in the picked colors, a warning while some of the user's colors are hard to read, and
+ * the picker that makes a set of colors from one hue.
+ */
 @Composable
 private fun ThemePreview(theme: ThemeSettingsState) {
     Column(verticalArrangement = Arrangement.spacedBy(ThemeTokens.previewGap)) {
         ThemeInboxPreview()
         LowContrastWarning(theme.choice.lowContrast())
+        ThemeRampPicker(theme.choice, onSelect = theme::select)
     }
 }
 
