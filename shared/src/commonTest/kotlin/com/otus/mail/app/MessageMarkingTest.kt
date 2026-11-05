@@ -50,8 +50,8 @@ class MessageMarkingTest {
     )
 
     /**
-     * Marking for a feed holding [messages], and the feed, which runs in [screen]. Each folder
-     * refresh counts a load.
+     * Marking for a feed holding [messages], and the feed. The feed and the saves of marks run in
+     * [screen]. Each folder refresh counts a load.
      */
     private fun TestScope.marking(
         vararg messages: MailMessage,
@@ -79,7 +79,7 @@ class MessageMarkingTest {
         val feed = InboxFeedState(source, screen)
         feed.refresh()
         runCurrent()
-        return MessageMarking(services, folders, MoveToasts(toasts, this)) to feed
+        return MessageMarking(services, folders, MoveToasts(toasts, this), screen) to feed
     }
 
     /** Sets or clears `$seen` on every id the `Email/set` call names, except [refused] ones. */
@@ -186,12 +186,13 @@ class MessageMarkingTest {
             val screen = CoroutineScope(coroutineContext + Job())
             val (marking, feed) = marking(message("m1"), message("m2"), screen = screen)
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
-            // The activity is recreated before the server answers the mark.
+            // The activity is recreated before the save finishes, which cancels it.
             screen.cancel()
             tap("2 emails marked as read")
-            settle { sent.value.count { "Email/set" in it } == 2 }
+            settle { sent.value.any { "Email/set" in it } }
+            settle { false }
             val undo = sent.value.last { "Email/set" in it }
-            assertEquals(listOf("m1" to "null", "m2" to "null"), patched(undo))
+            assertEquals(listOf("m1" to "null", "m2" to "null"), patched(undo), "Undo sets back every message")
         }
 
     @Test
