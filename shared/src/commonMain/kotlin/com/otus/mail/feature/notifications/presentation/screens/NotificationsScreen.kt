@@ -20,6 +20,7 @@ import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
+import com.otus.mail.feature.notifications.presentation.ButtonsInfo
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.mail.feature.notifications.presentation.PreviewsInfo
 import com.otus.mail.feature.notifications.presentation.description

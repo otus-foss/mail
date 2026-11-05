@@ -61,11 +61,16 @@ private val Intent.replies: Boolean get() = getBooleanExtra(EXTRA_REPLY, false)
  * intent. Android leaves an alert showing after a button that opens an app.
  */
 internal fun Intent.repliedAlert(): AlertedMail? {
+    val fromHistory = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+    if (!replies || fromHistory) return null
+    return alertedMail()
+}
+
+/** The message an alert's intent names; null when either id is missing. */
+private fun Intent.alertedMail(): AlertedMail? {
     val loginId = getStringExtra(EXTRA_LOGIN_ID)
     val emailId = getStringExtra(EXTRA_EMAIL_ID)
-    val fromHistory = flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
-    if (!replies || fromHistory || loginId == null || emailId == null) return null
-    return AlertedMail(loginId, emailId)
+    return if (loginId != null && emailId != null) AlertedMail(loginId, emailId) else null
 }
 
 private fun Intent.addresses(extra: String): List<MailSender> =
