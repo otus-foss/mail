@@ -5,12 +5,15 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.files.DownloadFolder
 import com.otus.mail.core.files.InMemoryDownloadFolder
 import com.otus.mail.feature.contacts.domain.ContactStore
+import com.otus.mail.feature.contacts.domain.forgetAccount
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.ReadLaterStore
+import com.otus.mail.feature.folders.domain.forgetAccount
 import com.otus.mail.feature.inbox.domain.AddressPinStore
 import com.otus.mail.feature.inbox.domain.EmailChangeStore
 import com.otus.mail.feature.inbox.domain.OutboxStore
+import com.otus.mail.feature.inbox.domain.forgetAccount
 import com.otus.mail.feature.notifications.domain.NotificationPreviewStore
 
 /**
@@ -27,6 +30,14 @@ class MailDeviceStores(
     val waiting: WaitingStores = WaitingStores(),
     val downloads: DownloadFolder = InMemoryDownloadFolder(),
 )
+
+/** Drops the settings these stores keep for [loginId], when its account is removed. */
+fun MailDeviceStores.forgetAccount(loginId: String) {
+    folders.colors?.forgetAccount(loginId)
+    addressPins?.forgetAccount(loginId)
+    folders.nudges?.forgetAccount(loginId)
+    contacts?.forgetAccount(loginId)
+}
 
 /** Each folder's Read later role, color, and the nudges shown about it. */
 class FolderStores(
