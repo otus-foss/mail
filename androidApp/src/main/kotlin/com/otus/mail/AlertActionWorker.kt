@@ -3,18 +3,20 @@ package com.otus.mail
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.Data
 import androidx.work.ForegroundInfo
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
+import com.otus.mail.feature.inbox.domain.EmailShortcuts
+import com.otus.mail.feature.notifications.domain.NewMail
 
 /**
- * Archives or marks read the message of an alert's button, once the device has a network. A
- * refused or unreachable change tries again later, up to [MAX_ATTEMPTS] times in all; an account
- * without an Archive folder keeps the message where it is.
+ * Runs the change of an alert's button once the device has a network. A refused or unreachable
+ * change tries again later, up to [MAX_ATTEMPTS] times in all. When the last try fails too, the
+ * alert comes back and says which change failed, so a failure is never silent.
  */
 class AlertActionWorker(
     context: Context,
@@ -22,20 +24,22 @@ class AlertActionWorker(
 ) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
         val action = AlertAction.named(inputData.getString(ACTION))
-        val loginId = inputData.getString(EXTRA_LOGIN_ID)
-        val emailId = inputData.getString(EXTRA_EMAIL_ID)
-        if (action == null || loginId == null || emailId == null) return Result.failure()
+        val mail = inputData.mail()
+        if (action == null || mail == null) return Result.failure()
         val shortcuts = (applicationContext as OtusMailApplication).services.shortcuts
-        val done =
-            when (action) {
-                AlertAction.Archive -> shortcuts.archive(loginId, emailId)
-                AlertAction.MarkRead -> shortcuts.markRead(loginId, emailId)
-            }
         return when {
-            done -> Result.success()
+            shortcuts.perform(action, mail.loginId, mail.emailId) -> Result.success()
             runAttemptCount + 1 < MAX_ATTEMPTS -> Result.retry()
-            else -> Result.failure()
+            else -> failed(action, mail)
         }
+    }
+
+    private fun failed(
+        action: AlertAction,
+        mail: NewMail,
+    ): Result {
+        MailNotifications(applicationContext).showFailed(mail, action)
+        return Result.failure()
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo = MailNotifications(applicationContext).backgroundWork()
@@ -48,10 +52,14 @@ class AlertActionWorker(
         internal fun enqueue(
             context: Context,
             action: AlertAction,
-            loginId: String,
-            emailId: String,
+            mail: NewMail,
         ) {
-            val input = workDataOf(ACTION to action.name, EXTRA_LOGIN_ID to loginId, EXTRA_EMAIL_ID to emailId)
+            val input =
+                Data
+                    .Builder()
+                    .putString(ACTION, action.name)
+                    .putMail(mail)
+                    .build()
             WorkManager
                 .getInstance(context)
                 .enqueue(
@@ -64,3 +72,24 @@ class AlertActionWorker(
         }
     }
 }
+
+/** Runs [action] on the email [emailId] of the login [loginId]; false when it did not change. */
+private suspend fun EmailShortcuts.perform(
+    action: AlertAction,
+    loginId: String,
+    emailId: String,
+): Boolean =
+    when (action) {
+        AlertAction.Trash -> trash(loginId, emailId)
+
+        AlertAction.Archive -> archive(loginId, emailId)
+
+        AlertAction.MarkRead -> markRead(loginId, emailId)
+
+        AlertAction.Flag -> flag(loginId, emailId)
+
+        AlertAction.Spam -> reportSpam(loginId, emailId)
+
+        // Reply opens Mail instead, so it never reaches the worker.
+        AlertAction.Reply -> false
+    }

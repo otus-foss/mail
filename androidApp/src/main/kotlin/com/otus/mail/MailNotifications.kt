@@ -11,6 +11,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ForegroundInfo
+import com.otus.mail.feature.inbox.domain.AlertAccount
+import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.domain.alertButtons
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.NewMail
@@ -24,10 +27,14 @@ import com.otus.designsystem.R as DesignR
  * screen the device's setting decides whether such an alert shows in full or only "New mail".
  * [NotificationPreviews.Hidden] says only "New mail" everywhere, without the account. An account's
  * summary goes once its last message notification is cleared. Tapping an alert opens its message,
- * and an alert that shows the message offers Archive and Mark read; tapping a summary opens Mail.
+ * and an alert that shows the message offers the buttons the user chose, [chosenActions], that its
+ * account can run; tapping a summary opens Mail.
  */
 class MailNotifications(
     context: Context,
+    private val chosenActions: () -> List<MailAction> = {
+        AndroidMailBehaviorStore(context).read().notificationActions
+    },
     private val previews: () -> PreviewChoices = { AndroidNotificationPreviewStore(context).read() },
 ) : MailAlerts {
     private val context = context.applicationContext
@@ -78,17 +85,30 @@ class MailNotifications(
             .forEach { manager.cancel(it, SUMMARY_ID) }
     }
 
-    override fun show(mail: List<NewMail>) {
+    override fun show(mail: List<NewMail>) = post(mail, failed = null)
+
+    /** [mail]'s alert again, saying that its [failed] button's change did not reach the server. */
+    internal fun showFailed(
+        mail: NewMail,
+        failed: AlertAction,
+    ) = post(listOf(mail), failed)
+
+    private fun post(
+        mail: List<NewMail>,
+        failed: AlertAction?,
+    ) {
         // From Android 13 on, posting needs the user's permission.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             if (permission != PackageManager.PERMISSION_GRANTED) return
         }
         val choices = previews()
+        val buttons = Buttons(chosenActions(), failed)
         mail.groupBy { it.loginId }.forEach { (loginId, messages) ->
             val shown = messages.map { choices.forMail(loginId, it.recipients) }
             messages.zip(shown).forEach { (arrival, preview) ->
-                manager.notify(AlertedMail(loginId, arrival.emailId).tag, MESSAGE_ID, message(arrival, preview))
+                val tag = AlertedMail(loginId, arrival.emailId).tag
+                manager.notify(tag, MESSAGE_ID, message(arrival, preview, buttons))
             }
             // The account's name shows only if every message in the group may show its details.
             val summary =
@@ -100,32 +120,20 @@ class MailNotifications(
     private fun message(
         mail: NewMail,
         shown: NotificationPreviews,
+        buttons: Buttons,
     ) = when (shown) {
-        NotificationPreviews.Hidden -> newMail(mail).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-        NotificationPreviews.Device -> detailedMessage(mail)
+        NotificationPreviews.Hidden -> context.newMail(mail).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        NotificationPreviews.Device -> context.detailedMessage(mail, buttons)
     }.setContentIntent(context.openMessage(mail.loginId, mail.emailId))
         .setWhen(mail.receivedAt.toEpochMilliseconds())
         .setShowWhen(true)
         .build()
 
-    private fun detailedMessage(mail: NewMail) =
-        context
-            .mailAlert(mail)
-            .setContentTitle(mail.sender)
-            .setContentText(mail.subject(context))
-            .setSubText(mail.accountName)
-            .setStyle(NotificationCompat.BigTextStyle().bigText("${mail.subject(context)}\n${mail.preview}"))
-            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .setPublicVersion(newMail(mail).build())
-            // Only an alert that shows the message offers to change it; the locked version has no buttons.
-            .addAction(context.alertAction(mail, AlertAction.Archive))
-            .addAction(context.alertAction(mail, AlertAction.MarkRead))
-
     private fun summary(
         latest: NewMail,
         shown: NotificationPreviews,
     ) = when (shown) {
-        NotificationPreviews.Hidden -> newMail(latest).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        NotificationPreviews.Hidden -> context.newMail(latest).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         NotificationPreviews.Device -> accountSummary(latest)
     }.setContentIntent(context.openApp())
         .setGroupSummary(true)
@@ -137,13 +145,7 @@ class MailNotifications(
             .mailAlert(latest)
             .setContentTitle(latest.accountName)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .setPublicVersion(newMail(latest).build())
-
-    /** "New mail" alone: a hidden alert, and what a locked device shows when it hides details. */
-    private fun newMail(mail: NewMail) =
-        context
-            .mailAlert(mail)
-            .setContentTitle(context.getString(R.string.notification_new_mail))
+            .setPublicVersion(context.newMail(latest).build())
 
     private companion object {
         const val BACKGROUND_CHANNEL = "background"
@@ -155,7 +157,46 @@ class MailNotifications(
 
 private val AlertedMail.tag get() = "$loginId/$emailId"
 
+/** The buttons the user [chosen] picked for alerts, and, on an alert that came back, the one that [failed]. */
+private class Buttons(
+    val chosen: List<MailAction>,
+    val failed: AlertAction?,
+)
+
 private const val CHANNEL = "new_mail"
+
+private fun Context.detailedMessage(
+    mail: NewMail,
+    buttons: Buttons,
+) = mailAlert(mail)
+    .setContentTitle(mail.sender)
+    .setContentText(mail.subject(this))
+    .setSubText(buttons.failed?.let { failure(it) } ?: mail.accountName)
+    .setStyle(NotificationCompat.BigTextStyle().bigText("${mail.subject(this)}\n${mail.preview}"))
+    .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+    .setPublicVersion(newMail(mail).build())
+    // Only an alert that shows the message offers to change it; the locked version has no buttons.
+    .addButtons(this, mail, buttons.chosen)
+
+/** "New mail" alone: a hidden alert, and what a locked device shows when it hides details. */
+private fun Context.newMail(mail: NewMail) = mailAlert(mail).setContentTitle(getString(R.string.notification_new_mail))
+
+/** What an alert that came back says in place of its account: which change failed. */
+private fun Context.failure(action: AlertAction): String =
+    getString(R.string.notification_action_failed, getString(action.title))
+
+/** The [chosen] buttons that [mail]'s account can run, in order. */
+private fun NotificationCompat.Builder.addButtons(
+    context: Context,
+    mail: NewMail,
+    chosen: List<MailAction>,
+): NotificationCompat.Builder {
+    chosen
+        .alertButtons(AlertAccount(mail.mailboxRoles, mail.canSend))
+        .mapNotNull(AlertAction::of)
+        .forEach { addAction(context.alertAction(mail, it)) }
+    return this
+}
 
 /** The parts every alert about [mail] shares: its channel, icon, and account group. */
 private fun Context.mailAlert(mail: NewMail) =

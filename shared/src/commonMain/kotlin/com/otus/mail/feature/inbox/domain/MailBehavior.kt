@@ -25,7 +25,8 @@ import com.otus.mail.core.avatar.IconSource
  * message, its control panel, and its bar. [screenSecurity] keeps Mail out of screenshots, screen
  * recordings, and recent apps, and [incognitoKeyboard] asks the keyboard not to learn from what the
  * user types, where [DevicePrivacy] allows them. [photoCleaning] decides whether attached photos
- * lose their metadata and file names.
+ * lose their metadata and file names. [notificationActions] are the buttons, in order, that new-mail
+ * alerts offer where the account can run them; see [alertButtons].
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -56,6 +57,7 @@ data class MailBehavior(
     val screenSecurity: Boolean = false,
     val incognitoKeyboard: Boolean = true,
     val photoCleaning: PhotoCleaning = PhotoCleaning.Ask,
+    val notificationActions: List<MailAction> = DefaultNotificationActions,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =

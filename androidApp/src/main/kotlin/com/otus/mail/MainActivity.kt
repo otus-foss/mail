@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             askForNotifications(services)
             // A recreated activity gets its first intent again, which it has already handled.
-            services.requests.take(intent)
+            take(intent)
         }
         val behaviorState = app.behavior
         themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))
@@ -97,7 +97,14 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        take(intent)
+    }
+
+    /** Hands [intent]'s request to Mail, and clears the alert whose Reply button sent it. */
+    private fun take(intent: Intent) {
         (application as OtusMailApplication).services.requests.take(intent)
+        val replied = intent.repliedAlert() ?: return
+        MailNotifications(this).clear(listOf(replied))
     }
 
     override fun onStart() {

@@ -4,6 +4,7 @@ import com.otus.jmap.ChangesMethod
 import com.otus.jmap.GetMethod
 import com.otus.jmap.GetResult
 import com.otus.jmap.JmapCall
+import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
@@ -186,11 +187,17 @@ class JmapNewMailChecker(
             }
         val muted = mutedThreads(response, members) ?: mutedThreads(response, emails).orEmpty()
         val inboxes = inboxIds(response[mailboxes])
+        val roles = response[mailboxes].list.mapNotNull { it.role?.lowercase() }.toSet()
+        val canSend =
+            JmapCapability.SUBMISSION in
+                account.session.accounts[account.id]
+                    ?.capabilities
+                    .orEmpty()
         return response[emails]
             .list
             .filter { it.waitsIn(inboxes) }
             .filterNot { it.threadId in muted }
-            .map { it.toNewMail(account) }
+            .map { it.toNewMail(account).copy(mailboxRoles = roles, canSend = canSend) }
     }
 
     /**

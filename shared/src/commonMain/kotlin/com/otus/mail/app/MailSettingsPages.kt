@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.feature.inbox.presentation.components.NotificationActionsSetting
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
 import com.otus.mail.feature.inbox.presentation.screens.FilterPanelSettingsScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
@@ -67,7 +68,12 @@ private fun NotificationPages(
     if (page == MailPage.NotificationOverrides) {
         NotificationOverridesScreen(notifications, states.accounts.accounts, onBack = back)
     } else {
-        NotificationsScreen(notifications, states.accounts.accounts, onBack = back) {
+        NotificationsScreen(
+            notifications,
+            states.accounts.accounts,
+            onBack = back,
+            buttons = { NotificationActionsSetting(states.behavior) },
+        ) {
             navigation.go(MailPage.NotificationOverrides)
         }
     }

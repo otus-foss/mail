@@ -15,6 +15,7 @@ import com.otus.mail.feature.inbox.presentation.PRIVACY_TITLE
 import com.otus.mail.feature.inbox.presentation.components.BehaviorIndexPages
 import com.otus.mail.feature.inbox.presentation.components.mailBehaviorIndex
 import com.otus.mail.feature.inbox.presentation.components.mailLookIndex
+import com.otus.mail.feature.inbox.presentation.components.notificationActionsIndex
 import com.otus.mail.feature.inbox.presentation.components.privacyIndex
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
@@ -48,7 +49,7 @@ internal fun mailSettingsIndex(
             Res.drawable.symbol_alternate_email,
             summary = accountsSummary(states.accounts.accounts.size),
         ) { keywords("JMAP", "Server", "Sign in") }
-        states.notifications?.let { notifications(it, states.accounts.accounts.isNotEmpty(), open) }
+        states.notifications?.let { notifications(it, behavior, states.accounts.accounts.isNotEmpty(), open) }
         appearance(settings, behavior, open)
         page(
             "Mail behavior",
@@ -104,9 +105,13 @@ private fun SettingsIndexScope.appearance(
     }
 }
 
-/** The Notifications page, which shows only where pushes are available. [hasAccounts] gates its overrides. */
+/**
+ * The Notifications page, which shows only where pushes are available. [hasAccounts] gates its
+ * overrides, and the alert buttons show with previews, as on the page.
+ */
 private fun SettingsIndexScope.notifications(
     state: NotificationSettingsState,
+    behavior: MailBehavior,
     hasAccounts: Boolean,
     open: (MailPage) -> (String?) -> Unit,
 ) {
@@ -127,6 +132,7 @@ private fun SettingsIndexScope.notifications(
             )
             if (hasAccounts) page("Accounts and addresses", open(MailPage.NotificationOverrides))
         }
+        section("Buttons") { notificationActionsIndex(behavior) }
     }
 }
 

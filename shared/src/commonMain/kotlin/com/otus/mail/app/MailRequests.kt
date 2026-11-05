@@ -22,10 +22,10 @@ class MailRequests internal constructor(
 ) {
     internal val pages = PageRequests(work)
 
-    private val waitingMessage = MutableStateFlow<AlertedMail?>(null)
+    private val waitingMessage = MutableStateFlow<MessageRequest?>(null)
 
-    /** The message a tapped notification asks to open, until an [App] took it; see [MessageOpens]. */
-    internal val message: StateFlow<AlertedMail?> = waitingMessage.asStateFlow()
+    /** The message a tapped notification asks to open or answer, until an [App] took it; see [MessageOpens]. */
+    internal val message: StateFlow<MessageRequest?> = waitingMessage.asStateFlow()
 
     /** The Inbox row that [message] turned out to be, until the Inbox opened it. */
     internal var row: OpenRequest? by mutableStateOf(null)
@@ -35,7 +35,15 @@ class MailRequests internal constructor(
         loginId: String,
         emailId: String,
     ) {
-        waitingMessage.value = AlertedMail(loginId, emailId)
+        waitingMessage.value = MessageRequest(AlertedMail(loginId, emailId), reply = false)
+    }
+
+    /** Starts a reply to the email [emailId] of the login [loginId], as its notification's Reply button asks. */
+    fun reply(
+        loginId: String,
+        emailId: String,
+    ) {
+        waitingMessage.value = MessageRequest(AlertedMail(loginId, emailId), reply = true)
     }
 
     /** Starts a draft from [request], such as one a `mailto:` link filled in. */
@@ -43,8 +51,14 @@ class MailRequests internal constructor(
         pages.showLater(MailPage.Compose(request))
     }
 
-    /** Marks [mail] handled, unless a newer request replaced it meanwhile. */
-    internal fun took(mail: AlertedMail) {
-        waitingMessage.compareAndSet(mail, null)
+    /** Marks [request] handled, unless a newer request replaced it meanwhile. */
+    internal fun took(request: MessageRequest) {
+        waitingMessage.compareAndSet(request, null)
     }
 }
+
+/** A notification's message to open, or with [reply] to answer. */
+internal data class MessageRequest(
+    val mail: AlertedMail,
+    val reply: Boolean,
+)
