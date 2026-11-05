@@ -69,7 +69,10 @@ internal fun MergeSheet(
         SheetConfirm("Merge", { onMerge(plan) }, enabled = plan.addresses.isNotEmpty()),
     ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             val sources = plan.cards.mapNotNull { card -> card.books.firstNotNullOfOrNull(bookOf)?.name }.distinct()
