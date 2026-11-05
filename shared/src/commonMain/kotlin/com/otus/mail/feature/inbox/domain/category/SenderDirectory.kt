@@ -37,7 +37,12 @@ class SenderDirectory(
                     .map { it.split(WHITESPACE, limit = 2) }
                     .filter { it.size == 2 }
                     .toList()
-            val version = lines.firstOrNull { it[0] == VERSION }?.get(1)?.trim()?.toIntOrNull() ?: 0
+            val version =
+                lines
+                    .firstOrNull { it[0] == VERSION }
+                    ?.get(1)
+                    ?.trim()
+                    ?.toIntOrNull() ?: 0
             val domains =
                 lines
                     .filter { it[0] != VERSION }

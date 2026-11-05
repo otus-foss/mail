@@ -82,8 +82,7 @@ data class InboxCategories(
         val DEFAULT_HIDDEN: Set<MailCategory> = emptySet()
 
         /** [categories]' hidden set as one stored value, one category per line. */
-        fun encodeHidden(categories: InboxCategories): String =
-            categories.hidden.joinToString("\n") { it.storageValue }
+        fun encodeHidden(categories: InboxCategories): String = categories.hidden.joinToString("\n") { it.storageValue }
 
         /** Lines this version does not know are left out; null keeps the default. */
         fun decodeHidden(saved: String?): Set<MailCategory>? =
@@ -99,7 +98,8 @@ data class InboxCategories(
                 ?.lines()
                 ?.mapNotNull { line ->
                     val address = line.substringBefore('\t').trim().lowercase()
-                    MailCategory.fromStorageValue(line.substringAfter('\t', ""))
+                    MailCategory
+                        .fromStorageValue(line.substringAfter('\t', ""))
                         ?.takeIf { address.isNotEmpty() }
                         ?.let { address to it }
                 }?.toMap()

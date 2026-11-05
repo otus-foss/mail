@@ -20,7 +20,12 @@ internal fun EmailObject.categorySignals(body: EmailObject?): CategorySignals {
     val html = body?.partValues(body.htmlBody.orEmpty().filter { it.isHtml }).orEmpty()
     val text = body?.partValues(body.textBody.orEmpty().filterNot { it.isHtml })?.joinToString("\n")
     return CategorySignals(
-        senderAddress = from?.firstOrNull()?.email.orEmpty().trim(),
+        senderAddress =
+            from
+                ?.firstOrNull()
+                ?.email
+                .orEmpty()
+                .trim(),
         subject = subject.orEmpty(),
         text = text?.ifBlank { null } ?: preview,
         headers = bulkHeaders,

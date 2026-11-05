@@ -117,6 +117,7 @@ internal fun rememberReadMenu(
     val state = parts.state
     val page = state.pages[index]
     val content = parts.content(page)
+    val categories = parts.read.services.categories
     val readPage =
         ReadPage(
             page,
@@ -128,7 +129,7 @@ internal fun rememberReadMenu(
             muted = state.muted == true,
             suggestedPath = suggested?.let(::listOf),
             people = participants(state.pages, parts.context.rowLook.own),
-            category = parts.read.services.categories?.placement(row),
+            category = categories?.placement(row),
         )
     val menu =
         ReadMenuActions(

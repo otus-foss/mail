@@ -180,6 +180,7 @@ class MailServices(
 
     /** Marks and moves that wait for the server; see docs/storage.md. */
     private val changes by lazy { EmailChangeQueue(stores.waiting.changes, host.wakeOutbox) }
+
     /** Sorts the Inbox into categories on the device; see docs/categories.md. */
     internal val categories = MailCategorySorting()
     internal val mail: MailSource by lazy {
