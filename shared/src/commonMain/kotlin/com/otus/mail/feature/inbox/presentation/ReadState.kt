@@ -35,6 +35,11 @@ sealed interface ReadSheet {
     data class People(
         val people: List<Participant>,
     ) : ReadSheet
+
+    /** Why the Inbox shows the conversation [row] where it does, and where its sender's mail goes. */
+    data class Category(
+        val row: MailMessage,
+    ) : ReadSheet
 }
 
 /**

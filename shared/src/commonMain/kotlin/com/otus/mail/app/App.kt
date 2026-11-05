@@ -63,6 +63,7 @@ fun App(
     val scope = rememberCoroutineScope()
     val states =
         remember(services, behaviorState) {
+            services.categories.follow(behaviorState)
             MailStates(services, scope, behaviorState, { chosenScope }) { chosenScope = it }
         }
     val nightly = rememberNightlyUpdate(services, build)
@@ -74,6 +75,7 @@ fun App(
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
     ServerChangeEffects(services, states) { page == MailPage.Inbox }
     AvatarEffects(states, behaviorState)
+    CategoryEffects(states, behaviorState)
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
     val settings =

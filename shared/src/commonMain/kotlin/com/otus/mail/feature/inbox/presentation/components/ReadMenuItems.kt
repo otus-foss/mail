@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_block
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_delete_sweep
@@ -9,6 +10,7 @@ import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forward
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_info
+import com.otus.designsystem.resources.symbol_label
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_notifications_off
@@ -64,7 +66,7 @@ private fun ReadMenuEntry.item(
                 label(),
                 icon,
                 { onEntry(this) },
-                opens = this is ReadMenuEntry.MoveTo,
+                opens = this is ReadMenuEntry.MoveTo || this == ReadMenuEntry.CategorizeSender,
                 detail = detail(),
             )
         }
@@ -88,4 +90,6 @@ private val ReadMenuEntry.icon: DrawableResource
             ReadMenuEntry.SenderContact -> Res.drawable.symbol_person_add
             is ReadMenuEntry.People -> Res.drawable.symbol_group
             ReadMenuEntry.DeleteConversation -> Res.drawable.symbol_delete_sweep
+            is ReadMenuEntry.WhyCategory -> Res.drawable.symbol_all_inbox
+            ReadMenuEntry.CategorizeSender -> Res.drawable.symbol_label
         }

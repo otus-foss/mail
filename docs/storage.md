@@ -12,6 +12,8 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 - Threads, as lists of email ids.
 - Bodies of opened messages: their text and HTML body values.
 - Sync values per login, such as the `Email` and `Thread` states and the loaded listings.
+- The Inbox category of each listed email, with its reasons and the classifier's version; see
+  [categories](categories.md).
 
 ## Where it lives
 

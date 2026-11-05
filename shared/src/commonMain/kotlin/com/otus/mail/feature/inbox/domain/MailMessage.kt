@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.domain
 
 import com.otus.avatar.ResolvedAvatar
 import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.feature.inbox.domain.category.CategoryVerdict
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -33,6 +34,8 @@ data class MailMessage(
     val preview: String = "",
     /** The thread this row stands for; null for supplied messages, which list one by one. */
     val conversation: MailConversation? = null,
+    /** The Inbox category the device sorted the row's email into, with why; null when it has not. */
+    val category: CategoryVerdict? = null,
 )
 
 /**

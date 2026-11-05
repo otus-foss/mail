@@ -15,6 +15,9 @@ import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.domain.SavedFiles
 import com.otus.mail.feature.inbox.domain.SenderBlocks
+import com.otus.mail.feature.inbox.domain.category.CategoryPlacement
+import com.otus.mail.feature.inbox.domain.category.InboxCategories
+import com.otus.mail.feature.inbox.domain.category.MailCategory
 import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
 import com.otus.mail.feature.inbox.presentation.components.PersonSheet
 import kotlinx.datetime.LocalDate
@@ -25,8 +28,9 @@ import kotlin.time.Clock
 /**
  * What the Read view needs beyond the list's actions: the conversation's [pages], the folders of a
  * message, the privacy setting for remote images, files, the services behind its strips and menu,
- * [effects] for toasts and work that outlives the page, and how its pages [display]. Null in
- * [InboxContext] keeps the screen to the message alone, as for supplied messages.
+ * [effects] for toasts and work that outlives the page, how its pages [display], and the Inbox's
+ * [categories]. Null in [InboxContext] keeps the screen to the message alone, as for supplied
+ * messages.
  */
 class ReadContext(
     val pages: ConversationMessages = ConversationMessages { null },
@@ -36,7 +40,20 @@ class ReadContext(
     val services: ReadServices = ReadServices(),
     val effects: ReadEffects = ReadEffects(),
     val display: ReadDisplay = ReadDisplay(),
+    val categories: ReadCategories? = null,
 )
+
+/**
+ * The Inbox's categories as the Read view offers them: the saved [settings], and [choose], which
+ * puts a sender's mail in a category from now on, or hands it back to the classifier with null.
+ */
+class ReadCategories(
+    val settings: () -> InboxCategories,
+    val choose: (sender: String, category: MailCategory?) -> Unit,
+) {
+    /** Where the list shows [row] and why; null while categories are off. */
+    fun placement(row: MailMessage): CategoryPlacement? = settings().takeIf { it.enabled }?.placement(row)
+}
 
 /**
  * How the Read view shows its pages: [showQuotes] tells whether replies show text quoted from

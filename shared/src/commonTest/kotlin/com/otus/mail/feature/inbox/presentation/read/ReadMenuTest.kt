@@ -7,6 +7,8 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.inbox.domain.category.CategoryPlacement
+import com.otus.mail.feature.inbox.domain.category.MailCategory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -145,6 +147,20 @@ class ReadMenuTest {
                 listOfNotNull(section.part.title()) + section.entries.map { it.label() }
             },
         )
+    }
+
+    @Test
+    fun categoryEntriesShowOnlyWhileCategoriesAreOn() {
+        val sent = message(sender = alex, to = listOf(grace, ada))
+        val promotions = CategoryPlacement(MailCategory.Promotions, emptyList())
+        val labels = { page: ReadPage -> readMenu(page).map { section -> section.entries.map { it.label() } } }
+        val on = labels(ReadPage(message(), own, category = promotions))
+        assertEquals("Why is this in Promotions?", on.first()[on.first().indexOf("View details") + 1])
+        assertEquals("Categorize sender\u2026", on[1].last())
+        val off = labels(ReadPage(message(), own)).flatten()
+        assertEquals(emptyList(), off.filter { "categor" in it.lowercase() })
+        val ownMail = labels(ReadPage(sent, own, category = promotions))
+        assertEquals(1, ownMail.size, "The user's own mail has no sender section to categorize")
     }
 
     @Test

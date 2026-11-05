@@ -11,6 +11,7 @@ import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.feature.inbox.presentation.INBOX_EMPTY_TITLE
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
@@ -41,6 +42,7 @@ internal fun InboxPage(
         )
     val labeled = rememberLabeled(states, feed)
     val filters = rememberPageFilters(states, MailPage.Inbox, feed)
+    val categories = rememberCategoryTabs(states.behavior.behavior.categories, labeled)
     InboxScreen(
         labeled,
         dateFormatter,
@@ -50,6 +52,7 @@ internal fun InboxPage(
         context =
             InboxContext(
                 defaultSearch = InboxSearch(mailboxes = contents.mailboxNames().map { MailboxScope(null, it) }.toSet()),
+                emptyTitle = categories?.emptyTitle() ?: INBOX_EMPTY_TITLE,
                 pills = pills,
                 mailboxSearch =
                     MailboxSearch(
@@ -67,6 +70,7 @@ internal fun InboxPage(
                 onLoadMore = feed::loadMore,
                 scope = states.scopeSwitch(states.mailScope, states.chooseScope),
                 quick = rememberQuickView(states, navigation),
+                categories = categories,
             ),
         messageActions = rememberMessageActions(states, feed, navigation),
     )

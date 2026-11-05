@@ -17,6 +17,7 @@ import com.otus.mail.feature.inbox.domain.allowingSender
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.ReadCategories
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadDisplay
 import com.otus.mail.feature.inbox.presentation.ReadEffects
@@ -55,6 +56,10 @@ internal class ReadWiring(
             allowSender = { address -> behavior.update { it.allowingSender(address) } },
         )
     private val files = ReadFiles(services.downloads, services.pickers.savedFiles, services.pickers.printer)
+    private val categories =
+        ReadCategories({ behavior.behavior.categories }) { address, category ->
+            behavior.update { it.copy(categories = it.categories.withSender(address, category)) }
+        }
 
     /** The Read view of messages that [feed] lists, whose folder, when it shows one, is left out of strips. */
     fun context(
@@ -88,6 +93,7 @@ internal class ReadWiring(
                     zen = { behavior.behavior.zenRead },
                     setZen = { on -> behavior.update { it.copy(zenRead = on) } },
                 ),
+            categories = categories,
         )
     }
 

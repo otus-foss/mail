@@ -28,7 +28,6 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.core.mail.ServerChanges
-import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
 import com.otus.mail.feature.contacts.domain.ContactRepository
@@ -97,7 +96,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -181,8 +179,11 @@ class MailServices(
 
     /** Marks and moves that wait for the server; see docs/storage.md. */
     private val changes by lazy { EmailChangeQueue(stores.waiting.changes, host.wakeOutbox) }
+    /** Sorts the Inbox into categories on the device; see docs/categories.md. */
+    internal val categories = MailCategorySorting()
     internal val mail: MailSource by lazy {
-        JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes)
+        val sorting = categories.records
+        JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes, categories = sorting)
     }
     internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache, changes) }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
@@ -295,6 +296,3 @@ class MailServices(
 
 /** How long a cached body stays after its mail arrived. Opening older mail fetches it again. */
 private val BODY_RETENTION = 90.days
-
-@OptIn(ExperimentalResourceApi::class)
-private suspend fun avatarSuffixRules(): String = Res.readBytes("files/public_suffix_list.dat").decodeToString()

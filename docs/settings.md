@@ -42,7 +42,9 @@ left, the control on the right, and large section titles. Search covers every pa
 - **Mail behavior** (`MailBehaviorScreen`) holds how Mail acts, in the order the user meets it:
   - **Inbox**: **Inbox shows** opens a sheet with Archive, Your folders, Spam, and Trash switches
     (see [Inbox contents](inbox.md#inbox-contents)); **Pills** opens `InboxPillsSheet`, where the
-    shown pills are reordered by their handles and others are added; the **Read later** switch
+    shown pills are reordered by their handles and others are added; **Categories** opens
+    `CategoriesSheet`, which turns the category pills on and shows or hides each category (see
+    [categories](categories.md)); the **Read later** switch
     gives each account a Read later folder (see [Read later](folders.md#read-later)).
   - **Panels**: **Sidebar** and **Filter panel** open their pages. The sidebar is a way around
     Mail, not a look, so it lives here rather than on Appearance.

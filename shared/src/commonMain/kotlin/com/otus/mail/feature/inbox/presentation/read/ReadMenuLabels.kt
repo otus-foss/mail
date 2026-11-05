@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.read
 
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.presentation.components.FOLDER_PATH_SEPARATOR
+import com.otus.mail.feature.inbox.presentation.label
 
 /** The caption above a menu section: the sender's name, "Whole conversation", or none. */
 fun ReadMenuPart.title(): String? =
@@ -20,6 +21,7 @@ fun ReadMenuEntry.label(): String =
         is ReadMenuEntry.MoveTo -> "Move to…"
         is ReadMenuEntry.Mute -> "Mute conversation"
         is ReadMenuEntry.People -> "People (${people.size})"
+        is ReadMenuEntry.WhyCategory -> "Why is this in ${category.label}?"
         else -> FIXED_LABELS.getValue(this)
     }
 
@@ -43,4 +45,5 @@ private val FIXED_LABELS: Map<ReadMenuEntry, String> =
         ReadMenuEntry.ReportSpam to "Report spam or phishing",
         ReadMenuEntry.DeleteConversation to "Delete conversation",
         ReadMenuEntry.SenderContact to "Add to contacts",
+        ReadMenuEntry.CategorizeSender to "Categorize sender…",
     )

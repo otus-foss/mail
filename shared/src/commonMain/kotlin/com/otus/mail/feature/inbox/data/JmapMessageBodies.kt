@@ -38,7 +38,8 @@ import kotlin.coroutines.CoroutineContext
  * the message opens again at once and offline. It is saved with its received time, so trimming old
  * bodies can drop it. Images the HTML shows by `cid:` are downloaded on each open, since the cache
  * keeps only the Email object. Reading the body, up to a megabyte of HTML per part, and inlining its
- * images runs on [parsing], off the caller's main thread.
+ * images runs on [parsing], off the caller's main thread. A new body drops the email's saved Inbox
+ * category, so the next list read sorts it again with the body's schema.org markup.
  */
 class JmapMessageBodies(
     private val connections: JmapConnections,
@@ -99,6 +100,8 @@ class JmapMessageBodies(
             try {
                 write(loginId) {
                     putObject(CacheKind.Body, email.id, EmailObject.serializer(), email, email.receivedMillis)
+                    // The body may hold markup the headers lacked, so the list sorts the email again.
+                    remove(CacheKind.Category, listOf(email.id))
                 }
             } catch (expected: CacheStorageException) {
                 // The fetched body can still be opened without a persistent copy.

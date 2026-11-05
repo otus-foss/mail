@@ -19,6 +19,7 @@ import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.QuickViewModule
 import com.otus.mail.feature.inbox.domain.ReadQuickModule
 import com.otus.mail.feature.inbox.domain.SidebarLayout
+import com.otus.mail.feature.inbox.domain.category.InboxCategories
 import com.otus.mail.feature.inbox.domain.decodeAddresses
 import com.otus.mail.feature.inbox.domain.decodeRemoteImages
 import com.otus.mail.feature.inbox.domain.encodeAddresses
@@ -61,6 +62,7 @@ class KeyValueMailBehaviorStore(
                 list = decoded(LIST, defaults.list, MailListLayout::decode),
                 remoteImages = savedRemoteImages() ?: defaults.remoteImages,
                 allowedSenders = decodeAddresses(string(ALLOWED_SENDERS)),
+                categories = savedCategories(defaults.categories),
             )
         }
 
@@ -94,8 +96,18 @@ class KeyValueMailBehaviorStore(
             put(LIST, MailListLayout.encode(behavior.list))
             put(REMOTE_IMAGES, behavior.remoteImages.storageValue)
             put(ALLOWED_SENDERS, encodeAddresses(behavior.allowedSenders))
+            put(CATEGORIES, behavior.categories.enabled)
+            put(HIDDEN_CATEGORIES, InboxCategories.encodeHidden(behavior.categories))
+            put(SENDER_CATEGORIES, InboxCategories.encodeSenders(behavior.categories))
         }
     }
+
+    private fun savedCategories(defaults: InboxCategories) =
+        InboxCategories(
+            enabled = values.flag(CATEGORIES, defaults.enabled),
+            hidden = InboxCategories.decodeHidden(values.string(HIDDEN_CATEGORIES)) ?: defaults.hidden,
+            senders = InboxCategories.decodeSenders(values.string(SENDER_CATEGORIES)),
+        )
 
     /** The saved choice, or DuckDuckGo for anyone who turned on Ask DuckDuckGo before the choice existed. */
     private fun savedIconSource() =
@@ -147,6 +159,9 @@ class KeyValueMailBehaviorStore(
         const val ALWAYS_REMOTE_IMAGES = "load_remote_images"
         const val EARLIER_REMOTE_IMAGES = "remote_images"
         const val ALLOWED_SENDERS = "allowed_senders"
+        const val CATEGORIES = "inbox_categories"
+        const val HIDDEN_CATEGORIES = "hidden_inbox_categories"
+        const val SENDER_CATEGORIES = "sender_categories"
 
         fun barKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

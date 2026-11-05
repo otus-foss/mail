@@ -63,6 +63,10 @@ internal class ReadMenuActions(
                 state.sheet = sheet(entry, page)
             }
 
+            ReadMenuEntry.CategorizeSender, is ReadMenuEntry.WhyCategory -> {
+                state.sheet = ReadSheet.Category(row)
+            }
+
             ReadMenuEntry.Print -> {
                 read.files.printer?.print(page.subject, printable(page, content))
             }
@@ -110,6 +114,7 @@ internal class ReadMenuActions(
             is ReadMenuEntry.MoveTo -> offer(MailAction.Move) != null
             ReadMenuEntry.DeleteConversation -> offer(MailAction.Trash) != null
             ReadMenuEntry.SenderContact, is ReadMenuEntry.People -> read.services.person != null
+            ReadMenuEntry.CategorizeSender, is ReadMenuEntry.WhyCategory -> read.categories != null
             else -> true
         }
 

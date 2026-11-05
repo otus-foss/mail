@@ -71,7 +71,10 @@ fun InboxScreen(
     val state = rememberInboxState(context.defaultSearch)
     val rows = rememberInboxRows(messages, messageActions)
     val filters = context.filters ?: remember { InboxFilterState() }
-    val listed = ListedMail(messages, filters.applied)
+    // Category pills sort the page's own mail; search and folder pills show all of theirs.
+    val tabs = context.categories.takeIf { !state.searching && state.folderPill == null }
+    val sorted = remember(messages, tabs?.settings, tabs?.selected) { tabs?.shown(messages) ?: messages }
+    val listed = ListedMail(sorted, filters.applied)
     val unreadCount = rememberUnreadCount(listed, status.loading)
     val anchor = rememberFilterAnchor(filters, context.filterOptions, messages, dateFormatter)
     val page = shownPage(state, context)
@@ -94,7 +97,7 @@ fun InboxScreen(
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
                         status.loading,
-                        rowsShown = messages.isNotEmpty(),
+                        rowsShown = sorted.isNotEmpty(),
                         onRefresh,
                         holdInset = selecting != null,
                         expansion = headerActions.expansion,
@@ -113,7 +116,7 @@ fun InboxScreen(
                         val frame = context.listFrame(state.searching, topInset, barPadding, collapse)
                         Box(Modifier.hiddenWhenCovered(headerActions.covers(state))) {
                             InboxResults(listed, status, state, dateFormatter, rows.gestures, frame) {
-                                InboxEmptyContent(messages, status, state, page, filters, onRefresh)
+                                InboxEmptyContent(sorted, status, state, page, filters, onRefresh)
                             }
                         }
                     }

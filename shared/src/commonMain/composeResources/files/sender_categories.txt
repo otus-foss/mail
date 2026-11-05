@@ -1,0 +1,86 @@
+# Otus Mail's curated sender list for Inbox categories. See docs/categories.md.
+#
+# One "category domain" pair per line. The category is one of social, updates, transactions,
+# newsletters, or promotions. A domain also covers its subdomains, so list the narrowest domain
+# that only sends that kind of mail, such as accounts.google.com rather than google.com.
+# A shop or payment provider's list mail without an order in its subject goes to Promotions.
+#
+# Bump the version whenever an entry changes, so mail is classified again.
+version 1
+
+# Social networks and communities
+social facebookmail.com
+social facebook.com
+social instagram.com
+social linkedin.com
+social x.com
+social twitter.com
+social pinterest.com
+social redditmail.com
+social reddit.com
+social tiktok.com
+social snapchat.com
+social tumblr.com
+social quora.com
+social meetup.com
+social nextdoor.com
+social discord.com
+social strava.com
+social goodreads.com
+social mastodon.social
+
+# Account, security, and service notices
+updates github.com
+updates gitlab.com
+updates bitbucket.org
+updates atlassian.net
+updates circleci.com
+updates travis-ci.com
+updates sentry.io
+updates vercel.com
+updates netlify.com
+updates slack.com
+updates accounts.google.com
+updates appleid.apple.com
+updates accountprotection.microsoft.com
+
+# Shops, payment providers, carriers, and travel
+transactions amazon.com
+transactions amazon.de
+transactions amazon.co.uk
+transactions amazon.fr
+transactions ebay.com
+transactions etsy.com
+transactions aliexpress.com
+transactions shopify.com
+transactions email.apple.com
+transactions paypal.com
+transactions paypal.de
+transactions stripe.com
+transactions squareup.com
+transactions klarna.com
+transactions wise.com
+transactions revolut.com
+transactions venmo.com
+transactions ups.com
+transactions fedex.com
+transactions dhl.com
+transactions dhl.de
+transactions dpd.de
+transactions usps.com
+transactions post.ch
+transactions booking.com
+transactions airbnb.com
+transactions uber.com
+transactions lyft.com
+transactions doordash.com
+
+# Newsletter platforms
+newsletters substack.com
+newsletters beehiiv.com
+newsletters buttondown.email
+newsletters ghost.io
+newsletters medium.com
+
+# Deal sites
+promotions groupon.com

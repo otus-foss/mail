@@ -128,6 +128,7 @@ internal fun rememberReadMenu(
             muted = state.muted == true,
             suggestedPath = suggested?.let(::listOf),
             people = participants(state.pages, parts.context.rowLook.own),
+            category = parts.read.categories?.placement(row),
         )
     val menu =
         ReadMenuActions(
@@ -181,6 +182,10 @@ internal fun ReadSheets(
 
         is ReadSheet.People -> {
             PeopleSheet(sheet.people, onPick = { state.sheet = ReadSheet.Person(it) }, onDismiss = dismiss)
+        }
+
+        is ReadSheet.Category -> {
+            read.categories?.let { CategorySheet(sheet.row, it, dismiss) }
         }
     }
 }

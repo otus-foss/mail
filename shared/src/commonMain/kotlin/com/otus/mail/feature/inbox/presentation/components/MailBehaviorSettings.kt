@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_format_list_bulleted
@@ -40,8 +41,8 @@ fun MailLookSettings(
 }
 
 /**
- * The Mail behavior page's Inbox section: what the Inbox lists and the inbox pills, each in a
- * sheet, and Read later. [folderPills] are the folder pills the accounts' folders can fill.
+ * The Mail behavior page's Inbox section: what the Inbox lists, the inbox pills, and its
+ * categories, each in a sheet, and Read later. [folderPills] are the folder pills the accounts' folders can fill.
  */
 @Composable
 fun InboxBehaviorSettings(
@@ -50,6 +51,7 @@ fun InboxBehaviorSettings(
 ) {
     var choosingInbox by rememberSaveable { mutableStateOf(false) }
     var choosingPills by rememberSaveable { mutableStateOf(false) }
+    var choosingCategories by rememberSaveable { mutableStateOf(false) }
     val behavior = state.behavior
     SettingsSection("Inbox") {
         SettingRow("Inbox shows", { choosingInbox = true }, icon = Res.drawable.symbol_inbox) {
@@ -62,6 +64,12 @@ fun InboxBehaviorSettings(
             description = "Filters and folders above your mail",
             icon = Res.drawable.symbol_filter_list,
         ) { ValueButton(shownCount(shown)) }
+        SettingRow(
+            "Categories",
+            { choosingCategories = true },
+            description = "Sorts the Inbox into Primary, Transactions, and more",
+            icon = Res.drawable.symbol_all_inbox,
+        ) { ValueButton(categoriesSummary(behavior.categories)) }
         SettingToggleRow(
             "Read later",
             checked = behavior.readLater,
@@ -71,6 +79,7 @@ fun InboxBehaviorSettings(
         )
     }
     if (choosingInbox) InboxContentsSheet(state) { choosingInbox = false }
+    if (choosingCategories) CategoriesSheet(state) { choosingCategories = false }
     if (choosingPills) {
         InboxPillsSheet(
             behavior.pills,

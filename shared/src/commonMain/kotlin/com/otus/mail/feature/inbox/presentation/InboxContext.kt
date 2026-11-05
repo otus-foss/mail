@@ -7,17 +7,20 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
 
+/** What the Inbox says with no mail to show. */
+const val INBOX_EMPTY_TITLE = "Your inbox is empty"
+
 /**
  * What a message list shows by default, how it names itself, which other mailboxes its search
  * can load, and its row of pills. The unified inbox is the default; a folder's page shows all of
  * its messages and names the folder. [folderPill] is the folder pill whose mail the page shows in
- * place of its own.
+ * place of its own. [categories] are the Inbox's category pills, null while they are off.
  */
 data class InboxContext(
     val defaultSearch: InboxSearch = InboxSearch(),
     /** The page's name, such as "Inbox" or a folder's, which its search prompt and account switcher show. */
     val title: String = "Inbox",
-    val emptyTitle: String = "Your inbox is empty",
+    val emptyTitle: String = INBOX_EMPTY_TITLE,
     val mailboxSearch: MailboxSearch = MailboxSearch(),
     val pills: InboxPills = InboxPills(),
     val folderPill: FolderPillOption? = null,
@@ -40,6 +43,7 @@ data class InboxContext(
     val scope: MailScopeSwitch? = null,
     /** What pulling the control panel down shows; null keeps the panel from opening that way. */
     val quick: QuickViewContext? = null,
+    val categories: CategoryTabs? = null,
 ) {
     val searchPrompt: String
         get() = "Search $title"

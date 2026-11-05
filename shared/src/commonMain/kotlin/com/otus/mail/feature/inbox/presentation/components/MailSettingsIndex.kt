@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_format_list_bulleted
@@ -106,6 +107,12 @@ fun SettingsIndexScope.mailBehaviorIndex(
             shownCount(InboxPills(behavior.pills, folderPills).shown.size),
             icon = Res.drawable.symbol_filter_list,
             keywords = listOf("Chips", "Tabs"),
+        )
+        setting(
+            "Categories",
+            categoriesSummary(behavior.categories),
+            icon = Res.drawable.symbol_all_inbox,
+            keywords = listOf("Primary", "Promotions", "Newsletters", "Transactions", "Updates", "Social", "Sort"),
         )
         toggle("Read later", behavior.readLater, Res.drawable.symbol_bookmark, keywords = listOf("Save for later"))
     }

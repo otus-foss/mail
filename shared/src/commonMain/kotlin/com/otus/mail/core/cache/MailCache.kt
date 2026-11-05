@@ -16,6 +16,9 @@ enum class CacheKind {
 
     /** An email's text and HTML body values. Emails never change, so a body stays valid. */
     Body,
+
+    /** The Inbox category the device sorted an email into, with its reasons and the classifier's version. */
+    Category,
 }
 
 /**

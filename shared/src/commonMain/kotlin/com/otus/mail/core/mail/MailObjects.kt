@@ -26,7 +26,8 @@ val EmailSubmissionType: JmapType<JsonObject> =
 /**
  * Email properties the inbox requests for each row (RFC 8621, section 4.1). Recipients and ids let
  * a reply quote and thread. The list shows `preview`; an open message loads its body separately.
- * The list headers tell newsletters apart.
+ * The list headers tell newsletters apart, and with [CATEGORY_HEADER_PROPERTIES] sort the Inbox's
+ * categories; see docs/categories.md.
  */
 val EMAIL_PROPERTIES =
     listOf(
@@ -48,7 +49,7 @@ val EMAIL_PROPERTIES =
         LIST_ID_PROPERTY,
         LIST_UNSUBSCRIBE_PROPERTY,
         AUTHENTICATION_RESULTS_PROPERTY,
-    )
+    ) + CATEGORY_HEADER_PROPERTIES
 
 /** The Email properties [EmailFolders] reads. */
 val EMAIL_FOLDERS_PROPERTIES = listOf("id", "mailboxIds")
@@ -134,6 +135,25 @@ data class EmailObject(
     /** Every `Authentication-Results` field (RFC 8601), topmost first, which tell a DMARC pass. */
     @SerialName(AUTHENTICATION_RESULTS_PROPERTY)
     val authenticationResults: List<String>? = null,
+    /** The automation and bulk headers the Inbox's categories read. */
+    @SerialName(LIST_POST_PROPERTY)
+    val listPost: String? = null,
+    @SerialName(PRECEDENCE_PROPERTY)
+    val precedence: String? = null,
+    @SerialName(AUTO_SUBMITTED_PROPERTY)
+    val autoSubmitted: String? = null,
+    @SerialName(FEEDBACK_ID_PROPERTY)
+    val feedbackId: String? = null,
+    @SerialName(MAILCHIMP_PROPERTY)
+    val mailchimp: String? = null,
+    @SerialName(SENDGRID_PROPERTY)
+    val sendGrid: String? = null,
+    @SerialName(AMAZON_SES_PROPERTY)
+    val amazonSes: String? = null,
+    @SerialName(MAILGUN_PROPERTY)
+    val mailgun: String? = null,
+    @SerialName(CSA_PROPERTY)
+    val certifiedSender: String? = null,
 ) {
     /** Whether a mailing list or newsletter sent it. */
     val fromList: Boolean
