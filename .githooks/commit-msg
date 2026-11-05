@@ -1,5 +1,14 @@
 #!/bin/sh
+# Checks the message with otus-meta's checker, from the checkout that the otus.meta.path Gradle
+# property names, else from the sibling ../otus-meta, as Gradle finds it.
 set -eu
 
 repo_root=$(git rev-parse --show-toplevel)
-exec python3 "$repo_root/tools/check_commit_message.py" "$1"
+cd "$repo_root"
+meta=$(printenv 'ORG_GRADLE_PROJECT_otus.meta.path' || true)
+for properties in "${GRADLE_USER_HOME:-$HOME/.gradle}/gradle.properties" gradle.properties; do
+  if [ -z "$meta" ] && [ -f "$properties" ]; then
+    meta=$(sed -n 's/^otus\.meta\.path=//p' "$properties" | tail -n 1)
+  fi
+done
+exec python3 "${meta:-../otus-meta}/tools/check_commit_message.py" "$1"
