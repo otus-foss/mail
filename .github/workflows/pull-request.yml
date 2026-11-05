@@ -40,17 +40,17 @@ jobs:
           tests='(^|/)src/[A-Za-z]*Test/|(^|/)src/test/|\.png$'
           lines=$(grep -vE "$tests" files.txt | awk '{ n += $1 } END { print n + 0 }')
           if ! grep -qvE "$tests" files.txt; then lines=$(awk '{ n += $1 } END { print n + 0 }' files.txt); fi
-          if [ "$lines" -lt 10 ]; then size=XS
-          elif [ "$lines" -lt 30 ]; then size=S
-          elif [ "$lines" -lt 100 ]; then size=M
-          elif [ "$lines" -lt 500 ]; then size=L
+          if [ "$lines" -lt 20 ]; then size=XS
+          elif [ "$lines" -lt 60 ]; then size=S
+          elif [ "$lines" -lt 200 ]; then size=M
+          elif [ "$lines" -lt 1000 ]; then size=L
           else size=XL; fi
           echo "$lines changed lines: size:$size"
-          gh label create size:XS --force --color 0e8a16 --description "Under 10 changed lines, tests left out"
-          gh label create size:S --force --color 5ebd3e --description "10 to 29 changed lines, tests left out"
-          gh label create size:M --force --color fbca04 --description "30 to 99 changed lines, tests left out"
-          gh label create size:L --force --color fe7d37 --description "100 to 499 changed lines, tests left out"
-          gh label create size:XL --force --color d93f0b --description "500 or more changed lines, tests left out"
+          gh label create size:XS --force --color 0e8a16 --description "Under 20 changed lines, tests left out"
+          gh label create size:S --force --color 5ebd3e --description "20 to 59 changed lines, tests left out"
+          gh label create size:M --force --color fbca04 --description "60 to 199 changed lines, tests left out"
+          gh label create size:L --force --color fe7d37 --description "200 to 999 changed lines, tests left out"
+          gh label create size:XL --force --color d93f0b --description "1000 or more changed lines, tests left out"
           stale=$(gh pr view "$PR" --json labels \
             --jq "[.labels[].name | select(startswith(\"size:\") and . != \"size:$size\")] | join(\",\")")
           if [ -n "$stale" ]; then gh pr edit "$PR" --remove-label "$stale"; fi

@@ -65,6 +65,8 @@ request that is not a draft opens, or when a draft is marked ready for review. L
 start it again, so open pull requests as drafts and mark them ready once every commit is pushed.
 Start it by hand from GitHub Actions to check again. Every push to `main`, which includes each
 merged pull request, runs it again to check `main` itself, and those runs never cancel each other.
+The macOS `ios` job runs only while the repository variable `IOS_CI` is `on`. Leave it unset to
+save macOS minutes; set it to `on` under Settings › Secrets and variables › Actions to turn it back on.
 
 Meta publishing is paused, so Mail's `check` job builds against Meta's source: the Meta branch
 with the pull request's branch name when one exists, and `main` otherwise.
