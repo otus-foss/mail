@@ -43,7 +43,6 @@
       <counter type="BRANCH" missed="1" covered="1"/>
       <counter type="LINE" missed="0" covered="1"/>
       <counter type="METHOD" missed="0" covered="1"/>
-      <counter type="CLASS" missed="0" covered="1"/>
     </class>
     <sourcefile name="Count.kt">
       <line nr="3" mi="2" ci="3" mb="1" cb="1"/>
@@ -57,7 +56,6 @@
       <counter type="INSTRUCTION" missed="6" covered="0"/>
       <counter type="LINE" missed="2" covered="0"/>
       <counter type="METHOD" missed="1" covered="0"/>
-      <counter type="CLASS" missed="1" covered="0"/>
     </class>
     <sourcefile name="MainActivity.kt">
       <line nr="5" mi="4" ci="0" mb="0" cb="0"/>

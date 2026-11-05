@@ -138,6 +138,11 @@ def add_class(source: SourceFile, element: ElementTree.Element) -> None:
         kind = counter.get("type", "")
         if kind in source.counters:
             source.counters[kind].add(int(counter.get("missed", 0)), int(counter.get("covered", 0)))
+    # Kover leaves out the class counter that JaCoCo writes; a class counts once any code in it ran.
+    if element.find("counter[@type='CLASS']") is None:
+        ran = element.find("counter[@type='INSTRUCTION']")
+        covered = int(ran is not None and int(ran.get("covered", 0)) > 0)
+        source.counters["CLASS"].add(1 - covered, covered)
     for method in element.findall("method"):
         instructions = method.find("counter[@type='INSTRUCTION']")
         if instructions is None:
