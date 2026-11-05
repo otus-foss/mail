@@ -12,7 +12,10 @@ import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.stalwartLike
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.TestScope
@@ -46,8 +49,14 @@ class MessageMarkingTest {
         emailId = id,
     )
 
-    /** Marking for a feed holding [messages], and the feed. Each folder refresh counts a load. */
-    private fun TestScope.marking(vararg messages: MailMessage): Pair<MessageMarking, InboxFeedState> {
+    /**
+     * Marking for a feed holding [messages], and the feed, which runs in [screen]. Each folder
+     * refresh counts a load.
+     */
+    private fun TestScope.marking(
+        vararg messages: MailMessage,
+        screen: CoroutineScope = this,
+    ): Pair<MessageMarking, InboxFeedState> {
         serverMessages.value = messages.toList()
         val engine =
             stalwartLike { body ->
@@ -67,10 +76,10 @@ class MessageMarkingTest {
                     return InboxSnapshot(serverMessages.value)
                 }
             }
-        val feed = InboxFeedState(source, this)
+        val feed = InboxFeedState(source, screen)
         feed.refresh()
         runCurrent()
-        return MessageMarking(services, folders, MoveToasts(toasts, this), this) to feed
+        return MessageMarking(services, folders, MoveToasts(toasts, this)) to feed
     }
 
     /** Sets or clears `$seen` on every id the `Email/set` call names, except [refused] ones. */
@@ -169,6 +178,20 @@ class MessageMarkingTest {
             assertEquals(listOf("m2", "m3"), feed.unread(), "m1 was read before, so it stays read")
             val undo = sent.value.single { "Email/set" in it }
             assertEquals(listOf("m2" to "null", "m3" to "null"), patched(undo))
+        }
+
+    @Test
+    fun undoStillSetsBackAfterTheScreenThatMarkedIsGone() =
+        runTest {
+            val screen = CoroutineScope(coroutineContext + Job())
+            val (marking, feed) = marking(message("m1"), message("m2"), screen = screen)
+            marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
+            // The activity is recreated before the server answers the mark.
+            screen.cancel()
+            tap("2 emails marked as read")
+            settle { sent.value.count { "Email/set" in it } == 2 }
+            val undo = sent.value.last { "Email/set" in it }
+            assertEquals(listOf("m1" to "null", "m2" to "null"), patched(undo))
         }
 
     @Test

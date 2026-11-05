@@ -243,7 +243,7 @@ internal class MailStates(
             behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
         }
     private val cleaning = FolderCleaning(services, folders, scope)
-    private val marking = MessageMarking(services, folders, moveToasts, scope)
+    private val marking = MessageMarking(services, folders, moveToasts)
 
     /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
     val sorting = MessageSorting(rules, services.rules, folders, filing, scope)

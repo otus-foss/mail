@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
  */
 internal class MoveToasts(
     val toasts: ToastState,
-    private val work: CoroutineScope,
+    /** The process's scope, which also runs the changes the toasts offer to undo, see [MailServices.work]. */
+    val work: CoroutineScope,
 ) {
     // The undos of the changes each toast counts, keyed like the toast's group.
     private val undos = mutableMapOf<Any, List<CountedUndo>>()

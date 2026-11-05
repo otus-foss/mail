@@ -9,21 +9,19 @@ import com.otus.mail.feature.inbox.domain.withFlag
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.LocalChange
 import com.otus.mail.feature.inbox.presentation.MessageMarks
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 
 /**
  * Read and flag marks for one message or many, such as Mark all read. The change shows at once and
  * goes to the server together, with an Undo toast that sets each message back as it was. Messages
- * the server refuses go back as they were, and a toast offers to retry just those. Undo and Retry
- * run in the toasts' work, which outlives the activity, so they still reach the server after a
- * rotation; [MailServices.serverChanges] then reloads the screen on show.
+ * the server refuses go back as they were, and a toast offers to retry just those. The save, Undo,
+ * and Retry run in the toasts' work, which outlives the activity, so a rotation cannot cancel a save
+ * that Undo waits for; [MailServices.serverChanges] then reloads the screen on show.
  */
 internal class MessageMarking(
     private val services: MailServices,
     private val folders: FoldersState,
     private val toasts: MoveToasts,
-    private val scope: CoroutineScope,
 ) {
     /** Marks for messages [feed] shows: the user's own offer Undo, the mark on opening does not. */
     fun marks(feed: InboxFeedState): MessageMarks =
@@ -49,7 +47,8 @@ internal class MessageMarking(
     ) {
         val count = changing(messages, flag, on)
         val changes = begin(feed, messages, flag, on)
-        val saving = scope.async { finish(feed, changes, flag, on) }
+        // In the toasts' scope, so a recreated activity cannot cancel the save that Undo waits for.
+        val saving = toasts.work.async { finish(feed, changes, flag, on) }
         if (undoable && count > 0) toasts.marked(flag, on, count) { restore(feed, saving.await()) }
     }
 
