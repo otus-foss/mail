@@ -72,7 +72,8 @@ left, the control on the right, and large section titles. Search covers every pa
   **Writing**; **Same everywhere** shows one **Every screen** card. Each card previews the saved
   bar and opens its editor. See [action bar](action-bar.md).
 - **Privacy & security** (`PrivacyScreen`) decides what mail and avatars load from other servers
-  and how the device protects Mail.
+  and how the device protects Mail. [Network destinations](network.md) lists every host the app
+  may contact and which of these choices turns each off.
   - Under **Load remote images**, **Load images** opens a `ChoiceSheet`: **In your contacts**
     (the default: contacts, people the user wrote to, and allowed senders), **Always**, or
     **Never**. The section's info button says that images inside the mail itself always show and

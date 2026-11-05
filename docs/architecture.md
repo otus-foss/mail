@@ -61,6 +61,12 @@ Mail keeps each login's mailboxes, emails, threads, bodies, and sync states in a
 behind `core/cache/MailCache`. See [storage](storage.md) for what it holds, where the file lives,
 and how long it keeps bodies.
 
+## Network destinations
+
+Every host the app may contact, when it does, what it sends, and which setting turns it off is
+listed in [network destinations](network.md). Update it with any change that adds a network
+client, a host, or a new trigger for an existing one.
+
 ## Avatar service
 
 The portable account-scoped avatar resolver comes from the `com.otus:avatar` library. App wiring

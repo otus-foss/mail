@@ -3,7 +3,8 @@
 Mail uses the `com.otus:avatar` library from otus-meta to resolve sender avatars. The service, its
 caching, website-icon rules, and privacy limits are documented in
 [otus-meta's avatar guide](https://github.com/reazndev/otus-meta/blob/main/docs/avatar.md). This
-guide covers how Mail wires and uses it.
+guide covers how Mail wires and uses it. Every host avatars may contact is also listed in
+[network destinations](network.md#avatars).
 
 Mail reads the Public Suffix List from `files/public_suffix_list.dat` in its Compose resources,
 with its MPL 2.0 notice in `public_suffix_list_MPL-2.0.txt`. Android and iOS entry points supply a
