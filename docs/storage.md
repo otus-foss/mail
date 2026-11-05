@@ -71,6 +71,21 @@ first looks in the book for a card with its uid (`ContactCard/query`, RFC 9610, 
 leaving out cards that other waiting changes are about. When it finds one, it updates that card
 with any change made since instead of creating a second card.
 
+Only a missing connection or sign-in, or a server that asks to be tried later (HTTP 408, 429,
+502 to 504), makes the contact queue wait. A method error, a `SetError` such as a
+`ContactCard/set` `notCreated`, or another 4xx request problem refuses that change alone: it is
+set aside as not saved and the queue goes on. An answer that says neither, such as HTTP 500 or a
+reply the app cannot read, passes that card over for the rest of the flush, together with the
+changes that need it, and sets it aside after three tries. Two such failures in a row end the
+flush, since then the server looks at fault. Tries and refusals live in memory, so a restart sends
+set-aside changes again.
+
+An import keeps each card's file `UID` unless the target account already holds it in any book,
+or an earlier card of the same file has it; then, or when the card has none, the card gets a new
+`urn:uuid:` uid. A server may allow a uid once per account, and RFC 9610 lets one card belong to
+several books, so a second card with the same uid is refused. A file card with the uid of a card
+already in the target book counts as that card, like a matching address.
+
 ## Retention and removal
 
 At each start the app removes cached bodies of mail received more than 90 days ago

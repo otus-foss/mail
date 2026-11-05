@@ -1,6 +1,7 @@
 package com.otus.mail.feature.contacts.domain
 
 import com.otus.jscontact.Card
+import com.otus.jscontact.Media
 
 /**
  * Every login's address books and cards (RFC 9610). Logins whose server has no contacts are left
@@ -33,6 +34,12 @@ interface ContactRepository {
     )
 
     suspend fun delete(keys: List<CardKey>)
+
+    /** The image of [photo], a photo of the card [key] that the server keeps as a blob; null when it cannot be read. */
+    suspend fun photo(
+        key: CardKey,
+        photo: Media,
+    ): ByteArray? = null
 }
 
 /**
@@ -56,6 +63,13 @@ enum class ContactWriteFailure {
 
     /** The server refused the change for another reason. */
     Refused,
+
+    /**
+     * The server's answer did not say whether it took the change, such as an internal error or an
+     * answer the app cannot read. The change goes again a few times, then it is set aside like a
+     * refusal, so it does not hold up the changes after it.
+     */
+    Failing,
 }
 
 class ContactWriteException(
