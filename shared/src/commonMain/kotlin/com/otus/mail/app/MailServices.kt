@@ -33,13 +33,11 @@ import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
 import com.otus.mail.feature.contacts.domain.ContactRepository
 import com.otus.mail.feature.contacts.domain.MailTraceSource
-import com.otus.mail.feature.contacts.domain.forgetAccount
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
-import com.otus.mail.feature.folders.domain.forgetAccount
 import com.otus.mail.feature.inbox.data.AttachmentCache
 import com.otus.mail.feature.inbox.data.AttachmentRetention
 import com.otus.mail.feature.inbox.data.EmailChangeQueue
@@ -89,7 +87,6 @@ import com.otus.mail.feature.inbox.domain.SenderBlocks
 import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import com.otus.mail.feature.inbox.domain.ThreadHistory
-import com.otus.mail.feature.inbox.domain.forgetAccount
 import com.otus.mail.feature.inbox.presentation.NewsletterSteps
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
@@ -163,10 +160,7 @@ class MailServices(
                 },
                 beforeRemove = { loginId ->
                     instantPush?.forget(loginId)
-                    stores.folders.colors?.forgetAccount(loginId)
-                    stores.addressPins?.forgetAccount(loginId)
-                    stores.folders.nudges?.forgetAccount(loginId)
-                    stores.contacts?.forgetAccount(loginId)
+                    stores.forgetAccount(loginId)
                     outbox.forget(loginId)
                     changes.forget(loginId)
                     try {
