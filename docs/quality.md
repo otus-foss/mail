@@ -63,7 +63,8 @@ mint run swiftlint lint --strict
 **CI runs once per pull request,** on Ubicloud runners. The `quality` workflow starts when a pull
 request that is not a draft opens, or when a draft is marked ready for review. Later pushes do not
 start it again, so open pull requests as drafts and mark them ready once every commit is pushed.
-Start it by hand from GitHub Actions to check again.
+Start it by hand from GitHub Actions to check again. Every push to `main`, which includes each
+merged pull request, runs it again to check `main` itself, and those runs never cancel each other.
 
 Meta publishing is paused, so Mail's `check` job builds against Meta's source: the Meta branch
 with the pull request's branch name when one exists, and `main` otherwise.

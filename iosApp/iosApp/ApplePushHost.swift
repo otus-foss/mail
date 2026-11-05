@@ -6,7 +6,7 @@ import UserNotifications
 final class ApplePushHost: NSObject, ApplePushPlatform {
     private let secrets = PushSecrets()
 
-    func newIdentifier() -> String {
+    func createIdentifier() -> String {
         UUID().uuidString
     }
 
