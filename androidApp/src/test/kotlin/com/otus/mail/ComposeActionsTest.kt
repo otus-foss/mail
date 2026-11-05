@@ -20,6 +20,7 @@ import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.original
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.MessageMarks
 import com.otus.mail.feature.inbox.presentation.MessageMoves
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals
@@ -57,8 +58,7 @@ class ComposeActionsTest {
         val actions =
             MessageActions(
                 moves = MessageMoves(targets = { emptyList() }, onMove = { _, _ -> }, suggested = { null }) { null },
-                canMark = { _, _ -> false },
-                onMark = { _, _, _ -> },
+                marks = MessageMarks(can = { _, _ -> false }, set = { _, _, _ -> }),
                 ruleForSender = { null },
                 readLater = { null },
                 behavior = { behavior },
