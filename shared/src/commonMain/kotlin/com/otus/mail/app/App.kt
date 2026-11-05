@@ -73,8 +73,7 @@ fun App(
     // Reload whenever the inbox is shown, including at launch.
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
     ServerChangeEffects(services, states) { page == MailPage.Inbox }
-    AvatarEffects(states, behaviorState)
-    CategoryEffects(services, states, behaviorState)
+    SettingEffects(services, states, behaviorState)
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
     val settings =
@@ -157,6 +156,17 @@ private fun ServerChangeEffects(
 }
 
 /** Keeps sender avatars in step with the avatar settings and the contacts' photos. */
+/** What changing an avatar or category setting reloads. */
+@Composable
+private fun SettingEffects(
+    services: MailServices,
+    states: MailStates,
+    behaviorState: MailBehaviorState,
+) {
+    AvatarEffects(states, behaviorState)
+    CategoryEffects(services, states, behaviorState)
+}
+
 @Composable
 private fun AvatarEffects(
     states: MailStates,
