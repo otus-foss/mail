@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN" "report.dtd">
+<report name="Kover Gradle Plugin XML report for :">
+  <package name="com/otus/mail/feature/inbox/presentation/screens">
+    <class name="com/otus/mail/feature/inbox/presentation/screens/InboxScreenKt" sourcefilename="InboxScreen.kt">
+      <method name="InboxScreen" desc="(ILandroidx/compose/runtime/Composer;I)V" line="6">
+        <counter type="INSTRUCTION" missed="0" covered="7"/>
+      </method>
+      <method name="InboxScreen$lambda$0" desc="(I)V" line="7">
+        <counter type="INSTRUCTION" missed="0" covered="3"/>
+      </method>
+      <method name="EmptyScreen-8_81llA" desc="(JLandroidx/compose/runtime/Composer;II)V" line="11">
+        <counter type="INSTRUCTION" missed="7" covered="0"/>
+      </method>
+      <method name="EmptyScreen-8_81llA$default" desc="(JLandroidx/compose/runtime/Composer;II)V" line="11">
+        <counter type="INSTRUCTION" missed="1" covered="0"/>
+      </method>
+      <method name="InboxScreenPreview" desc="(Landroidx/compose/runtime/Composer;I)V" line="17">
+        <counter type="INSTRUCTION" missed="5" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="12" covered="7"/>
+      <counter type="BRANCH" missed="0" covered="0"/>
+      <counter type="LINE" missed="4" covered="2"/>
+      <counter type="METHOD" missed="3" covered="2"/>
+      <counter type="CLASS" missed="0" covered="1"/>
+    </class>
+    <sourcefile name="InboxScreen.kt">
+      <line nr="6" mi="0" ci="4" mb="0" cb="0"/>
+      <line nr="7" mi="0" ci="3" mb="0" cb="0"/>
+      <line nr="11" mi="4" ci="0" mb="0" cb="0"/>
+      <line nr="12" mi="3" ci="0" mb="0" cb="0"/>
+      <line nr="17" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="18" mi="3" ci="0" mb="0" cb="0"/>
+      <counter type="LINE" missed="4" covered="2"/>
+    </sourcefile>
+  </package>
+  <package name="com/otus/mail/feature/inbox/domain">
+    <class name="com/otus/mail/feature/inbox/domain/CountKt" sourcefilename="Count.kt">
+      <method name="count" desc="(I)I" line="3">
+        <counter type="INSTRUCTION" missed="2" covered="3"/>
+      </method>
+      <counter type="INSTRUCTION" missed="2" covered="3"/>
+      <counter type="BRANCH" missed="1" covered="1"/>
+      <counter type="LINE" missed="0" covered="1"/>
+      <counter type="METHOD" missed="0" covered="1"/>
+    </class>
+    <sourcefile name="Count.kt">
+      <line nr="3" mi="2" ci="3" mb="1" cb="1"/>
+    </sourcefile>
+  </package>
+  <package name="com/otus/mail/app">
+    <class name="com/otus/mail/app/MainActivity" sourcefilename="MainActivity.kt">
+      <method name="onCreate" desc="(Landroid/os/Bundle;)V" line="5">
+        <counter type="INSTRUCTION" missed="6" covered="0"/>
+      </method>
+      <counter type="INSTRUCTION" missed="6" covered="0"/>
+      <counter type="LINE" missed="2" covered="0"/>
+      <counter type="METHOD" missed="1" covered="0"/>
+    </class>
+    <sourcefile name="MainActivity.kt">
+      <line nr="5" mi="4" ci="0" mb="0" cb="0"/>
+      <line nr="6" mi="2" ci="0" mb="0" cb="0"/>
+    </sourcefile>
+  </package>
+  <package name="com/otus/mail/core/cache">
+    <class name="com/otus/mail/core/cache/MailDatabaseImpl" sourcefilename="MailDatabaseImpl.kt">
+      <counter type="INSTRUCTION" missed="200" covered="0"/>
+      <counter type="LINE" missed="50" covered="0"/>
+      <counter type="METHOD" missed="10" covered="0"/>
+      <counter type="CLASS" missed="1" covered="0"/>
+    </class>
+    <sourcefile name="MailDatabaseImpl.kt">
+      <line nr="1" mi="4" ci="0" mb="0" cb="0"/>
+    </sourcefile>
+  </package>
+  <counter type="INSTRUCTION" missed="220" covered="10"/>
+  <counter type="LINE" missed="56" covered="3"/>
+</report>
