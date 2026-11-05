@@ -2,10 +2,14 @@ name: quality
 
 # Runs once a pull request is ready: when it opens as ready, or when a draft is marked ready. Later
 # pushes start it again only while the pull request has the "ci on every push" label, and adding that
-# label starts it at once. Draft pull requests never run it.
+# label starts it at once. Draft pull requests never run it. Every push to main, which includes each
+# merged pull request, runs it again so main itself stays checked.
 on:
   pull_request:
     types: [opened, ready_for_review, synchronize, labeled]
+    paths-ignore: ["**/*.md"]
+  push:
+    branches: [main]
     paths-ignore: ["**/*.md"]
   workflow_dispatch:
 
@@ -13,24 +17,26 @@ permissions:
   contents: read
 
 # Each kind of event gets its own group. Most events start a run that skips every job, such as an
-# unlabeled push, and that run must not cancel a real one started by another kind of event.
+# unlabeled push, and that run must not cancel a real one started by another kind of event. Runs on
+# main never cancel each other, so every merge gets its own result.
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}-${{ github.event.action }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
   # Decides which jobs this change needs. Workflow-only and Markdown-only changes skip the build,
   # except a change to this workflow, and changes that touch only Android code skip the macOS job.
-  # A run started by hand runs everything.
+  # A push to main compares it with the commit before. A run started by hand runs everything.
   changes:
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_dispatch' || github.event_name == 'push' ||
       !github.event.pull_request.draft && (
         github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
         github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
         github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
     runs-on: ubicloud-standard-2
     permissions:
+      contents: read
       pull-requests: read
     outputs:
       build: ${{ steps.files.outputs.build }}
@@ -40,12 +46,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
         run: |
-          if [ -z "$PR" ]; then
+          if [ -n "$PR" ]; then
+            gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename' > files.txt
+          elif [ -n "${BEFORE//0/}" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/compare/$BEFORE...$AFTER" --jq '.files[].filename' > files.txt
+          fi
+          # A run by hand, a new branch, or a compare cut off at 300 files checks everything.
+          if [ ! -s files.txt ] || [ "$(wc -l < files.txt)" -ge 300 ]; then
             printf 'build=true\nios=true\n' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename' > files.txt
           touched() { if grep -qvE "$1" files.txt || grep -qx '.github/workflows/quality.yml' files.txt; then echo true; else echo false; fi; }
           echo "build=$(touched '^\.github/|\.md$')" >> "$GITHUB_OUTPUT"
           echo "ios=$(touched '^\.github/|\.md$|^docs/|^androidApp/|(^|/)src/(androidMain|androidHostTest|androidUnitTest|androidTest|test)/')" >> "$GITHUB_OUTPUT"
@@ -163,9 +176,11 @@ jobs:
             gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body-file comment.md
           fi
 
+  # Runs only while the repository variable IOS_CI is "on" (Settings > Secrets and variables >
+  # Actions > Variables), so macOS minutes stay off until someone turns it back on.
   ios:
     needs: changes
-    if: needs.changes.outputs.ios == 'true'
+    if: needs.changes.outputs.ios == 'true' && vars.IOS_CI == 'on'
     # Ubicloud has no macOS runners, so this job runs on GitHub's.
     runs-on: macos-15
     steps:

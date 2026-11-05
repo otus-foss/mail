@@ -14,6 +14,7 @@ import com.otus.mail.app.MailPush
 import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.app.WaitingStores
+import com.otus.mail.app.trimCache
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
@@ -52,6 +53,8 @@ class OtusMailApplication :
                     AndroidNotificationPreviewStore(this),
                     AndroidContactStore(this),
                     WaitingStores(AndroidOutboxStore(this), AndroidEmailChangeStore(this)),
+                    // Matches the `files-path` in `res/xml/shared_files.xml`, so Open can lend these files.
+                    AndroidDownloadFolder(File(filesDir, "attachments")),
                 ),
             instantPush = instantPush,
             pickers =

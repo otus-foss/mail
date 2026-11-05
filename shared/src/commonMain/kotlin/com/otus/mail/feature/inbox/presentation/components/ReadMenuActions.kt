@@ -115,7 +115,7 @@ internal class ReadMenuActions(
 
     private val canChangePages: Boolean get() = read.services.changes != null && actions != null
 
-    private fun canMarkPage(flag: MessageFlag): Boolean = canChangePages && actions?.canMark(row, flag) == true
+    private fun canMarkPage(flag: MessageFlag): Boolean = canChangePages && actions?.marks?.can(row, flag) == true
 
     private fun offer(action: MailAction): OfferedAction? = actions?.offer(listOf(row), action, chooseFolder)
 

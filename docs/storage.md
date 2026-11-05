@@ -29,6 +29,35 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 The file is not encrypted. Only the app-private storage of each platform protects it. Login
 secrets never go in it; they stay in the platform's protected login store.
 
+## Attachments on the device
+
+Attachments are files on disk, not cache rows. `AttachmentCache` in `feature/inbox/data` streams
+each one from the account's `downloadUrl` (RFC 8620, section 6.2) through Meta's
+`JmapConnection.downloadStream`, which hands over 64 KiB pieces as they arrive. No piece outlives
+its write, so a file of any size downloads without the JMAP client's 16 MiB response limit. A
+server that sends more than the size the message gives for the part, its decoded size (RFC 8621,
+section 4.1.4), is stopped, so it cannot fill the disk.
+
+- `core/files/DownloadFolder` is the platform contract. A file lives in `<group>/<id>/` under its
+  own name, so the app that opens it sees that name. The group is the SHA-256 of the login id and
+  the id the SHA-256 of the blob id and file name, so names from the sender never become paths.
+- While a file downloads, its bytes go to a `.partial` file that nothing else reads. A failure,
+  a cancel, or a server that sends too much deletes it and keeps any earlier copy. One file
+  downloads once at a time, so a thumbnail and an Open of one file share one download.
+- The Read view shows a sticky toast with the share received, such as "Downloading report.pdf ·
+  42%", once bytes arrive. Its Cancel stops the download. After a file opens, its toast offers
+  **Keep offline**, or **Remove** for a kept file, and a kept file's row says "Offline" after its
+  size.
+- Android keeps the folder in `files/attachments`, in the app's private files, which the backup
+  and data extraction rules leave out like the rest. Open lends the file itself, read-only,
+  through the `FileProvider` path `attachments/`; Save streams a copy into Downloads.
+- iOS keeps it in `Application Support/attachments`, which iOS does not empty when space runs low.
+  The folder is marked to stay out of backups, and its files take the protection class
+  `NSFileProtectionCompleteUntilFirstUserAuthentication`, the same as the login Keychain items.
+- Tests, previews, and any platform without a folder use `InMemoryDownloadFolder`.
+
+The files are not encrypted beyond the platform's own storage protection.
+
 ## Following the server
 
 Each refresh brings the cache up to date with as little as the server allows:
@@ -71,13 +100,36 @@ first looks in the book for a card with its uid (`ContactCard/query`, RFC 9610, 
 leaving out cards that other waiting changes are about. When it finds one, it updates that card
 with any change made since instead of creating a second card.
 
+Only a missing connection or sign-in, or a server that asks to be tried later (HTTP 408, 429,
+502 to 504), makes the contact queue wait. A method error, a `SetError` such as a
+`ContactCard/set` `notCreated`, or another 4xx request problem refuses that change alone: it is
+set aside as not saved and the queue goes on. An answer that says neither, such as HTTP 500 or a
+reply the app cannot read, passes that card over for the rest of the flush, together with the
+changes that need it, and sets it aside after three tries. Two such failures in a row end the
+flush, since then the server looks at fault. Tries and refusals live in memory, so a restart sends
+set-aside changes again.
+
+An import keeps each card's file `UID` unless the target account already holds it in any book,
+or an earlier card of the same file has it; then, or when the card has none, the card gets a new
+`urn:uuid:` uid. A server may allow a uid once per account, and RFC 9610 lets one card belong to
+several books, so a second card with the same uid is refused. A file card with the uid of a card
+already in the target book counts as that card, like a matching address.
+
 ## Retention and removal
 
 At each start the app removes cached bodies of mail received more than 90 days ago
-(`MailServices.trimCache`). Opening such a message fetches its body again. The other kinds stay
+(`trimCache` in `app/CacheUpkeep.kt`). Opening such a message fetches its body again. The other kinds stay
 until sync replaces or destroys them.
 
-Removing an account calls `MailCache.forget`, which deletes every object and value of that login
+The same start-up trim, `AttachmentRetention.trim`, deletes `.partial` files that an earlier process left, and downloaded
+attachments that are not kept offline and were last used more than 7 days ago. Opening or
+finding a file counts as a use. After each download, unkept files also go, least recently used
+first, while together they take more than 256 MB; the file just downloaded always stays. Files the
+user keeps offline are never trimmed: they stay through restarts until the user removes them or
+removes the account.
+
+Removing an account calls `MailCache.forget`, which deletes every object and value of that login,
+and `AttachmentRetention.forget`, which deletes every downloaded file of that login, kept or not,
 before the login itself goes. Removal also cancels in-flight cache work for that account.
 Each operation uses an account generation, so an old request cannot repopulate the cache after
 removal or write into a later connection with the same login ID. Reconnecting a login only
@@ -98,6 +150,11 @@ retried after restart.
 `SQLITE_BUSY` and `SQLITE_LOCKED` mean another connection holds the database, so they are marked
 transient. A transient error fails only that operation, and callers handle it like any other
 cache error. The next operation uses the disk cache again.
+
+A download folder that cannot write, such as on a full disk, throws `DownloadFolderException`. The
+download then fails like a server failure: the file shows "Couldn't download", nothing partial
+stays, and the next tap tries again. Account removal reports an account-storage error when it
+cannot delete the login's files.
 
 A failed inbox write raises the existing recoverable storage error so the loaded list stays on
 screen until retry. Fresh message bodies and folder lists still open when saving their local copy

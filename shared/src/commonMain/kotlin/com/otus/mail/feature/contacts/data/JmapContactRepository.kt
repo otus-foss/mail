@@ -17,6 +17,7 @@ import com.otus.jmap.contacts.toCreation
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jscontact.Card
+import com.otus.jscontact.Media
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactBook
@@ -89,7 +90,8 @@ internal class JmapContactRepository(
                 write(book.loginId) { it.cardsWithUid(book, uid) }
             } catch (refusal: ContactWriteException) {
                 // A server that cannot look cards up by uid gets the create again, as it would have.
-                if (refusal.failure == ContactWriteFailure.Offline) throw refusal
+                // Without an answer the create waits instead, since the card may be there.
+                if (refusal.failure in setOf(ContactWriteFailure.Offline, ContactWriteFailure.Failing)) throw refusal
                 emptyList()
             }
         return found
@@ -124,6 +126,16 @@ internal class JmapContactRepository(
             if (error != null) throw refused(error.type)
         }
     }
+
+    override suspend fun photo(
+        key: CardKey,
+        photo: Media,
+    ): ByteArray? =
+        try {
+            write(key.loginId) { it.photo(key.accountId, photo) }
+        } catch (_: ContactWriteException) {
+            null
+        }
 
     private suspend fun loadLogin(login: JmapLogin): LoginContacts {
         val connection = connections.connection(login)
@@ -192,11 +204,11 @@ internal class JmapContactRepository(
             val position = cards.size
             val list =
                 try {
-                    cardPage(connection, account, CardPage(position, page, properties))
+                    connection.cardPage(account, CardPage(position, page, properties))
                 } catch (error: JmapException.MethodError) {
                     if (properties == null || error.type != "invalidArguments") throw error
                     properties = null
-                    cardPage(connection, account, CardPage(position, page, null))
+                    connection.cardPage(account, CardPage(position, page, null))
                 }
             cards += list
             if (list.size < page) break
@@ -204,29 +216,10 @@ internal class JmapContactRepository(
         return cards
     }
 
-    /** One [page] of [account]'s cards. */
-    private suspend fun cardPage(
-        connection: JmapConnection,
-        account: String,
-        page: CardPage,
-    ): List<Card> =
-        connection
-            .request {
-                val query =
-                    call(
-                        QueryMethod(
-                            ContactCardType,
-                            account,
-                            limit = page.size,
-                            extra = mapOf("position" to JsonPrimitive(page.position)),
-                        ),
-                    )
-                call(GetMethod(ContactCardType, account, JmapIds.Result(query.resultOf("/ids")), page.properties))
-            }.list
-
     /**
-     * Runs a change. A missing connection, a sign-in the server rejects, or a server error is
-     * [ContactWriteFailure.Offline], so the change waits and goes again later instead of failing.
+     * Runs a change. A missing connection or a sign-in the server rejects is
+     * [ContactWriteFailure.Offline], so the change waits and goes again later; [writeFailure] tells
+     * those apart from a refusal of this change alone.
      */
     private suspend fun <T> write(
         loginId: String,
@@ -238,10 +231,7 @@ internal class JmapContactRepository(
         return try {
             block(connections.connection(login))
         } catch (error: JmapException) {
-            throw when (error) {
-                is JmapException.MethodError -> refused(error.type, error)
-                else -> ContactWriteException(ContactWriteFailure.Offline, error)
-            }
+            throw ContactWriteException(error.writeFailure(), error)
         }
     }
 
@@ -259,11 +249,23 @@ internal class JmapContactRepository(
     }
 }
 
-private fun refused(
-    type: String,
-    cause: Throwable? = null,
-): ContactWriteException =
-    ContactWriteException(if (type == "forbidden") ContactWriteFailure.ReadOnly else ContactWriteFailure.Refused, cause)
+/** One [page] of [account]'s cards. */
+private suspend fun JmapConnection.cardPage(
+    account: String,
+    page: CardPage,
+): List<Card> =
+    request {
+        val query =
+            call(
+                QueryMethod(
+                    ContactCardType,
+                    account,
+                    limit = page.size,
+                    extra = mapOf("position" to JsonPrimitive(page.position)),
+                ),
+            )
+        call(GetMethod(ContactCardType, account, JmapIds.Result(query.resultOf("/ids")), page.properties))
+    }.list
 
 /** The cards in [book] with [uid] (RFC 9610, section 3.3). */
 private suspend fun JmapConnection.cardsWithUid(

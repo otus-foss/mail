@@ -103,3 +103,10 @@ internal val PreviewsInfo =
         "Accounts and addresses can each have their own setting. Mail to several of your addresses " +
             "follows the more private one.",
     )
+
+internal val ButtonsInfo =
+    InfoText(
+        "Buttons",
+        "Alerts that show the message offer these buttons. A button the account can't use, such as " +
+            "Archive without an Archive folder, is left out. Reply opens Mail; the others work without it.",
+    )

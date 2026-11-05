@@ -174,9 +174,16 @@ subprojects {
 dependencies { subprojects.forEach { kover(it) } }
 // Instrumentation slows every test run, so collect coverage only when a Kover task runs.
 val coverageRequested = gradle.startParameter.taskNames.any { "kover" in it }
+// The coverage variant runs each test suite once: Shared's host tests and the app's debug unit tests,
+// which hold the Robolectric screenshot tests. The total variant also runs the app's tests for every
+// other build type. The coverage workflow runs koverXmlReportCoverage and koverHtmlReportCoverage.
+kover { currentProject { createVariant("coverage") {} } }
 subprojects {
     apply(plugin = "org.jetbrains.kotlinx.kover")
-    if (!coverageRequested) {
-        extensions.configure<KoverProjectExtension> { currentProject { instrumentation { disabledForAll.set(true) } } }
+    extensions.configure<KoverProjectExtension> {
+        currentProject {
+            createVariant("coverage") { add("android", "debug", optional = true) }
+            if (!coverageRequested) instrumentation { disabledForAll.set(true) }
+        }
     }
 }

@@ -78,6 +78,11 @@ It does not synchronize an entire address book.
 
 Photos precede logos; lower JSContact `pref` values precede higher ones. Blob IDs use the session's
 advertised `downloadUrl` template and trusted origins. Embedded Base64 data URIs are also supported.
+
+The Contacts page draws inline photos only, so `ContactBlobPhotos` reads the blob of each card
+photo the server keeps as a blob, up to 500, once per process, and shows it as a `data:` photo.
+Stalwart gives back a photo saved as a `data:` URI this way, so without it a new photo turned back
+into initials on the next load. A blob that could not be read is tried again on the next load.
 External contact URLs load only while Website icons is on. PNG, JPEG, and WebP contact images are
 accepted. Missing capabilities, permissions, images, or optional request failures leave the
 generated avatar. Cancellation propagates and stops work from an obsolete inbox refresh.

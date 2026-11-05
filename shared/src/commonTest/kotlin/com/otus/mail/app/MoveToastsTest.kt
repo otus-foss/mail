@@ -1,6 +1,7 @@
 package com.otus.mail.app
 
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlinx.coroutines.CoroutineScope
@@ -10,6 +11,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MoveToastsTest {
@@ -54,4 +56,37 @@ class MoveToastsTest {
         moves.moved(trash) {}
         assertEquals("Email deleted", toasts.messages.single().text)
     }
+
+    @Test
+    fun marksOfOneKindCountTheirMessagesInOneToast() =
+        runTest {
+            val toasts = ToastState()
+            val moves = MoveToasts(toasts, this)
+            val undone = mutableListOf<Int>()
+            moves.marked(MessageFlag.Read, on = true, count = 2) { undone += 1 }
+            moves.marked(MessageFlag.Read, on = true, count = 3) { undone += 2 }
+            moves.marked(MessageFlag.Flagged, on = true, count = 1) { undone += 3 }
+            assertEquals(listOf("5 emails marked as read", "Email flagged"), toasts.messages.map { it.text })
+            toasts.messages
+                .first()
+                .action
+                ?.onAction
+                ?.invoke()
+            runCurrent()
+            assertEquals(listOf(1, 2), undone)
+        }
+
+    @Test
+    fun aFailureStaysWithRetry() =
+        runTest {
+            val toasts = ToastState()
+            var retried = 0
+            MoveToasts(toasts, this).failed("Couldn't flag 2 emails") { retried++ }
+            val toast = toasts.messages.single()
+            assertTrue(toast.sticky)
+            assertEquals("Retry", toast.action?.label)
+            toast.action?.onAction?.invoke()
+            runCurrent()
+            assertEquals(1, retried)
+        }
 }

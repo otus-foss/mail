@@ -3,6 +3,7 @@ package com.otus.mail
 import androidx.compose.ui.window.ComposeUIViewController
 import com.otus.dateformat.IosDateFormatPreferenceStore
 import com.otus.mail.app.App
+import com.otus.mail.app.trimCache
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.settings.data.IosAnimationPreferenceStore
 import com.otus.settings.presentation.AnimationSettingsState

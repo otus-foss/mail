@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.FolderChange
@@ -12,6 +11,7 @@ import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.MessageHeaders
 import com.otus.mail.feature.inbox.domain.MessagePrinter
 import com.otus.mail.feature.inbox.domain.Newsletters
+import com.otus.mail.feature.inbox.domain.OfflineAttachments
 import com.otus.mail.feature.inbox.domain.RemoteImages
 import com.otus.mail.feature.inbox.domain.SavedFiles
 import com.otus.mail.feature.inbox.domain.SenderBlocks
@@ -80,9 +80,12 @@ class ReadPrivacy(
     val allowSender: (String) -> Unit = {},
 )
 
-/** Attachments and printing; each is null where the platform or account has none. */
+/**
+ * Attachments and printing: [downloads] brings files to the device and keeps them offline, [saved]
+ * opens and saves them. Each is null where the platform or account has none.
+ */
 class ReadFiles(
-    val downloads: AttachmentDownloads? = null,
+    val downloads: OfflineAttachments? = null,
     val saved: SavedFiles? = null,
     val printer: MessagePrinter? = null,
 )

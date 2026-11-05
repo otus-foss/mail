@@ -82,6 +82,7 @@ fun App(
         }
     val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
     PageRequestEffects(services, states) { page = it }
+    MessageOpenEffects(states, navigation::go)
     OtusTheme(themeState.palette) {
         CompositionLocalProvider(
             LocalMotionScale provides animationState.speed.scale,
@@ -151,8 +152,8 @@ private fun PageRequestEffects(
     states: MailStates,
     show: (MailPage) -> Unit,
 ) {
-    LaunchedEffect(services) { services.pageRequests.collect { show(it) } }
-    LaunchedEffect(states) { states.outgoing.resume { states.pageRequests.show(MailPage.Compose(it)) } }
+    LaunchedEffect(services) { services.requests.pages.collect { show(it) } }
+    LaunchedEffect(states) { states.outgoing.resume { states.requests.pages.show(MailPage.Compose(it)) } }
 }
 
 /**

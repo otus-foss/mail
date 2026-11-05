@@ -10,7 +10,6 @@ import com.otus.mail.feature.contacts.presentation.ContactPickers
 import com.otus.mail.feature.contacts.presentation.ContactSync
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.FrequentContacts
-import com.otus.mail.feature.folders.domain.FolderRights
 import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderNudgeState
@@ -25,7 +24,6 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.MessageContent
-import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.accountId
 import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.AddressPinsState
@@ -221,8 +219,8 @@ internal class MailStates(
     /** The toasts that offer to undo moves; the process holds them, see [MailServices.work]. */
     val moveToasts: MoveToasts get() = services.moveToasts
 
-    /** Pages that work outliving this composition, such as a toast's, opens. */
-    val pageRequests: PageRequests get() = services.pageRequests
+    /** Pages that work outliving this composition opens, such as a toast's, and what the platform opens. */
+    val requests: MailRequests get() = services.requests
 
     /** The Read view's services, folders, and privacy setting; its toasts join the move toasts. */
     val reading =
@@ -245,7 +243,7 @@ internal class MailStates(
             behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
         }
     private val cleaning = FolderCleaning(services, folders, scope)
-    private val marking = MessageMarking(services, folders, scope)
+    private val marking = MessageMarking(services, folders, moveToasts, scope)
 
     /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
     val sorting = MessageSorting(rules, services.rules, folders, filing, scope)
@@ -267,8 +265,7 @@ internal class MailStates(
                     suggested = filing::suggestedTarget,
                     futureSorting = { sorting.futureSorting(it, feed) },
                 ),
-            canMark = ::canMark,
-            onMark = { messages, flag, on -> marking.mark(feed, messages, flag, on) },
+            marks = marking.marks(feed),
             ruleForSender = senderRules::start,
             readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },
@@ -283,16 +280,4 @@ internal class MailStates(
 
     /** The full body of an open message. */
     suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)
-
-    /** Supplied messages have no server id, so only loaded mail can change its marks. */
-    private fun canMark(
-        message: MailMessage,
-        flag: MessageFlag,
-    ): Boolean = message.emailId.isNotEmpty() && folders.rightsOf(message).allow(flag)
 }
-
-private fun FolderRights.allow(flag: MessageFlag): Boolean =
-    when (flag) {
-        MessageFlag.Read -> maySetSeen
-        MessageFlag.Flagged -> maySetKeywords
-    }

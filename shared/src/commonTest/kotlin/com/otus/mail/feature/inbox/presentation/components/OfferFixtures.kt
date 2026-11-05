@@ -8,6 +8,7 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.MessageMarks
 import com.otus.mail.feature.inbox.presentation.MessageMoves
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 
@@ -19,8 +20,7 @@ internal fun offerActions(
     onMark: (List<MailMessage>, MessageFlag, Boolean) -> Unit = { _, _, _ -> },
 ) = MessageActions(
     moves = MessageMoves(targets = targets, onMove = onMove, suggested = { null }, futureSorting = { null }),
-    canMark = canMark,
-    onMark = onMark,
+    marks = MessageMarks(can = canMark, set = onMark),
     ruleForSender = { null },
     readLater = { null },
     behavior = { MailBehavior() },

@@ -79,7 +79,11 @@ internal class ContactsState(
             ?: writableBooks.firstOrNull()
     }
 
-    val cards: List<ContactCard> by derivedStateOf { applyEdits(snapshot?.cards.orEmpty(), sync.edits, sync.refused) }
+    private val blobPhotos = ContactBlobPhotos(repository, scope)
+
+    val cards: List<ContactCard> by derivedStateOf {
+        applyEdits(snapshot?.cards.orEmpty().withFetchedPhotos(blobPhotos.fetched), sync.edits, sync.refused)
+    }
     val people: List<ContactPerson> by derivedStateOf { people(cards, sync.links) }
 
     /** The [FREQUENT_SHOWN] people the user deals with most, by their best-scoring address. */
@@ -114,6 +118,7 @@ internal class ContactsState(
             try {
                 val loaded = repository.load()
                 snapshot = loaded
+                blobPhotos.fetch(loaded.cards)
                 avatars?.shown(loaded)
                 if (loaded.failedLogins.isNotEmpty() && loaded.cards.isEmpty()) notice = "Couldn’t load your contacts."
                 sync.flush(this@ContactsState::sent)
@@ -133,7 +138,7 @@ internal class ContactsState(
         plan: ImportPlan,
         mode: ImportMode,
     ) {
-        sync.add(plan.edits(mode) { newId() }, ::sent)
+        sync.add(plan.edits(mode, id = ::newId, uid = ::newUid), ::sent)
         importing = null
     }
 

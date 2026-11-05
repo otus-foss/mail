@@ -177,11 +177,21 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
 
 - Marks set or clear one keyword with an `Email/set` patch (RFC 8621, section 4.1.1): `$seen` for
   read and `$flagged` for the flag. Other keywords are untouched; turning a mark off removes the
-  keyword. The open message shows the change at once. If the server refuses, the mark goes back
-  and the inbox shows a notice. Changing the read mark refreshes the folder unread counts.
+  keyword. The open message shows the change at once. If the server refuses, the mark goes back.
+  Changing the read mark refreshes the folder unread counts.
 - A selection and **Mark all read** mark their messages together: one `Email/set` call per
   account for at most `maxObjectsInSet` messages, capped at 256. Only the messages the server
   refuses go back, and the folder counts refresh once.
+- Each mark from a button, a swipe, a selection, or **Mark all read** shows a toast with **Undo**,
+  such as "Email marked as read" or "3 emails flagged". It counts only the messages whose mark
+  changes, and marks of the same kind while it is up count up in it, like moves. Undo sets each
+  message back as it was: a message that already had the mark keeps it, and one the server
+  refused is left alone. The automatic mark when a message opens offers no Undo.
+- When the server refuses some messages of a mark, they go back and a toast names them, such as
+  "Couldn't mark 2 emails as read", with **Retry**. It has no timer; Retry sends only the
+  refused messages again, and the ones it changes get their own Undo. A refused Undo offers
+  Retry the same way. `MarkOutcome` works out what Undo and Retry send, and `MessageMarking` runs
+  them in the toasts' process-wide scope, so they still reach the server after a rotation.
 - Archive, Trash, and Spam move the message to the account's folder with the `archive`, `trash`,
   or `junk` role, found by role because servers name these folders differently. Each is offered
   only when that folder exists and the message is not already in it. Archive also takes the
@@ -191,7 +201,7 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
   with **Undo**, such as "Email deleted" or "Moved to Clients". Moves to the same folder while
   its toast is up count up in it, such as "3 emails deleted", and Undo puts all of them back
   once their own moves have finished. The toast comes from Meta's `ToastHost`; dismissing it
-  keeps the move.
+  keeps the move. Marks share these toasts (`MoveToasts`).
 - **Read later**, when it is on, adds the account's Read later folder and keeps the message where
   it is; a saved message offers **Remove from Read later**. See
   [Folders and rules](folders.md#read-later).

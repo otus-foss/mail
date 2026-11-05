@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import com.otus.mail.feature.inbox.domain.AttachmentDownloads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.FolderChange
@@ -30,6 +29,7 @@ import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.MessageMarks
 import com.otus.mail.feature.inbox.presentation.MessageMoves
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.PageChanges
@@ -166,7 +166,7 @@ internal object ReadViewFixtures {
         privacy = ReadPrivacy({ RemoteImages.Known }, known = KnownPeople { team.map { it.address }.toSet() }),
         files =
             ReadFiles(
-                downloads = AttachmentDownloads { _, file -> photo().takeIf { file.type.startsWith("image/") } },
+                downloads = PhotoAttachments(::photo),
                 printer = MessagePrinter { _, _ -> },
             ),
         services =
@@ -207,8 +207,7 @@ internal object ReadViewFixtures {
         targets: List<MoveTarget> = emptyList(),
     ) = MessageActions(
         moves = MessageMoves(targets = { targets }, onMove = { _, _ -> }, suggested = { null }) { null },
-        canMark = { _, _ -> true },
-        onMark = { _, _, _ -> },
+        marks = MessageMarks(can = { _, _ -> true }, set = { _, _, _ -> }),
         ruleForSender = { null },
         readLater = { null },
         behavior = { behavior },

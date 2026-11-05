@@ -30,10 +30,13 @@ fun MailAttachment.kind(): AttachmentKindName {
     return KIND_RULES.firstOrNull { it.matches(type, extension) }?.kind ?: AttachmentKindName.Other
 }
 
-/** The line under the file's name: its kind and size, as in "PDF · 240 KB" or "ZIP · 1 MB". */
-fun MailAttachment.detail(): String {
+/**
+ * The line under the file's name: its kind and size, as in "PDF · 240 KB" or "ZIP · 1 MB", and
+ * "Offline" after them when the user [kept] it on the device.
+ */
+fun MailAttachment.detail(kept: Boolean = false): String {
     val kind = kind().label ?: extension.uppercase().ifBlank { "File" }
-    return "$kind · ${sizeText(size)}"
+    return if (kept) "$kind · ${sizeText(size)} · Offline" else "$kind · ${sizeText(size)}"
 }
 
 /** The attachment strip's line: how many files and their total size, as in "3 attachments · 4.2 MB". */

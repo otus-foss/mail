@@ -58,8 +58,9 @@ defined.
 ## Device storage
 
 Mail keeps each login's mailboxes, emails, threads, bodies, and sync states in an SQLite database
-behind `core/cache/MailCache`. See [storage](storage.md) for what it holds, where the file lives,
-and how long it keeps bodies.
+behind `core/cache/MailCache`, and downloaded attachments as files behind `core/files/DownloadFolder`,
+which each platform implements. See [storage](storage.md) for what they hold, where the files
+live, and how long they keep them.
 
 ## Avatar service
 

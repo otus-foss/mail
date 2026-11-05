@@ -53,9 +53,8 @@ data class MoveTarget(
 class MessageActions(
     /** Where the message can move, and the move itself. */
     val moves: MessageMoves,
-    val canMark: (MailMessage, MessageFlag) -> Boolean,
-    /** Turns a mark on or off for some messages together; the open message shows the change at once. */
-    val onMark: (List<MailMessage>, MessageFlag, Boolean) -> Unit,
+    /** Which messages can take a read or flag mark, and the change itself. */
+    val marks: MessageMarks,
     /** Starts a rule for mail from the message's sender; null when its account has no rules. */
     val ruleForSender: (MailMessage) -> (() -> Unit)?,
     /** Read later for the message, shown at once when applied; null while it is off or cannot change it. */
@@ -74,6 +73,6 @@ class MessageActions(
     /** Marks an unread message read as it opens, when the saved behavior asks for it. */
     fun opened(message: MailMessage) {
         val markRead = behavior().markReadOnOpen && message.attributes.unread
-        if (markRead && canMark(message, MessageFlag.Read)) onMark(listOf(message), MessageFlag.Read, true)
+        if (markRead && marks.can(message, MessageFlag.Read)) marks.opened(message)
     }
 }

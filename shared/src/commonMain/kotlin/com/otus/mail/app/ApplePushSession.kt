@@ -29,7 +29,7 @@ internal class ApplePushSession(
     val mailServices: MailServices by lazy(createServices)
     private val subscriptions: PushSubscriptions by lazy {
         val saved = host.read("device")
-        val deviceId = saved ?: host.newIdentifier()
+        val deviceId = saved ?: host.createIdentifier()
         if (saved == null) check(host.write("device", deviceId))
         mailServices.pushSubscriptions(storage, "ios-$deviceId", MailPush.Deliveries) { login ->
             val registration = storage.registrations()[login]
@@ -158,7 +158,7 @@ internal class ApplePushSession(
         deviceToken: String,
         client: ApplePushBridge,
     ): AppleRegistration {
-        val keyId = host.newIdentifier()
+        val keyId = host.createIdentifier()
         val keys = checkNotNull(host.createKey(keyId)) { "Push keys unavailable" }
         var saved = false
         try {

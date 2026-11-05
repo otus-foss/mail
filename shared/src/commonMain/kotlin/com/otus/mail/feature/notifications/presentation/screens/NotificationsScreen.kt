@@ -20,6 +20,7 @@ import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
+import com.otus.mail.feature.notifications.presentation.ButtonsInfo
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.mail.feature.notifications.presentation.PreviewsInfo
 import com.otus.mail.feature.notifications.presentation.description
@@ -27,12 +28,16 @@ import com.otus.mail.feature.notifications.presentation.overrideSummary
 import com.otus.mail.feature.notifications.presentation.short
 import com.otus.mail.feature.notifications.presentation.title
 
-/** Delivery choices, registration status, and, where alerts can show mail, what they show. */
+/**
+ * Delivery choices, registration status, and, where alerts can show mail, what they show and the
+ * [buttons] setting for what their buttons do.
+ */
 @Composable
 fun NotificationsScreen(
     state: NotificationSettingsState,
     accounts: List<ConnectedAccount>,
     onBack: () -> Unit,
+    buttons: (@Composable () -> Unit)? = null,
     onOpenOverrides: () -> Unit,
 ) {
     LaunchedEffect(state) { state.watch() }
@@ -51,6 +56,8 @@ fun NotificationsScreen(
             }
         }
         state.previews?.let { PreviewsSection(state, it, accounts, onOpenOverrides) }
+        // Only alerts that show the message have buttons, so they come with previews.
+        if (state.previews != null && buttons != null) SettingsSection("Buttons", info = ButtonsInfo) { buttons() }
         if (current != null) NotInstantSection(state, accounts)
     }
     if (choosing) {

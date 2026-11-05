@@ -18,7 +18,7 @@ import kotlinx.datetime.LocalDateTime
 /**
  * A draft for the page's request; without an account there is nothing to write from. A discarded
  * draft offers Undo, which opens it again, and its saved copy is deleted once the toast leaves. The
- * toasts can outlive this composition, so they open the draft through [MailStates.pageRequests].
+ * toasts can outlive this composition, so they open the draft through [MailStates.requests].
  */
 @Composable
 internal fun ComposePage(
@@ -33,8 +33,8 @@ internal fun ComposePage(
                 override fun close() = onClose()
 
                 override fun discarded(delete: () -> Unit) {
-                    val undo =
-                        ToastAction("Undo") { states.pageRequests.showLater(page.copy(request = compose.reopening())) }
+                    val pages = states.requests.pages
+                    val undo = ToastAction("Undo") { pages.showLater(page.copy(request = compose.reopening())) }
                     states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = delete))
                     onClose()
                 }
@@ -44,7 +44,7 @@ internal fun ComposePage(
                     at: LocalDateTime?,
                 ) {
                     val outgoing =
-                        Outgoing(draft, compose.reopening()) { states.pageRequests.show(page.copy(request = it)) }
+                        Outgoing(draft, compose.reopening()) { states.requests.pages.show(page.copy(request = it)) }
                     if (at == null) states.outgoing.send(outgoing) else states.outgoing.schedule(outgoing, at)
                     onClose()
                 }
