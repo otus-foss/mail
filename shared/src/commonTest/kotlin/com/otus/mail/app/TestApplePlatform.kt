@@ -8,7 +8,7 @@ internal class TestApplePlatform : ApplePushPlatform {
     var removed = false
     var stopped = false
 
-    override fun newIdentifier() = "12345678-1234-1234-1234-123456789012"
+    override fun createIdentifier() = "12345678-1234-1234-1234-123456789012"
 
     override fun requestRegistration() = Unit
 
