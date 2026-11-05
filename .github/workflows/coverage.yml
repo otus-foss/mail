@@ -3,6 +3,7 @@ name: coverage
 # Measures test coverage with Kover and reports it; the numbers never fail the run. It runs when the
 # quality workflow does: once a pull request is ready, on later pushes only while the pull request has
 # the "ci on every push" label, on every push to main, and by hand. Draft pull requests never run it.
+# A run by hand with a pull request number reports on that pull request without running quality.
 on:
   pull_request:
     types: [opened, ready_for_review, synchronize, labeled]
@@ -11,6 +12,11 @@ on:
     branches: [main]
     paths-ignore: ["**/*.md"]
   workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to report on and comment; empty for the selected branch
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -18,7 +24,7 @@ permissions:
 # Each kind of event gets its own group, so a run that skips every job, such as an unlabeled push,
 # does not cancel a real one. Runs on main never cancel each other.
 concurrency:
-  group: coverage-${{ github.workflow }}-${{ github.ref }}-${{ github.event.action }}
+  group: coverage-${{ github.workflow }}-${{ github.ref }}-${{ github.event.action }}-${{ inputs.pr }}
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
@@ -32,9 +38,36 @@ jobs:
         github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
         github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
     runs-on: ubicloud-standard-2
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      pr: ${{ steps.target.outputs.pr }}
     steps:
+      # Picks the pull request to report on: the one that started the run, or the one a run by hand
+      # names, whose merge commit and base it then reads.
+      - id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_PR: ${{ inputs.pr }}
+          EVENT_PR: ${{ github.event.pull_request.number }}
+          EVENT_BASE: ${{ github.event.pull_request.base.sha }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if [ -z "$INPUT_PR" ]; then
+            printf 'pr=%s\nbase=%s\nbranch=%s\nref=\n' "$EVENT_PR" "$EVENT_BASE" "$BRANCH" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          case "$INPUT_PR" in
+            *[!0-9]*) echo '::error::The pr input must be a pull request number.'; exit 1 ;;
+          esac
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$INPUT_PR" \
+            --jq '"base=\(.base.sha)\nbranch=\(.head.ref)"' >> "$GITHUB_OUTPUT"
+          printf 'pr=%s\nref=refs/pull/%s/merge\n' "$INPUT_PR" "$INPUT_PR" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ steps.target.outputs.ref }}
           fetch-depth: 0
           persist-credentials: false
       # Meta publishing is paused, so build against Meta's source, as the quality workflow does.
@@ -48,7 +81,7 @@ jobs:
       # Meta moves out of the workspace, so its sources don't count as Mail's.
       - name: Use the Meta branch with this branch's name, if there is one
         env:
-          BRANCH: ${{ github.head_ref || github.ref_name }}
+          BRANCH: ${{ steps.target.outputs.branch }}
         run: |
           mv otus-meta "$RUNNER_TEMP/otus-meta"
           cd "$RUNNER_TEMP/otus-meta"
@@ -75,7 +108,7 @@ jobs:
           -Potus.meta.path="$RUNNER_TEMP/otus-meta"
       - name: Write the summary
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
+          BASE: ${{ steps.target.outputs.base }}
         run: |
           set -- build/reports/kover/reportCoverage.xml
           if [ -n "$BASE" ]; then set -- "$@" --base "$BASE"; fi
@@ -96,7 +129,7 @@ jobs:
   # write to the pull request, so no build step gets that token.
   comment:
     needs: report
-    if: github.event_name == 'pull_request'
+    if: needs.report.outputs.pr != ''
     runs-on: ubicloud-standard-2
     permissions:
       pull-requests: write
@@ -107,7 +140,7 @@ jobs:
       - name: Comment the coverage
         env:
           GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
+          PR: ${{ needs.report.outputs.pr }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           marker="<!-- otus-coverage -->"

@@ -126,6 +126,12 @@ artifact, and on a pull request keeps one comment up to date. A separate job wit
 `pull-requests: write` posts that comment. Low coverage never fails the run; a failing test does,
 and then there is no report.
 
+To report on another open pull request without running `quality` again, run `coverage` by hand
+and enter the pull request's number as `pr`. The run checks out that pull request's merge commit,
+diffs it against its base, and posts or updates the comment on that pull request. The merge commit
+needs the `coverage` variant and `tools/coverage_report.py`, so merge `main` into an older pull
+request first. Leave `pr` empty to report on the branch the run starts from, without a comment.
+
 `tools/coverage_report.py` writes the summary. It counts only handwritten main Kotlin sources, so
 generated code such as SQLDelight queries and Compose resources is left out.
 
