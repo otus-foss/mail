@@ -1,22 +1,20 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
-    alias(libs.plugins.androidApplication)
-    alias(libs.plugins.composeCompiler)
+    id("otus.android-app")
+    id("otus.screenshots")
 }
 
 dependencies {
     implementation(projects.shared)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.work.runtime)
-    implementation(libs.unifiedpush.connector)
-    implementation(libs.unifiedpush.fcm)
-    implementation(libs.sqldelight.android.driver)
+    implementation(appLibs.androidx.work.runtime)
+    implementation(appLibs.unifiedpush.connector)
+    implementation(appLibs.unifiedpush.fcm)
+    implementation(appLibs.sqldelight.android.driver)
     implementation(libs.compose.foundation)
     testImplementation(libs.robolectric)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
-    testImplementation(libs.androidx.work.testing)
+    testImplementation(appLibs.androidx.work.testing)
     testImplementation(libs.compose.material)
     testImplementation(libs.androidx.compose.ui.test)
     testImplementation(libs.kotlinx.datetime)
@@ -33,30 +31,7 @@ val commit =
         .map { it.trim().ifEmpty { "unknown" } }
 
 android {
-    testOptions.unitTests.isIncludeAndroidResources = true
-    lint {
-        abortOnError = true
-        warningsAsErrors = true
-        checkDependencies = true
-        // ktlint and detekt cover test code; Android lint on tests took a third of its time.
-        ignoreTestSources = true
-    }
-    namespace = "com.otus.mail"
-    compileSdk =
-        libs.versions.android.compileSdk
-            .get()
-            .toInt()
-
     defaultConfig {
-        applicationId = "com.otus.mail"
-        minSdk =
-            libs.versions.android.minSdk
-                .get()
-                .toInt()
-        targetSdk =
-            libs.versions.android.targetSdk
-                .get()
-                .toInt()
         // The nightly workflow increments the release number for changes in Mail or Meta.
         versionCode = providers.gradleProperty("otus.versionCode").map(String::toInt).getOrElse(1)
         versionName = providers.gradleProperty("otus.versionName").getOrElse("1.0")
@@ -76,11 +51,6 @@ android {
                 keyPassword = password
             }
         }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
     buildTypes {
         getByName("release") {
             buildConfigField("String", "CHANNEL", "\"Stable\"")
@@ -104,37 +74,11 @@ android {
             signingConfig = nightlySigning
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
 }
-
-kotlin {
-    compilerOptions {
-        allWarningsAsErrors.set(true)
-        jvmTarget = JvmTarget.JVM_11
-    }
-}
-
-// Screenshot tests compare against the PNGs in src/test/screenshots. Pass -Proborazzi.record to
-// write new ones instead, as Meta's design system does.
-val screenshots = layout.projectDirectory.dir("src/test/screenshots")
-val recordScreenshots = providers.gradleProperty("roborazzi.record").isPresent
 
 tasks.withType<Test>().configureEach {
     // Keep native UI-test memory bounded on shared machines.
     maxParallelForks = 2
-    inputs
-        .dir(screenshots)
-        .withPropertyName("screenshots")
-        .withPathSensitivity(PathSensitivity.RELATIVE)
-        .optional()
-    systemProperty(if (recordScreenshots) "roborazzi.test.record" else "roborazzi.test.verify", "true")
-    if (recordScreenshots) {
-        outputs.upToDateWhen { false }
-        outputs.doNotCacheIf("Recording writes baselines outside the test outputs") { true }
-    }
     jvmArgs(
         "--add-opens=java.base/java.lang=ALL-UNNAMED",
         "--add-opens=java.base/java.util=ALL-UNNAMED",
