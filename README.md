@@ -50,6 +50,8 @@ Apple Silicon simulators, iOS 15.3+.
 
 See [Apple push delivery](docs/apple-push.md) for APNs bridge deployment, signing, and notification tests.
 
+See [network destinations](docs/network-destinations.md) for every host the app contacts, when, and which setting turns it off.
+
 ## Toolchain and attribution
 
 Versions are pinned in `gradle/libs.versions.toml`. The Gradle wrapper includes a distribution
