@@ -49,15 +49,6 @@ fun interface ConversationMessages {
     suspend fun messages(message: MailMessage): List<MailMessage>?
 }
 
-/** Downloads a message's attached files. */
-fun interface AttachmentDownloads {
-    /** [file]'s bytes; null when the server could not be reached or refused. */
-    suspend fun download(
-        message: MailMessage,
-        file: MailAttachment,
-    ): ByteArray?
-}
-
 /** The addresses the user knows on an account: their contacts and the people they wrote to. */
 fun interface KnownPeople {
     /** Lowercase addresses; empty when none could be loaded. */
@@ -134,21 +125,20 @@ fun interface SenderBlocks {
     suspend fun block(message: MailMessage): Boolean
 }
 
-/** The platform's file handling for attachments. */
+/** The platform's file handling for attachments and other files the app makes. */
 interface SavedFiles {
-    /** Saves to the device's downloads; false when it failed. */
+    /** Saves [bytes] to the device's downloads as [name]; false when it failed. */
     suspend fun save(
         name: String,
         type: String,
         bytes: ByteArray,
     ): Boolean
 
-    /** Opens the file in an app that shows it; false when none can. */
-    suspend fun open(
-        name: String,
-        type: String,
-        bytes: ByteArray,
-    ): Boolean
+    /** Copies a downloaded [file] to the device's downloads; false when it failed. */
+    suspend fun save(file: StoredFile): Boolean
+
+    /** Opens a downloaded [file] in an app that shows it; false when none can. */
+    suspend fun open(file: StoredFile): Boolean
 }
 
 /** Prints a message, or saves it as a PDF, through the platform's print dialog. */

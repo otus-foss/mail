@@ -54,7 +54,7 @@ internal class ReadWiring(
             known = services.knownPeople,
             allowSender = { address -> behavior.update { it.allowingSender(address) } },
         )
-    private val files = ReadFiles(services.downloads, services.pickers.savedFiles, services.pickers.printer)
+    private val files = ReadFiles(services.attachments, services.pickers.savedFiles, services.pickers.printer)
 
     /** The Read view of messages that [feed] lists, whose folder, when it shows one, is left out of strips. */
     fun context(

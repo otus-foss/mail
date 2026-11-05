@@ -10,8 +10,8 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailingList
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
+import com.otus.mail.feature.inbox.presentation.AttachmentTransfers
 import com.otus.mail.feature.inbox.presentation.NewsletterStep
-import com.otus.mail.feature.inbox.presentation.PageDownloads
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.read.AttachmentKindName
 import com.otus.mail.feature.inbox.presentation.read.kind
@@ -21,8 +21,8 @@ import kotlinx.coroutines.withContext
 /**
  * What the strips below a page do with its files and its mailing list. Downloads and requests run
  * in the process's scope, so they finish after the page closes, and say how they went in a toast.
- * A file is downloaded once while the view is open, for its thumbnail, Open, and Save alike.
- * [openLink] opens a web page outside the app.
+ * A file is downloaded to the device once, for its thumbnail, Open, and Save alike; see
+ * [AttachmentTransfers]. [openLink] opens a web page outside the app.
  */
 internal class ReadStripActions(
     private val read: ReadContext,
@@ -30,7 +30,7 @@ internal class ReadStripActions(
 ) {
     private val toasts get() = read.effects.toasts
     private val newsletters get() = read.effects.newsletters
-    private val downloads = PageDownloads(read.files.downloads)
+    private val transfers = AttachmentTransfers(read.files.downloads, read.files.saved, toasts, read.effects.launch)
 
     /** Opening, saving, and saving every one of [files] of [message]. */
     fun files(
@@ -38,10 +38,22 @@ internal class ReadStripActions(
         files: List<MailAttachment>,
     ): AttachmentActions =
         AttachmentActions(
-            onOpen = { index -> open(message, files[index]) },
-            onSave = { index -> save(message, listOf(files[index])) },
-            onSaveAll = { save(message, files) },
+            onOpen = { index -> transfers.open(message, files[index]) },
+            onSave = { index -> transfers.save(message, listOf(files[index])) },
+            onSaveAll = { transfers.save(message, files) },
         )
+
+    /** Whether [file] is kept offline, once [loadKept] has read it. */
+    fun isKept(
+        message: MailMessage,
+        file: MailAttachment,
+    ): Boolean = transfers.isKept(message, file)
+
+    /** Reads which of [message]'s [files] are kept offline. */
+    suspend fun loadKept(
+        message: MailMessage,
+        files: List<MailAttachment>,
+    ) = transfers.loadKept(message, files)
 
     /**
      * A small picture of [file] for the strip, when it is an image small enough to download just
@@ -53,46 +65,8 @@ internal class ReadStripActions(
     ): ImageBitmap? =
         file
             .takeIf { it.kind() == AttachmentKindName.Image && it.size <= THUMBNAIL_MAX_BYTES }
-            ?.let { downloads.bytes(message, it) }
+            ?.let { transfers.bytes(message, it) }
             ?.let { withContext(Dispatchers.Default) { decodeImage(it, THUMBNAIL_PIXELS) } }
-
-    private fun open(
-        message: MailMessage,
-        file: MailAttachment,
-    ) {
-        val saved = read.files.saved ?: return
-        read.effects.launch {
-            val bytes = downloads.bytes(message, file)
-            if (bytes == null || !saved.open(file.name, file.type, bytes)) {
-                toasts.show(ToastMessage("Couldn't open ${file.name}"))
-            }
-        }
-    }
-
-    private fun save(
-        message: MailMessage,
-        files: List<MailAttachment>,
-    ) {
-        val saved = read.files.saved ?: return
-        // A download can take a while, so the tap answers at once and the outcome replaces it.
-        val group = Any()
-        val saving = if (files.size == 1) "Saving ${files.single().name}…" else "Saving ${files.size} files…"
-        toasts.show(ToastMessage(saving, group = group, sticky = true))
-        read.effects.launch {
-            val failed =
-                files.filterNot { file ->
-                    val bytes = downloads.bytes(message, file)
-                    bytes != null && saved.save(file.name, file.type, bytes)
-                }
-            val text =
-                when {
-                    failed.isEmpty() -> "Saved to Downloads"
-                    failed.size == 1 -> "Couldn't save ${failed.single().name}"
-                    else -> "Couldn't save ${failed.size} files"
-                }
-            toasts.show(ToastMessage(text, group = group))
-        }
-    }
 
     /** Where [message]'s newsletter strip stands. */
     fun step(message: MailMessage): NewsletterStep = newsletters.of(message)

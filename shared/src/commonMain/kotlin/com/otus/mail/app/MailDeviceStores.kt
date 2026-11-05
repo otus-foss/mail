@@ -2,6 +2,8 @@ package com.otus.mail.app
 
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.files.DownloadFolder
+import com.otus.mail.core.files.InMemoryDownloadFolder
 import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
@@ -13,8 +15,8 @@ import com.otus.mail.feature.notifications.domain.NotificationPreviewStore
 
 /**
  * App-private settings and mail kept on this device only; null where a platform keeps none. The
- * [cache] stays in memory where a platform has no database. [notificationPreviews] exists only where
- * alerts can show message content.
+ * [cache] and the [downloads] folder of attachments stay in memory where a platform has no database
+ * or folder. [notificationPreviews] exists only where alerts can show message content.
  */
 class MailDeviceStores(
     val folders: FolderStores = FolderStores(),
@@ -23,6 +25,7 @@ class MailDeviceStores(
     val notificationPreviews: NotificationPreviewStore? = null,
     val contacts: ContactStore? = null,
     val waiting: WaitingStores = WaitingStores(),
+    val downloads: DownloadFolder = InMemoryDownloadFolder(),
 )
 
 /** Each folder's Read later role, color, and the nudges shown about it. */
