@@ -16,12 +16,14 @@ import kotlinx.coroutines.flow.first
 
 /**
  * Covers the app with the launch animation, once per launch, until the inbox shows mail: the
- * device's copy, which comes before the server answers, or the first load's result.
+ * device's copy, which comes before the server answers, or the first load's result. When Mail
+ * opens on another page, not the [inbox], the inbox does not load, so the animation plays once.
  */
 @Composable
 internal fun LaunchCover(
     feed: InboxFeedState,
     style: AppIconStyle,
+    inbox: Boolean,
 ) {
     var launching by rememberSaveable { mutableStateOf(true) }
     var inboxLoaded by remember { mutableStateOf(false) }
@@ -31,5 +33,5 @@ internal fun LaunchCover(
             .first { (loading, shown) -> shown || !loading }
         inboxLoaded = true
     }
-    if (launching) MailLaunch(style, loading = !inboxLoaded, onFinished = { launching = false })
+    if (launching) MailLaunch(style, loading = inbox && !inboxLoaded, onFinished = { launching = false })
 }

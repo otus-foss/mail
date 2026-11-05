@@ -62,6 +62,8 @@ internal fun MailBehaviorPage(
     MailBehaviorScreen(
         states.behavior,
         rememberFolderPills(states),
+        // Not remembered: folder colors change apart from the accounts.
+        sidebarPinOptions(states.folders.accounts, states.folderColors::groupColorOf),
         open = { page -> navigation.go(page.mailPage) },
         onBack = back,
     )

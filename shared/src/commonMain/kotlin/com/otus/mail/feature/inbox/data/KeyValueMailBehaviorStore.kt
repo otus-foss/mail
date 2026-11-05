@@ -19,6 +19,7 @@ import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.QuickViewModule
 import com.otus.mail.feature.inbox.domain.ReadQuickModule
 import com.otus.mail.feature.inbox.domain.SidebarLayout
+import com.otus.mail.feature.inbox.domain.SidebarPin
 import com.otus.mail.feature.inbox.domain.decodeAddresses
 import com.otus.mail.feature.inbox.domain.decodeNotificationActions
 import com.otus.mail.feature.inbox.domain.decodeRemoteImages
@@ -65,6 +66,7 @@ class KeyValueMailBehaviorStore(
                 allowedSenders = decodeAddresses(string(ALLOWED_SENDERS)),
                 notificationActions =
                     decoded(NOTIFICATION_ACTIONS, defaults.notificationActions, ::decodeNotificationActions),
+                startPage = decoded(START_PAGE, SidebarPin::fromStorageValue) ?: defaults.startPage,
             )
         }
 
@@ -99,6 +101,7 @@ class KeyValueMailBehaviorStore(
             put(REMOTE_IMAGES, behavior.remoteImages.storageValue)
             put(ALLOWED_SENDERS, encodeAddresses(behavior.allowedSenders))
             put(NOTIFICATION_ACTIONS, encodeNotificationActions(behavior.notificationActions))
+            put(START_PAGE, behavior.startPage.storageValue)
         }
     }
 
@@ -153,6 +156,7 @@ class KeyValueMailBehaviorStore(
         const val EARLIER_REMOTE_IMAGES = "remote_images"
         const val ALLOWED_SENDERS = "allowed_senders"
         const val NOTIFICATION_ACTIONS = "notification_actions"
+        const val START_PAGE = "start_page"
 
         fun barKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
     }

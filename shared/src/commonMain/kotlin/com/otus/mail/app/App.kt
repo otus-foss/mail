@@ -28,6 +28,7 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.brand.AppIconStyle
 import com.otus.designsystem.theme.motion.LocalMotionScale
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.feature.inbox.domain.SidebarPin
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.BackHandler
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
@@ -54,7 +55,9 @@ fun App(
     build: InstalledBuild? = null,
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
-    var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf<MailPage>(MailPage.Inbox) }
+    // The start page is read once per launch; changing it in settings applies at the next launch.
+    val start = remember(behaviorState) { behaviorState.behavior.startPage }
+    var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf(launchPage(start)) }
     val sidebar = rememberSidebarState()
     // Whose mail the pages show; it lasts for the process, like the page.
     var chosenScope by rememberSaveable(stateSaver = MailScopeChoiceSaver) {
@@ -66,17 +69,14 @@ fun App(
             MailStates(services, scope, behaviorState, { chosenScope }) { chosenScope = it }
         }
     val nightly = rememberNightlyUpdate(services, build)
-    FolderEffects(states, behaviorState)
+    LoadEffects(states, behaviorState, start, current = { page }) { page = it }
     // Reload whenever the inbox is shown, including at launch.
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
     ServerChangeEffects(services, states) { page == MailPage.Inbox }
     AvatarEffects(states, behaviorState)
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
     val pages = rememberSaveableStateHolder()
-    val settings =
-        remember(dateFormatState, themeState, animationState, appIconState) {
-            SharedSettings(dateFormatState, themeState, animationState, appIconState)
-        }
+    val settings = rememberSharedSettings(dateFormatState, themeState, animationState, appIconState)
     val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
     PageRequestEffects(services, states) { page = it }
     MessageOpenEffects(states, navigation::go)
@@ -110,7 +110,7 @@ fun App(
                         scope.launch { sidebar.close() }
                     },
                 )
-                LaunchCover(states.feed, appIconState?.style ?: AppIconStyle.Accent)
+                LaunchCover(states.feed, appIconState?.style ?: AppIconStyle.Accent, inbox = start == SidebarPin.Inbox)
             }
             // Outlives the page a move closed, such as the open message.
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
@@ -120,16 +120,23 @@ fun App(
 }
 
 /**
- * Loads the folders and rules. Rules decide whether an open message offers to start one. Folders
- * fill the sidebar; turning Read later on finds or creates its folders, and off unmarks them.
+ * Loads the rules and the folders at launch, and the folders again whenever Read later turns on or
+ * off. Once the folders have loaded, a [start] page no account has gives way to the Inbox through
+ * [show] while [current] still shows it.
  */
 @Composable
-private fun FolderEffects(
+private fun LoadEffects(
     states: MailStates,
     behaviorState: MailBehaviorState,
+    start: SidebarPin,
+    current: () -> MailPage,
+    show: (MailPage) -> Unit,
 ) {
+    // Rules decide whether an open message offers to start one.
     LaunchedEffect(states) { states.rules.refresh() }
+    // Folders fill the sidebar. Turning Read later on finds or creates its folders; off unmarks them.
     LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
+    StartPageFallback(start, states.folders, current, show)
 }
 
 /**
