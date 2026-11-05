@@ -110,22 +110,30 @@ internal class ContactsState(
         loadCards()
     }
 
-    /** Loads every login's cards again, without the frequent people, which read mail. */
+    /**
+     * Loads every login's cards again, without the frequent people, which read mail. Before the
+     * first load, the cards the device kept show at once, and stay when the servers cannot be reached.
+     */
     fun loadCards() {
         if (loading) return
         loading = true
         scope.launch {
             try {
+                if (snapshot == null) repository.cached()?.let(::show)
                 val loaded = repository.load()
-                snapshot = loaded
-                blobPhotos.fetch(loaded.cards)
-                avatars?.shown(loaded)
+                show(loaded)
                 if (loaded.failedLogins.isNotEmpty() && loaded.cards.isEmpty()) notice = "Couldn’t load your contacts."
                 sync.flush(this@ContactsState::sent)
             } finally {
                 loading = false
             }
         }
+    }
+
+    private fun show(loaded: ContactsSnapshot) {
+        snapshot = loaded
+        blobPhotos.fetch(loaded.cards)
+        avatars?.shown(loaded)
     }
 
     /** Asks for a vCard file and holds it in [importing] for the import sheet. */

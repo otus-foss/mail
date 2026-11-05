@@ -48,7 +48,7 @@ internal fun CacheWrite.replaceMailboxes(mailboxes: List<MailboxObject>) {
     mailboxes.forEach { putObject(CacheKind.Mailbox, it.id, MailboxObject.serializer(), it) }
 }
 
-private fun <T> Map<String, String>.decoded(serializer: KSerializer<T>): Map<String, T> =
+internal fun <T> Map<String, String>.decoded(serializer: KSerializer<T>): Map<String, T> =
     mapNotNull { (id, json) ->
         try {
             id to JmapJson.decodeFromString(serializer, json)

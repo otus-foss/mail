@@ -15,3 +15,11 @@ inline fun <T> mailCallOr(
     } catch (expected: LoginStoreException) {
         fallback
     }
+
+/** [read]'s result, or null when the server refused that call. */
+internal inline fun <T> unlessRefused(read: () -> T): T? =
+    try {
+        read()
+    } catch (expected: JmapException.MethodError) {
+        null
+    }

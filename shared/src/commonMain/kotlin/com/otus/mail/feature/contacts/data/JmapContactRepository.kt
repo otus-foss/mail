@@ -6,22 +6,18 @@ import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
-import com.otus.jmap.JmapSession
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
-import com.otus.jmap.contacts.AddressBookOrder
-import com.otus.jmap.contacts.AddressBookType
 import com.otus.jmap.contacts.ContactCardType
-import com.otus.jmap.contacts.contactCardPropertiesWithVCard
 import com.otus.jmap.contacts.toCreation
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jscontact.Card
 import com.otus.jscontact.Media
+import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.cache.withAccount
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
-import com.otus.mail.feature.contacts.domain.ContactBook
-import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactRepository
 import com.otus.mail.feature.contacts.domain.ContactWriteException
 import com.otus.mail.feature.contacts.domain.ContactWriteFailure
@@ -32,7 +28,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -43,21 +38,25 @@ import kotlinx.serialization.json.put
 internal class JmapContactRepository(
     private val connections: JmapConnections,
     private val logins: LoginStore,
+    private val cache: MailCache,
 ) : ContactRepository {
     override suspend fun load(): ContactsSnapshot =
         coroutineScope {
             val loaded =
                 withContext(Dispatchers.IO) { logins.logins() }
-                    .map { login -> async { login.id to runCatching { loadLogin(login) } } }
+                    .map { login -> async { login to runCatching { loadLogin(login) } } }
                     .awaitAll()
-            val found = loaded.mapNotNull { (_, result) -> result.getOrNull() }
-            ContactsSnapshot(
-                books = found.flatMap { it.books },
-                cards = found.flatMap { it.cards },
-                hasContacts = found.any { it.hasContacts } || loaded.any { (_, result) -> result.isFailure },
-                failedLogins = loaded.filter { (_, result) -> result.isFailure }.map { it.first },
-            )
+            val failed = loaded.filter { (_, result) -> result.isFailure }.map { it.first }
+            // A login the server did not answer for shows what the device kept of it.
+            val found = loaded.mapNotNull { (_, result) -> result.getOrNull() } + failed.mapNotNull { cachedLogin(it) }
+            snapshot(found, failed.map { it.id })
         }
+
+    override suspend fun cached(): ContactsSnapshot? =
+        withContext(Dispatchers.IO) { logins.logins() }
+            .mapNotNull { cachedLogin(it) }
+            .takeIf { it.isNotEmpty() }
+            ?.let { snapshot(it, failedLogins = emptyList()) }
 
     override suspend fun create(
         book: BookKey,
@@ -137,84 +136,29 @@ internal class JmapContactRepository(
             null
         }
 
-    private suspend fun loadLogin(login: JmapLogin): LoginContacts {
-        val connection = connections.connection(login)
-        val session = connection.session()
-        if (JmapCapability.CONTACTS !in session.capabilities) {
-            return LoginContacts(emptyList(), emptyList(), hasContacts = false)
-        }
-        val own = session.accountFor(JmapCapability.CONTACTS)
-        val accounts = session.accounts.filterValues { JmapCapability.CONTACTS in it.capabilities }.keys
-        val parts = accounts.map { account -> loadAccount(login, connection, session, account, own) }
-        return LoginContacts(parts.flatMap { it.first }, parts.flatMap { it.second }, hasContacts = true)
-    }
-
-    private suspend fun loadAccount(
-        login: JmapLogin,
-        connection: JmapConnection,
-        session: JmapSession,
-        account: String,
-        own: String?,
-    ): Pair<List<ContactBook>, List<ContactCard>> {
-        val info = session.accounts.getValue(account)
-        val shared = account != own && !info.isPersonal
-        val books =
-            connection
-                .call(GetMethod(AddressBookType, account))
-                .list
-                .filter { it.myRights.mayRead }
-                .sortedWith(AddressBookOrder)
-                .map { book ->
-                    ContactBook(
-                        BookKey(login.id, account, book.id),
-                        bookName(book.name, login, info.name),
-                        login.name,
-                        isDefault = book.isDefault && !shared,
-                        canWrite = book.myRights.mayWrite && !info.isReadOnly,
-                        sharedBy = info.name.takeIf { shared },
-                    )
-                }
-        val known = books.map { it.key.bookId }.toSet()
-        val cards =
-            cards(connection, session, account).map { card ->
-                ContactCard(
-                    CardKey(login.id, account, requireNotNull(card.id)),
-                    card,
-                    card.addressBookIds
-                        .orEmpty()
-                        .filter { (id, on) -> on && id in known }
-                        .keys
-                        .map { BookKey(login.id, account, it) },
-                )
+    /** Brings [login]'s cached contacts up to date with the server, and shows them. */
+    private suspend fun loadLogin(login: JmapLogin): LoginContacts =
+        cache.withAccount(login.id) { scoped ->
+            val connection = connections.connection(login)
+            val session = connection.session()
+            if (JmapCapability.CONTACTS !in session.capabilities) {
+                return@withAccount LoginContacts(emptyList(), emptyList(), hasContacts = false)
             }
-        return books to cards.filter { it.books.isNotEmpty() }
-    }
-
-    /** Every card of [account], a page at a time, up to [MAX_CARDS]. */
-    private suspend fun cards(
-        connection: JmapConnection,
-        session: JmapSession,
-        account: String,
-    ): List<Card> {
-        val page = (session.maxObjectsInGet ?: DEFAULT_PAGE).toInt().coerceIn(1, DEFAULT_PAGE)
-        val cards = mutableListOf<Card>()
-        // Asks for `vCard` too, where an avatar card keeps its style, unless the server refuses it.
-        var properties: List<String>? = contactCardPropertiesWithVCard
-        while (cards.size < MAX_CARDS) {
-            val position = cards.size
-            val list =
-                try {
-                    connection.cardPage(account, CardPage(position, page, properties))
-                } catch (error: JmapException.MethodError) {
-                    if (properties == null || error.type != "invalidArguments") throw error
-                    properties = null
-                    connection.cardPage(account, CardPage(position, page, null))
-                }
-            cards += list
-            if (list.size < page) break
+            val own = session.accountFor(JmapCapability.CONTACTS)
+            val before = scoped.contacts(login.id)
+            val now =
+                session.accounts
+                    .filterValues { JmapCapability.CONTACTS in it.capabilities }
+                    .map { (id, info) ->
+                        val account = ContactAccount(id, info.name, id != own && !info.isPersonal, info.isReadOnly)
+                        connection.syncAccount(session, account, before.firstOrNull { it.account.id == id })
+                    }
+            scoped.saveContacts(login.id, before, now)
+            loginContacts(login, now)
         }
-        return cards
-    }
+
+    private suspend fun cachedLogin(login: JmapLogin): LoginContacts? =
+        cache.contacts(login.id).takeIf { it.isNotEmpty() }?.let { loginContacts(login, it) }
 
     /**
      * Runs a change. A missing connection or a sign-in the server rejects is
@@ -235,37 +179,11 @@ internal class JmapContactRepository(
         }
     }
 
-    private class LoginContacts(
-        val books: List<ContactBook>,
-        val cards: List<ContactCard>,
-        val hasContacts: Boolean,
-    )
-
     private companion object {
         const val NEW_CARD = "new"
         const val NOT_FOUND = "notFound"
-        const val DEFAULT_PAGE = 500
-        const val MAX_CARDS = 10_000
     }
 }
-
-/** One [page] of [account]'s cards. */
-private suspend fun JmapConnection.cardPage(
-    account: String,
-    page: CardPage,
-): List<Card> =
-    request {
-        val query =
-            call(
-                QueryMethod(
-                    ContactCardType,
-                    account,
-                    limit = page.size,
-                    extra = mapOf("position" to JsonPrimitive(page.position)),
-                ),
-            )
-        call(GetMethod(ContactCardType, account, JmapIds.Result(query.resultOf("/ids")), page.properties))
-    }.list
 
 /** The cards in [book] with [uid] (RFC 9610, section 3.3). */
 private suspend fun JmapConnection.cardsWithUid(
@@ -283,9 +201,12 @@ private suspend fun JmapConnection.cardsWithUid(
     }.list
 }
 
-/** Where a page of cards starts, how many it holds, and the properties it asks for; null asks for all. */
-private class CardPage(
-    val position: Int,
-    val size: Int,
-    val properties: List<String>?,
+private fun snapshot(
+    found: List<LoginContacts>,
+    failedLogins: List<String>,
+) = ContactsSnapshot(
+    books = found.flatMap { it.books },
+    cards = found.flatMap { it.cards },
+    hasContacts = found.any { it.hasContacts } || failedLogins.isNotEmpty(),
+    failedLogins = failedLogins,
 )
