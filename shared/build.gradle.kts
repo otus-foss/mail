@@ -54,5 +54,3 @@ sqldelight {
         }
     }
 }
-
-compose.resources { packageOfResClass = "com.otus.mail.designsystem.resources" }

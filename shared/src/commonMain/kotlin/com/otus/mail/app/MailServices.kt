@@ -28,7 +28,6 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.core.files.DownloadFolderException
 import com.otus.mail.core.mail.ServerChanges
-import com.otus.mail.designsystem.resources.Res
 import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
 import com.otus.mail.feature.contacts.domain.ContactRepository
@@ -97,7 +96,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 
 /**
  * Connects data implementations to feature contracts. Create one per process: it owns the HTTP
@@ -130,7 +128,7 @@ class MailServices(
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
-    private val domains by lazy { PublicSuffixDomainResolver(::avatarSuffixRules) }
+    private val domains by lazy { PublicSuffixDomainResolver() }
     private val serverSites by lazy { ServerSites(domains) }
     internal val avatars by lazy {
         AvatarService(
@@ -291,6 +289,3 @@ class MailServices(
             emptyList()
         }
 }
-
-@OptIn(ExperimentalResourceApi::class)
-private suspend fun avatarSuffixRules(): String = Res.readBytes("files/public_suffix_list.dat").decodeToString()

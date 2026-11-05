@@ -6,9 +6,8 @@ caching, website-icon rules, and privacy limits are documented in
 guide covers how Mail wires and uses it. Every host avatars may contact is also listed in
 [network destinations](network.md#avatars).
 
-Mail reads the Public Suffix List from `files/public_suffix_list.dat` in its Compose resources,
-with its MPL 2.0 notice in `public_suffix_list_MPL-2.0.txt`. Android and iOS entry points supply a
-`FileAvatarStore` in the app's private cache directory.
+`PublicSuffixDomainResolver()` reads the Public Suffix List that the avatar module bundles. Android
+and iOS entry points supply a `FileAvatarStore` in the app's private cache directory.
 
 ## Website icons
 
