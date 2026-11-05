@@ -23,7 +23,8 @@ import com.otus.designsystem.R as DesignR
  * its account and addresses: by default the sender, subject, preview and account. On the lock
  * screen the device's setting decides whether such an alert shows in full or only "New mail".
  * [NotificationPreviews.Hidden] says only "New mail" everywhere, without the account. An account's
- * summary goes once its last message notification is cleared.
+ * summary goes once its last message notification is cleared. Tapping an alert opens its message,
+ * and an alert that shows the message offers Archive and Mark read; tapping a summary opens Mail.
  */
 class MailNotifications(
     context: Context,
@@ -102,7 +103,8 @@ class MailNotifications(
     ) = when (shown) {
         NotificationPreviews.Hidden -> newMail(mail).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         NotificationPreviews.Device -> detailedMessage(mail)
-    }.setWhen(mail.receivedAt.toEpochMilliseconds())
+    }.setContentIntent(context.openMessage(mail.loginId, mail.emailId))
+        .setWhen(mail.receivedAt.toEpochMilliseconds())
         .setShowWhen(true)
         .build()
 
@@ -115,6 +117,9 @@ class MailNotifications(
             .setStyle(NotificationCompat.BigTextStyle().bigText("${mail.subject(context)}\n${mail.preview}"))
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(newMail(mail).build())
+            // Only an alert that shows the message offers to change it; the locked version has no buttons.
+            .addAction(context.alertAction(mail, AlertAction.Archive))
+            .addAction(context.alertAction(mail, AlertAction.MarkRead))
 
     private fun summary(
         latest: NewMail,
@@ -122,7 +127,8 @@ class MailNotifications(
     ) = when (shown) {
         NotificationPreviews.Hidden -> newMail(latest).setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
         NotificationPreviews.Device -> accountSummary(latest)
-    }.setGroupSummary(true)
+    }.setContentIntent(context.openApp())
+        .setGroupSummary(true)
         .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
         .build()
 
@@ -151,14 +157,13 @@ private val AlertedMail.tag get() = "$loginId/$emailId"
 
 private const val CHANNEL = "new_mail"
 
-/** The parts every alert about [mail] shares: its channel, icon, account group, and tap action. */
+/** The parts every alert about [mail] shares: its channel, icon, and account group. */
 private fun Context.mailAlert(mail: NewMail) =
     NotificationCompat
         .Builder(this, CHANNEL)
         .setSmallIcon(DesignR.drawable.otus_mail_status_icon)
         .setCategory(NotificationCompat.CATEGORY_EMAIL)
         .setGroup("mail/${mail.loginId}")
-        .setContentIntent(openApp())
         .setAutoCancel(true)
         .setOnlyAlertOnce(true)
 

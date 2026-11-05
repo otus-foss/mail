@@ -15,11 +15,26 @@
     <!-- Every WebView, for message bodies and printing, keeps usage metrics and the addresses it loads from Google. -->
     <meta-data android:name="android.webkit.WebView.MetricsOptOut" android:value="true" />
     <meta-data android:name="android.webkit.WebView.EnableSafeBrowsing" android:value="false" />
+    <!-- One activity, so a tapped alert or a mailto: link reaches the Mail that is already open. -->
     <activity
       android:name=".MainActivity"
       android:exported="true"
+      android:launchMode="singleTask"
       android:windowSoftInputMode="adjustResize"
-    />
+    >
+      <!-- mailto: links (RFC 6068) open a draft; MailIntents.kt reads them. -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="mailto" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.SENDTO" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:scheme="mailto" />
+      </intent-filter>
+    </activity>
     <!-- One launcher entry per app icon; LauncherIcon.kt enables the one the settings pick. -->
     <activity-alias
       android:name=".icon.OtusBlue"
@@ -182,6 +197,8 @@
         <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
       </intent-filter>
     </service>
+    <!-- Hears the Archive and Mark read buttons on new-mail alerts. -->
+    <receiver android:name=".AlertActionReceiver" android:exported="false" />
     <!-- Lends opened attachments to the app that shows them, one file at a time. -->
     <provider
       android:name="androidx.core.content.FileProvider"

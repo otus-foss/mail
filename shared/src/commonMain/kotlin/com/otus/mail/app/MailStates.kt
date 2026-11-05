@@ -219,8 +219,8 @@ internal class MailStates(
     /** The toasts that offer to undo moves; the process holds them, see [MailServices.work]. */
     val moveToasts: MoveToasts get() = services.moveToasts
 
-    /** Pages that work outliving this composition, such as a toast's, opens. */
-    val pageRequests: PageRequests get() = services.pageRequests
+    /** Pages that work outliving this composition opens, such as a toast's, and what the platform opens. */
+    val requests: MailRequests get() = services.requests
 
     /** The Read view's services, folders, and privacy setting; its toasts join the move toasts. */
     val reading =

@@ -66,10 +66,7 @@ fun App(
             MailStates(services, scope, behaviorState, { chosenScope }) { chosenScope = it }
         }
     val nightly = rememberNightlyUpdate(services, build)
-    // Rules decide whether an open message offers to start one.
-    LaunchedEffect(states) { states.rules.refresh() }
-    // Folders fill the sidebar. Turning Read later on finds or creates its folders; off unmarks them.
-    LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
+    FolderEffects(states, behaviorState)
     // Reload whenever the inbox is shown, including at launch.
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
     ServerChangeEffects(services, states) { page == MailPage.Inbox }
@@ -82,6 +79,7 @@ fun App(
         }
     val navigation = rememberMailNavigation({ page = it }) { scope.launch { sidebar.open() } }
     PageRequestEffects(services, states) { page = it }
+    MessageOpenEffects(states, navigation::go)
     OtusTheme(themeState.palette) {
         CompositionLocalProvider(
             LocalMotionScale provides animationState.speed.scale,
@@ -122,6 +120,19 @@ fun App(
 }
 
 /**
+ * Loads the folders and rules. Rules decide whether an open message offers to start one. Folders
+ * fill the sidebar; turning Read later on finds or creates its folders, and off unmarks them.
+ */
+@Composable
+private fun FolderEffects(
+    states: MailStates,
+    behaviorState: MailBehaviorState,
+) {
+    LaunchedEffect(states) { states.rules.refresh() }
+    LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
+}
+
+/**
  * Opens with [show] the pages toasts ask for, including ones shown before the activity was
  * recreated. Messages an earlier run could not hand to the server go now, or wait in a toast.
  */
@@ -131,8 +142,8 @@ private fun PageRequestEffects(
     states: MailStates,
     show: (MailPage) -> Unit,
 ) {
-    LaunchedEffect(services) { services.pageRequests.collect { show(it) } }
-    LaunchedEffect(states) { states.outgoing.resume { states.pageRequests.show(MailPage.Compose(it)) } }
+    LaunchedEffect(services) { services.requests.pages.collect { show(it) } }
+    LaunchedEffect(states) { states.outgoing.resume { states.requests.pages.show(MailPage.Compose(it)) } }
 }
 
 /**

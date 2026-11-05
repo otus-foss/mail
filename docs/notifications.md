@@ -116,15 +116,51 @@ only. Once the accounts load, each moves to every login that lists the address, 
 login lists are dropped.
 
 Apple alerts never show message content, so iOS has no Previews setting.
-A tap opens the app; opening the message itself is not built yet.
+On iOS a tap opens the app; opening the message itself is not built there yet.
+
+### Opening the message
+
+Tapping a message's alert opens that message; tapping an account's summary opens Mail. The alert
+carries its login id and Email id to `MainActivity`, which hands them to `MailRequests`. Mail runs
+as one activity (`singleTask`), so an open Mail comes to the front and takes the request in place,
+and a closed one takes it once it starts. A recreated activity, or an intent the recent apps list
+gives back, does not open the message again.
+
+The Inbox then shows its own mail, without a folder pill's, and loads again. The row that lists
+the message, alone or in its conversation, opens as a tap would, so Mark read on open applies.
+When "Show mail from" hides the message's account, the pages show that account. A message that
+left the inbox or was deleted since the alert, on this device or another, is not listed any more,
+so a toast says so and the Inbox stays.
+
+### Archive and Mark read
+
+An alert that shows its message offers **Archive** and **Mark read**. A "New mail only" alert and
+the locked version of an alert offer neither, because the user cannot see which message they would
+change. A button acts without opening Mail: `AlertActionReceiver` removes the alert at once, and
+the account's summary with its last alert, then queues expedited `AlertActionWorker` work for
+when the device has a network. The worker calls `EmailShortcuts`:
+
+- Mark read adds `$seen` with `Email/set` (RFC 8621, section 4.6).
+- Archive reads the account's mailbox roles with `Mailbox/get` and moves the email out of every
+  mailbox with the `inbox` role into the one with the `archive` role.
+
+Like the list's own marks and moves, the change goes into the device's copy at once and waits in
+the change queue when the server cannot be reached. A refused change tries again, up to five runs
+in all. An account without an Archive folder keeps the message in its inbox; the alert is gone
+either way. The buttons also name their meaning to Android (`SEMANTIC_ACTION_ARCHIVE` and
+`SEMANTIC_ACTION_MARK_AS_READ`), for watches and cars.
 
 On Android 13 and later, the app asks for the notification permission at launch when an account
 is saved. Without it, the check still runs and saves state but posts nothing.
 
 ## Not built yet
 
-- Opening the tapped message, and notification actions such as Archive or Mark as read.
 - Removing a notification when the message is read elsewhere.
+- Opening the tapped message and the Archive and Mark read buttons on iOS. Apple alerts would need
+  the ids in the APNs payload, a notification category with these actions, and the app's
+  `UNUserNotificationCenter` delegate handing them to `MailRequests` and `EmailShortcuts`.
+- Telling the user when a button's change fails, such as Archive on an account without an
+  Archive folder.
 - A device test of Google delivery against a server advertising RFC 9749, including Doze, key
   rotation, and measured delivery delay.
 - A device test of instant delivery with ntfy and Stalwart, with measured delay and battery use.
@@ -135,6 +171,13 @@ is saved. Without it, the check still runs and saves state but posts nothing.
 - iOS background checks.
 
 ## Validation
+
+`AlertActionsTest` checks that tapping an alert names its message and a summary names none, that
+only alerts that show the message have buttons, and that a button clears its alert and queues the
+change. `JmapEmailShortcutsTest` checks the `Email/set` patches against a mock server, an account
+without an Archive folder, and a removed login. `MessageListingTest` checks finding the row of a
+message inside a conversation. Opening the message in the running app, on a cold start, and after
+the message was deleted needs a device check.
 
 `GooglePushRegistrationTest` checks device discovery, VAPID registration, unsupported servers,
 key rotation, persisted failures, retry behavior, cancellation, and external push apps.

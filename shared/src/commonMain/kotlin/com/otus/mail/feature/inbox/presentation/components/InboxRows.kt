@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -8,6 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.OpenRequest
 
 /** The open message, the selected rows, and the row gestures that change them; [selectAll] selects the rows given. */
 internal class InboxRows(
@@ -19,17 +21,28 @@ internal class InboxRows(
     val close: () -> Unit,
 )
 
-/** Which of [messages] is open or selected; system back clears a selection. */
+/**
+ * Which of [messages] is open or selected; system back clears a selection. [opening] opens its row
+ * as a tap would, marking it read when the saved behavior asks.
+ */
 @Composable
 internal fun rememberInboxRows(
     messages: List<MailMessage>,
     actions: MessageActions?,
+    opening: OpenRequest? = null,
 ): InboxRows {
     var openId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedIds by rememberSaveable { mutableStateOf(listOf<String>()) }
     val selected = remember(messages, selectedIds) { messages.filter { it.id in selectedIds } }
     val clearSelection = { selectedIds = emptyList() }
     BackHandler(selected.isNotEmpty(), clearSelection)
+    LaunchedEffect(opening) {
+        val request = opening ?: return@LaunchedEffect
+        val row = messages.firstOrNull { it.id == request.id }
+        if (row != null) actions?.opened(row)
+        openId = request.id
+        request.taken()
+    }
     val gestures =
         rowGestures(
             actions,

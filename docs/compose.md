@@ -10,6 +10,15 @@ the account's Drafts folder and sends them through JMAP `EmailSubmission/set`.
 `ComposeRequest` names what the draft starts from, and `startDraft` builds it:
 
 - **New message** starts blank, in the account the request names or else the first account.
+- **A `mailto:` link** starts a new message filled in from the link (RFC 6068): `mailtoRequest`
+  puts the addresses before `?` and in `to` fields in To, reads `cc`, `bcc`, `subject`, and
+  `body`, and decodes percent-escaped UTF-8. A `+` stays a plus sign, as the RFC says, and the
+  body's CRLF line breaks become plain ones. Repeated address fields add up; the first subject and
+  body count. Other fields, such as `from` or `in-reply-to`, are left out, as section 6 advises.
+  On Android, Mail handles `mailto:` VIEW and SENDTO intents. Apps often send a bare `mailto:` with
+  the addresses, subject, and text in `EXTRA_EMAIL`, `EXTRA_CC`, `EXTRA_BCC`, `EXTRA_SUBJECT`, and
+  `EXTRA_TEXT`; those fill in what the link leaves out. The draft opens over the inbox in Mail's
+  own task, so Back returns to the inbox, not to the app that sent the link.
 - **Reply** goes to the original's Reply-To addresses when present, otherwise its sender. The subject gets "Re: " unless it already starts with
   "Re:" in any case. `inReplyTo` holds the original's Message-ID, and `references` holds its
   References followed by its Message-ID, so the reply stays in the thread. The body starts
@@ -313,6 +322,8 @@ send was canceled but the draft could not be restored.
 - Photos larger than 4096 px on a side show no preview, though they still send.
 - Picked files are read again for each upload while the app runs; a draft reopened after the app
   closed cannot upload its files to another account.
+- iOS does not open `mailto:` links yet; it would need Mail registered for the `mailto` URL
+  scheme and the link handed to `MailRequests.compose`.
 - iOS has no background job for the outbox, so a message the device held, or one waiting for
   the network, goes only when the app runs again.
 - Sending from the outbox after a restart cannot clean up a copy saved in another account before
@@ -337,6 +348,7 @@ send was canceled but the draft could not be restored.
 ## Validation
 
 `DraftStartTest` and `RecipientTextTest` cover starting drafts and the recipient text format.
+`MailtoLinkTest` covers reading `mailto:` links, and `AlertActionsTest` the Android intent's extras.
 `JmapDraftSenderTest` checks the send requests against a mock server: the stored copy, reported
 before its submission by id, filing in Sent, wildcard identities, the marks on the original, and
 cleanup after a refusal. `ComposeSendTest` covers when Send is enabled, waiting for a save in

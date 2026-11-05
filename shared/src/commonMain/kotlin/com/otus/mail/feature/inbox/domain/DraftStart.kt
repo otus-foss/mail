@@ -12,15 +12,16 @@ val ComposeRequest.accountId: String?
         }
 
 /**
- * The draft this request starts in [accountId]: blank, a reply that quotes the original, or a
- * forward that carries it. Reply all leaves out [ownAddresses], the account's own addresses.
+ * The draft this request starts in [accountId]: a new message as the request fills it in, a reply
+ * that quotes the original, or a forward that carries it. Reply all leaves out [ownAddresses], the
+ * account's own addresses.
  */
 fun ComposeRequest.startDraft(
     accountId: String,
     ownAddresses: Collection<String>,
 ): Draft =
     when (this) {
-        is ComposeRequest.New -> Draft(accountId, to = to)
+        is ComposeRequest.New -> Draft(accountId, to = to, cc = cc, bcc = bcc, subject = subject, body = body)
         is ComposeRequest.Reply -> original.reply(accountId, all, ownAddresses.map(String::lowercase).toSet())
         is ComposeRequest.FollowUp -> original.followUp(accountId, ownAddresses)
         is ComposeRequest.Forward -> original.forward(accountId)
