@@ -4,34 +4,27 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapIds
 import com.otus.jmap.jmapCallOr
-import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.CacheKind
-import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
-import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.isMuted
-import com.otus.mail.core.mail.keywordPatch
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.objects
-import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.MailMessage
 
 /**
- * Mutes a conversation by setting [Keywords.MUTED] on every email of its thread with `Email/set`
- * (RFC 8621, sections 4.1.1 and 4.6), so another device sees it too. It reads the thread's ids
- * first, since the row lists only the emails in its folder. Muting marks every email, so reading
- * the keywords of the oldest ones that fit one `Email/get` tells whether it is muted. The emails it
- * changed change in [cache].
+ * Which emails a mute of a conversation marks, and whether it is muted. Muting sets the keyword
+ * on every email of the thread, read from the server, since the row lists only the emails in its
+ * folder; offline the row's own emails stand in. Muting marks every email, so reading the
+ * keywords of the oldest ones that fit one `Email/get` tells whether it is muted.
  */
-class JmapConversationMute(
+internal class ConversationMuting(
     private val connections: JmapConnections,
-    private val cache: MailCache = InMemoryMailCache(),
-) : ConversationMute {
-    override suspend fun isMuted(message: MailMessage): Boolean =
+    private val cache: MailCache,
+) {
+    suspend fun isMuted(message: MailMessage): Boolean =
         fromServer(message) { account, ids ->
             val oldest = ids.take(account.session.getBatch)
             account.connection
@@ -40,20 +33,9 @@ class JmapConversationMute(
                 .any { it.isMuted }
         } ?: cachedMuted(message)
 
-    override suspend fun setMuted(
-        message: MailMessage,
-        muted: Boolean,
-    ): Boolean =
-        cache.withAccount(message.location.accountId) { accountCache ->
-            val ids = fromServer(message) { _, ids -> ids } ?: return@withAccount false
-            val patch = keywordPatch(Keywords.MUTED, muted)
-            updateAccountEmails(
-                connections,
-                message.location.accountId,
-                ids.associateWith { patch },
-                accountCache,
-            ).containsAll(ids)
-        }
+    /** The thread's Email ids, or the row's own emails when the server cannot be read. */
+    suspend fun emailIds(message: MailMessage): List<String> =
+        fromServer(message) { _, ids -> ids } ?: message.memberIds
 
     /** [read] with the thread's Email ids; null when the server could not be read or knows none. */
     private suspend fun <T> fromServer(

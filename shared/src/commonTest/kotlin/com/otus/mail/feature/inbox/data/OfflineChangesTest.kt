@@ -31,9 +31,9 @@ class OfflineChangesTest {
     private val cache = InMemoryMailCache()
     private val changes = Store()
     private val server = FakeMailServer(INBOX, email("m1", 10))
-    private val queue = EmailChangeQueue(changes)
+    private val queue = EmailChangeQueue(server.connections(store), cache, changes)
     private val source = server.source(store, cache, queue = queue)
-    private val marker = JmapMessageMarker(server.connections(store), cache, queue)
+    private val writer = emailWriter(server.connections(store), cache, queue)
 
     private suspend fun message() = source.messages(MailScope.Inbox, MailQuery()).messages.single()
 
@@ -44,7 +44,7 @@ class OfflineChangesTest {
             server.down = true
             assertEquals(
                 setOf(message.id),
-                marker.mark(listOf(message), MessageFlag.Read, on = true),
+                writer.mark(listOf(message), MessageFlag.Read, on = true),
                 "It counts as made",
             )
             assertFalse(
@@ -58,7 +58,8 @@ class OfflineChangesTest {
             assertTrue(changes.saved.isNotEmpty(), "It waits on the device")
 
             server.down = false
-            val restarted = server.source(store, cache, queue = EmailChangeQueue(changes))
+            val restarted =
+                server.source(store, cache, queue = EmailChangeQueue(server.connections(store), cache, changes))
             assertFalse(
                 restarted
                     .messages(MailScope.Inbox, MailQuery())
@@ -75,8 +76,8 @@ class OfflineChangesTest {
         runTest {
             val message = message()
             server.down = true
-            marker.mark(listOf(message), MessageFlag.Read, on = true)
-            marker.mark(listOf(message), MessageFlag.Read, on = false)
+            writer.mark(listOf(message), MessageFlag.Read, on = true)
+            writer.mark(listOf(message), MessageFlag.Read, on = false)
             server.down = false
             source.messages(MailScope.Inbox, MailQuery())
             assertEquals(JsonNull, server.calls("Email/set").single().patchOf("m1")["keywords/\$seen"])
@@ -87,7 +88,7 @@ class OfflineChangesTest {
         runTest {
             val message = message()
             server.down = true
-            marker.mark(listOf(message), MessageFlag.Flagged, on = true)
+            writer.mark(listOf(message), MessageFlag.Flagged, on = true)
             assertTrue(
                 source
                     .messages(MailScope.Inbox, MailQuery())
@@ -102,7 +103,7 @@ class OfflineChangesTest {
         runTest {
             val message = message()
             server.refusedUpdates = setOf("m1")
-            assertTrue(marker.mark(listOf(message), MessageFlag.Read, on = true).isEmpty())
+            assertTrue(writer.mark(listOf(message), MessageFlag.Read, on = true).isEmpty())
             assertTrue(changes.saved.isEmpty())
             assertTrue(
                 source
@@ -119,7 +120,7 @@ class OfflineChangesTest {
             val message = message()
             server.refused = setOf("Email/set")
             server.refusalType = "serverUnavailable"
-            marker.mark(listOf(message), MessageFlag.Read, on = true)
+            writer.mark(listOf(message), MessageFlag.Read, on = true)
             assertTrue(changes.saved.isNotEmpty(), "It waits")
 
             server.refused = emptySet()
@@ -134,7 +135,7 @@ class OfflineChangesTest {
             val message = message()
             server.refusedUpdates = setOf("m1")
             server.updateRefusal = "rateLimit"
-            assertEquals(setOf(message.id), marker.mark(listOf(message), MessageFlag.Read, on = true))
+            assertEquals(setOf(message.id), writer.mark(listOf(message), MessageFlag.Read, on = true))
             assertTrue(changes.saved.isNotEmpty(), "It waits")
 
             server.refusedUpdates = emptySet()
@@ -147,13 +148,36 @@ class OfflineChangesTest {
     fun changesOfTwoLoginsMadeAtOnceBothWait() =
         runTest {
             store.save(GRACE_LOGIN, "secret")
-            val both = EmailChangeQueue(changes, io = StandardTestDispatcher(testScheduler))
+            val io = StandardTestDispatcher(testScheduler)
+            val both = EmailChangeQueue(server.connections(store), cache, changes, io = io)
             server.down = true
             val patch = mapOf("m1" to JsonObject(mapOf("keywords/\$seen" to JsonPrimitive(true))))
             listOf(ADA_LOGIN.id, GRACE_LOGIN.id)
-                .map { login -> async { both.update(server.connections(store), login, patch, cache = null) } }
+                .map { login -> async { both.update(login, patch) } }
                 .awaitAll()
             assertEquals(setOf(ADA_LOGIN.id, GRACE_LOGIN.id), changes.saved.keys, "Neither write lost the other")
+        }
+
+    @Test
+    fun anOfflineNotSpamWaitsLikeAMove() =
+        runTest {
+            val inbox = message()
+            val spam = inbox.copy(location = inbox.location.copy(mailboxId = "r", mailboxIds = setOf("r")))
+            server.down = true
+            assertTrue(writer.notSpam(spam, inboxId = "a", keywords = false), "It counts as made")
+            assertTrue(changes.saved.isNotEmpty(), "It waits on the device")
+
+            server.down = false
+            assertFalse(queue.flushAll())
+            assertEquals(JsonPrimitive(true), server.calls("Email/set").single().patchOf("m1")["mailboxIds/a"])
+        }
+
+    @Test
+    fun aDeletedEmailLeavesTheDevicesCopy() =
+        runTest {
+            val message = message()
+            assertEquals(setOf(message.id), writer.delete(listOf(message)))
+            assertTrue(source.cached(MailScope.Inbox, MailQuery()).messages.isEmpty(), "The list no longer shows it")
         }
 
     @Test

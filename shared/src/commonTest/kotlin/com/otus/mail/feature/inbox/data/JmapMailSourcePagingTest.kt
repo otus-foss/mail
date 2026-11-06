@@ -46,7 +46,7 @@ class JmapMailSourcePagingTest {
     fun aMovedRowDoesNotSkipTheNextOnes() =
         runTest {
             val first = source.messages(MailScope.Inbox, MailQuery()).messages
-            val mover = JmapMessageMover(server.connections(store), cache)
+            val mover = emailWriter(server.connections(store), cache)
             mover.move(first.first(), "r", leaving = setOf("a"))
             assertEquals(listOf("m2", "m3", "m4"), more())
         }
@@ -54,7 +54,7 @@ class JmapMailSourcePagingTest {
     @Test
     fun aListWithNoLoadedRowLeftLoadsAgainWithAPageMore() =
         runTest {
-            val mover = JmapMessageMover(server.connections(store), cache)
+            val mover = emailWriter(server.connections(store), cache)
             source.messages(MailScope.Inbox, MailQuery()).messages.forEach { mover.move(it, "r", leaving = setOf("a")) }
             assertEquals(listOf("m3", "m4", "m5", "m6"), more())
             val query = server.calls("Email/query").last()

@@ -250,18 +250,21 @@ internal class FakeMailServer(
 
     private fun set(arguments: JsonObject): JsonObject {
         val (refusals, updates) =
-            arguments
-                .getValue("update")
-                .jsonObject.entries
+            (arguments["update"] as? JsonObject)
+                .orEmpty()
+                .entries
                 .partition { it.key in refusedUpdates }
         updates.forEach { (id, patch) ->
             update(id) { email ->
                 patch.jsonObject.entries.fold(email) { patched, (path, value) -> patched.at(path, value) }
             }
         }
+        val destroyed = (arguments["destroy"] as? JsonArray)?.strings().orEmpty().filter { it in emails }
+        destroyed.forEach(::destroy)
         return buildJsonObject {
             put("newState", JsonPrimitive("e$state"))
             put("updated", JsonObject(updates.associate { it.key to JsonNull }))
+            put("destroyed", JsonArray(destroyed.map(::JsonPrimitive)))
             val error = buildJsonObject { put("type", JsonPrimitive(updateRefusal)) }
             put("notUpdated", JsonObject(refusals.associate { it.key to error }))
         }

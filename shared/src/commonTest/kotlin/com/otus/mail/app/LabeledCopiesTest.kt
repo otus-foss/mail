@@ -35,7 +35,7 @@ class LabeledCopiesTest {
             val folders = testFolders(services) { listOf(account) }
             folders.refresh()
             runCurrent()
-            val filing = MessageFiling(services, folders, FolderColorsState(), this)
+            val filing = MessageFiling(services.senderHistory, folders, FolderColorsState(), testEdits(services))
             val copies = LabeledCopies()
             val one = message("one")
             val two = message("two")

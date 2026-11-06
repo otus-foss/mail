@@ -8,7 +8,6 @@ import com.otus.avatar.AvatarService
 import com.otus.avatar.avatarOptions
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
-import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
@@ -96,10 +95,36 @@ class InboxFeedState(
     }
 
     /**
-     * Shows [transform] of the loaded message with [id] before the server saves it. Loads keep the
-     * change until it is confirmed; rolling it back applies [undo].
+     * Shows each edit before the server saves it: a row that leaves this list's scope goes, and a
+     * changed row changes. Loads keep the edit until it is kept; a rollback undoes it, and puts a
+     * row that left back only while the list still shows that scope.
      */
-    fun change(
+    internal val edits: EditObserver =
+        object : EditObserver {
+            private val shown = mutableMapOf<MailEdit, LocalChange>()
+
+            override fun shown(edit: MailEdit) {
+                val row = edit.row
+                val local =
+                    when {
+                        edit.leaves != null -> if (edit.leaves == mailScope) remove(edit.rowId) else null
+                        row != null -> change(edit.rowId, row, edit.undo)
+                        else -> null
+                    }
+                if (local != null) shown[edit] = local
+            }
+
+            override fun settled(
+                edit: MailEdit,
+                kept: Boolean,
+            ) {
+                val local = shown.remove(edit) ?: return
+                if (kept) local.confirm() else local.rollBack()
+            }
+        }
+
+    /** Shows [transform] of the row [id] until rolled back, which applies [undo]; see [edits]. */
+    internal fun change(
         id: String,
         transform: (MailMessage) -> MailMessage,
         undo: (MailMessage) -> MailMessage,
@@ -112,8 +137,8 @@ class InboxFeedState(
         }
     }
 
-    /** Takes [id] off the list before the server moves it. Rolling back restores it only in the same scope. */
-    fun remove(id: String): LocalChange {
+    /** Takes the row [id] off the list until rolled back; see [edits]. */
+    internal fun remove(id: String): LocalChange {
         val before = messages.firstOrNull { it.id == id }
         val previousScope = mailScope
         messages = messages.filterNot { it.id == id }
@@ -257,27 +282,3 @@ class InboxFeedState(
         }
     }
 }
-
-private const val MAX_AUTO_PAGES = 4
-
-/** One load's request number and inputs. [served] once the server's snapshot shows. */
-private class FeedLoad(
-    val number: Int,
-    val scope: MailScope,
-    val query: MailQuery,
-    val options: AvatarOptions,
-) {
-    var served = false
-}
-
-private fun loadNotice(
-    reported: String?,
-    loading: String?,
-): String? = listOfNotNull(reported, loading).distinct().joinToString(" ").ifEmpty { null }
-
-private val InboxStorage.notice: String
-    get() =
-        when (this) {
-            InboxStorage.Accounts -> "Couldn't load saved accounts. Try again in Settings."
-            InboxStorage.Cache -> "Couldn't save cached mail. Refresh to try again."
-        }

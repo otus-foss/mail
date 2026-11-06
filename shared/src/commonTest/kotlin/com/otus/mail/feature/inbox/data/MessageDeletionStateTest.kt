@@ -108,7 +108,7 @@ class MessageDeletionStateTest {
     private fun cleaner(
         mailboxes: String,
         stateMismatch: Boolean = false,
-    ): JmapMessageCleaner {
+    ): JmapEmailWriter {
         val engine =
             stalwartLike { body ->
                 val calls =
@@ -152,7 +152,7 @@ class MessageDeletionStateTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageCleaner(JmapConnections(JmapClient(engine), store))
+        return emailWriter(JmapConnections(JmapClient(engine), store))
     }
 
     private fun queryReply(): String {

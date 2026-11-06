@@ -146,7 +146,7 @@ internal fun FeedPage(
     navigation: MailNavigation,
 ) {
     val pageScope = rememberCoroutineScope()
-    val feed = remember(mailScope) { states.folderFeed(mailScope, pageScope) }
+    val feed = remember(mailScope) { states.feedOf(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
     val filters = rememberPageFilters(states, page, feed)
     val labeled = rememberLabeled(states, feed)

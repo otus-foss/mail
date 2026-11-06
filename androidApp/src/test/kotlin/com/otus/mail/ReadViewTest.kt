@@ -46,7 +46,7 @@ import org.robolectric.annotation.GraphicsMode
 class ReadViewTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val fixtures = ReadViewFixtures
-    private var applied: Pair<Set<String>, Set<String>>? = null
+    private val writer = RecordingWriter()
     private var unsubscribed = 0
 
     private fun show(
@@ -58,7 +58,7 @@ class ReadViewTest {
     ) {
         val read =
             fixtures
-                .read(pages, cameFrom, { applied = it.added to it.removed }, { unsubscribed++ }, newFolder)
+                .read(pages, cameFrom, writer, { unsubscribed++ }, newFolder)
                 .let { if (showQuotes) with(fixtures) { it.showingQuotes() } else it }
         val context =
             InboxContext(
@@ -179,8 +179,10 @@ class ReadViewTest {
         compose.onNodeWithText("Also in").performClick()
         compose.onNode(hasText("Freelancing") and hasClickAction()).performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
-        compose.waitUntil(TIMEOUT) { applied != null }
-        assertEquals(setOf("fr") to emptySet<String>(), applied)
+        compose.waitUntil(TIMEOUT) { writer.refiled != null }
+        val after = checkNotNull(writer.refiled).getValue(fixtures.invoice.emailId)
+        assertEquals("Freelancing is added, nothing removed", setOf("fr"), after - fixtures.invoice.location.mailboxIds)
+        assertTrue(after.containsAll(fixtures.invoice.location.mailboxIds))
     }
 
     @Test

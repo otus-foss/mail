@@ -13,25 +13,29 @@ import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.FolderKind
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.RowFolder
-import com.otus.mail.feature.inbox.domain.inFolder
+import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.inbox.domain.suggestedFolder
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.feature.inbox.presentation.MailEdits
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
+import com.otus.mail.feature.inbox.presentation.move
+import com.otus.mail.feature.inbox.presentation.moveBack
+import com.otus.mail.feature.inbox.presentation.moveWithUndo
 import com.otus.mail.feature.inbox.presentation.ownFolders
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import com.otus.mail.feature.inbox.presentation.setInFolder
 
 /**
- * Files messages into folders and in and out of Read later. Each change shows at once and is
- * undone, with a notice, if the server refuses it.
+ * Files messages into folders and in and out of Read later, as [edits] that show at once and are
+ * undone, with a notice, if the server refuses them.
  */
 internal class MessageFiling(
-    private val services: MailServices,
+    private val senderHistory: SenderHistory,
     private val folders: FoldersState,
     private val colors: FolderColorsState,
-    private val scope: CoroutineScope,
+    private val edits: MailEdits,
 ) {
     /**
      * [messages] with the other folders each one is in, for its row. Each account's tree is built
@@ -102,43 +106,22 @@ internal class MessageFiling(
     suspend fun suggestedTarget(message: MailMessage): MoveTarget? {
         val own = moveTargets(message).ownFolders().associateBy { it.folderId }
         if (own.isEmpty()) return null
-        return suggestedFolder(services.senderHistory.recentFolders(message), own.keys)?.let(own::get)
+        return suggestedFolder(senderHistory.recentFolders(message), own.keys)?.let(own::get)
     }
 
-    /**
-     * Takes the message out of [feed] at once and puts it back if the server refuses the move. A
-     * successful move does not reload the list; [feed] keeps the message out of loads that may
-     * predate the move. The returned job ends when the server has answered.
-     */
+    /** Moves [message] to [target] with the Undo toast; see [MailEdits.move]. */
     fun move(
         feed: InboxFeedState,
         message: MailMessage,
         target: MoveTarget,
-    ): Job {
-        val leaving = leaving(message, target.shortcut)
-        val change = feed.remove(message.id)
-        return scope.saveChange(change, feed, folders, "Couldn't move the message to ${target.label}. Try again.") {
-            services.mover.move(message, target.folderId, leaving)
-        }
-    }
+    ) = edits.moveWithUndo(feed, message, target, leaving(message, target.shortcut))
 
-    /**
-     * Puts [message] back in every folder a move to [target] took it out of, such as the inbox
-     * after an archive or all its folders after a trash, then reloads [feed] so it shows again. It
-     * waits for [after], the move itself, so the two cannot cross. The caller's scope runs it, which
-     * for a toast's Undo outlives the activity, so the outcome goes through [movedBack] too.
-     */
+    /** Undoes a move of [message] to [target]; see [MailEdits.moveBack]. */
     suspend fun moveBack(
         feed: InboxFeedState,
         message: MailMessage,
         target: MoveTarget,
-        after: Job? = null,
-    ) {
-        after?.join()
-        val done = services.mover.moveBack(message, target.folderId, leaving(message, target.shortcut))
-        if (done) feed.refresh()
-        services.movedBack(done)
-    }
+    ) = edits.moveBack(feed, message, target, leaving(message, target.shortcut))
 
     /** Read later for a loaded message shown in [feed]; supplied messages have no server id. */
     fun readLater(
@@ -155,7 +138,7 @@ internal class MessageFiling(
         val remove = { setReadLater(feed, message, folder, saved = false, leaves) }
         return when (account.readLaterStep(message.location.mailboxIds.ifEmpty { setOf(shown) }, shown)) {
             ReadLaterStep.Save -> ReadLaterChange(saves = true, leaves = false, apply = save)
-            ReadLaterStep.Move -> ReadLaterChange(saves = true, leaves = true) { move(feed, message, target) }
+            ReadLaterStep.Move -> ReadLaterChange(saves = true, leaves = true) { moveAlone(feed, message, target) }
             ReadLaterStep.Remove -> ReadLaterChange(saves = false, leaves = leaves, apply = remove)
             null -> null
         }
@@ -167,16 +150,15 @@ internal class MessageFiling(
         folder: MailFolder,
         saved: Boolean,
         leaves: Boolean = false,
+    ) = edits.setInFolder(feed, message, folder.id, folder.name, saved, leaves)
+
+    /** A move into Read later offers no Undo toast; the Read later control itself undoes it. */
+    private fun moveAlone(
+        feed: InboxFeedState,
+        message: MailMessage,
+        target: MoveTarget,
     ) {
-        val change =
-            if (leaves) {
-                feed.remove(message.id)
-            } else {
-                feed.change(message.id, { it.inFolder(folder.id, saved) }, undo = { it.inFolder(folder.id, !saved) })
-            }
-        scope.saveChange(change, feed, folders, "Couldn't change ${folder.name}. Try again.") {
-            services.mover.setInFolder(message, folder.id, saved)
-        }
+        edits.move(feed, message, target, leaving(message, target.shortcut))
     }
 
     /**
@@ -201,6 +183,17 @@ internal class MessageFiling(
 /** Rights of the folder the message is shown in. Unknown folders allow everything; the server decides. */
 internal fun FoldersState.rightsOf(message: MailMessage): FolderRights =
     folder(message.location.accountId, message.location.mailboxId)?.rights ?: FolderRights()
+
+/** Whether [message] can take [flag]: supplied messages have no server id, and the folder must allow it. */
+internal fun FoldersState.mayMark(
+    message: MailMessage,
+    flag: MessageFlag,
+): Boolean =
+    message.emailId.isNotEmpty() &&
+        when (flag) {
+            MessageFlag.Read -> rightsOf(message).maySetSeen
+            MessageFlag.Flagged -> rightsOf(message).maySetKeywords
+        }
 
 /** The system folders one action files a message into. */
 private val SHORTCUTS = setOf(MailboxRole.Inbox, MailboxRole.Archive, MailboxRole.Junk, MailboxRole.Trash)

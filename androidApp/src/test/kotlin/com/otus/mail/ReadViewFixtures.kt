@@ -7,15 +7,16 @@ import android.graphics.Paint
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.ConversationMessages
-import com.otus.mail.feature.inbox.domain.ConversationMute
-import com.otus.mail.feature.inbox.domain.FolderChange
+import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailConversation
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.MailingList
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder
@@ -30,19 +31,23 @@ import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
 import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
+import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.feature.inbox.presentation.MailEdits
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MessageMarks
 import com.otus.mail.feature.inbox.presentation.MessageMoves
 import com.otus.mail.feature.inbox.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.PageChanges
+import com.otus.mail.feature.inbox.presentation.MoveToasts
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadDisplay
+import com.otus.mail.feature.inbox.presentation.ReadEdits
 import com.otus.mail.feature.inbox.presentation.ReadEffects
 import com.otus.mail.feature.inbox.presentation.ReadFiles
 import com.otus.mail.feature.inbox.presentation.ReadFolders
 import com.otus.mail.feature.inbox.presentation.ReadPrivacy
 import com.otus.mail.feature.inbox.presentation.ReadServices
 import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
+import kotlinx.coroutines.MainScope
 import kotlinx.datetime.LocalDate
 
 /** Demo mail for the Read view: the Q4 launch thread, an invoice, and a Sentry digest. Alex reads it. */
@@ -156,13 +161,13 @@ internal object ReadViewFixtures {
             listName = "Sentry weekly digest",
         )
 
+    /** The Read view of [pages], whose changes reach [writer], on behalf of a list that shows none. */
     fun read(
         pages: List<MailMessage>,
         cameFrom: Set<String> = emptySet(),
-        applied: (FolderChange) -> Unit = {},
+        writer: RecordingWriter = RecordingWriter(),
         unsubscribed: () -> Unit = {},
         newFolder: NewFolderSheet? = null,
-        changes: PageChanges = RecordedPageChanges(),
         effects: ReadEffects = ReadEffects(),
     ) = ReadContext(
         pages = ConversationMessages { pages },
@@ -170,7 +175,6 @@ internal object ReadViewFixtures {
             ReadFolders(
                 of = { folders },
                 cameFrom = { cameFrom },
-                apply = { change, _ -> applied(change) },
                 newFolder = newFolder,
             ),
         privacy =
@@ -187,13 +191,22 @@ internal object ReadViewFixtures {
             ReadServices(
                 newsletters = FakeNewsletters(unsubscribed),
                 headers = MessageHeaders { emptyList() },
-                mute = FakeMute(),
                 blocks = SenderBlocks { true },
-                changes = changes,
+                edits = edits(writer, effects),
             ),
         effects = effects,
         display = ReadDisplay(today = { LocalDate(2026, 10, 19) }),
     )
+
+    /** Edits that [writer] saves, run on the main thread like the app's, with their toasts in [effects]. */
+    private fun edits(
+        writer: RecordingWriter,
+        effects: ReadEffects,
+    ): ReadEdits {
+        val scope = MainScope()
+        val feed = InboxFeedState(NoMail, scope)
+        return ReadEdits(MailEdits(writer, scope, MoveToasts(effects.toasts, scope)), feed)
+    }
 
     /** This context with replies showing their quotes, as the "Show quotes" setting does. */
     fun ReadContext.showingQuotes(): ReadContext =
@@ -247,13 +260,8 @@ internal object ReadViewFixtures {
         ) = true
     }
 
-    private class FakeMute : ConversationMute {
-        override suspend fun isMuted(message: MailMessage) = false
-
-        override suspend fun setMuted(
-            message: MailMessage,
-            muted: Boolean,
-        ) = true
+    private object NoMail : MailSource {
+        override suspend fun messages(scope: MailScope) = InboxSnapshot(emptyList())
     }
 
     private const val OLDER = 23

@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -17,12 +18,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class JmapConversationMuteTest {
+class ConversationMuteTest {
     private val login = ADA_LOGIN
     private val store = InMemoryLoginStore().apply { save(login, "secret") }
     private val server = FakeMailServer(MAILBOXES, THREAD)
-    private val mute =
-        JmapConversationMute(JmapConnections(JmapClient(stalwartLike(api = server::answer)), store))
+    private val connections = JmapConnections(JmapClient(stalwartLike(api = server::answer)), store)
+    private val cache = InMemoryMailCache()
+    private val queue = EmailChangeQueue(connections, cache, store = null)
+    private val mute = emailWriter(connections, cache, queue)
 
     private val row =
         MailMessage(
@@ -54,11 +57,19 @@ class JmapConversationMuteTest {
         }
 
     @Test
-    fun anUnreachableServerMutesNothing() =
+    fun anOfflineMuteWaitsForTheServerAndMarksTheRowsEmails() =
         runTest {
             server.down = true
-            assertFalse(mute.setMuted(row, muted = true))
-            assertFalse(mute.isMuted(row))
+            assertTrue(mute.setMuted(row, muted = true), "The mute waits for the server")
+            server.down = false
+            assertFalse(queue.flushAll())
+            val patched =
+                server
+                    .calls("Email/set")
+                    .single()
+                    .getValue("update")
+                    .jsonObject
+            assertEquals(setOf("r2"), patched.keys, "Offline, the row's own emails stand for the thread")
         }
 
     private companion object {

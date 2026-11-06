@@ -50,7 +50,7 @@ class MoveTargetPathTest {
         folders.refresh()
         runCurrent()
         val colors = FolderColorsState(accounts = { folders.accounts }).apply { setColor(account.folders, color) }
-        return MessageFiling(services, folders, colors, this).moveTargets(message())
+        return MessageFiling(services.senderHistory, folders, colors, testEdits(services)).moveTargets(message())
     }
 
     @Test

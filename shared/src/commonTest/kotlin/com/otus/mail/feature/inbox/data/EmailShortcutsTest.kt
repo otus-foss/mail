@@ -12,17 +12,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class JmapEmailShortcutsTest {
+class EmailShortcutsTest {
     private val sent = mutableListOf<String>()
 
-    private fun shortcuts(mailboxes: String = MAILBOXES): JmapEmailShortcuts {
+    private fun shortcuts(mailboxes: String = MAILBOXES): JmapEmailWriter {
         val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
         val server =
             stalwartLike(STALWART_SESSION) { body ->
                 sent += body
-                if ("Mailbox/get" in body) """{"methodResponses": [["Mailbox/get", $mailboxes, "c0"]]}""" else UPDATED
+                when {
+                    "Mailbox/get" in body -> """{"methodResponses": [["Mailbox/get", $mailboxes, "c0"]]}"""
+                    "\"m2\"" in body -> REFUSED
+                    else -> UPDATED
+                }
             }
-        return JmapEmailShortcuts(JmapConnections(JmapClient(server), store))
+        return emailWriter(JmapConnections(JmapClient(server), store))
     }
 
     @Test
@@ -85,6 +89,8 @@ class JmapEmailShortcutsTest {
         const val MAILBOXES =
             """{"state": "m", "list": [{"id": "i", "role": "inbox"}, {"id": "a", "role": "archive"}, """ +
                 """{"id": "t", "role": "trash"}, {"id": "j", "role": "Junk"}, {"id": "p"}]}"""
+        const val REFUSED =
+            """{"methodResponses": [["Email/set", {"newState": "e2", "notUpdated": {"m2": {"type": "notFound"}}}, "c0"]]}"""
         const val UPDATED =
             """{"methodResponses": [["Email/set", {"newState": "e2", "updated": {"m1": null}}, "c0"]]}"""
     }

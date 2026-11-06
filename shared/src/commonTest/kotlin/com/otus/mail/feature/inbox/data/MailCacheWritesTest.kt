@@ -67,9 +67,9 @@ class MailCacheWritesTest {
         runTest {
             val source = source()
             val rows = source.messages(MailScope.Inbox, MailQuery()).messages.associateBy { it.emailId }
-            val marker = JmapMessageMarker(connections, cache)
-            assertEquals(setOf("ada/h1"), marker.mark(listOf(rows.getValue("h1")), MessageFlag.Read, on = true))
-            assertTrue(JmapMessageMover(connections, cache).move(rows.getValue("w1"), "r", leaving = setOf("a")))
+            val writer = emailWriter(connections, cache)
+            assertEquals(setOf("ada/h1"), writer.mark(listOf(rows.getValue("h1")), MessageFlag.Read, on = true))
+            assertTrue(writer.move(rows.getValue("w1"), "r", leaving = setOf("a")))
             home.down = true
             office.down = true
             val cached = source.cached(MailScope.Inbox, MailQuery()).messages.associateBy { it.emailId }

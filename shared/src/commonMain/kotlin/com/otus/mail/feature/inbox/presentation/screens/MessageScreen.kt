@@ -9,6 +9,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -94,12 +95,17 @@ fun MessageScreen(
     val read = context.read ?: remember { ReadContext() }
     val state = rememberSaveable(message.id, saver = ReadState.saver(message)) { ReadState(message) }
     val pager = rememberPagerState { state.pages.size }
+    val edits = read.services.edits
     LaunchedEffect(message.id) {
-        state.showPages(read.pages.messages(message))?.let { pager.scrollToPage(it) }
+        val checkpoint = edits?.checkpoint()
+        val found = read.pages.messages(message)
+        state.showPages(found, checkpoint?.let(edits::since).orEmpty())?.let { pager.scrollToPage(it) }
     }
-    LaunchedEffect(message.id) { state.muted = read.services.mute?.isMuted(message) }
-    // The list's marks on the row settle the pages', such as Mark read from the list's bar.
-    LaunchedEffect(message.attributes, state.loaded) { state.follow(message) }
+    LaunchedEffect(message.id) { state.muted = edits?.isMuted(message) }
+    DisposableEffect(state, edits) {
+        val stop = edits?.observe(state)
+        onDispose { stop?.invoke() }
+    }
     NavigationBackHandler(
         state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
         onBackCompleted = { if (!state.back()) onClose() },

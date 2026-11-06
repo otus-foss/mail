@@ -49,12 +49,8 @@ internal class ReadParts(
      */
     fun refile(change: FolderChange) {
         if (!change.changes) return
-        if (change.leavesList) {
-            onClose()
-        } else {
-            state.refile(change.after)
-        }
-        read.folders.apply(change) { state.refile(change.before) }
+        if (change.leavesList) onClose()
+        read.services.edits?.refile(change)
     }
 
     /** The loaded body of [page]; null while it loads or after it failed. */

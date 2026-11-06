@@ -1,6 +1,8 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.app.adaServices
+import com.otus.mail.app.settle
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailAttributes
@@ -11,7 +13,6 @@ import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,6 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -33,7 +35,7 @@ class MessageMarkingTest {
     private val serverMessages = MutableStateFlow<List<MailMessage>>(emptyList())
     private var messageLoads = 0
     private var refused = emptySet<String>()
-    private var folderLoads = 0
+    private var countChanges = 0
     private val toasts = ToastState()
 
     private fun message(
@@ -52,7 +54,7 @@ class MessageMarkingTest {
 
     /**
      * Marking for a feed holding [messages], and the feed. The feed and the saves of marks run in
-     * [screen]. Each folder refresh counts a load.
+     * [screen]. Each announcement that folder counts changed counts.
      */
     private fun TestScope.marking(
         vararg messages: MailMessage,
@@ -65,11 +67,6 @@ class MessageMarkingTest {
                 setReply(body)
             }
         val services = adaServices(engine)
-        val folders =
-            testFolders(services) {
-                folderLoads++
-                emptyList()
-            }
         val source =
             object : MailSource {
                 override suspend fun messages(scope: MailScope): InboxSnapshot {
@@ -78,9 +75,12 @@ class MessageMarkingTest {
                 }
             }
         val feed = InboxFeedState(source, screen)
+        val edits = MailEdits(services.writer, screen, MoveToasts(toasts, this))
+        edits.observe(feed.edits)
+        backgroundScope.launch { edits.changed.collect { countChanges++ } }
         feed.refresh()
         runCurrent()
-        return MessageMarking(services, folders, MoveToasts(toasts, this), screen) to feed
+        return MessageMarking(edits) to feed
     }
 
     /** Sets or clears `$seen` on every id the `Email/set` call names, except [refused] ones. */
@@ -112,17 +112,17 @@ class MessageMarkingTest {
     }
 
     @Test
-    fun markingManyMessagesSendsOneUpdateAndRefreshesFoldersOnce() =
+    fun markingManyMessagesSendsOneUpdateAndChangesFolderCountsOnce() =
         runTest {
             val (marking, feed) = marking(message("m1"), message("m2"), message("m3"))
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
             assertEquals(emptyList(), feed.unread(), "Every message shows read at once")
             assertEquals(listOf("3 emails marked as read"), toasts.messages.map { it.text })
-            settle { folderLoads > 0 }
+            settle { countChanges > 0 }
             // Another refresh would follow here; give it the chance.
             settle { false }
             assertEquals(1, sent.value.count { "Email/set" in it }, sent.value.toString())
-            assertEquals(1, folderLoads)
+            assertEquals(1, countChanges)
             assertEquals(emptyList(), feed.unread())
             assertNull(feed.notice)
         }
@@ -139,8 +139,8 @@ class MessageMarkingTest {
             assertEquals(2, messageLoads)
             assertTrue(toasts.messages.single { it.text == failure }.sticky, "Retry waits for the user")
             assertNull(feed.notice)
-            settle { folderLoads > 0 }
-            assertEquals(1, folderLoads, "The marked messages still change the unread counts")
+            settle { countChanges > 0 }
+            assertEquals(1, countChanges, "The marked messages still change the unread counts")
 
             refused = emptySet()
             sent.value = emptyList()
@@ -161,7 +161,7 @@ class MessageMarkingTest {
             settle { toasts.messages.any { it.text == "Couldn't mark the email as read" } }
             settle { false }
             assertEquals(listOf("m1"), feed.unread())
-            assertEquals(1, folderLoads)
+            assertEquals(0, countChanges, "Nothing changed, so the folder counts stay")
             assertEquals(2, messageLoads)
         }
 

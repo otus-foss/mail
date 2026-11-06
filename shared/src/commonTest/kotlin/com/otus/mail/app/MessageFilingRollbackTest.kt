@@ -98,7 +98,8 @@ class MessageFilingRollbackTest {
         val action =
             async {
                 coroutineScope {
-                    val filing = MessageFiling(services, folders, FolderColorsState(), this)
+                    val edits = testEdits(services, feed)
+                    val filing = MessageFiling(services.senderHistory, folders, FolderColorsState(), edits)
                     if (readLater) {
                         assertNotNull(filing.readLater(feed, initial)).apply()
                     } else {

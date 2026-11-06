@@ -23,7 +23,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class JmapMessageCleanerTest {
+class EmailCleanupTest {
     private val login = ADA_LOGIN
 
     /** A session that takes two objects per `/get` and `/set` call. */
@@ -51,13 +51,13 @@ class JmapMessageCleanerTest {
         session: String = smallBatches,
         mailboxes: Map<String, Set<String>> = mapOf("m2" to setOf("t", "p")),
         reply: (String) -> String,
-    ): JmapMessageCleaner {
+    ): JmapEmailWriter {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val engine =
             stalwartLike(session) { body ->
                 if ("Email/get" in body && "Email/query" !in body) membershipReply(body, mailboxes) else reply(body)
             }
-        return JmapMessageCleaner(JmapConnections(JmapClient(engine), store))
+        return emailWriter(JmapConnections(JmapClient(engine), store))
     }
 
     private fun membershipReply(

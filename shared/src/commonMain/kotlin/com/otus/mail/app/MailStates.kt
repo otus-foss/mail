@@ -35,11 +35,16 @@ import com.otus.mail.feature.inbox.presentation.ComposeServices
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.MailEdits
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.MessageMarking
 import com.otus.mail.feature.inbox.presentation.MessageMoves
+import com.otus.mail.feature.inbox.presentation.MoveToasts
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 /** State holders that outlive a single page. One per composition of [App]. */
@@ -57,15 +62,10 @@ internal class MailStates(
     val mailScope: MailScopeChoice
         get() = chosenScope().within(accounts.accounts.map { it.id })
 
-    val feed =
-        InboxFeedState(
-            services.mail,
-            scope,
-            services.avatars,
-            ::avatarOptions,
-            behavior.behavior.inbox.mailScope(),
-            dates,
-        )
+    /** The changes the user makes to mail, which every list and Read view shows at once. */
+    val edits = MailEdits(services.writer, scope, services.moveToasts, afterUndo = services.serverChanges::changed)
+
+    val feed = feedOf(behavior.behavior.inbox.mailScope(), scope)
 
     val folders: FoldersState =
         FoldersState(
@@ -78,6 +78,11 @@ internal class MailStates(
                 rules.forget(it)
             },
         )
+
+    init {
+        // Folder counts follow every saved change of mail.
+        scope.launch { edits.changed.collect { folders.refresh() } }
+    }
 
     /** Colors the user gave their folders; the Folder colors switch hides them. */
     val folderColors: FolderColorsState =
@@ -158,21 +163,18 @@ internal class MailStates(
         }
 
     /**
-     * A folder page loads only its own mail, in [pageScope], so leaving the page stops its loads and
-     * avatar lookups. Avatars share the inbox's cache.
+     * The mail of [mailScope], loaded in [pageScope], so leaving a folder page stops its loads and
+     * avatar lookups. It shows edits until then. Avatars share the inbox's cache.
      */
-    fun folderFeed(
+    fun feedOf(
         mailScope: MailScope,
         pageScope: CoroutineScope,
-    ): InboxFeedState =
-        InboxFeedState(
-            services.mail,
-            pageScope,
-            services.avatars,
-            ::avatarOptions,
-            defaultScope = mailScope,
-            dates = dates,
-        )
+    ): InboxFeedState {
+        val feed = InboxFeedState(services.mail, pageScope, services.avatars, ::avatarOptions, mailScope, dates)
+        val stop = edits.observe(feed.edits)
+        pageScope.coroutineContext.job.invokeOnCompletion { stop() }
+        return feed
+    }
 
     /** Avatars load from outside the user's servers only while Website icons is on. */
     internal fun avatarOptions(): AvatarOptions =
@@ -232,7 +234,7 @@ internal class MailStates(
         folders.refresh()
     }
 
-    val filing = MessageFiling(services, folders, folderColors, scope)
+    val filing = MessageFiling(services.senderHistory, folders, folderColors, edits)
 
     /** The toasts that offer to undo moves; the process holds them, see [MailServices.work]. */
     val moveToasts: MoveToasts get() = services.moveToasts
@@ -244,11 +246,10 @@ internal class MailStates(
     val reading =
         ReadWiring(
             services,
-            scope,
             behavior,
             folders,
             folderColors,
-            moveToasts,
+            edits,
             folderActions(folders, folderColors, rules) { knownAddresses(it) },
         )
 
@@ -260,8 +261,8 @@ internal class MailStates(
         OutgoingMail(services.work, moveToasts.toasts, services.scheduled, services.outbox, dates) {
             behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
         }
-    private val cleaning = FolderCleaning(services, folders, scope)
-    private val marking = MessageMarking(services, folders, moveToasts, scope)
+    private val cleaning = FolderCleaning(folders, edits)
+    private val marking = MessageMarking(edits)
 
     /** Rules that sort mail like a moved message, and the offer that follows a saved one. */
     val sorting = MessageSorting(rules, services.rules, folders, filing, scope)
@@ -276,14 +277,11 @@ internal class MailStates(
                 MessageMoves(
                     targets = filing::moveTargets,
                     listed = filing::listedTargets,
-                    onMove = { message, target ->
-                        val move = filing.move(feed, message, target)
-                        moveToasts.moved(target) { filing.moveBack(feed, message, target, after = move) }
-                    },
+                    onMove = { message, target -> filing.move(feed, message, target) },
                     suggested = filing::suggestedTarget,
                     futureSorting = { sorting.futureSorting(it, feed) },
                 ),
-            marks = marking.marks(feed),
+            marks = marking.marks(feed, folders::mayMark),
             ruleForSender = senderRules::start,
             readLater = { filing.readLater(feed, it) },
             behavior = { behavior.behavior },

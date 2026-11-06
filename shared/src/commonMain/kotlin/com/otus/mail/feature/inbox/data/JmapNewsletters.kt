@@ -9,10 +9,6 @@ import com.otus.jmap.QueryMethod
 import com.otus.jmap.allOf
 import com.otus.jmap.filterCondition
 import com.otus.jmap.jmapCallOr
-import com.otus.jmap.login.LoginStore
-import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.core.cache.MailCache
-import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailFolders
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailObject
@@ -47,10 +43,10 @@ class JmapNewsletters(
     private val connections: JmapConnections,
     drafts: DraftRepository,
     sender: DraftSender,
-    private val cache: MailCache = InMemoryMailCache(),
+    private val writer: JmapEmailWriter,
+    private val mailboxes: Mailboxes,
 ) : Newsletters {
     private val unsubscriber = ListUnsubscriber(drafts, sender)
-    private val mailboxes = Mailboxes(cache)
 
     override suspend fun list(message: MailMessage): MailingList? =
         jmapCallOr(null) {
@@ -66,14 +62,10 @@ class JmapNewsletters(
         accountId: String,
         emailIds: List<String>,
     ): Boolean {
-        return cache.withAccount(accountId) { accountCache ->
-            if (emailIds.isEmpty()) return@withAccount true
-            val patches =
-                jmapCallOr(null) { connections.mailAccount(accountId)?.archivePatches(emailIds) }
-                    ?: return@withAccount false
-            patches.isEmpty() ||
-                updateAccountEmails(connections, accountId, patches, accountCache).containsAll(patches.keys)
-        }
+        if (emailIds.isEmpty()) return true
+        val patches =
+            jmapCallOr(null) { connections.mailAccount(accountId)?.archivePatches(emailIds) } ?: return false
+        return patches.isEmpty() || writer.update(accountId, patches).containsAll(patches.keys)
     }
 
     private suspend fun MailAccount.list(message: MailMessage): MailingList? {

@@ -24,7 +24,6 @@ import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.OwnAddresses
@@ -51,9 +50,8 @@ import org.robolectric.annotation.Config
 class ReadPageActionsTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val fixtures = ReadViewFixtures
-    private val changes = RecordedPageChanges()
+    private val writer = RecordingWriter()
     private val toasts = ToastState()
-    private var applied: FolderChange? = null
     private var unsubscribed = 0
 
     private fun show(
@@ -66,9 +64,8 @@ class ReadPageActionsTest {
             fixtures.read(
                 pages,
                 setOf("in"),
-                { applied = it },
+                writer,
                 { unsubscribed++ },
-                changes = changes,
                 effects = effects,
             )
         val context = InboxContext(loadContent = { fixtures.content(it) }, read = read, rowLook = RowLook(own = OWN))
@@ -112,7 +109,8 @@ class ReadPageActionsTest {
         strip("Radia Perlman, message 3 of 6")
         menu("Mark as unread")
         menu("Flag")
-        assertEquals(listOf("r" to MessageFlag.Read, "r" to MessageFlag.Flagged), changes.marks)
+        compose.waitForIdle()
+        assertEquals(listOf("r" to MessageFlag.Read, "r" to MessageFlag.Flagged), writer.marks)
     }
 
     @Test
@@ -120,9 +118,9 @@ class ReadPageActionsTest {
         openPage("Margaret Knuth")
         strip("Margaret Knuth, message 5 of 6")
         menu("Delete this message")
-        assertEquals(listOf("m"), changes.trashed)
         strip("message 5 of 5")
-        compose.runOnUiThread { changes.undo() }
+        assertEquals(listOf("m"), writer.moved)
+        compose.onNode(hasText("Undo") and hasClickAction()).performClick()
         strip(" of 6")
     }
 
@@ -138,11 +136,11 @@ class ReadPageActionsTest {
         compose.onNode(hasText("Inbox") and isToggleable()).performClick()
         compose.onNode(hasText("Clients") and hasClickAction()).performScrollTo().performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
-        compose.waitUntil(TIMEOUT) { applied != null }
-        val change = checkNotNull(applied)
-        assertEquals(fixtures.thread.map { it.emailId }.toSet(), change.before.keys)
-        assertEquals(setOf("in", "fi", "cl"), change.after.getValue("g"))
-        assertEquals(setOf("in", "cl"), change.after.getValue("k"))
+        compose.waitUntil(TIMEOUT) { writer.refiled != null }
+        val after = checkNotNull(writer.refiled)
+        assertEquals(fixtures.thread.map { it.emailId }.toSet(), after.keys)
+        assertEquals(setOf("in", "fi", "cl"), after.getValue("g"))
+        assertEquals(setOf("in", "cl"), after.getValue("k"))
     }
 
     @Test

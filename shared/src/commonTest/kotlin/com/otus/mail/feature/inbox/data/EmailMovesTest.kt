@@ -19,7 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class JmapMessageMoverTest {
+class EmailMovesTest {
     private val login = ADA_LOGIN
     private val message =
         MailMessage(
@@ -35,9 +35,9 @@ class JmapMessageMoverTest {
     private fun mover(
         session: String = STALWART_SESSION,
         reply: (String) -> String,
-    ): JmapMessageMover {
+    ): JmapEmailWriter {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageMover(JmapConnections(JmapClient(stalwartLike(session, reply)), store))
+        return emailWriter(JmapConnections(JmapClient(stalwartLike(session, reply)), store))
     }
 
     @Test

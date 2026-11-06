@@ -1,9 +1,8 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job

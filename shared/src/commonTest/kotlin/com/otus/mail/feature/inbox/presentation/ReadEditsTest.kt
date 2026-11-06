@@ -1,6 +1,8 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.app.adaServices
+import com.otus.mail.app.settle
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.data.FakeMailServer
 import com.otus.mail.feature.inbox.domain.FolderChange
@@ -15,8 +17,6 @@ import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
-import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,10 +36,10 @@ import kotlin.test.assertTrue
 /**
  * The Read view's changes to single emails of a conversation: the conversation `t` has `e1` in
  * the inbox, `e2` in Archive and Finance / Invoices, and `e3`, the newest, in the inbox. Its row
- * lists `e3` and `e1`.
+ * lists `e3` and `e1`, and the open Read view shows both pages.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class ReadPageChangesTest {
+class ReadEditsTest {
     private val server = FakeMailServer(MAILBOXES, THREAD)
     private val toasts = ToastState()
     private var loads = 0
@@ -78,11 +78,14 @@ class ReadPageChangesTest {
         emailId = id,
     )
 
+    /** The Read view of [row], showing its listed emails and every edit. */
+    private val state = ReadState(row).apply { showPages(listOf(email("e3"), email("e1"))) }
+
     /**
      * The changes for a feed that lists [row], made in [composition]; each load of the feed counts.
      * Toasts run their work in the test's scope, as in the process's.
      */
-    private fun TestScope.changes(composition: CoroutineScope = this): Pair<ReadPageChanges, InboxFeedState> {
+    private fun TestScope.changes(composition: CoroutineScope = this): Pair<ReadEdits, InboxFeedState> {
         val services = adaServices(stalwartLike(api = server::answer))
         val source =
             object : MailSource {
@@ -94,9 +97,14 @@ class ReadPageChangesTest {
         val feed = InboxFeedState(source, this)
         feed.refresh()
         runCurrent()
-        val folders = testFolders(services) { emptyList() }
-        return ReadPageChanges(services, folders, MoveToasts(toasts, this), composition, feed) to feed
+        val edits = MailEdits(services.writer, composition, MoveToasts(toasts, this))
+        edits.observe(feed.edits)
+        val changes = ReadEdits(edits, feed)
+        changes.observe(state)
+        return changes to feed
     }
+
+    private fun pageIds(): List<String> = state.pages.map { it.emailId }
 
     private fun updates(): List<JsonObject> = server.calls("Email/set").map { it.getValue("update").jsonObject }
 
@@ -105,8 +113,8 @@ class ReadPageChangesTest {
         runTest {
             val (changes, feed) = changes()
             val before = mapOf("e1" to setOf("a"), "e2" to setOf("ar", "fi"), "e3" to setOf("a"))
-            var refused = false
-            changes.refile(FolderChange(row, before, added = setOf("cl"), removed = setOf("fi"))) { refused = true }
+            changes.refile(FolderChange(row, before, added = setOf("cl"), removed = setOf("fi")))
+            assertEquals(listOf(setOf("a", "cl"), setOf("a", "cl")), state.pages.map { it.location.mailboxIds })
             settle { updates().isNotEmpty() }
             assertEquals(
                 listOf(
@@ -119,7 +127,7 @@ class ReadPageChangesTest {
                 updates(),
             )
             settle { false }
-            assertFalse(refused)
+            assertEquals(listOf(setOf("a", "cl"), setOf("a", "cl")), state.pages.map { it.location.mailboxIds })
             val shown = feed.messages.single()
             assertEquals(setOf("a", "cl"), shown.location.mailboxIds)
             assertEquals(listOf(setOf("a", "cl"), setOf("a", "cl")), shown.conversation?.members?.map { it.mailboxIds })
@@ -130,7 +138,8 @@ class ReadPageChangesTest {
         runTest {
             val (changes, feed) = changes()
             val page = email("e1")
-            changes.mark(row, page, MessageFlag.Flagged, on = true) { error("refused") }
+            changes.mark(row, page, MessageFlag.Flagged, on = true)
+            assertEquals(listOf(false, true), state.pages.map { it.attributes.flagged }, "Only its page shows it")
             settle { updates().isNotEmpty() }
             assertEquals(listOf(json("""{"e1": {"keywords/${'$'}flagged": true}}""")), updates())
             assertFalse(
@@ -141,14 +150,15 @@ class ReadPageChangesTest {
             )
             settle { loads > 1 }
             assertEquals(2, loads)
+            assertEquals(listOf(false, true), state.pages.map { it.attributes.flagged }, "The saved mark stays")
         }
 
     @Test
     fun deletingAnOlderPageTrashesOnlyItsEmailKeepsTheRowAndUndoPutsItBack() =
         runTest {
             val (changes, feed) = changes()
-            var back = 0
-            changes.trash(row, email("e1"), TRASH) { back++ }
+            changes.trash(row, email("e1"), TRASH)
+            assertEquals(listOf("e3"), pageIds(), "The page leaves at once")
             assertEquals(
                 listOf("e3"),
                 feed.messages
@@ -172,9 +182,9 @@ class ReadPageChangesTest {
                 .action
                 ?.onClick
                 ?.invoke()
-            settle { back > 0 }
+            settle { pageIds().size > 1 }
             assertEquals(json("""{"e1": {"mailboxIds/tr": null, "mailboxIds/a": true}}"""), updates().last())
-            assertEquals(1, back)
+            assertEquals(listOf("e3", "e1"), pageIds(), "Undo puts the page back where it was")
             assertTrue(feed.messages.isNotEmpty())
         }
 
@@ -184,7 +194,7 @@ class ReadPageChangesTest {
             // The scope of the composition that deleted the page, which a rotation ends.
             val composition = CoroutineScope(coroutineContext + Job(coroutineContext[Job]))
             val (changes, _) = changes(composition)
-            changes.trash(row, email("e1"), TRASH) {}
+            changes.trash(row, email("e1"), TRASH)
             settle { false }
             composition.cancel()
             toasts.messages

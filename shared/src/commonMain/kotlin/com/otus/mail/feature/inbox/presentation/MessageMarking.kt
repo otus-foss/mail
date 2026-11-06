@@ -1,15 +1,10 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.core.mailbox.FolderRights
-import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.hasFlag
+import com.otus.mail.feature.inbox.domain.memberMailboxes
 import com.otus.mail.feature.inbox.domain.withFlag
-import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.LocalChange
-import com.otus.mail.feature.inbox.presentation.MessageMarks
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 
@@ -18,28 +13,25 @@ import kotlinx.coroutines.async
  * goes to the server together, with an Undo toast that sets each message back as it was. Messages
  * the server refuses go back as they were, and a toast offers to retry just those. Undo and Retry
  * run in the toasts' work, which outlives the activity, so they still reach the server after a
- * rotation; [MailServices.serverChanges] then reloads the screen on show. The save itself runs in
- * [scope], the screen's, which a rotation can cancel; Undo then sets back every message it was changing.
+ * rotation, and then reload the screen on show. The save itself runs in the [edits]' scope, the
+ * screen's, which a rotation can cancel; Undo then sets back every message it was changing.
  */
 internal class MessageMarking(
-    private val services: MailServices,
-    private val folders: FoldersState,
-    private val toasts: MoveToasts,
-    private val scope: CoroutineScope,
+    private val edits: MailEdits,
 ) {
-    /** Marks for messages [feed] shows: the user's own offer Undo, the mark on opening does not. */
-    fun marks(feed: InboxFeedState): MessageMarks =
+    /**
+     * Marks for messages [feed] shows, where [can] allows them: the user's own offer Undo, the
+     * mark on opening does not.
+     */
+    fun marks(
+        feed: InboxFeedState,
+        can: (MailMessage, MessageFlag) -> Boolean,
+    ): MessageMarks =
         MessageMarks(
-            can = ::canMark,
+            can = can,
             set = { messages, flag, on -> mark(feed, messages, flag, on) },
             opened = { mark(feed, listOf(it), MessageFlag.Read, on = true, undoable = false) },
         )
-
-    /** Supplied messages have no server id, so only loaded mail can change its marks. */
-    private fun canMark(
-        message: MailMessage,
-        flag: MessageFlag,
-    ): Boolean = message.emailId.isNotEmpty() && folders.rightsOf(message).allow(flag)
 
     /** Sets [flag] to [on] for [messages] that [feed] shows; [undoable] offers the Undo toast. */
     fun mark(
@@ -50,9 +42,11 @@ internal class MessageMarking(
         undoable: Boolean = true,
     ) {
         val count = changing(messages, flag, on)
-        val changes = begin(feed, messages, flag, on)
-        val saving = scope.async { finish(feed, changes, flag, on) }
-        if (undoable && count > 0) toasts.marked(flag, on, count) { restore(feed, saving.outcome(messages, flag, on)) }
+        val shown = begin(messages, flag, on)
+        val saving = edits.scope.async { finish(feed, shown, flag, on) }
+        if (undoable && count > 0) {
+            edits.toasts.marked(flag, on, count) { restore(feed, saving.outcome(messages, flag, on)) }
+        }
     }
 
     /**
@@ -69,35 +63,31 @@ internal class MessageMarking(
         return if (isCancelled) MarkOutcome(messages, messages.map { it.id }.toSet(), flag, on) else await()
     }
 
-    /** Shows the change in [feed] at once; each message goes back to its own mark if refused. */
+    /** Shows the change at once; each message goes back to its own mark if refused. */
     private fun begin(
-        feed: InboxFeedState,
         messages: List<MailMessage>,
         flag: MessageFlag,
         on: Boolean,
-    ): List<Pair<MailMessage, LocalChange>> =
+    ): List<Pair<MailMessage, MailEdit>> =
         messages.map { message ->
-            val before = message.hasFlag(flag)
-            message to feed.change(message.id, { it.withFlag(flag, on) }, undo = { it.withFlag(flag, before) })
+            message to edits.show(markEdit(message, flag, on))
         }
 
-    /** Saves [changes] on the server, rolls back the refused ones, and offers to retry them. */
+    /** Saves [shown] on the server, rolls back the refused ones, and offers to retry them. */
     private suspend fun finish(
         feed: InboxFeedState,
-        changes: List<Pair<MailMessage, LocalChange>>,
+        shown: List<Pair<MailMessage, MailEdit>>,
         flag: MessageFlag,
         on: Boolean,
     ): MarkOutcome {
-        val messages = changes.map { it.first }
-        val marked = services.marker.mark(messages, flag, on)
-        changes.forEach { (message, change) -> if (message.id in marked) change.confirm() else change.rollBack() }
-        // Folder unread counts follow the read mark; one refresh covers every message.
-        if (flag == MessageFlag.Read) folders.refresh()
+        val messages = shown.map { it.first }
+        val marked = edits.writer.mark(messages, flag, on)
+        edits.settle(shown.associate { (message, edit) -> edit to (message.id in marked) })
         val outcome = MarkOutcome(messages, marked, flag, on)
         val failed = outcome.failed
         if (failed.isNotEmpty()) {
             feed.refresh()
-            toasts.failed(notMarkedText(flag, on, failed.size, messages.size)) { retry(feed, failed, flag, on) }
+            edits.toasts.failed(notMarkedText(flag, on, failed.size, messages.size)) { retry(feed, failed, flag, on) }
         }
         return outcome
     }
@@ -109,8 +99,8 @@ internal class MessageMarking(
     ) {
         val changed = outcome.changed
         if (changed.isEmpty()) return
-        val back = finish(feed, begin(feed, changed, outcome.flag, !outcome.on), outcome.flag, !outcome.on)
-        if (back.marked.isNotEmpty()) services.serverChanges.changed()
+        val back = finish(feed, begin(changed, outcome.flag, !outcome.on), outcome.flag, !outcome.on)
+        if (back.marked.isNotEmpty()) edits.reloadAfterUndo()
     }
 
     /** Sends [failed] again; the ones it changes get their own Undo toast. */
@@ -120,16 +110,30 @@ internal class MessageMarking(
         flag: MessageFlag,
         on: Boolean,
     ) {
-        val outcome = finish(feed, begin(feed, failed, flag, on), flag, on)
+        val outcome = finish(feed, begin(failed, flag, on), flag, on)
         val count = changing(outcome.messages.filter { it.id in outcome.marked }, flag, on)
         if (count == 0) return
-        toasts.marked(flag, on, count) { restore(feed, outcome) }
-        services.serverChanges.changed()
+        edits.toasts.marked(flag, on, count) { restore(feed, outcome) }
+        edits.reloadAfterUndo()
     }
 }
 
-private fun FolderRights.allow(flag: MessageFlag): Boolean =
-    when (flag) {
-        MessageFlag.Read -> maySetSeen
-        MessageFlag.Flagged -> maySetKeywords
-    }
+/**
+ * [flag] set to [on] on [message] and every email of its conversation, in lists and Read views.
+ * Folder unread counts follow the read mark only.
+ */
+internal fun markEdit(
+    message: MailMessage,
+    flag: MessageFlag,
+    on: Boolean,
+): MailEdit {
+    val before = message.hasFlag(flag)
+    return MailEdit(
+        message.id,
+        message.memberMailboxes.keys,
+        row = { it.withFlag(flag, on) },
+        undo = { it.withFlag(flag, before) },
+        page = { it.withFlag(flag, on) },
+        counts = flag == MessageFlag.Read,
+    )
+}

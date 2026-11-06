@@ -514,7 +514,7 @@ Rule for sender flow. Chips, the Add rule chip, and the sheet come from the desi
   leading ones, a block at the top moved, other bytes kept, CRLF), `LegacyRulesTest` (what the v1 migration converts and drops),
   `JmapFolderRuleRepositoryTest` (validate before save, `ifInState`, activation, the vacation
   script, migration), `ExistingMailTest` (the `Email/query` filters and batched moves),
-  `JmapMessageMoverTest`.
+  `EmailMovesTest`.
 - Folder colors: `FolderColorsTest` (keys, shared-folder groups, defaults for unknown names),
   `FolderColorsStateTest` (the switch hides colors without forgetting them, role folders and Read
   later stay plain, deletes and account removal forget colors), `FolderColorRemovalTest`,

@@ -169,8 +169,10 @@ such as after a move, is left out. When several listings are loaded, the list hi
 earliest point where a listing with more stops, in the chosen sort order, so a later page never
 adds rows above ones already shown. `hasMore` is true while any listing has more. Logins load in
 parallel and fail alone, with a reason; a login that fails still shows its cached rows. Marks and
-moves (`JmapMessageMarker`, `JmapMessageMover`) apply the `Email/set` patch the server accepted to
-the cached emails, so lists match before the next refresh reads the change back.
+moves go through `JmapEmailWriter`, the one writer of emails, which applies each `Email/set` patch to
+the cached emails at once and keeps it in the change queue until the server answers, so lists match
+before the next refresh reads the change back. Deleting for good asks the server first and then
+takes the destroyed emails out of the cache.
 
 ## Checks
 

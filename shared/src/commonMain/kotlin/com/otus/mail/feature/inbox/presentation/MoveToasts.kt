@@ -1,11 +1,10 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -16,7 +15,7 @@ import kotlinx.coroutines.launch
  * run in [work], which outlives the activity like the toasts, so an Undo after a rotation still puts
  * the mail back.
  */
-internal class MoveToasts(
+class MoveToasts(
     val toasts: ToastState,
     private val work: CoroutineScope,
 ) {
@@ -45,6 +44,10 @@ internal class MoveToasts(
         retry: suspend () -> Unit,
     ) {
         toasts.show(ToastMessage(text, UiAction("Retry") { work.launch { retry() } }, sticky = true))
+    }
+
+    fun failedUndo() {
+        toasts.show(ToastMessage("Couldn't undo the move"))
     }
 
     private fun offer(
@@ -88,12 +91,4 @@ internal fun movedText(
         MailboxRole.Junk -> "$mail marked as spam"
         else -> if (count == 1) "Moved to ${target.name}" else "$mail moved to ${target.name}"
     }
-}
-
-/**
- * Shows the outcome of an Undo that may outlive the activity that offered it: the screen on show
- * reloads its folders and inbox, as after a push, and a failure shows as a toast.
- */
-internal fun MailServices.movedBack(done: Boolean) {
-    if (done) serverChanges.changed() else moveToasts.toasts.show(ToastMessage("Couldn't undo the move"))
 }

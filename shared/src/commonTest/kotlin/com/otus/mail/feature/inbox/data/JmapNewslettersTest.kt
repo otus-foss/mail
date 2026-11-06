@@ -3,7 +3,9 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -61,7 +63,9 @@ class JmapNewslettersTest {
                 requests += body
                 reply(body)
             }
-        return JmapNewsletters(JmapConnections(JmapClient(engine), store), drafts, sender)
+        val connections = JmapConnections(JmapClient(engine), store)
+        val cache = InMemoryMailCache()
+        return JmapNewsletters(connections, drafts, sender, emailWriter(connections, cache), Mailboxes(cache))
     }
 
     @Test

@@ -105,7 +105,7 @@ class FolderCleaningTest {
         val feed = InboxFeedState(source, this, defaultScope = scope)
         feed.refresh()
         runCurrent()
-        return FolderCleaning(services, folders, this).cleanup(feed) to feed
+        return FolderCleaning(folders, testEdits(services, feed)).cleanup(feed) to feed
     }
 
     @Test

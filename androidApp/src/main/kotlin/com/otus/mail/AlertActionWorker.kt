@@ -10,7 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.otus.mail.feature.inbox.domain.EmailShortcuts
+import com.otus.mail.feature.inbox.domain.EmailWriter
 import com.otus.mail.feature.notifications.domain.NewMail
 
 /**
@@ -26,9 +26,9 @@ class AlertActionWorker(
         val action = AlertAction.named(inputData.getString(ACTION))
         val mail = inputData.mail()
         if (action == null || mail == null) return Result.failure()
-        val shortcuts = (applicationContext as OtusMailApplication).services.shortcuts
+        val writer = (applicationContext as OtusMailApplication).services.writer
         return when {
-            shortcuts.perform(action, mail.loginId, mail.emailId) -> Result.success()
+            writer.perform(action, mail.loginId, mail.emailId) -> Result.success()
             runAttemptCount + 1 < MAX_ATTEMPTS -> Result.retry()
             else -> failed(action, mail)
         }
@@ -74,7 +74,7 @@ class AlertActionWorker(
 }
 
 /** Runs [action] on the email [emailId] of the login [loginId]; false when it did not change. */
-private suspend fun EmailShortcuts.perform(
+private suspend fun EmailWriter.perform(
     action: AlertAction,
     loginId: String,
     emailId: String,

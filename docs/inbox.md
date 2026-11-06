@@ -192,6 +192,9 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
   refused messages again, and the ones it changes get their own Undo. A refused Undo offers
   Retry the same way. `MarkOutcome` works out what Undo and Retry send, and `MessageMarking` runs
   them in the toasts' process-wide scope, so they still reach the server after a rotation.
+- Every mark, move, and cleanup is a `MailEdits` edit: each list and the open Read view show it at
+  once and take it back when the server refuses, and folder counts reload once the server saved
+  an edit that changes them.
 - Archive, Trash, and Spam move the message to the account's folder with the `archive`, `trash`,
   or `junk` role, found by role because servers name these folders differently. Each is offered
   only when that folder exists and the message is not already in it. Archive also takes the

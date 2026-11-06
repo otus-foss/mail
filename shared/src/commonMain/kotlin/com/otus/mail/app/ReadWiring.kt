@@ -16,8 +16,10 @@ import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.allowingSender
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.MailEdits
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadDisplay
+import com.otus.mail.feature.inbox.presentation.ReadEdits
 import com.otus.mail.feature.inbox.presentation.ReadEffects
 import com.otus.mail.feature.inbox.presentation.ReadFiles
 import com.otus.mail.feature.inbox.presentation.ReadFolders
@@ -25,27 +27,24 @@ import com.otus.mail.feature.inbox.presentation.ReadPrivacy
 import com.otus.mail.feature.inbox.presentation.ReadServices
 import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
 import com.otus.mail.feature.inbox.presentation.components.PersonSheet
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
  * Connects the Read view to the app: the services behind its pages, strips, and menu, the saved
- * privacy setting, and the folders of each account. Folder and page changes show on the list at
- * once and are undone with a notice if the server refuses them; deleting one page offers Undo in
- * [moveToasts]. Its toasts and their work belong to the process, see [MailServices.work].
+ * privacy setting, and the folders of each account. Its changes are [edits] on behalf of the list
+ * it opened from. Its toasts and their work belong to the process, see [MailServices.work].
  * [folderActions] make the folders that the folders sheet starts. One per [MailStates].
  */
 internal class ReadWiring(
     private val services: MailServices,
-    private val scope: CoroutineScope,
     private val behavior: MailBehaviorState,
     private val folders: FoldersState,
     private val colors: FolderColorsState,
-    private val moveToasts: MoveToasts,
+    private val edits: MailEdits,
     private val folderActions: FolderActions,
 ) {
     private val effects =
-        ReadEffects(moveToasts.toasts, launch = { task -> services.work.launch { task() } }, services.newsletterSteps)
+        ReadEffects(edits.toasts.toasts, launch = { task -> services.work.launch { task() } }, services.newsletterSteps)
     private val privacy =
         ReadPrivacy(
             setting = { behavior.behavior.remoteImages },
@@ -59,15 +58,13 @@ internal class ReadWiring(
     fun context(
         feed: InboxFeedState,
         person: PersonSheet? = null,
-    ): ReadContext {
-        val changes = ReadPageChanges(services, folders, moveToasts, scope, feed)
-        return ReadContext(
+    ): ReadContext =
+        ReadContext(
             pages = services.conversationMessages,
             folders =
                 ReadFolders(
                     of = { message -> folders.account(message.location.accountId)?.messageFolders().orEmpty() },
                     cameFrom = { message -> cameFrom(feed.mailScope, message) },
-                    apply = changes::refile,
                     newFolder =
                         NewFolderSheet { accountId, onDismiss ->
                             val dialog = FolderDialog.Create(accountId, parentId = null)
@@ -79,7 +76,7 @@ internal class ReadWiring(
             privacy = privacy,
             files = files,
             services =
-                ReadServices(services.newsletters, services.headers, services.mute, services.blocks, changes, person),
+                ReadServices(services.newsletters, services.headers, services.blocks, ReadEdits(edits, feed), person),
             effects = effects,
             display =
                 ReadDisplay(
@@ -88,7 +85,6 @@ internal class ReadWiring(
                     setZen = { on -> behavior.update { it.copy(zenRead = on) } },
                 ),
         )
-    }
 
     /**
      * The folders of [message]'s account that [scope] lists: a folder page's folder, or the account's

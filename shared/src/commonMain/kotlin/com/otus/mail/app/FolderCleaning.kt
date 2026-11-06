@@ -8,27 +8,30 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.presentation.FolderCleanup
 import com.otus.mail.feature.inbox.presentation.FolderEmptying
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.MoveTarget
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import com.otus.mail.feature.inbox.presentation.MailEdits
+import com.otus.mail.feature.inbox.presentation.delete
+import com.otus.mail.feature.inbox.presentation.empty
+import com.otus.mail.feature.inbox.presentation.notSpam
 
 /**
- * Not spam, deleting for good, and emptying Spam and Trash. Each change shows at once; messages
- * the server keeps come back, with a notice.
+ * Not spam, deleting for good, and emptying Spam and Trash where the folders allow them, as [edits]
+ * that show at once; messages the server keeps come back, with a notice.
  */
 internal class FolderCleaning(
-    private val services: MailServices,
     private val folders: FoldersState,
-    private val scope: CoroutineScope,
+    private val edits: MailEdits,
 ) {
     /** The cleanup actions for the messages [feed] shows. */
     fun cleanup(feed: InboxFeedState): FolderCleanup =
         FolderCleanup(
             role = ::role,
             listRole = { listRole(feed) },
-            onNotSpam = { message, inbox -> notSpam(feed, message, inbox) },
+            // Spam keywords change only where the folder allows marks; the move happens either way.
+            onNotSpam = { message, inbox ->
+                edits.notSpam(feed, message, inbox, keywords = folders.rightsOf(message).maySetKeywords)
+            },
             canDelete = ::canDelete,
-            onDelete = { delete(feed, it) },
+            onDelete = { edits.delete(feed, it) },
             emptying = { emptying(feed) },
         )
 
@@ -47,79 +50,13 @@ internal class FolderCleaning(
             role(message)?.isBin == true &&
             folders.rightsOf(message).mayRemoveItems
 
-    /** Spam keywords change only where the folder allows marks; the move happens either way. */
-    private fun notSpam(
-        feed: InboxFeedState,
-        message: MailMessage,
-        inbox: MoveTarget,
-    ) {
-        val change = feed.remove(message.id)
-        val keywords = folders.rightsOf(message).maySetKeywords
-        scope.launch {
-            if (services.cleaner.notSpam(message, inbox.folderId, keywords)) {
-                change.confirm()
-                folders.refresh()
-            } else {
-                change.rollBack()
-                feed.refresh()
-                folders.refresh()
-                feed.report("Couldn't move the message to ${inbox.label}. Try again.")
-            }
-        }
-    }
-
-    private fun delete(
-        feed: InboxFeedState,
-        messages: List<MailMessage>,
-    ) {
-        val changes = messages.associate { it.id to feed.remove(it.id) }
-        scope.launch {
-            val deleted = services.cleaner.delete(messages)
-            changes.forEach { (id, change) -> if (id in deleted) change.confirm() else change.rollBack() }
-            val kept = messages.size - deleted.size
-            if (kept > 0) {
-                feed.refresh()
-                feed.report("Couldn't finish deleting ${countText(kept)}. Try again.")
-            }
-            folders.refresh()
-        }
-    }
-
     /** Empties only the list's folders that let their messages leave. */
     private fun emptying(feed: InboxFeedState): FolderEmptying? {
         val role = listRole(feed)?.takeIf { it != MailboxRole.Sent } ?: return null
         return shownFolders(feed.mailScope)
             .filter { it.rights.mayRemoveItems }
             .takeIf { it.isNotEmpty() }
-            ?.let { folders -> FolderEmptying(role, folders.sumOf(MailFolder::total)) { empty(feed, folders) } }
-    }
-
-    /** Takes the loaded messages off the list, and puts back those the server kept. */
-    private fun empty(
-        feed: InboxFeedState,
-        emptied: List<MailFolder>,
-    ) {
-        val changes =
-            feed.messages
-                .filter { message ->
-                    emptied.any { it.accountId == message.location.accountId && it.id == message.location.mailboxId }
-                }.associateWith { feed.remove(it.id) }
-        scope.launch {
-            val results = emptied.map { it.accountId to services.cleaner.empty(it.accountId, it.id) }
-            val removed = results.flatMap { (account, deletion) -> deletion.emailIds.map { account to it } }.toSet()
-            val (gone, kept) =
-                changes.entries.partition { (message, _) ->
-                    val members = message.conversation?.members?.map { it.emailId } ?: listOf(message.emailId)
-                    members.isNotEmpty() && members.all { message.location.accountId to it in removed }
-                }
-            gone.forEach { it.value.confirm() }
-            kept.forEach { it.value.rollBack() }
-            val incomplete = results.any { !it.second.complete }
-            // A complete empty can still keep a row whose members moved away meanwhile; refresh shows where they went.
-            if (incomplete || kept.isNotEmpty()) feed.refresh()
-            if (incomplete) feed.report("Couldn't delete every message. Try again.")
-            folders.refresh()
-        }
+            ?.let { folders -> FolderEmptying(role, folders.sumOf(MailFolder::total)) { edits.empty(feed, folders) } }
     }
 
     /** The loaded folders [mailScope] reads, when it names them by role or id. */
@@ -131,5 +68,3 @@ internal class FolderCleaning(
             MailScope.AllMailboxes, is MailScope.Mailboxes, is MailScope.Roles -> emptyList()
         }
 }
-
-internal fun countText(count: Int): String = if (count == 1) "1 message" else "$count messages"

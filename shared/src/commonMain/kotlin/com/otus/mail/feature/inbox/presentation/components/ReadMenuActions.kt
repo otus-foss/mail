@@ -9,7 +9,6 @@ import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.domain.withContent
-import com.otus.mail.feature.inbox.domain.withFlag
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadSheet
@@ -19,7 +18,7 @@ import com.otus.mail.feature.inbox.presentation.read.ReadMenuSection
 
 /**
  * What the ⋯ menu's entries do. Entries about this message act on the page's email alone, through
- * the read context's page changes; the conversation's act on the [row], the whole conversation the
+ * the read context's edits; the conversation's act on the [row], the whole conversation the
  * list shows. An action that takes the row away runs through [perform], which closes the page first.
  */
 internal class ReadMenuActions(
@@ -102,7 +101,7 @@ internal class ReadMenuActions(
             ReadMenuEntry.Print -> read.files.printer != null
             ReadMenuEntry.ViewDetails -> read.services.headers != null
             ReadMenuEntry.BlockSender -> read.services.blocks != null
-            is ReadMenuEntry.Mute -> read.services.mute != null && state.muted != null
+            is ReadMenuEntry.Mute -> read.services.edits != null && state.muted != null
             ReadMenuEntry.MarkUnread -> canMarkPage(MessageFlag.Read)
             is ReadMenuEntry.Flag -> canMarkPage(MessageFlag.Flagged)
             ReadMenuEntry.DeleteThisMessage -> canChangePages
@@ -113,7 +112,7 @@ internal class ReadMenuActions(
             else -> true
         }
 
-    private val canChangePages: Boolean get() = read.services.changes != null && actions != null
+    private val canChangePages: Boolean get() = read.services.edits != null && actions != null
 
     private fun canMarkPage(flag: MessageFlag): Boolean = canChangePages && actions?.marks?.can(row, flag) == true
 
@@ -126,27 +125,19 @@ internal class ReadMenuActions(
         replyOffer(page, action, role = null, compose)?.run?.invoke()
     }
 
-    /** Marks the page's email alone, with its own marks; a refused change goes back. */
+    /** Marks the page's email alone, with its own marks. */
     private fun mark(
         page: MailMessage,
         flag: MessageFlag,
         on: Boolean,
     ) {
-        val changes = read.services.changes ?: return
-        state.edit(page.id) { it.withFlag(flag, on) }
-        changes.mark(row, page, flag, on) { state.edit(page.id) { it.withFlag(flag, !on) } }
+        read.services.edits?.mark(row, page, flag, on)
     }
 
-    /**
-     * Moves the page's email alone to Trash, with the usual Undo toast. The conversation stays on
-     * the list, and the page comes back where it was when the server refuses or Undo runs.
-     */
+    /** Moves the page's email alone to Trash, with the usual Undo toast. */
     private fun deletePage(page: MailMessage) {
-        val changes = read.services.changes ?: return
         val target = actions?.shortcutTarget(page, MailboxRole.Trash) ?: return
-        val index = state.pages.indexOfFirst { it.id == page.id }
-        state.drop(page.id)
-        changes.trash(row, page, target) { state.restore(page, index) }
+        read.services.edits?.trash(row, page, target)
     }
 
     private fun block(page: MailMessage) {
@@ -160,10 +151,10 @@ internal class ReadMenuActions(
     }
 
     private fun mute(on: Boolean) {
-        val mute = read.services.mute ?: return
+        val edits = read.services.edits ?: return
         state.muted = on
         read.effects.launch {
-            if (!mute.setMuted(row, on)) {
+            if (!edits.setMuted(row, on)) {
                 state.muted = !on
                 read.effects.toasts.show(ToastMessage("Couldn't change mute. Try again."))
             }

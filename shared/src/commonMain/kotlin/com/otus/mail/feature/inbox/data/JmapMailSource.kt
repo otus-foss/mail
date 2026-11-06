@@ -133,7 +133,7 @@ class JmapMailSource(
                         clock.now().toEpochMilliseconds()
                     }
                 locks.of(login.id).withLock {
-                    queue?.flush(connections, login.id, accountCache)
+                    queue?.flush(login.id)
                     lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
                     if (queue != null) accountCache.patchEmails(login.id, queue.pending(login.id))
                 }

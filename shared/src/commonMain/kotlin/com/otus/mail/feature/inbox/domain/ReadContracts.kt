@@ -111,17 +111,6 @@ fun interface MessageHeaders {
     suspend fun headers(message: MailMessage): List<MailHeader>?
 }
 
-/** Mutes a conversation with the `$muted` keyword, so new mail in it does not notify. */
-interface ConversationMute {
-    suspend fun isMuted(message: MailMessage): Boolean
-
-    /** False when the server refused or could not be reached. */
-    suspend fun setMuted(
-        message: MailMessage,
-        muted: Boolean,
-    ): Boolean
-}
-
 /** Blocks senders with a server-side rule that files their mail as spam. */
 fun interface SenderBlocks {
     /** False when the account has no rules or the server refused. */

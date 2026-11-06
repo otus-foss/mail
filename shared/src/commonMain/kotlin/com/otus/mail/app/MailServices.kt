@@ -40,15 +40,11 @@ import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
 import com.otus.mail.feature.inbox.data.JmapAttachmentUploads
 import com.otus.mail.feature.inbox.data.JmapComposeMail
 import com.otus.mail.feature.inbox.data.JmapConversationMessages
-import com.otus.mail.feature.inbox.data.JmapConversationMute
-import com.otus.mail.feature.inbox.data.JmapEmailShortcuts
+import com.otus.mail.feature.inbox.data.JmapEmailWriter
 import com.otus.mail.feature.inbox.data.JmapKnownPeople
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import com.otus.mail.feature.inbox.data.JmapMessageBodies
-import com.otus.mail.feature.inbox.data.JmapMessageCleaner
 import com.otus.mail.feature.inbox.data.JmapMessageHeaders
-import com.otus.mail.feature.inbox.data.JmapMessageMarker
-import com.otus.mail.feature.inbox.data.JmapMessageMover
 import com.otus.mail.feature.inbox.data.JmapNewsletters
 import com.otus.mail.feature.inbox.data.JmapPeopleSearch
 import com.otus.mail.feature.inbox.data.JmapSendChecker
@@ -59,19 +55,15 @@ import com.otus.mail.feature.inbox.data.ServerSites
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
-import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
-import com.otus.mail.feature.inbox.domain.EmailShortcuts
+import com.otus.mail.feature.inbox.domain.EmailWriter
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.MessageBodies
-import com.otus.mail.feature.inbox.domain.MessageCleaner
 import com.otus.mail.feature.inbox.domain.MessageHeaders
-import com.otus.mail.feature.inbox.domain.MessageMarker
-import com.otus.mail.feature.inbox.domain.MessageMover
 import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.PeopleSearch
 import com.otus.mail.feature.inbox.domain.ScheduledSends
@@ -79,6 +71,7 @@ import com.otus.mail.feature.inbox.domain.SenderBlocks
 import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import com.otus.mail.feature.inbox.domain.ThreadHistory
+import com.otus.mail.feature.inbox.presentation.MoveToasts
 import com.otus.mail.feature.inbox.presentation.NewsletterSteps
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
@@ -150,17 +143,15 @@ class MailServices(
     }
 
     /** Marks and moves that wait for the server; see docs/storage.md. */
-    private val changes by lazy { EmailChangeQueue(stores.waiting.changes, host.wakeOutbox) }
+    private val changes by lazy { EmailChangeQueue(connections, cache, stores.waiting.changes, host.wakeOutbox) }
+    private val jmapWriter by lazy { JmapEmailWriter(connections, cache, changes, mailboxes) }
+
+    /** Every change to emails, also for a notification's buttons, which act without opening Mail. */
+    val writer: EmailWriter get() = jmapWriter
     internal val mail: MailSource by lazy {
         JmapMailSource(connections, cache, sites = serverSites, queue = changes)
     }
-    internal val mover: MessageMover by lazy { JmapMessageMover(connections, cache, changes) }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, cache) }
-    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, cache, changes) }
-
-    /** Marks and archives for a notification's buttons, which act without opening Mail. */
-    val shortcuts: EmailShortcuts by lazy { JmapEmailShortcuts(connections, cache, changes) }
-    internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections) }
     private val compose by lazy { JmapComposeMail(connections, mailboxes) }
     internal val drafts: DraftRepository get() = compose.drafts
     internal val sender: DraftSender get() = compose.sender
@@ -192,10 +183,9 @@ class MailServices(
     }
     internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, mailboxes) }
     internal val newsletters: Newsletters by lazy {
-        JmapNewsletters(connections, drafts, sender, cache)
+        JmapNewsletters(connections, drafts, sender, jmapWriter, mailboxes)
     }
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections) }
-    internal val mute: ConversationMute by lazy { JmapConversationMute(connections, cache) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
 
     /**
@@ -243,7 +233,7 @@ class MailServices(
      */
     suspend fun resumeOutbox(): Boolean {
         outbox.resume()
-        val changesWait = changes.flushAll(connections, cache)
+        val changesWait = changes.flushAll()
         return outbox.waiting() || changesWait
     }
 

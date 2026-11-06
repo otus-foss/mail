@@ -319,11 +319,11 @@ migration of older bars, and switching folders. `MoveToOffersTest` covers moving
 the disabled button, and Suggested move, and `MoveTargetPathTest` the folder paths move targets
 carry. `MoveToButtonsTest` picks Move to buttons with different folders for two slots, switches
 one slot's folder through its `ValuePicker`, and moves the open message with one. `FolderBarsTest`
-covers each folder's default bars and when they apply, `JmapMessageCleanerTest` the Not spam
+covers each folder's default bars and when they apply, `EmailCleanupTest` the Not spam
 patch, batching, and emptying, `FolderCleaningTest` the rights checks and the rollback of kept
 messages, and `FolderActionsTest` Not spam in Spam and the Delete forever confirm in Trash.
-`JmapMessageMarkerTest` covers batched marks per account, `MessageMarkingTest` the rollback of
-refused marks and the single folder refresh, and `MarkOffersTest` that Mark all read and a
+`EmailMarksTest` covers batched marks per account, `MessageMarkingTest` the rollback of
+refused marks and the single change of folder counts, and `MarkOffersTest` that Mark all read and a
 selection mark their messages in one change.
 `InboxActionBarTest` covers the message list's bar and the **Same everywhere** mode across
 screens, `ComposeActionsTest` the draft requests and the reply context, and

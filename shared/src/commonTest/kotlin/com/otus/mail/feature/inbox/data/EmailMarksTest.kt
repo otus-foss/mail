@@ -19,7 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class JmapMessageMarkerTest {
+class EmailMarksTest {
     private val login = ADA_LOGIN
 
     /** A second login on another server, with the same credentials so the mock server accepts it. */
@@ -50,13 +50,13 @@ class JmapMessageMarkerTest {
     private fun marker(
         session: String = STALWART_SESSION,
         reply: (String) -> String,
-    ): JmapMessageMarker {
+    ): JmapEmailWriter {
         val store =
             InMemoryLoginStore().apply {
                 save(login, "secret")
                 save(work, "secret")
             }
-        return JmapMessageMarker(JmapConnections(JmapClient(stalwartLike(session, reply)), store))
+        return emailWriter(JmapConnections(JmapClient(stalwartLike(session, reply)), store))
     }
 
     private suspend fun sentFor(
@@ -142,7 +142,7 @@ class JmapMessageMarkerTest {
         }
 
     @Test
-    fun refusedMessagesAndFailedBatchesAreLeftOut() =
+    fun refusedMessagesAreLeftOutAndFailedBatchesWait() =
         runTest {
             val messages = listOf(message("m1"), message("m2"), message("m3"), message("w1", "work"))
             val refused = marker(smallBatches) { setReply(it, refused = setOf("m2")) }
@@ -150,9 +150,9 @@ class JmapMessageMarkerTest {
             // The second batch of the first account fails.
             val failing = marker(smallBatches) { if ("\"m3\"" in it) "Service unavailable" else setReply(it) }
             assertEquals(
-                setOf("ada/m1", "ada/m2", "work/w1"),
+                messages.map { it.id }.toSet(),
                 failing.mark(messages, MessageFlag.Read, true),
-                "The first batch still counts, and other accounts still change",
+                "A batch the server did not get waits for it and counts as made",
             )
             val gone = message("g1", "gone")
             assertEquals(

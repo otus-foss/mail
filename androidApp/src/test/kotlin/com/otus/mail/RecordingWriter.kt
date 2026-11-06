@@ -1,0 +1,98 @@
+package com.otus.mail
+
+import com.otus.mail.feature.inbox.domain.Deletion
+import com.otus.mail.feature.inbox.domain.EmailWriter
+import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MessageFlag
+
+/** A server that takes every change and only records which emails each was for. */
+internal class RecordingWriter : EmailWriter {
+    val marks = mutableListOf<Pair<String, MessageFlag>>()
+    val moved = mutableListOf<String>()
+
+    /** Each email's mailboxes the last refile sent, by Email id. */
+    var refiled: Map<String, Set<String>>? = null
+
+    override suspend fun mark(
+        messages: List<MailMessage>,
+        flag: MessageFlag,
+        on: Boolean,
+    ): Set<String> {
+        messages.forEach { marks += it.emailId to flag }
+        return messages.map { it.id }.toSet()
+    }
+
+    override suspend fun move(
+        message: MailMessage,
+        folderId: String,
+        leaving: Set<String>,
+    ): Boolean {
+        moved += message.emailId
+        return true
+    }
+
+    override suspend fun moveBack(
+        message: MailMessage,
+        folderId: String,
+        returning: Set<String>,
+    ) = true
+
+    override suspend fun setInFolder(
+        message: MailMessage,
+        folderId: String,
+        inFolder: Boolean,
+    ) = true
+
+    override suspend fun setMailboxes(
+        accountId: String,
+        mailboxes: Map<String, Set<String>>,
+    ): Set<String> {
+        refiled = mailboxes
+        return mailboxes.keys
+    }
+
+    override suspend fun notSpam(
+        message: MailMessage,
+        inboxId: String,
+        keywords: Boolean,
+    ) = true
+
+    override suspend fun delete(messages: List<MailMessage>) = messages.map { it.id }.toSet()
+
+    override suspend fun empty(
+        accountId: String,
+        folderId: String,
+    ) = Deletion(emptySet(), complete = true)
+
+    override suspend fun isMuted(message: MailMessage) = false
+
+    override suspend fun setMuted(
+        message: MailMessage,
+        muted: Boolean,
+    ) = true
+
+    override suspend fun markRead(
+        loginId: String,
+        emailId: String,
+    ) = true
+
+    override suspend fun flag(
+        loginId: String,
+        emailId: String,
+    ) = true
+
+    override suspend fun archive(
+        loginId: String,
+        emailId: String,
+    ) = true
+
+    override suspend fun trash(
+        loginId: String,
+        emailId: String,
+    ) = true
+
+    override suspend fun reportSpam(
+        loginId: String,
+        emailId: String,
+    ) = true
+}

@@ -8,10 +8,8 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.setValue
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.Participant
 import com.otus.mail.feature.inbox.domain.memberMailboxes
-import com.otus.mail.feature.inbox.domain.withFlag
 
 /**
  * A sheet over the Read view: the folders of the conversation, a new folder started from there, or
@@ -77,11 +75,16 @@ class ReadState(
     val bodies = PageBodies()
 
     /**
-     * Takes the conversation's pages; a failed or empty load keeps the ones shown. Returns the
-     * index of the page that was on screen before the screen was recreated, if it is still there.
+     * Takes the conversation's pages, with the [edits] their load may have missed; a failed or
+     * empty load keeps the ones shown. Returns the index of the page that was on screen before the
+     * screen was recreated, if it is still there.
      */
-    fun showPages(found: List<MailMessage>?): Int? {
+    fun showPages(
+        found: List<MailMessage>?,
+        edits: List<MailEdit> = emptyList(),
+    ): Int? {
         if (!found.isNullOrEmpty()) pages = found
+        edits.forEach(::apply)
         loaded = true
         return pages.indexOfFirst { it.id == shownId }.takeIf { it >= 0 }
     }
@@ -94,46 +97,44 @@ class ReadState(
             row.memberMailboxes
         }
 
-    /** Shows each page's email in the mailboxes [after] gives it, by Email id. */
-    fun refile(after: Map<String, Set<String>>) {
-        pages =
-            pages.map { page ->
-                after[page.emailId]?.let { page.copy(location = page.location.copy(mailboxIds = it)) } ?: page
-            }
-    }
-
-    /** Shows [transform] of the page with [id] at once, such as a new flag. */
-    fun edit(
-        id: String,
-        transform: (MailMessage) -> MailMessage,
-    ) {
-        pages = pages.map { if (it.id == id) transform(it) else it }
-    }
-
-    /** Takes the page with [id] away, such as a message deleted on its own. */
-    fun drop(id: String) {
-        if (pages.size > 1) pages = pages.filterNot { it.id == id }
-    }
-
-    /** Puts [page] back at [index], such as after Undo; nothing when it is still there. */
-    fun restore(
-        page: MailMessage,
-        index: Int,
-    ) {
-        if (pages.none { it.id == page.id }) pages = pages.take(index) + page + pages.drop(index)
-    }
-
     /**
-     * Pages as the list's [row] settles them: its listed emails are read once the row is, and none
-     * is flagged once the row is not, such as after the row was marked from the list's bar.
+     * Shows each edit of the pages' emails at once, wherever it was made, such as Mark read from
+     * the list's bar; a rolled back or undone edit puts the pages back as they were.
      */
-    fun follow(row: MailMessage) {
-        val listed = row.memberMailboxes.keys
+    internal val edits: EditObserver =
+        object : EditObserver {
+            override fun shown(edit: MailEdit) = apply(edit)
+
+            override fun settled(
+                edit: MailEdit,
+                kept: Boolean,
+            ) {
+                if (!kept) restore(edit)
+            }
+
+            override fun reverted(edit: MailEdit) = restore(edit)
+        }
+
+    private val before = mutableMapOf<MailEdit, List<IndexedValue<MailMessage>>>()
+
+    /** The view keeps at least one page, so an edit never drops the last. */
+    private fun apply(edit: MailEdit) {
+        val change = edit.page ?: return
+        val hit = pages.withIndex().filter { it.value.emailId in edit.emailIds }
+        if (hit.isEmpty()) return
+        before[edit] = hit
+        pages = pages.mapNotNull { if (it.emailId in edit.emailIds) change(it) else it }.ifEmpty { pages }
+    }
+
+    private fun restore(edit: MailEdit) {
+        val old = before.remove(edit) ?: return
         pages =
-            pages.map { page ->
-                val seen = !row.attributes.unread && page.emailId in listed
-                val read = if (seen) page.withFlag(MessageFlag.Read, on = true) else page
-                if (row.attributes.flagged) read else read.withFlag(MessageFlag.Flagged, on = false)
+            old.fold(pages) { list, (index, page) ->
+                if (list.any { it.id == page.id }) {
+                    list.map { if (it.id == page.id) page else it }
+                } else {
+                    list.take(index) + page + list.drop(index)
+                }
             }
     }
 

@@ -6,7 +6,6 @@ import com.otus.jmap.JmapJson
 import com.otus.jmap.SetMethod
 import com.otus.jmap.isTemporary
 import com.otus.jmap.login.LoginLifecycle
-import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.CacheStorageException
@@ -33,12 +32,14 @@ import kotlin.time.Instant
 /**
  * Marks and moves as `Email/set` patches (RFC 8621, section 4.6) that wait for the server, kept in
  * [store] by login and email, so a change made offline or just before the app closed still
- * arrives. A change shows in the cache at once. A later patch of an email merges into the one
+ * arrives. A change shows in [cache] at once. A later patch of an email merges into the one
  * waiting. The patches only set or remove keys, so sending one twice changes nothing more. [wake]
  * asks the platform to try again once the network is back. [store] is read and written on [io].
  * Without a store, changes last as long as the process.
  */
 class EmailChangeQueue(
+    private val connections: JmapConnections,
+    private val cache: MailCache,
     private val store: EmailChangeStore?,
     private val wake: (Instant) -> Unit = {},
     private val now: () -> Instant = { Clock.System.now() },
@@ -53,38 +54,29 @@ class EmailChangeQueue(
 
     /**
      * Queues [patches] of [loginId]'s emails and sends every change the login has waiting. Returns
-     * the emails whose change the server made or that wait for it, which show in [cache] at once;
-     * the server refused the others.
+     * the emails whose change the server made or that wait for it, which show in the cache at
+     * once; the server refused the others.
      */
     internal suspend fun update(
-        connections: JmapConnections,
         loginId: String,
         patches: Map<String, JsonObject>,
-        cache: MailCache?,
     ): Set<String> =
         locks.of(loginId).withLock {
             write(loginId, pending(loginId).merged(patches))
-            val refused = send(connections, loginId, cache)
+            val refused = send(loginId)
             val shown = patches.keys - refused
-            if (cache != null) cache.show(loginId, patches.filterKeys { it in shown })
+            cache.show(loginId, patches.filterKeys { it in shown })
             shown
         }
 
     /** Sends [loginId]'s waiting changes, as before a sync reads the server's mail. */
-    internal suspend fun flush(
-        connections: JmapConnections,
-        loginId: String,
-        cache: MailCache?,
-    ) {
-        locks.of(loginId).withLock { send(connections, loginId, cache) }
+    internal suspend fun flush(loginId: String) {
+        locks.of(loginId).withLock { send(loginId) }
     }
 
     /** Sends every login's waiting changes. True when some still wait for the network. */
-    suspend fun flushAll(
-        connections: JmapConnections,
-        cache: MailCache?,
-    ): Boolean {
-        saved().keys.forEach { flush(connections, it, cache) }
+    suspend fun flushAll(): Boolean {
+        saved().keys.forEach { flush(it) }
         return saved().isNotEmpty()
     }
 
@@ -103,30 +95,32 @@ class EmailChangeQueue(
 
     /**
      * Sends the waiting changes batch by batch and drops each one the server answered. A refused
-     * email leaves the cache, so the next sync reads it again. Returns the refused emails.
+     * email leaves the cache, so the next sync reads it again. Returns the refused emails; every
+     * one when the login was removed, and its changes with it, or has no mail.
      */
-    private suspend fun send(
-        connections: JmapConnections,
-        loginId: String,
-        cache: MailCache?,
-    ): Set<String> {
+    private suspend fun send(loginId: String): Set<String> {
         val waiting = pending(loginId)
         if (waiting.isEmpty()) return emptySet()
         var left = waiting
         var refused = emptySet<String>()
         var limited = false
         try {
-            val account = connections.mailAccount(loginId)
-            if (account == null) {
-                // The login was removed, and its changes with it.
-                left = emptyMap()
-            } else {
-                waiting.entries.chunked(account.session.setBatch).forEach { batch ->
-                    val (answered, notTaken) = account.sendBatch(batch.associate { it.toPair() })
-                    limited = limited || answered.size < batch.size
-                    left = left - answered
-                    refused = refused + notTaken
+            val account =
+                try {
+                    connections.mailAccount(loginId)
+                } catch (expected: JmapException.Unsupported) {
+                    // A login without mail never takes the changes.
+                    null
                 }
+            if (account == null) {
+                write(loginId, emptyMap())
+                return waiting.keys
+            }
+            waiting.entries.chunked(account.session.setBatch).forEach { batch ->
+                val (answered, notTaken) = account.sendBatch(batch.associate { it.toPair() })
+                limited = limited || answered.size < batch.size
+                left = left - answered
+                refused = refused + notTaken
             }
         } catch (expected: JmapException) {
             // Offline or a server error: what is left goes with the next sync or background run.
@@ -136,7 +130,7 @@ class EmailChangeQueue(
         write(loginId, left)
         // A server that asked to slow down gets the next try only after a while.
         if (left.isNotEmpty()) wake(if (limited) now() + RATE_LIMIT_WAIT else now())
-        if (cache != null && refused.isNotEmpty()) cache.forgetEmails(loginId, refused)
+        if (refused.isNotEmpty()) cache.forgetEmails(loginId, refused)
         return refused
     }
 
