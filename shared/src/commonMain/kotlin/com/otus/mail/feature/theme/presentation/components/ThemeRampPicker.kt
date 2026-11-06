@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,32 +35,46 @@ import com.otus.mail.feature.theme.presentation.withRamp
 
 /**
  * Makes a set of theme colors from one hue on the Theme page. The slider picks the hue, starting
- * at [choice]'s accent, the toggle picks dark or light pages, and the swatches show the set.
- * Shuffle draws another set from the same hue; Apply runs [onSelect] with the set as a new custom
- * theme, so the user's own themes stay as they are.
+ * at [choice]'s accent, the toggle picks dark or light mode, and the swatches show the set. Once
+ * the user changes any of them, [onTry] gets each new set to preview. Shuffle draws another set
+ * from the same hue; Apply runs [onSelect] with the set as a new custom theme, so the user's own
+ * themes stay as they are.
  */
 @Composable
 fun ThemeRampPicker(
     choice: ThemeChoice,
+    onTry: (ThemeChoice) -> Unit,
     onSelect: (ThemeChoice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var hue by rememberSaveable { mutableFloatStateOf(choice.accent.toHsl().hue) }
     var light by rememberSaveable { mutableStateOf(choice.palette.isLight) }
     var seed by rememberSaveable { mutableIntStateOf(0) }
+    var touched by rememberSaveable(choice) { mutableStateOf(false) }
     val generated = remember(choice, hue, light, seed) { choice.withRamp(themeRamp(hue, light, seed)) }
+    LaunchedEffect(generated, touched) { if (touched) onTry(generated) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(ThemeTokens.previewGap)) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SwatchStack(generated.palette.swatches)
+            SwatchStack(generated.palette.swatches, size = ThemeTokens.sliderHeight)
             Text("Colors from one hue", color = OtusColors.text1)
         }
-        ColorSlider(hue, { hue = it }, hueTrack(generated.accent), "Base hue", range = 0f..FULL_TURN)
-        SegmentedToggle(PAGE_OPTIONS, selected = if (light) 1 else 0, onSelect = { light = it == 1 })
+        ColorSlider(hue, {
+            hue = it
+            touched = true
+        }, hueTrack(generated.accent), "Base hue", range = 0f..FULL_TURN)
+        SegmentedToggle(MODE_OPTIONS, selected = if (light) 1 else 0, onSelect = {
+            light = it == 1
+            touched = true
+        })
         ButtonPair(
-            secondary = PairButton("Shuffle", onClick = { seed++ }),
+            secondary =
+                PairButton("Shuffle", onClick = {
+                    seed++
+                    touched = true
+                }),
             primary = PairButton("Apply", onClick = { onSelect(generated) }),
         )
     }
@@ -75,5 +90,5 @@ private fun hueTrack(accent: Color): Brush {
     return Brush.horizontalGradient(List(HUE_STOPS + 1) { hslColor(FULL_TURN * it / HUE_STOPS, saturation, lightness) })
 }
 
-private val PAGE_OPTIONS = listOf("Dark pages", "Light pages")
+private val MODE_OPTIONS = listOf("Dark mode", "Light mode")
 private const val HUE_STOPS = 12

@@ -30,7 +30,8 @@ left, the control on the right, and large section titles. Search covers every pa
 - **Appearance** (`AppearanceSettingsScreen` from `com.otus.settings`) holds only how Otus looks,
   in one **Look** section: **Theme** (its page), **App icon**, **Mail list** (its page),
   **Date format**, and **Animations**. Nothing on it changes what Mail does.
-  - **Theme** previews the inbox in the current colors with `ThemeInboxPreview`, then offers the
+  - **Theme** shows a phone with the inbox under the control panel, in the current colors or
+    the set `ThemeRampPicker` is trying, then offers the
     **Otus**, **Light**, **Graphite** (warm grey, after Notion), and **Black** (true black, after
     the X app) themes as cards and seven accent swatches. The plus swatch opens a **Custom color**
     sheet with hue and intensity sliders, a hex field, and the shades in each theme; Done applies

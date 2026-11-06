@@ -1,14 +1,15 @@
 package com.otus.mail.app
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.otus.accounts.domain.AccountService
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
-import com.otus.designsystem.theme.tokens.settings.ThemeTokens
+import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.mail.feature.inbox.presentation.components.NotificationActionsSetting
-import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
 import com.otus.mail.feature.inbox.presentation.screens.FilterPanelSettingsScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
@@ -36,7 +37,7 @@ internal fun SettingsPageContent(
         MailPage.Behavior -> MailBehaviorPage(states, navigation, back)
         MailPage.Notifications, MailPage.NotificationOverrides -> NotificationPages(page, states, navigation, back)
         MailPage.SidebarSettings, MailPage.PinnedSettings -> SidebarSettingsPage(page, states, navigation, back)
-        MailPage.ThemeSettings -> ThemeSettingsScreen(settings.theme, onBack = back) { ThemePreview(settings.theme) }
+        MailPage.ThemeSettings -> ThemeSettingsPage(settings.theme, back)
         MailPage.ActionBarSettings -> ActionBarSettingsPage(states, back)
         MailPage.FilterPanelSettings -> FilterPanelSettingsScreen(states.behavior, onBack = back)
         MailPage.MailListSettings -> MailListSettingsPage(states, dateFormatter, back)
@@ -47,15 +48,18 @@ internal fun SettingsPageContent(
 }
 
 /**
- * The inbox in the picked colors, a warning while some of the user's colors are hard to read, and
- * the picker that makes a set of colors from one hue.
+ * The theme page with a warning while some of the user's colors are hard to read, and the picker
+ * that makes a set of colors from one hue. The phone shows the picker's set until the theme changes.
  */
 @Composable
-private fun ThemePreview(theme: ThemeSettingsState) {
-    Column(verticalArrangement = Arrangement.spacedBy(ThemeTokens.previewGap)) {
-        ThemeInboxPreview()
+private fun ThemeSettingsPage(
+    theme: ThemeSettingsState,
+    back: () -> Unit,
+) {
+    var trying by remember(theme.choice) { mutableStateOf<ThemeChoice?>(null) }
+    ThemeSettingsScreen(theme, onBack = back, preview = (trying ?: theme.choice).palette) {
         LowContrastWarning(theme.choice.lowContrast())
-        ThemeRampPicker(theme.choice, onSelect = theme::select)
+        ThemeRampPicker(theme.choice, onTry = { trying = it }, onSelect = theme::select)
     }
 }
 

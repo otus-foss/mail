@@ -14,7 +14,7 @@ palette rules.
 `App` takes a `ThemeSettingsState` and passes its palette to `OtusTheme`. `MainActivity` and the
 iOS view controller create it with `AndroidThemePreferenceStore` or `IosThemePreferenceStore`, and
 `MainActivity` darkens the system bar icons in the Light theme. `MailPage.ThemeSettings` shows
-Meta's `ThemeSettingsScreen` with `ThemeInboxPreview`. `ThemeSettingsTest` covers picking,
+Meta's `ThemeSettingsScreen`, whose phone preview shows the set the picker is trying before Apply. `ThemeSettingsTest` covers picking,
 saving, resetting, and a custom hex color. Below the preview, `LowContrastWarning` names the
 user's colors that fall below WCAG contrast; see [the color theme](../design.md#low-contrast-warning).
 Below it, `ThemeRampPicker` makes a custom theme from one hue with a port of RampenSau's color

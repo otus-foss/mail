@@ -71,7 +71,7 @@ class ThemeSettingsTest {
     @Test
     fun aSetFromOneHueIsAppliedAsANewThemeThatReadsWell() {
         openTheme()
-        compose.onNode(hasText("Light pages") and isSelectable()).performScrollTo().performClick()
+        compose.onNode(hasText("Light mode") and isSelectable()).performScrollTo().performClick()
         compose.onNode(hasText("Apply") and hasClickAction()).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT) { OtusColors.palette.isLight }
         assertTrue(saved.orEmpty().startsWith("light #"))
