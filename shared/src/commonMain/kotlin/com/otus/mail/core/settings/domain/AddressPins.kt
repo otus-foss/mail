@@ -1,5 +1,6 @@
 package com.otus.mail.core.settings.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.storage.StoreSpec
 import com.otus.mail.core.storage.TextCodec
@@ -18,7 +19,7 @@ data class AddressPins(
     fun byLogin(): Map<String, List<String>> = pins.groupBy({ it.accountId }, { it.address })
 
     private fun MailScopeChoice.Address.matches(other: MailScopeChoice.Address): Boolean =
-        accountId == other.accountId && address.equals(other.address, ignoreCase = true)
+        accountId == other.accountId && EmailAddressKey(address) == EmailAddressKey(other.address)
 
     companion object {
         fun of(byLogin: Map<String, List<String>>): AddressPins =

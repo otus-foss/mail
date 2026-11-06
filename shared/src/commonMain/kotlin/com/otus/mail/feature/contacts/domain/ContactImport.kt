@@ -107,11 +107,17 @@ private fun List<Card>.withFreeUids(
  * not have yet, under keys it does not use. Its books and everything it has stay as they are.
  */
 private fun Card.mergedWith(file: Card): Card {
+    val known =
+        emails
+            .orEmpty()
+            .values
+            .map { EmailAddressKey(it.address) }
+            .toSet()
     val newEmails =
         file.emails
             .orEmpty()
             .values
-            .filter { email -> emails.orEmpty().values.none { it.address.equals(email.address, ignoreCase = true) } }
+            .filter { EmailAddressKey(it.address) !in known }
             .distinctBy { EmailAddressKey(it.address) }
     val newPhones =
         file.phones

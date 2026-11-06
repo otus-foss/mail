@@ -11,4 +11,4 @@ fun ReadBehavior.allowingSender(address: String): ReadBehavior {
 
 /** [address] taken out of [ReadBehavior.allowedSenders], so its images ask first again. */
 fun ReadBehavior.withoutSender(address: String): ReadBehavior =
-    copy(allowedSenders = allowedSenders.filterNot { it.equals(address.trim(), ignoreCase = true) })
+    copy(allowedSenders = allowedSenders.filterNot { EmailAddressKey(it) == EmailAddressKey(address) })

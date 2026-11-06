@@ -1,6 +1,7 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
+import com.otus.accounts.domain.ownAddresses
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.messages.domain.AccountAddresses
 import com.otus.mail.core.messages.domain.MailScopeChoice
@@ -12,7 +13,7 @@ import com.otus.mail.feature.sidebar.presentation.SidebarCounter
 /** Each account's sign-in and sending addresses, for "Show mail from". */
 internal fun MailStates.accountAddresses(): List<AccountAddresses> =
     accounts.accounts.map { account ->
-        val addresses = AccountAddresses.of(account.id, account.name, account.username, account.emailAddresses)
+        val addresses = AccountAddresses(account.id, account.name, account.ownAddresses)
         addresses.copy(
             avatars =
                 addresses.addresses

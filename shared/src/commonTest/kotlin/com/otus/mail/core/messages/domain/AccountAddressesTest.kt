@@ -5,25 +5,7 @@ import kotlin.test.assertEquals
 
 class AccountAddressesTest {
     private val design =
-        AccountAddresses.of(
-            "design",
-            "Design",
-            username = "hi@design.ch",
-            identities = listOf("HI@design.ch", " test@design.ch ", "*@design.ch", "info@company.com"),
-        )
-
-    @Test
-    fun anAccountHasItsSignInThenItsIdentitiesOnceEachWithoutWildcards() {
-        assertEquals(listOf("hi@design.ch", "test@design.ch", "info@company.com"), design.addresses)
-    }
-
-    @Test
-    fun aSignInNameThatIsNoAddressIsLeftOut() {
-        assertEquals(
-            listOf("ada@example.org"),
-            AccountAddresses.of("ada", "Ada", "ada", listOf("ada@example.org")).addresses,
-        )
-    }
+        AccountAddresses("design", "Design", listOf("hi@design.ch", "test@design.ch", "info@company.com"))
 
     @Test
     fun addressesGroupByDomainInOrderOfFirstAppearance() {

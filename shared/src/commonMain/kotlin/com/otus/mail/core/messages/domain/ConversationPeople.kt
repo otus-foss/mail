@@ -43,7 +43,7 @@ internal fun MailMessage.isOwn(
     person: MailSender,
 ): Boolean =
     own.isMine(location.accountId, person.address) ||
-        (person.address.isNotBlank() && person.address.equals(location.accountAddress, ignoreCase = true))
+        (person.address.isNotBlank() && EmailAddressKey(person.address) == EmailAddressKey(location.accountAddress))
 
 private val MailSender.key: String
     get() = EmailAddressKey(address).value.ifBlank { name }

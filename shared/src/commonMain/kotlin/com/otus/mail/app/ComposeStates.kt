@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import com.otus.accounts.domain.ownAddresses
 import com.otus.accounts.presentation.AccountsState
 import com.otus.avatar.ui.presentation.OwnAvatarsState
 import com.otus.dateformat.DateFormatter
@@ -50,7 +51,7 @@ internal class ComposeStates(
             ComposeOrigin(
                 account.id,
                 all.map { ComposeAccount(it.id, it.name) },
-                account.emailAddresses + account.username,
+                account.ownAddresses,
                 behavior.behavior.write.recentFrom,
                 behavior.behavior.write.signatureInReplies,
                 photoCleaning = { behavior.behavior.write.photoCleaning },

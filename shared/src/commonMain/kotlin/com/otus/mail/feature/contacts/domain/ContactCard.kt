@@ -5,6 +5,7 @@ import com.otus.jscontact.Card
 import com.otus.jscontact.CardKind
 import com.otus.jscontact.NameComponentKind
 import com.otus.jscontact.PartialDate
+import com.otus.mail.core.mail.EmailAddressKey
 
 /**
  * One contact card as the server holds it, kept whole so an edit changes only what the user
@@ -34,7 +35,7 @@ data class ContactCard(
                 card.emails
                     .orEmpty()
                     .values
-                    .none { it.address.equals(name, ignoreCase = true) }
+                    .none { EmailAddressKey(it.address) == EmailAddressKey(name) }
         }
 
     /** The full name, or the joined name parts, or else the preferred address. */

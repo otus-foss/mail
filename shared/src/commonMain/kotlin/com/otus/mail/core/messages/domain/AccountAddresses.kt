@@ -5,7 +5,10 @@ import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.settings.domain.SidebarCount
 
-/** The addresses one account receives mail at, as "Show mail from" lists them. */
+/**
+ * The addresses one account receives mail at, as "Show mail from" lists them: the account's own
+ * addresses, from [com.otus.accounts.domain.ownAddresses].
+ */
 data class AccountAddresses(
     val accountId: String,
     val name: String,
@@ -15,28 +18,6 @@ data class AccountAddresses(
 ) {
     /** The avatar the user gave [address], if any. */
     fun avatarOf(address: String): ResolvedAvatar? = avatars[EmailAddressKey(address)]
-
-    companion object {
-        /**
-         * The sign-in [username] when it is an address, then the account's JMAP [identities], each
-         * once regardless of case. Wildcard identities, such as `*@example.org`, name no one
-         * address, so they are left out.
-         */
-        fun of(
-            accountId: String,
-            name: String,
-            username: String,
-            identities: List<String>,
-        ): AccountAddresses =
-            AccountAddresses(
-                accountId,
-                name,
-                (listOf(username) + identities)
-                    .map(String::trim)
-                    .filter { '@' in it && '*' !in it }
-                    .distinctBy(String::lowercase),
-            )
-    }
 }
 
 /** Addresses that share the part after the `@`, in the order they were listed. */

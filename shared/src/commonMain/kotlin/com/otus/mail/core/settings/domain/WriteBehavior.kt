@@ -1,5 +1,7 @@
 package com.otus.mail.core.settings.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /**
  * How Mail writes and sends. [recentFrom] holds the addresses the user last sent from, newest
  * first, which compose offers first and a new message from all accounts sends from.
@@ -19,7 +21,7 @@ data class WriteBehavior(
         copy(
             recentFrom =
                 listOf(address)
-                    .plus(recentFrom.filterNot { it.equals(address, ignoreCase = true) })
+                    .plus(recentFrom.filterNot { EmailAddressKey(it) == EmailAddressKey(address) })
                     .take(RECENT_FROM_LIMIT),
         )
 }

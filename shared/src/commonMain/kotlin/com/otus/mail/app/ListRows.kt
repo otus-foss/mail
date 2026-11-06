@@ -32,7 +32,7 @@ internal fun rememberRowLook(states: MailStates): RowLook {
                 }
             }.toMap()
     return remember(layout, accounts, avatars) {
-        RowLook(layout, OwnAddresses(accounts.associate { it.id to it.emailAddresses + it.username }), avatars)
+        RowLook(layout, OwnAddresses(accounts.associate { it.id to it.ownAddresses }), avatars)
     }
 }
 

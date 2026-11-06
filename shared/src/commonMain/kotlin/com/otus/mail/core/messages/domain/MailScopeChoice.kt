@@ -1,5 +1,6 @@
 package com.otus.mail.core.messages.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.AccountFolders
 
 /**
@@ -43,7 +44,7 @@ fun List<MailMessage>.within(choice: MailScopeChoice): List<MailMessage> =
 
 /** Whether [address] sent the message or is among its To or Cc recipients. */
 fun MailMessage.involves(address: String): Boolean =
-    (listOf(sender) + to + cc).any { it.address.equals(address, ignoreCase = true) }
+    (listOf(sender) + to + cc).any { EmailAddressKey(it.address) == EmailAddressKey(address) }
 
 /** The folders of [scope]'s account, or every account's while it shows all mail. */
 internal fun List<AccountFolders>.inScope(scope: MailScopeChoice): List<AccountFolders> =
