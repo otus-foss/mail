@@ -29,7 +29,7 @@ search field is open.
 - **New mail** starts a blank draft. When the list is filtered to one account, the draft sends
   from it.
 - **Search** opens the search field, as tapping the search prompt does.
-- **Filters** opens the filter sheet, as the header's filter button does.
+- **Filters** grows the control panel to every filter, as the header's filter button does.
 - **Mark all read** marks every unread message in the current results read, where the account
   allows it, in as few `Email/set` calls as each server allows. It is disabled when there is
   nothing to mark.
@@ -237,7 +237,7 @@ The mode is saved as `adaptive` or `fixed` under `action_bar_mode` on Android an
 is saved as a boolean under `action_bar_minimized` on Android and `otus.mail.action_bar_minimized`
 on iOS, and is off when missing.
 
-One action model in `feature/inbox/presentation/actions` serves every place: `ActionSubject.offer`
+One action model in `core/messages/presentation/actions` serves every place: `ActionSubject.offer`
 is one exhaustive `when` over `MailAction` that gives each action's label, symbol, and run for what
 the place holds (the swiped row, the selection, the open conversation and page, the list, or the
 draft), or null where it does not apply. `ActionLooks.kt` holds the labels and symbols settings

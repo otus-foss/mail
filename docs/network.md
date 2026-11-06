@@ -57,7 +57,7 @@ stops. Source:
 [`AccountsState.kt`](https://github.com/reazndev/otus-meta/blob/main/accounts/src/commonMain/kotlin/com/otus/accounts/presentation/AccountsState.kt).
 
 Blob downloads from these hosts include attachments, inline `cid:` images
-([`CidImages.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/data/CidImages.kt)),
+([`CidImages.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/read/data/CidImages.kt)),
 and contact photos stored as blobs
 ([`JmapContactAvatarSource.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otus/avatar/JmapContactAvatarSource.kt)).
 
@@ -71,8 +71,8 @@ WebView on Android and a WKWebView on iOS, with scripts, file access, and forms 
   **In your contacts** (the default) loads them for contacts, people the user wrote to, and
   allowed senders; **Always** for everyone; **Never** for no one. Mail in Spam never loads them.
   **Show** on the banner loads them once. Source:
-  [`ReadRules.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/domain/ReadRules.kt),
-  [`ReadPages.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ReadPages.kt).
+  [`ReadRules.kt`](../shared/src/commonMain/kotlin/com/otus/mail/core/messages/domain/ReadRules.kt),
+  [`ReadPages.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/read/presentation/components/ReadPages.kt).
 - **Sends:** the device's IP address, the URL (which can identify the recipient and act as a read
   receipt), and the time it was opened. Android sends a User-Agent without the device model or
   build, and turns Safe Browsing off so image addresses do not go to Google. Source:
@@ -90,7 +90,7 @@ Printing on Android renders in a separate WebView with network loads off
 
 Avatars always try contact photos on the user's own JMAP server. Every other avatar source waits
 for Settings › Privacy & security › **Website icons**, which is off by default
-([`MailBehavior.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/domain/MailBehavior.kt),
+([`MailBehavior.kt`](../shared/src/commonMain/kotlin/com/otus/mail/core/settings/domain/MailBehavior.kt),
 and otus-meta's `avatarOptions` in `avatar`).
 These requests carry no credentials or cookies, accept only public HTTPS hosts on port 443, and
 check every redirect
@@ -170,10 +170,10 @@ Only the Android nightly build checks for updates. Other builds never do
 
 Links in a message, a list's unsubscribe page, and other web addresses open outside the app on a
 tap, in whatever app handles them
-([`ReadPageBody.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/presentation/components/ReadPageBody.kt)).
+([`ReadPageBody.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/read/presentation/components/ReadPageBody.kt)).
 Mail sends nothing to these hosts itself. Unsubscribing by mail goes through the JMAP server; Mail
 does not send RFC 8058 one-click POSTs
-([`ListUnsubscriber.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/data/ListUnsubscriber.kt)).
+([`ListUnsubscriber.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/read/data/ListUnsubscriber.kt)).
 
 ## Keeping this page current
 

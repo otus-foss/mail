@@ -43,7 +43,8 @@ the app.
 
 ## Boundaries
 
-`feature/inbox/domain` owns message values and matching. `presentation` owns screen input state.
+`core/messages/domain` owns message values shared with other features; `feature/inbox/domain` owns
+search, filters, and matching. `presentation` owns screen input state.
 Feature components receive values/callbacks; they reuse the design-system panel, pills, input,
 icons, and avatar from Meta. App wiring connects `InboxFeedState` to the domain's `MailSource`
 contract and the `JmapMailSource` data implementation, then supplies messages to `InboxScreen`.
@@ -164,7 +165,9 @@ search; scrolling a search near its end loads more pages of the same mailboxes.
 A folder opened from the sidebar uses the same screen. `InboxContext` gives it its default scope
 (every message of that folder, not the Inbox scope), its search prompt ("Search <folder>"), and its
 empty-state title. Closing search and clearing filters return to that default. Folder pages offer
-no inbox choices. `MailSource.messages(MailScope)` loads named mailboxes across accounts, folders
+no inbox choices. `ListPage` builds the inputs of the Inbox and of every folder page, so a folder
+page pulls down into the same quick view, searches in the same search room, grows the same
+filters, and has the same scope switcher as the Inbox. `MailSource.messages(MailScope)` loads named mailboxes across accounts, folders
 with a shared role through `MailScope.Role`, or selected folders from their own accounts. The
 unified inbox uses the inbox role. [Combined folders](folders.md#combined-folders) use the other
 system roles, and [shared folders](folders.md#shared-folders) load each account's folder at their

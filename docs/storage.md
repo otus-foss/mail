@@ -33,7 +33,7 @@ secrets never go in it; they stay in the platform's protected login store.
 
 ## Attachments on the device
 
-Attachments are files on disk, not cache rows. `AttachmentCache` in `feature/inbox/data` streams
+Attachments are files on disk, not cache rows. `AttachmentCache` in `feature/read/data` streams
 each one from the account's `downloadUrl` (RFC 8620, section 6.2) through Meta's
 `JmapConnection.downloadStream`, which hands over 64 KiB pieces as they arrive. No piece outlives
 its write, so a file of any size downloads without the JMAP client's 16 MiB response limit. A
