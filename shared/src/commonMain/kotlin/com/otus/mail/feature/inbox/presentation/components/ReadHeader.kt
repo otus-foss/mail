@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,10 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.max
@@ -29,12 +25,8 @@ import com.otus.designsystem.mail.compose.elements.AddressPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_bookmark_fill
-import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.resources.symbol_self_improvement
-import com.otus.designsystem.shared.controls.elements.IconButton
-import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.IconPill
-import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.dates.elements.DatePill
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
@@ -45,6 +37,9 @@ import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.DropdownRow
 import com.otus.designsystem.theme.motion.motionTween
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
+import com.otus.designsystem.theme.tokens.core.Sizes
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
@@ -76,7 +71,7 @@ internal fun ReadHeader(
                 val labelMax = senderLabelMax(maxWidth, dateLabel, if (actions.readLater != null) 2 else 1)
                 Row(
                     Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     item(SENDER) { SenderPill(page, labelMax, actions.senderOpen, actions.onSender) }
@@ -184,14 +179,14 @@ private fun senderLabelMax(
                 .size.width
                 .toDp()
         }
-    val date = max(PanelTokens.touchTarget, dateText + PanelTokens.chipPadding * 2 + PanelTokens.borderWidth * 2)
-    val pillsWidth = (PanelTokens.touchTarget + PanelTokens.chipGap) * iconPills
+    val date = max(Sizes.touchTarget, dateText + ControlTokens.chipPadding * 2 + Sizes.borderWidth * 2)
+    val pillsWidth = (Sizes.touchTarget + Spacing.inlineGap) * iconPills
     val senderChrome =
-        ComposeTokens.fromAvatarSize + PanelTokens.iconSize + PanelTokens.iconGap * SENDER_GAPS +
-            PanelTokens.chipPadding +
-            PanelTokens.borderWidth * 2
-    return (railWidth - date - pillsWidth - PanelTokens.chipGap * 2 - senderChrome).coerceAtLeast(
-        PanelTokens.iconSize,
+        ComposeTokens.fromAvatarSize + Sizes.iconSize + Spacing.iconGap * SENDER_GAPS +
+            ControlTokens.chipPadding +
+            Sizes.borderWidth * 2
+    return (railWidth - date - pillsWidth - Spacing.inlineGap * 2 - senderChrome).coerceAtLeast(
+        Sizes.iconSize,
     )
 }
 

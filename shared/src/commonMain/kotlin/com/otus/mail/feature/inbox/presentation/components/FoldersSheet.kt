@@ -21,7 +21,7 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.IconPill
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
 import com.otus.mail.core.mail.ARCHIVE_ROLE
@@ -105,8 +105,8 @@ private fun SystemFolderPills(
 ) {
     if (folders.isEmpty() && onNewFolder == null) return
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
-        verticalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
+        verticalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
     ) {
         folders.forEach { folder ->
             val icon = if (folder.readLater) Res.drawable.symbol_bookmark else folderName(folder).icon

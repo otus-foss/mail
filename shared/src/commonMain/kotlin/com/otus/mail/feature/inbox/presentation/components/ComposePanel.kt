@@ -13,11 +13,9 @@ import androidx.compose.ui.semantics.semantics
 import com.otus.designsystem.mail.compose.elements.AddressPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
-import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.resources.symbol_more_horiz
 import com.otus.designsystem.shared.controls.elements.ButtonPill
 import com.otus.designsystem.shared.controls.elements.IconButton
-import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.OptionsMenu
@@ -26,7 +24,6 @@ import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.presentation.ComposeState
 

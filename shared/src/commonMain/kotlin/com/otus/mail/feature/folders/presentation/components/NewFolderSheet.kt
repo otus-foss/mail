@@ -24,7 +24,7 @@ import com.otus.designsystem.shared.folders.elements.FolderColorSwatch
 import com.otus.designsystem.shared.input.elements.InputField
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.folders.domain.AccountFolders
@@ -150,7 +150,7 @@ private fun SetupButton(
     ActionButton(label, onClick, modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.iconGap),
         ) {
             leading()
             Text(label, style = panelTextStyle())

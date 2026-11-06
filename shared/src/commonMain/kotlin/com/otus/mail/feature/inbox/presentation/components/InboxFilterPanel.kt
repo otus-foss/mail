@@ -1,6 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -8,8 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.paneTitle
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.filters.components.FilterPanel
@@ -17,7 +14,6 @@ import com.otus.designsystem.shared.filters.components.FilterPanelFooter
 import com.otus.designsystem.shared.filters.components.FilterPanelTitle
 import com.otus.designsystem.shared.filters.components.FilterResetAction
 import com.otus.designsystem.shared.filters.components.FilterShowBar
-import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.FilterCount

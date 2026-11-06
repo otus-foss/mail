@@ -16,8 +16,8 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add_photo_alternate
 import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.designsystem.shared.people.elements.rememberImage
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.core.text.sizeText
 import com.otus.mail.feature.inbox.domain.DraftAttachment
 import com.otus.mail.feature.inbox.domain.UploadFailure
@@ -39,9 +39,9 @@ internal fun ComposeAttachmentList(
     val shown = files.filterNot { it.inline }
     if (shown.isEmpty()) return
     FlowRow(
-        Modifier.padding(horizontal = PageTokens.textInset, vertical = PanelTokens.chipGap),
-        horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
-        verticalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
+        Modifier.padding(horizontal = PageTokens.textInset, vertical = Spacing.inlineGap),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
+        verticalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
     ) {
         shown.forEach { file ->
             val failure = attachments.failures[file.id]

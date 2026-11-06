@@ -16,8 +16,8 @@ import com.otus.designsystem.shared.dates.components.YearlyDate
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.input.elements.FieldLabel
 import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.ContactLabel
 import com.otus.mail.feature.contacts.domain.DraftValue
@@ -85,7 +85,7 @@ internal fun FieldGroup(
     action: (@Composable () -> Unit)? = null,
     fields: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.iconGap)) {
         FieldLabel(label, action = action)
         Column(verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) { fields() }
     }

@@ -2,8 +2,6 @@ package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -11,8 +9,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.paneTitle
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_contacts
@@ -25,7 +21,6 @@ import com.otus.designsystem.shared.filters.components.FilterSection
 import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.filters.elements.FilterChipRole
 import com.otus.designsystem.shared.pages.components.belowControlPanel
-import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.ContactBook

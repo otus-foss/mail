@@ -4,9 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -18,7 +15,6 @@ import com.otus.designsystem.shared.contacts.components.LetterIndexState
 import com.otus.designsystem.shared.contacts.components.rememberLetterIndexState
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.pages.components.pageSideInset
-import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.presentation.ContactsNavigation

@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_contacts
 import com.otus.designsystem.resources.symbol_filter_list
@@ -20,7 +19,6 @@ import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.contacts.presentation.icon
 
 /**

@@ -11,7 +11,7 @@ import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.elements.SelectionRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.feature.folders.domain.RuleCondition
@@ -25,7 +25,7 @@ internal fun RuleKindChips(
     kind: RuleKind,
     onChoose: (RuleKind) -> Unit,
 ) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap)) {
         RuleKind.entries.forEach { option ->
             Chip(option.label, { onChoose(option) }, selected = option == kind)
         }

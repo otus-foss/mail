@@ -18,9 +18,11 @@ import com.otus.designsystem.shared.panels.components.PanelSheetHeader
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
+import com.otus.designsystem.theme.typography.TypeScale
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 
 /**
@@ -50,7 +52,7 @@ internal fun InboxAccountSwitcher(
             ) {
                 Column(Modifier.padding(start = PanelTokens.titleStart)) {
                     PanelTitle(pageTitle)
-                    Text(header.title, color = OtusColors.text2, fontSize = PanelTokens.countSize)
+                    Text(header.title, color = OtusColors.text2, fontSize = TypeScale.label)
                 }
             }
         },
@@ -65,7 +67,7 @@ internal fun InboxAccountSwitcher(
                     fill = false,
                 ).verticalScroll(rememberScrollState())
                 .padding(horizontal = SheetTokens.inset),
-            verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
+            verticalArrangement = Arrangement.spacedBy(Spacing.iconGap),
         ) { MailScopeChoices(scope.closingOnPick(onDismiss)) }
     }
 }

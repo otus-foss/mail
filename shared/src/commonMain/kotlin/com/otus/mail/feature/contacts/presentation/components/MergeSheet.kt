@@ -36,7 +36,7 @@ import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickRowLayout
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -142,8 +142,8 @@ private fun AddressRow(
             .flatMap { card -> card.emails.map { card to it.value } }
             .distinctBy { it.second.lowercase() }
     FlowRow(
-        Modifier.padding(horizontal = SheetTokens.inset - PanelTokens.iconGap),
-        horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
+        Modifier.padding(horizontal = SheetTokens.inset - Spacing.iconGap),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
     ) {
         addresses.forEach { (card, address) ->
             val on = address in plan.addresses

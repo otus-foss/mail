@@ -1,6 +1,5 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -32,15 +31,14 @@ import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.PillRow
+import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
-import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.SearchField
 import com.otus.mail.feature.inbox.domain.toggled
-import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -155,7 +153,7 @@ internal val fieldChoices =
 @Composable
 internal fun searchRoomHeight(typed: Boolean): Dp {
     if (!typed) {
-        return QuickViewTokens.moduleGap + PanelTokens.touchTarget + PanelTokens.handlePadding * 2 +
+        return QuickViewTokens.moduleGap + Sizes.touchTarget + PanelTokens.handlePadding * 2 +
             PanelTokens.handleHeight
     }
     val window =

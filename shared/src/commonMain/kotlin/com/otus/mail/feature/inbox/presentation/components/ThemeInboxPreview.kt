@@ -27,7 +27,7 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.people.elements.Avatar
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.shapes.SmoothCornerShape
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.settings.ThemeTokens
 
 /**
@@ -37,7 +37,7 @@ import com.otus.designsystem.theme.tokens.settings.ThemeTokens
 @Composable
 fun ThemeInboxPreview() {
     Column(Modifier.clearAndSetSemantics {}, verticalArrangement = Arrangement.spacedBy(ThemeTokens.previewGap)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap)) {
             Chip("People", {}, selected = true, leading = { Symbol(Res.drawable.symbol_person) })
             Chip("Date", {}, leading = { Symbol(Res.drawable.symbol_calendar_add_on) })
         }

@@ -22,9 +22,9 @@ import com.otus.designsystem.mail.read.components.ThreadList
 import com.otus.designsystem.shared.rows.components.Unfold
 import com.otus.designsystem.shared.rows.components.UnfoldingStripCard
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.content.ReadTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.designsystem.theme.tokens.rows.StripTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.isOwn
@@ -70,7 +70,7 @@ internal fun ReadThreadOverlay(
         // It grows from the thread strip's own height, so its top edge starts at the strip's.
         UnfoldingStripCard(
             unfold,
-            ReadTokens.positionHeight,
+            StripTokens.height,
             { ConversationStrip(state, current, source, still) },
             Modifier
                 .align(Alignment.BottomCenter)

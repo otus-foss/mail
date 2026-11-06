@@ -7,7 +7,7 @@ import com.otus.avatar.ui.presentation.toChipAvatar
 import com.otus.designsystem.shared.people.components.AvatarStackChip
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.shared.people.components.NamedAvatar
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.shownName
@@ -58,7 +58,7 @@ internal fun AvatarFilterChip(
     detail: String? = null,
     prefix: String? = null,
 ) {
-    val hidden = avatars.size - PanelTokens.CHIP_AVATAR_LIMIT
+    val hidden = avatars.size - ControlTokens.CHIP_AVATAR_LIMIT
     AvatarStackChip(
         avatars,
         singleLabel ?: "+$hidden".takeIf { hidden > 0 },

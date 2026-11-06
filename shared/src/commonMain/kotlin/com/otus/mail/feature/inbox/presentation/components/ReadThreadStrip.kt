@@ -19,6 +19,8 @@ import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.shared.rows.elements.FirstFit
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.content.ReadTokens
+import com.otus.designsystem.theme.tokens.rows.FolderTokens
+import com.otus.designsystem.theme.tokens.rows.StripTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.ShownFolders
 import com.otus.mail.feature.inbox.domain.shownName
@@ -122,12 +124,12 @@ private fun SlotRow(
     content: @Composable () -> Unit,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(ReadTokens.glyphGap),
+        horizontalArrangement = Arrangement.spacedBy(StripTokens.glyphGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (flagged) {
             CompositionLocalProvider(LocalContentColor provides OtusColors.text2) {
-                Symbol(Res.drawable.symbol_flag, size = ReadTokens.folderGlyphSize)
+                Symbol(Res.drawable.symbol_flag, size = FolderTokens.glyphSize)
             }
         }
         content()

@@ -33,8 +33,8 @@ import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -128,8 +128,8 @@ private fun MovePills(
     onMove: (MoveTarget) -> Unit,
 ) {
     if (onReadLater == null && shortcuts.isEmpty() && sorting.future == null) return
-    Row(horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
-        FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap)) {
+        FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap)) {
             // Inbox leads whenever the message can go back there, so the pills keep one order.
             val (inbox, others) = shortcuts.partition { it.shortcut == FolderShortcut.Inbox }
             inbox.forEach { ShortcutPill(it, onMove) }

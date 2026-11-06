@@ -23,7 +23,9 @@ import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.designsystem.shared.rows.components.DetailLine
 import com.otus.designsystem.shared.rows.components.DetailsTable
 import com.otus.designsystem.theme.tokens.content.ReadTokens
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
+import com.otus.designsystem.theme.tokens.rows.FolderTokens
+import com.otus.designsystem.theme.tokens.rows.StripTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -64,8 +66,8 @@ private fun People(
     onPerson: ((MailSender) -> Unit)?,
 ) {
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
-        verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
+        verticalArrangement = Arrangement.spacedBy(Spacing.iconGap),
     ) {
         people.forEach { person ->
             val name = person.shownName
@@ -84,7 +86,7 @@ private fun FolderLines(
 ) {
     Column(
         Modifier.fillMaxWidth().clickable(onClickLabel = "Change folders", role = Role.Button, onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
+        verticalArrangement = Arrangement.spacedBy(Spacing.iconGap),
     ) {
         folders.forEach { FolderHint(listOf(folderName(it)), fontSize = ReadTokens.previewSize) }
     }
@@ -92,13 +94,13 @@ private fun FolderLines(
 
 @Composable
 private fun Marks(marks: List<Pair<DrawableResource, String>>) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(ReadTokens.stripGap)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(StripTokens.gap)) {
         marks.forEach { (icon, label) ->
             Row(
-                horizontalArrangement = Arrangement.spacedBy(ReadTokens.glyphGap),
+                horizontalArrangement = Arrangement.spacedBy(StripTokens.glyphGap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Symbol(icon, size = ReadTokens.folderGlyphSize)
+                Symbol(icon, size = FolderTokens.glyphSize)
                 Text(label, style = panelTextStyle(), fontSize = ReadTokens.previewSize)
             }
         }

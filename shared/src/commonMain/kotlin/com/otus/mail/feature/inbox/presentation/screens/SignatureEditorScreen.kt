@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Surface
@@ -39,9 +38,9 @@ import com.otus.designsystem.shared.people.elements.rememberAvatarImage
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.shapes.SmoothCornerShape
 import com.otus.designsystem.theme.shapes.strokeBorder
+import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.editing.SignatureTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.feature.inbox.domain.SignatureImage
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.SignaturesState
@@ -129,7 +128,7 @@ private fun SignatureBox(editor: SignatureEditorState) {
             .padding(top = PageTokens.contentInset)
             .fillMaxWidth()
             .background(OtusColors.bgDark, shape)
-            .strokeBorder(PanelTokens.borderWidth, OtusColors.strokeBgDark, shape)
+            .strokeBorder(Sizes.borderWidth, OtusColors.strokeBgDark, shape)
             .padding(bottom = PageTokens.contentInset),
         verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap),
     ) {

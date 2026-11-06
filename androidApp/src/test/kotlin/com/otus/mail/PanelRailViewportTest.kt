@@ -28,6 +28,7 @@ import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -70,7 +71,7 @@ class PanelRailViewportTest {
         val pill = compose.onNodeWithText("Sender filters").fetchSemanticsNode().boundsInRoot
         // Just past the edge fade, where the scrolled pill shows at full strength.
         val density = compose.activity.resources.displayMetrics.density
-        val past = PanelTokens.fadeWidth.value * density + 4f
+        val past = Sizes.edgeFade.value * density + 4f
         val x = if (direction == LayoutDirection.Ltr) panel.left + past else panel.right - past
         val bitmap = snapshot(direction)
         assertNotEquals(
