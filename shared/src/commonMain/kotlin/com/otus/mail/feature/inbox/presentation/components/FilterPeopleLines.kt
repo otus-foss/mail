@@ -8,9 +8,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import com.otus.designsystem.mail.compose.components.AddressInput
 import com.otus.designsystem.mail.compose.components.RecipientLine
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLook
 import com.otus.designsystem.shared.filters.components.FilterRowCard
 import com.otus.designsystem.shared.filters.components.FilterSection
-import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.PickMark
@@ -59,7 +60,7 @@ internal fun PeopleSection(
         FilterSection("Received in") {
             RecipientField.entries.forEach { field ->
                 val on = field in draft.receivedIn
-                FilterChip(field.label, on, { onEdit { it.withField(field, !on) } })
+                Chip(field.label, { onEdit { it.withField(field, !on) } }, selected = on, look = ChipLook.Raised)
             }
         }
     }

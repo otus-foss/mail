@@ -10,9 +10,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLook
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FilterSection
-import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.overlays.components.onPressDown
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
@@ -165,5 +166,5 @@ private fun QuickChip(
     on: Boolean,
     onClick: () -> Unit,
 ) {
-    FilterChip(label, on, onClick) { Symbol(icon, size = FilterTokens.chipIconSize) }
+    Chip(label, onClick, selected = on, look = ChipLook.Raised) { Symbol(icon, size = ControlTokens.chipIconSize) }
 }

@@ -19,8 +19,9 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_calendar_today
 import com.otus.designsystem.shared.controls.elements.ActionButton
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLook
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.panels.components.PanelSheet
@@ -30,6 +31,7 @@ import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.people.components.PersonRow
 import com.otus.designsystem.shared.rows.elements.SectionCaption
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxSearch
@@ -151,18 +153,23 @@ private fun NarrowChips(
         SectionCaption("Narrow it")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(FilterTokens.chipGap)) {
             fieldChoices.forEach { choice ->
-                FilterChip(choice.label, search.field == choice.field, { onChange(search.toggled(choice.field)) }) {
-                    Symbol(choice.symbol, size = FilterTokens.chipIconSize)
+                Chip(choice.label, {
+                    onChange(search.toggled(choice.field))
+                }, selected = search.field == choice.field, look = ChipLook.Raised) {
+                    Symbol(choice.symbol, size = ControlTokens.chipIconSize)
                 }
             }
-            FilterChip("Has files", search.withFiles, { onChange(search.copy(withFiles = !search.withFiles)) }) {
-                Symbol(Res.drawable.symbol_attach_file, size = FilterTokens.chipIconSize)
+            Chip("Has files", {
+                onChange(search.copy(withFiles = !search.withFiles))
+            }, selected = search.withFiles, look = ChipLook.Raised) {
+                Symbol(Res.drawable.symbol_attach_file, size = ControlTokens.chipIconSize)
             }
-            FilterChip(
+            Chip(
                 "Past 30 days",
-                recent,
                 { onChange(search.copy(dateStart = since.takeIf { !recent }, dateEnd = null)) },
-            ) { Symbol(Res.drawable.symbol_calendar_today, size = FilterTokens.chipIconSize) }
+                selected = recent,
+                look = ChipLook.Raised,
+            ) { Symbol(Res.drawable.symbol_calendar_today, size = ControlTokens.chipIconSize) }
         }
     }
 }

@@ -34,10 +34,10 @@ import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.MergePlan
@@ -149,7 +149,7 @@ private fun AddressRow(
             val on = address in plan.addresses
             val toggled = if (on) plan.addresses - address else plan.addresses + address
             Chip(address, { onChange(plan.copy(addresses = toggled)) }, selected = on) {
-                PersonAvatar(card.pill(address).avatar, FilterTokens.chipAvatarSize)
+                PersonAvatar(card.pill(address).avatar, ControlTokens.chipAvatarSize)
             }
         }
     }

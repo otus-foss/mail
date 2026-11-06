@@ -10,11 +10,13 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.mail.folders.components.FilterFolderRow
 import com.otus.designsystem.mail.folders.components.FolderCheck
 import com.otus.designsystem.mail.folders.components.TreeFolder
-import com.otus.designsystem.shared.filters.elements.FilterChip
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLook
 import com.otus.designsystem.shared.folders.elements.FolderGlyph
 import com.otus.designsystem.shared.overlays.components.ListSheet
 import com.otus.designsystem.shared.rows.components.AccountGroupRow
 import com.otus.designsystem.shared.selection.components.PickerSearch
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterAccount
@@ -80,7 +82,7 @@ private fun FolderRows(
             onCheck = { onEdit { it.toggle(folder) } },
             expanded = (folder.key !in collapsed).takeIf { folder.hasChildren && !searching },
             onExpandedChange = { onCollapse(folder.key, !it) },
-        ) { FolderGlyph(folder.color, icon = folder.icon, size = FilterTokens.chipIconSize) }
+        ) { FolderGlyph(folder.color, icon = folder.icon, size = ControlTokens.chipIconSize) }
         if (check == FolderCheck.On && folder.hasChildren) OnlyThisFolder(folder, draft, onEdit)
     }
 }
@@ -93,10 +95,11 @@ private fun OnlyThisFolder(
     onEdit: FilterEdit,
 ) {
     val only = draft.folders.firstOrNull { it.key == folder.key }?.includeSubfolders == false
-    FilterChip(
+    Chip(
         "Only this folder",
-        only,
         { onEdit { it.includeSubfolders(folder, include = only) } },
         Modifier.padding(start = FilterTokens.folderIndent * (folder.depth + 1) + FilterTokens.folderRowHeight),
+        selected = only,
+        look = ChipLook.Raised,
     )
 }

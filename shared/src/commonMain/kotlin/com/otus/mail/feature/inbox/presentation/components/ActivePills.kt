@@ -4,10 +4,10 @@ import androidx.compose.runtime.Composable
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLabel
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FolderStackChip
 import com.otus.designsystem.shared.filters.components.StackedFolder
-import com.otus.designsystem.shared.filters.elements.ChipLabel
 import com.otus.mail.feature.inbox.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailSender
