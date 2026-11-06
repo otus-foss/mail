@@ -93,8 +93,6 @@ For example, contact rows come from `shared.contacts.components` and message HTM
 their packages. These groups contain UI; the feature layers above keep their responsibilities.
 See [Meta's migration guide](https://github.com/reazndev/otus-meta/blob/main/docs/ui-package-migration.md).
 
-See [the component inventory](component-inventory.md) for every Otus UI declaration and its owner.
-
 ## Apple notification delivery
 
 `app/ApplePushRuntime` connects the Swift lifecycle to `ApplePushSession`, which uses the shared

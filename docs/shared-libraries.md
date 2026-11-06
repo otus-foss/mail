@@ -15,8 +15,6 @@ Code that Mail and Calendar both use lives in
 | `com.otus:jscontact` | `libs.otus.jscontact` |
 | `com.otus:jmap-contacts` | `libs.otus.jmap.contacts` |
 
-See [the component inventory](component-inventory.md) for historical ownership decisions.
-
 ## Building against Meta
 
 Mail builds otus-meta from source: the checkout next to it, `../otus-meta`, or the one the
