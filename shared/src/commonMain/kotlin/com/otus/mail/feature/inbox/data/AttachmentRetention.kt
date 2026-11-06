@@ -1,10 +1,12 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.accounts.domain.AccountStorageException
+import com.otus.jmap.login.LoginLifecycle
 import com.otus.mail.core.files.DownloadFolder
 import com.otus.mail.core.files.DownloadFolderException
 import com.otus.mail.core.files.StoredEntry
 import com.otus.mail.core.files.StoredKey
-import com.otus.mail.core.files.storedName
+import com.otus.storage.storedName
 
 /**
  * When downloaded attachments in [folder] leave the device. Files the user keeps stay until they
@@ -14,7 +16,7 @@ import com.otus.mail.core.files.storedName
 class AttachmentRetention(
     private val folder: DownloadFolder,
     private val budgetBytes: Long = UNKEPT_BUDGET_BYTES,
-) {
+) : LoginLifecycle {
     /**
      * Deletes partial files left by an earlier process, unkept files last used before
      * [unusedBeforeMillis], and then the least recently used unkept files over the budget. Call
@@ -58,6 +60,14 @@ class AttachmentRetention(
      */
     suspend fun forget(loginId: String) {
         folder.deleteGroup(storedName(loginId))
+    }
+
+    override suspend fun removing(loginId: String) {
+        try {
+            forget(loginId)
+        } catch (error: DownloadFolderException) {
+            throw AccountStorageException(error)
+        }
     }
 
     private companion object {

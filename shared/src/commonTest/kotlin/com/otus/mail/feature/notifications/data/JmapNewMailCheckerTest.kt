@@ -57,7 +57,7 @@ class JmapNewMailCheckerTest {
         reply: (String) -> String,
     ): List<NewMail> {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store, states)
+        JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(session, reply)), store), states)
             .check(alerts)
         return alerts.shown
     }
@@ -182,7 +182,7 @@ class JmapNewMailCheckerTest {
                     override fun logins(): List<JmapLogin> = throw LoginStoreException("locked")
                 }
             val alerts = Alerts()
-            JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike()), locked), locked, states)
+            JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike()), locked), states)
                 .check(alerts)
             assertEquals(emptyList(), alerts.shown)
             assertEquals(mapOf("ada" to "e1"), states.saved)

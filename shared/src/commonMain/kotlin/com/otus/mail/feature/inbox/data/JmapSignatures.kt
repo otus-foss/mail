@@ -6,6 +6,7 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.IdentityType
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.feature.inbox.domain.SignatureRepository
@@ -15,7 +16,6 @@ import kotlinx.serialization.json.put
 /** Writes `htmlSignature` and `textSignature` on the identity with one `Identity/set` update. */
 class JmapSignatures(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
 ) : SignatureRepository {
     override suspend fun save(
         identity: SendIdentity,
@@ -23,7 +23,7 @@ class JmapSignatures(
     ): Result<Unit> =
         try {
             val account =
-                mailAccount(connections, logins, identity.accountId) ?: error("No account for ${identity.accountId}")
+                connections.mailAccount(identity.accountId) ?: error("No account for ${identity.accountId}")
             val patch =
                 buildJsonObject {
                     put("htmlSignature", signature.html)

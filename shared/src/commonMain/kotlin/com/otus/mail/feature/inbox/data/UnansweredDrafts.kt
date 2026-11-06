@@ -2,10 +2,13 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
+import com.otus.jmap.allOf
+import com.otus.jmap.anyOf
+import com.otus.jmap.filterCondition
+import com.otus.jmap.jmapCallOr
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.condition
-import com.otus.mail.core.mail.operator
+import com.otus.mail.core.mail.inMailbox
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonPrimitive
@@ -36,9 +39,8 @@ class UnansweredDrafts {
     ) {
         val messageIds = lock.withLock { lost[account.login.id].orEmpty() }
         if (messageIds.isEmpty()) return
-        val inDrafts = condition("inMailbox", JsonPrimitive(drafts))
-        val filter = operator("AND", listOf(inDrafts, operator("OR", messageIds.map(::messageIdFilter))))
-        bestEffort {
+        val filter = allOf(inMailbox(drafts), anyOf(messageIds.map(::messageIdFilter)))
+        jmapCallOr(Unit) {
             val found = account.connection.call(QueryMethod(EmailType, account.id, filter)).ids - kept
             if (found.isNotEmpty()) account.connection.call(SetMethod(EmailType, account.id, destroy = found))
             lock.withLock { lost[account.login.id] = lost[account.login.id].orEmpty() - messageIds.toSet() }

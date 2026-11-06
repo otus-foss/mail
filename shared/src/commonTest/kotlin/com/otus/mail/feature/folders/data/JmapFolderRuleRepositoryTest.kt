@@ -81,7 +81,7 @@ class JmapFolderRuleRepositoryTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store), store) { "+0200" }
+        return JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store)) { "+0200" }
     }
 
     @Test
@@ -216,7 +216,7 @@ class JmapFolderRuleRepositoryTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store), store) { "+0200" }
+        return JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store)) { "+0200" }
     }
 
     private val support = RuleSupport(setOf("fileinto", "mailboxid"))

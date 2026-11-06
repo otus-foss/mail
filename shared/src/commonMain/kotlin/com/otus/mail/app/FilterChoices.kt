@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
-import com.otus.accounts.presentation.toChipAvatar
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
+import com.otus.avatar.ui.presentation.toChipAvatar
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.folders.domain.AccountFolders

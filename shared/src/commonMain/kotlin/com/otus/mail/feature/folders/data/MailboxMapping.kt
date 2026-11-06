@@ -4,7 +4,9 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.JmapJson
 import com.otus.jmap.SetError
 import com.otus.mail.core.mail.MailCapability
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.MailboxObject
+import com.otus.mail.core.mail.toMailFailure
 import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderLimits
 import com.otus.mail.feature.folders.domain.FolderRights
@@ -50,13 +52,13 @@ internal fun limits(capability: JsonObject?): FolderLimits {
 }
 
 internal fun JmapException.toFolderFailure(): FolderFailure =
-    when (this) {
-        is JmapException.Unauthorized -> FolderFailure.SignInRejected
-        is JmapException.Forbidden -> FolderFailure.NotPermitted
-        is JmapException.CredentialsUnavailable -> FolderFailure.CredentialsUnavailable
-        is JmapException.Unsupported -> FolderFailure.NoMail
-        is JmapException.Unreachable -> FolderFailure.Unreachable
-        else -> FolderFailure.ServerProblem
+    when (toMailFailure()) {
+        MailFailure.SignInRejected -> FolderFailure.SignInRejected
+        MailFailure.NotPermitted -> FolderFailure.NotPermitted
+        MailFailure.CredentialsUnavailable -> FolderFailure.CredentialsUnavailable
+        MailFailure.NoMail -> FolderFailure.NoMail
+        MailFailure.Unreachable -> FolderFailure.Unreachable
+        MailFailure.ServerProblem -> FolderFailure.ServerProblem
     }
 
 internal fun SetError.toFolderFailure(): FolderFailure =

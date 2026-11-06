@@ -13,6 +13,7 @@ import com.otus.mail.core.mail.JUNK_ROLE
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.EmailShortcuts
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -26,7 +27,6 @@ import kotlinx.serialization.json.put
  */
 class JmapEmailShortcuts(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
     private val queue: EmailChangeQueue? = null,
 ) : EmailShortcuts {
@@ -77,7 +77,7 @@ class JmapEmailShortcuts(
         loginId: String,
         emailId: String,
         patch: JsonObject,
-    ): Boolean = emailId in updateAccountEmails(connections, logins, loginId, mapOf(emailId to patch), cache, queue)
+    ): Boolean = emailId in updateAccountEmails(connections, loginId, mapOf(emailId to patch), cache, queue)
 
     private fun List<MailboxObject>.withRole(role: String): MailboxObject? =
         firstOrNull { it.role?.lowercase() == role }
@@ -85,7 +85,7 @@ class JmapEmailShortcuts(
     /** The login's mailboxes with their roles; none when the login is gone or the server cannot be reached. */
     private suspend fun mailboxes(loginId: String): List<MailboxObject> =
         try {
-            val account = mailAccount(connections, logins, loginId) ?: return emptyList()
+            val account = connections.mailAccount(loginId) ?: return emptyList()
             account.connection
                 .call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
                 .list

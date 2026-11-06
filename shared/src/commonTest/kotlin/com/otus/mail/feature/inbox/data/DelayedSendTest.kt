@@ -20,7 +20,7 @@ class DelayedSendTest {
             )
         check(session != SUBMISSION_SESSION)
         val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-        val sender = JmapDraftSender(JmapConnections(JmapClient(stalwartLike(session)), store), store)
+        val sender = JmapDraftSender(JmapConnections(JmapClient(stalwartLike(session)), store))
         return sender.maxDelaySeconds(ADA_LOGIN.id)
     }
 

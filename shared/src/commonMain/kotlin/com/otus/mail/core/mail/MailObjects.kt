@@ -212,28 +212,6 @@ data class IdentityObject(
     val htmlSignature: String = "",
 )
 
-/** Contact cards suggested as recipients (RFC 9610, section 3); only their names and addresses. */
-val ContactCardType: JmapType<ContactCardObject> =
-    JmapType("ContactCard", JmapCapability.CONTACTS, ContactCardObject.serializer())
-
-@Serializable
-data class ContactCardObject(
-    val id: String,
-    val name: ContactName? = null,
-    val emails: Map<String, ContactEmailObject> = emptyMap(),
-)
-
-/** A JSContact name (RFC 9553, section 2.2.1); suggestions show only its full form. */
-@Serializable
-data class ContactName(
-    val full: String? = null,
-)
-
-@Serializable
-data class ContactEmailObject(
-    val address: String = "",
-)
-
 /**
  * Marks an email of a muted conversation. A conversation is muted while any of its emails has it,
  * so new mail in it does not notify. Not a registered keyword, so other apps ignore it.

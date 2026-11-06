@@ -1,10 +1,11 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 import com.otus.mail.feature.inbox.domain.ThreadMessage
@@ -19,15 +20,15 @@ import kotlin.time.Instant
  */
 class JmapThreadHistory(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
 ) : ThreadHistory {
     override suspend fun earlier(
         accountId: String,
         emailId: String,
     ): List<ThreadMessage> =
-        mailCallOr(emptyList()) {
-            mailAccount(connections, logins, accountId)
+        jmapCallOr(emptyList()) {
+            connections
+                .mailAccount(accountId)
                 ?.let { account ->
                     val emails = account.threadEmails(emailId, PROPERTIES)
                     jmapDecoding { emails.upTo(emailId).map { it.threadMessage() } }

@@ -21,7 +21,7 @@ class JmapConversationMuteTest {
     private val store = InMemoryLoginStore().apply { save(login, "secret") }
     private val server = FakeMailServer(MAILBOXES, THREAD)
     private val mute =
-        JmapConversationMute(JmapConnections(JmapClient(stalwartLike(api = server::answer)), store), store)
+        JmapConversationMute(JmapConnections(JmapClient(stalwartLike(api = server::answer)), store))
 
     private val row =
         MailMessage(

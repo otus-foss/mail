@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnection
+import com.otus.jmap.JmapFilter
 import com.otus.jmap.JmapJson
 import com.otus.jmap.JmapResponse
 import com.otus.jmap.QueryMethod
@@ -15,18 +16,17 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /** One mailbox's list: the mail in [mailboxId] that [filter] finds, in [sort] order. */
 internal class ListingQuery(
     val mailboxId: String,
-    val filter: JsonObject,
+    val filter: JmapFilter,
     val sort: FilterSort,
 ) {
     /** The saved-value key of this list's [Listing]; the filter names the mailbox. */
     val key: String
-        get() = "$LISTING_PREFIX${sort.name}:$filter"
+        get() = "$LISTING_PREFIX${sort.name}:${filter.toJson()}"
 }
 
 /**

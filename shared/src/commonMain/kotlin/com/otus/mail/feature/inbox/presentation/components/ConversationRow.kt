@@ -2,7 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.otus.accounts.presentation.toChipAvatar
+import com.otus.avatar.ui.presentation.toChipAvatar
 import com.otus.designsystem.mail.inbox.components.CompactContentRow
 import com.otus.designsystem.shared.people.components.PersonBadge
 import com.otus.designsystem.shared.people.elements.BadgedAvatar

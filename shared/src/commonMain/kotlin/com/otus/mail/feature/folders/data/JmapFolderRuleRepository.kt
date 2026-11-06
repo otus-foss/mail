@@ -8,13 +8,12 @@ import com.otus.jmap.JmapJson
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.folders.domain.AccountFolderRules
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
-import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.RuleFailure
 import com.otus.mail.feature.folders.domain.RuleOutcome
@@ -34,20 +33,18 @@ import kotlin.time.Clock
  * made meanwhile on another device is refused instead of overwritten.
  */
 class JmapFolderRuleRepository(
-    connections: JmapConnections,
-    logins: LoginStore,
+    private val connections: JmapConnections,
     /** The UTC offset, such as `+0200`, that day and time conditions are written in. */
     private val zone: () -> String = ::deviceZone,
 ) : FolderRuleRepository {
-    private val accounts = MailAccounts(connections, logins, ::FolderStorageException)
-    private val existing = ExistingMail(accounts)
+    private val existing = ExistingMail(connections)
 
     override suspend fun accounts(): List<AccountFolderRules> =
-        coroutineScope { accounts.logins().map { async { load(it) } }.awaitAll() }
+        coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
 
     private suspend fun load(login: JmapLogin): AccountFolderRules =
         try {
-            val account = accounts.open(login)
+            val account = connections.mailAccount(login)
             when (val availability = availability(account)) {
                 is RuleAvailability.Available -> loadRules(account, availability)
                 else -> AccountFolderRules(login.id, login.name, availability)
@@ -92,7 +89,8 @@ class JmapFolderRuleRepository(
     ): RuleOutcome {
         val support = account.support ?: return RuleOutcome.Failed(RuleFailure.NotPermitted)
         return try {
-            accounts.open(account.accountId)?.let { write(it, support, account.script?.state, rules) }
+            folderStorage { connections.mailAccount(account.accountId) }
+                ?.let { write(it, support, account.script?.state, rules) }
                 ?: RuleOutcome.Failed(RuleFailure.NotFound)
         } catch (error: JmapException) {
             RuleOutcome.Failed(error.toRuleFailure())

@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapIds
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
@@ -12,7 +13,7 @@ import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MUTED_KEYWORD
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.objects
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -26,12 +27,11 @@ import com.otus.mail.feature.inbox.domain.MailMessage
  */
 class JmapConversationMute(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
 ) : ConversationMute {
     override suspend fun isMuted(message: MailMessage): Boolean =
         fromServer(message) { account, ids ->
-            val oldest = ids.take(account.session.coreLimit("maxObjectsInGet", GET_BATCH))
+            val oldest = ids.take(account.session.getBatch)
             account.connection
                 .call(GetMethod(EmailType, account.id, JmapIds.Of(oldest), PROPERTIES))
                 .list
@@ -47,7 +47,6 @@ class JmapConversationMute(
             val patch = membershipPatch("keywords", MUTED_KEYWORD, muted)
             updateAccountEmails(
                 connections,
-                logins,
                 message.location.accountId,
                 ids.associateWith { patch },
                 accountCache,
@@ -60,8 +59,8 @@ class JmapConversationMute(
         read: suspend (MailAccount, List<String>) -> T,
     ): T? {
         if (message.emailId.isEmpty()) return null
-        return mailCallOr(null) {
-            mailAccount(connections, logins, message.location.accountId)?.let { account ->
+        return jmapCallOr(null) {
+            connections.mailAccount(message.location.accountId)?.let { account ->
                 account.threadEmailIds(message.emailId).ifEmpty { null }?.let { read(account, it) }
             }
         }
@@ -78,8 +77,5 @@ class JmapConversationMute(
 
     private companion object {
         val PROPERTIES = listOf("id", "receivedAt", "keywords")
-
-        /** Read when the server names no `maxObjectsInGet`; small enough for any server. */
-        const val GET_BATCH = 200
     }
 }

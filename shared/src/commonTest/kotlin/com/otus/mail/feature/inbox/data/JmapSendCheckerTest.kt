@@ -77,7 +77,7 @@ class JmapSendCheckerTest {
                     }
                 """{"methodResponses": [${responses.joinToString()}]}"""
             }
-        return JmapSendChecker(JmapConnections(JmapClient(engine), store), store)
+        return JmapSendChecker(JmapConnections(JmapClient(engine), store))
     }
 
     /** Records an `Email/set` and confirms every update and destroy in it. */

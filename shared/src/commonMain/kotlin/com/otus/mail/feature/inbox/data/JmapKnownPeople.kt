@@ -4,13 +4,14 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.inMailbox
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import kotlinx.coroutines.sync.Mutex
@@ -29,7 +30,6 @@ import kotlin.time.TimeSource
  */
 class JmapKnownPeople(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val maxAge: Duration = 10.minutes,
     private val timeSource: TimeSource = TimeSource.Monotonic,
 ) : KnownPeople {
@@ -45,8 +45,8 @@ class JmapKnownPeople(
     }
 
     private suspend fun load(accountId: String): Set<String>? =
-        mailCallOr(null) {
-            mailAccount(connections, logins, accountId)?.let { account ->
+        jmapCallOr(null) {
+            connections.mailAccount(accountId)?.let { account ->
                 (account.contactCards(CONTACT_SCAN).map { it.address } + account.sentTo())
                     .map { it.trim().lowercase() }
                     .filter { it.isNotEmpty() }
@@ -63,7 +63,7 @@ class JmapKnownPeople(
         return connection
             .call(QueryMethod(EmailType, id, inMailbox(sent), NEWEST_FIRST, SENT_SCAN))
             .ids
-            .chunked(session.coreLimit("maxObjectsInGet", GET_BATCH))
+            .chunked(session.getBatch)
             .flatMap { batch -> connection.call(GetMethod(EmailType, id, JmapIds.Of(batch), PROPERTIES)).list }
             .flatMap { it.to.orEmpty() + it.cc.orEmpty() + it.bcc.orEmpty() }
             .map { it.email }
@@ -77,9 +77,6 @@ class JmapKnownPeople(
     private companion object {
         const val CONTACT_SCAN = 500
         const val SENT_SCAN = 500
-
-        /** Read when the server names no `maxObjectsInGet`; small enough for any server. */
-        const val GET_BATCH = 200
         val PROPERTIES = listOf("id", "receivedAt", "to", "cc", "bcc")
     }
 }

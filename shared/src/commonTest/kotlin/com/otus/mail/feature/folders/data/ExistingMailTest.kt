@@ -129,7 +129,7 @@ class ExistingMailTest {
                 }
             val login = JmapLogin("ada", "https://mail.example.org/jmap/session", "ada@example.org", "Ada")
             val store = InMemoryLoginStore().apply { save(login, "secret") }
-            val repository = JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store), store)
+            val repository = JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store))
             assertEquals(14, repository.existingCount("ada", "P", FolderRule(agency)))
             val count = calls.last()
             assertTrue(

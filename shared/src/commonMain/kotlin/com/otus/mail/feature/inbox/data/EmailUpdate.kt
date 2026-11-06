@@ -11,7 +11,7 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailAccounts
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.MailMessage
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -27,7 +27,6 @@ import kotlinx.serialization.json.JsonPrimitive
  */
 internal suspend fun updateEmail(
     connections: JmapConnections,
-    logins: LoginStore,
     message: MailMessage,
     patch: JsonObject,
     cache: MailCache? = null,
@@ -36,7 +35,6 @@ internal suspend fun updateEmail(
     message.emailId.isNotEmpty() &&
         updateAccountEmails(
             connections,
-            logins,
             message.location.accountId,
             message.memberIds.associateWith { patch },
             cache,
@@ -53,7 +51,6 @@ internal suspend fun updateEmail(
  */
 internal suspend fun updateEmails(
     connections: JmapConnections,
-    logins: LoginStore,
     messages: List<MailMessage>,
     patch: JsonObject,
     cache: MailCache? = null,
@@ -66,7 +63,7 @@ internal suspend fun updateEmails(
             .map { (loginId, group) ->
                 async {
                     val patches = group.flatMap { it.memberIds }.associateWith { patch }
-                    val updated = updateAccountEmails(connections, logins, loginId, patches, cache, queue)
+                    val updated = updateAccountEmails(connections, loginId, patches, cache, queue)
                     group.filter { updated.containsAll(it.memberIds) }.map { it.id }
                 }
             }.awaitAll()
@@ -108,28 +105,26 @@ internal val MailMessage.memberIds: List<String>
  */
 internal suspend fun updateAccountEmails(
     connections: JmapConnections,
-    logins: LoginStore,
     loginId: String,
     patches: Map<String, JsonObject>,
     cache: MailCache? = null,
     queue: EmailChangeQueue? = null,
 ): Set<String> =
     when {
-        queue != null -> queue.update(connections, logins, loginId, patches, cache)
-        cache == null -> sendUpdates(connections, logins, loginId, patches)
-        else -> sendAndPatch(connections, logins, loginId, patches, cache)
+        queue != null -> queue.update(connections, loginId, patches, cache)
+        cache == null -> sendUpdates(connections, loginId, patches)
+        else -> sendAndPatch(connections, loginId, patches, cache)
     }
 
 /** [sendUpdates], then the same patches on the emails the server updated in [cache]. */
 private suspend fun sendAndPatch(
     connections: JmapConnections,
-    logins: LoginStore,
     loginId: String,
     patches: Map<String, JsonObject>,
     cache: MailCache,
 ): Set<String> =
     cache.withAccount(loginId) { accountCache ->
-        val updated = sendUpdates(connections, logins, loginId, patches)
+        val updated = sendUpdates(connections, loginId, patches)
         try {
             accountCache.patchEmails(loginId, patches.filterKeys { it in updated })
         } catch (expected: CacheStorageException) {
@@ -140,14 +135,13 @@ private suspend fun sendAndPatch(
 
 private suspend fun sendUpdates(
     connections: JmapConnections,
-    logins: LoginStore,
     loginId: String,
     patches: Map<String, JsonObject>,
 ): Set<String> {
     val updated = mutableSetOf<String>()
     // A failed batch keeps the ones before it, so the caller knows which changed.
     return try {
-        val account = mailAccount(connections, logins, loginId) ?: return emptySet()
+        val account = connections.mailAccount(loginId) ?: return emptySet()
         patches.entries.chunked(account.session.setBatch).forEach { batch ->
             val result =
                 account.connection.call(
@@ -162,14 +156,3 @@ private suspend fun sendUpdates(
         updated
     }
 }
-
-/**
- * The mail account of the saved login [loginId], or null once the login was removed. Like
- * [MailAccounts.open], it throws [JmapException.Unsupported] when the login has no mail, and it
- * throws what reading logins and the session throw.
- */
-internal suspend fun mailAccount(
-    connections: JmapConnections,
-    logins: LoginStore,
-    loginId: String,
-): MailAccount? = MailAccounts(connections, logins).open(loginId)

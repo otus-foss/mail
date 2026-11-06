@@ -49,7 +49,7 @@ class InlineImagesTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-        return JmapDraftRepository(JmapConnections(JmapClient(engine), store), store)
+        return JmapDraftRepository(JmapConnections(JmapClient(engine), store))
     }
 
     private fun answer(body: String): String =

@@ -119,7 +119,7 @@ class JmapFilteredMailTest {
 
     private fun source(respond: (String) -> String) =
         stalwartLike(api = respond).let {
-            JmapMailSource(JmapConnections(JmapClient(it), store), store)
+            JmapMailSource(JmapConnections(JmapClient(it), store))
         }
 
     private companion object {

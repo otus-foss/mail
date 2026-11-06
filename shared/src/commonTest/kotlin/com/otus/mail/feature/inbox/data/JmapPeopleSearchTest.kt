@@ -21,7 +21,7 @@ class JmapPeopleSearchTest {
             val store = FailsAfterFirstList(InMemoryLoginStore().apply { save(ada, "secret") })
             val engine = MockEngine { error("The search must not reach the server") }
             val grace = MailSender("Grace Hopper", "grace@navy.example")
-            val search = JmapPeopleSearch(JmapConnections(JmapClient(engine), store), store, { _, _ -> listOf(grace) })
+            val search = JmapPeopleSearch(JmapConnections(JmapClient(engine), store), { _, _ -> listOf(grace) })
             assertEquals(listOf(grace), search.find(PeopleField.From, "gra", logins = null).map { it.person })
         }
 

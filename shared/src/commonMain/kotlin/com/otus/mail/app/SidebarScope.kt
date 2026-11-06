@@ -14,7 +14,7 @@ internal fun MailStates.accountAddresses(): List<AccountAddresses> =
         addresses.copy(
             avatars =
                 addresses.addresses
-                    .mapNotNull { email -> ownAvatars.avatar(account, email)?.let { email.lowercase() to it } }
+                    .mapNotNull { email -> ownAvatars.avatar(account.own, email)?.let { email.lowercase() to it } }
                     .toMap(),
         )
     }

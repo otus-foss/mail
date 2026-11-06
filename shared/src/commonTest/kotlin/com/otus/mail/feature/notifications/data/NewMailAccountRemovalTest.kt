@@ -54,7 +54,7 @@ class NewMailAccountRemovalTest {
                              "preview": "Preview", "receivedAt": "2026-10-14T08:00:00Z"}]}, "c1"]]}"""
                     }
                 })
-            JmapNewMailChecker(JmapConnections(JmapClient(server), store), store, states).check(alerts)
+            JmapNewMailChecker(JmapConnections(JmapClient(server), store), states).check(alerts)
             assertEquals(emptyList(), shown)
             assertEquals(emptyMap(), saved)
         }

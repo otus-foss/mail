@@ -42,7 +42,7 @@ class JmapMessageBodiesTest {
         }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val engine = stalwartLike(DOWNLOAD_SESSION, files, api)
-        return JmapMessageBodies(JmapConnections(JmapClient(engine), store), store, cache, parsing)
+        return JmapMessageBodies(JmapConnections(JmapClient(engine), store), cache, parsing)
     }
 
     private val opened =

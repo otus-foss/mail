@@ -60,7 +60,7 @@ class JmapNewslettersTest {
                 requests += body
                 reply(body)
             }
-        return JmapNewsletters(JmapConnections(JmapClient(engine), store), store, drafts, sender)
+        return JmapNewsletters(JmapConnections(JmapClient(engine), store), drafts, sender)
     }
 
     @Test

@@ -39,7 +39,7 @@ private suspend fun JmapConnection.followChanges(
     val bookState = cached.account.bookState
     val cardState = cached.account.cardState
     if (bookState == null || cardState == null) return null
-    val max = session.pageSize()
+    val max = session.getBatch
     lateinit var books: ChangeCalls<AddressBook>
     lateinit var cards: ChangeCalls<Card>
     val response =
@@ -85,7 +85,7 @@ private suspend fun JmapConnection.readAll(
     account: ContactAccount,
 ): AccountContacts {
     val books = call(GetMethod(AddressBookType, account.id))
-    val cards = allCards(account.id, session.pageSize())
+    val cards = allCards(account.id, session.getBatch)
     return AccountContacts(
         account.copy(bookState = books.state.ifEmpty { null }, cardState = cards.state),
         books.list,
@@ -146,8 +146,3 @@ private fun <T> List<T>.patched(
     val gone = (changes.created + changes.updated + changes.destroyed).toSet()
     return filterNot { id(it) in gone } + fetched
 }
-
-/** The most objects one get or one page of changes asks for. */
-internal fun JmapSession.pageSize(): Int = (maxObjectsInGet ?: DEFAULT_PAGE).toInt().coerceIn(1, DEFAULT_PAGE)
-
-private const val DEFAULT_PAGE = 500

@@ -45,7 +45,7 @@ class JmapAddressBookTest {
                     }
                     server.config.requestHandlers.single()(this, request)
                 }
-            val book = JmapAddressBook(JmapConnections(JmapClient(engine), store), store)
+            val book = JmapAddressBook(JmapConnections(JmapClient(engine), store))
             withContext(Dispatchers.Default) {
                 val slow = async { book.suggestions("ada", "gr") }
                 withTimeout(10.seconds) {

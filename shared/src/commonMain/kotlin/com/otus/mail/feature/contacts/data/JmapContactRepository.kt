@@ -8,7 +8,9 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
+import com.otus.jmap.contacts.ContactCardFilter
 import com.otus.jmap.contacts.ContactCardType
+import com.otus.jmap.contacts.cardPatch
 import com.otus.jmap.contacts.toCreation
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
@@ -28,7 +30,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 /**
@@ -37,13 +38,13 @@ import kotlinx.serialization.json.put
  */
 internal class JmapContactRepository(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache,
 ) : ContactRepository {
     override suspend fun load(): ContactsSnapshot =
         coroutineScope {
             val loaded =
-                withContext(Dispatchers.IO) { logins.logins() }
+                connections
+                    .savedLogins()
                     .map { login -> async { login to runCatching { loadLogin(login) } } }
                     .awaitAll()
             val failed = loaded.filter { (_, result) -> result.isFailure }.map { it.first }
@@ -53,7 +54,8 @@ internal class JmapContactRepository(
         }
 
     override suspend fun cached(): ContactsSnapshot? =
-        withContext(Dispatchers.IO) { logins.logins() }
+        connections
+            .savedLogins()
             .mapNotNull { cachedLogin(it) }
             .takeIf { it.isNotEmpty() }
             ?.let { snapshot(it, failedLogins = emptyList()) }
@@ -104,7 +106,7 @@ internal class JmapContactRepository(
         before: Card,
         after: Card,
     ) {
-        val patch = patch(before, after)
+        val patch = cardPatch(before, after)
         if (patch.isEmpty()) return
         val result =
             write(key.loginId) { connection ->
@@ -170,7 +172,7 @@ internal class JmapContactRepository(
         block: suspend (JmapConnection) -> T,
     ): T {
         val login =
-            withContext(Dispatchers.IO) { logins.logins().firstOrNull { it.id == loginId } }
+            connections.savedLogins().firstOrNull { it.id == loginId }
                 ?: throw ContactWriteException(ContactWriteFailure.Refused)
         return try {
             block(connections.connection(login))
@@ -190,11 +192,7 @@ private suspend fun JmapConnection.cardsWithUid(
     book: BookKey,
     uid: String,
 ): List<Card> {
-    val filter =
-        buildJsonObject {
-            put("inAddressBook", book.bookId)
-            put("uid", uid)
-        }
+    val filter = ContactCardFilter(inAddressBook = book.bookId, uid = uid).toFilter()
     return request {
         val query = call(QueryMethod(ContactCardType, book.accountId, filter))
         call(GetMethod(ContactCardType, book.accountId, JmapIds.Result(query.resultOf("/ids"))))

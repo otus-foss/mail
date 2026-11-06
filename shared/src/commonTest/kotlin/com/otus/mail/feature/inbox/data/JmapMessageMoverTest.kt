@@ -36,7 +36,7 @@ class JmapMessageMoverTest {
         reply: (String) -> String,
     ): JmapMessageMover {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageMover(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store)
+        return JmapMessageMover(JmapConnections(JmapClient(stalwartLike(session, reply)), store))
     }
 
     @Test

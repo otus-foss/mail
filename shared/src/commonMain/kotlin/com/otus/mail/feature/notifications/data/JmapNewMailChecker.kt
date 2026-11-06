@@ -9,6 +9,7 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.JmapResponse
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
@@ -18,12 +19,11 @@ import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MUTED_KEYWORD
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.ThreadType
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -46,16 +46,13 @@ import kotlin.time.Instant
  * next one tries again.
  */
 class JmapNewMailChecker(
-    connections: JmapConnections,
-    logins: LoginStore,
+    private val connections: JmapConnections,
     private val states: MailStateStore,
 ) : NewMailChecker {
-    private val accounts = MailAccounts(connections, logins)
-
     override suspend fun check(alerts: MailAlerts) {
         val logins =
             try {
-                accounts.logins()
+                connections.savedLogins()
             } catch (_: LoginStoreException) {
                 return
             }
@@ -66,7 +63,7 @@ class JmapNewMailChecker(
         // An account removed while its check ran gets no alert, and its state is not written back.
         val remaining =
             try {
-                accounts.logins().map { it.id }.toSet()
+                connections.savedLogins().map { it.id }.toSet()
             } catch (_: LoginStoreException) {
                 return
             }
@@ -91,8 +88,8 @@ class JmapNewMailChecker(
         since: String?,
         showing: List<String>,
     ): LoginCheck =
-        mailCallOr(LoginCheck(login.id, state = null, mail = emptyList())) {
-            val account = accounts.open(login)
+        jmapCallOr(LoginCheck(login.id, state = null, mail = emptyList())) {
+            val account = connections.mailAccount(login)
             since?.let { changesSince(account, it, showing) } ?: startFromNow(account)
         }
 

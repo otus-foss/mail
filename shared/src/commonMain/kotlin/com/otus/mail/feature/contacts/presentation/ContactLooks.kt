@@ -1,10 +1,10 @@
 package com.otus.mail.feature.contacts.presentation
 
-import com.otus.accounts.presentation.toChipAvatar
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.avatarStyle
 import com.otus.avatar.generatedAvatar
 import com.otus.avatar.isAvatarCard
+import com.otus.avatar.ui.presentation.toChipAvatar
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_badge
 import com.otus.designsystem.resources.symbol_group

@@ -4,6 +4,8 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapJson
 import com.otus.jmap.SetMethod
+import com.otus.jmap.isTemporary
+import com.otus.jmap.login.LoginLifecycle
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
@@ -12,6 +14,7 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.EmailChangeStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -40,7 +43,7 @@ class EmailChangeQueue(
     private val wake: (Instant) -> Unit = {},
     private val now: () -> Instant = { Clock.System.now() },
     private val io: CoroutineContext = Dispatchers.IO,
-) {
+) : LoginLifecycle {
     // A login's changes go out one batch after another, in the order they were made.
     private val locks = LoginLocks()
 
@@ -55,14 +58,13 @@ class EmailChangeQueue(
      */
     internal suspend fun update(
         connections: JmapConnections,
-        logins: LoginStore,
         loginId: String,
         patches: Map<String, JsonObject>,
         cache: MailCache?,
     ): Set<String> =
         locks.of(loginId).withLock {
             write(loginId, pending(loginId).merged(patches))
-            val refused = send(connections, logins, loginId, cache)
+            val refused = send(connections, loginId, cache)
             val shown = patches.keys - refused
             if (cache != null) cache.show(loginId, patches.filterKeys { it in shown })
             shown
@@ -71,20 +73,18 @@ class EmailChangeQueue(
     /** Sends [loginId]'s waiting changes, as before a sync reads the server's mail. */
     internal suspend fun flush(
         connections: JmapConnections,
-        logins: LoginStore,
         loginId: String,
         cache: MailCache?,
     ) {
-        locks.of(loginId).withLock { send(connections, logins, loginId, cache) }
+        locks.of(loginId).withLock { send(connections, loginId, cache) }
     }
 
     /** Sends every login's waiting changes. True when some still wait for the network. */
     suspend fun flushAll(
         connections: JmapConnections,
-        logins: LoginStore,
         cache: MailCache?,
     ): Boolean {
-        saved().keys.forEach { flush(connections, logins, it, cache) }
+        saved().keys.forEach { flush(connections, it, cache) }
         return saved().isNotEmpty()
     }
 
@@ -96,13 +96,17 @@ class EmailChangeQueue(
         locks.of(loginId).withLock { write(loginId, emptyMap()) }
     }
 
+    override suspend fun removing(loginId: String): Unit = forget(loginId)
+
+    // A change queued while the login was being removed must not wait for it to come back.
+    override suspend fun removed(loginId: String): Unit = forget(loginId)
+
     /**
      * Sends the waiting changes batch by batch and drops each one the server answered. A refused
      * email leaves the cache, so the next sync reads it again. Returns the refused emails.
      */
     private suspend fun send(
         connections: JmapConnections,
-        logins: LoginStore,
         loginId: String,
         cache: MailCache?,
     ): Set<String> {
@@ -112,7 +116,7 @@ class EmailChangeQueue(
         var refused = emptySet<String>()
         var limited = false
         try {
-            val account = mailAccount(connections, logins, loginId)
+            val account = connections.mailAccount(loginId)
             if (account == null) {
                 // The login was removed, and its changes with it.
                 left = emptyMap()
@@ -162,7 +166,7 @@ private suspend fun MailAccount.sendBatch(batch: Map<String, JsonObject>): Pair<
         result.updated.keys + refused to refused
     } catch (error: JmapException.MethodError) {
         // A server down for now may take the batch later; any other refusal of the call would recur.
-        if (error.type in TEMPORARY_METHOD_ERRORS) throw error
+        if (error.isTemporary) throw error
         batch.keys to batch.keys
     }
 

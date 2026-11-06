@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -40,21 +41,25 @@ import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.AppIconSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
+import com.otus.settings.presentation.components.LocalDateFormatter
+import com.otus.settings.presentation.components.rememberDateFormatter
+import com.otus.storage.inMemoryChoice
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 @Composable
 fun App(
-    dateFormatState: DateFormatSettingsState = remember { DateFormatSettingsState() },
+    dateFormatState: DateFormatSettingsState = remember { DateFormatSettingsState(inMemoryChoice()) },
     services: MailServices = remember { MailServices() },
     behaviorState: MailBehaviorState = remember { MailBehaviorState() },
-    themeState: ThemeSettingsState = remember { ThemeSettingsState() },
-    animationState: AnimationSettingsState = remember { AnimationSettingsState() },
+    themeState: ThemeSettingsState = remember { ThemeSettingsState(inMemoryChoice()) },
+    animationState: AnimationSettingsState = remember { AnimationSettingsState(inMemoryChoice()) },
     // Null where the platform cannot switch its icon; the launch animation then uses the accent.
     appIconState: AppIconSettingsState? = null,
     build: InstalledBuild? = null,
 ) {
     val dateFormatter = rememberDateFormatter(dateFormatState)
+    val currentDates = rememberUpdatedState(dateFormatter)
     // The start page is read once per launch; changing it in settings applies at the next launch.
     val start = remember(behaviorState) { behaviorState.behavior.startPage }
     var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf(launchPage(start)) }
@@ -66,7 +71,7 @@ fun App(
     val scope = rememberCoroutineScope()
     val states =
         remember(services, behaviorState) {
-            MailStates(services, scope, behaviorState, { chosenScope }) { chosenScope = it }
+            MailStates(services, scope, behaviorState, { chosenScope }, { chosenScope = it }) { currentDates.value }
         }
     val nightly = rememberNightlyUpdate(services, build)
     LoadEffects(states, behaviorState, start, current = { page }) { page = it }
@@ -83,6 +88,7 @@ fun App(
     OtusTheme(themeState.palette) {
         CompositionLocalProvider(
             LocalMotionScale provides animationState.speed.scale,
+            LocalDateFormatter provides dateFormatter,
             LocalBottomClearance provides remember { BottomClearance() },
         ) {
             Box(Modifier.fillMaxSize()) {

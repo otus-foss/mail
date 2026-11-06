@@ -22,7 +22,7 @@ class JmapEmailShortcutsTest {
                 sent += body
                 if ("Mailbox/get" in body) """{"methodResponses": [["Mailbox/get", $mailboxes, "c0"]]}""" else UPDATED
             }
-        return JmapEmailShortcuts(JmapConnections(JmapClient(server), store), store)
+        return JmapEmailShortcuts(JmapConnections(JmapClient(server), store))
     }
 
     @Test

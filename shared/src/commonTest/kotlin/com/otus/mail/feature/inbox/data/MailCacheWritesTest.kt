@@ -47,7 +47,7 @@ class MailCacheWritesTest {
             return JmapConnections(JmapClient(routed), store)
         }
 
-    private fun source(limit: Int = 50) = JmapMailSource(connections, store, cache, limit, zone = { TimeZone.UTC })
+    private fun source(limit: Int = 50) = JmapMailSource(connections, cache, limit, zone = { TimeZone.UTC })
 
     @Test
     fun rowsPastWhereAnotherAccountStopsWaitForTheNextPage() =
@@ -67,9 +67,9 @@ class MailCacheWritesTest {
         runTest {
             val source = source()
             val rows = source.messages(MailScope.Inbox, MailQuery()).messages.associateBy { it.emailId }
-            val marker = JmapMessageMarker(connections, store, cache)
+            val marker = JmapMessageMarker(connections, cache)
             assertEquals(setOf("ada/h1"), marker.mark(listOf(rows.getValue("h1")), MessageFlag.Read, on = true))
-            assertTrue(JmapMessageMover(connections, store, cache).move(rows.getValue("w1"), "r", leaving = setOf("a")))
+            assertTrue(JmapMessageMover(connections, cache).move(rows.getValue("w1"), "r", leaving = setOf("a")))
             home.down = true
             office.down = true
             val cached = source.cached(MailScope.Inbox, MailQuery()).messages.associateBy { it.emailId }

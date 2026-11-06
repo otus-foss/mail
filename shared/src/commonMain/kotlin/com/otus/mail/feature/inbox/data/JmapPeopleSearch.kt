@@ -2,19 +2,20 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
+import com.otus.jmap.JmapFilter
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
+import com.otus.jmap.anyOf
+import com.otus.jmap.filterCondition
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.NEWEST_FIRST
-import com.otus.mail.core.mail.anyOf
-import com.otus.mail.core.mail.condition
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.FoundPerson
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -23,7 +24,6 @@ import com.otus.mail.feature.inbox.domain.PeopleSearch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
@@ -34,7 +34,6 @@ import kotlinx.serialization.json.JsonPrimitive
  */
 class JmapPeopleSearch(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val contacts: AddressBook,
     private val limit: Int = DEFAULT_LIMIT,
 ) : PeopleSearch {
@@ -56,7 +55,7 @@ class JmapPeopleSearch(
     /** The ids of [chosen] logins, or of every login when null; none when the logins cannot be read. */
     private suspend fun loginIds(chosen: Set<String>?): List<String> =
         try {
-            MailAccounts(connections, logins).logins().map { it.id }.filter { chosen == null || it in chosen }
+            connections.savedLogins().map { it.id }.filter { chosen == null || it in chosen }
         } catch (expected: LoginStoreException) {
             emptyList()
         }
@@ -66,8 +65,9 @@ class JmapPeopleSearch(
         field: PeopleField,
         text: String,
     ): List<FoundPerson> =
-        mailCallOr(emptyList()) {
-            mailAccount(connections, logins, loginId)
+        jmapCallOr(emptyList()) {
+            connections
+                .mailAccount(loginId)
                 ?.let { account ->
                     val emails =
                         account.connection.request {
@@ -105,10 +105,10 @@ private fun people(
             )
         }
 
-private fun PeopleField.filter(text: String): JsonObject =
+private fun PeopleField.filter(text: String): JmapFilter =
     when (this) {
-        PeopleField.From -> condition("from", JsonPrimitive(text))
-        PeopleField.To -> anyOf(listOf("to", "cc").map { name -> condition(name, JsonPrimitive(text)) })
+        PeopleField.From -> filterCondition("from", JsonPrimitive(text))
+        PeopleField.To -> anyOf(listOf("to", "cc").map { name -> filterCondition(name, JsonPrimitive(text)) })
     }
 
 private val PeopleField.properties: List<String>

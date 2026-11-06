@@ -1,7 +1,8 @@
 package com.otus.mail.core.mail
 
 import com.otus.jmap.QueryMethod
-import kotlinx.serialization.json.buildJsonObject
+import com.otus.jmap.filterCondition
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.put
 
 // The mailbox roles Mail gives a place of their own (RFC 8621, section 2).
@@ -17,4 +18,4 @@ internal val BIN_ROLES = setOf(TRASH_ROLE, JUNK_ROLE)
 
 /** The `Mailbox/query` for the mailbox with [role], such as [DRAFTS_ROLE] or [SENT_ROLE]. */
 internal fun MailAccount.roleQuery(role: String): QueryMethod =
-    QueryMethod(MailboxType, id, buildJsonObject { put("role", role) })
+    QueryMethod(MailboxType, id, filterCondition("role", JsonPrimitive(role)))

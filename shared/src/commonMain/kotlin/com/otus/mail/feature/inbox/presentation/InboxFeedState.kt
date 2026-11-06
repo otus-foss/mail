@@ -5,8 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
-import com.otus.mail.core.avatar.mailAvatarOptions
-import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.avatar.avatarOptions
+import com.otus.dateformat.DateFormatter
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
@@ -34,8 +35,9 @@ class InboxFeedState(
     private val source: MailSource,
     private val scope: CoroutineScope,
     avatars: AvatarService? = null,
-    private val avatarOptions: () -> AvatarOptions = { mailAvatarOptions(websiteIcons = true) },
+    private val avatarOptions: () -> AvatarOptions = { avatarOptions(websiteIcons = true) },
     defaultScope: MailScope = MailScope.Inbox,
+    private val dates: () -> DateFormatter = { DateFormatter() },
 ) {
     /**
      * The page's own messages, such as the inbox with Spam and Trash as the user chose. A new one
@@ -250,7 +252,10 @@ class InboxFeedState(
         if (fromServer) {
             load.served = true
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val unavailable = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice(now) }
+            val unavailable =
+                snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(
+                    " ",
+                ) { it.notice(now, dates()) }
             notice = loadNotice(reportedNotice, unavailable)
         }
     }
@@ -269,22 +274,25 @@ private class FeedLoad(
 }
 
 /** Why the account did not load, and when the mail it shows last matched the server. */
-private fun UnavailableAccount.notice(now: LocalDateTime): String {
+private fun UnavailableAccount.notice(
+    now: LocalDateTime,
+    dates: DateFormatter,
+): String {
     val updated =
         syncedAt
             ?.toLocalDateTime(TimeZone.currentSystemDefault())
-            ?.let { " Last updated ${it.syncedLabel(now)}." }
+            ?.let { " Last updated ${dates.syncedLabel(it, now)}." }
     return reasonNotice() + updated.orEmpty()
 }
 
 private fun UnavailableAccount.reasonNotice(): String =
     when (reason) {
-        InboxFailure.SignInRejected -> "$name: the server rejected the sign-in. Reconnect it in Settings."
-        InboxFailure.NotPermitted -> "$name: the server doesn't allow this account to read mail."
-        InboxFailure.CredentialsUnavailable -> "$name: the saved password couldn't be read. Reconnect it in Settings."
-        InboxFailure.NoMail -> "$name: this account doesn't offer mail over JMAP."
-        InboxFailure.Unreachable -> "$name: couldn't reach the server."
-        InboxFailure.ServerProblem -> "$name: the server returned an error."
+        MailFailure.SignInRejected -> "$name: the server rejected the sign-in. Reconnect it in Settings."
+        MailFailure.NotPermitted -> "$name: the server doesn't allow this account to read mail."
+        MailFailure.CredentialsUnavailable -> "$name: the saved password couldn't be read. Reconnect it in Settings."
+        MailFailure.NoMail -> "$name: this account doesn't offer mail over JMAP."
+        MailFailure.Unreachable -> "$name: couldn't reach the server."
+        MailFailure.ServerProblem -> "$name: the server returned an error."
     }
 
 private fun loadNotice(

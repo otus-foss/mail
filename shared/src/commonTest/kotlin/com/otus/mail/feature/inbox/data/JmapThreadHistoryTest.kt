@@ -28,7 +28,7 @@ class JmapThreadHistoryTest {
                     ["Thread/get", {"state": "t", "list": [{"id": "t1", "emailIds": ["m1", "m2", "m3", "m4"]}]}, "c1"],
                     ["Email/get", {"state": "e", "list": [$emails]}, "c2"]]}"""
             }
-        return JmapThreadHistory(JmapConnections(JmapClient(engine), store), store) { TimeZone.UTC }
+        return JmapThreadHistory(JmapConnections(JmapClient(engine), store)) { TimeZone.UTC }
     }
 
     @Test

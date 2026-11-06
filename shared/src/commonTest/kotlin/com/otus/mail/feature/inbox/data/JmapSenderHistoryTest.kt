@@ -34,7 +34,7 @@ class JmapSenderHistoryTest {
         reply: (String) -> String,
     ): JmapSenderHistory {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapSenderHistory(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store)
+        return JmapSenderHistory(JmapConnections(JmapClient(stalwartLike(session, reply)), store))
     }
 
     @Test

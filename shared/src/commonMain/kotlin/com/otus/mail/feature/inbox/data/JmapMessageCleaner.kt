@@ -15,6 +15,7 @@ import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.Deletion
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageCleaner
@@ -30,7 +31,6 @@ import kotlinx.serialization.json.JsonPrimitive
  */
 class JmapMessageCleaner(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
 ) : MessageCleaner {
     override suspend fun notSpam(
         message: MailMessage,
@@ -50,7 +50,7 @@ class JmapMessageCleaner(
                         }
                     }
             }
-        return updateAccountEmails(connections, logins, message.location.accountId, patches).containsAll(patches.keys)
+        return updateAccountEmails(connections, message.location.accountId, patches).containsAll(patches.keys)
     }
 
     override suspend fun delete(messages: List<MailMessage>): Set<String> =
@@ -76,7 +76,7 @@ class JmapMessageCleaner(
         val removed = mutableSetOf<String>()
         // A failed batch keeps the ones before it, so the caller knows what left.
         return try {
-            val account = mailAccount(connections, logins, loginId) ?: return Deletion(emptySet(), complete = false)
+            val account = connections.mailAccount(loginId) ?: return Deletion(emptySet(), complete = false)
             val emails = account.find()
             val batchSize = minOf(account.session.setBatch, account.session.getBatch)
             emails.chunked(batchSize).forEach { removed += account.removeBatch(it) }
@@ -173,19 +173,6 @@ private class FolderEmail(
 ) {
     val elsewhere: Boolean = (mailboxIds - folderId).isNotEmpty()
 }
-
-/** Objects per `/set` call: the server's `maxObjectsInSet`, or a modest default when it names none. */
-internal val JmapSession.setBatch: Int
-    get() = limit(maxObjectsInSet)
-
-/** Objects per `/get` call, which also sizes each page of a query. */
-private val JmapSession.getBatch: Int
-    get() = limit(maxObjectsInGet)
-
-private fun limit(advertised: Long?): Int = advertised?.coerceIn(1L, DEFAULT_BATCH.toLong())?.toInt() ?: DEFAULT_BATCH
-
-/** RFC 8620 suggests servers allow at least 500; staying below it keeps requests small. */
-private const val DEFAULT_BATCH = 256
 
 internal const val JUNK_KEYWORD = "\$junk"
 internal const val NOT_JUNK_KEYWORD = "\$notjunk"

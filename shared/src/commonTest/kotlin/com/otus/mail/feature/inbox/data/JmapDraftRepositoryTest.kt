@@ -38,7 +38,7 @@ class JmapDraftRepositoryTest {
                 calls += body
                 api(body)
             }
-        return JmapDraftRepository(JmapConnections(JmapClient(engine), store), store) { "m${++saves}@otus.mail" }
+        return JmapDraftRepository(JmapConnections(JmapClient(engine), store)) { "m${++saves}@otus.mail" }
     }
 
     private var saves = 0

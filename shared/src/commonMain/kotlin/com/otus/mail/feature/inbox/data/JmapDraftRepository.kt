@@ -6,14 +6,17 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.SetError
 import com.otus.jmap.SetMethod
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DRAFTS_ROLE
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.roleQuery
+import com.otus.mail.core.mail.toMailFailure
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
@@ -33,7 +36,6 @@ import kotlin.uuid.Uuid
  */
 class JmapDraftRepository(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val unanswered: UnansweredDrafts = UnansweredDrafts(),
     private val newMessageId: () -> String = ::draftMessageId,
 ) : DraftRepository {
@@ -41,8 +43,9 @@ class JmapDraftRepository(
     private val images = InlineImageUploads()
 
     override suspend fun identities(accountId: String): List<SendIdentity> =
-        mailCallOr(emptyList()) {
-            mailAccount(connections, logins, accountId)
+        jmapCallOr(emptyList()) {
+            connections
+                .mailAccount(accountId)
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
                 ?.let { account ->
                     account.connection
@@ -121,7 +124,7 @@ class JmapDraftRepository(
         block: suspend (MailAccount) -> T,
     ): Result<T> =
         try {
-            val account = mailAccount(connections, logins, loginId) ?: throw DraftException(DraftFailure.ServerProblem)
+            val account = connections.mailAccount(loginId) ?: throw DraftException(DraftFailure.ServerProblem)
             Result.success(block(account))
         } catch (error: DraftException) {
             Result.failure(error)
@@ -153,11 +156,14 @@ internal fun MailAccount.mayUse(capability: String): Boolean =
 private fun SetError.toDraftFailure(): DraftFailure = draftFailure(type)
 
 private fun JmapException.toDraftFailure(): DraftFailure =
-    when (this) {
-        is JmapException.Forbidden -> DraftFailure.NotPermitted
-        is JmapException.MethodError -> draftFailure(type)
-        is JmapException.Unreachable -> DraftFailure.Unreachable
-        else -> DraftFailure.ServerProblem
+    if (this is JmapException.MethodError) {
+        draftFailure(type)
+    } else {
+        when (toMailFailure()) {
+            MailFailure.NotPermitted -> DraftFailure.NotPermitted
+            MailFailure.Unreachable -> DraftFailure.Unreachable
+            else -> DraftFailure.ServerProblem
+        }
     }
 
 private fun draftFailure(type: String): DraftFailure =

@@ -4,17 +4,17 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.inMailbox
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.contacts.domain.MailTrace
 import com.otus.mail.feature.contacts.domain.MailTraceSource
@@ -27,32 +27,28 @@ import kotlin.time.Instant
  * `maxObjectsInGet` allows. A login without mail or out of reach gives none.
  */
 internal class JmapMailTraces(
-    connections: JmapConnections,
-    logins: LoginStore,
+    private val connections: JmapConnections,
 ) : MailTraceSource {
-    private val accounts = MailAccounts(connections, logins)
-
     override suspend fun logins(): List<String> =
         try {
-            accounts.logins().map { it.id }
+            connections.savedLogins().map { it.id }
         } catch (expected: LoginStoreException) {
             emptyList()
         }
 
     override suspend fun traces(loginId: String): MailTraces? =
-        mailCallOr(null) {
-            accounts.open(loginId)?.let { account ->
+        jmapCallOr(null) {
+            connections.mailAccount(loginId)?.let { account ->
                 MailTraces(account.newest(SENT_ROLE), account.newest(INBOX_ROLE))
             }
         }
 
     private suspend fun MailAccount.newest(role: String): List<MailTrace> {
         val mailbox = connection.call(roleQuery(role)).ids.firstOrNull() ?: return emptyList()
-        val batch = (session.maxObjectsInGet ?: GET_BATCH.toLong()).toInt().coerceIn(1, GET_BATCH)
         return connection
             .call(QueryMethod(EmailType, id, inMailbox(mailbox), NEWEST_FIRST, SCAN))
             .ids
-            .chunked(batch)
+            .chunked(session.getBatch)
             .flatMap { connection.call(GetMethod(EmailType, id, JmapIds.Of(it), PROPERTIES)).list }
             .mapNotNull(::trace)
     }
@@ -69,9 +65,6 @@ internal class JmapMailTraces(
 
     private companion object {
         const val SCAN = 500
-
-        /** Read when the server names no `maxObjectsInGet`; small enough for any server. */
-        const val GET_BATCH = 200
         val PROPERTIES = listOf("id", "receivedAt", "from", "to", "cc", "bcc")
     }
 }

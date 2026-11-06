@@ -7,6 +7,9 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.QueryResult
+import com.otus.jmap.allOf
+import com.otus.jmap.filterCondition
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
@@ -23,9 +26,7 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.NEWEST_FIRST
-import com.otus.mail.core.mail.condition
-import com.otus.mail.core.mail.mailCallOr
-import com.otus.mail.core.mail.operator
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
@@ -47,7 +48,6 @@ import kotlin.time.Instant
  */
 class JmapNewsletters(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     drafts: DraftRepository,
     sender: DraftSender,
     private val cache: MailCache = InMemoryMailCache(),
@@ -55,8 +55,8 @@ class JmapNewsletters(
     private val unsubscriber = ListUnsubscriber(drafts, sender)
 
     override suspend fun list(message: MailMessage): MailingList? =
-        mailCallOr(null) {
-            mailAccount(connections, logins, message.location.accountId)?.list(message)
+        jmapCallOr(null) {
+            connections.mailAccount(message.location.accountId)?.list(message)
         }
 
     override suspend fun unsubscribe(
@@ -71,10 +71,10 @@ class JmapNewsletters(
         return cache.withAccount(accountId) { accountCache ->
             if (emailIds.isEmpty()) return@withAccount true
             val patches =
-                mailCallOr(null) { mailAccount(connections, logins, accountId)?.archivePatches(emailIds) }
+                jmapCallOr(null) { connections.mailAccount(accountId)?.archivePatches(emailIds) }
                     ?: return@withAccount false
             patches.isEmpty() ||
-                updateAccountEmails(connections, logins, accountId, patches, accountCache).containsAll(patches.keys)
+                updateAccountEmails(connections, accountId, patches, accountCache).containsAll(patches.keys)
         }
     }
 
@@ -115,11 +115,11 @@ class JmapNewsletters(
         val address = email.from?.firstOrNull()?.email
         val same =
             when {
-                listId != null -> condition("header", JsonArray(listOf("List-Id", listId).map(::JsonPrimitive)))
-                !address.isNullOrBlank() -> condition("from", JsonPrimitive(address))
+                listId != null -> filterCondition("header", JsonArray(listOf("List-Id", listId).map(::JsonPrimitive)))
+                !address.isNullOrBlank() -> filterCondition("from", JsonPrimitive(address))
                 else -> return emptyList()
             }
-        val filter = operator("AND", listOf(same, condition("before", JsonPrimitive(email.receivedAt))))
+        val filter = allOf(listOf(same, filterCondition("before", JsonPrimitive(email.receivedAt))))
         return connection
             .request {
                 val query = call(QueryMethod(EmailType, id, filter, NEWEST_FIRST, SCAN))

@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.accounts.presentation.toChipAvatar
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
+import com.otus.avatar.ui.presentation.toChipAvatar
 import com.otus.designsystem.shared.people.components.AvatarStackChip
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.shared.people.components.NamedAvatar

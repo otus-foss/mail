@@ -4,6 +4,7 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.CacheKind
@@ -18,7 +19,7 @@ import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.LIST_ID_PROPERTY
 import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mail.putObject
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -42,13 +43,12 @@ import kotlin.coroutines.CoroutineContext
  */
 class JmapMessageBodies(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
     private val parsing: CoroutineContext = Dispatchers.Default,
 ) : MessageBodies {
     override suspend fun content(message: MailMessage): MessageContent? =
         withContext(parsing) {
-            mailCallOr(null) {
+            jmapCallOr(null) {
                 val loginId = message.location.accountId
                 cache.withAccount(loginId) { accountCache ->
                     val email = accountCache.cached(loginId, message.emailId) ?: accountCache.fetched(loginId, message)
@@ -70,7 +70,7 @@ class JmapMessageBodies(
             content
         } else {
             try {
-                mailAccount(connections, logins, loginId)?.withInlineImages(content, parts) ?: content
+                connections.mailAccount(loginId)?.withInlineImages(content, parts) ?: content
             } catch (expected: JmapException) {
                 content
             }
@@ -89,7 +89,7 @@ class JmapMessageBodies(
         loginId: String,
         message: MailMessage,
     ): EmailObject? {
-        val account = mailAccount(connections, logins, loginId) ?: return null
+        val account = connections.mailAccount(loginId) ?: return null
         val email =
             account.connection
                 .call(GetMethod(EmailType, account.id, JmapIds.Of(listOf(message.emailId)), PROPERTIES, ARGUMENTS))

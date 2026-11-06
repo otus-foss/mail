@@ -1,10 +1,11 @@
 package com.otus.mail.app
 
+import com.otus.accounts.domain.ownAddresses
 import com.otus.accounts.presentation.AccountsState
-import com.otus.accounts.presentation.OwnAvatarsState
-import com.otus.accounts.presentation.ownAddresses
 import com.otus.avatar.AvatarOptions
-import com.otus.mail.core.avatar.mailAvatarOptions
+import com.otus.avatar.avatarOptions
+import com.otus.avatar.ui.presentation.OwnAvatarsState
+import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.contacts.presentation.ContactAvatarUpdates
 import com.otus.mail.feature.contacts.presentation.ContactPickers
 import com.otus.mail.feature.contacts.presentation.ContactSync
@@ -48,13 +49,22 @@ internal class MailStates(
     private val chosenScope: () -> MailScopeChoice = { MailScopeChoice.All },
     /** Chooses whose mail the pages show, as the sidebar and the inbox's account switcher do. */
     val chooseScope: (MailScopeChoice) -> Unit = {},
+    /** The user's date format now, for dates in notices and toasts. */
+    private val dates: () -> DateFormatter,
 ) {
     /** Whose mail the pages show. A removed account's choice falls back to every account. */
     val mailScope: MailScopeChoice
         get() = chosenScope().within(accounts.accounts.map { it.id })
 
     val feed =
-        InboxFeedState(services.mail, scope, services.avatars, ::avatarOptions, behavior.behavior.inbox.mailScope())
+        InboxFeedState(
+            services.mail,
+            scope,
+            services.avatars,
+            ::avatarOptions,
+            behavior.behavior.inbox.mailScope(),
+            dates,
+        )
 
     val folders: FoldersState =
         FoldersState(
@@ -154,11 +164,18 @@ internal class MailStates(
         mailScope: MailScope,
         pageScope: CoroutineScope,
     ): InboxFeedState =
-        InboxFeedState(services.mail, pageScope, services.avatars, ::avatarOptions, defaultScope = mailScope)
+        InboxFeedState(
+            services.mail,
+            pageScope,
+            services.avatars,
+            ::avatarOptions,
+            defaultScope = mailScope,
+            dates = dates,
+        )
 
     /** Avatars load from outside the user's servers only while Website icons is on. */
     internal fun avatarOptions(): AvatarOptions =
-        behavior.behavior.let { mailAvatarOptions(it.websiteIcons, it.iconSource, it.bulwarkAddress) }
+        behavior.behavior.let { avatarOptions(it.websiteIcons, it.iconSource, it.bulwarkAddress) }
 
     /** Every account's folder names in folder order, once each, for search to choose from. */
     fun mailboxNames(): List<String> =
@@ -194,7 +211,7 @@ internal class MailStates(
                 behavior.behavior.signatureInReplies,
                 photoCleaning = { behavior.behavior.photoCleaning },
                 ownAvatar = { accountId, address ->
-                    all.firstOrNull { it.id == accountId }?.let { ownAvatars.avatar(it, address) }
+                    all.firstOrNull { it.id == accountId }?.let { ownAvatars.avatar(it.own, address) }
                 },
             ),
             onSent = { from -> behavior.update { it.sentFrom(from.address) } },
@@ -239,7 +256,7 @@ internal class MailStates(
      * process's scope, so a send outlives a recreated activity.
      */
     val outgoing =
-        OutgoingMail(services.work, moveToasts.toasts, services.scheduled, services.outbox) {
+        OutgoingMail(services.work, moveToasts.toasts, services.scheduled, services.outbox, dates) {
             behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
         }
     private val cleaning = FolderCleaning(services, folders, scope)

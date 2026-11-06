@@ -4,6 +4,7 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.AttachmentBlob
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.MAX_ATTACHMENT_BYTES
@@ -16,11 +17,10 @@ import com.otus.mail.feature.inbox.domain.UploadFailure
  */
 class JmapAttachmentUploads(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
 ) : AttachmentUploads {
     override suspend fun maxBytes(accountId: String): Int =
         try {
-            val account = mailAccount(connections, logins, accountId) ?: throw UploadException(UploadFailure.Failed)
+            val account = connections.mailAccount(accountId) ?: throw UploadException(UploadFailure.Failed)
             (account.session.maxSizeUpload ?: MAX_ATTACHMENT_BYTES.toLong())
                 .coerceIn(0L, MAX_ATTACHMENT_BYTES.toLong())
                 .toInt()
@@ -36,7 +36,7 @@ class JmapAttachmentUploads(
         type: String,
     ): Result<AttachmentBlob> =
         try {
-            val account = mailAccount(connections, logins, accountId) ?: throw UploadException(UploadFailure.Failed)
+            val account = connections.mailAccount(accountId) ?: throw UploadException(UploadFailure.Failed)
             Result.success(AttachmentBlob(accountId, account.connection.upload(account.id, bytes, type).blobId))
         } catch (error: UploadException) {
             Result.failure(error)

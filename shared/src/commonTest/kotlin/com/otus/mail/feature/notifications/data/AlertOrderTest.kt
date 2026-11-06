@@ -41,7 +41,7 @@ class AlertOrderTest {
     fun oldAlertsGoBeforeNewOnesShow() =
         runTest {
             val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-            JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(api = ::reply)), store), store, states)
+            JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(api = ::reply)), store), states)
                 .check(alerts)
             assertEquals(listOf("clear [m1]", "show [m6]"), events, "Android must not clear the new alert's summary")
         }

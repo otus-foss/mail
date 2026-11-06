@@ -11,6 +11,7 @@ import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.ThreadObject
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.objects
 import com.otus.mail.feature.inbox.domain.ConversationMessages
@@ -27,7 +28,6 @@ import kotlin.time.Instant
  */
 class JmapConversationMessages(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     private val sites: ServerSites = ServerSites { null },
@@ -57,7 +57,8 @@ class JmapConversationMessages(
     /** The thread's emails from the server, or from the device when the server cannot be reached. */
     private suspend fun emails(message: MailMessage): List<EmailObject>? =
         try {
-            mailAccount(connections, logins, message.location.accountId)
+            connections
+                .mailAccount(message.location.accountId)
                 ?.threadEmails(message.emailId, EMAIL_PROPERTIES)
         } catch (expected: JmapException) {
             cached(message)

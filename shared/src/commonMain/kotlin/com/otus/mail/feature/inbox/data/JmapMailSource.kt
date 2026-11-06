@@ -10,7 +10,8 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
-import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mail.toMailFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
@@ -40,7 +41,6 @@ import kotlin.time.Instant
  */
 class JmapMailSource(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
     private val limit: Int = DEFAULT_LIMIT,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
@@ -92,12 +92,10 @@ class JmapMailSource(
         }
 
     private suspend fun selected(scope: MailScope): List<JmapLogin> =
-        withContext(Dispatchers.IO) {
-            try {
-                logins.logins()
-            } catch (error: LoginStoreException) {
-                throw InboxStorageException(error)
-            }
+        try {
+            connections.savedLogins()
+        } catch (error: LoginStoreException) {
+            throw InboxStorageException(error)
         }.filter { scope.reads(it.id) }
 
     /** Runs [sync] for each login [scope] reads, then reads the lists from the cache. */
@@ -130,20 +128,20 @@ class JmapMailSource(
                 val connection = connections.connection(login)
                 val accountId =
                     connection.session().accountFor(JmapCapability.MAIL)
-                        ?: return@withAccount UnavailableAccount(login.name, InboxFailure.NoMail)
+                        ?: return@withAccount UnavailableAccount(login.name, MailFailure.NoMail)
                 val lists =
                     MailAccountLists(connection, accountId, login.id, accountCache, limit) {
                         clock.now().toEpochMilliseconds()
                     }
                 locks.of(login.id).withLock {
-                    queue?.flush(connections, logins, login.id, accountCache)
+                    queue?.flush(connections, login.id, accountCache)
                     lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
                     if (queue != null) accountCache.patchEmails(login.id, queue.pending(login.id))
                 }
                 null
             }
         } catch (error: JmapException) {
-            UnavailableAccount(login.name, error.toInboxFailure(), cache.syncedAt(login.id))
+            UnavailableAccount(login.name, error.toMailFailure(), cache.syncedAt(login.id))
         }
     }
 
@@ -192,16 +190,6 @@ class JmapMailSource(
         const val DEFAULT_LIMIT = 50
     }
 }
-
-private fun JmapException.toInboxFailure(): InboxFailure =
-    when (this) {
-        is JmapException.Unauthorized -> InboxFailure.SignInRejected
-        is JmapException.Forbidden -> InboxFailure.NotPermitted
-        is JmapException.CredentialsUnavailable -> InboxFailure.CredentialsUnavailable
-        is JmapException.Unsupported -> InboxFailure.NoMail
-        is JmapException.Unreachable -> InboxFailure.Unreachable
-        else -> InboxFailure.ServerProblem
-    }
 
 private suspend fun <T> cacheErrors(operation: suspend () -> T): T =
     try {

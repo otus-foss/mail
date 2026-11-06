@@ -55,7 +55,7 @@ class JmapMessageMarkerTest {
                 save(login, "secret")
                 save(work, "secret")
             }
-        return JmapMessageMarker(JmapConnections(JmapClient(stalwartLike(session, reply)), store), store)
+        return JmapMessageMarker(JmapConnections(JmapClient(stalwartLike(session, reply)), store))
     }
 
     private suspend fun sentFor(

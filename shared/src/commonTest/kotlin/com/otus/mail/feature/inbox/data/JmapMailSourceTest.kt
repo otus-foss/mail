@@ -6,7 +6,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginSecret
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
@@ -148,7 +148,7 @@ class JmapMailSourceTest {
     fun aLoginThatFailsIsReportedWithoutHidingOthers() =
         runTest {
             val snapshot = inbox.source(store(other)).messages(MailScope.Inbox)
-            assertEquals(listOf(UnavailableAccount("Grace", InboxFailure.SignInRejected)), snapshot.unavailable)
+            assertEquals(listOf(UnavailableAccount("Grace", MailFailure.SignInRejected)), snapshot.unavailable)
             assertEquals(2, snapshot.messages.size)
         }
 
@@ -159,9 +159,8 @@ class JmapMailSourceTest {
             val snapshot =
                 JmapMailSource(
                     JmapConnections(JmapClient(stalwartLike()), withoutSecret),
-                    withoutSecret,
                 ).messages(MailScope.Inbox)
-            assertEquals(listOf(UnavailableAccount("Ada", InboxFailure.CredentialsUnavailable)), snapshot.unavailable)
+            assertEquals(listOf(UnavailableAccount("Ada", MailFailure.CredentialsUnavailable)), snapshot.unavailable)
         }
 
     private companion object {

@@ -198,7 +198,7 @@ class ScheduledCancellationTest {
                     }
                 """{"methodResponses": [["$method", {"newState": "n"$result}, "c0"]]}"""
             }
-        return JmapDraftSender(JmapConnections(JmapClient(engine), store), store)
+        return JmapDraftSender(JmapConnections(JmapClient(engine), store))
     }
 
     private fun also(id: String?) = id?.let { """, "$it": null""" }.orEmpty()

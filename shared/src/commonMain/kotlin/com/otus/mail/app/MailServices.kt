@@ -2,8 +2,6 @@ package com.otus.mail.app
 
 import com.otus.accounts.data.JmapAccountRepository
 import com.otus.accounts.domain.AccountRepository
-import com.otus.accounts.domain.AccountService
-import com.otus.accounts.domain.AccountStorageException
 import com.otus.avatar.AvatarCacheConfig
 import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
@@ -20,13 +18,10 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
-import com.otus.jmap.push.PushStateStore
 import com.otus.jmap.push.PushSubscriptions
 import com.otus.mail.core.cache.AccountMailCache
-import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
-import com.otus.mail.core.files.DownloadFolderException
 import com.otus.mail.core.mail.ServerChanges
 import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
@@ -91,11 +86,11 @@ import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMailChecker
+import com.otus.storage.StringMapStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.withContext
 
 /**
  * Connects data implementations to feature contracts. Create one per process: it owns the HTTP
@@ -132,7 +127,7 @@ class MailServices(
     private val serverSites by lazy { ServerSites(domains) }
     internal val avatars by lazy {
         AvatarService(
-            JmapContactAvatarSource(connections, logins, avatarImages),
+            JmapContactAvatarSource(connections, avatarImages),
             avatarImages,
             domains = domains,
             cacheConfig = AvatarCacheConfig(store = avatarStore),
@@ -141,89 +136,66 @@ class MailServices(
 
     /** The avatar of each of the user's own addresses, read with [options] like any sender's. */
     internal fun ownAvatars(options: () -> AvatarOptions): JmapOwnAvatars =
-        JmapOwnAvatars(connections, logins, avatars, options)
+        JmapOwnAvatars(connections, avatars, options)
 
     internal val accounts: AccountRepository by lazy {
-        val repository =
-            JmapAccountRepository(
-                client,
-                connections,
-                logins,
-                AccountService.Mail,
-                onAccountChanged = { loginId ->
-                    val connected = withContext(Dispatchers.IO) { logins.logins().any { it.id == loginId } }
-                    // A change queued while the login was being removed must not wait for it to come back.
-                    if (connected) accountCache.connected(loginId) else changes.forget(loginId)
-                    avatars.removeAccount(loginId)
-                },
-                beforeRemove = { loginId ->
-                    instantPush?.forget(loginId)
-                    stores.forgetAccount(loginId)
-                    outbox.forget(loginId)
-                    changes.forget(loginId)
-                    try {
-                        cache.forget(loginId)
-                    } catch (error: CacheStorageException) {
-                        throw AccountStorageException(error)
-                    }
-                    try {
-                        retention.forget(loginId)
-                    } catch (error: DownloadFolderException) {
-                        throw AccountStorageException(error)
-                    }
-                },
-            )
-        CacheAccountRepository(repository, logins, accountCache)
+        JmapAccountRepository(
+            client,
+            connections,
+            logins,
+            MailAccountService,
+            listOf(DeviceAccountData(stores, outbox, instantPush), changes, accountCache, retention, avatars),
+        )
     }
 
     /** Marks and moves that wait for the server; see docs/storage.md. */
     private val changes by lazy { EmailChangeQueue(stores.waiting.changes, host.wakeOutbox) }
     internal val mail: MailSource by lazy {
-        JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes)
+        JmapMailSource(connections, cache, sites = serverSites, queue = changes)
     }
-    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache, changes) }
-    internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
-    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache, changes) }
+    internal val mover: MessageMover by lazy { JmapMessageMover(connections, cache, changes) }
+    internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, cache) }
+    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, cache, changes) }
 
     /** Marks and archives for a notification's buttons, which act without opening Mail. */
-    val shortcuts: EmailShortcuts by lazy { JmapEmailShortcuts(connections, logins, cache, changes) }
-    internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
+    val shortcuts: EmailShortcuts by lazy { JmapEmailShortcuts(connections, cache, changes) }
+    internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections) }
     private val unansweredDrafts = UnansweredDrafts()
-    internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins, unansweredDrafts) }
-    private val jmapSender by lazy { JmapDraftSender(connections, logins, unansweredDrafts) }
+    internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, unansweredDrafts) }
+    private val jmapSender by lazy { JmapDraftSender(connections, unansweredDrafts) }
     internal val sender: DraftSender get() = jmapSender
     internal val scheduled: ScheduledSends get() = jmapSender
 
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {
-        MailOutbox(stores.waiting.outbox, jmapSender, JmapSendChecker(connections, logins), host.wakeOutbox)
+        MailOutbox(stores.waiting.outbox, jmapSender, JmapSendChecker(connections), host.wakeOutbox)
     }
-    internal val signatures: SignatureRepository by lazy { JmapSignatures(connections, logins) }
-    internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
-    internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
-    internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
-    internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, logins, cache) }
+    internal val signatures: SignatureRepository by lazy { JmapSignatures(connections) }
+    internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections) }
+    internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections) }
+    internal val addressBook: AddressBook by lazy { JmapAddressBook(connections) }
+    internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, cache) }
 
     /** Each login's recent mail, for the people the user deals with most. */
-    internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections, logins) }
-    internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, logins, addressBook) }
-    internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
-    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins, cache) }
+    internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections) }
+    internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, addressBook) }
+    internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections) }
+    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, cache) }
     internal val conversationMessages: ConversationMessages by lazy {
-        JmapConversationMessages(connections, logins, cache, sites = serverSites)
+        JmapConversationMessages(connections, cache, sites = serverSites)
     }
 
     /** Attachments streamed to the device, the ones kept offline, and when the others go; see docs/storage.md. */
     internal val retention by lazy { AttachmentRetention(stores.downloads) }
     internal val attachments by lazy {
-        AttachmentCache(JmapAttachmentDownloads(connections, logins), stores.downloads, retention)
+        AttachmentCache(JmapAttachmentDownloads(connections), stores.downloads, retention)
     }
-    internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, logins) }
+    internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections) }
     internal val newsletters: Newsletters by lazy {
-        JmapNewsletters(connections, logins, drafts, sender, cache)
+        JmapNewsletters(connections, drafts, sender, cache)
     }
-    internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections, logins) }
-    internal val mute: ConversationMute by lazy { JmapConversationMute(connections, logins, cache) }
+    internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections) }
+    internal val mute: ConversationMute by lazy { JmapConversationMute(connections, cache) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
 
     /**
@@ -240,17 +212,17 @@ class MailServices(
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
-    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, logins) }
+    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections) }
 
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */
-    fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, logins, states)
+    fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, states)
 
     /**
      * Keeps each login's push subscription pointed at its push endpoint, for the changes in [push].
      * Create one per process.
      */
     fun pushSubscriptions(
-        states: PushStateStore,
+        states: StringMapStore,
         deviceClientId: String,
         push: MailPush,
         beforeCreate: suspend (String) -> Unit = {},
@@ -271,7 +243,7 @@ class MailServices(
      */
     suspend fun resumeOutbox(): Boolean {
         outbox.resume()
-        val changesWait = changes.flushAll(connections, logins, cache)
+        val changesWait = changes.flushAll(connections, cache)
         return outbox.waiting() || changesWait
     }
 

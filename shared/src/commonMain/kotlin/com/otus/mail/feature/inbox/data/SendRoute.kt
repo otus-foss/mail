@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapException
 import com.otus.jmap.SetError
 import com.otus.jmap.jmapPatch
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mail.toMailFailure
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendException
@@ -77,11 +79,14 @@ internal fun failSend(failure: SendFailure): Nothing = throw SendException(failu
 internal fun SetError.toSendFailure(): SendFailure = sendFailure(type)
 
 internal fun JmapException.toSendFailure(): SendFailure =
-    when (this) {
-        is JmapException.Forbidden -> SendFailure.NotPermitted
-        is JmapException.MethodError -> sendFailure(type)
-        is JmapException.Unreachable -> SendFailure.Unreachable
-        else -> SendFailure.ServerProblem
+    if (this is JmapException.MethodError) {
+        sendFailure(type)
+    } else {
+        when (toMailFailure()) {
+            MailFailure.NotPermitted -> SendFailure.NotPermitted
+            MailFailure.Unreachable -> SendFailure.Unreachable
+            else -> SendFailure.ServerProblem
+        }
     }
 
 private fun sendFailure(type: String): SendFailure =

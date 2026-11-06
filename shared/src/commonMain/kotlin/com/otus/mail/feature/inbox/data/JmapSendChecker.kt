@@ -9,13 +9,15 @@ import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.QueryResult
 import com.otus.jmap.SetMethod
+import com.otus.jmap.filterCondition
+import com.otus.jmap.isTemporary
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.condition
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendCheck
@@ -38,7 +40,6 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 class JmapSendChecker(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
 ) : SendChecker {
     override suspend fun check(
         draft: Draft,
@@ -53,7 +54,7 @@ class JmapSendChecker(
         storedCopy: String?,
     ): SendCheck =
         try {
-            val account = mailAccount(connections, logins, draft.accountId)
+            val account = connections.mailAccount(draft.accountId)
             when {
                 account == null -> SendCheck.Unconfirmable
                 storedCopy != null -> account.findCopy(storedCopy, cancelHeld, draft.emailId, answered)
@@ -63,7 +64,7 @@ class JmapSendChecker(
         } catch (error: JmapException.MethodError) {
             // A server down for now can be asked later; one that cannot look the message up, as with
             // `unsupportedFilter`, never can.
-            if (error.type in TEMPORARY_METHOD_ERRORS) SendCheck.Unreachable else SendCheck.Unconfirmable
+            if (error.isTemporary) SendCheck.Unreachable else SendCheck.Unconfirmable
         } catch (expected: JmapException) {
             SendCheck.Unreachable
         } catch (expected: LoginStoreException) {
@@ -81,7 +82,7 @@ private suspend fun MailAccount.findCopy(
     lateinit var query: JmapCall<QueryResult>
     lateinit var submissions: JmapCall<GetResult<JsonObject>>
     lateinit var found: JmapCall<GetResult<EmailObject>>
-    val ofCopy = condition("emailIds", JsonArray(listOf(JsonPrimitive(copy))))
+    val ofCopy = filterCondition("emailIds", JsonArray(listOf(JsonPrimitive(copy))))
     val response =
         connection.send {
             query = call(QueryMethod(EmailSubmissionType, id, ofCopy))
@@ -132,6 +133,6 @@ private suspend fun MailAccount.findSent(
 
 /** The mail whose Message-ID header holds [messageId]. */
 internal fun messageIdFilter(messageId: String) =
-    condition("header", JsonArray(listOf(JsonPrimitive("Message-ID"), JsonPrimitive(messageId))))
+    filterCondition("header", JsonArray(listOf(JsonPrimitive("Message-ID"), JsonPrimitive(messageId))))
 
 private val FOUND_PROPERTIES = listOf("id", "keywords", "receivedAt")

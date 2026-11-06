@@ -4,10 +4,12 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetError
 import com.otus.jmap.SetMethod
+import com.otus.jmap.allOf
+import com.otus.jmap.filterCondition
+import com.otus.jmap.jmapCallOr
+import com.otus.jmap.noneOf
 import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.condition
-import com.otus.mail.core.mail.operator
 import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SentMessage
 import kotlinx.serialization.json.JsonArray
@@ -52,7 +54,7 @@ internal suspend fun MailAccount.resubmit(message: SentMessage): SetError? =
  * section 7.3), for a request whose answer was lost. Null when it could not say.
  */
 internal suspend fun MailAccount.isSubmitted(emailId: String): Boolean? =
-    unlessUnanswered { liveSubmissions(listOf(emailId), limit = 1).isNotEmpty() }
+    jmapCallOr(null) { liveSubmissions(listOf(emailId), limit = 1).isNotEmpty() }
 
 /**
  * Cancels every submission of [emailIds] that nobody canceled yet. True when there was one and the
@@ -76,23 +78,12 @@ private suspend fun MailAccount.liveSubmissions(
             QueryMethod(
                 EmailSubmissionType,
                 id,
-                operator(
-                    "AND",
-                    listOf(
-                        condition("emailIds", JsonArray(emailIds.map(::JsonPrimitive))),
-                        operator("NOT", listOf(condition("undoStatus", JsonPrimitive("canceled")))),
-                    ),
+                allOf(
+                    filterCondition("emailIds", JsonArray(emailIds.map(::JsonPrimitive))),
+                    noneOf(filterCondition("undoStatus", JsonPrimitive("canceled"))),
                 ),
                 limit = limit,
             ),
         ).ids
-
-/** [read]'s result, or null when the server could not be reached or refused the call. */
-internal inline fun <T> unlessUnanswered(read: () -> T): T? =
-    try {
-        read()
-    } catch (expected: JmapException) {
-        null
-    }
 
 private const val RESUBMISSION = "send"

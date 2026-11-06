@@ -33,7 +33,7 @@ class OfflineChangesTest {
     private val server = FakeMailServer(INBOX, email("m1", 10))
     private val queue = EmailChangeQueue(changes)
     private val source = server.source(store, cache, queue = queue)
-    private val marker = JmapMessageMarker(server.connections(store), store, cache, queue)
+    private val marker = JmapMessageMarker(server.connections(store), cache, queue)
 
     private suspend fun message() = source.messages(MailScope.Inbox, MailQuery()).messages.single()
 
@@ -151,7 +151,7 @@ class OfflineChangesTest {
             server.down = true
             val patch = mapOf("m1" to JsonObject(mapOf("keywords/\$seen" to JsonPrimitive(true))))
             listOf(ADA_LOGIN.id, GRACE_LOGIN.id)
-                .map { login -> async { both.update(server.connections(store), store, login, patch, cache = null) } }
+                .map { login -> async { both.update(server.connections(store), login, patch, cache = null) } }
                 .awaitAll()
             assertEquals(setOf(ADA_LOGIN.id, GRACE_LOGIN.id), changes.saved.keys, "Neither write lost the other")
         }

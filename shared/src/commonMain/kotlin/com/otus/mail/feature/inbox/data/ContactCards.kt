@@ -5,8 +5,8 @@ import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
+import com.otus.jmap.contacts.ContactCardType
 import com.otus.jmap.jmapDecoding
-import com.otus.mail.core.mail.ContactCardType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.feature.inbox.domain.MailSender
 
@@ -25,7 +25,10 @@ internal suspend fun MailAccount.contactCards(limit: Int): List<MailSender> {
             }
         jmapDecoding {
             cards.list.flatMap { card ->
-                card.emails.values.map { MailSender(card.name?.full.orEmpty(), it.address) }
+                card.emails
+                    .orEmpty()
+                    .values
+                    .map { MailSender(card.name?.full.orEmpty(), it.address) }
             }
         }
     } catch (expected: JmapException) {

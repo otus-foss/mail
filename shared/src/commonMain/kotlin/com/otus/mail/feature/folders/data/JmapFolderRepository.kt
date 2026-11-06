@@ -14,8 +14,8 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.replaceMailboxes
 import com.otus.mail.feature.folders.domain.AccountFolders
@@ -23,7 +23,6 @@ import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
-import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.SharedMailboxes
 import kotlinx.coroutines.async
@@ -41,17 +40,14 @@ import kotlinx.serialization.json.JsonPrimitive
  * left out. Each login's own mailboxes replace the ones in [cache], which the inbox shares.
  */
 class JmapFolderRepository(
-    connections: JmapConnections,
-    logins: LoginStore,
+    private val connections: JmapConnections,
     private val cache: MailCache = InMemoryMailCache(),
 ) : FolderRepository {
-    private val accounts = MailAccounts(connections, logins, ::FolderStorageException)
-
     override suspend fun accounts(): List<AccountFolders> =
-        coroutineScope { accounts.logins().map { async { load(it) } }.awaitAll() }
+        coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
 
     override suspend fun cachedAccounts(): List<AccountFolders> =
-        accounts.logins().map { login ->
+        folderStorage { connections.savedLogins() }.map { login ->
             cache.withAccount(login.id) { accountCache ->
                 AccountFolders(login.id, login.name, accountCache.mailboxes(login.id).map { it.toFolder(login.id) })
             }
@@ -60,7 +56,7 @@ class JmapFolderRepository(
     private suspend fun load(login: JmapLogin): AccountFolders =
         try {
             cache.withAccount(login.id) { accountCache ->
-                val account = accounts.open(login)
+                val account = connections.mailAccount(login)
                 coroutineScope {
                     val shared =
                         account.sharedAccountIds().map {
@@ -162,7 +158,9 @@ class JmapFolderRepository(
         method: (accountId: String) -> SetMethod,
     ): FolderOutcome =
         try {
-            val account = accounts.open(loginId) ?: return FolderOutcome.Failed(FolderFailure.NotFound)
+            val account =
+                folderStorage { connections.mailAccount(loginId) }
+                    ?: return FolderOutcome.Failed(FolderFailure.NotFound)
             val result = account.connection.call(method(jmapAccountId ?: account.id))
             val error = result.firstError
             when {

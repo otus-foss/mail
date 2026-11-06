@@ -29,7 +29,10 @@ class EmailConditionsTest {
     private fun conditions(
         query: MailQuery,
         login: String = "ada",
-    ): String? = emailConditions(query, login, now, zurich)?.let { JsonArray(it).toString() }
+    ): String? =
+        emailConditions(query, login, now, zurich)?.let { filters ->
+            JsonArray(filters.map { it.toJson() }).toString()
+        }
 
     private fun conditions(filters: InboxFilters): String? = conditions(MailQuery(filters, addresses = own))
 

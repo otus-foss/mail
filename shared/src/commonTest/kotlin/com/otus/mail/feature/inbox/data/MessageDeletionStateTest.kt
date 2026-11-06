@@ -152,7 +152,7 @@ class MessageDeletionStateTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageCleaner(JmapConnections(JmapClient(engine), store), store)
+        return JmapMessageCleaner(JmapConnections(JmapClient(engine), store))
     }
 
     private fun queryReply(): String {

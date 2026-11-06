@@ -1,8 +1,9 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
-import com.otus.accounts.domain.AccountService
+import androidx.compose.runtime.remember
 import com.otus.accounts.presentation.screens.AccountSetupScreen
+import com.otus.avatar.ui.presentation.components.OwnAvatarEditor
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.presentation.components.NotificationActionsSetting
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
@@ -53,7 +54,15 @@ private fun EmailAccountsPage(
     states: MailStates,
     back: () -> Unit,
 ) {
-    AccountSetupScreen(states.accounts, states.ownAvatars, "Email accounts", AccountService.Mail, onBack = back)
+    val avatars = remember(states.ownAvatars) { MailAccountAvatars(states.ownAvatars) }
+    AccountSetupScreen(
+        states.accounts,
+        avatars,
+        { account, email, onDismiss -> OwnAvatarEditor(states.ownAvatars, account.own, email, onDismiss) },
+        "Email accounts",
+        MailAccountService,
+        onBack = back,
+    )
 }
 
 /** Notifications and its page of account and address previews; neither shows where pushes are unavailable. */

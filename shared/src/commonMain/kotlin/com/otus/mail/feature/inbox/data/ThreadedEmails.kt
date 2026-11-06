@@ -51,7 +51,7 @@ internal suspend fun JmapConnection.fetchMail(
     accountId: String,
     wanted: WantedMail,
 ): FetchedMail {
-    val chunk = session().coreLimit("maxObjectsInGet", SUGGESTED_MAX_OBJECTS)
+    val chunk = session().getBatch
     val groups =
         wanted.rows.chunked(chunk).map { rowGroup(accountId, it) } +
             wanted.threads.chunked(chunk).map { threadGroup(accountId, it) } +
@@ -140,6 +140,3 @@ internal val MEMBER_PROPERTIES =
 
 private const val ROW_CALLS = 3
 private const val THREAD_CALLS = 2
-
-/** RFC 8620, section 2, suggests servers take at least this many ids per `/get`. */
-private const val SUGGESTED_MAX_OBJECTS = 500

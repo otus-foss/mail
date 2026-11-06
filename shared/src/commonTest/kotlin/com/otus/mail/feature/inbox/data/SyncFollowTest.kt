@@ -2,7 +2,7 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.testing.ADA_LOGIN
@@ -75,7 +75,7 @@ class SyncFollowTest {
             loaded()
             server.down = true
             val unavailable = source.messages(MailScope.Inbox, MailQuery()).unavailable.single()
-            assertEquals(InboxFailure.Unreachable, unavailable.reason)
+            assertEquals(MailFailure.Unreachable, unavailable.reason)
             assertNotNull(unavailable.syncedAt)
         }
 

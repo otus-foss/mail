@@ -22,7 +22,7 @@ internal fun FakeMailServer.source(
     queue: EmailChangeQueue? = null,
     session: String = STALWART_SESSION,
 ): JmapMailSource =
-    JmapMailSource(connections(store, session), store, cache, limit, zone = {
+    JmapMailSource(connections(store, session), cache, limit, zone = {
         TimeZone.UTC
     }, queue = queue)
 

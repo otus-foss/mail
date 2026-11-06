@@ -18,7 +18,6 @@ import kotlinx.serialization.json.buildJsonObject
  */
 class JmapMessageMover(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
     private val queue: EmailChangeQueue? = null,
 ) : MessageMover {
@@ -29,7 +28,7 @@ class JmapMessageMover(
     ): Boolean {
         val left = leaving - folderId - ""
         if (left.isEmpty()) return false
-        return updateEmail(connections, logins, message, movePatch(left, folderId), cache, queue)
+        return updateEmail(connections, message, movePatch(left, folderId), cache, queue)
     }
 
     override suspend fun moveBack(
@@ -44,15 +43,14 @@ class JmapMessageMover(
                 back.forEach { set(JsonPrimitive(true), "mailboxIds", it) }
             }
         if (back.isEmpty()) return false
-        return updateEmail(connections, logins, message, patch, cache, queue)
+        return updateEmail(connections, message, patch, cache, queue)
     }
 
     override suspend fun setInFolder(
         message: MailMessage,
         folderId: String,
         inFolder: Boolean,
-    ): Boolean =
-        updateEmail(connections, logins, message, membershipPatch("mailboxIds", folderId, inFolder), cache, queue)
+    ): Boolean = updateEmail(connections, message, membershipPatch("mailboxIds", folderId, inFolder), cache, queue)
 
     /** Sends each email's whole `mailboxIds`, so one call files a conversation whose emails differ. */
     override suspend fun setMailboxes(
@@ -61,7 +59,6 @@ class JmapMessageMover(
     ): Set<String> =
         updateAccountEmails(
             connections,
-            logins,
             accountId,
             mailboxes.mapValues { (_, boxes) ->
                 buildJsonObject { put("mailboxIds", JsonObject(boxes.associateWith { JsonPrimitive(true) })) }

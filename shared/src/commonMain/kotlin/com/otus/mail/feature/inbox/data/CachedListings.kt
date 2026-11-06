@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapException
+import com.otus.jmap.JmapFilter
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.CacheKind
@@ -16,7 +17,6 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.datetime.TimeZone
-import kotlinx.serialization.json.JsonObject
 import kotlin.time.Instant
 
 /** The list of each mailbox of [scope] among [mailboxes] that [query] keeps, with its [conditions]. */
@@ -24,7 +24,7 @@ internal fun MailScope.listingQueries(
     mailboxes: List<MailboxObject>,
     loginId: String,
     query: MailQuery,
-    conditions: List<JsonObject>,
+    conditions: List<JmapFilter>,
 ): List<ListingQuery> =
     chosen(mailboxes, loginId, query).map { mailbox ->
         ListingQuery(mailbox.id, mailFilter(listOf(mailbox.id), conditions), query.filters.sort)
@@ -41,7 +41,7 @@ internal suspend fun MailCache.cachedPages(
     login: JmapLogin,
     scope: MailScope,
     query: MailQuery,
-    conditions: List<JsonObject>,
+    conditions: List<JmapFilter>,
     zone: TimeZone,
     serverSite: String,
     check: ((ListedRow) -> Boolean)? = null,

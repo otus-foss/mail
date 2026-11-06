@@ -16,7 +16,6 @@ import com.otus.mail.feature.inbox.domain.MessageMarker
  */
 class JmapMessageMarker(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache = InMemoryMailCache(),
     private val queue: EmailChangeQueue? = null,
 ) : MessageMarker {
@@ -24,8 +23,7 @@ class JmapMessageMarker(
         messages: List<MailMessage>,
         flag: MessageFlag,
         on: Boolean,
-    ): Set<String> =
-        updateEmails(connections, logins, messages, membershipPatch("keywords", flag.keyword, on), cache, queue)
+    ): Set<String> = updateEmails(connections, messages, membershipPatch("keywords", flag.keyword, on), cache, queue)
 }
 
 internal val MessageFlag.keyword: String

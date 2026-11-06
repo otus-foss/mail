@@ -1,18 +1,19 @@
 package com.otus.mail.feature.folders.data
 
 import com.otus.jmap.GetMethod
+import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapPatch
+import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.ARCHIVE_ROLE
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailAccounts
 import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.folders.domain.FolderRule
-import com.otus.mail.feature.folders.domain.FolderStorageException
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
@@ -21,7 +22,7 @@ import kotlinx.serialization.json.JsonPrimitive
  * moves the matches with `Email/set`, in batches within the server's `maxObjectsInSet`.
  */
 internal class ExistingMail(
-    private val accounts: MailAccounts,
+    private val connections: JmapConnections,
 ) {
     /** How many messages match; null when JMAP cannot filter by the rule or the server cannot be read. */
     suspend fun count(
@@ -62,7 +63,6 @@ internal class ExistingMail(
         rule: FolderRule,
     ): Int {
         val filter = emailFilter(rule, listOf(source)) ?: return 0
-        val batch = (account.session.maxObjectsInSet ?: MAX_BATCH).coerceIn(1, MAX_BATCH).toInt()
         val patch =
             jmapPatch {
                 remove("mailboxIds", source)
@@ -72,7 +72,11 @@ internal class ExistingMail(
         var rounds = 0
         var more = true
         while (more && rounds < MAX_ROUNDS) {
-            val ids = account.connection.call(QueryMethod(EmailFoldersType, account.id, filter, limit = batch)).ids
+            val ids =
+                account.connection
+                    .call(
+                        QueryMethod(EmailFoldersType, account.id, filter, limit = account.session.setBatch),
+                    ).ids
             val updated =
                 if (ids.isEmpty()) {
                     0
@@ -104,16 +108,14 @@ internal class ExistingMail(
         use: suspend (MailAccount) -> T?,
     ): T? =
         try {
-            accounts.open(accountId)?.let { use(it) }
+            connections.mailAccount(accountId)?.let { use(it) }
         } catch (expected: JmapException) {
             null
-        } catch (expected: FolderStorageException) {
+        } catch (expected: LoginStoreException) {
             null
         }
 
     private companion object {
-        const val MAX_BATCH = 100L
-
         /** At most this many batches, so a server that keeps answering with the same mail cannot loop forever. */
         const val MAX_ROUNDS = 100
         val SOURCE_ROLES = setOf(INBOX_ROLE, ARCHIVE_ROLE)

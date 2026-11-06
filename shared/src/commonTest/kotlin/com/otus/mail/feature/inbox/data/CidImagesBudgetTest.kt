@@ -5,7 +5,7 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.mail.EmailBodyPart
-import com.otus.mail.core.mail.MailAccounts
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageHtml
 import com.otus.mail.testing.DOWNLOAD_SESSION
@@ -109,8 +109,8 @@ class CidImagesBudgetTest {
             }
         val login = JmapLogin("ada", "https://mail.example.org/session", "ada@example.org", "Ada")
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return MailAccounts(JmapConnections(JmapClient(engine), store), store)
-            .open(login)
+        return JmapConnections(JmapClient(engine), store)
+            .mailAccount(login)
             .withInlineImages(
                 MessageContent("Keep the text", false, MessageHtml(html, false)),
                 parts,

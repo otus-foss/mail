@@ -57,7 +57,7 @@ class JmapMessageCleanerTest {
             stalwartLike(session) { body ->
                 if ("Email/get" in body && "Email/query" !in body) membershipReply(body, mailboxes) else reply(body)
             }
-        return JmapMessageCleaner(JmapConnections(JmapClient(engine), store), store)
+        return JmapMessageCleaner(JmapConnections(JmapClient(engine), store))
     }
 
     private fun membershipReply(

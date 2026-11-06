@@ -2,7 +2,7 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
@@ -132,7 +132,7 @@ class JmapMailSourceCacheTest {
             val snapshot = source.messages(MailScope.Inbox, query)
             assertEquals(shown, snapshot.messages)
             val unavailable = snapshot.unavailable.single()
-            assertEquals("Ada" to InboxFailure.Unreachable, unavailable.name to unavailable.reason)
+            assertEquals("Ada" to MailFailure.Unreachable, unavailable.name to unavailable.reason)
             assertNotNull(unavailable.syncedAt, "The notice says when the account last loaded")
         }
 

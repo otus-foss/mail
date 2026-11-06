@@ -91,7 +91,7 @@ class JmapMailboxScopeTest {
     private fun source(
         engine: MockEngine,
         store: LoginStore,
-    ) = JmapMailSource(JmapConnections(JmapClient(engine), store), store)
+    ) = JmapMailSource(JmapConnections(JmapClient(engine), store))
 
     private companion object {
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {"maxConcurrentRequests": 1},

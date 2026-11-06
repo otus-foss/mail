@@ -47,7 +47,7 @@ class MailCacheFailureTest {
                 "bodyValues": {"1": {"value": "Keep this body"}}
             }]}, "c0"]]}"""
                 }
-            val bodies = JmapMessageBodies(JmapConnections(JmapClient(engine), store), store, failingWrites())
+            val bodies = JmapMessageBodies(JmapConnections(JmapClient(engine), store), failingWrites())
             val message =
                 MailMessage(
                     "ada/e",

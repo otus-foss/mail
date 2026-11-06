@@ -33,7 +33,6 @@ class JmapConversationMessagesTest {
     private val pages =
         JmapConversationMessages(
             JmapConnections(JmapClient(stalwartLike(api = server::answer)), store),
-            store,
             cache,
             zone = { TimeZone.UTC },
         )

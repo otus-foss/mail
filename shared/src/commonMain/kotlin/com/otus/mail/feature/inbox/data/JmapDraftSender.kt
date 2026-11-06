@@ -8,6 +8,7 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.QueryResult
 import com.otus.jmap.SetMethod
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DRAFTS_ROLE
@@ -17,7 +18,7 @@ import com.otus.mail.core.mail.IdentityObject
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.roleQuery
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
@@ -44,7 +45,6 @@ import kotlinx.serialization.json.putJsonObject
  */
 class JmapDraftSender(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val unanswered: UnansweredDrafts = UnansweredDrafts(),
 ) : DraftSender,
     ScheduledSends {
@@ -64,7 +64,7 @@ class JmapDraftSender(
         stored: suspend (emailId: String) -> Unit,
     ): Result<SentMessage> =
         try {
-            val account = mailAccount(connections, logins, draft.accountId) ?: failSend(SendFailure.ServerProblem)
+            val account = connections.mailAccount(draft.accountId) ?: failSend(SendFailure.ServerProblem)
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
             val route = account.route(from ?: failSend(SendFailure.NoIdentity))
             val sent = account.submit(draft, route, time, stored)
@@ -175,8 +175,9 @@ class JmapDraftSender(
     )
 
     override suspend fun maxDelaySeconds(accountId: String): Long =
-        mailCallOr(0L) {
-            mailAccount(connections, logins, accountId)
+        jmapCallOr(0L) {
+            connections
+                .mailAccount(accountId)
                 ?.takeIf { it.mayUse(JmapCapability.SUBMISSION) }
                 ?.delayedSendSeconds() ?: 0L
         }
@@ -196,7 +197,7 @@ class JmapDraftSender(
      */
     override suspend fun sendNow(message: SentMessage): Result<Unit> =
         submissionCall(message) { account ->
-            val canceled = unlessUnanswered { account.cancelSubmission(message) == null } == true
+            val canceled = jmapCallOr(null) { account.cancelSubmission(message) == null } == true
             // Unless the cancel was confirmed, a submission still there goes at its time by itself.
             val kept = !canceled && account.isSubmitted(message.emailId) ?: failSend(SendFailure.Unreachable)
             if (kept) return@submissionCall
@@ -221,7 +222,7 @@ class JmapDraftSender(
         block: suspend (MailAccount) -> Unit,
     ): Result<Unit> =
         try {
-            block(mailAccount(connections, logins, message.accountId) ?: failSend(SendFailure.ServerProblem))
+            block(connections.mailAccount(message.accountId) ?: failSend(SendFailure.ServerProblem))
             Result.success(Unit)
         } catch (error: DraftRestoreException) {
             Result.failure(error)
@@ -269,7 +270,7 @@ private suspend fun MailAccount.refused(
     copy: String,
     failure: SendFailure,
 ): Nothing {
-    bestEffort { connection.call(SetMethod(EmailType, id, destroy = listOf(copy))) }
+    jmapCallOr(Unit) { connection.call(SetMethod(EmailType, id, destroy = listOf(copy))) }
     failSend(failure)
 }
 

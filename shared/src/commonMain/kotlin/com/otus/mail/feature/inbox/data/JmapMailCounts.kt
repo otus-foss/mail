@@ -5,6 +5,7 @@ import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
+import com.otus.jmap.JmapFilter
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.mail.EmailType
@@ -18,7 +19,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.concurrent.Volatile
 import kotlin.time.Clock
@@ -67,7 +67,7 @@ internal class JmapMailCounts(
         login: JmapLogin,
         scope: MailScope,
         query: MailQuery,
-        conditions: List<JsonObject>,
+        conditions: List<JmapFilter>,
     ): Long? =
         try {
             val connection = connections.connection(login)

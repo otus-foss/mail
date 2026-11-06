@@ -42,7 +42,7 @@ class JmapKnownPeopleTest {
                     else -> sentMail(body)
                 }
             }
-        return JmapKnownPeople(JmapConnections(JmapClient(engine), store), store)
+        return JmapKnownPeople(JmapConnections(JmapClient(engine), store))
     }
 
     @Test

@@ -23,16 +23,15 @@ import kotlin.test.assertNull
 class MailAccountsTest {
     private val login = ADA_LOGIN
 
-    private fun accounts(
+    private fun connections(
         session: String = STALWART_SESSION,
         store: LoginStore = InMemoryLoginStore().apply { save(login, "secret") },
-        storageFailure: (LoginStoreException) -> Exception = { it },
-    ) = MailAccounts(JmapConnections(JmapClient(stalwartLike(session)), store), store, storageFailure)
+    ) = JmapConnections(JmapClient(stalwartLike(session)), store)
 
     @Test
     fun aSavedLoginOpensTheAccountThatHoldsItsMail() =
         runTest {
-            val account = assertNotNull(accounts().open("ada"))
+            val account = assertNotNull(connections().mailAccount("ada"))
             assertEquals(login, account.login)
             assertEquals("d333333", account.id)
         }
@@ -40,28 +39,22 @@ class MailAccountsTest {
     @Test
     fun aRemovedLoginHasNoAccount() =
         runTest {
-            assertNull(accounts().open("gone"))
+            assertNull(connections().mailAccount("gone"))
         }
 
     @Test
     fun aLoginWithoutMailIsUnsupportedRatherThanRemoved() =
         runTest {
-            val error = assertFailsWith<JmapException.Unsupported> { accounts(CONTACTS_ONLY_SESSION).open("ada") }
+            val error =
+                assertFailsWith<JmapException.Unsupported> { connections(CONTACTS_ONLY_SESSION).mailAccount("ada") }
             assertEquals(JmapCapability.MAIL, error.capability)
         }
 
     @Test
-    fun unreadableLoginsThrowWhatTheFeatureReports() =
+    fun unreadableLoginsThrowTheStoreFailure() =
         runTest {
-            assertFailsWith<LoginStoreException> { accounts(store = UnreadableLogins).open("ada") }
-            assertFailsWith<StorageUnavailable> {
-                accounts(store = UnreadableLogins, storageFailure = ::StorageUnavailable).open("ada")
-            }
+            assertFailsWith<LoginStoreException> { connections(store = UnreadableLogins).mailAccount("ada") }
         }
-
-    private class StorageUnavailable(
-        cause: Throwable,
-    ) : Exception("Saved accounts are unavailable.", cause)
 
     private object UnreadableLogins : LoginStore {
         override fun logins(): List<JmapLogin> = throw LoginStoreException("The saved logins cannot be read.")

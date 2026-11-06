@@ -23,7 +23,7 @@ class JmapFolderRepositoryTest {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val api = { body: String -> reply(body).also { sent += body } }
         val client = JmapClient(stalwartLike(session = SESSION, api = api))
-        return JmapFolderRepository(JmapConnections(client, store), store)
+        return JmapFolderRepository(JmapConnections(client, store))
     }
 
     @Test

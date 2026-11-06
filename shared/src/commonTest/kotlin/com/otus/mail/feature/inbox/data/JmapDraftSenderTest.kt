@@ -77,7 +77,7 @@ class JmapDraftSenderTest {
                     }
                 }
             }
-        return JmapDraftSender(JmapConnections(JmapClient(engine), store), store)
+        return JmapDraftSender(JmapConnections(JmapClient(engine), store))
     }
 
     private fun responses(vararg items: String) = """{"methodResponses": [${items.joinToString()}]}"""
