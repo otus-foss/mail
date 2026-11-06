@@ -251,7 +251,7 @@ Flag left the open message's bar for Reply; it is in **More actions**.
 ### Folder bars
 
 Spam, Trash, and Sent pages show their own bars. The page's folders are found by role
-(`FolderRole`: `junk`, `trash`, or `sent`), so a combined folder, one account's folder, and a
+(`MailboxRole`: `Junk`, `Trash`, or `Sent`), so a combined folder, one account's folder, and a
 folder pill all count. The open message uses the role of the folder it is shown in.
 
 | Folder | Message list | Selected messages | Open message |

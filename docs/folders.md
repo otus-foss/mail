@@ -6,9 +6,11 @@ script, so they keep working while the app is closed.
 
 ## Folders
 
-- Loaded per account with `Mailbox/get` (RFC 8621, section 2): hierarchy, role, sort order,
-  counts, and `myRights`. Accounts load in parallel and fail alone.
-- Each load saves the login's own mailboxes in the device's mail cache, which the inbox shares.
+- Loaded per account through `core/mailbox/Mailboxes` (RFC 8621, section 2): hierarchy, role,
+  sort order, counts, and `myRights`. Accounts load in parallel and fail alone. The first load
+  reads every mailbox with `Mailbox/get`; later loads ask `Mailbox/changes` from the saved state.
+- Each load saves the login's own mailboxes and their `Mailbox` state in the device's mail cache.
+  The inbox, rules, drafts, sending, notifications, and the other features read them there.
   While no folders show, as at launch, a load first shows the cached ones with their counts, so the
   sidebar fills before the server answers. Loading stays on until the server's folders replace
   them. The cache keeps no shared mailboxes or server limits, so those arrive with the server load.
@@ -500,8 +502,8 @@ Rule for sender flow. Chips, the Add rule chip, and the sheet come from the desi
   `ReadLaterFoldersTest` (saved, adopted, and created folders; saved folders moved into Trash or
   given a role; overlapping and replaced loads; the switch turning off during a load),
   `MessageFoldersTest` (saving, removing, or moving into Read later; which folders label a row),
-  `CombinedFolderTest` (one entry per role any account has, with every account's folder, in sidebar
-  order), `FolderPlacementTest` (numbers between neighbors, renumbering only what changes, nesting,
+  `MailboxRoleTest` (one entry per role any account has, with every account's folder, in sidebar
+  order; roles read in any case), `FolderPlacementTest` (numbers between neighbors, renumbering only what changes, nesting,
   refused drops), `SharedMailboxesTest` (a shared mailbox shows once, under a connected owner, as
   shared by that owner), `SharedFolderTest` (folders merged by path in any case, system folders
   and Read later lifted, Trash left out).

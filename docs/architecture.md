@@ -11,6 +11,7 @@ shared/src/
   commonMain/kotlin/<package>/
     app/                            App.kt, wiring, navigation
     core/                           Protocol/storage/platform contracts and infrastructure
+      mailbox/                      The folder model, roles, and the one Mailboxes source
     feature/<feature>/
       domain/                       Models, contracts, business behavior
       data/                         Repository implementations, local/remote adapters
