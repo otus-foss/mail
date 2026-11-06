@@ -18,6 +18,7 @@ import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.settings.presentation.themeTitle
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,6 +66,17 @@ class ThemeSettingsTest {
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNode(hasText("Theme") and hasText("Otus")).assertExists()
+    }
+
+    @Test
+    fun aSetFromOneHueIsAppliedAsANewThemeThatReadsWell() {
+        openTheme()
+        compose.onNode(hasText("Light mode") and isSelectable()).performScrollTo().performClick()
+        compose.onNode(hasText("Apply") and hasClickAction()).performScrollTo().performClick()
+        compose.waitUntil(TIMEOUT) { OtusColors.palette.isLight }
+        assertTrue(saved.orEmpty().startsWith("light #"))
+        assertTrue(" custom=1 1:light 1:page=#" in saved.orEmpty())
+        compose.onNode(hasText("Low contrast", substring = true)).assertDoesNotExist()
     }
 
     private fun openTheme() {
