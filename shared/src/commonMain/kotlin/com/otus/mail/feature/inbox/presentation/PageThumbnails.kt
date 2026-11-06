@@ -3,8 +3,8 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.graphics.ImageBitmap
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
 
 /** The small pictures of the Read view's image attachments, kept per page while the view is open. */
 @Stable

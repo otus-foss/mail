@@ -9,8 +9,8 @@ import com.otus.designsystem.shared.selection.components.ChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.core.mailbox.pathText
-import com.otus.mail.feature.inbox.domain.SidebarPin
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.SidebarPin
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 
 /** The Start page row, which names the page Mail opens on among [options] and calls [onChoose]. */

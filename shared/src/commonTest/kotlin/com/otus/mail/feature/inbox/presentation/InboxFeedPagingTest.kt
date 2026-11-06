@@ -1,10 +1,10 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent

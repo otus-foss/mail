@@ -1,6 +1,10 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.isOwn
 
 /** How someone took part in a conversation, from the most to the least direct. */
 enum class ParticipantRole { Sender, Recipient, Copied }

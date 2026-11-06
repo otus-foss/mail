@@ -15,10 +15,10 @@ import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxPills

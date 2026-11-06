@@ -31,18 +31,19 @@ import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.domain.ReadQuickModule
-import com.otus.mail.feature.inbox.presentation.MoveTarget
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.core.messages.presentation.actions.offerFolder
+import com.otus.mail.core.messages.presentation.actions.offerMove
+import com.otus.mail.core.messages.presentation.actions.symbol
+import com.otus.mail.core.messages.presentation.components.rememberSuggestedMove
+import com.otus.mail.core.messages.presentation.ownFolders
+import com.otus.mail.core.messages.presentation.shortcuts
+import com.otus.mail.core.settings.domain.ReadQuickModule
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
-import com.otus.mail.feature.inbox.presentation.actions.offerFolder
-import com.otus.mail.feature.inbox.presentation.actions.offerMove
-import com.otus.mail.feature.inbox.presentation.actions.symbol
-import com.otus.mail.feature.inbox.presentation.ownFolders
-import com.otus.mail.feature.inbox.presentation.shortcuts
 
 /**
  * How far the Read view's control panel is dragged open: its usual height, the quick view with

@@ -2,11 +2,11 @@ package com.otus.mail.app
 
 import com.otus.jscontact.Card
 import com.otus.jscontact.VCard
+import com.otus.mail.core.files.AttachmentFiles
+import com.otus.mail.core.files.SavedFiles
+import com.otus.mail.core.files.UploadException
 import com.otus.mail.feature.contacts.domain.ContactFile
 import com.otus.mail.feature.contacts.domain.ContactFiles
-import com.otus.mail.feature.inbox.domain.AttachmentFiles
-import com.otus.mail.feature.inbox.domain.SavedFiles
-import com.otus.mail.feature.inbox.domain.UploadException
 
 /** vCard files through the platform's file picker and downloads (RFC 6350, read with [VCard]). */
 internal class VCardFiles(

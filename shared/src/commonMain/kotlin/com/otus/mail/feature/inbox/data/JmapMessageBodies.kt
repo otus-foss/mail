@@ -6,7 +6,6 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
-import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
@@ -22,9 +21,11 @@ import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mail.putObject
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageBodies
-import com.otus.mail.feature.inbox.domain.MessageContent
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.receivedMillis
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageBodies
+import com.otus.mail.core.messages.domain.MessageContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray

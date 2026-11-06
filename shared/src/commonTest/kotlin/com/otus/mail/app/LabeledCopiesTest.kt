@@ -4,11 +4,11 @@ import com.otus.jmap.JmapClient
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.feature.folders.presentation.FolderColorsState
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent

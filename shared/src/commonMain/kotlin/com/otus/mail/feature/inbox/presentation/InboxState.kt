@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 
 /**

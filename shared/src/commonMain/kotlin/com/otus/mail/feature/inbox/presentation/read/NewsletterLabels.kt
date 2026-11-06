@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.read
 
-import com.otus.mail.feature.inbox.domain.MailingList
+import com.otus.mail.core.messages.domain.MailingList
 
 /**
  * The newsletter strip's subtitle: "Mailing list" and how often the list writes, as in

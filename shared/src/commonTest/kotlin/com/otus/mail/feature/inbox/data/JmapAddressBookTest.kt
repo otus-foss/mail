@@ -4,6 +4,7 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.testing.stalwartLike
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.CompletableDeferred

@@ -13,7 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.WritingSettings
 import org.junit.Assert.assertEquals
 import org.junit.Rule

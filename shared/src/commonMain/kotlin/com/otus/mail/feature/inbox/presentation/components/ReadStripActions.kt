@@ -5,10 +5,10 @@ import com.otus.designsystem.mail.attachments.components.AttachmentActions
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.people.elements.decodeImage
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailingList
-import com.otus.mail.feature.inbox.domain.Unsubscribe
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailingList
+import com.otus.mail.core.messages.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import com.otus.mail.feature.inbox.presentation.AttachmentTransfers
 import com.otus.mail.feature.inbox.presentation.NewsletterStep

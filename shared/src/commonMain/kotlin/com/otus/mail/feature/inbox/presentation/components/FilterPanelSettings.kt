@@ -21,10 +21,10 @@ import com.otus.designsystem.shared.settings.components.DependentSettings
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.FilterSection
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.QuickViewModule
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.settings.domain.FilterSection
+import com.otus.mail.core.settings.domain.QuickViewModule
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.jetbrains.compose.resources.DrawableResource
 
 /**

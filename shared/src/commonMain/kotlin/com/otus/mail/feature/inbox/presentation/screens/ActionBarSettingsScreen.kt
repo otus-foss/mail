@@ -18,10 +18,10 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.feature.inbox.domain.ActionBarMode
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.ActionBarMode
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.ActionBarCopySheet
 import com.otus.mail.feature.inbox.presentation.components.ActionBarEditSheet
 import com.otus.mail.feature.inbox.presentation.components.ActionBarPreview

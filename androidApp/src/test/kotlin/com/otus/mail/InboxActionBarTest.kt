@@ -9,9 +9,9 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.otus.mail.feature.inbox.domain.ActionBarMode
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.ActionBarMode
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test

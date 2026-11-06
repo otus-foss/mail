@@ -9,10 +9,11 @@ import com.otus.designsystem.shared.contacts.components.ContactRow
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.mail.core.mail.EmailAddressKey
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.domain.Participant
 import com.otus.mail.feature.inbox.domain.ParticipantRole
-import com.otus.mail.feature.inbox.domain.shownName
 
 /**
  * Everyone a conversation names besides the user, under who wrote, who it went to, and who was

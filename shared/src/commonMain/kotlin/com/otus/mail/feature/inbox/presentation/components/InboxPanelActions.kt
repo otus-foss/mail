@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 
 /**

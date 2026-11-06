@@ -1,8 +1,8 @@
 package com.otus.mail
 
 import android.content.Context
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.RemoteImages
+import com.otus.mail.core.messages.domain.RemoteImages
+import com.otus.mail.core.settings.domain.MailBehavior
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

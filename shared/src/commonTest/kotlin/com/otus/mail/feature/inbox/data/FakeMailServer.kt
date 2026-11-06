@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.messages.data.boxes
+import com.otus.mail.core.messages.data.receivedAt
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray

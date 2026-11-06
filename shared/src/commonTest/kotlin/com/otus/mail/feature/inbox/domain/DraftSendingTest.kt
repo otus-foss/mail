@@ -1,5 +1,9 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OriginalMessage
+import com.otus.mail.core.messages.domain.original
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

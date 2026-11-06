@@ -3,7 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.inbox.domain.OriginalMessage
+import com.otus.mail.core.messages.domain.OriginalMessage
 import com.otus.mail.feature.inbox.domain.QuoteMode
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 import com.otus.mail.feature.inbox.domain.ThreadMessage

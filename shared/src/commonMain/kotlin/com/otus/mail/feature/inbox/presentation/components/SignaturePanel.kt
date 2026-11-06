@@ -24,6 +24,7 @@ import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.editing.SignatureTokens
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 import kotlinx.coroutines.launch

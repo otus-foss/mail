@@ -18,9 +18,9 @@ import com.otus.designsystem.shared.selection.components.ValuePicker
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mailbox.pathText
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.BarButton
-import com.otus.mail.feature.inbox.domain.BarSlot
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.BarButton
+import com.otus.mail.core.messages.domain.BarSlot
 
 /** What the Move to row in [ActionPickerSheet] is called, and what search matches. */
 internal const val MOVE_TO_FOLDER = "Move to folder…"

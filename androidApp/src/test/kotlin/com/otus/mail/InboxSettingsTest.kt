@@ -10,8 +10,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.InboxContents
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.InboxContents
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

@@ -2,7 +2,7 @@ package com.otus.mail.feature.inbox.presentation.screens
 
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.shared.pages.components.Subpage
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.components.FilterPanelSettings
 
 /**

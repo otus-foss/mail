@@ -11,7 +11,6 @@ import com.otus.jmap.QueryResult
 import com.otus.jmap.SetMethod
 import com.otus.jmap.filterCondition
 import com.otus.jmap.isTemporary
-import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailSubmissionType
@@ -19,8 +18,9 @@ import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
-import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendCheck
 import com.otus.mail.feature.inbox.domain.SendChecker
 import kotlinx.serialization.json.JsonArray

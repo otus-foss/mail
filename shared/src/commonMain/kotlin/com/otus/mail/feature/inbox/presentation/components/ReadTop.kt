@@ -22,10 +22,10 @@ import com.otus.designsystem.theme.motion.MotionCurve
 import com.otus.designsystem.theme.motion.MotionSpeed
 import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.ReadQuickModule
-import com.otus.mail.feature.inbox.presentation.ReadLaterChange
-import com.otus.mail.feature.inbox.presentation.read.fullLabel
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.ReadLaterChange
+import com.otus.mail.core.messages.presentation.fullLabel
+import com.otus.mail.core.settings.domain.ReadQuickModule
 import com.otus.settings.presentation.components.LocalDateFormatter
 import kotlinx.coroutines.launch
 

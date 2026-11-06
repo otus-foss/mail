@@ -1,6 +1,24 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.MailConversation
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.ReplyState
+import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.ThreadEmail
+import com.otus.mail.core.messages.domain.TypeFacet
+import com.otus.mail.core.settings.domain.InboxPill
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test

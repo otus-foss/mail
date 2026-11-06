@@ -14,8 +14,8 @@ import com.github.takahirom.roborazzi.captureScreenRoboImage
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.presentation.ComposeAccount

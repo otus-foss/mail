@@ -9,7 +9,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.panels.components.PanelExpansion
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState

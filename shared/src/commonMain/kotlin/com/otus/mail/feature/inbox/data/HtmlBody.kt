@@ -1,7 +1,8 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.feature.inbox.domain.MessageHtml
+import com.otus.mail.core.messages.data.isHtml
+import com.otus.mail.core.messages.domain.MessageHtml
 
 /**
  * The [EmailObject.htmlBody] parts as one HTML document, or null when none of them is HTML, since

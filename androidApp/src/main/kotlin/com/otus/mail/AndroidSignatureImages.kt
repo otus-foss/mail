@@ -1,7 +1,7 @@
 package com.otus.mail
 
-import com.otus.mail.feature.inbox.domain.SignatureImagePick
-import com.otus.mail.feature.inbox.domain.SignatureImages
+import com.otus.mail.core.messages.domain.SignatureImagePick
+import com.otus.mail.core.messages.domain.SignatureImages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

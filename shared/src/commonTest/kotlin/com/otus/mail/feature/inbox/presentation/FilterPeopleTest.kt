@@ -1,14 +1,15 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.FoundPerson
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.SenderKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

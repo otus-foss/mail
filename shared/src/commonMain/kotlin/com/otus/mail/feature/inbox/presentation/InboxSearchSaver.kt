@@ -2,8 +2,9 @@ package com.otus.mail.feature.inbox.presentation
 
 import androidx.compose.runtime.saveable.mapSaver
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.SearchField
 
 internal val InboxSearchSaver =

@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import com.otus.designsystem.shared.selection.components.OrderedChoice
 import com.otus.designsystem.shared.selection.components.OrderedChoiceSheet
 import com.otus.mail.core.mailbox.pathText
-import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.core.messages.presentation.nestedByPath
+import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
-import com.otus.mail.feature.inbox.presentation.nestedByPath
 
 /** Chooses the inbox row's pills: the filters, then each group of [folders] pills. */
 @Composable

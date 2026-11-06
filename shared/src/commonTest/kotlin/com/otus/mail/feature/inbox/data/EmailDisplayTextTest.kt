@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.data
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.toMessage
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals

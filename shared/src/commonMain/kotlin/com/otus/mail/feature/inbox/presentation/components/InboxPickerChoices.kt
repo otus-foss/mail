@@ -17,12 +17,14 @@ import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.people.AvatarTokens
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.SenderAvatar
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.selectedAccounts
-import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 
 @Composable

@@ -19,11 +19,12 @@ import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.settings.components.PreviewCard
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.BarButton
-import com.otus.mail.feature.inbox.domain.BarSlot
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.BarButton
+import com.otus.mail.core.messages.domain.BarSlot
+import com.otus.mail.core.messages.presentation.components.RowTextInset
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 
 /**
  * Edits [place]'s bar, saving each change at once. Tapping a button in the preview, or the Add

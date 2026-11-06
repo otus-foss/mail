@@ -10,7 +10,9 @@ import com.otus.mail.core.cache.CacheWrite
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.unlessRefused
-import com.otus.mail.feature.inbox.domain.FilterSort
+import com.otus.mail.core.messages.data.CallGroup
+import com.otus.mail.core.messages.data.sendAll
+import com.otus.mail.core.messages.domain.FilterSort
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException

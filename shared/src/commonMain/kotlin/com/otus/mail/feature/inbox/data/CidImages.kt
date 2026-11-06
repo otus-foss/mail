@@ -3,7 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapException
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.feature.inbox.domain.MessageContent
+import com.otus.mail.core.messages.domain.MessageContent
 import kotlin.io.encoding.Base64
 
 /**

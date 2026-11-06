@@ -1,7 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
 import androidx.compose.ui.graphics.Color
-import com.otus.mail.feature.inbox.domain.SidebarPin
+import com.otus.mail.core.settings.domain.SidebarPin
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.title
 import org.jetbrains.compose.resources.DrawableResource
 
 /**

@@ -4,8 +4,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 
 /**
  * Shows the app signed in to [server], waiting until its inbox, folders, and rules have loaded, so

@@ -1,12 +1,12 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.feature.inbox.domain.Draft
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendTime
-import com.otus.mail.feature.inbox.domain.Unsubscribe
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import io.ktor.http.URLDecodeException
 import io.ktor.http.decodeURLPart

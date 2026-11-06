@@ -13,10 +13,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.FilterLayout
-import com.otus.mail.feature.inbox.domain.FilterSection
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.FilterLayout
+import com.otus.mail.core.settings.domain.FilterSection
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

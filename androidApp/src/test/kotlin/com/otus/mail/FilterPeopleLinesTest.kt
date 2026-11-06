@@ -10,8 +10,8 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.OwnAddress
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

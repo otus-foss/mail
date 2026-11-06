@@ -2,8 +2,8 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
+import com.otus.mail.core.messages.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxFiltersSaver
 

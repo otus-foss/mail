@@ -14,8 +14,8 @@ import com.otus.designsystem.shared.filters.components.FilterPanelFooter
 import com.otus.designsystem.shared.filters.components.FilterPanelTitle
 import com.otus.designsystem.shared.filters.components.FilterResetAction
 import com.otus.designsystem.shared.filters.components.FilterShowBar
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.FilterCount
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxFilterState

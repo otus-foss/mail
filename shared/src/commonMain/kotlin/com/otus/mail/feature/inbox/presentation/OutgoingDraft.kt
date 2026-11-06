@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
-import com.otus.mail.feature.inbox.domain.Draft
 
 /**
  * A draft the compose page handed over for sending. [ready] gives it as it goes, once any save in

@@ -3,8 +3,8 @@ package com.otus.mail.app
 import com.otus.dateformat.DateFormatPreference
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.Draft
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.ScheduledSends

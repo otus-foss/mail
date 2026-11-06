@@ -7,6 +7,8 @@ import com.otus.jmap.jmapCallOr
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.keywordPatch
+import com.otus.mail.core.messages.data.keyword
+import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 
 /** Deletes a sent draft's earlier copy [draftId] and marks the message it [answered]. */

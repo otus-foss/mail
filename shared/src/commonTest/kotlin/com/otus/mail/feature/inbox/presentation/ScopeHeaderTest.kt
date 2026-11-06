@@ -1,7 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.AccountAddresses
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.AccountAddresses
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.settings.presentation.title
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

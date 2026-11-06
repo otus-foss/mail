@@ -25,12 +25,13 @@ import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.rows.StripTokens
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.domain.isOwn
-import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.isOwn
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.shortLabel
 import com.otus.mail.feature.inbox.presentation.ReadState
-import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import com.otus.settings.presentation.components.LocalDateFormatter
 import kotlinx.datetime.LocalDate
 

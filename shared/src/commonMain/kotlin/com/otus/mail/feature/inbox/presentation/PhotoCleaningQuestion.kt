@@ -3,8 +3,10 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.inbox.domain.PhotoCleaning
-import com.otus.mail.feature.inbox.domain.PickedFile
+import com.otus.mail.core.files.PickedFile
+import com.otus.mail.core.settings.domain.PhotoCleaning
+import com.otus.mail.feature.inbox.domain.cleanable
+import com.otus.mail.feature.inbox.domain.cleaned
 import kotlinx.coroutines.CompletableDeferred
 
 /**

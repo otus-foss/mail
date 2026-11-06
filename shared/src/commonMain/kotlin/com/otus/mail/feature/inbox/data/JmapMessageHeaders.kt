@@ -4,11 +4,11 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapIds
 import com.otus.jmap.jmapCallOr
-import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailHeader
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageHeaders
 
 /**

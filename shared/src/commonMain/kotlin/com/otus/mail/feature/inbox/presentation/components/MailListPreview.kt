@@ -7,15 +7,15 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.feature.inbox.domain.MailAttributes
-import com.otus.mail.feature.inbox.domain.MailConversation
-import com.otus.mail.feature.inbox.domain.MailListLayout
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.RowFolder
-import com.otus.mail.feature.inbox.domain.ThreadEmail
+import com.otus.mail.core.messages.domain.MailAttributes
+import com.otus.mail.core.messages.domain.MailConversation
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.RowFolder
+import com.otus.mail.core.messages.domain.ThreadEmail
+import com.otus.mail.core.settings.domain.MailListLayout
 import com.otus.mail.feature.inbox.presentation.RowLook
 import com.otus.mail.feature.inbox.presentation.conversationRows
 

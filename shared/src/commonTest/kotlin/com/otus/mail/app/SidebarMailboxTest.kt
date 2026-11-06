@@ -3,9 +3,9 @@ package com.otus.mail.app
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.PinSize
-import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.SidebarPin
+import com.otus.mail.core.settings.domain.PinSize
+import com.otus.mail.core.settings.domain.SidebarLayout
+import com.otus.mail.core.settings.domain.SidebarPin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

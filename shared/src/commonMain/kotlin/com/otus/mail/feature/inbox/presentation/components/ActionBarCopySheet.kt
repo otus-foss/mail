@@ -19,12 +19,12 @@ import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.shared.settings.components.PreviewCard
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionBarMode
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.actions.label
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.ActionBarMode
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.presentation.actions.label
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 
 /**
  * Copies [from]'s bar to the screens the user ticks, each getting what it can offer. Done replaces

@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.signature
+
 /**
  * [bytes] without the metadata a camera or editor wrote into them: EXIF, with the place and time a
  * photo was taken and the device that took it, XMP, IPTC, comments, and data trailing the image.

@@ -3,15 +3,18 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.shownName
-import com.otus.mail.feature.inbox.presentation.actions.ActionSubject
-import com.otus.mail.feature.inbox.presentation.actions.DraftSubject
-import com.otus.mail.feature.inbox.presentation.actions.barFor
-import com.otus.mail.feature.inbox.presentation.actions.offer
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.DraftSubject
+import com.otus.mail.core.messages.presentation.actions.barFor
+import com.otus.mail.core.messages.presentation.actions.offer
+import com.otus.mail.core.messages.presentation.components.MailActionBar
+import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.components.groupContext
+import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.recipients
 
 /**

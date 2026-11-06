@@ -5,11 +5,11 @@ import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.settings.components.SketchMarker
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.BarSlot
-import com.otus.mail.feature.inbox.presentation.actions.buttonLabel
-import com.otus.mail.feature.inbox.presentation.actions.symbol
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.BarSlot
+import com.otus.mail.core.messages.presentation.actions.buttonLabel
+import com.otus.mail.core.messages.presentation.actions.symbol
 
 /**
  * [layout] as its bar shows it; each button runs [onSlot] with its slot instead of its action.

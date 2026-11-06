@@ -17,8 +17,9 @@ import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.overlays.MenuTokens
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.SendIdentity
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.SendIdentity
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.presentation.ComposeAccount
 
 /**

@@ -9,9 +9,9 @@ import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.core.mailbox.subtreeIds
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.feature.folders.presentation.folderIcon
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.OwnAddress
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterAddress
 import com.otus.mail.feature.inbox.presentation.FilterFolder

@@ -20,12 +20,12 @@ import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.MailHeader
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.components.FoldersSheet
 import com.otus.mail.feature.inbox.presentation.components.MessageDetailsSheet
 import org.junit.Assert.assertEquals

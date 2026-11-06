@@ -1,6 +1,14 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OriginalMessage
+import com.otus.mail.core.messages.domain.matching
+import com.otus.mail.core.messages.domain.original
+import com.otus.mail.core.messages.domain.recipientText
+import com.otus.mail.core.messages.domain.shownName
 
 /** The account a draft for this request comes from, when the request names one. */
 val ComposeRequest.accountId: String?

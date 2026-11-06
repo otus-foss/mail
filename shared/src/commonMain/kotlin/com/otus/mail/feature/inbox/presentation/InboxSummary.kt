@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.InboxContents
+import com.otus.mail.core.messages.presentation.ownFolders
+import com.otus.mail.core.settings.domain.InboxContents
 
 /** How the Inbox shows row names [contents], such as "Inbox", "Inbox + Spam", or "All mail" with everything on. */
 fun inboxSummary(contents: InboxContents): String {

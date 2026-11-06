@@ -1,7 +1,7 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.saveable.listSaver
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.MailScopeChoice
 
 /** Saves the "Show mail from" choice for the life of the process, as the page is saved. */
 internal val MailScopeChoiceSaver =

@@ -3,8 +3,9 @@ package com.otus.mail.feature.inbox.data
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.Unsubscribe
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.Unsubscribe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

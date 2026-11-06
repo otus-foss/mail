@@ -1,16 +1,8 @@
 package com.otus.mail.feature.inbox.domain
 
-/**
- * A downloaded attachment on the device. [path] is where its bytes lie, for the platform's file
- * handling; [kept] says whether the user keeps it offline.
- */
-data class StoredFile(
-    val path: String,
-    val name: String,
-    val type: String,
-    val size: Long,
-    val kept: Boolean,
-)
+import com.otus.mail.core.files.StoredFile
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
 
 /**
  * Attachments downloaded to the device, and the ones the user keeps offline. A download streams to

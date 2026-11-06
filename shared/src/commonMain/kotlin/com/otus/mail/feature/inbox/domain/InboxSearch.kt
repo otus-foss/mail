@@ -1,6 +1,15 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.TypeFacet
+import com.otus.mail.core.messages.domain.lastReceived
 
 data class InboxSearch(
     val query: String = "",
@@ -111,30 +120,6 @@ fun selectedAccounts(
     return accountIds.map { id ->
         known[id]?.let { it.copy(accountAvatar = loaded[id]?.accountAvatar ?: it.accountAvatar) }
             ?: MailLocation("", id, id)
-    }
-}
-
-/**
- * A mailbox of [account], or of every account when null. A [role] finds the folder with that role,
- * whatever it is named; without one, [name] finds the user's folders of that name.
- */
-data class MailboxScope(
-    val account: String?,
-    val name: String,
-    val role: MailboxRole? = null,
-) {
-    fun matches(location: MailLocation): Boolean =
-        holds(location.mailbox, location.mailboxRole) && (account == null || location.accountId == account)
-
-    /** Whether a mailbox named [mailbox] with [mailboxRole] is this one. */
-    fun holds(
-        mailbox: String,
-        mailboxRole: MailboxRole?,
-    ): Boolean = if (role != null) mailboxRole == role else mailboxRole == null && mailbox == name
-
-    companion object {
-        /** Every account's inbox, the default search scope. */
-        val Inbox = MailboxScope(null, MailboxRole.Inbox.title, MailboxRole.Inbox)
     }
 }
 

@@ -9,8 +9,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.inbox.domain.SidebarPin
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
 

@@ -6,8 +6,8 @@ import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.rows.elements.RowButton
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
-import com.otus.mail.feature.inbox.domain.withoutSender
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.withoutSender
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 
 /**
  * Settings › Privacy & security › Allowed senders: everyone whose remote images always load, added

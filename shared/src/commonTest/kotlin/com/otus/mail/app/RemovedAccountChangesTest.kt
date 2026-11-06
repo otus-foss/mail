@@ -2,7 +2,7 @@ package com.otus.mail.app
 
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.feature.inbox.domain.EmailChangeStore
+import com.otus.mail.core.messages.domain.EmailChangeStore
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest

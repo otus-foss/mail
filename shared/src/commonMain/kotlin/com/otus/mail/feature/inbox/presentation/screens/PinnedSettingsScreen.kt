@@ -21,15 +21,15 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.feature.inbox.domain.MailboxStyle
-import com.otus.mail.feature.inbox.domain.PinSize
-import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.presentation.nestedByPath
+import com.otus.mail.core.settings.domain.MailboxStyle
+import com.otus.mail.core.settings.domain.PinSize
+import com.otus.mail.core.settings.domain.SidebarLayout
+import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.components.PinnedGridEditor
 import com.otus.mail.feature.inbox.presentation.components.PinnedRowsEditor
-import com.otus.mail.feature.inbox.presentation.label
-import com.otus.mail.feature.inbox.presentation.nestedByPath
 
 /**
  * Arranges the sidebar's Pinned section. Show as picks Grid or Rows, and the editor below follows

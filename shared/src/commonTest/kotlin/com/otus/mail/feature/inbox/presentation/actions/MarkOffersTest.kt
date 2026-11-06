@@ -1,8 +1,11 @@
 package com.otus.mail.feature.inbox.presentation.actions
 
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageFlag
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.ListSubject
+import com.otus.mail.core.messages.presentation.actions.offer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

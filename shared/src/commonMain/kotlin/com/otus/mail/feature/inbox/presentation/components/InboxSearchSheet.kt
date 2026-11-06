@@ -35,17 +35,18 @@ import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.lastReceived
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.listDateLabel
+import com.otus.mail.core.settings.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailListLayout
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SearchField
-import com.otus.mail.feature.inbox.domain.lastReceived
 import com.otus.mail.feature.inbox.domain.searchMessages
-import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.domain.toggled
 import com.otus.mail.feature.inbox.presentation.InboxState
-import com.otus.mail.feature.inbox.presentation.listDateLabel
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.minus
 

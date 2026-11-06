@@ -1,8 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailboxScope
 
 /**
  * Mailboxes a page can show beyond its own messages. [mailboxes] are the search's choices, and [load]

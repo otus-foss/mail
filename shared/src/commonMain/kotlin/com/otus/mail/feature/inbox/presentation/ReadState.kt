@@ -6,10 +6,13 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.memberMailboxes
+import com.otus.mail.core.messages.presentation.EditObserver
+import com.otus.mail.core.messages.presentation.MailEdit
+import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.feature.inbox.domain.Participant
-import com.otus.mail.feature.inbox.domain.memberMailboxes
 
 /**
  * A sheet over the Read view: the folders of the conversation, a new folder started from there, or

@@ -15,10 +15,10 @@ import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.feature.inbox.domain.SendIdentity
-import com.otus.mail.feature.inbox.domain.signature
+import com.otus.mail.core.messages.domain.SendIdentity
+import com.otus.mail.core.messages.domain.signature
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.presentation.SignaturesState
-import com.otus.mail.feature.inbox.presentation.components.chipAvatar
 
 /**
  * Settings › Mail behavior › Signatures: whether replies get a signature, then every address by

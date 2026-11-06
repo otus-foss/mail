@@ -14,7 +14,7 @@ import com.otus.designsystem.resources.symbol_unsubscribe
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.InfoStrip
 import com.otus.designsystem.shared.rows.components.Unfold
-import com.otus.mail.feature.inbox.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailAttachment
 import com.otus.mail.feature.inbox.presentation.NewsletterStep
 import com.otus.mail.feature.inbox.presentation.read.AttachmentKindName
 import com.otus.mail.feature.inbox.presentation.read.attachmentSummary

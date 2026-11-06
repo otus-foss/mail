@@ -18,9 +18,9 @@ import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.people.elements.rememberImage
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.mail.core.files.UploadFailure
+import com.otus.mail.core.messages.domain.DraftAttachment
 import com.otus.mail.core.text.sizeText
-import com.otus.mail.feature.inbox.domain.DraftAttachment
-import com.otus.mail.feature.inbox.domain.UploadFailure
 import com.otus.mail.feature.inbox.presentation.ComposeAttachments
 import com.otus.mail.feature.inbox.presentation.source
 

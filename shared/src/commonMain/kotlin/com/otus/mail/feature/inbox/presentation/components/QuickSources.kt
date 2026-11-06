@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.within
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.within
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 

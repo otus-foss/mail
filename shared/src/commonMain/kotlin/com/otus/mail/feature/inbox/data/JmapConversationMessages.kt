@@ -2,7 +2,6 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
@@ -15,8 +14,13 @@ import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.ServerSites
+import com.otus.mail.core.messages.data.boxes
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.threadEmails
+import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.ConversationMessages
-import com.otus.mail.feature.inbox.domain.MailMessage
 import kotlinx.datetime.TimeZone
 import kotlin.time.Instant
 

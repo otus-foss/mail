@@ -17,11 +17,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.MailboxStyle
-import com.otus.mail.feature.inbox.domain.SidebarCount
-import com.otus.mail.feature.inbox.domain.SidebarPin
-import com.otus.mail.feature.inbox.domain.SidebarSection
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.MailboxStyle
+import com.otus.mail.core.settings.domain.SidebarCount
+import com.otus.mail.core.settings.domain.SidebarPin
+import com.otus.mail.core.settings.domain.SidebarSection
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule

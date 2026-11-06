@@ -1,11 +1,11 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.mail.compose.elements.RichText
-import com.otus.mail.feature.inbox.domain.AttachmentBlob
+import com.otus.mail.core.files.PickedFile
+import com.otus.mail.core.files.UploadFailure
+import com.otus.mail.core.messages.domain.AttachmentBlob
+import com.otus.mail.core.messages.domain.DraftAttachment
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
-import com.otus.mail.feature.inbox.domain.DraftAttachment
-import com.otus.mail.feature.inbox.domain.PickedFile
-import com.otus.mail.feature.inbox.domain.UploadFailure
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope

@@ -1,12 +1,18 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.FolderChange
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.domain.hasFlag
-import com.otus.mail.feature.inbox.domain.memberMailboxes
-import com.otus.mail.feature.inbox.domain.withFlag
-import com.otus.mail.feature.inbox.domain.withMailboxes
+import com.otus.mail.core.messages.domain.FolderChange
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageFlag
+import com.otus.mail.core.messages.domain.hasFlag
+import com.otus.mail.core.messages.domain.memberMailboxes
+import com.otus.mail.core.messages.domain.withFlag
+import com.otus.mail.core.messages.domain.withMailboxes
+import com.otus.mail.core.messages.presentation.MailEdit
+import com.otus.mail.core.messages.presentation.MailEdits
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.core.messages.presentation.delete
+import com.otus.mail.core.messages.presentation.move
+import com.otus.mail.core.messages.presentation.moveBack
 import kotlinx.coroutines.launch
 
 /**

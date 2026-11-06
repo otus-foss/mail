@@ -5,7 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
-import com.otus.mail.feature.inbox.domain.SendIdentityKey
+import com.otus.mail.core.messages.domain.SendIdentityKey
 import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.OutgoingDraft
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState

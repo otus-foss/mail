@@ -1,8 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.FoundPerson
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.PeopleField
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.PeopleField
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

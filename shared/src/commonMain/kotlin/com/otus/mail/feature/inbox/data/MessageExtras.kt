@@ -2,9 +2,9 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.Unsubscribe
-import com.otus.mail.feature.inbox.domain.displayLine
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.Unsubscribe
+import com.otus.mail.core.messages.domain.displayLine
 
 /**
  * The message's files: its `attachments` (RFC 8621, section 4.1.4) without the images [html]

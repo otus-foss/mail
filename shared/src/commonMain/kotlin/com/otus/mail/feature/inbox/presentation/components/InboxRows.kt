@@ -10,8 +10,8 @@ import androidx.compose.runtime.setValue
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.OpenRequest
 
 /** The open message, the selected rows, and the row gestures that change them; [selectAll] selects the rows given. */

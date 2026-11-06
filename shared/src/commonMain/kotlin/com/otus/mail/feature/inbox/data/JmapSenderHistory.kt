@@ -7,14 +7,13 @@ import com.otus.jmap.QueryMethod
 import com.otus.jmap.filterCondition
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
-import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.EMAIL_FOLDERS_PROPERTIES
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.SenderHistory
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.SenderHistory
 import kotlinx.serialization.json.JsonPrimitive
 
 /**

@@ -2,8 +2,8 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.saveable.Saver
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.feature.contacts.domain.CardKey
-import com.otus.mail.feature.inbox.domain.ComposeRequest
 
 /** Every page, including subpages. Pages without a parent are sidebar destinations. */
 internal sealed interface MailPage {

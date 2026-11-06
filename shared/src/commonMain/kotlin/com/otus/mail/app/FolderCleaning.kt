@@ -2,16 +2,16 @@ package com.otus.mail.app
 
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.presentation.FolderCleanup
+import com.otus.mail.core.messages.presentation.FolderEmptying
+import com.otus.mail.core.messages.presentation.MailEdits
+import com.otus.mail.core.messages.presentation.delete
+import com.otus.mail.core.messages.presentation.empty
+import com.otus.mail.core.messages.presentation.notSpam
 import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.presentation.FolderCleanup
-import com.otus.mail.feature.inbox.presentation.FolderEmptying
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.MailEdits
-import com.otus.mail.feature.inbox.presentation.delete
-import com.otus.mail.feature.inbox.presentation.empty
-import com.otus.mail.feature.inbox.presentation.notSpam
 
 /**
  * Not spam, deleting for good, and emptying Spam and Trash where the folders allow them, as [edits]

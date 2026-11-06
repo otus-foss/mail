@@ -9,13 +9,13 @@ import com.otus.designsystem.resources.symbol_photo_camera
 import com.otus.designsystem.resources.symbol_public
 import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.resources.symbol_visibility_off
-import com.otus.mail.feature.inbox.domain.DevicePrivacy
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.PhotoCleaning
-import com.otus.mail.feature.inbox.domain.RemoteImages
-import com.otus.mail.feature.inbox.presentation.ICONS_UNAVAILABLE
-import com.otus.mail.feature.inbox.presentation.allowedSummary
-import com.otus.mail.feature.inbox.presentation.title
+import com.otus.mail.core.messages.domain.DevicePrivacy
+import com.otus.mail.core.messages.domain.RemoteImages
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.PhotoCleaning
+import com.otus.mail.core.settings.presentation.ICONS_UNAVAILABLE
+import com.otus.mail.core.settings.presentation.allowedSummary
+import com.otus.mail.core.settings.presentation.title
 import com.otus.settings.presentation.SettingsIndexScope
 
 /** Mirrors PrivacyScreen, with the device protections [device] offers. */

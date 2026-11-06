@@ -1,8 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.FilterSort
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.ReceivedAt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

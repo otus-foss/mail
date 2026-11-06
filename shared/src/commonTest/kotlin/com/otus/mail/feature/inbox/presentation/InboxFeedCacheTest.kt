@@ -1,8 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
-import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest

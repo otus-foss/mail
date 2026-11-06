@@ -22,8 +22,9 @@ import com.otus.designsystem.theme.tokens.content.ReadTokens
 import com.otus.designsystem.theme.tokens.rows.FolderTokens
 import com.otus.designsystem.theme.tokens.rows.StripTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.domain.ShownFolders
-import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.core.messages.domain.ShownFolders
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 
 /**
  * The thread strip, newest first: "Latest" on the newest page, else the sender, with the position

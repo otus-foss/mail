@@ -2,17 +2,19 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.ListSubject
+import com.otus.mail.core.messages.presentation.actions.barFor
+import com.otus.mail.core.messages.presentation.actions.offer
+import com.otus.mail.core.messages.presentation.components.MailActionBar
+import com.otus.mail.core.messages.presentation.components.Minimized
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.actions.ActionSubject
-import com.otus.mail.feature.inbox.presentation.actions.ListSubject
-import com.otus.mail.feature.inbox.presentation.actions.barFor
-import com.otus.mail.feature.inbox.presentation.actions.offer
 
 /**
  * The message list's bar while nothing is selected. Search opens the search field, Filters runs

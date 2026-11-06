@@ -11,15 +11,15 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ForegroundInfo
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.presentation.actions.AlertAccount
-import com.otus.mail.feature.inbox.presentation.actions.alertButtons
-import com.otus.mail.feature.inbox.presentation.actions.alertFailure
+import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
+import com.otus.mail.feature.notifications.presentation.AlertAccount
+import com.otus.mail.feature.notifications.presentation.alertButtons
+import com.otus.mail.feature.notifications.presentation.alertFailure
 import com.otus.designsystem.R as DesignR
 
 /**

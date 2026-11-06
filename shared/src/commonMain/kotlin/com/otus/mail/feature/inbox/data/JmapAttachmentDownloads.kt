@@ -3,10 +3,9 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.downloadStream
 import com.otus.jmap.jmapCallOr
-import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
 
 /**
  * Streams an attached file's blob from the download URL of the message's account (RFC 8620,

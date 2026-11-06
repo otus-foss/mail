@@ -18,8 +18,9 @@ import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.RecipientField
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FilterPeopleSearch
 import com.otus.mail.feature.inbox.presentation.FilterPerson

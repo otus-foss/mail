@@ -9,8 +9,8 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.OptionsItem
-import com.otus.mail.feature.inbox.domain.SignatureImage
-import com.otus.mail.feature.inbox.domain.SignatureImageSize
+import com.otus.mail.core.messages.domain.SignatureImage
+import com.otus.mail.core.messages.domain.SignatureImageSize
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 
 /** The bar while a signature image is selected: its sizes, ✓ to finish, and ⋯ with Remove image. */

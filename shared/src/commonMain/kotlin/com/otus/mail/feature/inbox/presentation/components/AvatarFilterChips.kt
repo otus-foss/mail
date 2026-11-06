@@ -1,16 +1,13 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.avatar.ResolvedAvatar
-import com.otus.avatar.generatedAvatar
-import com.otus.avatar.ui.presentation.toChipAvatar
 import com.otus.designsystem.shared.people.components.AvatarStackChip
 import com.otus.designsystem.shared.people.components.ChipAvatar
-import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 
 @Composable
 internal fun PeopleFilterChip(
@@ -68,20 +65,6 @@ internal fun AvatarFilterChip(
         prefix = prefix,
     )
 }
-
-/** The sender's avatar for a chip or an action bar token. */
-internal val MailSender.chipAvatar: ChipAvatar
-    get() = chipAvatar(avatar, name, address)
-
-/** The avatar, named by address, for text that shows the address rather than the name. */
-internal val MailSender.namedByAddress: NamedAvatar
-    get() = NamedAvatar(address, chipAvatar)
-
-internal fun chipAvatar(
-    avatar: ResolvedAvatar?,
-    name: String,
-    address: String,
-): ChipAvatar = (avatar ?: ResolvedAvatar(generatedAvatar(name, address))).toChipAvatar()
 
 private fun shortName(sender: MailSender): String =
     sender.name

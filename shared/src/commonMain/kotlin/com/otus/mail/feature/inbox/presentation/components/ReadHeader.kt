@@ -45,9 +45,10 @@ import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.shownName
-import com.otus.mail.feature.inbox.presentation.ReadLaterChange
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.ReadLaterChange
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 
 /**
  * The Read view's control panel: Back and the [subject] alone, over pills for the [page]'s sender

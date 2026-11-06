@@ -2,8 +2,9 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailBodyValue
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.feature.inbox.domain.MessageContent
-import com.otus.mail.feature.inbox.domain.displayText
+import com.otus.mail.core.messages.data.isHtml
+import com.otus.mail.core.messages.domain.MessageContent
+import com.otus.mail.core.messages.domain.displayText
 
 /**
  * The open message's text and HTML bodies. The text loses hidden characters, and an HTML-only body

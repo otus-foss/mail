@@ -8,7 +8,7 @@ import com.otus.jmap.QueryMethod
 import com.otus.jmap.contacts.ContactCardType
 import com.otus.jmap.jmapDecoding
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.messages.domain.MailSender
 
 /**
  * The names and addresses on the first [limit] contact cards of the login's address books

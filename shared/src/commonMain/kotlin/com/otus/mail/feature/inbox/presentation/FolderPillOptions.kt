@@ -5,8 +5,9 @@ import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.folderTree
-import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.presentation.title
 
 /**
  * The folder pills [accounts] can fill, in the order Settings lists them. Read later, which the

@@ -3,10 +3,10 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.inbox.domain.FoundPerson
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.PeopleField
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxStorageException
-import com.otus.mail.feature.inbox.domain.PeopleField
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

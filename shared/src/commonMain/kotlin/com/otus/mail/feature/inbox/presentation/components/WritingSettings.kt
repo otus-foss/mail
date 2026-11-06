@@ -15,9 +15,9 @@ import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.DEFAULT_UNDO_SEND_SECONDS
-import com.otus.mail.feature.inbox.domain.UNDO_SEND_CHOICES
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.DEFAULT_UNDO_SEND_SECONDS
+import com.otus.mail.core.settings.domain.UNDO_SEND_CHOICES
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 
 /**
  * The Mail behavior page's Writing section: how long a sent message waits on the device so Undo

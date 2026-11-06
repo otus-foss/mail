@@ -7,11 +7,12 @@ import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.withContent
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.withContent
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.DOWNLOAD_SESSION
 import com.otus.mail.testing.stalwartLike

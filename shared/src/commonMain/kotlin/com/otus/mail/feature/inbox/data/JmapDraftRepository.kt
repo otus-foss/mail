@@ -7,7 +7,6 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.SetError
 import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapCallOr
-import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityType
@@ -15,12 +14,12 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.toMailFailure
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftException
-import com.otus.mail.feature.inbox.domain.DraftFailure
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftException
+import com.otus.mail.core.messages.domain.DraftFailure
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.SendIdentity
 import kotlinx.coroutines.CancellationException
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

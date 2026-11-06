@@ -16,14 +16,14 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.DateStyle
-import com.otus.mail.feature.inbox.domain.ListOrder
-import com.otus.mail.feature.inbox.domain.MailListLayout
-import com.otus.mail.feature.inbox.domain.PreviewLines
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.SENDER_UNAVAILABLE
-import com.otus.mail.feature.inbox.presentation.dateStyleExample
-import com.otus.mail.feature.inbox.presentation.label
+import com.otus.mail.core.messages.presentation.dateStyleExample
+import com.otus.mail.core.settings.domain.DateStyle
+import com.otus.mail.core.settings.domain.ListOrder
+import com.otus.mail.core.settings.domain.MailListLayout
+import com.otus.mail.core.settings.domain.PreviewLines
+import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.SENDER_UNAVAILABLE
+import com.otus.mail.core.settings.presentation.label
 
 /**
  * How the mail list's rows read, with [preview] showing a row in the current layout at the top.

@@ -9,8 +9,8 @@ import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
-import com.otus.mail.feature.inbox.domain.InboxContents
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.InboxContents
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 
 /**
  * Chooses which folders join the Inbox page: Archive and the user's own folders keep filed mail

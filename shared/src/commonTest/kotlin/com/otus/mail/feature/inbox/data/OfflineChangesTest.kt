@@ -3,10 +3,13 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.feature.inbox.domain.EmailChangeStore
+import com.otus.mail.core.messages.data.EmailChangeQueue
+import com.otus.mail.core.messages.data.merged
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.EmailChangeStore
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.async

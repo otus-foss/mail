@@ -2,17 +2,17 @@ package com.otus.mail.feature.inbox.presentation
 
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
-import com.otus.mail.feature.inbox.domain.DateFilter
-import com.otus.mail.feature.inbox.domain.FilterSort
-import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.SenderKey
-import com.otus.mail.feature.inbox.domain.SizeFilter
-import com.otus.mail.feature.inbox.domain.TypeFacet
 import kotlinx.datetime.LocalDate
 
 /**

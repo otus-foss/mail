@@ -7,13 +7,16 @@ import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
 import com.otus.avatar.avatarOptions
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.presentation.EditObserver
+import com.otus.mail.core.messages.presentation.EditedList
+import com.otus.mail.core.messages.presentation.MailEdit
+import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -34,7 +37,7 @@ class InboxFeedState(
     private val avatarOptions: () -> AvatarOptions = { avatarOptions(websiteIcons = true) },
     defaultScope: MailScope = MailScope.Inbox,
     private val dates: () -> DateFormatter = { DateFormatter() },
-) {
+) : EditedList {
     /**
      * The page's own messages, such as the inbox with Spam and Trash as the user chose. A new one
      * loads at once while the page shows its own messages, not while a search shows others.
@@ -62,10 +65,10 @@ class InboxFeedState(
         }
 
     /** What the list loads: the page's own messages, or what a search or folder pill shows in their place. */
-    var mailScope by mutableStateOf(defaultScope)
+    override var mailScope by mutableStateOf(defaultScope)
         private set
 
-    var messages by mutableStateOf(emptyList<MailMessage>())
+    override var messages by mutableStateOf(emptyList<MailMessage>())
         private set
     var loading by mutableStateOf(false)
         private set
@@ -89,7 +92,7 @@ class InboxFeedState(
     private var reportedNotice: String? = null
 
     /** Keeps an action failure visible through the current load, until the next refresh by the user. */
-    fun report(text: String) {
+    override fun report(text: String) {
         reportedNotice = text
         notice = text
     }
@@ -183,6 +186,8 @@ class InboxFeedState(
      * the device kept, while [loading] stays true, unless the server answers first. With
      * [keepReport], as for a reload after a change on the server, a reported failure stays.
      */
+    override fun refresh() = refresh(cachedFirst = messages.isEmpty())
+
     fun refresh(
         cachedFirst: Boolean = messages.isEmpty(),
         keepReport: Boolean = false,

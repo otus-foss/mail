@@ -1,13 +1,14 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.bounds
 import kotlinx.datetime.TimeZone
 import kotlin.time.Instant

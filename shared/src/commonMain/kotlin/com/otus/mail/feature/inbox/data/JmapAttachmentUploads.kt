@@ -2,14 +2,13 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.files.MAX_ATTACHMENT_BYTES
+import com.otus.mail.core.files.UploadException
+import com.otus.mail.core.files.UploadFailure
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.feature.inbox.domain.AttachmentBlob
+import com.otus.mail.core.messages.domain.AttachmentBlob
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
-import com.otus.mail.feature.inbox.domain.MAX_ATTACHMENT_BYTES
-import com.otus.mail.feature.inbox.domain.UploadException
-import com.otus.mail.feature.inbox.domain.UploadFailure
 
 /**
  * Uploads attachments to the account's blob endpoint (RFC 8620, section 6.1). A file larger than

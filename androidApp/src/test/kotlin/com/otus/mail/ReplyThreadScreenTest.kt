@@ -11,10 +11,10 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OriginalMessage
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OriginalMessage
+import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.ThreadMessage
 import com.otus.mail.feature.inbox.presentation.ComposeAccount
 import com.otus.mail.feature.inbox.presentation.ComposeExits

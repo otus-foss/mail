@@ -9,13 +9,13 @@ import com.otus.designsystem.shared.selection.components.OrderedChoice
 import com.otus.designsystem.shared.selection.components.OrderedChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.NOTIFICATION_ACTION_LIMIT
-import com.otus.mail.feature.inbox.domain.NotificationActionChoices
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.actions.buttonLabel
-import com.otus.mail.feature.inbox.presentation.actions.symbol
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.presentation.actions.buttonLabel
+import com.otus.mail.core.messages.presentation.actions.symbol
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.NOTIFICATION_ACTION_LIMIT
+import com.otus.mail.core.settings.domain.NotificationActionChoices
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.settings.presentation.SettingsIndexScope
 
 /**

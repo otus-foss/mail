@@ -3,8 +3,8 @@ package com.otus.mail
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.otus.mail.feature.inbox.presentation.actions.opensMailFromAlert
 import com.otus.mail.feature.notifications.domain.AlertedMail
+import com.otus.mail.feature.notifications.presentation.opensMailFromAlert
 
 /**
  * Hears an alert's button that changes its message without opening Mail: the alert goes at once,

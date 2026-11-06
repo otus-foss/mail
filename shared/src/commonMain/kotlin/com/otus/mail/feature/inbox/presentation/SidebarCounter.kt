@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.mailbox.MailFolder
-import com.otus.mail.feature.inbox.domain.SidebarCount
+import com.otus.mail.core.settings.domain.SidebarCount
 
 /**
  * The counts beside sidebar mailboxes and folders: those of [accountId] alone, or of every

@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.read
 
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailingList
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailingList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

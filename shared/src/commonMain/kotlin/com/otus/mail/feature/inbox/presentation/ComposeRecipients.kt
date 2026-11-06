@@ -4,11 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.mail.core.mail.EmailAddressKey
-import com.otus.mail.feature.inbox.domain.AddressBook
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.parseRecipients
-import com.otus.mail.feature.inbox.domain.recipientText
+import com.otus.mail.core.messages.domain.AddressBook
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.parseRecipients
+import com.otus.mail.core.messages.domain.recipientText
+import com.otus.mail.core.messages.presentation.empty
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

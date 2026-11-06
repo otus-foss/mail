@@ -3,8 +3,9 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.presentation.label
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

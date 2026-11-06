@@ -5,27 +5,27 @@ import com.otus.mail.core.mailbox.FolderRights
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.folderTree
+import com.otus.mail.core.messages.domain.FolderKind
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageFlag
+import com.otus.mail.core.messages.domain.RowFolder
+import com.otus.mail.core.messages.domain.SenderHistory
+import com.otus.mail.core.messages.domain.suggestedFolder
+import com.otus.mail.core.messages.presentation.MailEdits
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.core.messages.presentation.ReadLaterChange
+import com.otus.mail.core.messages.presentation.move
+import com.otus.mail.core.messages.presentation.moveBack
+import com.otus.mail.core.messages.presentation.moveWithUndo
+import com.otus.mail.core.messages.presentation.ownFolders
+import com.otus.mail.core.messages.presentation.setInFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStep
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.inbox.domain.FolderKind
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.domain.RowFolder
-import com.otus.mail.feature.inbox.domain.SenderHistory
-import com.otus.mail.feature.inbox.domain.suggestedFolder
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.MailEdits
-import com.otus.mail.feature.inbox.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.ReadLaterChange
-import com.otus.mail.feature.inbox.presentation.move
-import com.otus.mail.feature.inbox.presentation.moveBack
-import com.otus.mail.feature.inbox.presentation.moveWithUndo
-import com.otus.mail.feature.inbox.presentation.ownFolders
-import com.otus.mail.feature.inbox.presentation.setInFolder
 
 /**
  * Files messages into folders and in and out of Read later, as [edits] that show at once and are

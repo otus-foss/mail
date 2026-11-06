@@ -7,10 +7,10 @@ import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.shared.selection.components.ScopeChildRow
 import com.otus.designsystem.shared.selection.components.ScopeOption
 import com.otus.designsystem.shared.selection.components.ScopeRow
-import com.otus.mail.feature.inbox.domain.AccountAddresses
-import com.otus.mail.feature.inbox.domain.DomainGroup
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.domainGroups
+import com.otus.mail.core.messages.domain.AccountAddresses
+import com.otus.mail.core.messages.domain.DomainGroup
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.domainGroups
 import com.otus.mail.feature.inbox.presentation.addressCount
 import com.otus.mail.feature.inbox.presentation.avatar
 import com.otus.mail.feature.inbox.presentation.domainAvatar

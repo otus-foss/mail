@@ -3,6 +3,8 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.otus.designsystem.shared.feedback.components.ToastMessage
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.presentation.ContactNavigation
 import com.otus.mail.feature.contacts.presentation.ContactsNavigation
@@ -11,8 +13,6 @@ import com.otus.mail.feature.contacts.presentation.components.PersonContactSheet
 import com.otus.mail.feature.contacts.presentation.screens.ContactEditorScreen
 import com.otus.mail.feature.contacts.presentation.screens.ContactScreen
 import com.otus.mail.feature.contacts.presentation.screens.ContactsScreen
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.components.PersonSheet
 
 /** The Read view's sheet for a person a message names: their card, or ways to save the address. */

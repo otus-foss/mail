@@ -8,8 +8,9 @@ import com.otus.jmap.login.LoginSecret
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike

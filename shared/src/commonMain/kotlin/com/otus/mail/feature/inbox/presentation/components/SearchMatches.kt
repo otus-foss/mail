@@ -37,12 +37,13 @@ import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.core.mail.EmailAddressKey
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.domain.SearchField
 import com.otus.mail.feature.inbox.domain.looksLikeAddress
 import com.otus.mail.feature.inbox.domain.searchMessages
-import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.FilterCount
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.conversationRows

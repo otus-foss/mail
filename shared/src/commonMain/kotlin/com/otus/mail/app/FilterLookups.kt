@@ -1,11 +1,11 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.inbox.domain.FoundPerson
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.PeopleField
+import com.otus.mail.core.messages.domain.PeopleSearch
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.PeopleField
-import com.otus.mail.feature.inbox.domain.PeopleSearch
 
 /** What a filter panel asks the servers while it is open: the draft's count and people to pick. */
 internal class FilterLookups(

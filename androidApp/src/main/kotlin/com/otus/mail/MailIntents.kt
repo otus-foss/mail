@@ -4,10 +4,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.otus.mail.app.MailRequests
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.mailtoRequest
-import com.otus.mail.feature.inbox.domain.parseRecipients
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.mailtoRequest
+import com.otus.mail.core.messages.domain.parseRecipients
 import com.otus.mail.feature.notifications.domain.AlertedMail
 
 /** The login of the message an alert or its button is about. */

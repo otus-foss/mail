@@ -12,9 +12,17 @@ import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.data.ListingPage
+import com.otus.mail.core.messages.data.ServerSites
+import com.otus.mail.core.messages.data.ThreadView
+import com.otus.mail.core.messages.data.boxes
+import com.otus.mail.core.messages.data.inConversation
+import com.otus.mail.core.messages.data.memberIds
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.datetime.TimeZone
 import kotlin.time.Instant
 

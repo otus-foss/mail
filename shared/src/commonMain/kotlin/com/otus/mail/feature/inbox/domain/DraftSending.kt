@@ -1,5 +1,8 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.original
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 

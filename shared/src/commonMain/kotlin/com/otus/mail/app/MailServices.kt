@@ -23,6 +23,17 @@ import com.otus.mail.core.cache.AccountMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
+import com.otus.mail.core.messages.data.JmapEmailWriter
+import com.otus.mail.core.messages.data.ServerSites
+import com.otus.mail.core.messages.domain.AddressBook
+import com.otus.mail.core.messages.domain.DevicePrivacy
+import com.otus.mail.core.messages.domain.EmailWriter
+import com.otus.mail.core.messages.domain.MessageBodies
+import com.otus.mail.core.messages.domain.PeopleSearch
+import com.otus.mail.core.messages.domain.SenderBlocks
+import com.otus.mail.core.messages.domain.SenderHistory
+import com.otus.mail.core.messages.presentation.MoveToasts
 import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
 import com.otus.mail.feature.contacts.domain.ContactRepository
@@ -34,13 +45,11 @@ import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.inbox.data.AttachmentCache
 import com.otus.mail.feature.inbox.data.AttachmentRetention
-import com.otus.mail.feature.inbox.data.EmailChangeQueue
 import com.otus.mail.feature.inbox.data.JmapAddressBook
 import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
 import com.otus.mail.feature.inbox.data.JmapAttachmentUploads
 import com.otus.mail.feature.inbox.data.JmapComposeMail
 import com.otus.mail.feature.inbox.data.JmapConversationMessages
-import com.otus.mail.feature.inbox.data.JmapEmailWriter
 import com.otus.mail.feature.inbox.data.JmapKnownPeople
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import com.otus.mail.feature.inbox.data.JmapMessageBodies
@@ -51,27 +60,18 @@ import com.otus.mail.feature.inbox.data.JmapSendChecker
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
-import com.otus.mail.feature.inbox.data.ServerSites
-import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
-import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
-import com.otus.mail.feature.inbox.domain.EmailWriter
 import com.otus.mail.feature.inbox.domain.KnownPeople
 import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.MessageBodies
 import com.otus.mail.feature.inbox.domain.MessageHeaders
 import com.otus.mail.feature.inbox.domain.Newsletters
-import com.otus.mail.feature.inbox.domain.PeopleSearch
 import com.otus.mail.feature.inbox.domain.ScheduledSends
-import com.otus.mail.feature.inbox.domain.SenderBlocks
-import com.otus.mail.feature.inbox.domain.SenderHistory
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import com.otus.mail.feature.inbox.domain.ThreadHistory
-import com.otus.mail.feature.inbox.presentation.MoveToasts
 import com.otus.mail.feature.inbox.presentation.NewsletterSteps
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.domain.InstantPush
@@ -80,7 +80,6 @@ import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.storage.StringMapStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 
 /**

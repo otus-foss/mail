@@ -16,9 +16,10 @@ import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.rows.elements.listCaptionInset
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.domain.QuoteMode
 import com.otus.mail.feature.inbox.domain.ThreadMessage
-import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ReplyThread
 import com.otus.settings.presentation.components.LocalDateFormatter
 

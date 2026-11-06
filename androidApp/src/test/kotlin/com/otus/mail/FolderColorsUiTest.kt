@@ -19,8 +19,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import com.otus.mail.app.App
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.folders.domain.readColors
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule

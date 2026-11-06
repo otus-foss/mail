@@ -14,18 +14,19 @@ import com.otus.designsystem.resources.symbol_reply
 import com.otus.designsystem.shared.folders.elements.FolderGlyphKind
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mail.EmailAddressKey
-import com.otus.mail.feature.inbox.domain.FolderKind
-import com.otus.mail.feature.inbox.domain.ListOrder
-import com.otus.mail.feature.inbox.domain.MailListLayout
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.domain.PreviewLines
-import com.otus.mail.feature.inbox.domain.RowFolder
-import com.otus.mail.feature.inbox.domain.SenderLine
-import com.otus.mail.feature.inbox.domain.lastReceived
-import com.otus.mail.feature.inbox.domain.receivedOn
-import com.otus.mail.feature.inbox.domain.senderLine
-import com.otus.mail.feature.inbox.domain.threadSubject
+import com.otus.mail.core.messages.domain.FolderKind
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.RowFolder
+import com.otus.mail.core.messages.domain.SenderLine
+import com.otus.mail.core.messages.domain.lastReceived
+import com.otus.mail.core.messages.domain.receivedOn
+import com.otus.mail.core.messages.domain.senderLine
+import com.otus.mail.core.messages.domain.threadSubject
+import com.otus.mail.core.messages.presentation.listDateLabel
+import com.otus.mail.core.settings.domain.ListOrder
+import com.otus.mail.core.settings.domain.MailListLayout
+import com.otus.mail.core.settings.domain.PreviewLines
 import kotlinx.datetime.LocalDate
 
 /** How a list draws its rows: the user's Mail list settings and the user's own addresses. */

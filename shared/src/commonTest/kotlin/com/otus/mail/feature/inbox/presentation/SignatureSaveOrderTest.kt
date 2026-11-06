@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.SendIdentityKey
-import com.otus.mail.feature.inbox.domain.Signature
-import com.otus.mail.feature.inbox.domain.SignatureImage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.SendIdentityKey
+import com.otus.mail.core.messages.domain.Signature
+import com.otus.mail.core.messages.domain.SignatureImage
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi

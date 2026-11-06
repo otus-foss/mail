@@ -5,11 +5,12 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
-import com.otus.mail.feature.inbox.domain.MailConversation
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.ThreadEmail
-import com.otus.mail.feature.inbox.domain.ThreadMember
+import com.otus.mail.core.messages.data.EmailChangeQueue
+import com.otus.mail.core.messages.domain.MailConversation
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.ThreadEmail
+import com.otus.mail.core.messages.domain.ThreadMember
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.datetime.TimeZone

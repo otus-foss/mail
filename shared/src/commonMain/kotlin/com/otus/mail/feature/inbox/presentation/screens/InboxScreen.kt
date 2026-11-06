@@ -17,15 +17,15 @@ import com.otus.designsystem.shared.pages.components.SlidingOverlay
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.pages.elements.hiddenWhen
 import com.otus.designsystem.theme.typography.panelTextStyle
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.scopeToLoad
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
-import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.components.HitDates
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxHeaderActions

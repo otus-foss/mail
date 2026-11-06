@@ -3,6 +3,14 @@ package com.otus.mail.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.presentation.FutureSorting
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.core.messages.presentation.OlderMail
+import com.otus.mail.core.messages.presentation.SortChoice
+import com.otus.mail.core.messages.presentation.SortedMove
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.SortBy
@@ -17,15 +25,7 @@ import com.otus.mail.feature.folders.presentation.keyword
 import com.otus.mail.feature.folders.presentation.phrase
 import com.otus.mail.feature.folders.presentation.reach
 import com.otus.mail.feature.folders.presentation.shown
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.presentation.FutureSorting
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.OlderMail
-import com.otus.mail.feature.inbox.presentation.SortChoice
-import com.otus.mail.feature.inbox.presentation.SortedMove
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

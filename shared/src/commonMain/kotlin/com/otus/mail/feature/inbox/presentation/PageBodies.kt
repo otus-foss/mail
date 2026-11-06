@@ -3,8 +3,8 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageContent
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageContent
 
 /** A page's body: still loading, loaded, or failed, when the preview stays with a note. */
 sealed interface PageBody {

@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.mail.folders.components.FolderCheck
-import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.core.messages.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 
 /** [folder]'s checkbox: its own choice, or included by a parent chosen with its subfolders. */

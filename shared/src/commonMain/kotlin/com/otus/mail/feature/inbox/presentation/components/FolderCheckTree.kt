@@ -9,9 +9,12 @@ import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickMarkView
 import com.otus.mail.core.mailbox.pathText
-import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.presentation.SheetTreeFolder
-import com.otus.mail.feature.inbox.presentation.sheetTree
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.presentation.SheetTreeFolder
+import com.otus.mail.core.messages.presentation.components.FolderTreeEntry
+import com.otus.mail.core.messages.presentation.components.FolderTreeRow
+import com.otus.mail.core.messages.presentation.components.RowTextInset
+import com.otus.mail.core.messages.presentation.sheetTree
 
 /**
  * The user's own folders in the Folders sheet, as the Move to sheet lists them, with a checkbox

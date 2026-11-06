@@ -1,12 +1,13 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.people.components.ChipAvatar
-import com.otus.mail.feature.inbox.domain.AccountAddresses
-import com.otus.mail.feature.inbox.domain.DomainGroup
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.avatarOf
-import com.otus.mail.feature.inbox.domain.domainGroups
-import com.otus.mail.feature.inbox.presentation.components.chipAvatar
+import com.otus.mail.core.messages.domain.AccountAddresses
+import com.otus.mail.core.messages.domain.DomainGroup
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.avatarOf
+import com.otus.mail.core.messages.domain.domainGroups
+import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.settings.presentation.title
 
 /** How the sidebar header names the chosen scope. */
 data class ScopeHeader(

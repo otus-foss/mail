@@ -7,7 +7,7 @@ import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 
 /** The Mail behavior page's Reading section: marking mail read, quoted text, and the Read view's quick view. */
 @Composable

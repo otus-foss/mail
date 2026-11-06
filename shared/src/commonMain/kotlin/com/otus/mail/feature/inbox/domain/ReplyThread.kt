@@ -1,5 +1,8 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OriginalMessage
+import com.otus.mail.core.messages.domain.original
 import kotlinx.datetime.LocalDate
 
 /** A message earlier in the thread a reply answers: who sent it, when, and the start of its text. */

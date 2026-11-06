@@ -9,12 +9,12 @@ import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.messages.domain.FolderKind
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.key
 import com.otus.mail.feature.folders.presentation.NUDGE_COLORS
-import com.otus.mail.feature.inbox.domain.FolderKind
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.presentation.ListNudge
 import com.otus.mail.feature.inbox.presentation.RowLook
 

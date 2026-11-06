@@ -1,18 +1,22 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.domain.replyAction
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.actions.ActionSubject
-import com.otus.mail.feature.inbox.presentation.actions.MailBar
-import com.otus.mail.feature.inbox.presentation.actions.OfferedAction
-import com.otus.mail.feature.inbox.presentation.actions.barFor
-import com.otus.mail.feature.inbox.presentation.actions.offer
-import com.otus.mail.feature.inbox.presentation.actions.showsSuggestedMove
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.replyAction
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.MailBar
+import com.otus.mail.core.messages.presentation.actions.OfferedAction
+import com.otus.mail.core.messages.presentation.actions.barFor
+import com.otus.mail.core.messages.presentation.actions.offer
+import com.otus.mail.core.messages.presentation.actions.showsSuggestedMove
+import com.otus.mail.core.messages.presentation.components.MailActionBar
+import com.otus.mail.core.messages.presentation.components.MoveChoice
+import com.otus.mail.core.messages.presentation.components.rememberSuggestedMove
+import com.otus.mail.core.messages.presentation.components.replyContext
 
 /**
  * What the Read view's actions work on: filing acts on the [row], the whole conversation, while

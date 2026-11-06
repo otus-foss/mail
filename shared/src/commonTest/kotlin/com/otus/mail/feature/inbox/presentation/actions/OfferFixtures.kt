@@ -1,17 +1,18 @@
 package com.otus.mail.feature.inbox.presentation.actions
 
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.MailAttributes
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.MessageMarks
-import com.otus.mail.feature.inbox.presentation.MessageMoves
-import com.otus.mail.feature.inbox.presentation.MoveTarget
+import com.otus.mail.core.messages.domain.MailAttributes
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MessageFlag
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.MessageMarks
+import com.otus.mail.core.messages.presentation.MessageMoves
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.core.messages.presentation.actions.offer
+import com.otus.mail.core.settings.domain.MailBehavior
 
 /** Message actions with no suggestions, rules, or Read later, for testing what bars offer. */
 internal fun offerActions(

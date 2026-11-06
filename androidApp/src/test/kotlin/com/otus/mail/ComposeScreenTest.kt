@@ -22,11 +22,11 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OriginalMessage
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OriginalMessage
+import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SentMessage
 import com.otus.mail.feature.inbox.domain.earliestPick

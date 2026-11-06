@@ -1,10 +1,10 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.mail.compose.elements.RichText
-import com.otus.mail.feature.inbox.domain.AttachmentBlob
-import com.otus.mail.feature.inbox.domain.DraftAttachment
-import com.otus.mail.feature.inbox.domain.PhotoCleaning
-import com.otus.mail.feature.inbox.domain.PickedFile
+import com.otus.mail.core.files.PickedFile
+import com.otus.mail.core.messages.domain.AttachmentBlob
+import com.otus.mail.core.messages.domain.DraftAttachment
+import com.otus.mail.core.settings.domain.PhotoCleaning
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent

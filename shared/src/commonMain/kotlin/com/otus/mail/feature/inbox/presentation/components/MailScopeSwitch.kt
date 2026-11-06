@@ -1,8 +1,8 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.feature.inbox.domain.AccountAddresses
-import com.otus.mail.feature.inbox.domain.AddressPins
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.AccountAddresses
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.settings.domain.AddressPins
 import com.otus.mail.feature.inbox.presentation.ScopeHeader
 import com.otus.mail.feature.inbox.presentation.scopeHeader
 

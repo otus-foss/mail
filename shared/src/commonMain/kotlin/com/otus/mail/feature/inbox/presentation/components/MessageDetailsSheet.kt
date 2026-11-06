@@ -15,8 +15,8 @@ import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailHeader
-import com.otus.mail.feature.inbox.domain.MailMessage
 
 /**
  * View details: [message]'s raw headers from [loadHeaders], each name in `text3` over its value,

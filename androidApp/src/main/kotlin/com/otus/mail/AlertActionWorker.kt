@@ -10,9 +10,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.presentation.actions.runAlertButton
+import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.feature.notifications.domain.NewMail
+import com.otus.mail.feature.notifications.presentation.runAlertButton
 
 /**
  * Runs the change of an alert's button once the device has a network. A refused or unreachable

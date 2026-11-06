@@ -8,12 +8,12 @@ import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_calendar_today
 import com.otus.designsystem.resources.symbol_straighten
 import com.otus.designsystem.resources.symbol_swap_vert
-import com.otus.mail.feature.inbox.domain.DateFilter
-import com.otus.mail.feature.inbox.domain.FilterSort
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.SizeFilter
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 
 /** One applied choice as its [pill], and what a tap on it does: [tap] removes it. */

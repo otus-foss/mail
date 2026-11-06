@@ -8,10 +8,10 @@ import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
-import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.screens.PinnedSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.SidebarSettingsScreen

@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.feature.inbox.domain.ActionBarMode
+import com.otus.mail.core.messages.domain.ActionBarMode
 
 /** The action bar mode as settings name it. */
 internal val ActionBarMode.label: String

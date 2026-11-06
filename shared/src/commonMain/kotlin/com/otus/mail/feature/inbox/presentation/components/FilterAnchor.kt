@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 

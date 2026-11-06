@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftFailure
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftFailure
+import com.otus.mail.core.messages.domain.MailSender
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent

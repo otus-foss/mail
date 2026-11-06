@@ -4,6 +4,8 @@ import com.otus.jmap.JmapConnections
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
+import com.otus.mail.core.messages.data.JmapEmailWriter
 
 /** The email writer the app builds, over [connections] and [cache], with changes kept in [queue]. */
 internal fun emailWriter(

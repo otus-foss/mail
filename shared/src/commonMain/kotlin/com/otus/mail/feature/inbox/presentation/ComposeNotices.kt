@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.DraftFailure
+import com.otus.mail.core.messages.domain.DraftFailure
 
 /** What the compose page says under its header when a save fails. */
 internal val DraftFailure.notice: String

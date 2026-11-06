@@ -2,9 +2,9 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.QuickFacet
 
 /** Whether this scope reads mail of the login with [loginId]. */
 internal fun MailScope.reads(loginId: String): Boolean =

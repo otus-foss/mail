@@ -12,12 +12,12 @@ import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.core.mailbox.pathText
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.RuleSheetDraft
 import com.otus.mail.feature.folders.presentation.components.AddRuleSheet
 import com.otus.mail.feature.folders.presentation.sheetActions
-import com.otus.mail.feature.inbox.domain.MailMessage
 
 /** "Rule for sender" for [address] in [accountId]; [folderId] is set once the user picks a folder. */
 internal data class SenderRule(

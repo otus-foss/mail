@@ -2,8 +2,10 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.searchMessages
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test

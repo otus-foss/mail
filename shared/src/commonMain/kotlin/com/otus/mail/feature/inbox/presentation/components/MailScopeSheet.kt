@@ -10,11 +10,12 @@ import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.shared.selection.components.ScopeOption
 import com.otus.designsystem.shared.selection.components.ScopeRow
-import com.otus.mail.feature.inbox.domain.AccountAddresses
-import com.otus.mail.feature.inbox.domain.AddressPins
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.avatarOf
-import com.otus.mail.feature.inbox.domain.searchAddresses
+import com.otus.mail.core.messages.domain.AccountAddresses
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.avatarOf
+import com.otus.mail.core.messages.domain.searchAddresses
+import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.settings.domain.AddressPins
 import com.otus.mail.feature.inbox.presentation.ALL_MAIL
 import com.otus.mail.feature.inbox.presentation.allMailAvatars
 import com.otus.mail.feature.inbox.presentation.allMailSummary

@@ -8,9 +8,9 @@ import com.otus.designsystem.shared.controls.elements.ChipLabel
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FolderStackChip
 import com.otus.designsystem.shared.filters.components.StackedFolder
-import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.key

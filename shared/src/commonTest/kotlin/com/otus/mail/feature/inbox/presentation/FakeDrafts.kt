@@ -1,11 +1,11 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftException
-import com.otus.mail.feature.inbox.domain.DraftFailure
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftException
+import com.otus.mail.core.messages.domain.DraftFailure
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.SendIdentity
 import kotlinx.coroutines.Deferred
 
 /** A Drafts folder in memory; stored copies get the ids `d1`, `d2`, and so on. */

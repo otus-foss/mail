@@ -14,9 +14,10 @@ import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.shared.people.components.ChipAvatar
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.domain.participants
-import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 
 /**

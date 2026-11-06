@@ -3,8 +3,8 @@ package com.otus.mail.feature.inbox.presentation.components
 import com.otus.designsystem.mail.folders.components.FolderName
 import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.domain.displayPaths
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.displayPaths
 
 /** [folder] as a strip or details row names it, showing [path]: its own color, or its role's outlined icon. */
 internal fun folderName(

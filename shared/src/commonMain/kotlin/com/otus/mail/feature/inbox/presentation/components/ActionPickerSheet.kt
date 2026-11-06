@@ -21,13 +21,14 @@ import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionTarget
-import com.otus.mail.feature.inbox.domain.BarButton
-import com.otus.mail.feature.inbox.domain.BarSlot
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.presentation.actions.label
-import com.otus.mail.feature.inbox.presentation.actions.symbol
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.ActionTarget
+import com.otus.mail.core.messages.domain.BarButton
+import com.otus.mail.core.messages.domain.BarSlot
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.presentation.actions.label
+import com.otus.mail.core.messages.presentation.actions.symbol
+import com.otus.mail.core.messages.presentation.components.RowTextInset
 
 /**
  * Picks the action for [slot] of [layout] from [choices], grouped by what each acts on and narrowed

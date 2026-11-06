@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.Draft
 import com.otus.storage.StringMapStore
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer

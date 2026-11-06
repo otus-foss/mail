@@ -3,7 +3,13 @@ package com.otus.mail.feature.inbox.data
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.Keywords
-import com.otus.mail.feature.inbox.domain.MailConversation
+import com.otus.mail.core.messages.data.ThreadView
+import com.otus.mail.core.messages.data.inConversation
+import com.otus.mail.core.messages.data.merged
+import com.otus.mail.core.messages.data.mergedByThread
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailConversation
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals

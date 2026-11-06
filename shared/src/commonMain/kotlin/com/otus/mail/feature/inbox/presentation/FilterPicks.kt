@@ -1,8 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.SenderKey
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.SenderKey
 
 /** Whether [person]'s mail is kept: one of their addresses is among the chosen senders. */
 fun InboxFilters.hasSender(person: FilterPerson): Boolean = from.any { it.overlaps(person.key) }

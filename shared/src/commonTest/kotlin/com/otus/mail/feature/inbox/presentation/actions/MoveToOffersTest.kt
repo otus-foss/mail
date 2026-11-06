@@ -1,9 +1,12 @@
 package com.otus.mail.feature.inbox.presentation.actions
 
-import com.otus.mail.feature.inbox.domain.BarButton.MoveTo
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.presentation.MoveTarget
+import com.otus.mail.core.messages.domain.BarButton.MoveTo
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.label
+import com.otus.mail.core.messages.presentation.actions.offer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

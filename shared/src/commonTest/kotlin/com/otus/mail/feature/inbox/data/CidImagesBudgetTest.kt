@@ -6,8 +6,8 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.feature.inbox.domain.MessageContent
-import com.otus.mail.feature.inbox.domain.MessageHtml
+import com.otus.mail.core.messages.domain.MessageContent
+import com.otus.mail.core.messages.domain.MessageHtml
 import com.otus.mail.testing.DOWNLOAD_SESSION
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond

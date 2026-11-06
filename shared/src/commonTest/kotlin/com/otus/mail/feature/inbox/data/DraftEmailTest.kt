@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.feature.inbox.domain.AttachmentBlob
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftAttachment
-import com.otus.mail.feature.inbox.domain.Signature
+import com.otus.mail.core.messages.domain.AttachmentBlob
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftAttachment
+import com.otus.mail.core.messages.domain.Signature
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive

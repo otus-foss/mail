@@ -22,17 +22,17 @@ import com.otus.designsystem.mail.read.components.AlsoInStrip
 import com.otus.designsystem.shared.rows.components.rememberUnfold
 import com.otus.designsystem.theme.tokens.content.ReadTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailingList
-import com.otus.mail.feature.inbox.domain.MessageContent
-import com.otus.mail.feature.inbox.domain.folderHint
-import com.otus.mail.feature.inbox.domain.inJunk
-import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailingList
+import com.otus.mail.core.messages.domain.MessageContent
+import com.otus.mail.core.messages.domain.folderHint
+import com.otus.mail.core.messages.domain.inJunk
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.shortLabel
 import com.otus.mail.feature.inbox.presentation.PageBody
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
-import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import com.otus.mail.feature.inbox.presentation.read.subtitle
 import com.otus.settings.presentation.components.LocalDateFormatter
 

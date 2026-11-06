@@ -4,10 +4,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.presentation.actions.buttonLabel
-import com.otus.mail.feature.inbox.presentation.actions.opensMailFromAlert
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.presentation.actions.buttonLabel
 import com.otus.mail.feature.notifications.domain.NewMail
+import com.otus.mail.feature.notifications.presentation.opensMailFromAlert
 
 /** The [action] button for the alert about [mail]: [AlertActionReceiver] hears it, or Mail opens a reply. */
 internal fun Context.alertAction(

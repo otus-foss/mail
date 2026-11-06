@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.Keywords
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftAttachment
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftAttachment
+import com.otus.mail.core.messages.domain.MailSender
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder

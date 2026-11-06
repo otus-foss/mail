@@ -21,16 +21,16 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.DevicePrivacy
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.PhotoCleaning
-import com.otus.mail.feature.inbox.domain.RemoteImages
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.PRIVACY_TITLE
-import com.otus.mail.feature.inbox.presentation.allowedSummary
+import com.otus.mail.core.messages.domain.DevicePrivacy
+import com.otus.mail.core.messages.domain.RemoteImages
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.PhotoCleaning
+import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.PRIVACY_TITLE
+import com.otus.mail.core.settings.presentation.allowedSummary
+import com.otus.mail.core.settings.presentation.description
+import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.inbox.presentation.components.AvatarSettings
-import com.otus.mail.feature.inbox.presentation.description
-import com.otus.mail.feature.inbox.presentation.title
 
 /**
  * Settings › Privacy & security: when mail loads images from other servers, chosen in a sheet, who

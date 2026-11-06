@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.avatar.AvatarOptions
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 
 internal const val MAX_AUTO_PAGES = 4
 

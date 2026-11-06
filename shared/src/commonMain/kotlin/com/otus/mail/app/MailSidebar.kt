@@ -12,14 +12,14 @@ import com.otus.designsystem.shared.sidebar.components.SidebarHeader
 import com.otus.designsystem.shared.sidebar.components.SidebarState
 import com.otus.designsystem.shared.sidebar.elements.SidebarDivider
 import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.settings.domain.SidebarSection
+import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.components.FolderColorSheet
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.SidebarSection
 import com.otus.mail.feature.inbox.presentation.SidebarCounter
 import com.otus.mail.feature.inbox.presentation.scopeHeader
-import com.otus.mail.feature.inbox.presentation.title
 
 /**
  * The chosen [scope] in the header, over the pinned mailboxes and the user's shared folders in

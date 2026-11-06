@@ -18,8 +18,8 @@ import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.shared.actionbar.components.BarMorph
 import com.otus.designsystem.shared.actionbar.components.BarNotice
 import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.recipients
 import com.otus.settings.presentation.components.LocalDateFormatter

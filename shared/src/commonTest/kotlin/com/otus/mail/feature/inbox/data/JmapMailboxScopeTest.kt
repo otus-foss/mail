@@ -5,8 +5,8 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.testing.stalwartLike
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond

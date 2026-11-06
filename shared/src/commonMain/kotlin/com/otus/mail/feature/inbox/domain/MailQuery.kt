@@ -1,5 +1,8 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.QuickFacet
+
 /**
  * [filters] with what the server needs to run them: each login's chosen folder ids with
  * subfolders already added, each login's Read later folder, each login's own [addresses], and the

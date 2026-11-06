@@ -1,9 +1,9 @@
 package com.otus.mail
 
-import com.otus.mail.feature.inbox.domain.AddressPins
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.readPins
-import com.otus.mail.feature.inbox.domain.writePins
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.settings.domain.AddressPins
+import com.otus.mail.core.settings.domain.readPins
+import com.otus.mail.core.settings.domain.writePins
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

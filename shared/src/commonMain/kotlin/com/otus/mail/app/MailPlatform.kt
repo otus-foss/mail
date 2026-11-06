@@ -1,6 +1,6 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.inbox.domain.DevicePrivacy
+import com.otus.mail.core.messages.domain.DevicePrivacy
 import kotlin.time.Instant
 
 /**

@@ -1,16 +1,16 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.DateFilter
-import com.otus.mail.feature.inbox.domain.FoundPerson
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.PeopleField
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.PeopleField
-import com.otus.mail.feature.inbox.domain.ReadStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.advanceTimeBy

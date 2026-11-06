@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

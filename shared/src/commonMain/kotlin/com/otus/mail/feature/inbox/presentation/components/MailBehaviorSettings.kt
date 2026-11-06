@@ -17,14 +17,14 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.sectionSummary
+import com.otus.mail.core.settings.presentation.summary
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.inboxSummary
-import com.otus.mail.feature.inbox.presentation.sectionSummary
-import com.otus.mail.feature.inbox.presentation.summary
 
 /** Mail's row in the Appearance page's Look section: the mail list's page, opened with [onMailList]. */
 @Composable

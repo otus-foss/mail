@@ -1,6 +1,14 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailConversation
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.ThreadEmail
+import com.otus.mail.core.messages.domain.ThreadMember
+import com.otus.mail.core.messages.domain.listing
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

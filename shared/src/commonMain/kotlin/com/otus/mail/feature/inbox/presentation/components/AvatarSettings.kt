@@ -16,8 +16,8 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.presentation.ICONS_UNAVAILABLE
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.ICONS_UNAVAILABLE
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 
 /**
  * Whether avatars load website icons and contacts from every account. Icons from names where the

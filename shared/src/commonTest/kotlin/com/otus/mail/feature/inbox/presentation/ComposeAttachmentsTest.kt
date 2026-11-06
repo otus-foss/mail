@@ -5,11 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import com.otus.designsystem.mail.compose.elements.RichText
-import com.otus.mail.feature.inbox.domain.AttachmentBlob
-import com.otus.mail.feature.inbox.domain.DraftAttachment
-import com.otus.mail.feature.inbox.domain.PickedFile
-import com.otus.mail.feature.inbox.domain.UploadException
-import com.otus.mail.feature.inbox.domain.UploadFailure
+import com.otus.mail.core.files.PickedFile
+import com.otus.mail.core.files.UploadException
+import com.otus.mail.core.files.UploadFailure
+import com.otus.mail.core.messages.domain.AttachmentBlob
+import com.otus.mail.core.messages.domain.DraftAttachment
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch

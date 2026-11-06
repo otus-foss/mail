@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
 import androidx.compose.runtime.saveable.SaverScope
-import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailboxScope
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

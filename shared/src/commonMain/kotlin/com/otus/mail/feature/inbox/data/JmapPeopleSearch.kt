@@ -9,7 +9,6 @@ import com.otus.jmap.anyOf
 import com.otus.jmap.filterCondition
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
-import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailAddressKey
@@ -17,11 +16,12 @@ import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.feature.inbox.domain.AddressBook
-import com.otus.mail.feature.inbox.domain.FoundPerson
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.PeopleField
-import com.otus.mail.feature.inbox.domain.PeopleSearch
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.AddressBook
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.PeopleField
+import com.otus.mail.core.messages.domain.PeopleSearch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope

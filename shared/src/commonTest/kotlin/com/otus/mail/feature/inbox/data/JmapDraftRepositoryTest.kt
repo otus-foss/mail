@@ -3,12 +3,12 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftException
-import com.otus.mail.feature.inbox.domain.DraftFailure
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftException
+import com.otus.mail.core.messages.domain.DraftFailure
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION

@@ -1,6 +1,9 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OwnAddresses
 
 /** Someone the user deals with often: as they appear on mail, and whether they sent [unread] mail. */
 data class FrequentSender(

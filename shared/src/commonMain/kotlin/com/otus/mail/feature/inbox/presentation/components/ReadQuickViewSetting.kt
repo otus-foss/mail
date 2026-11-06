@@ -13,8 +13,8 @@ import com.otus.designsystem.shared.selection.components.OrderedChoice
 import com.otus.designsystem.shared.selection.components.OrderedChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.ReadQuickModule
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.ReadQuickModule
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.jetbrains.compose.resources.DrawableResource
 
 /** The Reading setting for what the Read view's quick view shows, with the sheet that picks it. */

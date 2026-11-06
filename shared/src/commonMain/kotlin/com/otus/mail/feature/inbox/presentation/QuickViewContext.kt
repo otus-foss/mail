@@ -1,6 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.QuickViewModule
+import com.otus.mail.core.settings.domain.QuickViewModule
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.title
 import org.jetbrains.compose.resources.DrawableResource
 
 /** A folder the quick view's Jump to row opens: its [title], [icon], and [onOpen]. */

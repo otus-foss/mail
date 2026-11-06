@@ -1,17 +1,18 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.core.files.SavedFiles
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.RemoteImages
+import com.otus.mail.core.messages.domain.SenderBlocks
+import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.KnownPeople
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.MessageHeaders
 import com.otus.mail.feature.inbox.domain.MessagePrinter
 import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.OfflineAttachments
-import com.otus.mail.feature.inbox.domain.RemoteImages
-import com.otus.mail.feature.inbox.domain.SavedFiles
-import com.otus.mail.feature.inbox.domain.SenderBlocks
 import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
 import com.otus.mail.feature.inbox.presentation.components.PersonSheet
 import kotlinx.datetime.LocalDate

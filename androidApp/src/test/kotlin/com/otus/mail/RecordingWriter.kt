@@ -1,9 +1,9 @@
 package com.otus.mail
 
-import com.otus.mail.feature.inbox.domain.Deletion
-import com.otus.mail.feature.inbox.domain.EmailWriter
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.core.messages.domain.Deletion
+import com.otus.mail.core.messages.domain.EmailWriter
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageFlag
 
 /** A server that takes every change and only records which emails each was for. */
 internal class RecordingWriter : EmailWriter {

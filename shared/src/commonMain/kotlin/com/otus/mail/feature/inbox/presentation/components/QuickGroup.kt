@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.core.messages.domain.QuickFacet
 
 /** A captioned group of Quick filters on the filter panel's main page, in page order. */
 internal enum class QuickGroup(

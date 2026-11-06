@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.InboxContents
+import com.otus.mail.core.messages.presentation.ownFolders
+import com.otus.mail.core.settings.domain.InboxContents
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -1,7 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.label
 import org.jetbrains.compose.resources.DrawableResource
 
 /**

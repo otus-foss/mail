@@ -12,8 +12,8 @@ import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.overlays.components.ListSheet
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxSearchSaver
 

@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
 
 /** A change shown before the server saved it. Call [confirm] when the server saves it, or [rollBack]. */
 internal class LocalChange(

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.messages.presentation.delete
 import kotlinx.datetime.LocalDateTime
 
 /** Where the compose page goes when it closes, and what it hands over on the way. */

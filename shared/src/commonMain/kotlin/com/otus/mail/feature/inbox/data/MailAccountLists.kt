@@ -8,6 +8,11 @@ import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.WantedMail
+import com.otus.mail.core.messages.data.boxes
+import com.otus.mail.core.messages.data.fetchMail
+import com.otus.mail.core.messages.data.memberIds
+import com.otus.mail.core.messages.data.saveMail
 
 /** The lists a load keeps for a login, given its mailboxes. */
 internal typealias ListingsOf = (List<MailFolder>) -> List<ListingQuery>

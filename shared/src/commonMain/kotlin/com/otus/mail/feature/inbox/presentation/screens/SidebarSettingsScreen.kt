@@ -20,16 +20,16 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.SidebarCount
-import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.SidebarSection
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.PINNED_UNAVAILABLE
+import com.otus.mail.core.settings.domain.SidebarCount
+import com.otus.mail.core.settings.domain.SidebarLayout
+import com.otus.mail.core.settings.domain.SidebarSection
+import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.PINNED_UNAVAILABLE
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.label
+import com.otus.mail.core.settings.presentation.pinnedSummary
+import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
-import com.otus.mail.feature.inbox.presentation.icon
-import com.otus.mail.feature.inbox.presentation.label
-import com.otus.mail.feature.inbox.presentation.pinnedSummary
-import com.otus.mail.feature.inbox.presentation.title
 
 /**
  * Arranges the sidebar for every account. Drag a section's handle to move it, or switch it off to

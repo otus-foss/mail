@@ -23,18 +23,18 @@ import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.shared.swipe.components.SwipeToDismiss
 import com.otus.mail.core.mail.EmailAddressKey
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageContent
-import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.domain.RemoteImages
-import com.otus.mail.feature.inbox.domain.inJunk
-import com.otus.mail.feature.inbox.domain.orderedFolders
-import com.otus.mail.feature.inbox.domain.showsRemoteImages
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageContent
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.RemoteImages
+import com.otus.mail.core.messages.domain.inJunk
+import com.otus.mail.core.messages.domain.orderedFolders
+import com.otus.mail.core.messages.domain.showsRemoteImages
+import com.otus.mail.core.messages.presentation.fullLabel
 import com.otus.mail.feature.inbox.presentation.PageBody
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
-import com.otus.mail.feature.inbox.presentation.read.fullLabel
 import com.otus.settings.presentation.components.LocalDateFormatter
 
 /**

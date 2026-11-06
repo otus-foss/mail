@@ -10,8 +10,8 @@ import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_visibility_off
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.PRIVACY_TITLE
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.PRIVACY_TITLE
 import com.otus.mail.feature.inbox.presentation.components.BehaviorIndexPages
 import com.otus.mail.feature.inbox.presentation.components.mailBehaviorIndex
 import com.otus.mail.feature.inbox.presentation.components.mailLookIndex

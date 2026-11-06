@@ -17,8 +17,8 @@ import com.otus.mail.app.WaitingStores
 import com.otus.mail.app.trimCache
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
-import com.otus.mail.feature.inbox.domain.DevicePrivacy
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.DevicePrivacy
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.storage.PreferenceMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -41,7 +41,7 @@ import com.otus.designsystem.theme.shapes.strokeBorder
 import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.editing.SignatureTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.feature.inbox.domain.SignatureImage
+import com.otus.mail.core.messages.domain.SignatureImage
 import com.otus.mail.feature.inbox.presentation.SignatureEditorState
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 import com.otus.mail.feature.inbox.presentation.components.CopySignatureSheet

@@ -26,7 +26,7 @@ import com.otus.designsystem.mail.compose.components.RichTextBody
 import com.otus.designsystem.mail.compose.elements.QuoteChip
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.RecipientField
 

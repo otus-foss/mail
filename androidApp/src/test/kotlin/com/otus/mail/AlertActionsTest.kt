@@ -9,9 +9,9 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.WorkManager
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews

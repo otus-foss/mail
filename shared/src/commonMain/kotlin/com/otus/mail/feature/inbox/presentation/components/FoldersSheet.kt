@@ -26,11 +26,13 @@ import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
-import com.otus.mail.feature.inbox.domain.FolderChange
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.presentation.folderSheetChoices
-import com.otus.mail.feature.inbox.presentation.matchesSearch
+import com.otus.mail.core.messages.domain.FolderChange
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.presentation.components.MoveSummary
+import com.otus.mail.core.messages.presentation.components.RowTextInset
+import com.otus.mail.core.messages.presentation.folderSheetChoices
+import com.otus.mail.core.messages.presentation.matchesSearch
 
 /**
  * Adds every email of [message]'s conversation to folders and takes it out of others, laid out

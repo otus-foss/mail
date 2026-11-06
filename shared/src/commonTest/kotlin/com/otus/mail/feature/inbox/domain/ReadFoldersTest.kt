@@ -1,6 +1,11 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.displayPaths
+import com.otus.mail.core.messages.domain.folderHint
+import com.otus.mail.core.messages.domain.inJunk
+import com.otus.mail.core.messages.domain.orderedFolders
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

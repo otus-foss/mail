@@ -31,10 +31,10 @@ import com.otus.designsystem.shared.sidebar.components.rememberSidebarState
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.brand.AppIconStyle
 import com.otus.designsystem.theme.motion.LocalMotionScale
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.SidebarPin
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.presentation.components.SortedMoveSheet
+import com.otus.mail.core.settings.domain.SidebarPin
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState

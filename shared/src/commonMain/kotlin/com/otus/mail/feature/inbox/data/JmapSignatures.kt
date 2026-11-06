@@ -3,12 +3,11 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.SetMethod
-import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.feature.inbox.domain.SendIdentity
-import com.otus.mail.feature.inbox.domain.Signature
+import com.otus.mail.core.messages.domain.SendIdentity
+import com.otus.mail.core.messages.domain.Signature
 import com.otus.mail.feature.inbox.domain.SignatureRepository
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

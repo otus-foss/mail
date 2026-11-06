@@ -1,8 +1,10 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.original
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.original
 import com.otus.mail.feature.inbox.domain.startDraft
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json

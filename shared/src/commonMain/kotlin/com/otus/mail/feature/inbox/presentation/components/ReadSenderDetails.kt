@@ -27,10 +27,11 @@ import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.rows.FolderTokens
 import com.otus.designsystem.theme.tokens.rows.StripTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import org.jetbrains.compose.resources.DrawableResource
 
 /**

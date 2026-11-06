@@ -5,11 +5,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import com.otus.designsystem.shared.feedback.components.ToastMessage
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.listing
-import com.otus.mail.feature.inbox.domain.original
-import com.otus.mail.feature.inbox.domain.withContent
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.listing
+import com.otus.mail.core.messages.domain.original
+import com.otus.mail.core.messages.domain.withContent
 import com.otus.mail.feature.inbox.presentation.OpenRequest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first

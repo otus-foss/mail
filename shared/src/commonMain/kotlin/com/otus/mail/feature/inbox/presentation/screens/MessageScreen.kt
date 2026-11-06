@@ -37,11 +37,13 @@ import com.otus.designsystem.theme.motion.MotionCurve
 import com.otus.designsystem.theme.motion.MotionSpeed
 import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.ReadQuickModule
-import com.otus.mail.feature.inbox.domain.withContent
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.withContent
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.components.rememberMoveChoice
+import com.otus.mail.core.messages.presentation.shortLabel
+import com.otus.mail.core.settings.domain.ReadQuickModule
 import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadState
 import com.otus.mail.feature.inbox.presentation.components.ReadActionBar
@@ -62,7 +64,6 @@ import com.otus.mail.feature.inbox.presentation.components.SwipeFeel
 import com.otus.mail.feature.inbox.presentation.components.openLink
 import com.otus.mail.feature.inbox.presentation.components.readDetailsHeight
 import com.otus.mail.feature.inbox.presentation.components.rememberFoldSwipe
-import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
 import com.otus.mail.feature.inbox.presentation.components.rememberPageLook
 import com.otus.mail.feature.inbox.presentation.components.rememberPageSwipe
 import com.otus.mail.feature.inbox.presentation.components.rememberReadActions
@@ -70,7 +71,6 @@ import com.otus.mail.feature.inbox.presentation.components.rememberReadExpansion
 import com.otus.mail.feature.inbox.presentation.components.rememberReadMenu
 import com.otus.mail.feature.inbox.presentation.components.rememberStripFolds
 import com.otus.mail.feature.inbox.presentation.components.rememberUnfoldDrag
-import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import com.otus.settings.presentation.components.LocalDateFormatter
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate

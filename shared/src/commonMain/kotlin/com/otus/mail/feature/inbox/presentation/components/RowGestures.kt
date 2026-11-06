@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
 
 /**
  * What message rows do when touched. [actions] supply their swipes, and a long press toggles a row

@@ -2,12 +2,13 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.avatar.ResolvedAvatar
 import com.otus.mail.core.mail.EmailAddressKey
-import com.otus.mail.feature.inbox.domain.FoundPerson
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.SenderKey
-import com.otus.mail.feature.inbox.domain.lastReceived
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.messages.domain.lastReceived
+import com.otus.mail.core.settings.presentation.label
 
 /**
  * One person the filter panel's From or To line matches: a person with every address they use, the most

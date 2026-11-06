@@ -8,8 +8,8 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
-import com.otus.mail.feature.inbox.domain.SavedFiles
-import com.otus.mail.feature.inbox.domain.StoredFile
+import com.otus.mail.core.files.SavedFiles
+import com.otus.mail.core.files.StoredFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

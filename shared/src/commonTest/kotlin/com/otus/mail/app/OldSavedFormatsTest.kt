@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.SidebarPin
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.domain.SidebarPin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

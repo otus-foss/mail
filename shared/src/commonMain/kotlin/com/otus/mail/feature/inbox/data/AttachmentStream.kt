@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
 
 /** Streams an attached file from the server. */
 fun interface AttachmentStream {

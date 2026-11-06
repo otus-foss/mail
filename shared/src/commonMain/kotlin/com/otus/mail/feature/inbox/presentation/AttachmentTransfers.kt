@@ -4,11 +4,12 @@ import androidx.compose.runtime.mutableStateMapOf
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.files.SavedFiles
+import com.otus.mail.core.files.StoredFile
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.OfflineAttachments
-import com.otus.mail.feature.inbox.domain.SavedFiles
-import com.otus.mail.feature.inbox.domain.StoredFile
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged

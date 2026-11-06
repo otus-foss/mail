@@ -1,13 +1,13 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.feature.inbox.domain.DevicePrivacy
-import com.otus.mail.feature.inbox.domain.FilterLayout
-import com.otus.mail.feature.inbox.domain.FilterSection
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailListLayout
-import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.SidebarSection
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.DevicePrivacy
+import com.otus.mail.core.settings.domain.FilterLayout
+import com.otus.mail.core.settings.domain.FilterSection
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.MailListLayout
+import com.otus.mail.core.settings.domain.SidebarLayout
+import com.otus.mail.core.settings.domain.SidebarSection
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.settings.presentation.SettingsItem
 import com.otus.settings.presentation.search
 import com.otus.settings.presentation.settingsIndex

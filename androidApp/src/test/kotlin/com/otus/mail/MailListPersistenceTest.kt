@@ -1,11 +1,11 @@
 package com.otus.mail
 
 import android.content.Context
-import com.otus.mail.feature.inbox.domain.DateStyle
-import com.otus.mail.feature.inbox.domain.ListOrder
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailListLayout
-import com.otus.mail.feature.inbox.domain.PreviewLines
+import com.otus.mail.core.settings.domain.DateStyle
+import com.otus.mail.core.settings.domain.ListOrder
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.MailListLayout
+import com.otus.mail.core.settings.domain.PreviewLines
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

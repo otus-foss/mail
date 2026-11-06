@@ -10,8 +10,8 @@ import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.CountBadge
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.panels.components.ContextPanelScope
-import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.ReadStatus
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
 import org.jetbrains.compose.resources.DrawableResource

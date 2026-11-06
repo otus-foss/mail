@@ -7,8 +7,8 @@ import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.toMailFailure
+import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
-import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
 import kotlinx.serialization.json.JsonObject

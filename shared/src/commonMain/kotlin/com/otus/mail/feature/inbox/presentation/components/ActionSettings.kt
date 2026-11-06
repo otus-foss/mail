@@ -18,10 +18,10 @@ import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.actions.label
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.presentation.actions.label
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.jetbrains.compose.resources.DrawableResource
 
 /**

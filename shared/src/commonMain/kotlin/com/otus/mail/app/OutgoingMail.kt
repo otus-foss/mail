@@ -4,7 +4,7 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.OutboxProblem

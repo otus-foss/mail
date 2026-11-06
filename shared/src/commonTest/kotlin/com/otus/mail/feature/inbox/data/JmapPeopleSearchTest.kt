@@ -6,8 +6,8 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.PeopleField
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.PeopleField
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test

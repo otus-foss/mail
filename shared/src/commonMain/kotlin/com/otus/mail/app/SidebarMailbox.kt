@@ -19,15 +19,15 @@ import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.combinedFolders
+import com.otus.mail.core.settings.domain.InboxContents
+import com.otus.mail.core.settings.domain.MailboxStyle
+import com.otus.mail.core.settings.domain.PinSize
+import com.otus.mail.core.settings.domain.SidebarLayout
+import com.otus.mail.core.settings.domain.SidebarPin
+import com.otus.mail.core.settings.presentation.tileSize
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
-import com.otus.mail.feature.inbox.domain.InboxContents
-import com.otus.mail.feature.inbox.domain.MailboxStyle
-import com.otus.mail.feature.inbox.domain.PinSize
-import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.SidebarPin
 import com.otus.mail.feature.inbox.presentation.SidebarCounter
-import com.otus.mail.feature.inbox.presentation.tileSize
 import org.jetbrains.compose.resources.DrawableResource
 
 /**

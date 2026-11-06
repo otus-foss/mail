@@ -1,10 +1,12 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageContent
+import com.otus.mail.core.messages.presentation.empty
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
 
 /**

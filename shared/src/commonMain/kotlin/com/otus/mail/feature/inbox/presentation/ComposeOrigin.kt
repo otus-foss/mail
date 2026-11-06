@@ -1,13 +1,13 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.avatar.ResolvedAvatar
-import com.otus.mail.feature.inbox.domain.AddressBook
-import com.otus.mail.feature.inbox.domain.AttachmentFiles
+import com.otus.mail.core.files.AttachmentFiles
+import com.otus.mail.core.messages.domain.AddressBook
+import com.otus.mail.core.messages.domain.SendIdentity
+import com.otus.mail.core.settings.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.PhotoCleaning
 import com.otus.mail.feature.inbox.domain.ScheduledSends
-import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 
 /** An account a draft can be sent from, by its [name] in the Send-from list. */

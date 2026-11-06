@@ -1,11 +1,11 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.SendIdentity
+import com.otus.mail.core.messages.domain.SendIdentityKey
+import com.otus.mail.core.messages.domain.Signature
 import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.SendIdentity
-import com.otus.mail.feature.inbox.domain.SendIdentityKey
-import com.otus.mail.feature.inbox.domain.Signature
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent

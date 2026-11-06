@@ -1,10 +1,10 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.InboxState
-import com.otus.mail.feature.inbox.presentation.MessageActions
 
 /**
  * The bar under the list: the selection's while rows are selected, none while searching, and the

@@ -23,7 +23,7 @@ import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.designsystem.theme.typography.TypeScale
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.MailScopeChoice
 
 /**
  * The account switcher, unfolded from the inbox's control panel [collapsedHeight] tall: All mail,

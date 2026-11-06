@@ -20,9 +20,10 @@ import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.feature.inbox.domain.SendIdentity
-import com.otus.mail.feature.inbox.domain.SendIdentityKey
-import com.otus.mail.feature.inbox.domain.signature
+import com.otus.mail.core.messages.domain.SendIdentity
+import com.otus.mail.core.messages.domain.SendIdentityKey
+import com.otus.mail.core.messages.domain.signature
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.presentation.SignaturesState
 
 /**

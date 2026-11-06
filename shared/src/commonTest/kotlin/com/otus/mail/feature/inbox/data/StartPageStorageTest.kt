@@ -1,7 +1,8 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.SidebarPin
+import com.otus.mail.core.settings.data.KeyValueMailBehaviorStore
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.storage.KeyValueEditor
 import com.otus.storage.KeyValueStore
 import kotlin.test.Test

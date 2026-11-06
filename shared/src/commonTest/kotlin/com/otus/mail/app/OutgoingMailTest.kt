@@ -1,6 +1,6 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.OutboxStore
 import com.otus.mail.feature.inbox.domain.SendCheck

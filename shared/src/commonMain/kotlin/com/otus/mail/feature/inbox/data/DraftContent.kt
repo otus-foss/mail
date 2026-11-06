@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.feature.inbox.domain.Draft
+import com.otus.mail.core.messages.domain.Draft
 
 /** What the user wrote, then the signature after a "-- " line, then the quote, each after a blank line. */
 internal fun Draft.textContent(): String =

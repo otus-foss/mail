@@ -2,10 +2,12 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.feature.inbox.domain.FilterLayout
-import com.otus.mail.feature.inbox.domain.FolderRef
-import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.QuickFacet
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.settings.domain.FilterLayout
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.label
 import org.jetbrains.compose.resources.DrawableResource
 
 /** One login's folder as the filter panel lists it. [ancestors] name its parents, top level first. */

@@ -1,13 +1,13 @@
 package com.otus.mail.feature.inbox.presentation.read
 
 import com.otus.mail.core.mailbox.pathText
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.isOwn
+import com.otus.mail.core.messages.domain.otherReply
+import com.otus.mail.core.messages.domain.replyAction
 import com.otus.mail.feature.inbox.domain.Participant
-import com.otus.mail.feature.inbox.domain.isOwn
-import com.otus.mail.feature.inbox.domain.otherReply
-import com.otus.mail.feature.inbox.domain.replyAction
 
 /**
  * The Read view page the ⋯ menu acts on: its [message], at [index] of [count] in its conversation,

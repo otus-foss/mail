@@ -3,11 +3,12 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
-import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.isDraft
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.threadEmails
+import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ThreadHistory
 import com.otus.mail.feature.inbox.domain.ThreadMessage
 import kotlinx.datetime.TimeZone

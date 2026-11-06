@@ -2,6 +2,8 @@ package com.otus.mail.app
 
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.SenderBlocks
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.FolderRepository
@@ -11,8 +13,6 @@ import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.RuleOutcome
 import com.otus.mail.feature.folders.domain.withAdded
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.SenderBlocks
 
 /**
  * Blocks a sender with a folder rule that files their mail into the account's Junk folder, so the

@@ -13,13 +13,13 @@ import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_newspaper
 import com.otus.designsystem.resources.symbol_reply
-import com.otus.mail.feature.inbox.domain.DateFilter
-import com.otus.mail.feature.inbox.domain.FilterSort
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.SizeFilter
-import com.otus.mail.feature.inbox.domain.TypeFacet
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.TypeFacet
 import org.jetbrains.compose.resources.DrawableResource
 
 internal val ReadStatus.label: String

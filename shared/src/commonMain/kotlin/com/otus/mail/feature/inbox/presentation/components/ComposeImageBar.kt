@@ -16,8 +16,8 @@ import com.otus.designsystem.resources.symbol_short_text
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.InputSheet
 import com.otus.designsystem.shared.overlays.components.OptionsItem
-import com.otus.mail.feature.inbox.domain.DraftAttachment
-import com.otus.mail.feature.inbox.domain.UploadFailure
+import com.otus.mail.core.files.UploadFailure
+import com.otus.mail.core.messages.domain.DraftAttachment
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.source
 

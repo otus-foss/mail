@@ -2,10 +2,11 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.testing.ADA_LOGIN
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull

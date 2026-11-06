@@ -16,14 +16,14 @@ import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_hourglass_empty
 import com.otus.designsystem.resources.symbol_reply
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.SenderKey
 import com.otus.mail.feature.inbox.domain.frequentSenders
-import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.read.kind
 import org.jetbrains.compose.resources.DrawableResource
 

@@ -1,5 +1,18 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.TypeFacet
+import com.otus.mail.core.settings.domain.InboxPill
+
 /**
  * What a page's list is narrowed to. The quick pills and the filter panel edit the same value.
  * [status], each of [quick] and [types], and each other choice must all hold. [from] senders,

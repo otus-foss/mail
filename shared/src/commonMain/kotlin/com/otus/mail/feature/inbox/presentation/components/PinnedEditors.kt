@@ -16,11 +16,11 @@ import com.otus.designsystem.shared.controls.elements.LocalIconTint
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.reorder.components.ReorderableColumn
 import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.mail.feature.inbox.domain.PinSize
-import com.otus.mail.feature.inbox.domain.SidebarLayout
+import com.otus.mail.core.settings.domain.PinSize
+import com.otus.mail.core.settings.domain.SidebarLayout
+import com.otus.mail.core.settings.presentation.pinSize
+import com.otus.mail.core.settings.presentation.tileSize
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
-import com.otus.mail.feature.inbox.presentation.pinSize
-import com.otus.mail.feature.inbox.presentation.tileSize
 
 /**
  * The [pinned] mailboxes as the sidebar's grid draws them, in [layout]'s sizes: hold a tile to

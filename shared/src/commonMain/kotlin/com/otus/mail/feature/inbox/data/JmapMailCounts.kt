@@ -8,8 +8,8 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope

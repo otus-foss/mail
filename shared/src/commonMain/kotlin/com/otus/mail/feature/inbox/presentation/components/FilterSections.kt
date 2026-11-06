@@ -17,12 +17,12 @@ import com.otus.designsystem.shared.filters.components.FilterSection
 import com.otus.designsystem.shared.overlays.components.onPressDown
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
-import com.otus.mail.feature.inbox.domain.FilterSection
-import com.otus.mail.feature.inbox.domain.FilterSort
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.TypeFacet
+import com.otus.mail.core.settings.domain.FilterSection
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.SizeFilter
-import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import org.jetbrains.compose.resources.DrawableResource
 

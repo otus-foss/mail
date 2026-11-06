@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test

@@ -3,11 +3,11 @@ package com.otus.mail.feature.inbox.data
 import com.otus.mail.core.files.DownloadFolder
 import com.otus.mail.core.files.DownloadFolderException
 import com.otus.mail.core.files.StoredEntry
+import com.otus.mail.core.files.StoredFile
 import com.otus.mail.core.files.StoredKey
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OfflineAttachments
-import com.otus.mail.feature.inbox.domain.StoredFile
 import com.otus.storage.storedName
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

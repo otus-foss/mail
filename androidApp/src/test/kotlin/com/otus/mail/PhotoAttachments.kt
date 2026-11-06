@@ -1,9 +1,9 @@
 package com.otus.mail
 
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.files.StoredFile
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OfflineAttachments
-import com.otus.mail.feature.inbox.domain.StoredFile
 
 /** Gives every image file the bytes of [photo] for its thumbnail; nothing is stored on the device. */
 class PhotoAttachments(

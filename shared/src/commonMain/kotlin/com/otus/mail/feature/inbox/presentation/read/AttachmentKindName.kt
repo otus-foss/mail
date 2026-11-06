@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.read
 
+import com.otus.mail.core.messages.domain.MailAttachment
 import com.otus.mail.core.text.sizeText
-import com.otus.mail.feature.inbox.domain.MailAttachment
 
 /**
  * What kind of file an attachment is, which picks its icon and the word its detail line uses. A

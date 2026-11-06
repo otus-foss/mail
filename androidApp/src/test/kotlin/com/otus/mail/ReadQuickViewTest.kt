@@ -17,9 +17,9 @@ import androidx.compose.ui.unit.dp
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.RowLook
 import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
 import org.junit.Rule

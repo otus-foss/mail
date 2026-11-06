@@ -31,12 +31,12 @@ import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.designsystem.theme.tokens.rows.InboxTokens
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.swipe
 import com.otus.mail.feature.inbox.presentation.ConversationRowModel
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.ListFrame
-import com.otus.mail.feature.inbox.presentation.actions.ActionSubject
-import com.otus.mail.feature.inbox.presentation.actions.swipe
 import com.otus.mail.feature.inbox.presentation.conversationRows
 
 @Composable

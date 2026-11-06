@@ -3,13 +3,17 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.actions.ActionSubject
-import com.otus.mail.feature.inbox.presentation.actions.barFor
-import com.otus.mail.feature.inbox.presentation.actions.offer
-import com.otus.mail.feature.inbox.presentation.actions.showsSuggestedMove
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.barFor
+import com.otus.mail.core.messages.presentation.actions.offer
+import com.otus.mail.core.messages.presentation.actions.showsSuggestedMove
+import com.otus.mail.core.messages.presentation.components.MailActionBar
+import com.otus.mail.core.messages.presentation.components.Minimized
+import com.otus.mail.core.messages.presentation.components.rememberMoveChoice
+import com.otus.mail.core.messages.presentation.components.rememberSuggestedMove
 
 /**
  * The bar for [selected] messages, which names their number beside the primary. An action they
