@@ -32,8 +32,9 @@ left, the control on the right, and large section titles. Search covers every pa
   **Date format**, and **Animations**. Nothing on it changes what Mail does.
   - **Theme** shows a phone with the inbox under the control panel, in the current colors or
     the set `ThemeRampPicker` is trying, then offers the
-    **Otus**, **Light**, **Graphite** (warm grey, after Notion), and **Black** (true black, after
-    the X app) themes as cards and seven accent swatches. The plus swatch opens a **Custom color**
+    **Otus**, **Ink**, **Light**, and **Black** themes as cards, then **System** on Android 12 and
+    newer, and seven accent swatches. System uses the device's Material You colors and follows its
+    light or dark mode; it hides the accent swatches and Colors. The plus swatch opens a **Custom color**
     sheet with hue and intensity sliders, a hex field, and the shades in each theme; Done applies
     it. **Reset to Otus** restores the default. Every choice applies to the whole app at once and
     is saved by `AndroidThemePreferenceStore` or `IosThemePreferenceStore`. Below the preview, a

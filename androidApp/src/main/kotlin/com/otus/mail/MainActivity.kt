@@ -16,6 +16,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.otus.dateformat.AndroidDateFormatPreferenceStore
+import com.otus.designsystem.theme.colors.systemTheme
 import com.otus.mail.app.App
 import com.otus.mail.app.IncognitoKeyboard
 import com.otus.mail.app.MailServices
@@ -50,7 +51,8 @@ class MainActivity : ComponentActivity() {
             take(intent)
         }
         val behaviorState = app.behavior
-        themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))
+        // A change of wallpaper or of light and dark mode recreates the activity, which reads them again.
+        themeState = ThemeSettingsState(AndroidThemePreferenceStore(this), systemTheme())
         appIconState = AppIconSettingsState(AndroidAppIconPreferenceStore(this))
         // Until Compose draws, the window shows the theme's color behind the launch animation.
         window.setBackgroundDrawable(

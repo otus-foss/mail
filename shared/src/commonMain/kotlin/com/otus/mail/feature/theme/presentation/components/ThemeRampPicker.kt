@@ -28,6 +28,7 @@ import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.designsystem.theme.colors.hslColor
 import com.otus.designsystem.theme.colors.toHsl
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.designsystem.theme.tokens.settings.ThemeTokens
 import com.otus.mail.feature.theme.domain.FULL_TURN
 import com.otus.mail.feature.theme.domain.themeRamp
@@ -65,10 +66,16 @@ fun ThemeRampPicker(
             hue = it
             touched = true
         }, hueTrack(generated.accent), "Base hue", range = 0f..FULL_TURN)
-        SegmentedToggle(MODE_OPTIONS, selected = if (light) 1 else 0, onSelect = {
-            light = it == 1
-            touched = true
-        })
+        SegmentedToggle(
+            MODE_OPTIONS,
+            selected = if (light) 1 else 0,
+            onSelect = {
+                light = it == 1
+                touched = true
+            },
+            height = FilterTokens.segmentHeight,
+            track = OtusColors.bgDark,
+        )
         ButtonPair(
             secondary =
                 PairButton("Shuffle", onClick = {
