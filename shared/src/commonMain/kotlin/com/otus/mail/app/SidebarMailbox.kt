@@ -2,17 +2,17 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import com.otus.designsystem.mail.sidebar.components.SidebarMailboxGrid
+import com.otus.designsystem.mail.sidebar.elements.SidebarInboxEntry
+import com.otus.designsystem.mail.sidebar.elements.SidebarMailboxTile
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_contacts
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.shared.controls.elements.LocalIconTint
-import com.otus.designsystem.shared.sidebar.components.SidebarMailboxGrid
 import com.otus.designsystem.shared.sidebar.elements.SidebarCount
 import com.otus.designsystem.shared.sidebar.elements.SidebarEntry
-import com.otus.designsystem.shared.sidebar.elements.SidebarInboxEntry
-import com.otus.designsystem.shared.sidebar.elements.SidebarMailboxTile
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.SENT_ROLE

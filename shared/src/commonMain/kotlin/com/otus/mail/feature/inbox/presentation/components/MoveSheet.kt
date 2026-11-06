@@ -20,6 +20,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
 import com.otus.designsystem.mail.folders.components.FolderName
 import com.otus.designsystem.mail.folders.components.SuggestedFolderRow
+import com.otus.designsystem.mail.folders.elements.DestinationPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_auto_filter
@@ -28,7 +29,6 @@ import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.shared.controls.elements.IconPill
-import com.otus.designsystem.shared.folders.elements.DestinationPill
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.designsystem.shared.selection.components.PickerSearch

@@ -5,6 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.mail.sidebar.components.EditableTile
+import com.otus.designsystem.mail.sidebar.components.SidebarTileEditor
+import com.otus.designsystem.mail.sidebar.elements.SidebarMailboxTile
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_remove
 import com.otus.designsystem.shared.controls.elements.IconButton
@@ -13,9 +16,6 @@ import com.otus.designsystem.shared.controls.elements.LocalIconTint
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.reorder.components.ReorderableColumn
 import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.designsystem.shared.sidebar.components.EditableTile
-import com.otus.designsystem.shared.sidebar.components.SidebarTileEditor
-import com.otus.designsystem.shared.sidebar.elements.SidebarMailboxTile
 import com.otus.mail.feature.inbox.domain.PinSize
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption

@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.designsystem.mail.read.elements.HtmlQuote
-import com.otus.designsystem.mail.read.elements.HtmlQuoteLevel
+import com.otus.designsystem.mail.read.html.HtmlQuote
+import com.otus.designsystem.mail.read.html.HtmlQuoteLevel
 import com.otus.mail.feature.inbox.presentation.read.HtmlQuoteSplit
 import com.otus.mail.feature.inbox.presentation.read.QuoteHeader
 import com.otus.mail.feature.inbox.presentation.read.QuoteLevelText

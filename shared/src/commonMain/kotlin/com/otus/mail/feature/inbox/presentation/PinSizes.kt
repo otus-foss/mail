@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.designsystem.shared.sidebar.elements.SidebarTileSize
+import com.otus.designsystem.mail.sidebar.elements.SidebarTileSize
 import com.otus.mail.feature.inbox.domain.PinSize
 
 val PinSize.tileSize: SidebarTileSize

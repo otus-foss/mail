@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import com.otus.designsystem.mail.folders.components.RuleChip
 import com.otus.designsystem.shared.controls.elements.Chip
-import com.otus.designsystem.shared.filters.components.RuleChip
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.elements.SelectionRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow

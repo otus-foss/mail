@@ -25,12 +25,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.max
+import com.otus.designsystem.mail.compose.elements.AddressPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_bookmark_fill
 import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.resources.symbol_self_improvement
-import com.otus.designsystem.shared.controls.elements.AddressPill
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.IconPill

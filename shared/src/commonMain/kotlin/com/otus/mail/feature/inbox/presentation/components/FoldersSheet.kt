@@ -13,12 +13,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.mail.folders.elements.DestinationPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.IconPill
-import com.otus.designsystem.shared.folders.elements.DestinationPill
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.layout.PanelTokens

@@ -5,7 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.otus.designsystem.shared.selection.components.ChoiceDialog
+import com.otus.designsystem.shared.selection.components.ChoiceOptions
+import com.otus.designsystem.shared.selection.components.ChoiceRow
+import com.otus.designsystem.shared.selection.components.ChoiceSheet
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderNode
 import com.otus.mail.feature.folders.domain.folderTree
@@ -66,11 +68,10 @@ internal fun SenderRuleSheets(states: MailStates) {
     val account = states.folders.account(request.accountId) ?: return
     val folder = request.folderId?.let(account::folder)
     if (folder == null) {
-        ChoiceDialog<FolderNode?>(
+        ChoiceSheet(
             "Sort mail from ${request.name} into",
-            account.ruleFolders(),
-            selected = null,
-            label = { it?.path.orEmpty() },
+            ChoiceOptions<FolderNode?>(account.ruleFolders(), selected = null),
+            row = { ChoiceRow(it?.path.orEmpty()) },
             onSelect = { node -> if (node != null) senderRules.choose(node.folder.id) },
             onDismiss = { senderRules.dismiss(picking = true) },
         )

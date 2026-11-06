@@ -3,6 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.mail.brand.elements.MailAppIcon
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.inbox.presentation.components.MailListPreview
@@ -31,7 +32,7 @@ internal fun AppearancePage(
         onTheme = { navigation.go(MailPage.ThemeSettings) },
         onBack = back,
         look = {
-            settings.appIcon?.let { AppIconSetting(it) }
+            settings.appIcon?.let { AppIconSetting(it) { style -> MailAppIcon(style) } }
             MailLookSettings(states.behavior.behavior) { navigation.go(MailPage.MailListSettings) }
         },
     )

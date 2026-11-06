@@ -11,12 +11,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import com.otus.designsystem.mail.compose.elements.AddressPill
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add_photo_alternate
 import com.otus.designsystem.resources.symbol_chevron_left
 import com.otus.designsystem.resources.symbol_content_copy
 import com.otus.designsystem.resources.symbol_delete
-import com.otus.designsystem.shared.controls.elements.AddressPill
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol

@@ -7,9 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.filters.components.FilterFolderRow
-import com.otus.designsystem.shared.filters.components.FolderCheck
-import com.otus.designsystem.shared.filters.components.TreeFolder
+import com.otus.designsystem.mail.folders.components.FilterFolderRow
+import com.otus.designsystem.mail.folders.components.FolderCheck
+import com.otus.designsystem.mail.folders.components.TreeFolder
 import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.folders.elements.FolderGlyph
 import com.otus.designsystem.shared.rows.components.AccountGroupRow

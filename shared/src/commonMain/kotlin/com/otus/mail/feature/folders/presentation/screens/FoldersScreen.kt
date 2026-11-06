@@ -12,10 +12,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.mail.folders.components.RuleChipLine
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.shared.actionbar.elements.BarIconButton
-import com.otus.designsystem.shared.filters.components.RuleChipLine
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.rows.components.TrailingIcons
