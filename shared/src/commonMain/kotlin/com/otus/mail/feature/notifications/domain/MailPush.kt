@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.notifications.domain
 
 /** Which mail changes a push subscription asks the server for (RFC 8620, section 7.2). */
 enum class MailPush(

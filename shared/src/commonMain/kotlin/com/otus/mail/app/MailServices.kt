@@ -62,7 +62,9 @@ import com.otus.mail.feature.inbox.data.JmapPeopleSearch
 import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
+import com.otus.mail.feature.notifications.data.PushServices
 import com.otus.mail.feature.notifications.domain.InstantPush
+import com.otus.mail.feature.notifications.domain.MailPush
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.mail.feature.read.data.AttachmentCache
@@ -96,7 +98,7 @@ class MailServices(
     internal val pickers: MailPickers = MailPickers(),
     private val host: MailPlatform = MailPlatform(),
     createClient: () -> JmapClient = { JmapClient() },
-) {
+) : PushServices {
     internal val nightly: NightlyUpdates get() = host.nightly
 
     /** The screen and keyboard protections this platform can apply. */
@@ -207,15 +209,12 @@ class MailServices(
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */
     fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, mailboxes, states)
 
-    /**
-     * Keeps each login's push subscription pointed at its push endpoint, for the changes in [push].
-     * Create one per process.
-     */
-    fun pushSubscriptions(
+    /** Create one per process. */
+    override fun pushSubscriptions(
         states: StringMapStore,
         deviceClientId: String,
         push: MailPush,
-        beforeCreate: suspend (String) -> Unit = {},
+        beforeCreate: suspend (String) -> Unit,
     ): PushSubscriptions =
         PushSubscriptions(
             connections,
@@ -240,11 +239,10 @@ class MailServices(
     /** The server signing key used to register directly with Google (RFC 9749). */
     suspend fun pushVapidKey(login: JmapLogin): String? = connections.connection(login).session().vapidPublicKey
 
-    /** Push cleanup must distinguish an empty account list from locked or unavailable storage. */
-    internal fun notificationLogins(): List<JmapLogin> = logins.logins()
+    override fun notificationLogins(): List<JmapLogin> = logins.logins()
 
-    /** The saved logins; none when storage cannot be read. Call it off the main thread. */
-    fun logins(): List<JmapLogin> =
+    /** Call it off the main thread. */
+    override fun logins(): List<JmapLogin> =
         try {
             logins.logins()
         } catch (_: LoginStoreException) {

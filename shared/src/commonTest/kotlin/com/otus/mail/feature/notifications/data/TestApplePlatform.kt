@@ -1,6 +1,4 @@
-package com.otus.mail.app
-
-import com.otus.mail.feature.notifications.data.ApplePushPlatform
+package com.otus.mail.feature.notifications.data
 
 internal class TestApplePlatform : ApplePushPlatform {
     val saved = mutableMapOf("token" to "device-token")

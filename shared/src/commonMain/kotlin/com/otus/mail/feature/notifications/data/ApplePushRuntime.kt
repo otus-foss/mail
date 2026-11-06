@@ -1,6 +1,5 @@
-package com.otus.mail.app
+package com.otus.mail.feature.notifications.data
 
-import com.otus.mail.feature.notifications.data.ApplePushPlatform
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
@@ -16,15 +15,15 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
 
 /** One per app process, shared by the Swift lifecycle and the Compose settings page. */
-open class ApplePushRuntime(
+open class ApplePushRuntime<S : PushServices>(
     private val host: ApplePushPlatform,
     baseUrl: String,
-    createServices: (InstantPush) -> MailServices,
+    createServices: (InstantPush) -> S,
     http: HttpClient = applePushHttp(),
 ) : InstantPush {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val session = ApplePushSession(host, baseUrl, http) { createServices(this) }
-    internal val mailServices: MailServices get() = session.mailServices
+    val services: S get() = session.services
     private var watching: Job? = null
     private var background: Job? = null
     override val periodicChecks: Boolean = false
@@ -41,7 +40,7 @@ open class ApplePushRuntime(
 
     fun registrationFailed() {
         session.registrationError = true
-        session.results = mailServices.logins().associate { it.id to PushDeliveryStatus.RegistrationFailed }
+        session.results = services.logins().associate { it.id to PushDeliveryStatus.RegistrationFailed }
     }
 
     fun resume() {

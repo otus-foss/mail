@@ -20,6 +20,7 @@ import com.otus.mail.feature.mailsettings.presentation.components.privacyIndex
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.mail.feature.notifications.presentation.screens.deliveryLabel
+import com.otus.mail.feature.notifications.presentation.screens.deliverySummary
 import com.otus.mail.feature.notifications.presentation.short
 import com.otus.mail.feature.notifications.presentation.title
 import com.otus.settings.presentation.SettingsIndexScope
@@ -116,10 +117,12 @@ private fun SettingsIndexScope.notifications(
     hasAccounts: Boolean,
     open: (MailPage) -> (String?) -> Unit,
 ) {
-    val summary =
-        state.current?.let { "Delivery through ${it.name}" }
-            ?: if (state.periodicChecks) "New mail every 15 minutes" else "New-mail alerts off"
-    page("Notifications", open(MailPage.Notifications), Res.drawable.symbol_notifications, summary = summary) {
+    page(
+        "Notifications",
+        open(MailPage.Notifications),
+        Res.drawable.symbol_notifications,
+        summary = state.deliverySummary,
+    ) {
         keywords("Push", "Alerts")
         section("New mail") { setting("Instant delivery", state.deliveryLabel) }
         // The page shows previews only where they can be saved, and their overrides only with accounts.

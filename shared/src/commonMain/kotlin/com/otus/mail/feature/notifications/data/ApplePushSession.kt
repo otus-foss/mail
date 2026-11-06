@@ -1,15 +1,11 @@
-package com.otus.mail.app
+package com.otus.mail.feature.notifications.data
 
 import com.otus.jmap.PushKeys
 import com.otus.jmap.PushMessage
 import com.otus.jmap.push.PushEndpoint
 import com.otus.jmap.push.PushStatus
 import com.otus.jmap.push.PushSubscriptions
-import com.otus.mail.feature.notifications.data.ApplePushBridge
-import com.otus.mail.feature.notifications.data.ApplePushPlatform
-import com.otus.mail.feature.notifications.data.ApplePushRouteExpired
-import com.otus.mail.feature.notifications.data.ApplePushStorage
-import com.otus.mail.feature.notifications.data.AppleRegistration
+import com.otus.mail.feature.notifications.domain.MailPush
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CancellationException
@@ -18,20 +14,20 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlin.io.encoding.Base64
 
-internal class ApplePushSession(
+internal class ApplePushSession<S : PushServices>(
     private val host: ApplePushPlatform,
     baseUrl: String,
     http: HttpClient,
-    createServices: () -> MailServices,
+    createServices: () -> S,
 ) {
     private val storage = ApplePushStorage(host)
     val bridge = baseUrl.takeIf { it.isNotBlank() }?.let { ApplePushBridge(it, http) }
-    val mailServices: MailServices by lazy(createServices)
+    val services: S by lazy(createServices)
     private val subscriptions: PushSubscriptions by lazy {
         val saved = host.read("device")
         val deviceId = saved ?: host.createIdentifier()
         if (saved == null) check(host.write("device", deviceId))
-        mailServices.pushSubscriptions(storage, "ios-$deviceId", MailPush.Deliveries) { login ->
+        services.pushSubscriptions(storage, "ios-$deviceId", MailPush.Deliveries) { login ->
             val registration = storage.registrations()[login]
             if (registration != null) checkNotNull(bridge).active(registration.route, value = false)
         }
@@ -77,7 +73,7 @@ internal class ApplePushSession(
      */
     suspend fun checkSafely(): Boolean =
         guarded {
-            if (mailServices.notificationLogins().map { it.id } != settledLogins) sync()
+            if (services.notificationLogins().map { it.id } != settledLogins) sync()
         }
 
     private suspend fun guarded(work: suspend () -> Unit): Boolean =
@@ -89,7 +85,7 @@ internal class ApplePushSession(
                 throw error
             } catch (_: Exception) {
                 settledLogins = null
-                results = mailServices.logins().associate { it.id to PushDeliveryStatus.Unavailable }
+                results = services.logins().associate { it.id to PushDeliveryStatus.Unavailable }
                 false
             }
         }
@@ -98,7 +94,7 @@ internal class ApplePushSession(
         settledLogins = null
         val push = subscriptions
         val client = bridge ?: return
-        val logins = mailServices.notificationLogins().map { it.id }
+        val logins = services.notificationLogins().map { it.id }
         storage
             .registrations()
             .keys
@@ -143,14 +139,7 @@ internal class ApplePushSession(
         storage.registrations().forEach { (login, registration) ->
             client.active(registration.route, statuses[login] == PushStatus.Active)
         }
-        results =
-            logins.associateWith { login ->
-                when (statuses[login]) {
-                    PushStatus.Active -> PushDeliveryStatus.Active
-                    PushStatus.Refused -> PushDeliveryStatus.ServerRefused
-                    else -> PushDeliveryStatus.Connecting
-                }
-            }
+        results = logins.associateWith { login -> statuses[login].delivery }
     }
 
     private suspend fun register(

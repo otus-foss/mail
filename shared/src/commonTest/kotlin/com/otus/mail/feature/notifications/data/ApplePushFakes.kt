@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.notifications.data
 
 import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore

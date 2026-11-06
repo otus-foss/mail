@@ -1,6 +1,6 @@
-package com.otus.mail.app
+package com.otus.mail.feature.notifications.data
 
-import com.otus.mail.feature.notifications.data.ApplePushPlatform
+import com.otus.mail.app.MailServices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

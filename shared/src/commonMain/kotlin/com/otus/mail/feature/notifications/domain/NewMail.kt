@@ -2,9 +2,16 @@ package com.otus.mail.feature.notifications.domain
 
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.storage.StringMapStore
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import kotlin.time.Instant
 
-/** A message that arrived unread in an inbox since the last check. */
+/**
+ * A message that arrived unread in an inbox since the last check. An alert's buttons and their
+ * queued work carry it as [encoded].
+ */
+@Serializable
 data class NewMail(
     val loginId: String,
     val accountName: String,
@@ -18,11 +25,28 @@ data class NewMail(
      * for Bcc and list mail, for previews chosen per address.
      */
     val recipients: List<String> = emptyList(),
-    /** The lowercase roles of its account's mailboxes, such as `archive`, which decide the alert's buttons. */
+    /** The roles of its account's mailboxes, such as Archive, which decide the alert's buttons. */
     val mailboxRoles: Set<MailboxRole> = emptySet(),
     /** Whether its account can send, so the alert can offer Reply. */
     val canSend: Boolean = false,
-)
+) {
+    /** This alert as one line of JSON. */
+    fun encoded(): String = Json.encodeToString(this)
+
+    companion object {
+        /** The alert [encoded] made; null for anything else, such as a field an older build left out. */
+        fun decoded(line: String?): NewMail? =
+            line?.let {
+                try {
+                    Json.decodeFromString<NewMail>(it)
+                } catch (_: SerializationException) {
+                    null
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            }
+    }
+}
 
 /** Each login's Email state from the last check, keyed by login id. */
 interface MailStateStore : StringMapStore

@@ -13,6 +13,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.otus.mail.feature.notifications.domain.PERIODIC_CHECK
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.TimeUnit
@@ -45,9 +46,6 @@ class NewMailWorker(
         private const val NOW = "new-mail-now"
         private const val PUSHED = "pushed"
 
-        /** Android's shortest period for repeating work. Doze and app standby can stretch it. */
-        private const val PERIOD_MINUTES = 15L
-
         private val checking = Mutex()
         private val pushes = PushedChecks()
 
@@ -58,7 +56,7 @@ class NewMailWorker(
                 .enqueueUniquePeriodicWork(
                     NAME,
                     ExistingPeriodicWorkPolicy.KEEP,
-                    PeriodicWorkRequestBuilder<NewMailWorker>(PERIOD_MINUTES, TimeUnit.MINUTES)
+                    PeriodicWorkRequestBuilder<NewMailWorker>(PERIODIC_CHECK.inWholeMinutes, TimeUnit.MINUTES)
                         .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
                         .build(),
                 )

@@ -10,7 +10,6 @@ import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailPickers
 import com.otus.mail.app.MailPlatform
-import com.otus.mail.app.MailPush
 import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.app.WaitingStores
@@ -19,6 +18,7 @@ import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.core.messages.domain.DevicePrivacy
 import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.feature.notifications.domain.MailPush
 import com.otus.storage.PreferenceMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

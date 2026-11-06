@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 fun mainViewController(push: IosPushRuntime? = null) =
     DateFormatSettingsState(dateFormatChoice()).let { dateFormatState ->
-        val services = push?.mailServices ?: iosMailServices(null)
+        val services = push?.services ?: iosMailServices(null)
         push?.resume()
         // Cache upkeep outlives the screen; it ends with the process.
         CoroutineScope(Dispatchers.IO).launch { services.trimCache() }

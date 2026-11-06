@@ -17,6 +17,7 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
+import com.otus.mail.feature.notifications.domain.PERIODIC_CHECK
 import com.otus.mail.feature.notifications.domain.PreviewChoices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
@@ -48,9 +49,7 @@ fun NotificationsScreen(
             SettingRow(
                 "Instant delivery",
                 { choosing = true },
-                description =
-                    current?.let { "Through ${it.name}" }
-                        ?: if (state.periodicChecks) "Off, checks about every 15 minutes" else "New-mail alerts off",
+                description = state.deliverySummary,
             ) {
                 ValueButton(state.deliveryLabel)
             }
@@ -133,7 +132,7 @@ private fun notInstantInfo(periodicChecks: Boolean) =
     InfoText(
         "Not instant",
         if (periodicChecks) {
-            "Mail still arrives for these accounts through checks about every 15 minutes, and Mail keeps " +
+            "Mail still arrives for these accounts through checks $CHECKS, and Mail keeps " +
                 "retrying instant delivery."
         } else {
             "These accounts get no new-mail alerts until instant delivery works. Opening Mail retries it."
@@ -142,7 +141,7 @@ private fun notInstantInfo(periodicChecks: Boolean) =
 
 private fun PushDistributor?.choiceRow(periodicChecks: Boolean): ChoiceRow =
     this?.let { ChoiceRow(it.name, if (it.isGoogle || it.isApple) "Built into Otus" else "Through a separate app") }
-        ?: ChoiceRow("Off", if (periodicChecks) "Checks about every 15 minutes" else "No new-mail alerts")
+        ?: ChoiceRow("Off", if (periodicChecks) "Checks $CHECKS" else "No new-mail alerts")
 
 private fun PushDeliveryStatus?.label(periodicChecks: Boolean): String {
     // With periodic checks mail still arrives, which the section's info explains; without them the
@@ -207,6 +206,14 @@ private fun NotificationSettingsState.deliveryNote(): String =
             "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy."
         }
     }
+
+/** How new mail arrives: through the push service in use, by checks, or not at all. */
+internal val NotificationSettingsState.deliverySummary: String
+    get() =
+        current?.let { "Through ${it.name}" }
+            ?: if (periodicChecks) "Off, checks $CHECKS" else "New-mail alerts off"
+
+private val CHECKS = "about every ${PERIODIC_CHECK.inWholeMinutes} minutes"
 
 /** The Instant delivery row's value: the distributor that delivers new mail, or Off. */
 internal val NotificationSettingsState.deliveryLabel: String
