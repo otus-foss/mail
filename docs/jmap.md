@@ -97,9 +97,11 @@ When an `htmlBody` part is `text/html`, the reader shows the HTML body instead o
 it keeps the text body. Plain parts between HTML parts keep their line breaks, and parts without a
 value, such as inline `cid:` images, are left out. A failed load also keeps the text body.
 
-Drafts (`JmapDraftRepository`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:
+Drafts (`JmapComposeMail`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:
 
-- Saving finds the mailbox with role `drafts` through `Mailbox/query`, then sends an `Email/set`.
+- Saving finds the folder with role `drafts` in the kept folders (`Mailboxes`), then sends an
+  `Email/set`. Saving and sending share the copies whose save lost its answer and the uploaded
+  signature images.
   It creates the Email with keywords `$draft` and `$seen`, the addresses, the subject,
   `inReplyTo` and `references` when set, and a single `text/plain` body (`bodyValues` and
   `textBody`). Email content cannot change, so a second `Email/set` destroys the previous copy.

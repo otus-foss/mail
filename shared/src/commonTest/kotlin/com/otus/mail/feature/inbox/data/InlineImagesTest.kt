@@ -3,9 +3,8 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.Draft
+import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.ADA_SECRET_HEADER
@@ -29,7 +28,7 @@ class InlineImagesTest {
     private val uploads = mutableListOf<String>()
     private val created = mutableListOf<String>()
 
-    private fun repository(): JmapDraftRepository {
+    private fun repository(): DraftRepository {
         val json = headersOf(HttpHeaders.ContentType, "application/json")
         val engine =
             MockEngine { request ->
@@ -51,7 +50,7 @@ class InlineImagesTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-        return JmapDraftRepository(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache()))
+        return composeMail(JmapConnections(JmapClient(engine), store)).drafts
     }
 
     private fun answer(body: String): String =

@@ -20,11 +20,11 @@ import kotlinx.serialization.json.JsonPrimitive
  * [MAX_KEPT] per login are remembered, for as long as the process runs. Saving and sending share
  * one, since a send is often the next thing after a save.
  */
-class UnansweredDrafts {
+internal class UnansweredDrafts {
     private val lock = Mutex()
     private val lost = mutableMapOf<String, List<String>>()
 
-    internal suspend fun remember(
+    suspend fun remember(
         loginId: String,
         messageId: String,
     ) {
@@ -32,7 +32,7 @@ class UnansweredDrafts {
     }
 
     /** Destroys the copies remembered for [account] that are in [drafts], but [kept], the copy just stored. */
-    internal suspend fun destroy(
+    suspend fun destroy(
         account: MailAccount,
         drafts: String,
         kept: String,

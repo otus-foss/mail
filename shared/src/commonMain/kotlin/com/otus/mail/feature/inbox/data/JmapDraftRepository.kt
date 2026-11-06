@@ -15,8 +15,6 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.toMailFailure
-import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
@@ -34,15 +32,11 @@ import kotlin.uuid.Uuid
  * Message-ID from [newMessageId], so a copy whose save lost its answer is found and destroyed by
  * the next save.
  */
-class JmapDraftRepository(
+internal class JmapDraftRepository(
     private val connections: JmapConnections,
-    private val mailboxes: Mailboxes,
-    private val unanswered: UnansweredDrafts = UnansweredDrafts(),
-    private val newMessageId: () -> String = ::draftMessageId,
+    private val copies: DraftCopies,
+    private val newMessageId: () -> String,
 ) : DraftRepository {
-    // Signature images upload once, not at every save.
-    private val images = InlineImageUploads()
-
     override suspend fun identities(accountId: String): List<SendIdentity> =
         jmapCallOr(emptyList()) {
             connections
@@ -65,9 +59,9 @@ class JmapDraftRepository(
 
     override suspend fun save(draft: Draft): Result<String> =
         attempt(draft.accountId) { account ->
-            val drafts = draftsFolder(account) ?: throw DraftException(DraftFailure.NoDraftsFolder)
+            val drafts = copies.draftsFolder(account) ?: throw DraftException(DraftFailure.NoDraftsFolder)
             val messageId = newMessageId()
-            val html = account.inlineImages(draft.htmlContent(), images)
+            val html = account.inlineImages(draft.htmlContent(), copies.images)
             val email = draft.copy(messageId = messageId).toEmail(drafts, html)
             val create = SetMethod(EmailType, account.id, create = mapOf(CREATION_ID to email))
             val result =
@@ -77,7 +71,7 @@ class JmapDraftRepository(
                     throw refusal
                 } catch (error: JmapException) {
                     // Without an answer the server may have stored the copy, so a later save removes it.
-                    unanswered.remember(account.login.id, messageId)
+                    copies.unanswered.remember(account.login.id, messageId)
                     throw error
                 }
             val failure = result.notCreated[CREATION_ID]
@@ -87,7 +81,7 @@ class JmapDraftRepository(
             // copy is destroyed only once the server has stored the new one.
             val previous = draft.emailId
             if (previous != null) account.destroyReplaced(previous)
-            unanswered.destroy(account, drafts, kept = id)
+            copies.unanswered.destroy(account, drafts, kept = id)
             id
         }
 
@@ -113,12 +107,6 @@ class JmapDraftRepository(
             // A leftover copy is only a duplicate, so the stored save is not reported as failed.
         }
     }
-
-    private suspend fun draftsFolder(account: MailAccount): String? =
-        mailboxes
-            .of(account)
-            .firstOrNull { it.role == MailboxRole.Drafts }
-            ?.id
 
     private suspend fun <T> attempt(
         loginId: String,
@@ -148,7 +136,7 @@ class JmapDraftRepository(
 
 /** A Message-ID of its own for a saved copy of a draft. */
 @OptIn(ExperimentalUuidApi::class)
-private fun draftMessageId(): String = "draft-${Uuid.random()}@otus.mail"
+internal fun draftMessageId(): String = "draft-${Uuid.random()}@otus.mail"
 
 /** Identities and submission must live in the account that holds the drafts. */
 internal fun MailAccount.mayUse(capability: String): Boolean =

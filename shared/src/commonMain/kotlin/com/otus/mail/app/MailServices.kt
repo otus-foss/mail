@@ -38,10 +38,9 @@ import com.otus.mail.feature.inbox.data.EmailChangeQueue
 import com.otus.mail.feature.inbox.data.JmapAddressBook
 import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
 import com.otus.mail.feature.inbox.data.JmapAttachmentUploads
+import com.otus.mail.feature.inbox.data.JmapComposeMail
 import com.otus.mail.feature.inbox.data.JmapConversationMessages
 import com.otus.mail.feature.inbox.data.JmapConversationMute
-import com.otus.mail.feature.inbox.data.JmapDraftRepository
-import com.otus.mail.feature.inbox.data.JmapDraftSender
 import com.otus.mail.feature.inbox.data.JmapEmailShortcuts
 import com.otus.mail.feature.inbox.data.JmapKnownPeople
 import com.otus.mail.feature.inbox.data.JmapMailSource
@@ -57,7 +56,6 @@ import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.data.JmapSignatures
 import com.otus.mail.feature.inbox.data.JmapThreadHistory
 import com.otus.mail.feature.inbox.data.ServerSites
-import com.otus.mail.feature.inbox.data.UnansweredDrafts
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.AttachmentUploads
 import com.otus.mail.feature.inbox.domain.ConversationMessages
@@ -163,15 +161,14 @@ class MailServices(
     /** Marks and archives for a notification's buttons, which act without opening Mail. */
     val shortcuts: EmailShortcuts by lazy { JmapEmailShortcuts(connections, cache, changes) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections) }
-    private val unansweredDrafts = UnansweredDrafts()
-    internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, mailboxes, unansweredDrafts) }
-    private val jmapSender by lazy { JmapDraftSender(connections, mailboxes, unansweredDrafts) }
-    internal val sender: DraftSender get() = jmapSender
-    internal val scheduled: ScheduledSends get() = jmapSender
+    private val compose by lazy { JmapComposeMail(connections, mailboxes) }
+    internal val drafts: DraftRepository get() = compose.drafts
+    internal val sender: DraftSender get() = compose.sender
+    internal val scheduled: ScheduledSends get() = compose.sender
 
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {
-        MailOutbox(stores.waiting.outbox, jmapSender, JmapSendChecker(connections), host.wakeOutbox)
+        MailOutbox(stores.waiting.outbox, compose.sender, JmapSendChecker(connections), host.wakeOutbox)
     }
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections) }

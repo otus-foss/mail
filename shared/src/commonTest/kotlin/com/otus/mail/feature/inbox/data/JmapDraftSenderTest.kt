@@ -3,8 +3,6 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -79,7 +77,7 @@ class JmapDraftSenderTest {
                     }
                 }
             }
-        return JmapDraftSender(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache()))
+        return composeMail(JmapConnections(JmapClient(engine), store)).sender
     }
 
     private fun responses(vararg items: String) = """{"methodResponses": [${items.joinToString()}]}"""

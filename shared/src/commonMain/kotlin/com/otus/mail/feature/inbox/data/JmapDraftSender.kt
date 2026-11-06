@@ -19,7 +19,6 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.keywordPatch
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
@@ -43,15 +42,11 @@ import kotlinx.serialization.json.putJsonObject
  * clears `$draft`. Without an envelope, the server takes the recipients from To, Cc, and Bcc, and
  * strips Bcc.
  */
-class JmapDraftSender(
+class JmapDraftSender internal constructor(
     private val connections: JmapConnections,
-    private val mailboxes: Mailboxes,
-    private val unanswered: UnansweredDrafts = UnansweredDrafts(),
+    private val copies: DraftCopies,
 ) : DraftSender,
     ScheduledSends {
-    // Signature images upload once, not at every send.
-    private val images = InlineImageUploads()
-
     override suspend fun send(
         draft: Draft,
         answered: AnsweredMessage?,
@@ -73,7 +68,7 @@ class JmapDraftSender(
             val marked = if (time == SendTime.Now) null else answered?.let { account.unmarked(it) }
             account.tidySent(draft.emailId, answered)
             // A save whose answer was lost may have left a copy that no later save will remove.
-            route.drafts?.let { unanswered.destroy(account, it, kept = sent.emailId) }
+            route.drafts?.let { copies.unanswered.destroy(account, it, kept = sent.emailId) }
             Result.success(sent.copy(marked = marked))
         } catch (error: SendException) {
             Result.failure(error)
@@ -91,8 +86,8 @@ class JmapDraftSender(
     /** The identity that sends as [from], and the folders the sent copy moves between. */
     private suspend fun MailAccount.route(from: String): SendRoute {
         lateinit var identities: JmapCall<GetResult<IdentityObject>>
-        val (folders, response) =
-            mailboxes.send(this) { identities = call(GetMethod(IdentityType, id, properties = listOf("id", "email"))) }
+        val identityGet = GetMethod(IdentityType, id, properties = listOf("id", "email"))
+        val (folders, response) = copies.mailboxes.send(this) { identities = call(identityGet) }
         return SendRoute(
             identityId = response[identities].list.sendingAs(from) { it.email }?.id ?: failSend(SendFailure.NoIdentity),
             drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id,
@@ -112,7 +107,7 @@ class JmapDraftSender(
         stored: suspend (emailId: String) -> Unit,
     ): SentMessage {
         val folder = route.drafts ?: route.sent ?: failSend(SendFailure.ServerProblem)
-        val email = draft.toEmail(folder, inlineImages(draft.htmlContent(), images))
+        val email = draft.toEmail(folder, inlineImages(draft.htmlContent(), copies.images))
         val created = connection.call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
         val creationFailure = created.notCreated[EMAIL]
         if (creationFailure != null) failSend(creationFailure.toSendFailure())

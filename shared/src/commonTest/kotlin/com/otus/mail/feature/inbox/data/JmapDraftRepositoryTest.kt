@@ -3,11 +3,10 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
+import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SendIdentity
 import com.otus.mail.testing.ADA_LOGIN
@@ -33,16 +32,14 @@ class JmapDraftRepositoryTest {
     private fun repository(
         session: String = STALWART_SESSION,
         api: (String) -> String,
-    ): JmapDraftRepository {
+    ): DraftRepository {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val engine =
             stalwartLike(session) { body ->
                 calls += body
                 api(body)
             }
-        return JmapDraftRepository(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache())) {
-            "m${++saves}@otus.mail"
-        }
+        return composeMail(JmapConnections(JmapClient(engine), store)) { "m${++saves}@otus.mail" }.drafts
     }
 
     private var saves = 0
