@@ -1,13 +1,12 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation
 
+import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.folderTree
-import com.otus.mail.feature.folders.presentation.folderIcon
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.presentation.FolderPillOption
 
 /**
  * The folder pills [accounts] can fill, in the order Settings lists them. Read later, which the
@@ -43,7 +42,7 @@ private fun everyAccount(
     FolderPillOption(
         pill,
         nodes.map { it.folder.name }.distinct().singleOrNull() ?: fallback,
-        folderIcon(nodes.first()),
+        nodes.first().let { folderSymbol(it.folder.role?.wire, it.readLater) },
         MailScope.Folders(nodes.map { MailScope.Folder(it.folder.accountId, it.folder.id) }.toSet()),
         group = EVERY_ACCOUNT_GROUP,
     )
@@ -55,7 +54,7 @@ private fun ownFolder(
     FolderPillOption(
         InboxPill.Folder(account.accountId, node.folder.id),
         node.folder.name,
-        folderIcon(node),
+        folderSymbol(node.folder.role?.wire, node.readLater),
         MailScope.Folder(account.accountId, node.folder.id),
         group = account.accountName,
         path = node.path,

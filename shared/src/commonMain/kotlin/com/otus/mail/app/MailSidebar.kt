@@ -17,6 +17,7 @@ import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.components.FolderColorSheet
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.SidebarSection
+import com.otus.mail.feature.inbox.presentation.SidebarCounter
 import com.otus.mail.feature.inbox.presentation.scopeHeader
 import com.otus.mail.feature.inbox.presentation.title
 

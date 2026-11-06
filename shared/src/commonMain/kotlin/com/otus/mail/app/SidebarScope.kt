@@ -5,6 +5,7 @@ import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.addressCount
+import com.otus.mail.feature.inbox.presentation.SidebarCounter
 import com.otus.mail.feature.inbox.presentation.components.MailScopeSheet
 import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
 

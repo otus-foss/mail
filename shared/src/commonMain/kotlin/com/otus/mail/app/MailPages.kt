@@ -14,6 +14,7 @@ import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.folderPillOptions
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.status
 

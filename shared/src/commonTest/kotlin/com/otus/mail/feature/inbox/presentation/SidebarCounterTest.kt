@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.inbox.domain.SidebarCount

@@ -26,6 +26,7 @@ import com.otus.mail.feature.inbox.domain.MailboxStyle
 import com.otus.mail.feature.inbox.domain.PinSize
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.SidebarPin
+import com.otus.mail.feature.inbox.presentation.SidebarCounter
 import com.otus.mail.feature.inbox.presentation.tileSize
 import org.jetbrains.compose.resources.DrawableResource
 

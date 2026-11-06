@@ -9,6 +9,7 @@ import com.otus.designsystem.shared.sidebar.elements.SidebarFolder
 import com.otus.designsystem.shared.sidebar.elements.SidebarFolderEntry
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.folders.domain.SharedFolder
+import com.otus.mail.feature.inbox.presentation.SidebarCounter
 
 /**
  * The user's folders, shared by every account, nested under their parents. A folder with
