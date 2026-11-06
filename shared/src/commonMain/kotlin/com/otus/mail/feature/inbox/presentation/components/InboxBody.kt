@@ -149,6 +149,8 @@ private fun LazyItemScope.ConversationItem(
             Modifier
                 .animateItem(motionTween(), motionTween(), motionTween())
                 .padding(horizontal = InboxTokens.pageInset),
+        // A swiped row the list keeps, such as one moved but still matching a search, settles once it changes.
+        settledBy = message,
     ) {
         ConversationRow(
             message,
