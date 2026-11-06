@@ -118,14 +118,14 @@ class ReplyThreadScreenTest {
         open(ComposeRequest.Reply(original, all = false), 1)
         compose.onNodeWithText("11 Oct").assertExists()
         compose.onNode(hasContentDescription("Send, to Grace Hopper") and hasClickAction()).assertIsEnabled()
-        compose.screenshot("reply-thread-one")
+        compose.screenshot("compose/reply_thread_one")
     }
 
     @Test
     fun upToThreeMessagesShowAsRows() {
         open(ComposeRequest.Reply(original, all = false), 3)
         compose.onNodeWithText("Margaret Knuth").assertExists()
-        compose.screenshot("reply-thread-three")
+        compose.screenshot("compose/reply_thread_three")
     }
 
     @Test
@@ -134,10 +134,10 @@ class ReplyThreadScreenTest {
         compose.onNodeWithText("5 earlier messages").assertExists()
         compose.onNodeWithText("Latest: Grace Hopper, 11 Oct").assertExists()
         compose.onNodeWithText("+3 more").assertExists()
-        compose.screenshot("reply-thread-folded")
+        compose.screenshot("compose/reply_thread_folded")
         compose.onNodeWithText("+3 more").performClick()
         compose.onNodeWithText("Radia Perlman").assertExists()
-        compose.screenshot("reply-to-expanded")
+        compose.screenshot("compose/reply_to_expanded")
     }
 
     @Test
@@ -145,7 +145,7 @@ class ReplyThreadScreenTest {
         open(ComposeRequest.Reply(original, all = true), 5)
         compose.onNodeWithText("5 earlier messages").performClick()
         compose.onNodeWithText("Earlier in this thread").assertExists()
-        compose.screenshot("reply-thread-sheet")
+        compose.screenshot("compose/reply_thread_sheet")
         compose.onNode(hasText("Latest only") and hasClickAction()).performClick()
         compose.waitForIdle()
         assertEquals(

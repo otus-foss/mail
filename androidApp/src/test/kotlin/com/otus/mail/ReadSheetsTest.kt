@@ -115,7 +115,7 @@ class ReadSheetsTest {
         folder("Clients").assertTicked(true)
         folder("Taxes").assertTicked(false)
         compose.onNodeWithText("Drafts").assertDoesNotExist()
-        compose.screenshot("2026-10-19-feat-read-view-folders-sheet")
+        compose.screenshot("read/folders_sheet")
         folder("Taxes").performClick()
         folder("Clients").performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
@@ -155,7 +155,7 @@ class ReadSheetsTest {
         }
         compose.onNodeWithText("Authentication-Results").assertIsDisplayed()
         compose.onNodeWithText("mx.example.org; dkim=pass header.d=lovelace.example").assertIsDisplayed()
-        compose.screenshot("2026-10-19-feat-read-view-details-sheet")
+        compose.screenshot("read/details_sheet")
     }
 
     @Test

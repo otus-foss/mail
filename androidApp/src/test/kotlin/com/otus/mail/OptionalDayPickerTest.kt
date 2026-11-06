@@ -43,7 +43,7 @@ class OptionalDayPickerTest {
     fun openingAndChangingMonthAndYearLeavesDayUnselected() {
         showPicker()
         choice("Day", "Any").assertIsSelected()
-        screenshot("choose-date-optional-day")
+        compose.screenshot("pickers/optional_day")
         choose("Month", "February")
         choose("Year", "2021")
         choice("Day", "Any").assertIsSelected()
@@ -113,7 +113,7 @@ class OptionalDayPickerTest {
         choice("Day", "Any").assertIsSelected().assertIsDisplayed()
         compose.onNodeWithContentDescription("Close date chooser").assertIsDisplayed()
         compose.onNodeWithText("Go").assertIsDisplayed()
-        screenshot("choose-date-small-large-text")
+        compose.screenshot("pickers/optional_day_large_text")
     }
 
     private fun showPicker(fontScale: Float = 1f) {
@@ -151,6 +151,4 @@ class OptionalDayPickerTest {
         column: String,
         value: String,
     ) = compose.onNode(hasText(value) and hasAnyAncestor(hasContentDescription("$column choices")))
-
-    private fun screenshot(name: String) = compose.dialogBitmap().savePng("build/reports/pickers/$name.png")
 }

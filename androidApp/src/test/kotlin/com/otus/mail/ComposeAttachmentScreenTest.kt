@@ -68,7 +68,7 @@ class ComposeAttachmentScreenTest {
         compose.onNodeWithText("Whiteboard.png").assertDoesNotExist()
         compose.onNodeWithContentDescription("Whiteboard.png").performClick()
         compose.onNodeWithText("Full").assertIsSelected()
-        compose.screenshot("compose-attachments-inline")
+        compose.screenshot("compose/attachment_inline")
 
         val handle = compose.onNodeWithContentDescription("Resize image")
         handle.performTouchInput {
@@ -77,14 +77,13 @@ class ComposeAttachmentScreenTest {
         }
         // The pill under the handle and the bar's segment both name the snapped size.
         compose.onAllNodesWithText("Large").assertCountEquals(2)
-        compose.screenshot("compose-attachments-drag")
         handle.performTouchInput { up() }
 
         compose.onNodeWithContentDescription("Image options").performClick()
-        compose.screenshot("compose-attachments-image-options")
+        compose.screenshot("compose/attachment_image_options")
         compose.onNodeWithText("Send as file").performClick()
         compose.onNodeWithText("Whiteboard.png").assertExists()
-        compose.screenshot("compose-attachments")
+        compose.screenshot("compose/attachments")
     }
 
     @Test
@@ -104,7 +103,7 @@ class ComposeAttachmentScreenTest {
             down(center)
             moveBy(Offset(-DRAG_TO_LARGE, 0f))
         }
-        compose.screenshot("compose-attachments-drag-tall")
+        compose.screenshot("compose/attachment_drag_tall")
         handle.performTouchInput { up() }
     }
 

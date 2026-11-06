@@ -58,7 +58,7 @@ class PrivacySettingsTest {
     @Test
     fun knownPeopleIsTheDefaultAndAChoiceAppliesAtOnce() {
         openPrivacy()
-        compose.screenshot("2026-10-19-feat-read-view-privacy")
+        compose.screenshot("settings/privacy")
         compose.onNodeWithText("Load images").performClick()
         compose.onNode(hasText("In your contacts") and isSelectable()).assertIsSelected()
         compose.onNode(hasText("Never") and isSelectable()).performClick()
@@ -77,7 +77,7 @@ class PrivacySettingsTest {
         openPrivacy()
         compose.onNodeWithText("2 senders").performClick()
         compose.onNodeWithText("news@sentry.io").assertIsDisplayed()
-        compose.screenshot("2026-10-19-feat-read-view-allowed-senders")
+        compose.screenshot("settings/allowed_senders")
         compose.onNodeWithContentDescription("Remove news@sentry.io").performClick()
         assertEquals(listOf("grace@example.org"), behavior.behavior.read.allowedSenders)
         compose.onNodeWithContentDescription("Remove grace@example.org").performClick()

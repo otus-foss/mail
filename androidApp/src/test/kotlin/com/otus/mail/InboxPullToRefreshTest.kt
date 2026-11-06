@@ -64,7 +64,6 @@ class InboxPullToRefreshTest {
             down(center)
             repeat(PULL_STEPS) { moveBy(Offset(0f, height * 0.25f / PULL_STEPS)) }
         }
-        screenshot("pull-to-refresh-held")
         assertEquals(0, refreshes)
         node.performTouchInput { up() }
         compose.waitForIdle()
@@ -87,7 +86,6 @@ class InboxPullToRefreshTest {
         )
         pull("Design review", distance = 0.9f)
         assertEquals(1, refreshes)
-        screenshot("pull-to-refresh-loading")
     }
 
     private fun show(messages: List<MailMessage>) {
@@ -121,8 +119,6 @@ class InboxPullToRefreshTest {
         }
         compose.waitForIdle()
     }
-
-    private fun screenshot(name: String) = compose.windowBitmap().savePng("build/reports/inbox/$name.png")
 }
 
 private const val PULL_STEPS = 10

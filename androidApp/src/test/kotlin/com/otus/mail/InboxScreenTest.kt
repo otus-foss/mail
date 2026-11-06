@@ -46,12 +46,12 @@ class InboxScreenTest {
     fun launchIsEmptyInboxAndSearchCanBeClearedAndClosed() {
         compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
         compose.onNodeWithText("Context panel playground").assertDoesNotExist()
-        screenshot("empty-inbox")
+        compose.screenshot("inbox/empty")
         compose.openSearch()
         compose.searchField().assertIsFocused().performTextInput("hello")
         compose.searchField().performImeAction()
         compose.onNodeWithText("Nothing to search yet").assertIsDisplayed()
-        screenshot("empty-search")
+        compose.screenshot("inbox/empty_search")
         compose.onNodeWithContentDescription("Clear search").performClick().assertDoesNotExist()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
@@ -85,12 +85,12 @@ class InboxScreenTest {
             .onNode(hasText("Design review") and hasContentDescription("Attachment. Read later.", substring = true))
             .assertIsDisplayed()
         compose.onNode(hasText("Weekend plans")).assertIsDisplayed()
-        screenshot("inbox-fixtures")
+        compose.screenshot("inbox/list")
         compose.openSearchResults()
         compose.searchField().performTextInput("prototype")
         compose.onNodeWithText("Design review").assertIsDisplayed()
         compose.onNodeWithText("Weekend plans").assertDoesNotExist()
-        screenshot("search-fixtures")
+        compose.screenshot("inbox/search_results")
         compose.searchField().performTextReplacement("nothing matches")
         compose.onNodeWithText("No matching mail").assertIsDisplayed()
         compose.onNodeWithText("Clear search and filters").performClick()
@@ -114,7 +114,7 @@ class InboxScreenTest {
         compose.onNodeWithText("Personal").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("No matching mail").assertIsDisplayed()
-        screenshot("narrow-filtered")
+        compose.screenshot("inbox/narrow_filtered")
     }
 
     @Test
@@ -142,7 +142,7 @@ class InboxScreenTest {
         compose.searchField().performTextInput("hello")
         compose.onNodeWithText("Clear search and filters").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Clear search").assertDoesNotExist()
-        screenshot("large-text-empty")
+        compose.screenshot("inbox/large_text_empty")
     }
 
     private fun showFixtures() {
@@ -178,6 +178,4 @@ class InboxScreenTest {
             }
         }
     }
-
-    private fun screenshot(name: String) = compose.windowBitmap().savePng("build/reports/inbox/$name.png")
 }

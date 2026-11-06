@@ -47,7 +47,7 @@ class UndoSendSettingTest {
             }
         }
         compose.onNodeWithText("15 seconds").performScrollTo().performClick()
-        compose.screenshot("undo-send-setting")
+        compose.screenshot("settings/undo_send")
         compose.onNodeWithText("Off").performClick()
         compose.waitForIdle()
         assertEquals(0, state.behavior.write.undoSendSeconds)

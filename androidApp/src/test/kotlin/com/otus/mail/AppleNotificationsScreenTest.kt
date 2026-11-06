@@ -73,5 +73,5 @@ class AppleNotificationsScreenTest {
         compose.showNotifications(push, theme)
     }
 
-    private fun capture(name: String) = compose.captureNotifications(name)
+    private fun capture(name: String) = compose.screenshot("notifications/$name")
 }

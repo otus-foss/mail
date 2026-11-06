@@ -44,37 +44,37 @@ class FilterPanelScreenshotTest {
     fun panelDefault() {
         compose.showFilterPanel()
         compose.onNodeWithText("Reset").assertIsNotEnabled()
-        compose.filterShot("filter_panel_default")
+        compose.screenshot("filter_panel_default")
     }
 
     @Test
     fun panelDefaultLight() {
         compose.showFilterPanel(palette = light)
-        compose.filterShot("filter_panel_default_light")
+        compose.screenshot("filter_panel_default_light")
     }
 
     @Test
     fun panelDefaultBlack() {
         compose.showFilterPanel(palette = black)
-        compose.filterShot("filter_panel_default_black")
+        compose.screenshot("filter_panel_default_black")
     }
 
     @Test
     fun panelWithSelections() {
         compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts)
-        compose.filterShot("filter_panel_selections")
+        compose.screenshot("filter_panel_selections")
     }
 
     @Test
     fun panelWithSelectionsLight() {
         compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts, palette = light)
-        compose.filterShot("filter_panel_selections_light")
+        compose.screenshot("filter_panel_selections_light")
     }
 
     @Test
     fun panelWithSelectionsBlack() {
         compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts, palette = black)
-        compose.filterShot("filter_panel_selections_black")
+        compose.screenshot("filter_panel_selections_black")
     }
 
     @Test
@@ -88,13 +88,13 @@ class FilterPanelScreenshotTest {
                 sort = FilterSort.OldestFirst,
             )
         compose.showFilterPanel(applied, open = false, options = FilterPanelFixtures.twoAccounts)
-        compose.filterShot("filter_pills_active")
+        compose.screenshot("filter_pills_active")
     }
 
     @Test
     fun noConversations() {
         compose.showFilterPanel(InboxFilters(quick = setOf(QuickFacet.Flagged)), total = 0)
         compose.onNodeWithText("No mails").assertIsNotEnabled()
-        compose.filterShot("filter_panel_no_conversations")
+        compose.screenshot("filter_panel_no_conversations")
     }
 }

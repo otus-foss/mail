@@ -83,14 +83,14 @@ class ReadQuickViewTest {
     fun pullingDownShowsTheQuickViewThenEveryDetail() {
         showThread()
         compose.waitUntil(TIMEOUT) { exists("Let's lock it in") }
-        compose.screenshot("read-quick-view-regular")
+        compose.screenshot("read/quick_view_regular")
         pull(QUICK_PULL)
-        compose.screenshot("read-quick-view-quick")
+        compose.screenshot("read/quick_view_quick")
         compose.onNodeWithText("Archive").assertIsDisplayed()
         compose.onNodeWithContentDescription("All folders").assertIsDisplayed()
         pull(DETAILS_PULL)
         compose.onNodeWithText("Show original").assertIsDisplayed()
-        compose.screenshot("read-quick-view-details")
+        compose.screenshot("read/quick_view_details")
     }
 
     @Test
@@ -101,7 +101,7 @@ class ReadQuickViewTest {
         compose.onNodeWithContentDescription("All folders").performClick()
         compose.waitUntil(TIMEOUT) { exists("Projects") && !exists("Show original") }
         compose.onNodeWithText("This message has no headers", substring = true).assertDoesNotExist()
-        compose.screenshot("read-quick-view-move-sheet")
+        compose.screenshot("read/quick_view_move_sheet")
     }
 
     private companion object {

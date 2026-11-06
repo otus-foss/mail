@@ -8,8 +8,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
-import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.captureScreenRoboImage
 import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import org.junit.Rule
@@ -26,7 +24,6 @@ import org.robolectric.annotation.GraphicsMode
 class FilterPeopleLinesTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
-    @OptIn(ExperimentalRoborazziApi::class)
     @Test
     fun typingInFromListsTheMatches() {
         compose.showFilterPanel(InboxFilters(from = setOf(FilterPanelFixtures.grace)))
@@ -34,7 +31,7 @@ class FilterPeopleLinesTest {
         compose.waitForIdle()
         compose.onNodeWithText("Lena Park").assertIsDisplayed()
         // The matches open in a popup of their own, so the shot takes every window.
-        captureScreenRoboImage("src/test/screenshots/filter_panel_from_typing.png")
+        compose.screenshot("filter_panel_from_typing")
     }
 
     @Test
@@ -82,7 +79,7 @@ class FilterPeopleLinesTest {
     @Test
     fun receivedInUnderTheToLine() {
         compose.showFilterPanel(InboxFilters(sentTo = setOf(OwnAddress("ada", "otus@rubylabs.design"))))
-        compose.filterShot("filter_panel_received_in")
+        compose.screenshot("filter_panel_received_in")
     }
 
     @Test

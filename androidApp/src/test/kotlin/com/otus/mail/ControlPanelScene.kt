@@ -20,13 +20,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.github.takahirom.roborazzi.captureRoboImage
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusPalette
 import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
@@ -111,9 +109,6 @@ internal fun AndroidComposeTestRule<*, MainActivity>.holdScrolledBy(distance: Dp
     }
     waitForIdle()
 }
-
-internal fun AndroidComposeTestRule<*, MainActivity>.panelShot(name: String) =
-    onRoot().captureRoboImage("src/test/screenshots/control_panel/$name.png")
 
 /** Taps the search pill, which focuses the field, and on the inbox grows its search room. */
 internal fun ComposeTestRule.openSearch(prompt: String = "Search Inbox") {

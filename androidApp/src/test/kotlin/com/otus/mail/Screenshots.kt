@@ -1,35 +1,16 @@
 package com.otus.mail
 
-import android.graphics.Canvas
-import android.view.View
-import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 
 /**
- * Writes the activity's window with any open menu, dropdown, or sheet, which draw in windows of
- * their own, laid over it, to `build/reports/compose/<name>.png`.
+ * Compares the screen once idle, with any menu, sheet, or dialog that draws in a window of its own
+ * laid over the page, against `src/test/screenshots/<name>.png`; `-Proborazzi.record` writes it
+ * instead. Every Mail screenshot test captures through this, so all shots frame the same way.
  */
-internal fun AndroidComposeTestRule<*, out ComponentActivity>.screenshot(name: String) {
-    runOnIdle {
-        val decor = activity.window.decorView
-        val snapshot = decor.drawnBitmap()
-        val canvas = Canvas(snapshot)
-        windowViews().filter { it !== decor && it.isShown }.forEach { view ->
-            val position = IntArray(2)
-            view.getLocationOnScreen(position)
-            canvas.save()
-            canvas.translate(position[0].toFloat(), position[1].toFloat())
-            view.draw(canvas)
-            canvas.restore()
-        }
-        snapshot
-    }.savePng("build/reports/compose/$name.png")
-}
-
-/** Every window's root view, the page's and each popup's, from the framework's window list. */
-private fun windowViews(): List<View> {
-    val global = Class.forName("android.view.WindowManagerGlobal")
-    val instance = global.getMethod("getInstance").invoke(null)
-    val views = global.getDeclaredField("mViews").apply { isAccessible = true }.get(instance) as List<*>
-    return views.filterIsInstance<View>()
+@OptIn(ExperimentalRoborazziApi::class)
+internal fun AndroidComposeTestRule<*, *>.screenshot(name: String) {
+    waitForIdle()
+    captureScreenRoboImage("src/test/screenshots/$name.png")
 }

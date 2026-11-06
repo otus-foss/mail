@@ -67,7 +67,7 @@ class FolderActionsTest {
         server.folders += """{"id": "j", "name": "Junk Mail", "role": "junk", "totalEmails": 1}"""
         server.subjects["j"] = "You won a prize"
         openMessageIn("Spam", "You won a prize")
-        screenshot("spam-bar")
+        compose.screenshot("folders/spam_bar")
         button("Delete forever").assertExists()
         button("Not spam").performClick()
         val update = lastUpdate()
@@ -83,7 +83,7 @@ class FolderActionsTest {
         server.folders += """{"id": "t", "name": "Deleted Items", "role": "trash", "totalEmails": 1}"""
         server.subjects["t"] = "Old receipt"
         openMessageIn("Trash", "Old receipt")
-        screenshot("trash-bar")
+        compose.screenshot("folders/trash_bar")
         button("Restore").assertExists()
 
         button("Delete forever").performClick()
@@ -93,18 +93,10 @@ class FolderActionsTest {
         assertTrue("Cancel deletes nothing", server.calls.none { "Email/set" in it })
 
         button("Delete forever").performClick()
-        dialogScreenshot("delete-forever-confirm")
+        compose.screenshot("folders/delete_forever_confirm")
         compose.onNodeWithText("Delete").performClick()
         val destroy = lastUpdate()
         assertTrue(destroy, "\"destroy\":[\"m1-t\"]" in destroy)
         compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
     }
-
-    /** Saves the screen to build/reports/inbox for review. */
-    private fun screenshot(name: String) = compose.windowBitmap().savePng(reportPath(name))
-
-    /** Saves the dialog on top, which has its own window. */
-    private fun dialogScreenshot(name: String) = compose.dialogBitmap().savePng(reportPath(name))
-
-    private fun reportPath(name: String) = "build/reports/inbox/folder-actions-$name.png"
 }

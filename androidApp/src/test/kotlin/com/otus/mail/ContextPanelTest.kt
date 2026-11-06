@@ -1,6 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
@@ -49,11 +48,10 @@ class ContextPanelTest {
 
     @Test
     fun searchSelectionAndFiltersAreControlledByScreen() {
-        saveScreenshot("inbox")
         compose.onNodeWithContentDescription("Search mailbox").performClick()
         compose.onNodeWithText("People").performClick().assertIsOn()
         compose.searchField().performTextInput("meeting")
-        val searchImage = saveScreenshot("search")
+        val searchImage = compose.windowBitmap()
         val people = compose.onNodeWithText("People").fetchSemanticsNode().boundsInRoot
         val density = compose.activity.resources.displayMetrics.density
         val gapY = (people.center.y - (36f / 2 + 1) * density).toInt()
@@ -66,7 +64,6 @@ class ContextPanelTest {
         compose.onNodeWithContentDescription("Search mailbox").assertIsDisplayed()
         compose.onNodeWithText("Metadata").performClick()
         compose.onNodeWithText("Design review").assertIsDisplayed()
-        saveScreenshot("metadata")
     }
 
     @Test
@@ -78,7 +75,6 @@ class ContextPanelTest {
         val after = compose.onNodeWithContentDescription("Open filters").fetchSemanticsNode().boundsInRoot
         assertEquals(before, after)
         compose.onNodeWithText("Mails").performClick().assertIsOn()
-        saveScreenshot("search-narrow-scrolled")
     }
 
     @Test
@@ -106,13 +102,13 @@ class ContextPanelTest {
                     hasAnyDescendant(hasText("People")),
             )
         val bounds = rail.fetchSemanticsNode().boundsInRoot
-        val before = saveScreenshot("edge-$name-before")
+        val before = compose.windowBitmap()
         rail.performTouchInput {
             // In the rail's inset at the edge being pulled, so no pill shows press feedback.
             down(if (distance > 0) centerLeft + Offset(1f, 0f) else centerRight - Offset(1f, 0f))
             moveBy(Offset(distance, 0f), delayMillis = 200)
         }
-        val held = saveScreenshot("edge-$name-held")
+        val held = compose.windowBitmap()
         rail.performTouchInput { up() }
         val width = bounds.width.toInt()
         val height = bounds.height.toInt()
@@ -141,13 +137,6 @@ class ContextPanelTest {
             .performClick()
             .assertIsOn()
         compose.onNodeWithContentDescription("Open filters").assertIsDisplayed()
-        saveScreenshot("search-large-text")
-    }
-
-    private fun saveScreenshot(name: String): Bitmap {
-        val bitmap = compose.windowBitmap()
-        bitmap.savePng("build/reports/context-panel/$name.png")
-        return bitmap
     }
 }
 

@@ -9,8 +9,6 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.captureScreenRoboImage
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
@@ -48,7 +46,6 @@ class FromSearchScreenshotTest {
     @Test
     fun searchStaysAboveScrolledAddressesBlack() = scrolledShot("compose_from_search_scrolled_black", ThemeBase.Black)
 
-    @OptIn(ExperimentalRoborazziApi::class)
     private fun scrolledShot(
         name: String,
         theme: ThemeBase,
@@ -57,8 +54,7 @@ class FromSearchScreenshotTest {
         compose.onNode(hasContentDescription("Send from this@companya.com. Change") and hasClickAction()).performClick()
         compose.onNodeWithText("otus@rubylabs.design").performScrollTo()
         compose.onNodeWithText("Search 13 addresses").assertExists()
-        compose.waitForIdle()
-        captureScreenRoboImage("src/test/screenshots/$name.png")
+        compose.screenshot(name)
     }
 
     private fun open(theme: ThemeBase) {

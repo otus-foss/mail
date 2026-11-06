@@ -68,7 +68,7 @@ class ReadZenTest {
         assertTrue(zen.value)
         compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsNotDisplayed()
         compose.onNodeWithText("Mailing list", substring = true).assertIsNotDisplayed()
-        compose.screenshot("read-zen")
+        compose.screenshot("read/zen")
         compose.onNodeWithContentDescription("Leave zen mode").performClick()
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
         compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsDisplayed()

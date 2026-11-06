@@ -31,7 +31,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowDialog
 import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
@@ -109,7 +108,6 @@ class CalendarWeekLayoutTest {
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("2020-12-30 → 2021-01-03").assertIsDisplayed()
         dates.drop(2).forEach { compose.onNodeWithContentDescription(it).assertIsSelected() }
-        saveScreenshot()
         calendar.performTouchInput { up() }
         compose.mainClock.autoAdvance = true
         compose.onNodeWithText("2020-12-30 → 2021-01-03").assertIsDisplayed()
@@ -139,13 +137,5 @@ class CalendarWeekLayoutTest {
         compose.onNodeWithContentDescription("Month choices").performScrollToNode(hasText("December"))
         compose.onNodeWithText("December").performClick()
         compose.onNodeWithText("Go").performClick()
-    }
-
-    private fun saveScreenshot() {
-        compose
-            .runOnIdle {
-                val dialog = ShadowDialog.getShownDialogs().last { it.isShowing }
-                requireNotNull(dialog.window).decorView.drawnBitmap()
-            }.savePng("build/reports/pickers/calendar-continuous-week.png")
     }
 }

@@ -1,6 +1,5 @@
 package com.otus.mail
 
-import android.graphics.Bitmap
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
@@ -70,10 +69,9 @@ class InboxPickerTest {
         compose.onNode(hasText("sam@example.com") and isToggleable()).performClick().assertIsOn()
         compose.onNodeWithText("2 selected").assertIsDisplayed()
         compose.onNodeWithContentDescription("Clear picker search").performClick()
-        screenshot("people")
+        compose.screenshot("inbox/picker_people")
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithContentDescription("From 2 people").assertIsDisplayed().assert(!hasText("Alex"))
-        chipScreenshot("From 2 people", "people-chip-multiple")
         compose.onNodeWithText("Meeting").assertIsDisplayed()
         assertResults(2)
     }
@@ -89,7 +87,6 @@ class InboxPickerTest {
         compose.onNodeWithText("Done").performClick()
         assertResults(1)
         compose.onNodeWithContentDescription("From Alex").assert(hasText("Alex"))
-        chipScreenshot("From Alex", "people-chip-single")
         compose.onNodeWithContentDescription("From Alex").performClick()
         compose.onNodeWithText("Clear").performClick()
         compose.onNodeWithContentDescription("Dismiss From").performTouchInput { click(Offset(center.x, 10f)) }
@@ -164,13 +161,12 @@ class InboxPickerTest {
         compose.onNodeWithText("1 selected").assertIsDisplayed()
         compose.onNodeWithContentDescription("Search accounts…").performTextInput("Personal")
         compose.onNode(hasText("Personal") and isToggleable()).performClick()
-        screenshot("accounts")
+        compose.screenshot("inbox/picker_accounts")
         compose.onNodeWithText("Done").performClick()
         assertResults(1)
         compose.onNodeWithText("Meeting plans").assertIsDisplayed()
         val single = compose.onNodeWithContentDescription("Personal account, Inbox").performScrollTo()
         single.assert(hasText("Inbox") and !hasText("Personal")).assertIsOn()
-        chipScreenshot("Personal account, Inbox", "accounts-chip-single")
         single.performClick()
         compose.onNodeWithContentDescription("Search accounts…").performTextReplacement("Work")
         compose.onNode(hasText("Work") and isToggleable()).performClick()
@@ -181,7 +177,6 @@ class InboxPickerTest {
             .performScrollTo()
             .assert(hasText("Inbox"))
             .assertIsOn()
-        chipScreenshot("2 accounts, Inbox", "accounts-chip-multiple")
     }
 
     @Test
@@ -194,7 +189,6 @@ class InboxPickerTest {
         compose.onNodeWithText("Done").assertIsNotEnabled()
         compose.onNodeWithContentDescription(first).performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(400)
-        screenshot("date-range")
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText(relativeIsoRange(first, last, "–")).performScrollTo().performClick()
         compose.onNodeWithText(relativeIsoRange(first, last)).assertIsDisplayed()
@@ -218,7 +212,7 @@ class InboxPickerTest {
         compose.onNodeWithContentDescription("Search people…").performTextInput("unknown")
         compose.onNodeWithText("No matches. Try another search.").assertIsDisplayed()
         compose.onNodeWithText("Done").assertIsDisplayed()
-        screenshot("people-large-text")
+        compose.screenshot("inbox/picker_people_large_text")
         compose.onNodeWithContentDescription("Dismiss From").performTouchInput { click(Offset(center.x, 10f)) }
     }
 
@@ -228,23 +222,6 @@ class InboxPickerTest {
             count,
             compose.onAllNodes(hasStateDescription("Read") or hasStateDescription("Unread")).fetchSemanticsNodes().size,
         )
-
-    private fun chipScreenshot(
-        description: String,
-        name: String,
-    ) {
-        val bounds = compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInWindow
-        Bitmap
-            .createBitmap(
-                compose.windowBitmap(),
-                bounds.left.toInt(),
-                bounds.top.toInt(),
-                bounds.width.toInt(),
-                bounds.height.toInt(),
-            ).savePng("build/reports/pickers/$name.png")
-    }
-
-    private fun screenshot(name: String) = compose.dialogBitmap().savePng("build/reports/pickers/$name.png")
 
     private val dateFormatter = DateFormatter(DateFormatPreference.YearMonthDayDashes)
 

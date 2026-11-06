@@ -143,7 +143,7 @@ class ComposeScreenTest {
         compose.onNodeWithText("New message").assertExists()
         button("Send from this@companya.com. Change").assertExists()
         button("Send").assertIsNotEnabled()
-        compose.screenshot("compose-new-empty")
+        compose.screenshot("compose/new_empty")
     }
 
     @Test
@@ -155,7 +155,7 @@ class ComposeScreenTest {
         button("Send, to Grace Hopper").assertIsEnabled()
         compose.onNodeWithText("Grace Hopper").assertExists()
         button("Attach").assertIsNotEnabled()
-        compose.screenshot("compose-new-filled")
+        compose.screenshot("compose/new_filled")
 
         button("Add Cc").performClick()
         type("Cc", "bob@example.com")
@@ -199,7 +199,7 @@ class ComposeScreenTest {
         button("Send from this@companya.com. Change").performClick()
         compose.onNodeWithText("Recent").assertExists()
         compose.onNodeWithText("Rubylabs").assertExists()
-        compose.screenshot("compose-from-dropdown")
+        compose.screenshot("compose/from_dropdown")
         compose.onNodeWithText("otus@rubylabs.design").performClick()
         compose.waitForIdle()
         button("Send from otus@rubylabs.design. Change").assertExists()
@@ -209,7 +209,7 @@ class ComposeScreenTest {
     fun theMoreMenuAddsBccAndDiscards() {
         open()
         button("More options").performClick()
-        compose.screenshot("compose-more-options")
+        compose.screenshot("compose/more_options")
         compose.onNodeWithText("Add Bcc").performClick()
         compose.onNodeWithContentDescription("Bcc").assertExists()
         button("More options").performClick()
@@ -223,17 +223,14 @@ class ComposeScreenTest {
     fun scheduleSendPicksATimeThatShowsUntilSendSchedulesIt() {
         open(ComposeRequest.Reply(original, all = false))
         button("More options").performClick()
-        compose.screenshot("compose-more-options-reply")
         compose.onNodeWithText("Schedule send").performClick()
         compose.onNodeWithText("Send later").assertExists()
         compose.onNodeWithText("Pick date and time").assertExists()
-        compose.screenshot("compose-send-later")
         compose.onNodeWithText("Tomorrow morning").performClick()
         compose.waitForIdle()
         assertFalse("Choosing a time does not send", closed)
         compose.onNodeWithText("Scheduled for", substring = true).assertExists()
         compose.onNode(hasText("Change") and hasClickAction()).assertExists()
-        compose.screenshot("compose-scheduled")
 
         compose.onNode(hasContentDescription("Send, to Grace Hopper") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { closed }
@@ -248,7 +245,6 @@ class ComposeScreenTest {
         compose.onNodeWithText("Pick date and time").performClick()
         compose.onNode(hasText("Go") and hasClickAction()).performClick()
         compose.onNodeWithText("Choose time").assertExists()
-        compose.screenshot("compose-pick-time")
         // The date chooser starts on the first day with a time left, so its first hour is the earliest's.
         // The wheel opens on 08:00 when that is still ahead, so scroll it to its first hour first.
         val earliest = earliestPick(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()))

@@ -27,7 +27,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowDialog
 
 /** Move to buttons: picked for slots in the bar editor, each with its own folder, and moving the open message. */
 @RunWith(RobolectricTestRunner::class)
@@ -70,7 +69,7 @@ class MoveToButtonsTest {
         compose.onNodeWithContentDescription("Receipts, change").performClick()
         pick("Receipts / Amazon")
         done()
-        screenshot("edit-sheet")
+        compose.screenshot("messages/move_to_edit_sheet")
         done()
 
         val expected =
@@ -104,7 +103,7 @@ class MoveToButtonsTest {
         compose.onNodeWithText("Welcome").performClick()
         compose.waitForNode(hasContentDescription("Travel") and hasClickAction())
         button("Move to Receipts").assertExists()
-        screenshot("message-bar")
+        compose.screenshot("messages/move_to_message_bar")
         button("Travel").performClick()
         assertTrue(moveUpdate(), "\"mailboxIds/a\":null,\"mailboxIds/t\":true" in moveUpdate())
     }
@@ -112,15 +111,6 @@ class MoveToButtonsTest {
     private fun moveUpdate(): String {
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "mailboxIds" in it } }
         return server.calls.first { "Email/set" in it && "mailboxIds" in it }
-    }
-
-    /** Saves the sheet on top, or the page without one, to build/reports/action-targets for review. */
-    private fun screenshot(name: String) {
-        compose
-            .runOnIdle {
-                val sheet = ShadowDialog.getShownDialogs().lastOrNull { it.isShowing }
-                (sheet?.window?.decorView ?: compose.activity.window.decorView).drawnBitmap()
-            }.savePng("build/reports/action-targets/$name.png")
     }
 
     private companion object {
