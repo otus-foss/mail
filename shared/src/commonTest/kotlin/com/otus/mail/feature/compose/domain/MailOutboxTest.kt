@@ -1,6 +1,5 @@
 package com.otus.mail.feature.compose.domain
 
-import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftSender
 import com.otus.mail.core.messages.domain.SendException
@@ -8,7 +7,6 @@ import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SendTime
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.accountId
-import com.otus.mail.core.messages.domain.answered
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -152,7 +150,8 @@ class MailOutboxTest {
         runTest {
             val copies = mutableListOf<String?>()
             val woken = mutableListOf<Instant>()
-            val outbox = MailOutbox(store, storing, recordingCopies(copies), wake = { woken += it }, now = { now })
+            val outbox =
+                MailOutbox(store, storing, checker.recordingCopies(copies), wake = { woken += it }, now = { now })
             val id = outbox.add(draft, null, NOW)
             failure = SendFailure.Unreachable
             outbox.send(id)
@@ -178,45 +177,7 @@ class MailOutboxTest {
             assertEquals(1, sent.size, "Nothing goes twice")
         }
 
-    /** [sender], storing the copy `e9` before it submits it. */
-    private val storing =
-        object : DraftSender {
-            override suspend fun send(
-                draft: Draft,
-                answered: AnsweredMessage?,
-                time: SendTime,
-            ) = sender.send(draft, answered, time)
-
-            override suspend fun send(
-                draft: Draft,
-                answered: AnsweredMessage?,
-                time: SendTime,
-                stored: suspend (emailId: String) -> Unit,
-            ): Result<SentMessage> {
-                stored("e9")
-                return sender.send(draft, answered, time)
-            }
-        }
-
-    /** [checker], recording the stored copy each lookup goes by in [copies]. */
-    private fun recordingCopies(copies: MutableList<String?>) =
-        object : SendChecker {
-            override suspend fun check(
-                draft: Draft,
-                answered: AnsweredMessage?,
-                cancelHeld: Boolean,
-            ) = checker.check(draft, answered, cancelHeld)
-
-            override suspend fun check(
-                draft: Draft,
-                answered: AnsweredMessage?,
-                cancelHeld: Boolean,
-                storedCopy: String?,
-            ): SendCheck {
-                copies += storedCopy
-                return checker.check(draft, answered, cancelHeld)
-            }
-        }
+    private val storing = sender.storingCopy("e9")
 
     @Test
     fun undoDropsAWaitingMessageButNotOneThatWent() =

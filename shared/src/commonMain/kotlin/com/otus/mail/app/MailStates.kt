@@ -134,10 +134,8 @@ internal class MailStates(
             },
         )
 
-    /** Addresses pinned in "Show mail from". */
     val addressPins = AddressPinsState(services.stores.addressPins)
 
-    /** The screen and keyboard protections Settings › Privacy & security offers on this platform. */
     val devicePrivacy: DevicePrivacy get() = services.devicePrivacy
 
     /** Rules keep only addresses, so senders take their names from the inbox's loaded mail. */
@@ -244,10 +242,8 @@ internal class MailStates(
 
     val filing = MessageFiling(services.senderHistory, folders, folderColors, edits)
 
-    /** The toasts that offer to undo moves; the process holds them, see [MailServices.work]. */
     val moveToasts: MoveToasts get() = services.moveToasts
 
-    /** Pages that work outliving this composition opens, such as a toast's, and what the platform opens. */
     val requests: MailRequests get() = services.requests
 
     /** The Read view's services, folders, and privacy setting; its toasts join the move toasts. */
@@ -296,10 +292,8 @@ internal class MailStates(
             cleanup = cleaning.cleanup(feed),
         )
 
-    /** Each page's applied filters while the app runs. */
     val pageFilters = PageFilters()
 
-    /** The counts and people search of the filter panels. */
     val filterLookups = FilterLookups(services.mail, services.people) { mailScope.accountId?.let(::setOf) }
 
     suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)

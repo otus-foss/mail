@@ -212,20 +212,6 @@ internal object ReadViewFixtures {
         return ReadEdits(MailEdits(writer, scope, MoveToasts(effects.toasts, scope)), feed)
     }
 
-    /** This context with replies showing their quotes, as the "Show quotes" setting does. */
-    fun ReadContext.showingQuotes(): ReadContext =
-        ReadContext(
-            pages,
-            folders,
-            privacy,
-            files,
-            services,
-            effects,
-            ReadDisplay({ true }, today = display.today),
-            own,
-            loadContent,
-        )
-
     /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
     private fun photo(): ByteArray {
         val bitmap = Bitmap.createBitmap(PHOTO_SIZE, PHOTO_SIZE, Bitmap.Config.ARGB_8888)
@@ -305,7 +291,3 @@ internal object ReadViewFixtures {
             "Crash-free sessions are at 99.2%.\n\n" +
             "View all issues"
 }
-
-/** This context for a user who owns [own]. */
-internal fun ReadContext.ownedBy(own: OwnAddresses): ReadContext =
-    ReadContext(pages, folders, privacy, files, services, effects, display, own, loadContent)

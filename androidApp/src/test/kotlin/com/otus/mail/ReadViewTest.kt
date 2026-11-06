@@ -57,7 +57,7 @@ class ReadViewTest {
         val read =
             fixtures
                 .read(pages, cameFrom, writer, { unsubscribed++ }, newFolder)
-                .let { if (showQuotes) with(fixtures) { it.showingQuotes() } else it }
+                .let { if (showQuotes) it.showingQuotes() else it }
         val context =
             read.ownedBy(OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address))))
         compose.runOnUiThread {
