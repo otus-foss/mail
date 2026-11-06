@@ -7,7 +7,6 @@ import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
 import com.otus.avatar.avatarOptions
 import com.otus.dateformat.DateFormatter
-import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
@@ -16,11 +15,9 @@ import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
-import com.otus.mail.feature.inbox.presentation.components.syncedLabel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
@@ -272,28 +269,6 @@ private class FeedLoad(
 ) {
     var served = false
 }
-
-/** Why the account did not load, and when the mail it shows last matched the server. */
-private fun UnavailableAccount.notice(
-    now: LocalDateTime,
-    dates: DateFormatter,
-): String {
-    val updated =
-        syncedAt
-            ?.toLocalDateTime(TimeZone.currentSystemDefault())
-            ?.let { " Last updated ${dates.syncedLabel(it, now)}." }
-    return reasonNotice() + updated.orEmpty()
-}
-
-private fun UnavailableAccount.reasonNotice(): String =
-    when (reason) {
-        MailFailure.SignInRejected -> "$name: the server rejected the sign-in. Reconnect it in Settings."
-        MailFailure.NotPermitted -> "$name: the server doesn't allow this account to read mail."
-        MailFailure.CredentialsUnavailable -> "$name: the saved password couldn't be read. Reconnect it in Settings."
-        MailFailure.NoMail -> "$name: this account doesn't offer mail over JMAP."
-        MailFailure.Unreachable -> "$name: couldn't reach the server."
-        MailFailure.ServerProblem -> "$name: the server returned an error."
-    }
 
 private fun loadNotice(
     reported: String?,

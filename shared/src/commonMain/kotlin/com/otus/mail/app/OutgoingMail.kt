@@ -287,7 +287,6 @@ private fun Throwable.isOffline() = (this as? SendException)?.failure == SendFai
 private const val WILL_SEND = "Will send when online"
 private const val UNCONFIRMED = "Couldn't confirm sending"
 
-/** What the toast for a message an earlier run could not send says. */
 private fun OutboxProblem?.offerText() = if (this == OutboxProblem.Unconfirmed) UNCONFIRMED else "Couldn't send"
 
 /** Time for the request to reach the server and for its clock to differ from the device's. */
