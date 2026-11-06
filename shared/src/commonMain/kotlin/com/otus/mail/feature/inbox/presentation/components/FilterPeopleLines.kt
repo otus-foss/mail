@@ -13,7 +13,9 @@ import com.otus.designsystem.shared.filters.components.FilterSection
 import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
-import com.otus.designsystem.shared.selection.components.DropdownRow
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.RecipientField
@@ -152,12 +154,7 @@ private fun FilterPersonChoice(
     person: FilterPerson,
     onPick: () -> Unit,
 ) {
-    DropdownRow(
-        person.own?.address ?: person.label,
-        selected = false,
-        onClick = onPick,
-        subtitle = person.subline,
-    ) {
+    PickRow(person.own?.address ?: person.label, person.subline, PickMark(false, style = PickStyle.Card), onPick) {
         val avatar = chipAvatar(person.avatar, person.name, person.addresses.first())
         PersonAvatar(avatar, ComposeTokens.dropdownAvatarSize)
     }

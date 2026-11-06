@@ -6,12 +6,11 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
-import com.otus.designsystem.shared.selection.components.PickRowLayout
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -47,7 +46,7 @@ internal fun BookChoices(
                                 null,
                                 PickMark(book.key == selected),
                                 { onSelect(book) },
-                                layout = PickRowLayout(RowDensity.Compact),
+                                height = Sizes.touchTarget,
                             )
                         }
                     },

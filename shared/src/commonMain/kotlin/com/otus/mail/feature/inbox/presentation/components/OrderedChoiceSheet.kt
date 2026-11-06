@@ -13,11 +13,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.overlays.components.SelectionSheet
+import com.otus.designsystem.shared.overlays.components.ListSheet
+import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.reorder.components.ReorderableColumn
 import com.otus.designsystem.shared.reorder.components.ReorderableScope
 import com.otus.designsystem.shared.rows.elements.nestIndent
-import com.otus.designsystem.shared.selection.elements.SelectionRow
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -43,14 +46,16 @@ internal fun <T> OrderedChoiceSheet(
     var draft by rememberSaveable { mutableStateOf(selected.map(keyOf)) }
     val shown = draft.mapNotNull { key -> choices.firstOrNull { it.key == key } }
     val values = selected.associateBy(keyOf) + choices.associate { it.key to it.value }
-    SelectionSheet(
-        title = title,
-        onDismiss = onDismiss,
+    ListSheet(
+        title,
+        onDismiss,
+        done =
+            SheetConfirm("Done", {
+                onApply(draft.mapNotNull(values::get))
+                onDismiss()
+            }),
         onClear = { draft = emptyList() },
-        onApply = {
-            onApply(draft.mapNotNull(values::get))
-            onDismiss()
-        },
+        scrolls = true,
     ) {
         Column(
             Modifier.verticalScroll(rememberScrollState()),
@@ -79,12 +84,18 @@ private fun <T> ReorderableScope.ShownChoice(
     choice: OrderedChoice<T>,
     onRemove: () -> Unit,
 ) {
-    SelectionRow(choice.path, selected = true, onClick = onRemove, leading = {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            DragHandle(choice.path)
-            Symbol(choice.icon)
-        }
-    })
+    PickRow(
+        choice.path,
+        null,
+        PickMark(true, multiple = true, style = PickStyle.Card),
+        onRemove,
+        leading = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                DragHandle(choice.path)
+                Symbol(choice.icon)
+            }
+        },
+    )
 }
 
 @Composable
@@ -95,10 +106,11 @@ private fun <T> AvailableChoices(
     choices.groupBy { it.group }.forEach { (group, options) ->
         SheetCaption(group)
         options.nestedByPath { it.path }.forEach { (choice, name, depth) ->
-            SelectionRow(
+            PickRow(
                 name,
-                selected = false,
-                onClick = { onAdd(choice.key) },
+                null,
+                PickMark(false, multiple = true, style = PickStyle.Card),
+                { onAdd(choice.key) },
                 modifier = Modifier.nestIndent(PageTokens.nestIndent, depth),
                 leading = { Symbol(choice.icon) },
             )

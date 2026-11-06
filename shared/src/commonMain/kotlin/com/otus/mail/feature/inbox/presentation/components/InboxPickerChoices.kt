@@ -10,7 +10,9 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.people.components.PersonAvatar
-import com.otus.designsystem.shared.selection.elements.SelectionRow
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.people.AvatarTokens
@@ -59,11 +61,11 @@ private fun LazyListScope.peopleChoices(
         item { EmptyChoices(people.isEmpty(), "No senders yet.") }
     }
     items(matches, key = { it.address }) { person ->
-        SelectionRow(
+        PickRow(
             person.shownName,
-            person.address in draft.senders,
+            person.address,
+            PickMark(person.address in draft.senders, multiple = true, style = PickStyle.Card),
             { onChange(draft.copy(senders = draft.senders.toggled(person.address))) },
-            subtitle = person.address,
             leading = {
                 SenderAvatar(person)
             },
@@ -97,13 +99,12 @@ private fun LazyListScope.accountChoices(
         item { EmptyChoices(accounts.isEmpty() && names.isEmpty(), "No accounts connected.") }
     }
     items(matches, key = { it.accountId }) { account ->
-        SelectionRow(
+        PickRow(
             account.account,
-            account.accountId in draft.accounts,
-            { onChange(draft.copy(accounts = draft.accounts.toggled(account.accountId))) },
             // The account name defaults to its address; show the address only when it adds something.
-            subtitle =
-                account.accountAddress.takeIf { it.isNotBlank() && !it.equals(account.account, ignoreCase = true) },
+            account.accountAddress.takeIf { it.isNotBlank() && !it.equals(account.account, ignoreCase = true) },
+            PickMark(account.accountId in draft.accounts, multiple = true, style = PickStyle.Card),
+            { onChange(draft.copy(accounts = draft.accounts.toggled(account.accountId))) },
             leading = { AccountAvatar(account) },
         )
     }
@@ -118,9 +119,10 @@ private fun LazyListScope.mailboxChoices(
     if (names.isEmpty()) return
     item { SheetCaption("Inboxes", Modifier.padding(top = SheetTokens.inset)) }
     items(names, key = { "mailbox/$it" }) { name ->
-        SelectionRow(
+        PickRow(
             name,
-            draft.mailboxes.any { it.name == name },
+            null,
+            PickMark(draft.mailboxes.any { it.name == name }, multiple = true, style = PickStyle.Card),
             { onChange(draft.copy(mailboxes = draft.mailboxes.toggledName(name))) },
         )
     }

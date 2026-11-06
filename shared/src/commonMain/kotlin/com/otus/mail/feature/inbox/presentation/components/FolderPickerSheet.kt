@@ -12,9 +12,9 @@ import com.otus.designsystem.mail.folders.components.FolderCheck
 import com.otus.designsystem.mail.folders.components.TreeFolder
 import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.folders.elements.FolderGlyph
+import com.otus.designsystem.shared.overlays.components.ListSheet
 import com.otus.designsystem.shared.rows.components.AccountGroupRow
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.shared.selection.components.ScopeSheet
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterAccount
@@ -43,11 +43,7 @@ internal fun FolderPickerSheet(
     var query by remember { mutableStateOf("") }
     var collapsed by remember { mutableStateOf(emptySet<FolderKey>()) }
     var foldedAccounts by remember { mutableStateOf(emptySet<String>()) }
-    ScopeSheet(
-        "Folders",
-        onDismiss,
-        search = { PickerSearch(query, { query = it }, "Search folders") },
-    ) {
+    ListSheet("Folders", onDismiss, search = { PickerSearch(query, { query = it }, "Search folders") }) {
         options.accounts.forEach { account ->
             val open = account.id !in foldedAccounts
             if (options.accounts.size > 1) {

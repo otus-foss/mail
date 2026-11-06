@@ -10,8 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
@@ -36,10 +36,11 @@ internal fun AddPeopleSheet(
     var query by remember { mutableStateOf("") }
     var picked by remember { mutableStateOf(emptySet<CardKey>()) }
     val chosen = people.filter { it.main.key in picked }
-    ClosableSheet(
+    SheetFrame(
         "Add people",
         onDismiss,
-        SheetConfirm("Add ${peopleCount(chosen.size)}", { onAdd(chosen) }, enabled = chosen.isNotEmpty()),
+        done = SheetConfirm("Add ${peopleCount(chosen.size)}", { onAdd(chosen) }, enabled = chosen.isNotEmpty()),
+        closeButton = true,
     ) {
         PickerSearch(query, { query = it }, "Search people…", Modifier.padding(horizontal = SheetTokens.inset))
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {

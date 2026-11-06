@@ -16,10 +16,13 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.filters.components.FilterRowCard
 import com.otus.designsystem.shared.filters.components.FilterValueRow
-import com.otus.designsystem.shared.overlays.components.SelectionSheet
+import com.otus.designsystem.shared.overlays.components.ListSheet
+import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
-import com.otus.designsystem.shared.selection.components.DropdownRow
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.InboxFilters
@@ -117,15 +120,20 @@ private fun AccountChoices(
         onEdit { it.copy(account = account) }
         close()
     }
-    DropdownRow(
+    PickRow(
         "All accounts",
-        draft.account == null,
+        "${options.accounts.size} accounts · ${options.addresses.size} addresses",
+        PickMark(draft.account == null, style = PickStyle.Card),
         { pick(null) },
-        subtitle = "${options.accounts.size} accounts · ${options.addresses.size} addresses",
     ) { Symbol(Res.drawable.symbol_all_inbox) }
     options.accounts.forEach { account ->
         val (title, subtitle) = account.lines(options)
-        DropdownRow(title, draft.account == account.id, { pick(account.id) }, subtitle = subtitle) {
+        PickRow(
+            title,
+            subtitle,
+            PickMark(draft.account == account.id, style = PickStyle.Card),
+            { pick(account.id) },
+        ) {
             PersonAvatar(account.avatar, ComposeTokens.dropdownAvatarSize)
         }
     }
@@ -148,15 +156,25 @@ private fun DateChoices(
     onCustom: () -> Unit,
 ) {
     DATE_PRESETS.forEach { preset ->
-        DropdownRow(preset.label, date == preset, {
-            onEdit { it.copy(date = preset) }
-            close()
-        })
+        PickRow(
+            preset.label,
+            null,
+            PickMark(date == preset, style = PickStyle.Card),
+            {
+                onEdit { it.copy(date = preset) }
+                close()
+            },
+        )
     }
-    DropdownRow("Custom…", date is DateFilter.Range, {
-        close()
-        onCustom()
-    })
+    PickRow(
+        "Custom…",
+        null,
+        PickMark(date is DateFilter.Range, style = PickStyle.Card),
+        {
+            close()
+            onCustom()
+        },
+    )
 }
 
 /** The range picker search uses, applying its range on Done; Clear and Done go back to any time. */
@@ -170,18 +188,20 @@ private fun DateRangeSheet(
     val range = date as? DateFilter.Range
     var start by remember { mutableStateOf(range?.from?.toString()) }
     var end by remember { mutableStateOf(range?.to?.toString()) }
-    SelectionSheet(
+    ListSheet(
         "Date",
         onDismiss,
+        done =
+            SheetConfirm("Done", {
+                val picked = start?.let { DateFilter.Range(LocalDate.parse(it), LocalDate.parse(end ?: it)) }
+                onEdit { it.copy(date = picked ?: DateFilter.Any) }
+                onDismiss()
+            }),
         onClear = {
             start = null
             end = null
         },
-        onApply = {
-            val picked = start?.let { DateFilter.Range(LocalDate.parse(it), LocalDate.parse(end ?: it)) }
-            onEdit { it.copy(date = picked ?: DateFilter.Any) }
-            onDismiss()
-        },
+        scrolls = true,
     ) {
         DateRangePicker(start, end, dateFormatter) { first, last ->
             start = first

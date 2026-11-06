@@ -19,7 +19,7 @@ import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.shared.contacts.components.ContactRow
 import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.PlainAction
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.colors.OtusColors
@@ -60,7 +60,7 @@ internal fun PersonContactSheet(
         state.notice = "Added to contact"
         onDismiss()
     }
-    ClosableSheet(name, onDismiss) {
+    SheetFrame(name, onDismiss, done = null, closeButton = true) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),

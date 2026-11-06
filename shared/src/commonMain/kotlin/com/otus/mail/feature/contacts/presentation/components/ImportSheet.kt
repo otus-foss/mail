@@ -14,8 +14,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.jscontact.Card
@@ -41,10 +41,11 @@ internal fun ImportSheet(
     var mode by remember { mutableStateOf(ImportMode.Merge) }
     val plan = book?.let { ImportPlan(file.cards, it.key, existing, file.failures) }
     val count = plan?.count(mode) ?: 0
-    ClosableSheet(
+    SheetFrame(
         "Import contacts",
         onDismiss,
-        SheetConfirm("Import $count", { if (plan != null) onImport(plan, mode) }, enabled = count > 0),
+        done = SheetConfirm("Import $count", { if (plan != null) onImport(plan, mode) }, enabled = count > 0),
+        closeButton = true,
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),

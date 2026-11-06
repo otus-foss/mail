@@ -8,7 +8,8 @@ import androidx.compose.runtime.setValue
 import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.dates.components.DateRangePicker
-import com.otus.designsystem.shared.overlays.components.SelectionSheet
+import com.otus.designsystem.shared.overlays.components.ListSheet
+import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -29,21 +30,22 @@ fun InboxFilterSheet(
     var query by rememberSaveable(filter) { mutableStateOf("") }
     val updateDraft = { changed: InboxSearch -> draft = changed }
     val searchable = filter in listOf(InboxFilter.People, InboxFilter.Accounts)
-    SelectionSheet(
-        title = if (filter == InboxFilter.People) "From" else filter.title,
-        onDismiss = onDismiss,
+    ListSheet(
+        if (filter == InboxFilter.People) "From" else filter.title,
+        onDismiss,
+        done =
+            SheetConfirm("Done", {
+                onApply(draft)
+                onDismiss()
+            }, enabled = filter != InboxFilter.Date || draft.hasCompleteDates(currentLocalDate().toString())),
         onClear = { draft = draft.clear(filter) },
-        onApply = {
-            onApply(draft)
-            onDismiss()
-        },
-        applyEnabled = filter != InboxFilter.Date || draft.hasCompleteDates(currentLocalDate().toString()),
         search =
             if (searchable) {
                 { PickerSearch(query, { query = it }, "Search ${filter.title.lowercase()}…") }
             } else {
                 null
             },
+        scrolls = true,
     ) {
         when (filter) {
             InboxFilter.Date -> SearchDates(draft, dateFormatter, updateDraft)

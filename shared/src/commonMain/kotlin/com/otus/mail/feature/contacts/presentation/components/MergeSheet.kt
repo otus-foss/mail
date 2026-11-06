@@ -25,17 +25,16 @@ import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.feedback.components.InfoTip
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.OptionsMenu
 import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonAvatar
-import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
-import com.otus.designsystem.shared.selection.components.PickRowLayout
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
@@ -63,10 +62,11 @@ internal fun MergeSheet(
     onDismiss: () -> Unit,
 ) {
     val bookOf = { key: BookKey -> books.firstOrNull { it.key == key } }
-    ClosableSheet(
+    SheetFrame(
         "Same person?",
         onDismiss,
-        SheetConfirm("Merge", { onMerge(plan) }, enabled = plan.addresses.isNotEmpty()),
+        done = SheetConfirm("Merge", { onMerge(plan) }, enabled = plan.addresses.isNotEmpty()),
+        closeButton = true,
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -208,7 +208,7 @@ private fun DeleteRow(
         null,
         PickMark(plan.deleteOthers, multiple = true),
         { onChange(plan.copy(deleteOthers = !plan.deleteOthers)) },
-        layout = PickRowLayout(RowDensity.Compact),
+        height = Sizes.touchTarget,
     )
 }
 

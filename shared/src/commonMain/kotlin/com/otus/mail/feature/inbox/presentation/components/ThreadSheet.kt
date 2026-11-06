@@ -11,7 +11,7 @@ import com.otus.designsystem.mail.read.components.ThreadEntry
 import com.otus.designsystem.mail.read.components.ThreadMessageRow
 import com.otus.designsystem.mail.read.components.ThreadStrip
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.ListCaption
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -44,7 +44,7 @@ internal fun ThreadSheet(
     thread: ReplyThread,
     onDismiss: () -> Unit,
 ) {
-    ClosableSheet("Earlier in this thread", onDismiss) {
+    SheetFrame("Earlier in this thread", onDismiss, done = null, closeButton = true) {
         Column(
             Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),

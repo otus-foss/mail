@@ -8,7 +8,9 @@ import androidx.compose.runtime.Composable
 import com.otus.designsystem.mail.folders.components.RuleChip
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.people.components.PersonAvatar
-import com.otus.designsystem.shared.selection.elements.SelectionRow
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.core.Spacing
@@ -42,12 +44,11 @@ internal fun RuleSuggestionList(
     if (suggestions.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(SheetTokens.rowPadding)) {
         suggestions.forEach { suggestion ->
-            SelectionRow(
+            PickRow(
                 suggestion.title,
-                selected = suggestion.condition == chosen,
-                onClick = { onChoose(suggestion.condition) },
-                subtitle = suggestion.subtitle,
-                singleChoice = true,
+                suggestion.subtitle,
+                PickMark(suggestion.condition == chosen, style = PickStyle.Card),
+                { onChoose(suggestion.condition) },
                 leading = { SuggestionAvatar(suggestion.condition) },
             )
         }

@@ -16,8 +16,8 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.resources.symbol_label
 import com.otus.designsystem.shared.controls.elements.PlainAction
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.ConfirmDialog
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.elements.RowButton
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.theme.colors.OtusColors
@@ -35,7 +35,7 @@ internal fun LabelsSheet(
     onDismiss: () -> Unit,
 ) {
     var deleting by remember { mutableStateOf<String?>(null) }
-    ClosableSheet("Labels", onDismiss) {
+    SheetFrame("Labels", onDismiss, done = null, closeButton = true) {
         Column(
             Modifier
                 .fillMaxWidth()

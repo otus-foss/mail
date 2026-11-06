@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.MailHeader
@@ -30,7 +30,7 @@ fun MessageDetailsSheet(
     val headers by produceState<HeadersLoad>(HeadersLoad.Loading, message.id) {
         value = loadHeaders()?.let(HeadersLoad::Loaded) ?: HeadersLoad.Failed
     }
-    ClosableSheet("Details", onDismiss) {
+    SheetFrame("Details", onDismiss, done = null, closeButton = true) {
         Column(
             Modifier
                 .weight(1f, fill = false)

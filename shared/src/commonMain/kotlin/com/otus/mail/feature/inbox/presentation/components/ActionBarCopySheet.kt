@@ -11,8 +11,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.overlays.components.SheetFrame
-import com.otus.designsystem.shared.selection.elements.SelectionRow
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.shared.settings.components.PreviewCard
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
@@ -40,12 +43,13 @@ internal fun ActionBarCopySheet(
     SheetFrame(
         "Copy to",
         onDismiss,
-        onDone = {
-            state.update { now ->
-                now.copy(actionBar = now.actionBar + ticked.associateWith { now.copiedBar(from, it) })
-            }
-            onDismiss()
-        },
+        done =
+            SheetConfirm("Done", {
+                state.update { now ->
+                    now.copy(actionBar = now.actionBar + ticked.associateWith { now.copiedBar(from, it) })
+                }
+                onDismiss()
+            }),
     ) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = SheetTokens.inset),
@@ -54,11 +58,11 @@ internal fun ActionBarCopySheet(
             SheetCaption("The ${from.title} bar", heading = false)
             PreviewCard(from.marker) { ActionBarPreview(source) }
             targets.forEach { place ->
-                SelectionRow(
+                PickRow(
                     place.title,
-                    selected = place in ticked,
-                    onClick = { ticked = ticked.toggled(place) },
-                    subtitle = behavior.copySummary(from, place),
+                    behavior.copySummary(from, place),
+                    PickMark(place in ticked, multiple = true, style = PickStyle.Card),
+                    { ticked = ticked.toggled(place) },
                 )
             }
             if (unusable.isNotEmpty()) {

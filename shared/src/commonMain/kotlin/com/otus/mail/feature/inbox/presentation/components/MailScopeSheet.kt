@@ -5,21 +5,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.otus.designsystem.shared.overlays.components.ListSheet
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.shared.selection.components.ScopeOption
 import com.otus.designsystem.shared.selection.components.ScopeRow
-import com.otus.designsystem.shared.selection.components.ScopeSheet
 import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.AddressPins
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.avatarOf
 import com.otus.mail.feature.inbox.domain.searchAddresses
 import com.otus.mail.feature.inbox.presentation.ALL_MAIL
-import com.otus.mail.feature.inbox.presentation.ScopeHeader
 import com.otus.mail.feature.inbox.presentation.allMailAvatars
 import com.otus.mail.feature.inbox.presentation.allMailSummary
-import com.otus.mail.feature.inbox.presentation.scopeHeader
 
 /** "Show mail from" in a sheet, which stays open after a choice and searches many addresses. */
 @Composable
@@ -29,7 +27,7 @@ fun MailScopeSheet(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val total = switch.accounts.sumOf { it.addresses.size }
-    ScopeSheet(
+    ListSheet(
         "Show mail from",
         onDismiss,
         search =

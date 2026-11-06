@@ -35,7 +35,9 @@ import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
-import com.otus.designsystem.shared.selection.components.DropdownRow
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.core.Sizes
@@ -134,7 +136,7 @@ private fun DateChip(
         DatePill(label, full, { open = true })
         if (open) {
             Dropdown({ open = false }, width = ComposeTokens.fromLabelMaxWidth) {
-                DropdownRow(full, selected = false, onClick = { open = false })
+                PickRow(full, null, PickMark(false, style = PickStyle.Card), { open = false })
             }
         }
     }

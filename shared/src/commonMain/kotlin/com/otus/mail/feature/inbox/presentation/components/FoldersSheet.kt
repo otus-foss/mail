@@ -19,6 +19,7 @@ import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.IconPill
+import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.core.Spacing
@@ -61,11 +62,11 @@ fun FoldersSheet(
     SheetFrame(
         "Folders",
         onDismiss,
-        onDone = {
-            if (change.changes) onApply(change.added, change.removed)
-            onDismiss()
-        },
-        doneEnabled = change.keepsEveryEmail,
+        done =
+            SheetConfirm("Done", {
+                if (change.changes) onApply(change.added, change.removed)
+                onDismiss()
+            }, enabled = change.keepsEveryEmail),
     ) {
         Column(
             Modifier

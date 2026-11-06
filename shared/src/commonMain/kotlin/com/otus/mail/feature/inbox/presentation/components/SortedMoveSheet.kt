@@ -17,6 +17,7 @@ import com.otus.designsystem.shared.controls.components.ButtonPair
 import com.otus.designsystem.shared.controls.components.PairButton
 import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonText
 import com.otus.designsystem.shared.rows.components.SummaryCard
@@ -42,11 +43,11 @@ internal fun SortedMoveSheet(
     SheetFrame(
         "Moved to ${move.folderName}",
         onDismiss,
-        onDone = {
-            move.undo()
-            onDismiss()
-        },
-        doneLabel = "Undo",
+        done =
+            SheetConfirm("Undo", {
+                move.undo()
+                onDismiss()
+            }),
     ) {
         Column(
             Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),

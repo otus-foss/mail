@@ -22,6 +22,7 @@ import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.folders.elements.FolderColorSwatch
 import com.otus.designsystem.shared.input.elements.InputField
+import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.designsystem.theme.tokens.core.Spacing
@@ -60,12 +61,11 @@ internal fun NewFolderSheet(
     SheetFrame(
         parent?.let { "New folder in ${it.name}" } ?: "New folder",
         onDismiss,
-        onDone = {
-            actions.onCreate(account.accountId, name, parentId, setup)
-            onDismiss()
-        },
-        doneEnabled = problem == null,
-        doneLabel = "Create",
+        done =
+            SheetConfirm("Create", {
+                actions.onCreate(account.accountId, name, parentId, setup)
+                onDismiss()
+            }, enabled = problem == null),
     ) {
         Column(
             Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),

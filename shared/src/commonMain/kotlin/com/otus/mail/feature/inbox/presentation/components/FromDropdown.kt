@@ -9,8 +9,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
-import com.otus.designsystem.shared.selection.components.DropdownRow
 import com.otus.designsystem.shared.selection.components.ListCaption
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.overlays.MenuTokens
@@ -80,12 +82,15 @@ private fun IdentitySection(
     identities.forEach { identity ->
         val sender = identity.sender
         val named = sender.name.isNotBlank() && sender.name != sender.address
-        DropdownRow(
+        PickRow(
             if (named) sender.name else sender.address,
-            selected =
+            null,
+            PickMark(
                 selected != null && sender.accountKey == selected.accountKey &&
                     sender.address.equals(selected.address, ignoreCase = true),
-            onClick = { onSelect(identity) },
+                style = PickStyle.Card,
+            ),
+            { onSelect(identity) },
             detail = sender.address.takeIf { named },
         ) { PersonAvatar(sender.chipAvatar, ComposeTokens.dropdownAvatarSize) }
     }

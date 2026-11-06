@@ -9,8 +9,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.theme.colors.OtusColors
@@ -166,7 +166,12 @@ private fun FolderDetailDialogs(
             rules.remove(folder, index)
             close()
         }
-        ClosableSheet("Can't edit this rule here", close, SheetConfirm("Delete rule", delete)) {
+        SheetFrame(
+            "Can't edit this rule here",
+            close,
+            done = SheetConfirm("Delete rule", delete),
+            closeButton = true,
+        ) {
             Text(
                 "Only rules on one sender, recipient, subject, or mailing list can be edited here.",
                 Modifier.padding(SheetTokens.inset),

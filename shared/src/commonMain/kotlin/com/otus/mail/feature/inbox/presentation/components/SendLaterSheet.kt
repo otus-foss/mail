@@ -17,7 +17,7 @@ import com.otus.designsystem.resources.symbol_wb_twilight
 import com.otus.designsystem.resources.symbol_work
 import com.otus.designsystem.shared.dates.components.SpecificDatePicker
 import com.otus.designsystem.shared.dates.components.TimeWheelPicker
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.components.GroupRow
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -53,7 +53,7 @@ internal fun SendLaterSheet(
         onDismiss()
         onSchedule(at)
     }
-    ClosableSheet("Send later", onDismiss) {
+    SheetFrame("Send later", onDismiss, done = null, closeButton = true) {
         Column(
             Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
