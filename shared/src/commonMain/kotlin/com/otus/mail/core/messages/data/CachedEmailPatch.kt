@@ -1,6 +1,7 @@
 package com.otus.mail.core.messages.data
 
 import com.otus.jmap.JmapJson
+import com.otus.json.types.patchTokens
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.MailCache
 import kotlinx.serialization.SerializationException
@@ -46,14 +47,14 @@ private fun patched(
         null
     }
 
-/** [path] is `property` or `property/key`, with the key escaped as a JSON Pointer token (RFC 6901). */
+/** [path] is `property` or `property/key`; a bad escape throws [IllegalArgumentException]. */
 internal fun JsonObject.patchedAt(
     path: String,
     value: JsonElement,
 ): JsonObject {
-    val property = path.substringBefore('/')
-    if (property == path) return JsonObject(this + (property to value))
-    val key = path.substringAfter('/').replace("~1", "/").replace("~0", "~")
+    val tokens = patchTokens(path)
+    val property = tokens.first()
+    val key = tokens.getOrNull(1) ?: return JsonObject(this + (property to value))
     val inner = (get(property) as? JsonObject).orEmpty()
     val changed = if (value is JsonNull) inner - key else inner + (key to value)
     return JsonObject(this + (property to JsonObject(changed)))

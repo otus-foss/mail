@@ -12,12 +12,13 @@ import android.print.PrintManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.otus.designsystem.mail.read.html.offlineHtml
 import com.otus.mail.feature.read.domain.MessagePrinter
 import java.lang.ref.WeakReference
 
 /**
  * Prints a message, or saves it as a PDF, through the system print dialog. The HTML loads into an
- * off-screen [WebView] with scripts and network loads off, sealed as [printableHtml] says, never
+ * off-screen [WebView] with scripts and network loads off, sealed by [offlineHtml], never
  * follows a link or refresh, and prints once it has drawn. The print dialog needs an activity, so
  * [attach] names the one in front. The printer holds the loading view until printing starts, since
  * nothing else does, and the print job destroys it when it finishes; a newly attached activity
@@ -68,25 +69,9 @@ class AndroidMessagePrinter : MessagePrinter {
                     )
                 }
             }
-        view.loadDataWithBaseURL(null, printableHtml(html), "text/html", "utf-8", null)
+        view.loadDataWithBaseURL(null, offlineHtml(html), "text/html", "utf-8", null)
     }
 }
-
-/**
- * [html] sealed as the Read view seals a message whose remote content is off: a policy that lets it
- * load nothing from the network, DNS prefetching off, and its `<link>` elements inert, since the policy
- * does not cover `dns-prefetch` or `preconnect` hints, which would reach the sender's server.
- */
-internal fun printableHtml(html: String): String =
-    "<meta http-equiv=\"Content-Security-Policy\" content=\"$PRINT_POLICY\">" +
-        "<meta http-equiv=\"x-dns-prefetch-control\" content=\"off\">" +
-        html.replace(LINK_TAG, "<otus-inert-link")
-
-private const val PRINT_POLICY =
-    "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; form-action 'none'"
-
-/** An HTML `<link>` start tag: the tag name ends at whitespace, `/`, or `>`, in any case. */
-private val LINK_TAG = Regex("<link(?=[\\s/>])", RegexOption.IGNORE_CASE)
 
 /** Prints as [adapter] does and destroys [view], which drew the pages, once the job is done. */
 private class DestroyingAdapter(
