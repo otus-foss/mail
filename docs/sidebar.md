@@ -1,8 +1,9 @@
 # Sidebar
 
-Implemented in common Compose code for Mail. `Sidebar`, `SidebarHeader`, `SidebarMailboxGrid`, and
-`ScopeSheet` live in the shared design system's `components` (`com.otus.designsystem`, from
-otus-meta). `SidebarInboxEntry`, `SidebarMailboxTile`, `SidebarEntry`, `SidebarFolderEntry`,
+Implemented in common Compose code for Mail. `Sidebar`, `SidebarHeader`, and `ListSheet` live in
+the shared design system's `components` (`com.otus.designsystem`, from otus-meta), and
+`SidebarMailboxGrid`, `SidebarInboxEntry`, and `SidebarMailboxTile` in its `mail/sidebar`
+group. `SidebarEntry`, `SidebarFolderEntry`,
 `SectionCaption`, and `SidebarDivider` are elements. None of them knows about Mail: the caller
 supplies the header, the rows, and a `SidebarState`. App wiring owns the current page, the chosen
 "Show mail from" scope, and the `SidebarState`.

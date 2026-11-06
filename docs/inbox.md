@@ -240,7 +240,7 @@ storage.
 
 ## Message rows
 
-Each row is Meta's `ContentRow`. The first line is the subject, bold while unread, with when the
+Each row is Meta's `CompactContentRow`. The first line is the subject, bold while unread, with when the
 message arrived: the time today, "Yesterday", the weekday within the last week, and the saved date
 format before that (`receivedLabel`). The second line is the sender's name, or the address when
 the message has none.
@@ -289,7 +289,7 @@ are mark read or unread on a swipe right and delete on a swipe left. Right-to-le
 ## Inbox pills
 
 The row under the search prompt shows the user's pills in the user's order. **Mail behavior
-› Pills** opens a `SelectionSheet` that starts with the shown pills in row order. Dragging
+› Pills** opens an `OrderedChoiceSheet` that starts with the shown pills in row order. Dragging
 a pill's handle moves it, using Meta's `ReorderableColumn`, and tapping a shown pill takes it off
 the row. TalkBack and VoiceOver offer Move up and Move down on each shown pill. Below follow the
 pills to add, grouped as filters, folders every account has, and each account's own folders;

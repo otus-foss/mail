@@ -115,6 +115,5 @@ and generated-avatar service.
 See [the component inventory](docs/component-inventory.md) for shared UI and the Mail-specific compositions that remain.
 
 Meta is the central owner of visual elements, reusable components, tokens, and symbols.
-Mail retains feature screens and adapters. Message, folder, and rule rows and empty states
-use shared `ContentRow`, `DetailRow`, and `EmptyState`; all symbols and `InboxTokens` come
-from `designsystem`. These additions are included in Meta 0.3.0.
+Mail retains feature screens and adapters. Message rows use Meta's `CompactContentRow`, empty
+states `EmptyState`, and all symbols and tokens come from `designsystem`.

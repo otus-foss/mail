@@ -110,10 +110,10 @@ Every setting is one of a few kinds, so each kind reads and behaves the same on 
 - **Choice**: a `SettingRow` that shows the current value in a `ValueButton` and opens a
   `ChoiceSheet`. Choosing applies at once and moves the check; Done, the scrim, Back, or a swipe
   down closes it, and the default sits alone at the top. A choice is never a list of radio rows on
-  the page itself. Only **Icons from** uses a `RadioChoiceSheet`, which saves on Done, because its
+  the page itself. Only **Icons from** uses `ChoiceSheet(saveOnDone)`, which saves on Done, because its
   Bulwark choice needs an address that has to be valid first.
 - **Ordered list**: a `SettingRow` that shows how many are chosen, such as "4 shown", and opens
-  `OrderedChoiceSheet`, a `SelectionSheet` where chosen items are dragged by their handles or
+  Meta's `OrderedChoiceSheet`, a `ListSheet` where chosen items are dragged by their handles or
   tapped out and others are added; Done saves. Pills, the filter panel's Sections and Quick
   filters, both Quick views, and the alert buttons use it. A list with a limit, such as the three
   alert buttons, says "Take one out to add another." once it is full.
@@ -164,14 +164,13 @@ live.
 - `ChoiceSheet` (component): single-choice bottom sheet for settings; choosing applies at once.
   The default option, "Use device format" or a swipe's own default marked "Default", is listed
   first in a group of its own.
-- `ChoiceDialog` (component): single-choice popup over a scrim, for one-shot picks.
 - `DialogFrame` (component): the shared popup frame with a title and close button.
 - `SheetFrame` (component): the shared bottom sheet with a title, Done, and dismissal gestures.
 - `ConfirmDialog` (component): asks before a destructive change, with Cancel and the
   confirming action. Removing an account and deleting a folder use it.
 - `ActionDialog` and `InputDialog` (components): a confirmation or menu of `DialogAction`s, and a
   popup with one validated text field.
-- `ActionRow`, `InputField`, and `InputKind` (elements).
+- `InputField` and `InputKind` (elements).
 
 App wiring owns the page (`app/MailPage`): subpages name their parent and belong to the Settings
 sidebar entry. Each page keeps its saved state while another is shown. The password is held in
