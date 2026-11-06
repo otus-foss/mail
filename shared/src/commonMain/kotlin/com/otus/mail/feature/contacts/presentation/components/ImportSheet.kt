@@ -14,7 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -44,7 +44,7 @@ internal fun ImportSheet(
     SheetFrame(
         "Import contacts",
         onDismiss,
-        done = SheetConfirm("Import $count", { if (plan != null) onImport(plan, mode) }, enabled = count > 0),
+        done = UiAction("Import $count", enabled = count > 0, onClick = { if (plan != null) onImport(plan, mode) }),
         closeButton = true,
     ) {
         Column(

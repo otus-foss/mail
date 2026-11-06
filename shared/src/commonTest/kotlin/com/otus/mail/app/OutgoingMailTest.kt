@@ -1,22 +1,15 @@
 package com.otus.mail.app
 
-import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.OutboxStore
-import com.otus.mail.feature.inbox.domain.ScheduledSends
 import com.otus.mail.feature.inbox.domain.SendCheck
-import com.otus.mail.feature.inbox.domain.SendException
 import com.otus.mail.feature.inbox.domain.SendFailure
 import com.otus.mail.feature.inbox.domain.SendTime
 import com.otus.mail.feature.inbox.domain.SentMessage
-import com.otus.mail.feature.inbox.presentation.OutgoingDraft
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -29,7 +22,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class OutgoingMailTest : OutgoingMailFixture() {
@@ -61,7 +53,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
     fun undoKeepsTheMessageAndOpensTheDraftAgain() =
         runTest {
             outgoing().send(message)
-            assertNotNull(toasts.messages.single().action).onAction()
+            assertNotNull(toasts.messages.single().action).onClick()
             advanceTimeBy(HOLD * 2)
             assertTrue(runs.isEmpty())
             assertEquals(listOf<ComposeRequest>(message.reopen), opened)
@@ -78,7 +70,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             assertEquals("Will send when online", failed.text)
             assertTrue(failed.sticky)
             failure = null
-            assertNotNull(failed.action).onAction()
+            assertNotNull(failed.action).onClick()
             runCurrent()
             assertEquals(listOf("Sent"), toasts.messages.map { it.text })
         }
@@ -91,7 +83,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             val toast = toasts.messages.single()
             assertEquals("Scheduled for Mon 19 Oct, 8:00", toast.text)
             assertTrue(runs.single() is SendTime.Scheduled)
-            assertNotNull(toast.action).onAction()
+            assertNotNull(toast.action).onClick()
             runCurrent()
             assertEquals(listOf(SentMessage("a1", "e9", "s1")), cancelled)
             assertEquals("e9", (opened.single() as ComposeRequest.Resume).draft.emailId)
@@ -119,7 +111,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
         runTest {
             serverDelaySeconds = 60
             outgoing().send(message)
-            assertNotNull(toasts.messages.single().action).onAction()
+            assertNotNull(toasts.messages.single().action).onClick()
             runCurrent()
             assertEquals(listOf(SentMessage("a1", "e9", "s1")), cancelled)
             assertEquals("e9", (opened.single() as ComposeRequest.Resume).draft.emailId)
@@ -185,7 +177,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             runCurrent()
             val failed = toasts.messages.single()
             assertEquals("Couldn't send", failed.text)
-            assertNotNull(failed.action).onAction()
+            assertNotNull(failed.action).onClick()
             // Open runs in the process scope, so it outlives the page that showed the toast.
             runCurrent()
             assertEquals("e9", (opened.single() as ComposeRequest.Resume).draft.emailId)
@@ -231,7 +223,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             runCurrent()
             val offer = toasts.messages.single()
             assertEquals("Couldn't send", offer.text)
-            assertNotNull(offer.action).onAction()
+            assertNotNull(offer.action).onClick()
             runCurrent()
             val reopened = (opened.single() as ComposeRequest.Resume).draft
             assertEquals("Lunch", reopened.subject)
@@ -254,7 +246,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
                 .resume { pages.show(MailPage.Compose(it)) }
             runCurrent()
             // The user taps Open while no activity shows pages, as during a rotation.
-            assertNotNull(toasts.messages.single().action).onAction()
+            assertNotNull(toasts.messages.single().action).onClick()
             runCurrent()
 
             suspend fun kept() = MailOutbox(store, sender, checker, io = EmptyCoroutineContext).offers()

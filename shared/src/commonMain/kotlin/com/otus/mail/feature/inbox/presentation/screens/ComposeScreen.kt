@@ -23,6 +23,7 @@ import com.otus.designsystem.resources.symbol_schedule_send
 import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.input.elements.isKeyboardUp
 import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.overlays.components.OptionsItem
@@ -188,12 +189,14 @@ private fun options(
 ): List<OptionsItem> =
     listOfNotNull(
         OptionsItem
-            .Action("Schedule send", Res.drawable.symbol_schedule_send, onSchedule, opens = true)
+            .Action(UiAction("Schedule send", Res.drawable.symbol_schedule_send, onClick = onSchedule), opens = true)
             .takeIf { state.maxDelaySeconds > 0 },
-        OptionsItem.Action(if (bcc) "Remove Bcc" else "Add Bcc", Res.drawable.symbol_visibility_off, onToggleBcc),
+        OptionsItem.Action(
+            UiAction(if (bcc) "Remove Bcc" else "Add Bcc", Res.drawable.symbol_visibility_off, onClick = onToggleBcc),
+        ),
         OptionsItem.Toggle("Signature", Res.drawable.symbol_signature, state.signatureOn, state::showSignature),
         OptionsItem.Divider,
-        OptionsItem.Action("Discard draft", Res.drawable.symbol_delete, onDiscard),
+        OptionsItem.Action(UiAction("Discard draft", Res.drawable.symbol_delete, onClick = onDiscard)),
     )
 
 /** The copy lines a draft opens with: those that already hold people. */

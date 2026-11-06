@@ -7,6 +7,7 @@ import com.otus.designsystem.mail.compose.components.ImagePreset
 import com.otus.designsystem.mail.compose.components.ImageSizing
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_delete
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.mail.feature.inbox.domain.SignatureImage
 import com.otus.mail.feature.inbox.domain.SignatureImageSize
@@ -19,7 +20,13 @@ internal fun SignatureImageBar(editor: SignatureEditorState) {
     val image = editor.images.getOrNull(index) ?: return
     ImageBar(
         editor.imageSizing(index, image),
-        listOf(OptionsItem.Action("Remove image", Res.drawable.symbol_delete, { editor.removeImage(index) })),
+        listOf(
+            OptionsItem.Action(
+                UiAction("Remove image", Res.drawable.symbol_delete, onClick = {
+                    editor.removeImage(index)
+                }),
+            ),
+        ),
         onDone = { editor.selected = null },
     )
 }

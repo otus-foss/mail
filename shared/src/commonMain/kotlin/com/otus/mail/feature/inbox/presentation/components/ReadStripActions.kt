@@ -2,8 +2,8 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.ui.graphics.ImageBitmap
 import com.otus.designsystem.mail.attachments.components.AttachmentActions
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
-import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.designsystem.shared.people.elements.decodeImage
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -88,7 +88,7 @@ internal class ReadStripActions(
         val web = how.web
         if (how.mail == null && web != null) return openLink(web)
         newsletters.set(message, NewsletterStep.Unsubscribed)
-        val undo = ToastAction("Undo") { newsletters.set(message, NewsletterStep.Subscribed) }
+        val undo = UiAction("Undo") { newsletters.set(message, NewsletterStep.Subscribed) }
         val send = {
             read.effects.launch {
                 when (val result = lists.unsubscribe(message, how)) {

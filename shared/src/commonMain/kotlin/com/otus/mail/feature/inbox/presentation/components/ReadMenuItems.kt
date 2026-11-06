@@ -16,6 +16,7 @@ import com.otus.designsystem.resources.symbol_person_add
 import com.otus.designsystem.resources.symbol_print
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_verified_user
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.mail.feature.inbox.presentation.read.ReadMenuEntry
 import com.otus.mail.feature.inbox.presentation.read.ReadMenuSection
@@ -43,7 +44,7 @@ internal fun readMenuItems(
             section.entries.forEach { add(it.item(onEntry, unread)) }
         }
         if (more.isNotEmpty()) add(OptionsItem.Divider)
-        more.forEach { add(OptionsItem.Action(it.label, it.symbol, { onMore(it) })) }
+        more.forEach { add(OptionsItem.Action(UiAction(it.label, it.symbol, onClick = { onMore(it) }))) }
     }
 
 private fun ReadMenuEntry.item(
@@ -56,14 +57,16 @@ private fun ReadMenuEntry.item(
         }
 
         this == ReadMenuEntry.MarkUnread && unread -> {
-            OptionsItem.Action("Mark as read", Res.drawable.symbol_mark_email_read, { onEntry(this) })
+            OptionsItem.Action(
+                UiAction("Mark as read", Res.drawable.symbol_mark_email_read, onClick = { onEntry(this) }),
+            )
         }
 
         else -> {
             OptionsItem.Action(
-                label(),
-                icon,
-                { onEntry(this) },
+                UiAction(label(), icon, onClick = {
+                    onEntry(this)
+                }),
                 opens = this is ReadMenuEntry.MoveTo,
                 detail = detail(),
             )

@@ -14,7 +14,7 @@ import com.otus.designsystem.mail.attachments.components.AttachmentChip
 import com.otus.designsystem.mail.compose.components.EditableImage
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add_photo_alternate
-import com.otus.designsystem.shared.overlays.components.MenuAction
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.people.elements.rememberImage
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PageTokens
@@ -58,14 +58,14 @@ internal fun ComposeAttachmentList(
 private fun DraftAttachment.actions(
     failure: UploadFailure?,
     attachments: ComposeAttachments,
-): List<MenuAction> =
+): List<UiAction> =
     buildList {
-        if (failure == UploadFailure.Failed) add(MenuAction("Retry") { attachments.retry(id) })
+        if (failure == UploadFailure.Failed) add(UiAction("Retry") { attachments.retry(id) })
         if (image) add(inMessage(attachments))
     }
 
 private fun DraftAttachment.inMessage(attachments: ComposeAttachments) =
-    MenuAction("Show in message", Res.drawable.symbol_add_photo_alternate) { attachments.showInline(id, inline = true) }
+    UiAction("Show in message", Res.drawable.symbol_add_photo_alternate) { attachments.showInline(id, inline = true) }
 
 /** Why a file is not ready to send, or null once the draft's account has it. */
 private fun DraftAttachment.status(

@@ -38,6 +38,7 @@ import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
@@ -80,7 +81,13 @@ class ActionBarTest {
                         Box(Modifier.fillMaxSize().background(OtusColors.bgRegular)) {
                             if (shown) {
                                 ActionBar(
-                                    BarAction("Move", Res.drawable.symbol_drive_file_move, enabled = primaryEnabled) {},
+                                    BarAction(
+                                        UiAction(
+                                            "Move",
+                                            Res.drawable.symbol_drive_file_move,
+                                            enabled = primaryEnabled,
+                                        ) {},
+                                    ),
                                     Modifier.align(Alignment.BottomCenter).padding(ActionBarTokens.barInset),
                                     secondary = secondary().take(secondaryCount),
                                     context = context,
@@ -95,9 +102,9 @@ class ActionBarTest {
 
     private fun secondary() =
         listOf(
-            BarAction("Archive", Res.drawable.symbol_archive, enabled = archiveEnabled) {},
-            BarAction("Delete", Res.drawable.symbol_delete) {},
-            BarAction("Flag", Res.drawable.symbol_flag) {},
+            BarAction(UiAction("Archive", Res.drawable.symbol_archive, enabled = archiveEnabled) {}),
+            BarAction(UiAction("Delete", Res.drawable.symbol_delete) {}),
+            BarAction(UiAction("Flag", Res.drawable.symbol_flag) {}),
         )
 
     @Test

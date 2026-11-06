@@ -15,11 +15,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import com.otus.designsystem.mail.read.components.BannerAction
 import com.otus.designsystem.mail.read.components.ImageBanner
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_hide_image
 import com.otus.designsystem.resources.symbol_image
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.shared.swipe.components.SwipeToDismiss
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -98,7 +98,7 @@ internal class ReadPageLook(
                 ImageBanner(
                     Res.drawable.symbol_hide_image,
                     "Images blocked for privacy",
-                    listOf(BannerAction("Show") { bodies.showImages(page) }),
+                    listOf(UiAction("Show") { bodies.showImages(page) }),
                 )
             } else {
                 // Always shows this sender's images from now on, which the ⋯ menu names in full.
@@ -106,8 +106,8 @@ internal class ReadPageLook(
                     Res.drawable.symbol_image,
                     "Images shown",
                     listOf(
-                        BannerAction("Hide") { bodies.hideImages(page) },
-                        BannerAction("Always") { read.privacy.allowSender(page.sender.address) },
+                        UiAction("Hide") { bodies.hideImages(page) },
+                        UiAction("Always") { read.privacy.allowSender(page.sender.address) },
                     ),
                 )
             }

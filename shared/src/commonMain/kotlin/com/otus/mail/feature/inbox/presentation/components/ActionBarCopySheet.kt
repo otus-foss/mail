@@ -11,7 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
@@ -44,7 +44,7 @@ internal fun ActionBarCopySheet(
         "Copy to",
         onDismiss,
         done =
-            SheetConfirm("Done", {
+            UiAction("Done", onClick = {
                 state.update { now ->
                     now.copy(actionBar = now.actionBar + ticked.associateWith { now.copiedBar(from, it) })
                 }

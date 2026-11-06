@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.swipe.components.SwipeAction
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.BarButton
@@ -73,7 +74,7 @@ internal fun MessageActions.swipeAction(
     action: MailAction?,
 ): SwipeAction? =
     action?.takeIf { it.swipeable }?.let { offer(listOf(message), it, chooseFolder = { _, _ -> }) }?.let {
-        SwipeAction(it.label, it.symbol, dismisses = it.leaves, onSwipe = it.run)
+        SwipeAction(UiAction(it.label, it.symbol, onClick = it.run), dismisses = it.leaves)
     }
 
 /** The action bar mode as settings name it. */

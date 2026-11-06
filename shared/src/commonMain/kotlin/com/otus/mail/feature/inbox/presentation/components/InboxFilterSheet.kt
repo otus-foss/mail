@@ -7,9 +7,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.currentLocalDate
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.overlays.components.ListSheet
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -34,10 +34,15 @@ fun InboxFilterSheet(
         if (filter == InboxFilter.People) "From" else filter.title,
         onDismiss,
         done =
-            SheetConfirm("Done", {
-                onApply(draft)
-                onDismiss()
-            }, enabled = filter != InboxFilter.Date || draft.hasCompleteDates(currentLocalDate().toString())),
+            UiAction(
+                "Done",
+                enabled =
+                    filter != InboxFilter.Date || draft.hasCompleteDates(currentLocalDate().toString()),
+                onClick = {
+                    onApply(draft)
+                    onDismiss()
+                },
+            ),
         onClear = { draft = draft.clear(filter) },
         search =
             if (searchable) {

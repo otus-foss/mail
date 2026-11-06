@@ -12,7 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.overlays.components.SheetHeaderAction
 import com.otus.designsystem.shared.selection.components.PickerSearch
@@ -55,12 +55,12 @@ fun AddRuleSheet(
         "Sort into $folderName",
         actions.onDismiss,
         done =
-            SheetConfirm(if (start.editing == null) "Add" else "Save", {
+            UiAction(if (start.editing == null) "Add" else "Save", enabled = chosen != null, onClick = {
                 when {
                     deleting -> actions.onDelete?.invoke()
                     chosen != null -> actions.onSave(FolderRule(chosen), moveExisting && (existing ?: 0) > 0)
                 }
-            }, enabled = chosen != null),
+            }),
         leadingAction =
             actions.onDelete?.let {
                 { done ->

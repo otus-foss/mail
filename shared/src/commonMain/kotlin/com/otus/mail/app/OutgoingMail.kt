@@ -1,9 +1,9 @@
 package com.otus.mail.app
 
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.MailOutbox
@@ -78,7 +78,7 @@ internal class OutgoingMail(
                 deliver(outgoing, id.await(), group)
             }
         val undo =
-            ToastAction("Undo") {
+            UiAction("Undo") {
                 onDevice.cancel()
                 scope.launch {
                     val sent = held.await()?.getOrNull()
@@ -91,7 +91,7 @@ internal class OutgoingMail(
             }
         val sentToast = { scope.launch { if (held.await()?.isSuccess == true) toasts.show(sent(group)) } }
         val send =
-            ToastAction("Send") {
+            UiAction("Send") {
                 early.complete(Unit)
                 scope.launch { sendEarly(outgoing, held.await()?.getOrNull() ?: return@launch, deadline, group) }
             }
@@ -121,7 +121,7 @@ internal class OutgoingMail(
             outbox.offers().forEach { entry ->
                 val draft = entry.draft.copy(messageId = null)
                 val action =
-                    ToastAction("Open") {
+                    UiAction("Open") {
                         scope.launch {
                             open(ComposeRequest.Resume(draft, ComposeRequest.New(draft.accountId)))
                             outbox.drop(entry.id)
@@ -146,11 +146,11 @@ internal class OutgoingMail(
         outbox.send(id).fold(
             onSuccess = { sent ->
                 outgoing.draft.sent()
-                val undo = sent?.let { ToastAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
+                val undo = sent?.let { UiAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
                 toasts.show(ToastMessage(dates().scheduledLabel(at), undo))
             },
             onFailure = { error ->
-                val retry = ToastAction("Retry") { scope.launch { schedule(outgoing, id, at) } }
+                val retry = UiAction("Retry") { scope.launch { schedule(outgoing, id, at) } }
                 val text = if (error.isOffline()) "Will schedule when online" else "Couldn't schedule"
                 toasts.show(ToastMessage(text, retry, sticky = true))
             },
@@ -206,7 +206,7 @@ internal class OutgoingMail(
         }
         val reopen = outgoing.reopen
         val open =
-            ToastAction("Open") {
+            UiAction("Open") {
                 scope.launch { outgoing.open(reopen.copy(draft = reopen.draft.copy(emailId = held.emailId))) }
             }
         toasts.show(ToastMessage("Couldn't send", open, group, sticky = true))
@@ -239,14 +239,14 @@ internal class OutgoingMail(
         val unconfirmed = (error as? SendException)?.failure == SendFailure.Unconfirmed
         val action =
             if (unconfirmed) {
-                ToastAction("Open") {
+                UiAction("Open") {
                     scope.launch {
                         outgoing.open(outgoing.reopen)
                         outbox.drop(id)
                     }
                 }
             } else {
-                ToastAction("Retry") { scope.launch { deliver(outgoing, id, group) } }
+                UiAction("Retry") { scope.launch { deliver(outgoing, id, group) } }
             }
         val text =
             when {

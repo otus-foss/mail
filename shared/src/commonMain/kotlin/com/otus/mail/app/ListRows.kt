@@ -4,8 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.accounts.domain.ownAddresses
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
-import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.MailFolder
@@ -69,6 +69,6 @@ private fun MailStates.colorFolder(
     color: FolderColor,
 ) {
     folderColors.setColor(listOf(folder), color.name)
-    val undo = ToastAction("Undo") { folderColors.setColor(listOf(folder), null) }
+    val undo = UiAction("Undo") { folderColors.setColor(listOf(folder), null) }
     moveToasts.toasts.show(ToastMessage("${folder.name} is now ${color.label.lowercase()}", undo))
 }

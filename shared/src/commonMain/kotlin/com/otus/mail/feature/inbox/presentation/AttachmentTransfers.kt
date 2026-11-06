@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
 import androidx.compose.runtime.mutableStateMapOf
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OfflineAttachments
@@ -107,7 +107,7 @@ internal class AttachmentTransfers(
         return coroutineScope {
             val transfer = coroutineContext.job
             val cancel =
-                ToastAction("Cancel") {
+                UiAction("Cancel") {
                     transfer.cancel()
                     toasts.show(ToastMessage("Download canceled", group = group))
                 }
@@ -140,9 +140,9 @@ internal class AttachmentTransfers(
         group: Any,
     ): ToastMessage =
         if (stored.kept) {
-            ToastMessage("${file.name} is kept offline", ToastAction("Remove") { remove(message, file) }, group)
+            ToastMessage("${file.name} is kept offline", UiAction("Remove") { remove(message, file) }, group)
         } else {
-            ToastMessage("Opened ${file.name}", ToastAction("Keep offline") { keep(message, file) }, group)
+            ToastMessage("Opened ${file.name}", UiAction("Keep offline") { keep(message, file) }, group)
         }
 
     fun keep(

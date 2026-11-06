@@ -26,6 +26,7 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.rows.components.FoldingSection
 import com.otus.designsystem.shared.rows.components.LocalEntriesOnRaised
@@ -181,10 +182,12 @@ internal fun SearchResultsBar(
         remember(listed, state.matching) { searchMessages(listed.messages, state.matching, listed.filters).size }
     ActionBar(
         BarAction(
-            FilterCount.Known(count.toLong()).showLabel,
-            Res.drawable.symbol_search,
-            enabled = count > 0,
-            onClick = state::showResults,
+            UiAction(
+                FilterCount.Known(count.toLong()).showLabel,
+                Res.drawable.symbol_search,
+                enabled = count > 0,
+                onClick = state::showResults,
+            ),
         ),
     )
 }

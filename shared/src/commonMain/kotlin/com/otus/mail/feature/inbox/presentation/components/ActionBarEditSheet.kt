@@ -14,7 +14,7 @@ import com.otus.designsystem.resources.symbol_content_copy
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.settings.components.PreviewCard
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -47,7 +47,7 @@ internal fun ActionBarEditSheet(
     SheetFrame(
         place.title,
         onDismiss,
-        done = SheetConfirm("Done", { if (copyNext) onCopy() else onDismiss() }),
+        done = UiAction("Done", onClick = { if (copyNext) onCopy() else onDismiss() }),
         leadingAction = { done ->
             IconButton("Copy to other screens", {
                 copyNext = true

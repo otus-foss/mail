@@ -13,11 +13,11 @@ import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_calendar_today
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.filters.components.FilterRowCard
 import com.otus.designsystem.shared.filters.components.FilterValueRow
 import com.otus.designsystem.shared.overlays.components.ListSheet
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.PickMark
@@ -192,7 +192,7 @@ private fun DateRangeSheet(
         "Date",
         onDismiss,
         done =
-            SheetConfirm("Done", {
+            UiAction("Done", onClick = {
                 val picked = start?.let { DateFilter.Range(LocalDate.parse(it), LocalDate.parse(end ?: it)) }
                 onEdit { it.copy(date = picked ?: DateFilter.Any) }
                 onDismiss()

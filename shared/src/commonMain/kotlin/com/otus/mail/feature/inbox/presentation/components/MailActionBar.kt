@@ -6,7 +6,7 @@ import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarMinimized
-import com.otus.designsystem.shared.overlays.components.MenuAction
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton
@@ -36,7 +36,7 @@ internal fun MailActionBar(
 ) {
     val confirmation = rememberConfirmation()
     val menuOf = { actions: List<OfferedAction> ->
-        actions.map { MenuAction(it.label, it.symbol) { confirmation.run(it, onAction) } }
+        actions.map { UiAction(it.label, it.symbol) { confirmation.run(it, onAction) } }
     }
 
     fun barAction(
@@ -45,16 +45,21 @@ internal fun MailActionBar(
     ): BarAction {
         if (button == MailAction.AllActions) {
             val label = button.buttonLabel(primary)
-            return BarAction(label, button.symbol, everyAction.isNotEmpty(), menu = menuOf(everyAction)) {}
+            return BarAction(
+                UiAction(label, button.symbol, enabled = everyAction.isNotEmpty()) {},
+                menu = menuOf(everyAction),
+            )
         }
         val offered = offer(button)
         return BarAction(
-            (if (primary) offered?.primaryLabel else offered?.label) ?: button.buttonLabel(primary),
-            offered?.symbol ?: button.symbol,
-            enabled = offered != null,
-        ) {
-            if (offered != null) confirmation.run(offered, onAction)
-        }
+            UiAction(
+                (if (primary) offered?.primaryLabel else offered?.label) ?: button.buttonLabel(primary),
+                offered?.symbol ?: button.symbol,
+                enabled = offered != null,
+            ) {
+                if (offered != null) confirmation.run(offered, onAction)
+            },
+        )
     }
     ActionBar(
         barAction(layout.primary, primary = true),

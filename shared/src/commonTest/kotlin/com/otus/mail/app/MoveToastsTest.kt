@@ -38,7 +38,7 @@ class MoveToastsTest {
             assertEquals(listOf(trash.folderId, clients.folderId), toasts.messages.map { it.group })
             val deleted = toasts.messages.first()
             assertEquals("3 emails deleted", deleted.text)
-            deleted.action?.onAction?.invoke()
+            deleted.action?.onClick?.invoke()
             runCurrent()
             assertEquals(listOf(1, 2, 3), undone)
         }
@@ -51,7 +51,7 @@ class MoveToastsTest {
         toasts.messages
             .single()
             .action
-            ?.onAction
+            ?.onClick
             ?.invoke()
         moves.moved(trash) {}
         assertEquals("Email deleted", toasts.messages.single().text)
@@ -70,7 +70,7 @@ class MoveToastsTest {
             toasts.messages
                 .first()
                 .action
-                ?.onAction
+                ?.onClick
                 ?.invoke()
             runCurrent()
             assertEquals(listOf(1, 2), undone)
@@ -85,7 +85,7 @@ class MoveToastsTest {
             val toast = toasts.messages.single()
             assertTrue(toast.sticky)
             assertEquals("Retry", toast.action?.label)
-            toast.action?.onAction?.invoke()
+            toast.action?.onClick?.invoke()
             runCurrent()
             assertEquals(1, retried)
         }

@@ -14,10 +14,9 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.shared.controls.components.ButtonPair
-import com.otus.designsystem.shared.controls.components.PairButton
 import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonText
 import com.otus.designsystem.shared.rows.components.SummaryCard
@@ -44,7 +43,7 @@ internal fun SortedMoveSheet(
         "Moved to ${move.folderName}",
         onDismiss,
         done =
-            SheetConfirm("Undo", {
+            UiAction("Undo", onClick = {
                 move.undo()
                 onDismiss()
             }),
@@ -81,8 +80,12 @@ internal fun SortedMoveSheet(
                     onDismiss()
                 }
                 ButtonPair(
-                    PairButton("Leave them", onDismiss),
-                    PairButton(if (checking) "Move them too" else "Move $count too", moveOlder, enabled = !checking),
+                    UiAction("Leave them", onClick = onDismiss),
+                    UiAction(
+                        if (checking) "Move them too" else "Move $count too",
+                        enabled = !checking,
+                        onClick = moveOlder,
+                    ),
                 )
             } else {
                 ActionButton("Done", onDismiss, Modifier.fillMaxWidth())

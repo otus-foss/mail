@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_content_copy
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.PickMark
@@ -53,7 +53,7 @@ internal fun CopySignatureSheet(
     SheetFrame(
         "Copy signature",
         onDismiss,
-        done = SheetConfirm("Copy", copy, ready, Res.drawable.symbol_content_copy),
+        done = UiAction("Copy", Res.drawable.symbol_content_copy, enabled = ready, onClick = copy),
         closeButton = true,
     ) {
         SegmentedToggle(

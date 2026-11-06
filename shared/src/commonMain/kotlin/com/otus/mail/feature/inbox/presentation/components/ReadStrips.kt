@@ -11,8 +11,8 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_newspaper
 import com.otus.designsystem.resources.symbol_unsubscribe
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.InfoStrip
-import com.otus.designsystem.shared.feedback.components.StripAction
 import com.otus.designsystem.shared.rows.components.Unfold
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.presentation.NewsletterStep
@@ -66,7 +66,7 @@ internal fun ReadNewsletterStrip(
                 icon,
                 title,
                 subtitle,
-                StripAction("Unsubscribe", Res.drawable.symbol_unsubscribe, onUnsubscribe),
+                UiAction("Unsubscribe", Res.drawable.symbol_unsubscribe, onClick = onUnsubscribe),
                 modifier,
             )
         }
@@ -74,7 +74,7 @@ internal fun ReadNewsletterStrip(
         NewsletterStep.Unsubscribed -> {
             val waiting = if (older == 1) "1 older digest in your mail" else "$older older digests in your mail"
             val detail = listOfNotNull(TAKES, waiting.takeIf { older > 0 }).joinToString(" · ")
-            val archive = StripAction("Archive all", Res.drawable.symbol_archive, onArchive).takeIf { older > 0 }
+            val archive = UiAction("Archive all", Res.drawable.symbol_archive, onClick = onArchive).takeIf { older > 0 }
             InfoStrip(icon, UNSUBSCRIBED, detail, archive, modifier)
         }
 

@@ -107,7 +107,7 @@ class MessageMarkingTest {
     /** Runs the action of the toast that says [text]. */
     private fun tap(text: String) {
         val toast = toasts.messages.single { it.text == text }
-        toast.action?.onAction?.invoke()
+        toast.action?.onClick?.invoke()
     }
 
     @Test

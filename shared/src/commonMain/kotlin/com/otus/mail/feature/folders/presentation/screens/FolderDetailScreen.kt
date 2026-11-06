@@ -9,7 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.Subpage
@@ -169,7 +169,7 @@ private fun FolderDetailDialogs(
         SheetFrame(
             "Can't edit this rule here",
             close,
-            done = SheetConfirm("Delete rule", delete),
+            done = UiAction("Delete rule", onClick = delete),
             closeButton = true,
         ) {
             Text(

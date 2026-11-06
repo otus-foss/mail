@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.settings.components.SketchMarker
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
@@ -20,10 +21,12 @@ internal fun ActionBarPreview(
 ) {
     val secondary =
         layout.secondary.mapIndexed { index, button ->
-            BarAction(button.buttonLabel(), button.symbol) { onSlot(BarSlot.Secondary(index)) }
+            BarAction(UiAction(button.buttonLabel(), button.symbol) { onSlot(BarSlot.Secondary(index)) })
         }
     ActionBar(
-        BarAction(layout.primary.buttonLabel(primary = true), layout.primary.symbol) { onSlot(BarSlot.Primary) },
+        BarAction(
+            UiAction(layout.primary.buttonLabel(primary = true), layout.primary.symbol) { onSlot(BarSlot.Primary) },
+        ),
         secondary = secondary,
         onAdd = { onSlot(BarSlot.Secondary(layout.secondary.size)) }.takeIf { addSlot },
     )

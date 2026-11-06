@@ -23,11 +23,11 @@ import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.shared.contacts.components.ContactValueRow
 import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.feedback.components.InfoTip
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.OptionsMenu
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.rows.components.RowGroup
@@ -65,7 +65,7 @@ internal fun MergeSheet(
     SheetFrame(
         "Same person?",
         onDismiss,
-        done = SheetConfirm("Merge", { onMerge(plan) }, enabled = plan.addresses.isNotEmpty()),
+        done = UiAction("Merge", enabled = plan.addresses.isNotEmpty(), onClick = { onMerge(plan) }),
         closeButton = true,
     ) {
         Column(
@@ -119,10 +119,13 @@ private fun NameRow(
             OptionsMenu(
                 named.map { card ->
                     OptionsItem.Action(
-                        card.displayName,
-                        Res.drawable.symbol_person,
-                        { onChange(plan.copy(name = card.key)) },
-                        current = card.key == plan.name,
+                        UiAction(
+                            card.displayName,
+                            Res.drawable.symbol_person,
+                            onClick = { onChange(plan.copy(name = card.key)) },
+                        ),
+                        current =
+                            card.key == plan.name,
                     )
                 },
             ) { open = false }
@@ -177,10 +180,9 @@ private fun BookRow(
                     listOf(OptionsItem.Caption(owner)) +
                         owned.map {
                             OptionsItem.Action(
-                                it.name,
-                                it.icon,
-                                { onChange(plan.copy(book = it.key)) },
-                                current = it.key == plan.book,
+                                UiAction(it.name, it.icon, onClick = { onChange(plan.copy(book = it.key)) }),
+                                current =
+                                    it.key == plan.book,
                             )
                         }
                 },

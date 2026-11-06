@@ -10,7 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.PickMark
@@ -39,7 +39,7 @@ internal fun AddPeopleSheet(
     SheetFrame(
         "Add people",
         onDismiss,
-        done = SheetConfirm("Add ${peopleCount(chosen.size)}", { onAdd(chosen) }, enabled = chosen.isNotEmpty()),
+        done = UiAction("Add ${peopleCount(chosen.size)}", enabled = chosen.isNotEmpty(), onClick = { onAdd(chosen) }),
         closeButton = true,
     ) {
         PickerSearch(query, { query = it }, "Search people…", Modifier.padding(horizontal = SheetTokens.inset))

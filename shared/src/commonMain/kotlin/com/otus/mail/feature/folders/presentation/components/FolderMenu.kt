@@ -5,7 +5,7 @@ import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_palette
-import com.otus.designsystem.shared.overlays.components.MenuAction
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.mail.feature.folders.domain.AccountFolders
 import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.presentation.FolderDialog
@@ -22,17 +22,17 @@ internal fun AccountFolders.folderMenu(
     folder: MailFolder,
     colorable: Boolean,
     onDialog: (FolderDialog) -> Unit,
-): List<MenuAction> {
+): List<UiAction> {
     if (!folder.isCustom || folder.sharedIn != null) return emptyList()
     val id = accountId
     return listOfNotNull(
-        MenuAction("Rename", Res.drawable.symbol_edit) { onDialog(FolderDialog.Rename(id, folder.id)) }
+        UiAction("Rename", Res.drawable.symbol_edit) { onDialog(FolderDialog.Rename(id, folder.id)) }
             .takeIf { folder.rights.mayRename },
-        MenuAction("Move into", Res.drawable.symbol_drive_file_move) { onDialog(FolderDialog.Move(id, folder.id)) }
+        UiAction("Move into", Res.drawable.symbol_drive_file_move) { onDialog(FolderDialog.Move(id, folder.id)) }
             .takeIf { canMove(folder) },
-        MenuAction("Color", Res.drawable.symbol_palette) { onDialog(FolderDialog.Color(id, folder.id)) }
+        UiAction("Color", Res.drawable.symbol_palette) { onDialog(FolderDialog.Color(id, folder.id)) }
             .takeIf { colorable },
-        MenuAction("Delete", Res.drawable.symbol_delete) { onDialog(FolderDialog.Delete(id, folder.id)) }
+        UiAction("Delete", Res.drawable.symbol_delete) { onDialog(FolderDialog.Delete(id, folder.id)) }
             .takeIf { folder.deletable(subfolderCount(folder)) },
     )
 }

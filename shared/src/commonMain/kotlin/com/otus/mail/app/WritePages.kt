@@ -3,8 +3,8 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
-import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.SendIdentityKey
 import com.otus.mail.feature.inbox.presentation.ComposeExits
 import com.otus.mail.feature.inbox.presentation.OutgoingDraft
@@ -34,7 +34,7 @@ internal fun ComposePage(
 
                 override fun discarded(delete: () -> Unit) {
                     val pages = states.requests.pages
-                    val undo = ToastAction("Undo") { pages.showLater(page.copy(request = compose.reopening())) }
+                    val undo = UiAction("Undo") { pages.showLater(page.copy(request = compose.reopening())) }
                     states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = delete))
                     onClose()
                 }

@@ -12,7 +12,7 @@ import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
-import com.otus.designsystem.shared.overlays.components.MenuAction
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.mail.feature.contacts.domain.ContactAddress
 import com.otus.mail.feature.contacts.presentation.ContactNavigation
 import com.otus.mail.feature.contacts.presentation.ContactPage
@@ -33,9 +33,11 @@ internal fun ContactPageBar(
 ) {
     val recipients = page.recipients
     ActionBar(
-        BarAction("Write", Res.drawable.symbol_edit, enabled = recipients.isNotEmpty()) {
-            navigation.onWrite(recipients)
-        },
+        BarAction(
+            UiAction("Write", Res.drawable.symbol_edit, enabled = recipients.isNotEmpty()) {
+                navigation.onWrite(recipients)
+            },
+        ),
         secondary =
             moreOptions(
                 if (page.card.isGroup) {
@@ -49,15 +51,15 @@ internal fun ContactPageBar(
 }
 
 /** A group's menu, shown only when the group can change. */
-private fun groupActions(onOverlay: (ContactOverlay) -> Unit): List<MenuAction> =
+private fun groupActions(onOverlay: (ContactOverlay) -> Unit): List<UiAction> =
     listOf(
-        MenuAction("Add people", Res.drawable.symbol_group_add) {
+        UiAction("Add people", Res.drawable.symbol_group_add) {
             onOverlay(ContactOverlay.EditGroup(GroupEdit.AddPeople))
         },
-        MenuAction("Rename", Res.drawable.symbol_person_edit) {
+        UiAction("Rename", Res.drawable.symbol_person_edit) {
             onOverlay(ContactOverlay.EditGroup(GroupEdit.Rename))
         },
-        MenuAction("Delete", Res.drawable.symbol_delete) { onOverlay(ContactOverlay.Delete) },
+        UiAction("Delete", Res.drawable.symbol_delete) { onOverlay(ContactOverlay.Delete) },
     )
 
 /** A person's menu: Edit and Delete when every card can change, Export when files are available. */
@@ -66,15 +68,15 @@ private fun personActions(
     state: ContactsState,
     navigation: ContactNavigation,
     onOverlay: (ContactOverlay) -> Unit,
-): List<MenuAction> =
+): List<UiAction> =
     listOfNotNull(
-        MenuAction("Edit", Res.drawable.symbol_person_edit) {
+        UiAction("Edit", Res.drawable.symbol_person_edit) {
             navigation.onEdit(page.card.key)
         }.takeIf { page.writable },
-        MenuAction("Export as vCard", Res.drawable.symbol_upload) {
+        UiAction("Export as vCard", Res.drawable.symbol_upload) {
             state.export(page.cards)
         }.takeIf { state.canTransfer },
-        MenuAction("Delete", Res.drawable.symbol_delete) {
+        UiAction("Delete", Res.drawable.symbol_delete) {
             onOverlay(ContactOverlay.Delete)
         }.takeIf { page.writable },
     )
@@ -95,7 +97,7 @@ private fun personContext(
         "to ${first.value}",
         choices =
             page.emails.drop(1).map { email ->
-                MenuAction("Write to ${email.value}", Res.drawable.symbol_mail) {
+                UiAction("Write to ${email.value}", Res.drawable.symbol_mail) {
                     onWrite(listOf(ContactAddress(page.name, email.value)))
                 }
             },

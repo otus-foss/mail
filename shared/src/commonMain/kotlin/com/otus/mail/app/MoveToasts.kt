@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MoveTarget
@@ -44,7 +44,7 @@ internal class MoveToasts(
         text: String,
         retry: suspend () -> Unit,
     ) {
-        toasts.show(ToastMessage(text, ToastAction("Retry") { work.launch { retry() } }, sticky = true))
+        toasts.show(ToastMessage(text, UiAction("Retry") { work.launch { retry() } }, sticky = true))
     }
 
     private fun offer(
@@ -56,7 +56,7 @@ internal class MoveToasts(
         val counted = undos[group].takeIf { toasts.isShowing(group) }.orEmpty() + CountedUndo(count, undo)
         undos[group] = counted
         val action =
-            ToastAction("Undo") {
+            UiAction("Undo") {
                 undos.remove(group)
                 counted.forEach { change -> work.launch { change.undo() } }
             }

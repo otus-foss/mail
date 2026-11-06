@@ -162,7 +162,7 @@ class ReadPageChangesTest {
             toasts.messages
                 .single()
                 .action
-                ?.onAction
+                ?.onClick
                 ?.invoke()
             settle { back > 0 }
             assertEquals(json("""{"e1": {"mailboxIds/tr": null, "mailboxIds/a": true}}"""), updates().last())
@@ -182,7 +182,7 @@ class ReadPageChangesTest {
             toasts.messages
                 .single()
                 .action
-                ?.onAction
+                ?.onClick
                 ?.invoke()
             settle { updates().size > 1 }
             assertEquals(json("""{"e1": {"mailboxIds/tr": null, "mailboxIds/a": true}}"""), updates().last())

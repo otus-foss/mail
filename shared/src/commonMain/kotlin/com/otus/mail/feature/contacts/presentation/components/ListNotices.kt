@@ -8,8 +8,8 @@ import com.otus.designsystem.resources.symbol_call_merge
 import com.otus.designsystem.resources.symbol_cloud_off
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_lock
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.InfoStrip
-import com.otus.designsystem.shared.feedback.components.StripAction
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.PossibleDuplicate
@@ -68,7 +68,7 @@ internal fun LazyListScope.notices(
                 Res.drawable.symbol_group,
                 title,
                 null,
-                StripAction("Review", Res.drawable.symbol_call_merge, onReviewDuplicate),
+                UiAction("Review", Res.drawable.symbol_call_merge, onClick = onReviewDuplicate),
                 Modifier.padding(vertical = PageTokens.rowGap),
             )
         }

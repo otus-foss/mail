@@ -13,6 +13,7 @@ import com.otus.designsystem.resources.symbol_arrow_upward
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_short_text
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.InputSheet
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.mail.feature.inbox.domain.DraftAttachment
@@ -51,7 +52,11 @@ private fun DraftAttachment.options(
     val attachments = state.attachments
     return buildList {
         if (attachments.failures[id] == UploadFailure.Failed) {
-            add(OptionsItem.Action("Retry upload", Res.drawable.symbol_arrow_upward, { attachments.retry(id) }))
+            add(
+                OptionsItem.Action(
+                    UiAction("Retry upload", Res.drawable.symbol_arrow_upward, onClick = { attachments.retry(id) }),
+                ),
+            )
         }
         add(
             OptionsItem.Toggle("Send as file", Res.drawable.symbol_attach_file, checked = false) {
@@ -59,14 +64,27 @@ private fun DraftAttachment.options(
                 attachments.showInline(id, inline = false)
             },
         )
-        add(OptionsItem.Action("Description", Res.drawable.symbol_short_text, onDescribe, opens = true))
-        add(OptionsItem.Action("Replace", Res.drawable.symbol_add_photo_alternate, { attachments.replace(id) }))
+        add(
+            OptionsItem.Action(
+                UiAction("Description", Res.drawable.symbol_short_text, onClick = onDescribe),
+                opens = true,
+            ),
+        )
+        add(
+            OptionsItem.Action(
+                UiAction("Replace", Res.drawable.symbol_add_photo_alternate, onClick = {
+                    attachments.replace(id)
+                }),
+            ),
+        )
         add(OptionsItem.Divider)
         add(
-            OptionsItem.Action("Remove image", Res.drawable.symbol_delete, {
-                state.body.images.deselect()
-                attachments.remove(id)
-            }),
+            OptionsItem.Action(
+                UiAction("Remove image", Res.drawable.symbol_delete, onClick = {
+                    state.body.images.deselect()
+                    attachments.remove(id)
+                }),
+            ),
         )
     }
 }

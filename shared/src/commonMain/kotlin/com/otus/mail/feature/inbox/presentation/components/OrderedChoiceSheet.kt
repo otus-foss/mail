@@ -13,8 +13,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.ListSheet
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.reorder.components.ReorderableColumn
 import com.otus.designsystem.shared.reorder.components.ReorderableScope
 import com.otus.designsystem.shared.rows.elements.nestIndent
@@ -50,7 +50,7 @@ internal fun <T> OrderedChoiceSheet(
         title,
         onDismiss,
         done =
-            SheetConfirm("Done", {
+            UiAction("Done", onClick = {
                 onApply(draft.mapNotNull(values::get))
                 onDismiss()
             }),
