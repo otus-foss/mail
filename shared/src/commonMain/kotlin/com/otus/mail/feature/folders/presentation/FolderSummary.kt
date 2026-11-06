@@ -3,7 +3,7 @@ package com.otus.mail.feature.folders.presentation
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 
-/** How many folders sit directly inside [folder] among [scope]'s folders. */
+/** How many folders sit directly inside [folder]. */
 fun AccountFolders.subfolderCount(folder: MailFolder): Int = folders.count { it.parentId == folder.id }
 
 /** A folder page's first line, such as "45 messages · 3 unread · 2 folders inside"; zero counts are left out. */

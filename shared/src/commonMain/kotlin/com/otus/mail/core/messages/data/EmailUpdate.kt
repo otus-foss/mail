@@ -30,7 +30,6 @@ internal suspend fun EmailChangeQueue.updateRows(
             .toSet()
     }
 
-/** [updateRows] for one message. */
 internal suspend fun EmailChangeQueue.updateRow(
     message: MailMessage,
     patch: JsonObject,

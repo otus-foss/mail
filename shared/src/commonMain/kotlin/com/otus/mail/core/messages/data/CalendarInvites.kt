@@ -20,7 +20,6 @@ internal fun EmailBodyPart.isInvite(): Boolean {
     return mediaType in INVITE_TYPES || extension in INVITE_EXTENSIONS
 }
 
-/** Whether any attachment of this Email is a calendar invitation. */
 internal val EmailObject.hasInvite: Boolean
     get() = attachments.orEmpty().any { it.isInvite() }
 

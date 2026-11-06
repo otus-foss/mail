@@ -71,7 +71,6 @@ class InboxFilterState(
         recipients.clear()
     }
 
-    /** Resets the draft to no filters. */
     fun reset() = edit { InboxFilters() }
 
     fun edit(transform: (InboxFilters) -> InboxFilters) {
