@@ -27,7 +27,16 @@ class FolderNudgeStoreTest {
                     FolderKey("bob https://mail.example.com/jmap/session", "M1"),
                 ),
             )
-        AndroidFolderNudgeStore(context).writeNudges(saved)
-        assertEquals(saved, AndroidFolderNudgeStore(context).readNudges())
+        testStores(context)
+            .folders.nudges
+            .let(::checkNotNull)
+            .writeNudges(saved)
+        assertEquals(
+            saved,
+            testStores(context)
+                .folders.nudges
+                .let(::checkNotNull)
+                .readNudges(),
+        )
     }
 }

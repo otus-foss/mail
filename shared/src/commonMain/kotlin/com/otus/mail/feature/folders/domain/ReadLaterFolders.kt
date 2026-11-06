@@ -16,6 +16,9 @@ const val READ_LATER_NAME = "Read later"
 /** App-private record of each account's Read later folder: mailbox ids by login id. */
 interface ReadLaterStore : StringMapStore
 
+/** Drops [loginId]'s Read later folder, when its account is removed. */
+fun ReadLaterStore.forgetAccount(loginId: String) = write(read() - loginId)
+
 /**
  * Each account's Read later folder. It is one of the user's own folders, because JMAP has no role
  * for it (RFC 8621, section 2), so other mail apps show it like any other. Its id is saved per

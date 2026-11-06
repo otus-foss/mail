@@ -1,6 +1,7 @@
 package com.otus.mail.feature.notifications.domain
 
 import com.otus.jmap.JmapClient
+import com.otus.jmap.PushKeys
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.push.PushEndpoint
 import com.otus.mail.app.MailServices

@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import com.otus.jmap.JmapException
+import com.otus.jmap.PushKeys
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.push.PushEndpoint
 import com.otus.mail.app.MailServices

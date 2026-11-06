@@ -27,7 +27,7 @@ class AddressPinStoreTest {
                     MailScopeChoice.Address("bob https://mail.example.com/jmap/session", "bob@example.com"),
                 ),
             )
-        AndroidAddressPinStore(context).writePins(pins)
-        assertEquals(pins, AndroidAddressPinStore(context).readPins())
+        testStores(context).addressPins.let(::checkNotNull).writePins(pins)
+        assertEquals(pins, testStores(context).addressPins.let(::checkNotNull).readPins())
     }
 }

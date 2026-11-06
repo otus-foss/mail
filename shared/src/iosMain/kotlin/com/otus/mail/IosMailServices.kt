@@ -3,13 +3,13 @@ package com.otus.mail
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.IosLoginStore
-import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
+import com.otus.mail.app.MailDeviceStores.Companion.READ_LATER
 import com.otus.mail.app.MailServices
-import com.otus.mail.app.WaitingStores
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.feature.notifications.domain.InstantPush
+import com.otus.storage.UserDefaultsMap
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSSearchPathDirectory
@@ -18,19 +18,17 @@ import platform.Foundation.NSUserDomainMask
 
 internal fun iosMailServices(push: InstantPush?): MailServices {
     val cacheDirectory = userDirectory(NSCachesDirectory)
+    // Each store keeps one user-defaults dictionary; Read later keeps the name of the first release.
     return MailServices(
         // Names kept from the first release so saved accounts keep working.
         IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
         instantPush = push,
         avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
         stores =
-            MailDeviceStores(
-                FolderStores(IosReadLaterStore(), IosFolderColorStore(), IosFolderNudgeStore()),
-                IosAddressPinStore(),
+            MailDeviceStores.named(
+                { name, _ -> UserDefaultsMap("otus.mail." + if (name == READ_LATER) "read_later_folders" else name) },
                 SqlMailCache(cacheDriver(cacheDirectory)),
-                contacts = IosContactStore(),
-                waiting = WaitingStores(IosOutboxStore(), IosEmailChangeStore()),
-                downloads = IosDownloadFolder("${userDirectory(NSApplicationSupportDirectory)}/attachments"),
+                IosDownloadFolder("${userDirectory(NSApplicationSupportDirectory)}/attachments"),
             ),
     )
 }

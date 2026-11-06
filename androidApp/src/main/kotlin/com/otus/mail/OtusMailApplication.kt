@@ -1,18 +1,17 @@
 package com.otus.mail
 
 import android.app.Application
+import android.content.Context
 import androidx.work.Configuration
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.AndroidLoginStore
 import com.otus.jmap.push.PushSubscriptions
-import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailPickers
 import com.otus.mail.app.MailPlatform
 import com.otus.mail.app.MailServices
 import com.otus.mail.app.NightlyUpdates
-import com.otus.mail.app.WaitingStores
 import com.otus.mail.app.trimCache
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
@@ -37,26 +36,22 @@ class OtusMailApplication :
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().build()
 
+    val stores: MailDeviceStores by lazy {
+        MailDeviceStores.named(
+            { name, commit -> mailPreferences(this, name, commit) },
+            SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
+            // Matches the `files-path` in `res/xml/shared_files.xml`, so Open can lend these files.
+            AndroidDownloadFolder(File(filesDir, "attachments")),
+            AndroidNotificationPreviewStore(this),
+        )
+    }
+
     val services: MailServices by lazy {
         // Names kept from the first release so saved accounts keep working.
         MailServices(
             AndroidLoginStore(this, preferencesName = "otus_accounts", keyAlias = "otus.account.credentials"),
             avatarStore = FileAvatarStore(File(cacheDir, "avatars-v1").absolutePath),
-            stores =
-                MailDeviceStores(
-                    FolderStores(
-                        AndroidReadLaterStore(this),
-                        AndroidFolderColorStore(this),
-                        AndroidFolderNudgeStore(this),
-                    ),
-                    AndroidAddressPinStore(this),
-                    SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
-                    AndroidNotificationPreviewStore(this),
-                    AndroidContactStore(this),
-                    WaitingStores(AndroidOutboxStore(this), AndroidEmailChangeStore(this)),
-                    // Matches the `files-path` in `res/xml/shared_files.xml`, so Open can lend these files.
-                    AndroidDownloadFolder(File(filesDir, "attachments")),
-                ),
+            stores = stores,
             instantPush = instantPush,
             pickers =
                 MailPickers(
@@ -123,3 +118,10 @@ class OtusMailApplication :
         const val CACHE_DATABASE = "otus_mail_cache.db"
     }
 }
+
+/** The shared preferences file of the device store [name]; each store keeps its own. */
+internal fun mailPreferences(
+    context: Context,
+    name: String,
+    commit: Boolean = false,
+): PreferenceMap = PreferenceMap(context, "otus_mail_$name", commit)

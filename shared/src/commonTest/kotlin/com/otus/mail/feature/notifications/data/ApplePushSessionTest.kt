@@ -4,6 +4,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.app.MailServices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine

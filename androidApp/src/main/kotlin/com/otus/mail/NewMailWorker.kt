@@ -32,7 +32,12 @@ class NewMailWorker(
         // would post the same mail twice and bring back notifications the user dismissed.
         val pushed = inputData.getBoolean(PUSHED, false)
         checking.withLock {
-            if (pushes.start(pushed)) app.services.newMail(AndroidMailStateStore(app)).check(MailNotifications(app))
+            if (pushes.start(
+                    pushed,
+                )
+            ) {
+                app.services.newMail(checkNotNull(app.stores.mailStates)).check(MailNotifications(app))
+            }
         }
         // The periodic run also renews push subscriptions and registers new accounts.
         if (!pushed) PushSyncWorker.enqueue(app)

@@ -162,3 +162,9 @@ interface NotificationPreviewStore {
 
     fun write(choices: PreviewChoices)
 }
+
+/** Drops [loginId]'s choices, when its account is removed. */
+fun NotificationPreviewStore.forgetAccount(loginId: String) {
+    val choices = read()
+    write(choices.copy(logins = choices.logins - loginId, addresses = choices.addresses - loginId))
+}

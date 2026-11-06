@@ -64,13 +64,24 @@ internal class FrequentContacts(
         }
     }
 
-    private companion object {
-        val MAX_AGE = 1.days.inWholeMilliseconds
-        val serializer = MapSerializer(String.serializer(), FrequentScan.serializer())
+    companion object {
+        private val MAX_AGE = 1.days.inWholeMilliseconds
 
-        fun encode(scans: Map<String, FrequentScan>): String = JsContactJson.encodeToString(serializer, scans)
+        /** Drops [loginId]'s scores from [store], when its account is removed. */
+        fun forget(
+            store: ContactStore,
+            loginId: String,
+        ) {
+            val saved = store.read()
+            val scans = decode(saved[ContactStore.FREQUENT])
+            if (loginId in scans) store.write(saved + (ContactStore.FREQUENT to encode(scans - loginId)))
+        }
 
-        fun decode(saved: String?): Map<String, FrequentScan> =
+        private val serializer = MapSerializer(String.serializer(), FrequentScan.serializer())
+
+        private fun encode(scans: Map<String, FrequentScan>): String = JsContactJson.encodeToString(serializer, scans)
+
+        private fun decode(saved: String?): Map<String, FrequentScan> =
             saved?.let { runCatching { JsContactJson.decodeFromString(serializer, it) }.getOrNull() }.orEmpty()
     }
 }
