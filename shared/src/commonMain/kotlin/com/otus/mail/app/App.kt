@@ -17,6 +17,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.shared.feedback.components.ToastHost
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
@@ -31,7 +34,6 @@ import com.otus.designsystem.theme.motion.LocalMotionScale
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.SidebarPin
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.components.BackHandler
 import com.otus.mail.feature.inbox.presentation.components.SortedMoveSheet
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel
@@ -94,7 +96,11 @@ fun App(
             Box(Modifier.fillMaxSize()) {
                 // Back from another sidebar page returns to the inbox, so only the inbox's back closes
                 // Mail. Pages and sheets shown later take back first.
-                BackHandler(enabled = page.parent == null && page != MailPage.Inbox) { page = MailPage.Inbox }
+                NavigationBackHandler(
+                    rememberNavigationEventState(NavigationEventInfo.None),
+                    isBackEnabled = page.parent == null && page != MailPage.Inbox,
+                    onBackCompleted = { page = MailPage.Inbox },
+                )
                 // Subpages lead back to their parent, so only top-level pages swipe the sidebar open.
                 SidebarSwipeArea(sidebar, enabled = page.parent == null) {
                     SlidingPages(page, depth = MailPage::depth) { shown ->

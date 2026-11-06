@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -14,20 +13,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.mail.quickview.components.QuickJump
 import com.otus.designsystem.resources.Res
@@ -35,16 +31,20 @@ import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.panels.components.GROWN_LAST_STOP
+import com.otus.designsystem.shared.panels.components.GROWN_LAST_STOP_FROM
+import com.otus.designsystem.shared.panels.components.GrownPanelLayers
 import com.otus.designsystem.shared.panels.components.PanelExpansion
+import com.otus.designsystem.shared.panels.components.grownPanelHeight
+import com.otus.designsystem.shared.panels.components.quickViewHeight
 import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
+import com.otus.designsystem.shared.panels.components.rememberShownUntilClosed
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.QuickViewModule
-import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.QuickViewContext
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -65,7 +65,7 @@ internal fun rememberInboxExpansion(
 ): PanelExpansion? {
     val modules = quick?.modules?.size ?: 0
     val full = filtersHeight()
-    val first = searchRoom?.coerceAtMost(full) ?: quickHeight(modules)
+    val first = searchRoom?.coerceAtMost(full) ?: quickViewHeight(modules)
     // Typing changes what the search room shows; the keyboard only moves its edge.
     val expansion = rememberPanelExpansion(listOf(first, full), content = (searchRoom != null) to typed)
     FollowSearch(expansion, searchRoom != null, onLeaveSearch)
@@ -74,20 +74,24 @@ internal fun rememberInboxExpansion(
         // Dragged past the first stop, or sent to every filter, the panel heads for the filters: the
         // keyboard goes first, or the page scrolls to keep the focused field in view. A stop the
         // keyboard moves, or a search room shrinking as its text is cleared, is neither.
-        snapshotFlow { expansion.position > 1f && (expansion.dragging || expansion.stop == FILTERS_STOP) }
+        snapshotFlow { expansion.position > 1f && (expansion.dragging || expansion.stop == GROWN_LAST_STOP) }
             .distinctUntilChanged()
             .collect { past -> if (past) focus.clearFocus() }
     }
     LaunchedEffect(expansion, filters) {
-        snapshotFlow { expansion.position >= FILTERS_FROM }.distinctUntilChanged().collect { full ->
+        snapshotFlow { expansion.position >= GROWN_LAST_STOP_FROM }.distinctUntilChanged().collect { full ->
             when {
-                full && !filters.isOpen && (expansion.dragging || expansion.stop == FILTERS_STOP) -> filters.open()
+                full && !filters.isOpen && (expansion.dragging || expansion.stop == GROWN_LAST_STOP) -> filters.open()
                 !full && filters.isOpen -> filters.close()
             }
         }
     }
     // While a search is in the panel, back ends the search, which closes the panel too.
-    BackHandler(expansion.expanded && searchRoom == null) { expansion.collapse() }
+    NavigationBackHandler(
+        rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = expansion.expanded && searchRoom == null,
+        onBackCompleted = expansion::collapse,
+    )
     return expansion.takeIf { quick != null }
 }
 
@@ -106,34 +110,16 @@ internal class ExpandedInbox(
  */
 @Composable
 internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
-    val expansion = inbox.expansion
-    val position = { expansion.position }
-    // A faded layer leaves the accessibility tree too, so a screen reader finds only what shows.
-    val quickHidden by remember(expansion) { derivedStateOf { expansion.skipping || quickAlpha(position()) == 0f } }
-    val filtersHidden by remember(expansion) { derivedStateOf { filtersAlpha(position()) == 0f } }
-    Box(Modifier.fillMaxSize()) {
-        Box(
-            Modifier
-                .graphicsLayer {
-                    alpha =
-                        if (expansion.skipping) {
-                            0f
-                        } else {
-                            quickAlpha(
-                                position(),
-                            )
-                        }
-                }.hiddenWhen(quickHidden),
-        ) {
-            if (rememberSearchShown(inbox)) SearchRoomContent(inbox.room) else QuickViewContent(inbox)
-        }
-        val filters = inbox.sources.filters
-        if (rememberFiltersShown(inbox)) {
-            Box(Modifier.fillMaxSize().graphicsLayer { alpha = filtersAlpha(position()) }.hiddenWhen(filtersHidden)) {
-                FiltersContent(filters, inbox)
-            }
-        }
-    }
+    val filters = inbox.sources.filters
+    GrownPanelLayers(
+        inbox.expansion,
+        lastStopOpen = filters.isOpen,
+        quick = {
+            val searching = rememberShownUntilClosed(inbox.expansion, inbox.room.state.searchSurfaceOpen)
+            if (searching) SearchRoomContent(inbox.room) else QuickViewContent(inbox)
+        },
+        lastStop = { FiltersContent(filters, inbox) },
+    )
 }
 
 @Composable
@@ -155,7 +141,7 @@ private fun QuickViewContent(inbox: ExpandedInbox) {
         val allFilters = @Composable {
             IconButton(
                 "All filters",
-                { inbox.expansion.expandTo(FILTERS_STOP) },
+                { inbox.expansion.expandTo(GROWN_LAST_STOP) },
             ) { Symbol(Res.drawable.symbol_filter_list) }
         }
         QuickJump(allFilters) {
@@ -202,13 +188,8 @@ private fun FiltersContent(
  */
 @Composable
 private fun filtersHeight(): Dp {
-    val window =
-        with(LocalDensity.current) {
-            LocalWindowInfo.current.containerSize.height
-                .toDp()
-        }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val bar = ActionBarTokens.height + ActionBarTokens.barInset * 2
-    return window - top - PanelTokens.headerRowHeight - bottom - bar
+    return grownPanelHeight(above = top + PanelTokens.headerRowHeight, below = bottom + bar)
 }

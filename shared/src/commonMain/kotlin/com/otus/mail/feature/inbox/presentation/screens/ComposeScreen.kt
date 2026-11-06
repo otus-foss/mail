@@ -29,7 +29,9 @@ import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.pages.components.pageSideInset
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailBehavior
@@ -39,7 +41,6 @@ import com.otus.mail.feature.inbox.presentation.RecipientField
 import com.otus.mail.feature.inbox.presentation.components.ComposeBottom
 import com.otus.mail.feature.inbox.presentation.components.ComposeContent
 import com.otus.mail.feature.inbox.presentation.components.ComposePanel
-import com.otus.mail.feature.inbox.presentation.components.PageNotice
 import com.otus.mail.feature.inbox.presentation.components.SendLaterSheet
 import com.otus.mail.feature.inbox.presentation.recipients
 import kotlinx.datetime.LocalDateTime
@@ -137,7 +138,11 @@ private fun ComposePage(
             onAddCc = onAddCc,
             options = options,
         )
-        state.notice?.let { Box(Modifier.pageSideInset()) { PageNotice(it) } }
+        state.notice?.let {
+            Box(
+                Modifier.pageSideInset(),
+            ) { Caption(it, Modifier.padding(horizontal = PageTokens.textInset), heading = false) }
+        }
         ComposeContent(state, shown, Modifier.weight(1f).pageSideInset(), padding)
     }
 }

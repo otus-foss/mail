@@ -7,6 +7,7 @@ import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarMinimized
 import com.otus.designsystem.shared.controls.elements.UiAction
+import com.otus.designsystem.shared.overlays.components.rememberConfirmation
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton
@@ -36,7 +37,7 @@ internal fun MailActionBar(
 ) {
     val confirmation = rememberConfirmation()
     val menuOf = { actions: List<OfferedAction> ->
-        actions.map { UiAction(it.label, it.symbol) { confirmation.run(it, onAction) } }
+        actions.map { UiAction(it.label, it.symbol) { confirmation.run(it.confirm) { onAction(it) } } }
     }
 
     fun barAction(
@@ -57,7 +58,7 @@ internal fun MailActionBar(
                 offered?.symbol ?: button.symbol,
                 enabled = offered != null,
             ) {
-                if (offered != null) confirmation.run(offered, onAction)
+                if (offered != null) confirmation.run(offered.confirm) { onAction(offered) }
             },
         )
     }

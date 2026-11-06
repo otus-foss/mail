@@ -15,6 +15,8 @@ import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_swap_vert
 import com.otus.designsystem.resources.symbol_tune
+import com.otus.designsystem.shared.selection.components.OrderedChoice
+import com.otus.designsystem.shared.selection.components.OrderedChoiceSheet
 import com.otus.designsystem.shared.settings.components.DependentSettings
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection

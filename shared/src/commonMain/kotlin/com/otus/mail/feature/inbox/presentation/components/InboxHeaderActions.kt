@@ -2,9 +2,11 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -28,7 +30,11 @@ private fun searchCloser(
         changes.undo(filters)
         focus.clearFocus()
     }
-    BackHandler(state.searching, closeSearch)
+    NavigationBackHandler(
+        rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = state.searching,
+        onBackCompleted = closeSearch,
+    )
     return closeSearch
 }
 

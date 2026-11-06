@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import com.otus.designsystem.shared.rows.components.CollapsibleTree
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickMarkView
 import com.otus.mail.feature.inbox.domain.MessageFolder
@@ -25,7 +26,7 @@ internal fun FolderCheckTree(
     onToggle: (String) -> Unit,
 ) {
     if (folders.isEmpty()) return
-    SheetCaption("Folders", RowTextInset)
+    Caption("Folders", RowTextInset)
     CollapsibleTree(
         sheetTree(folders),
         { it.folder.id },

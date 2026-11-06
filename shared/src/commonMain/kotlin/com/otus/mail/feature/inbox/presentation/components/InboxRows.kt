@@ -7,6 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.OpenRequest
@@ -35,7 +38,11 @@ internal fun rememberInboxRows(
     var selectedIds by rememberSaveable { mutableStateOf(listOf<String>()) }
     val selected = remember(messages, selectedIds) { messages.filter { it.id in selectedIds } }
     val clearSelection = { selectedIds = emptyList() }
-    BackHandler(selected.isNotEmpty(), clearSelection)
+    NavigationBackHandler(
+        rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = selected.isNotEmpty(),
+        onBackCompleted = clearSelection,
+    )
     LaunchedEffect(opening) {
         val request = opening ?: return@LaunchedEffect
         val row = messages.firstOrNull { it.id == request.id }

@@ -6,18 +6,16 @@ import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.pages.components.SlidingOverlay
 import com.otus.designsystem.shared.pages.components.belowControlPanel
-import com.otus.designsystem.shared.panels.components.PanelExpansion
+import com.otus.designsystem.shared.pages.elements.hiddenWhen
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxSearch
@@ -28,23 +26,17 @@ import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.components.BackHandler
-import com.otus.mail.feature.inbox.presentation.components.ExpandedInbox
-import com.otus.mail.feature.inbox.presentation.components.ExpandedInboxContent
 import com.otus.mail.feature.inbox.presentation.components.HitDates
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxHeaderActions
 import com.otus.mail.feature.inbox.presentation.components.InboxLayers
-import com.otus.mail.feature.inbox.presentation.components.InboxOverlays
 import com.otus.mail.feature.inbox.presentation.components.InboxPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.InboxResults
-import com.otus.mail.feature.inbox.presentation.components.InboxRows
 import com.otus.mail.feature.inbox.presentation.components.ListedMail
 import com.otus.mail.feature.inbox.presentation.components.PanelLook
 import com.otus.mail.feature.inbox.presentation.components.PanelOpens
 import com.otus.mail.feature.inbox.presentation.components.PanelOverList
-import com.otus.mail.feature.inbox.presentation.components.QuickSources
 import com.otus.mail.feature.inbox.presentation.components.SearchFieldActions
 import com.otus.mail.feature.inbox.presentation.components.grownWith
 import com.otus.mail.feature.inbox.presentation.components.inboxBar
@@ -52,8 +44,6 @@ import com.otus.mail.feature.inbox.presentation.components.panelSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterAnchor
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberHeaderActions
-import com.otus.mail.feature.inbox.presentation.components.rememberInboxExpansion
-import com.otus.mail.feature.inbox.presentation.components.rememberInboxOverlays
 import com.otus.mail.feature.inbox.presentation.components.rememberInboxRows
 import com.otus.mail.feature.inbox.presentation.components.rememberUnreadCount
 import com.otus.mail.feature.inbox.presentation.listFrame
@@ -89,7 +79,8 @@ fun InboxScreen(
                         .fillMaxSize()
                         // The control panel draws behind the status bar and pads itself.
                         .belowControlPanel()
-                        .hiddenWhenCovered(rows.opened != null || overlays.coverPage(state)),
+                        // What an open message or an overlay covers, accessibility services skip too.
+                        .hiddenWhen(rows.opened != null || overlays.coverPage(state)),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
@@ -111,7 +102,7 @@ fun InboxScreen(
                         },
                     ) { topInset, collapse ->
                         val frame = context.listFrame(state.searching, topInset, barPadding, collapse)
-                        Box(Modifier.hiddenWhenCovered(headerActions.covers(state))) {
+                        Box(Modifier.hiddenWhen(headerActions.covers(state))) {
                             InboxResults(listed, status, state, dateFormatter, rows.gestures, frame) {
                                 InboxEmptyContent(messages, status, state, page, filters, onRefresh)
                             }
@@ -134,13 +125,6 @@ private fun rememberInboxState(defaultSearch: InboxSearch): InboxState =
         defaultSearch,
         saver = InboxState.saver(defaultSearch),
     ) { InboxState(defaultSearch = defaultSearch) }
-
-/**
- * An open message, an overlay, or the grown panel covers what is under it, so accessibility
- * services skip it too. An overlay of its own hides the whole page; under the grown panel only the
- * list hides, as the panel holds the search and the filters.
- */
-private fun Modifier.hiddenWhenCovered(covered: Boolean): Modifier = if (covered) clearAndSetSemantics {} else this
 
 /**
  * The folders this page shows [message] from. Search, folder pills, and the filter panel's folder

@@ -1,26 +1,10 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.MessageActions
-
-/** Runs [onBack] on system back while [enabled]. */
-@Composable
-internal fun BackHandler(
-    enabled: Boolean,
-    onBack: () -> Unit,
-) {
-    NavigationBackHandler(
-        state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
-        isBackEnabled = enabled,
-        onBackCompleted = onBack,
-    )
-}
 
 /**
  * The bar under the list: the selection's while rows are selected, none while searching, and the

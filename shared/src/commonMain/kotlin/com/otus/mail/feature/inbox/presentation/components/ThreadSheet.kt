@@ -13,7 +13,8 @@ import com.otus.designsystem.mail.read.components.ThreadStrip
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.components.RowGroup
-import com.otus.designsystem.shared.selection.components.ListCaption
+import com.otus.designsystem.shared.rows.elements.Caption
+import com.otus.designsystem.shared.rows.elements.listCaptionInset
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.QuoteMode
 import com.otus.mail.feature.inbox.domain.ThreadMessage
@@ -51,7 +52,7 @@ internal fun ThreadSheet(
         ) {
             val dates = LocalDateFormatter.current
             RowGroup(thread.messages.map { message -> { ThreadMessageRow(message.entry(dates)) } })
-            ListCaption("Quote in your reply")
+            Caption("Quote in your reply", Modifier.listCaptionInset())
             SegmentedToggle(
                 QuoteMode.entries.map { it.label },
                 QuoteMode.entries.indexOf(thread.quoteMode),

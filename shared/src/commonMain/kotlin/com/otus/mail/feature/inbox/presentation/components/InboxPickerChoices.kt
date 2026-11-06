@@ -10,6 +10,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.people.components.PersonAvatar
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
@@ -117,7 +118,7 @@ private fun LazyListScope.mailboxChoices(
     onChange: (InboxSearch) -> Unit,
 ) {
     if (names.isEmpty()) return
-    item { SheetCaption("Inboxes", Modifier.padding(top = SheetTokens.inset)) }
+    item { Caption("Inboxes", Modifier.padding(top = SheetTokens.inset)) }
     items(names, key = { "mailbox/$it" }) { name ->
         PickRow(
             name,

@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
@@ -55,7 +56,7 @@ internal fun ActionBarCopySheet(
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
-            SheetCaption("The ${from.title} bar", heading = false)
+            Caption("The ${from.title} bar", heading = false)
             PreviewCard(from.marker) { ActionBarPreview(source) }
             targets.forEach { place ->
                 PickRow(
@@ -66,9 +67,9 @@ internal fun ActionBarCopySheet(
                 )
             }
             if (unusable.isNotEmpty()) {
-                SheetCaption("${unusable.joinToString(" and ") { it.title }} can't use these buttons.", heading = false)
+                Caption("${unusable.joinToString(" and ") { it.title }} can't use these buttons.", heading = false)
             }
-            SheetCaption("Replaces the bars you tick.", heading = false)
+            Caption("Replaces the bars you tick.", heading = false)
         }
     }
 }

@@ -31,6 +31,7 @@ import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.shared.controls.elements.IconPill
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.Recipient
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.designsystem.theme.tokens.core.Spacing
@@ -104,7 +105,7 @@ internal fun MoveSheet(
             if (suggestion != null) MoveSuggestion(suggestion, first.sender, move)
             MoveFolderList(folders, here, searching = query.isNotBlank(), onMove = move)
             if (readLater == null && suggestion == null && (shortcuts + folders).none { it.folderId != here }) {
-                SheetCaption(
+                Caption(
                     if (query.isBlank()) "No folders to move to." else "No folders match.",
                     RowTextInset,
                     heading = false,
@@ -167,7 +168,7 @@ private fun MoveSuggestion(
     sender: MailSender,
     onMove: (MoveTarget) -> Unit,
 ) {
-    SheetCaption("Suggested", RowTextInset)
+    Caption("Suggested", RowTextInset)
     val name = sender.shownName
     SuggestedFolderRow(
         Recipient(name, sender.chipAvatar, sender.address),

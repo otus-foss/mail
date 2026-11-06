@@ -17,6 +17,7 @@ import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.components.RowDensity
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -61,14 +62,14 @@ internal fun ActionPickerSheet(
             PickerSearch(query, { query = it }, "Search actions…")
             groups.forEach { (target, actions) ->
                 Column {
-                    if (groups.size > 1) SheetCaption(target.title, RowTextInset)
+                    if (groups.size > 1) Caption(target.title, RowTextInset)
                     actions.forEach { action ->
                         ActionChoice(action, layout, slot, current, onPick)
                     }
                     if (moveTo && target == ActionTarget.Messages) MoveToChoice(slot, layout, folders, onPick)
                 }
             }
-            if (groups.isEmpty()) SheetCaption("No actions match.", RowTextInset, heading = false)
+            if (groups.isEmpty()) Caption("No actions match.", RowTextInset, heading = false)
             if (onRemove != null) {
                 SettingRow(
                     "Remove from bar",

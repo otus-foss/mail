@@ -21,6 +21,7 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.IconPill
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -77,13 +78,13 @@ fun FoldersSheet(
         ) {
             MoveSummary(listOf(message), oneSender = true)
             PickerSearch(query, { query = it }, "Search folders…")
-            if (!change.keepsEveryEmail) SheetCaption("Each mail needs a folder", heading = false)
+            if (!change.keepsEveryEmail) Caption("Each mail needs a folder", heading = false)
             val system = choices.system.filter { it.matchesSearch(query) }
             val own = choices.own.filter { it.matchesSearch(query) }
             SystemFolderPills(system, checked, toggle, onNewFolder)
             FolderCheckTree(own, query.isNotBlank(), checked, toggle)
             if (system.isEmpty() && own.isEmpty()) {
-                SheetCaption(
+                Caption(
                     if (query.isBlank()) "No folders yet." else "No folders match.",
                     RowTextInset,
                     heading = false,

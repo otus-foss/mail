@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.ChoiceSheet
@@ -29,7 +30,7 @@ internal fun MoveSortFooter(sorting: MoveSorting) {
         Modifier.padding(SheetTokens.inset),
         verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
     ) {
-        SheetCaption("New rule", RowTextInset)
+        Caption("New rule", RowTextInset)
         ValuePicker(
             chosen.value,
             { choosing = true },

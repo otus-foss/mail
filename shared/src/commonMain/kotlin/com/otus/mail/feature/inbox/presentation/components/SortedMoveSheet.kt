@@ -20,6 +20,7 @@ import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.PersonText
 import com.otus.designsystem.shared.rows.components.SummaryCard
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.presentation.OlderMail
 import com.otus.mail.feature.inbox.presentation.SortedMove
@@ -59,7 +60,7 @@ internal fun SortedMoveSheet(
                 }
 
                 older == null -> {
-                    SheetCaption(
+                    Caption(
                         "Couldn't check Inbox and Archive for older mail.",
                         RowTextInset,
                         heading = false,
@@ -67,7 +68,7 @@ internal fun SortedMoveSheet(
                 }
 
                 count == 0 -> {
-                    SheetCaption("No older mail in Inbox or Archive matches.", RowTextInset, heading = false)
+                    Caption("No older mail in Inbox or Archive matches.", RowTextInset, heading = false)
                 }
 
                 else -> {

@@ -9,6 +9,8 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_grid_on
 import com.otus.designsystem.resources.symbol_group
 import com.otus.designsystem.resources.symbol_person
+import com.otus.designsystem.shared.selection.components.OrderedChoice
+import com.otus.designsystem.shared.selection.components.OrderedChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.feature.inbox.domain.ReadQuickModule

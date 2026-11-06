@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,14 +8,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.mail.quickview.components.QuickJump
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_code
@@ -25,7 +24,10 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.panels.components.GrownPanelLayers
 import com.otus.designsystem.shared.panels.components.PanelExpansion
+import com.otus.designsystem.shared.panels.components.quickViewHeight
+import com.otus.designsystem.shared.panels.components.rememberLastStopShows
 import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
@@ -49,8 +51,12 @@ internal fun rememberReadExpansion(
     modules: Int,
     details: Dp,
 ): PanelExpansion {
-    val expansion = rememberPanelExpansion(listOf(quickHeight(modules), details))
-    BackHandler(expansion.expanded) { expansion.collapse() }
+    val expansion = rememberPanelExpansion(listOf(quickViewHeight(modules), details))
+    NavigationBackHandler(
+        rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = expansion.expanded,
+        onBackCompleted = expansion::collapse,
+    )
     return expansion
 }
 
@@ -88,67 +94,46 @@ internal fun ReadExpandedContent(
     room: ReadRoom,
     modules: List<ReadQuickModule>,
 ) {
-    val expansion = room.expansion
-    val position = { expansion.position }
-    // A faded layer leaves the accessibility tree too, so a screen reader finds only what shows.
-    val quickHidden by remember(expansion) { derivedStateOf { quickAlpha(position()) == 0f } }
-    val detailsHidden by remember(expansion) { derivedStateOf { filtersAlpha(position()) == 0f } }
-    Box(Modifier.fillMaxSize()) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .graphicsLayer { alpha = quickAlpha(position()) }
-                .hiddenWhen(quickHidden)
-                .padding(horizontal = SheetTokens.inset)
-                .padding(top = QuickViewTokens.moduleGap),
-            verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
-        ) {
-            modules.forEach { module ->
-                when (module) {
-                    ReadQuickModule.Thread -> ReadThreadModule(room)
-                    ReadQuickModule.Sender -> ReadSenderModule(room)
-                    ReadQuickModule.Counts -> ReadCountsModule(room)
-                }
-            }
-            ReadMoveRow(room)
-        }
-        // Composed only while it shows, so the faded details over the quick view take no taps.
-        if (rememberDetailsShown(expansion, !detailsHidden)) {
+    GrownPanelLayers(
+        room.expansion,
+        lastStopOpen = rememberLastStopShows(room.expansion),
+        quick = {
             Column(
                 Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { alpha = filtersAlpha(position()) }
-                    .hiddenWhen(detailsHidden)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = SheetTokens.inset),
+                    .fillMaxWidth()
+                    .padding(horizontal = SheetTokens.inset)
+                    .padding(top = QuickViewTokens.moduleGap),
+                verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
             ) {
-                room.look.Details(room.page)
-                SettingPageRow(
-                    "Show original",
-                    { room.open(ReadSheet.Details(room.page)) },
-                    icon = Res.drawable.symbol_code,
-                )
+                modules.forEach { module ->
+                    when (module) {
+                        ReadQuickModule.Thread -> ReadThreadModule(room)
+                        ReadQuickModule.Sender -> ReadSenderModule(room)
+                        ReadQuickModule.Counts -> ReadCountsModule(room)
+                    }
+                }
+                ReadMoveRow(room)
             }
-        }
-    }
+        },
+        lastStop = { ReadDetails(room) },
+    )
 }
 
-/**
- * Whether the details show: while [inSight], and on until the panel stops moving after, so a drag
- * that started in them keeps them under the finger and ends where the panel settles.
- */
 @Composable
-private fun rememberDetailsShown(
-    expansion: PanelExpansion,
-    inSight: Boolean,
-): Boolean {
-    var shown by remember { mutableStateOf(inSight) }
-    if (inSight) {
-        shown = true
-    } else if (!expansion.moving) {
-        shown = false
+private fun ReadDetails(room: ReadRoom) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = SheetTokens.inset),
+    ) {
+        room.look.Details(room.page)
+        SettingPageRow(
+            "Show original",
+            { room.open(ReadSheet.Details(room.page)) },
+            icon = Res.drawable.symbol_code,
+        )
     }
-    return shown
 }
 
 /**

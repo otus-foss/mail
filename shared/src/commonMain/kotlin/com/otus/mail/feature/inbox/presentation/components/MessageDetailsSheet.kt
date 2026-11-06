@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.MailHeader
@@ -39,8 +40,8 @@ fun MessageDetailsSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             when (val load = headers) {
-                HeadersLoad.Loading -> SheetCaption("Loading headers…", heading = false)
-                HeadersLoad.Failed -> SheetCaption("Couldn't load the headers. Check your connection.", heading = false)
+                HeadersLoad.Loading -> Caption("Loading headers…", heading = false)
+                HeadersLoad.Failed -> Caption("Couldn't load the headers. Check your connection.", heading = false)
                 is HeadersLoad.Loaded -> HeaderLines(load.headers)
             }
         }
@@ -50,7 +51,7 @@ fun MessageDetailsSheet(
 @Composable
 private fun HeaderLines(headers: List<MailHeader>) {
     if (headers.isEmpty()) {
-        SheetCaption("This message has no headers.", heading = false)
+        Caption("This message has no headers.", heading = false)
         return
     }
     SelectionContainer {

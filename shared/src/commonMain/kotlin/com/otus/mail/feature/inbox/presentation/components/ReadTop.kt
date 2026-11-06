@@ -11,12 +11,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.PanelMotion
 import com.otus.designsystem.shared.panels.components.PanelScrim
+import com.otus.designsystem.shared.panels.components.grownPanelHeight
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.theme.motion.MotionCurve
 import com.otus.designsystem.theme.motion.MotionSpeed
 import com.otus.designsystem.theme.motion.motionTween
@@ -86,7 +87,11 @@ internal fun ReadTop(
             headerActions(parts, text.menu),
             PanelMotion(expansion = expansion) { ReadExpandedContent(room, quick.modules) },
         )
-        text.notice?.let { Box(Modifier.padding(PageTokens.pageInset)) { PageNotice(it) } }
+        text.notice?.let {
+            Box(Modifier.padding(PageTokens.pageInset)) {
+                Caption(it, Modifier.padding(horizontal = PageTokens.textInset), heading = false)
+            }
+        }
     }
 }
 
@@ -98,14 +103,7 @@ internal fun ReadTop(
 internal fun readDetailsHeight(
     header: Dp,
     padding: PaddingValues,
-): Dp {
-    val window =
-        with(LocalDensity.current) {
-            LocalWindowInfo.current.containerSize.height
-                .toDp()
-        }
-    return window - header - padding.calculateBottomPadding() - PageTokens.pageInset
-}
+): Dp = grownPanelHeight(above = header, below = padding.calculateBottomPadding() + PageTokens.pageInset)
 
 private fun headerActions(
     parts: ReadParts,

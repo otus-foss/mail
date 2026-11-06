@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.people.components.PersonRow
-import com.otus.designsystem.shared.selection.components.ListCaption
+import com.otus.designsystem.shared.rows.elements.Caption
+import com.otus.designsystem.shared.rows.elements.listCaptionInset
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.editing.ComposeTokens
@@ -38,7 +40,7 @@ fun SignaturesScreen(
             state.accountList.forEach { account ->
                 val identities = state.identities.filter { it.accountId == account.id }
                 if (identities.isNotEmpty()) {
-                    ListCaption(account.name)
+                    Caption(account.name, Modifier.listCaptionInset())
                     identities.forEach { identity -> SignatureRow(identity) { onEdit(identity) } }
                 }
             }

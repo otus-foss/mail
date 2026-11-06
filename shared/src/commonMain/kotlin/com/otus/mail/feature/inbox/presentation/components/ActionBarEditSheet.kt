@@ -16,6 +16,7 @@ import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.settings.components.PreviewCard
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
@@ -60,7 +61,7 @@ internal fun ActionBarEditSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             PreviewCard(place.marker) { ActionBarPreview(layout, { picking = it }, addSlot = true) }
-            SheetCaption("Tap a button to change it.", RowTextInset, heading = false)
+            Caption("Tap a button to change it.", RowTextInset, heading = false)
         }
     }
     val slot = picking ?: return

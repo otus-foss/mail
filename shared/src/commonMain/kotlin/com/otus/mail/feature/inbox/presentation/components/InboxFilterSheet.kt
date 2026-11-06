@@ -10,6 +10,7 @@ import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.overlays.components.ListSheet
+import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -78,7 +79,7 @@ private fun InboxContext.Choices(
     draft: InboxSearch,
     onChange: (InboxSearch) -> Unit,
 ) {
-    SheetCaption("${draft.selectionCount(filter)} selected", heading = false)
+    Caption("${draft.selectionCount(filter)} selected", heading = false)
     InboxPickerChoices(filter, messages, mailboxSearch, allowsMailboxSelection, query, draft, onChange)
 }
 

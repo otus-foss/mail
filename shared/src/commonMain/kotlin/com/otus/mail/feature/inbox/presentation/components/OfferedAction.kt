@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.designsystem.shared.overlays.components.ConfirmQuestion
 import com.otus.mail.feature.inbox.domain.BarButton
 import org.jetbrains.compose.resources.DrawableResource
 
@@ -18,13 +19,6 @@ internal class OfferedAction(
     val confirm: ConfirmQuestion? = null,
     val primaryLabel: String = label,
     val run: () -> Unit,
-)
-
-/** What a confirm dialog asks before an action that cannot be undone, and its button's [label]. */
-internal class ConfirmQuestion(
-    val title: String,
-    val message: String,
-    val label: String,
 )
 
 /** [action] under its own name and symbol, for an action whose label never changes. */

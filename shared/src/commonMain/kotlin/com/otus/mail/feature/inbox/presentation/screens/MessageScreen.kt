@@ -28,6 +28,7 @@ import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.overlays.components.LocalSheetPull
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.pages.components.belowControlPanel
+import com.otus.designsystem.shared.pages.elements.hiddenWhen
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.motion.MotionCurve
@@ -56,7 +57,6 @@ import com.otus.mail.feature.inbox.presentation.components.ReadTopText
 import com.otus.mail.feature.inbox.presentation.components.StripFolds
 import com.otus.mail.feature.inbox.presentation.components.StripGestures
 import com.otus.mail.feature.inbox.presentation.components.SwipeFeel
-import com.otus.mail.feature.inbox.presentation.components.hiddenWhen
 import com.otus.mail.feature.inbox.presentation.components.openLink
 import com.otus.mail.feature.inbox.presentation.components.readDetailsHeight
 import com.otus.mail.feature.inbox.presentation.components.rememberFoldSwipe

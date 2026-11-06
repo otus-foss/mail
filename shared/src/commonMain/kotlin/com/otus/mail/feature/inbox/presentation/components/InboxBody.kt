@@ -24,6 +24,7 @@ import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.shared.feedback.components.EmptyState
 import com.otus.designsystem.shared.feedback.elements.RefreshIndicator
+import com.otus.designsystem.shared.rows.components.dragToSelect
 import com.otus.designsystem.shared.rows.components.rowSelection
 import com.otus.designsystem.shared.swipe.components.SwipeActions
 import com.otus.designsystem.theme.colors.OtusColors
