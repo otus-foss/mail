@@ -15,6 +15,7 @@ import com.otus.designsystem.resources.symbol_schedule_send
 import com.otus.designsystem.resources.symbol_signature
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_view_agenda
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.DateStyle
 import com.otus.mail.feature.inbox.domain.FilterLayout
@@ -149,7 +150,7 @@ private fun SettingsIndexScope.panelsIndex(
         setting(
             "Start page",
             startPageLabel(behavior.startPage, startPages),
-            startPages.map { it.path },
+            startPages.map { it.path.pathText() },
             Res.drawable.symbol_home,
             keywords = listOf("Open on", "Launch", "Home"),
         )

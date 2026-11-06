@@ -9,12 +9,12 @@ import kotlin.test.assertTrue
 class MoveSearchTest {
     private val targets =
         listOf(
-            MoveTarget("t", "Deleted Items", MailboxRole.Trash),
-            MoveTarget("c", "Clients", name = "Clients", own = true),
-            MoveTarget("j", "Junk Mail", MailboxRole.Junk),
-            MoveTarget("ca", "Clients / Acme", name = "Acme", depth = 1, own = true),
-            MoveTarget("s", "Sent"),
-            MoveTarget("x", "Old mail", MailboxRole.Archive),
+            MoveTarget("t", listOf("Deleted Items"), MailboxRole.Trash),
+            MoveTarget("c", listOf("Clients"), name = "Clients", own = true),
+            MoveTarget("j", listOf("Junk Mail"), MailboxRole.Junk),
+            MoveTarget("ca", listOf("Clients", "Acme"), name = "Acme", depth = 1, own = true),
+            MoveTarget("s", listOf("Sent")),
+            MoveTarget("x", listOf("Old mail"), MailboxRole.Archive),
         )
 
     @Test

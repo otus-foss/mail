@@ -15,14 +15,14 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MoveToastsTest {
-    private val trash = MoveTarget("t", "Trash", MailboxRole.Trash)
-    private val clients = MoveTarget("c", "Clients")
+    private val trash = MoveTarget("t", listOf("Trash"), MailboxRole.Trash)
+    private val clients = MoveTarget("c", listOf("Clients"))
 
     @Test
     fun namesTheMoveByWhereTheMailWent() {
         assertEquals("Email deleted", movedText(trash, 1))
-        assertEquals("3 emails archived", movedText(MoveTarget("a", "Archive", MailboxRole.Archive), 3))
-        assertEquals("Email marked as spam", movedText(MoveTarget("s", "Spam", MailboxRole.Junk), 1))
+        assertEquals("3 emails archived", movedText(MoveTarget("a", listOf("Archive"), MailboxRole.Archive), 3))
+        assertEquals("Email marked as spam", movedText(MoveTarget("s", listOf("Spam"), MailboxRole.Junk), 1))
         assertEquals("Moved to Clients", movedText(clients, 1))
         assertEquals("2 emails moved to Clients", movedText(clients, 2))
     }

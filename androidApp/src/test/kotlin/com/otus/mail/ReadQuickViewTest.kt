@@ -38,10 +38,10 @@ class ReadQuickViewTest {
     private val fixtures = ReadViewFixtures
     private val targets =
         listOf(
-            MoveTarget("in", "Inbox", MailboxRole.Inbox),
-            MoveTarget("ar", "Archive", MailboxRole.Archive),
-            MoveTarget("tr", "Trash", MailboxRole.Trash),
-            MoveTarget("pr", "Projects", own = true),
+            MoveTarget("in", listOf("Inbox"), MailboxRole.Inbox),
+            MoveTarget("ar", listOf("Archive"), MailboxRole.Archive),
+            MoveTarget("tr", listOf("Trash"), MailboxRole.Trash),
+            MoveTarget("pr", listOf("Projects"), own = true),
         )
 
     private fun showThread() {

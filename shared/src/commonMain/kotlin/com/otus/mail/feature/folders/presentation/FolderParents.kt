@@ -3,6 +3,7 @@ package com.otus.mail.feature.folders.presentation
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.ancestors
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.folders.domain.folderNameProblem
 import com.otus.mail.feature.folders.domain.moveTargets
 
@@ -17,12 +18,11 @@ fun AccountFolders.parentChoices(folder: MailFolder): List<MailFolder?> =
             (isOwn(parent) && folderNameProblem(folder.name, parent?.id, this, renaming = folder) == null)
     }
 
-private fun AccountFolders.isOwn(folder: MailFolder?): Boolean =
-    folder == null || (folder.isCustom && folder.id != readLaterId)
+private fun AccountFolders.isOwn(folder: MailFolder?): Boolean = folder == null || isOwnFolder(folder)
 
 /** [folder]'s names from the top level down, such as "Clients / Acme". */
 fun AccountFolders.folderPath(folder: MailFolder): String =
-    (ancestors(folders, folder).reversed() + folder).joinToString(" / ") { it.name }
+    (ancestors(folders, folder).reversed() + folder).map { it.name }.pathText()
 
 /** Whether [folder] has somewhere to move: the server lets it change parent and another place takes it. */
 fun AccountFolders.canMove(folder: MailFolder): Boolean =

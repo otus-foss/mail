@@ -18,11 +18,17 @@ class MoveToOffersTest {
         mapOf(
             "ada" to
                 listOf(
-                    MoveTarget("ada-r", "Receipts", own = true, path = listOf("Receipts")),
-                    MoveTarget("ada-a", "Clients / Acme", name = "Acme", own = true, path = listOf("Clients", "Acme")),
-                    MoveTarget("ada-t", "Trash"),
+                    MoveTarget("ada-r", listOf("Receipts"), own = true, path = listOf("Receipts")),
+                    MoveTarget(
+                        "ada-a",
+                        listOf("Clients", "Acme"),
+                        name = "Acme",
+                        own = true,
+                        path = listOf("Clients", "Acme"),
+                    ),
+                    MoveTarget("ada-t", listOf("Trash")),
                 ),
-            "grace" to listOf(MoveTarget("grace-r", "RECEIPTS", own = true, path = listOf("RECEIPTS"))),
+            "grace" to listOf(MoveTarget("grace-r", listOf("RECEIPTS"), own = true, path = listOf("RECEIPTS"))),
         )
 
     private val actions =

@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.MessageFolder
 
 /**
@@ -54,4 +55,4 @@ fun sheetTree(folders: List<MessageFolder>): List<SheetTreeFolder> {
 }
 
 /** Whether the folder's path contains [query], ignoring case; a blank query matches. */
-fun MessageFolder.matchesSearch(query: String): Boolean = path.joinToString(" / ").containsSearch(query)
+fun MessageFolder.matchesSearch(query: String): Boolean = path.pathText().containsSearch(query)

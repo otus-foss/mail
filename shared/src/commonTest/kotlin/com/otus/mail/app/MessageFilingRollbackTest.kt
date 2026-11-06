@@ -102,7 +102,7 @@ class MessageFilingRollbackTest {
                     if (readLater) {
                         assertNotNull(filing.readLater(feed, initial)).apply()
                     } else {
-                        filing.move(feed, initial, MoveTarget("r", "Receipts"))
+                        filing.move(feed, initial, MoveTarget("r", listOf("Receipts")))
                     }
                 }
             }

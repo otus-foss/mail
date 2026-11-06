@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.read
 
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.presentation.components.FOLDER_PATH_SEPARATOR
 
 /** The caption above a menu section: the sender's name, "Whole conversation", or none. */
 fun ReadMenuPart.title(): String? =
@@ -28,7 +28,7 @@ fun ReadMenuEntry.detail(): String? =
     when (this) {
         ReadMenuEntry.ViewDetails -> "Headers, encryption, original"
         ReadMenuEntry.DeleteThisMessage -> "Only this one, not the thread"
-        is ReadMenuEntry.MoveTo -> suggestedPath?.let { "Usually ${it.joinToString(FOLDER_PATH_SEPARATOR)}" }
+        is ReadMenuEntry.MoveTo -> suggestedPath?.let { "Usually ${it.pathText()}" }
         else -> null
     }
 

@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.pathText
+
 /**
  * How a folder chip names its folder: the [name], after a [prefix] of parents when another folder
  * has the same name, and [spoken] as its full path. [showAccount] asks for the account's avatar,
@@ -51,7 +53,7 @@ private fun parentsToShow(
 }
 
 private fun shortPrefix(parents: List<String>): String =
-    if (parents.size > MAX_SHOWN_PARENTS) "${parents.first()} / …" else parents.joinToString(" / ")
+    if (parents.size > MAX_SHOWN_PARENTS) "${parents.first()} / …" else parents.pathText()
 
 private fun List<String>.equalsIgnoringCase(other: List<String>): Boolean =
     size == other.size && zip(other).all { (a, b) -> a.equals(b, ignoreCase = true) }

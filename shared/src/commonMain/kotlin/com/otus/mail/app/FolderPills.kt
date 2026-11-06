@@ -4,7 +4,6 @@ import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.folderTree
-import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.folders.presentation.folderIcon
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailScope
@@ -59,7 +58,7 @@ private fun ownFolder(
         folderIcon(node),
         MailScope.Folder(account.accountId, node.folder.id),
         group = account.accountName,
-        path = node.path.pathText(),
+        path = node.path,
     )
 
 private const val EVERY_ACCOUNT_GROUP = "Folders"

@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
@@ -16,7 +17,7 @@ class ReadLaterChange(
 )
 
 /**
- * A folder a message can move to; [label] is its full path and [name] its own name. [shortcut]
+ * A folder a message can move to; [folderPath] names it from the top level down and [name] is its own name. [shortcut]
  * marks the account's Inbox, Archive, Spam, or Trash, which one action files into: found by role
  * because servers name these folders differently. [own] marks the user's own folders, which the move
  * sheet lists as a tree, nested [depth] levels below other own folders. [path] is an own folder's
@@ -25,14 +26,18 @@ class ReadLaterChange(
  */
 data class MoveTarget(
     val folderId: String,
-    val label: String,
+    val folderPath: List<String>,
     val shortcut: MailboxRole? = null,
-    val name: String = label,
+    val name: String = folderPath.last(),
     val depth: Int = 0,
     val own: Boolean = false,
     val path: List<String>? = null,
     val color: String? = null,
-)
+) {
+    /** The full path as text, such as "Clients / Acme". */
+    val label: String
+        get() = folderPath.pathText()
+}
 
 /**
  * What the user can do with a message besides reading it, from an open message or by swiping its

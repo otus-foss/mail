@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.swipe.components.SwipeAction
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailAction
@@ -25,7 +26,7 @@ internal val ReadLaterChange.label: String
 internal val BarButton.label: String
     get() =
         when (this) {
-            is BarButton.MoveTo -> "Move to ${path.joinToString(FOLDER_PATH_SEPARATOR)}"
+            is BarButton.MoveTo -> "Move to ${path.pathText()}"
             MailAction.Read -> "Read / unread"
             MailAction.Flag -> "Flag / unflag"
             MailAction.ReadLater -> "Read later"
@@ -64,9 +65,6 @@ internal fun BarButton.buttonLabel(primary: Boolean = false): String =
         MailAction.Flag -> MessageFlag.Flagged.label(on = false)
         else -> label
     }
-
-/** Joins a folder's names from the top level down, as pickers show its path. */
-internal const val FOLDER_PATH_SEPARATOR = " / "
 
 /** The swipe that runs [action] on [message]; null when there is none or the message cannot take it. */
 internal fun MessageActions.swipeAction(

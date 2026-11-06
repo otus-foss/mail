@@ -52,7 +52,7 @@ class FolderPillsTest {
             trash.scope,
         )
         assertEquals(listOf("Folders", "Folders", "Ada", "Ada"), options.map { it.group })
-        assertEquals("Work / Clients", options.last().path)
+        assertEquals(listOf("Work", "Clients"), options.last().path)
         assertEquals(MailScope.Folder("ada", "c"), options.last().scope)
     }
 

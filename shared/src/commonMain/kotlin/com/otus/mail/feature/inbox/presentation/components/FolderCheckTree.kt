@@ -8,6 +8,7 @@ import com.otus.designsystem.shared.rows.components.CollapsibleTree
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickMarkView
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.presentation.SheetTreeFolder
 import com.otus.mail.feature.inbox.presentation.sheetTree
@@ -50,6 +51,6 @@ private fun SheetTreeFolder.treeEntry(searching: Boolean): FolderTreeEntry {
         folder.path.last(),
         folder.color,
         depth = if (searching) 0 else depth,
-        description = shownParents.takeIf { it.isNotEmpty() }?.joinToString(" / "),
+        description = shownParents.takeIf { it.isNotEmpty() }?.pathText(),
     )
 }

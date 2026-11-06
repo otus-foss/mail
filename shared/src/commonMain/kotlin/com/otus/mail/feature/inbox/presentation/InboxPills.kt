@@ -15,7 +15,7 @@ data class FolderPillOption(
     val icon: DrawableResource,
     val scope: MailScope,
     val group: String,
-    val path: String = label,
+    val path: List<String> = listOf(label),
 ) {
     fun scopeFor(accounts: Set<String>): MailScope =
         if (accounts.isEmpty()) {

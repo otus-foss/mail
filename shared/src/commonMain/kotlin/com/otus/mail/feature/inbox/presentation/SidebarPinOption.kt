@@ -14,6 +14,6 @@ data class SidebarPinOption(
     val title: String,
     val icon: DrawableResource,
     val group: String,
-    val path: String = title,
+    val path: List<String> = listOf(title),
     val tint: Color? = null,
 )

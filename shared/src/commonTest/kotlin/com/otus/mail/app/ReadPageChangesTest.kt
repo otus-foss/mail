@@ -200,7 +200,7 @@ class ReadPageChangesTest {
 
     private companion object {
         val GRACE = MailSender("Grace", "grace@example.org")
-        val TRASH = MoveTarget("tr", "Trash", MailboxRole.Trash)
+        val TRASH = MoveTarget("tr", listOf("Trash"), MailboxRole.Trash)
 
         const val MAILBOXES = """{"id": "a", "name": "Inbox", "role": "inbox"},
             {"id": "ar", "name": "Archive", "role": "archive"}, {"id": "fi", "name": "Invoices"},

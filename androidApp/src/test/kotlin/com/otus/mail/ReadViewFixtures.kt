@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
@@ -172,7 +173,11 @@ internal object ReadViewFixtures {
                 apply = { change, _ -> applied(change) },
                 newFolder = newFolder,
             ),
-        privacy = ReadPrivacy({ RemoteImages.Known }, known = KnownPeople { team.map { it.address }.toSet() }),
+        privacy =
+            ReadPrivacy(
+                { RemoteImages.Known },
+                known = KnownPeople { team.map { EmailAddressKey(it.address) }.toSet() },
+            ),
         files =
             ReadFiles(
                 downloads = PhotoAttachments(::photo),

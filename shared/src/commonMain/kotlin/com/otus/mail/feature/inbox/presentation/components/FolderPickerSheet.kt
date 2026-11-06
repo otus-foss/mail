@@ -18,6 +18,7 @@ import com.otus.designsystem.shared.rows.components.AccountGroupRow
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterFolder
@@ -75,7 +76,7 @@ private fun FolderRows(
     val searching = query.isNotBlank()
     account.shownFolders(query, collapsed).forEach { folder ->
         val check = draft.check(folder, options)
-        val path = folder.ancestors.takeIf { searching && it.isNotEmpty() }?.joinToString(" / ")
+        val path = folder.ancestors.takeIf { searching && it.isNotEmpty() }?.pathText()
         FilterFolderRow(
             TreeFolder(folder.name, if (searching) 0 else folder.depth, path),
             check,

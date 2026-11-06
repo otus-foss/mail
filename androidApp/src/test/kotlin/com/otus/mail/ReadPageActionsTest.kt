@@ -72,7 +72,7 @@ class ReadPageActionsTest {
                 effects = effects,
             )
         val context = InboxContext(loadContent = { fixtures.content(it) }, read = read, rowLook = RowLook(own = OWN))
-        val actions = fixtures.actions(targets = listOf(MoveTarget("tr", "Trash", MailboxRole.Trash)))
+        val actions = fixtures.actions(targets = listOf(MoveTarget("tr", listOf("Trash"), MailboxRole.Trash)))
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {

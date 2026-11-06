@@ -17,6 +17,7 @@ import com.otus.designsystem.shared.selection.components.ChoiceSheet
 import com.otus.designsystem.shared.selection.components.ValuePicker
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.BarSlot
@@ -85,4 +86,4 @@ private fun Map<BarButton.MoveTo, String?>.tintOf(folder: BarButton.MoveTo?): Co
 
 /** The folder's names from the top level down, as pickers show its path. */
 private val BarButton.MoveTo.folderPath: String
-    get() = path.joinToString(FOLDER_PATH_SEPARATOR)
+    get() = path.pathText()

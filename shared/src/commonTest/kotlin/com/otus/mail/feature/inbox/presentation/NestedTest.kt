@@ -4,7 +4,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class NestedTest {
-    private fun nest(vararg paths: String) = paths.toList().nestedByPath { it }.map { it.title to it.depth }
+    private fun nest(vararg paths: String) =
+        paths.toList().nestedByPath { it.split(" / ") }.map { it.title to it.depth }
 
     @Test
     fun foldersSitUnderTheirParentsByName() {

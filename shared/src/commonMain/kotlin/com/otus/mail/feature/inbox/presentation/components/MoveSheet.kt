@@ -169,7 +169,7 @@ private fun MoveSuggestion(
     val name = sender.shownName
     SuggestedFolderRow(
         Recipient(name, sender.chipAvatar, sender.address),
-        FolderName(target.path ?: target.label.split(" / "), target.color?.let(FolderColor::named), system = false),
+        FolderName(target.path ?: target.folderPath, target.color?.let(FolderColor::named), system = false),
         "Move to ${target.label}, where $name's mail usually goes",
         { onMove(target) },
         RowTextInset,

@@ -51,7 +51,7 @@ internal fun sidebarPinOptions(
             mailbox.title,
             mailbox.icon,
             group = if (folder == null) "Mailboxes" else "Folders",
-            path = folder?.path?.joinToString(" / ") ?: mailbox.title,
+            path = folder?.path ?: listOf(mailbox.title),
             tint = folder?.let { FolderColor.named(colorOf(it)).tint },
         )
     }

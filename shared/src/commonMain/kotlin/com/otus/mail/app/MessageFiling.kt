@@ -5,7 +5,6 @@ import com.otus.mail.core.mailbox.FolderRights
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.folderTree
-import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.folders.domain.ReadLaterStep
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
@@ -88,7 +87,7 @@ internal class MessageFiling(
                 val ownNode = own[node.folder.id]
                 MoveTarget(
                     node.folder.id,
-                    node.path.pathText(),
+                    node.path,
                     node.folder.role?.takeIf { it in SHORTCUTS },
                     name = node.folder.name,
                     depth = ownNode?.depth ?: 0,
@@ -150,7 +149,7 @@ internal class MessageFiling(
         val folder = account?.readLater
         if (folder == null || message.emailId.isEmpty()) return null
         val shown = message.location.mailboxId
-        val target = MoveTarget(folder.id, folder.name)
+        val target = MoveTarget(folder.id, listOf(folder.name))
         val leaves = shown == folder.id
         val save = { setReadLater(feed, message, folder, saved = true) }
         val remove = { setReadLater(feed, message, folder, saved = false, leaves) }

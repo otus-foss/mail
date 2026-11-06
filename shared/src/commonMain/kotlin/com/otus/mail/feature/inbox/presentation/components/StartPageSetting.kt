@@ -8,6 +8,7 @@ import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.ChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.elements.ValueButton
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.SidebarPin
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.SidebarPinOption
@@ -50,6 +51,6 @@ internal fun startPageLabel(
     options: List<SidebarPinOption>,
 ): String = options.firstOrNull { it.pin == start }?.title ?: INBOX_TITLE
 
-private fun SidebarPinOption.startPageRow(): ChoiceRow = ChoiceRow(path, icon = icon, iconTint = tint)
+private fun SidebarPinOption.startPageRow(): ChoiceRow = ChoiceRow(path.pathText(), icon = icon, iconTint = tint)
 
 private const val INBOX_TITLE = "Inbox"

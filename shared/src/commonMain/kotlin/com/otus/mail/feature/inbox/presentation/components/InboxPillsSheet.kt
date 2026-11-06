@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.shared.selection.components.OrderedChoice
 import com.otus.designsystem.shared.selection.components.OrderedChoiceSheet
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.nestedByPath
@@ -25,7 +26,7 @@ internal fun InboxPillsSheet(
                     OrderedChoice(
                         folder.pill,
                         folder.pill.storageValue,
-                        folder.path,
+                        folder.path.pathText(),
                         folder.icon,
                         folder.group,
                         name,
