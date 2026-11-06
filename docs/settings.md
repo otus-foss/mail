@@ -147,13 +147,22 @@ load also cancels the fallback. `StartPageTest` covers the resolution and fallba
 
 ## Search
 
-The settings home searches `mailSettingsIndex` in `app/MailSettings.kt`, which mirrors each page:
-`mailBehaviorIndex`, `mailLookIndex`, and `privacyIndex` in the inbox feature list what their
-screens show, in the same sections. A search finds a page, setting, option, or keyword, such as
-"Dark mode" for Theme, "drawer" for Sidebar, or "screenshots" for Screen security, and a query of
-several words finds a setting that holds each word somewhere, such as "swipe archive". Opening a
-result opens its page with the row flashed, and Back returns to the results. When a setting moves
-between pages, move its index entry with it; `MailSettingsIndexTest` checks where the moved ones
+The settings home searches `mailSettingsIndex` in `app/MailSettings.kt`. Each Mail page declares
+its rows once in `feature/mailsettings/presentation/components`, as Meta's `SettingsSectionSpec`
+values built from the current state: `mailListSettings`, `mailBehaviorSettings`,
+`sidebarSettings`, `pinnedSettings`, `filterPanelSettings`, `actionBarSettings`, and
+`privacySettings`, with `mailListRow` for Appearance and `alertButtonsRow` for Notifications. The
+screen shows that list with `SettingSections`, and the index walks the same list with `sections`,
+so titles, values, options, icons, and disabled reasons cannot drift apart. Previews, the Pinned
+editors, the action bar cards, and the Sidebar's reorderable sections stay in the screens around
+the list. The Signatures page belongs to the compose feature, so its Add to replies switch is
+repeated in `writingRows` for search. The top-level pages and the Notifications page's other
+rows are listed by hand in `app/MailSettings.kt`.
+
+A search finds a page, setting, option, or keyword, such as "Dark mode" for Theme, "drawer" for
+Sidebar, or "screenshots" for Screen security, and a query of several words finds a setting that
+holds each word somewhere, such as "swipe archive". Opening a result opens its page with the row
+flashed, and Back returns to the results. `MailSettingsIndexTest` checks where moved settings
 live.
 
 ## Reusable pieces

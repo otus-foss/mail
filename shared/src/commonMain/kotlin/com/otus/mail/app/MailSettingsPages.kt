@@ -6,10 +6,11 @@ import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.avatar.ui.presentation.components.OwnAvatarEditor
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
-import com.otus.mail.feature.mailsettings.presentation.components.NotificationActionsSetting
+import com.otus.mail.feature.mailsettings.presentation.components.alertButtonsRow
 import com.otus.mail.feature.mailsettings.presentation.screens.FilterPanelSettingsScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
+import com.otus.settings.presentation.components.SettingSpecRow
 import com.otus.settings.presentation.screens.SettingsScreen
 import com.otus.settings.presentation.screens.ThemeSettingsScreen
 
@@ -24,9 +25,9 @@ internal fun SettingsPageContent(
     back: () -> Unit,
 ) {
     when (page) {
-        MailPage.Settings -> SettingsIndex(states, settings, navigation)
+        MailPage.Settings -> SettingsIndex(states, settings, dateFormatter, navigation)
         MailPage.EmailAccounts -> EmailAccountsPage(states, back)
-        MailPage.Appearance -> AppearancePage(states, settings, navigation, back)
+        MailPage.Appearance -> AppearancePage(states, settings, dateFormatter, navigation, back)
         MailPage.Behavior -> MailBehaviorPage(states, navigation, back)
         MailPage.Notifications, MailPage.NotificationOverrides -> NotificationPages(page, states, navigation, back)
         MailPage.SidebarSettings, MailPage.PinnedSettings -> SidebarSettingsPage(page, states, navigation, back)
@@ -44,9 +45,13 @@ internal fun SettingsPageContent(
 private fun SettingsIndex(
     states: MailStates,
     settings: SharedSettings,
+    dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    SettingsScreen(mailSettingsIndex(states, settings, navigation), onOpenNavigation = navigation.openSidebar)
+    SettingsScreen(
+        mailSettingsIndex(states, settings, dateFormatter, navigation),
+        onOpenNavigation = navigation.openSidebar,
+    )
 }
 
 @Composable
@@ -81,7 +86,7 @@ private fun NotificationPages(
             notifications,
             states.accounts.accounts,
             onBack = back,
-            buttons = { NotificationActionsSetting(states.behavior) },
+            buttons = { SettingSpecRow(alertButtonsRow(states.behavior)) },
         ) {
             navigation.go(MailPage.NotificationOverrides)
         }

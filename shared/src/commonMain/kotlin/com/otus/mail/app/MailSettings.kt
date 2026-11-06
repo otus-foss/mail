@@ -3,6 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_folder
@@ -10,14 +11,13 @@ import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_visibility_off
-import com.otus.mail.core.settings.domain.ActionBehavior
-import com.otus.mail.core.settings.domain.MailListLayout
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.PRIVACY_TITLE
-import com.otus.mail.feature.mailsettings.presentation.components.BehaviorIndexPages
-import com.otus.mail.feature.mailsettings.presentation.components.mailBehaviorIndex
-import com.otus.mail.feature.mailsettings.presentation.components.mailLookIndex
-import com.otus.mail.feature.mailsettings.presentation.components.notificationActionsIndex
-import com.otus.mail.feature.mailsettings.presentation.components.privacyIndex
+import com.otus.mail.feature.mailsettings.presentation.components.BehaviorPages
+import com.otus.mail.feature.mailsettings.presentation.components.alertButtonsRow
+import com.otus.mail.feature.mailsettings.presentation.components.mailBehaviorSettings
+import com.otus.mail.feature.mailsettings.presentation.components.mailListRow
+import com.otus.mail.feature.mailsettings.presentation.components.privacySettings
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.mail.feature.notifications.presentation.screens.deliveryLabel
@@ -28,6 +28,9 @@ import com.otus.settings.presentation.SettingsIndexScope
 import com.otus.settings.presentation.SettingsItem
 import com.otus.settings.presentation.appIconIndex
 import com.otus.settings.presentation.appearanceIndex
+import com.otus.settings.presentation.components.PageRowSpec
+import com.otus.settings.presentation.components.row
+import com.otus.settings.presentation.components.sections
 import com.otus.settings.presentation.settingsIndex
 
 /**
@@ -38,11 +41,11 @@ import com.otus.settings.presentation.settingsIndex
 internal fun mailSettingsIndex(
     states: MailStates,
     settings: SharedSettings,
+    dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ): List<SettingsItem> {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val folderPills = rememberFolderPills(states)
-    val behavior = states.behavior.behavior
     val open = navigation::finder
     return settingsIndex {
         page(
@@ -51,8 +54,8 @@ internal fun mailSettingsIndex(
             Res.drawable.symbol_alternate_email,
             summary = accountsSummary(states.accounts.accounts.size),
         ) { keywords("JMAP", "Server", "Sign in") }
-        states.notifications?.let { notifications(it, behavior.actions, states.accounts.accounts.isNotEmpty(), open) }
-        appearance(settings, behavior.list.layout, open)
+        states.notifications?.let { notifications(it, states.behavior, states.accounts.accounts.isNotEmpty(), open) }
+        appearance(settings, mailListRow(states.behavior, dateFormatter, open(MailPage.MailListSettings)), open)
         page(
             "Mail behavior",
             open(MailPage.Behavior),
@@ -60,7 +63,7 @@ internal fun mailSettingsIndex(
             summary = "Inbox, sidebar, swipes, reading, and writing",
         ) {
             val startPages = sidebarPinOptions(states.folders.all.accounts, states.folders.colors::groupColorOf)
-            mailBehaviorIndex(states.behavior, folderPills, startPages, rtl, behaviorPages(open))
+            sections(mailBehaviorSettings(states.behavior, folderPills, startPages, rtl, behaviorPages(open)))
         }
         page(
             PRIVACY_TITLE,
@@ -69,7 +72,7 @@ internal fun mailSettingsIndex(
             summary = "Remote images, avatars, and this device",
         ) {
             keywords("Security")
-            privacyIndex(behavior, states.devicePrivacy, open(MailPage.AllowedSenders))
+            sections(privacySettings(states.behavior, states.devicePrivacy, open(MailPage.AllowedSenders)))
         }
         page(
             "Folders & rules",
@@ -80,8 +83,9 @@ internal fun mailSettingsIndex(
     }
 }
 
-private fun behaviorPages(open: (MailPage) -> (String?) -> Unit): BehaviorIndexPages =
-    BehaviorIndexPages(
+/** The pages Mail behavior's rows lead to, each opened with [open]. */
+internal fun behaviorPages(open: (MailPage) -> (String?) -> Unit): BehaviorPages =
+    BehaviorPages(
         sidebar = open(MailPage.SidebarSettings),
         pinned = open(MailPage.PinnedSettings),
         filterPanel = open(MailPage.FilterPanelSettings),
@@ -89,10 +93,10 @@ private fun behaviorPages(open: (MailPage) -> (String?) -> Unit): BehaviorIndexP
         signatures = open(MailPage.Signatures),
     )
 
-/** The Appearance page, with Mail's App icon and Mail list rows among the shared ones. */
+/** The Appearance page, with Mail's App icon and [mailList] rows among the shared ones. */
 private fun SettingsIndexScope.appearance(
     settings: SharedSettings,
-    layout: MailListLayout,
+    mailList: PageRowSpec,
     open: (MailPage) -> (String?) -> Unit,
 ) {
     page(
@@ -103,7 +107,7 @@ private fun SettingsIndexScope.appearance(
     ) {
         appearanceIndex(settings.dateFormat, settings.theme, settings.animation, open(MailPage.ThemeSettings)) {
             settings.appIcon?.let { appIconIndex(it) }
-            mailLookIndex(layout, open(MailPage.MailListSettings))
+            row(mailList)
         }
     }
 }
@@ -114,7 +118,7 @@ private fun SettingsIndexScope.appearance(
  */
 private fun SettingsIndexScope.notifications(
     state: NotificationSettingsState,
-    actions: ActionBehavior,
+    behavior: MailBehaviorState,
     hasAccounts: Boolean,
     open: (MailPage) -> (String?) -> Unit,
 ) {
@@ -137,7 +141,7 @@ private fun SettingsIndexScope.notifications(
             )
             if (hasAccounts) page("Accounts and addresses", open(MailPage.NotificationOverrides))
         }
-        section("Buttons") { notificationActionsIndex(actions) }
+        section("Buttons") { row(alertButtonsRow(behavior)) }
     }
 }
 

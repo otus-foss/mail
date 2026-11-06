@@ -6,32 +6,33 @@ import com.otus.designsystem.resources.symbol_home
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.ChoiceSheet
-import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.SidebarPinOption
 import com.otus.mail.core.settings.presentation.icon
+import com.otus.settings.presentation.components.ChoiceRowSpec
 
-/** The Start page row, which names the page Mail opens on among [options] and calls [onChoose]. */
-@Composable
-internal fun StartPageRow(
-    start: SidebarPin,
+/** The Start page row, which names the page Mail opens on among [options], the sidebar's mailboxes. */
+internal fun startPageRow(
+    state: MailBehaviorState,
     options: List<SidebarPinOption>,
-    onChoose: () -> Unit,
-) {
-    SettingRow("Start page", onChoose, icon = Res.drawable.symbol_home) {
-        ValueButton(startPageLabel(start, options))
-    }
-}
+): ChoiceRowSpec =
+    ChoiceRowSpec(
+        "Start page",
+        startPageLabel(state.behavior.sidebar.startPage, options),
+        { StartPageSheet(state, options, it) },
+        options.map { it.path.pathText() },
+        Res.drawable.symbol_home,
+        keywords = listOf("Open on", "Launch", "Home"),
+    )
 
 /**
  * Picks the page Mail opens on among [options], the sidebar's mailboxes, with the Inbox first as
  * the default. A saved choice no account has now selects nothing, since Mail opens on the Inbox.
  */
 @Composable
-internal fun StartPageSheet(
+private fun StartPageSheet(
     state: MailBehaviorState,
     options: List<SidebarPinOption>,
     onDismiss: () -> Unit,
@@ -47,7 +48,7 @@ internal fun StartPageSheet(
 }
 
 /** The Start page row's value: the chosen page, or Inbox while no account has it. */
-internal fun startPageLabel(
+private fun startPageLabel(
     start: SidebarPin,
     options: List<SidebarPinOption>,
 ): String = options.firstOrNull { it.pin == start }?.title ?: INBOX_TITLE

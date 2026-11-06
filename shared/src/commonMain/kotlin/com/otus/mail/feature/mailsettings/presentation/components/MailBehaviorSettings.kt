@@ -1,122 +1,130 @@
 package com.otus.mail.feature.mailsettings.presentation.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_filter_list
-import com.otus.designsystem.resources.symbol_format_list_bulleted
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_menu
 import com.otus.designsystem.resources.symbol_tune
-import com.otus.designsystem.shared.settings.components.SettingPageRow
-import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.designsystem.shared.settings.components.SettingToggleRow
-import com.otus.designsystem.shared.settings.components.SettingsSection
-import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.core.settings.domain.MailListLayout
 import com.otus.mail.core.settings.presentation.FolderPillOption
 import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.SidebarPinOption
-import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.sectionSummary
-import com.otus.mail.core.settings.presentation.summary
 import com.otus.mail.feature.mailsettings.presentation.inboxSummary
+import com.otus.settings.presentation.components.ChoiceRowSpec
+import com.otus.settings.presentation.components.PageRowSpec
+import com.otus.settings.presentation.components.SettingRowSpec
+import com.otus.settings.presentation.components.SettingsSectionSpec
+import com.otus.settings.presentation.components.ToggleRowSpec
 
-/** Mail's row in the Appearance page's Look section: the mail list's page, opened with [onMailList]. */
-@Composable
-fun MailLookSettings(
-    layout: MailListLayout,
-    onMailList: () -> Unit,
-) {
-    SettingPageRow(
-        "Mail list",
-        onMailList,
-        description = layout.summary,
-        icon = Res.drawable.symbol_format_list_bulleted,
+/** The pages Mail behavior's rows open, at their top for null or with the named setting found. */
+class BehaviorPages(
+    val sidebar: (setting: String?) -> Unit,
+    val pinned: (setting: String?) -> Unit,
+    val filterPanel: (setting: String?) -> Unit,
+    val actionBar: (setting: String?) -> Unit,
+    val signatures: (setting: String?) -> Unit,
+)
+
+/**
+ * Settings › Mail behavior: how Mail acts, in the order the user meets it. Inbox holds what the
+ * Inbox lists and its pills, Panels the start page, the sidebar, and the filter panel, then Actions,
+ * Reading, and Writing. [folderPills] are the folder pills the accounts' folders can fill,
+ * [startPages] the sidebar mailboxes Mail can open on, and [rtl] names the swipes by their physical
+ * direction. Each change is saved at once.
+ */
+fun mailBehaviorSettings(
+    state: MailBehaviorState,
+    folderPills: List<FolderPillOption>,
+    startPages: List<SidebarPinOption>,
+    rtl: Boolean,
+    pages: BehaviorPages,
+): List<SettingsSectionSpec> =
+    listOf(
+        SettingsSectionSpec("Inbox", inboxRows(state, folderPills)),
+        SettingsSectionSpec("Panels", panelRows(state, startPages, pages)),
+        SettingsSectionSpec("Actions", actionRows(state, rtl, pages.actionBar)),
+        SettingsSectionSpec("Reading", readingRows(state)),
+        SettingsSectionSpec("Writing", writingRows(state, pages.signatures)),
+    )
+
+/** What the Inbox lists and the inbox pills, each in a sheet, and Read later. */
+private fun inboxRows(
+    state: MailBehaviorState,
+    folderPills: List<FolderPillOption>,
+): List<SettingRowSpec> {
+    val behavior = state.behavior
+    return listOf(
+        ChoiceRowSpec(
+            "Inbox shows",
+            inboxSummary(behavior.list.inbox),
+            { InboxContentsSheet(state, it) },
+            icon = Res.drawable.symbol_inbox,
+            keywords = listOf("Archive", "Spam", "Trash", "All mail"),
+        ),
+        ChoiceRowSpec(
+            "Pills",
+            shownCount(InboxPills(behavior.list.pills, folderPills).shown.size),
+            { PillsSheet(state, folderPills, it) },
+            icon = Res.drawable.symbol_filter_list,
+            description = "Filters and folders above your mail",
+            keywords = listOf("Chips", "Tabs"),
+        ),
+        ToggleRowSpec(
+            "Read later",
+            behavior.readLater,
+            { on -> state.update { it.withReadLater(on) } },
+            Res.drawable.symbol_bookmark,
+            description = "One list for mail you save from every account",
+            keywords = listOf("Save for later"),
+        ),
     )
 }
 
-/**
- * The Mail behavior page's Inbox section: what the Inbox lists and the inbox pills, each in a
- * sheet, and Read later. [folderPills] are the folder pills the accounts' folders can fill.
- */
 @Composable
-fun InboxBehaviorSettings(
+private fun PillsSheet(
     state: MailBehaviorState,
     folderPills: List<FolderPillOption>,
+    onDismiss: () -> Unit,
 ) {
-    var choosingInbox by rememberSaveable { mutableStateOf(false) }
-    var choosingPills by rememberSaveable { mutableStateOf(false) }
-    val behavior = state.behavior
-    SettingsSection("Inbox") {
-        SettingRow("Inbox shows", { choosingInbox = true }, icon = Res.drawable.symbol_inbox) {
-            ValueButton(inboxSummary(behavior.list.inbox))
-        }
-        val shown = InboxPills(behavior.list.pills, folderPills).shown.size
-        SettingRow(
-            "Pills",
-            { choosingPills = true },
-            description = "Filters and folders above your mail",
-            icon = Res.drawable.symbol_filter_list,
-        ) { ValueButton(shownCount(shown)) }
-        SettingToggleRow(
-            "Read later",
-            checked = behavior.readLater,
-            onCheckedChange = { on -> state.update { it.withReadLater(on) } },
-            description = "One list for mail you save from every account",
-            icon = Res.drawable.symbol_bookmark,
-        )
-    }
-    if (choosingInbox) InboxContentsSheet(state) { choosingInbox = false }
-    if (choosingPills) {
-        InboxPillsSheet(
-            behavior.list.pills,
-            folderPills,
-            onApply = { pills -> state.updateList { it.copy(pills = pills) } },
-            onDismiss = { choosingPills = false },
-        )
-    }
+    InboxPillsSheet(
+        state.behavior.list.pills,
+        folderPills,
+        onApply = { pills -> state.updateList { it.copy(pills = pills) } },
+        onDismiss = onDismiss,
+    )
 }
 
-/**
- * The Mail behavior page's Panels section: the page Mail opens on, chosen in a sheet among
- * [startPages], the sidebar's page, opened with [onSidebar], and the filter panel's, opened with
- * [onFilterPanel]. Each names what its panel shows.
- */
-@Composable
-fun PanelSettings(
+/** The page Mail opens on among [startPages], and the sidebar's and filter panel's pages. */
+private fun panelRows(
     state: MailBehaviorState,
     startPages: List<SidebarPinOption>,
-    onSidebar: () -> Unit,
-    onFilterPanel: () -> Unit,
-) {
-    var choosingStart by rememberSaveable { mutableStateOf(false) }
+    pages: BehaviorPages,
+): List<SettingRowSpec> {
     val behavior = state.behavior
-    SettingsSection("Panels") {
-        StartPageRow(behavior.sidebar.startPage, startPages) { choosingStart = true }
-        SettingPageRow(
+    return listOf(
+        startPageRow(state, startPages),
+        PageRowSpec(
             "Sidebar",
-            onSidebar,
-            description = behavior.sidebar.layout.sectionSummary,
+            pages.sidebar,
+            value = behavior.sidebar.layout.sectionSummary,
             icon = Res.drawable.symbol_menu,
-        )
-        SettingPageRow(
+            keywords = listOf("Navigation", "Drawer"),
+        ) { sidebarSettings(state, startPages, pages.pinned) },
+        PageRowSpec(
             "Filter panel",
-            onFilterPanel,
-            description = filterPanelSummary(behavior.list.filters.sections.size),
+            pages.filterPanel,
+            value = filterPanelSummary(behavior.list.filters.sections.size),
             icon = Res.drawable.symbol_tune,
-        )
-    }
-    if (choosingStart) StartPageSheet(state, startPages) { choosingStart = false }
+            keywords = listOf("Control panel", "Filters"),
+        ) { filterPanelSettings(state) },
+    )
 }
 
 /** The Filter panel row's summary: how many sections the panel shows. */
-internal fun filterPanelSummary(count: Int): String =
+private fun filterPanelSummary(count: Int): String =
     when (count) {
         0 -> "No sections"
         1 -> "1 section"

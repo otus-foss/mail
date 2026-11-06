@@ -1,5 +1,7 @@
 package com.otus.mail.feature.mailsettings.presentation.components
 
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatter
 import com.otus.mail.core.messages.domain.DevicePrivacy
 import com.otus.mail.core.settings.domain.FilterLayout
 import com.otus.mail.core.settings.domain.FilterSection
@@ -11,6 +13,8 @@ import com.otus.mail.core.settings.domain.SidebarLayout
 import com.otus.mail.core.settings.domain.SidebarSection
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.settings.presentation.SettingsItem
+import com.otus.settings.presentation.components.row
+import com.otus.settings.presentation.components.sections
 import com.otus.settings.presentation.search
 import com.otus.settings.presentation.settingsIndex
 import kotlin.test.Test
@@ -21,8 +25,9 @@ class MailSettingsIndexTest {
     private val opened = mutableListOf<String>()
 
     private fun index(behavior: MailBehavior = MailBehavior()): List<SettingsItem> {
+        val state = MailBehaviorState(initial = behavior)
         val pages =
-            BehaviorIndexPages(
+            BehaviorPages(
                 sidebar = { opened += "Sidebar: $it" },
                 pinned = { opened += "Pinned: $it" },
                 filterPanel = { opened += "Filter panel: $it" },
@@ -31,13 +36,15 @@ class MailSettingsIndexTest {
             )
         return settingsIndex {
             page("Appearance", { opened += "Appearance: $it" }) {
-                mailLookIndex(behavior.list.layout) { opened += "Mail list: $it" }
+                val dates = DateFormatter(DateFormatPreference.DayMonthYearDots)
+                row(mailListRow(state, dates) { opened += "Mail list: $it" })
             }
             page("Mail behavior", { opened += "Mail behavior: $it" }) {
-                mailBehaviorIndex(MailBehaviorState(initial = behavior), emptyList(), emptyList(), rtl = false, pages)
+                sections(mailBehaviorSettings(state, emptyList(), emptyList(), rtl = false, pages))
             }
             page("Privacy & security", { opened += "Privacy: $it" }) {
-                privacyIndex(behavior, DevicePrivacy(screen = true, keyboard = true)) { opened += "Allowed: $it" }
+                val device = DevicePrivacy(screen = true, keyboard = true)
+                sections(privacySettings(state, device) { opened += "Allowed: $it" })
             }
         }
     }

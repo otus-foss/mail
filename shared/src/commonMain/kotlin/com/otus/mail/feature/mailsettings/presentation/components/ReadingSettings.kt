@@ -1,33 +1,30 @@
 package com.otus.mail.feature.mailsettings.presentation.components
 
-import androidx.compose.runtime.Composable
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_forum
 import com.otus.designsystem.resources.symbol_mark_email_read
 import com.otus.designsystem.shared.feedback.components.InfoText
-import com.otus.designsystem.shared.settings.components.SettingToggleRow
-import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.mail.core.settings.presentation.MailBehaviorState
-import com.otus.mail.core.settings.presentation.icon
+import com.otus.settings.presentation.components.SettingRowSpec
+import com.otus.settings.presentation.components.ToggleRowSpec
 
-/** The Mail behavior page's Reading section: marking mail read, quoted text, and the Read view's quick view. */
-@Composable
-fun ReadingSettings(state: MailBehaviorState) {
+/** The Mail behavior page's Reading rows: marking mail read, quoted text, and the Read view's quick view. */
+internal fun readingRows(state: MailBehaviorState): List<SettingRowSpec> {
     val read = state.behavior.read
-    SettingsSection("Reading") {
-        SettingToggleRow(
+    return listOf(
+        ToggleRowSpec(
             "Mark as read when opened",
-            checked = read.markReadOnOpen,
-            onCheckedChange = { on -> state.updateRead { it.copy(markReadOnOpen = on) } },
-            icon = Res.drawable.symbol_mark_email_read,
-        )
-        SettingToggleRow(
+            read.markReadOnOpen,
+            { on -> state.updateRead { it.copy(markReadOnOpen = on) } },
+            Res.drawable.symbol_mark_email_read,
+        ),
+        ToggleRowSpec(
             "Show quoted text",
-            checked = read.showQuotes,
-            onCheckedChange = { on -> state.updateRead { it.copy(showQuotes = on) } },
+            read.showQuotes,
+            { on -> state.updateRead { it.copy(showQuotes = on) } },
+            Res.drawable.symbol_forum,
             info = InfoText("Show quoted text", "Swipe through the conversation to read earlier messages."),
-            icon = Res.drawable.symbol_forum,
-        )
-        ReadQuickViewSetting(state)
-    }
+        ),
+        readQuickViewRow(state),
+    )
 }

@@ -14,7 +14,9 @@ import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.mail.core.settings.presentation.MailBehaviorState
-import com.otus.mail.feature.mailsettings.presentation.components.WritingSettings
+import com.otus.mail.feature.mailsettings.presentation.components.writingRows
+import com.otus.settings.presentation.components.SettingSections
+import com.otus.settings.presentation.components.SettingsSectionSpec
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -39,7 +41,7 @@ class UndoSendSettingTest {
                     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
                         Column(
                             Modifier.verticalScroll(rememberScrollState()),
-                        ) { WritingSettings(state, onOpenSignatures = {}) }
+                        ) { SettingSections(listOf(SettingsSectionSpec("Writing", writingRows(state) {}))) }
                     }
                 }
             }

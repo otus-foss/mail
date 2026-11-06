@@ -2,34 +2,26 @@ package com.otus.mail.feature.mailsettings.presentation.screens
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
-import com.otus.designsystem.resources.symbol_view_agenda
 import com.otus.designsystem.shared.controls.elements.LocalIconTint
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.rows.elements.nestIndent
-import com.otus.designsystem.shared.selection.components.ChoiceOptions
-import com.otus.designsystem.shared.selection.components.ChoiceRow
-import com.otus.designsystem.shared.selection.components.ChoiceSheet
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
-import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.core.messages.presentation.nestedByPath
 import com.otus.mail.core.settings.domain.MailboxStyle
 import com.otus.mail.core.settings.domain.PinSize
-import com.otus.mail.core.settings.domain.SidebarLayout
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.SidebarPinOption
-import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.mailsettings.presentation.components.PinnedGridEditor
 import com.otus.mail.feature.mailsettings.presentation.components.PinnedRowsEditor
+import com.otus.mail.feature.mailsettings.presentation.components.changeSidebar
+import com.otus.mail.feature.mailsettings.presentation.components.pinnedSettings
+import com.otus.settings.presentation.components.SettingSections
 
 /**
  * Arranges the sidebar's Pinned section. Show as picks Grid or Rows, and the editor below follows
@@ -45,24 +37,18 @@ fun PinnedSettingsScreen(
     onBack: () -> Unit,
 ) {
     val layout = state.behavior.sidebar.layout
-    val change: ((SidebarLayout) -> SidebarLayout) -> Unit = { update ->
-        state.updateSidebar { it.copy(layout = update(it.layout)) }
-    }
-    var choosingStyle by rememberSaveable { mutableStateOf(false) }
     val pinned = layout.pinned.mapNotNull { pin -> pins.firstOrNull { it.pin == pin } }
     val onMove = { from: Int, to: Int ->
         val shown = pinned.map { it.pin }
         val rest = shown.filterIndexed { index, _ -> index != from }
-        change { it.withPinOrder(rest.take(to) + shown[from] + rest.drop(to)) }
+        state.changeSidebar { it.withPinOrder(rest.take(to) + shown[from] + rest.drop(to)) }
     }
-    val onRemove = { option: SidebarPinOption -> change { it.copy(pinned = it.pinned - option.pin) } }
+    val onRemove = { option: SidebarPinOption -> state.changeSidebar { it.copy(pinned = it.pinned - option.pin) } }
     val onResize = { option: SidebarPinOption, size: PinSize ->
-        change { it.copy(sizes = it.sizes + (option.pin to size)) }
+        state.changeSidebar { it.copy(sizes = it.sizes + (option.pin to size)) }
     }
     Subpage("Pinned", onBack) {
-        SettingRow("Show as", { choosingStyle = true }, icon = Res.drawable.symbol_view_agenda) {
-            ValueButton(layout.mailboxes.label)
-        }
+        SettingSections(pinnedSettings(state))
         SettingsSection("Shown") {
             when (layout.mailboxes) {
                 MailboxStyle.Grid -> PinnedGridEditor(pinned, layout, onMove, onRemove, onResize)
@@ -75,7 +61,7 @@ fun PinnedSettingsScreen(
                     CompositionLocalProvider(LocalIconTint provides option.tint) {
                         SettingRow(
                             name,
-                            { change { it.copy(pinned = it.pinned + option.pin) } },
+                            { state.changeSidebar { it.copy(pinned = it.pinned + option.pin) } },
                             Modifier.nestIndent(PageTokens.nestIndent, depth),
                             icon = option.icon,
                         ) { Symbol(Res.drawable.symbol_add) }
@@ -84,20 +70,4 @@ fun PinnedSettingsScreen(
             }
         }
     }
-    if (choosingStyle) {
-        ChoiceSheet(
-            title = "Show pinned as",
-            choices = ChoiceOptions(MailboxStyle.entries, selected = layout.mailboxes, default = MailboxStyle.Grid),
-            row = { ChoiceRow(it.label, it.detail) },
-            onSelect = { style -> change { it.copy(mailboxes = style) } },
-            onDismiss = { choosingStyle = false },
-        )
-    }
 }
-
-private val MailboxStyle.detail: String
-    get() =
-        when (this) {
-            MailboxStyle.Grid -> "Tiles you can resize"
-            MailboxStyle.Rows -> "One row each, in order"
-        }

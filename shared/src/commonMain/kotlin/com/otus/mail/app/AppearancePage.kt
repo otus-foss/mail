@@ -7,14 +7,14 @@ import com.otus.designsystem.mail.brand.elements.MailAppIcon
 import com.otus.mail.core.mailbox.SharedFolder
 import com.otus.mail.core.mailbox.sharedFolders
 import com.otus.mail.feature.inbox.presentation.components.MailListPreview
-import com.otus.mail.feature.mailsettings.presentation.components.MailLookSettings
+import com.otus.mail.feature.mailsettings.presentation.components.mailListRow
 import com.otus.mail.feature.mailsettings.presentation.screens.ActionBarSettingsScreen
 import com.otus.mail.feature.mailsettings.presentation.screens.AllowedSendersScreen
-import com.otus.mail.feature.mailsettings.presentation.screens.BehaviorPage
 import com.otus.mail.feature.mailsettings.presentation.screens.MailBehaviorScreen
 import com.otus.mail.feature.mailsettings.presentation.screens.MailListSettingsScreen
 import com.otus.mail.feature.mailsettings.presentation.screens.PrivacyScreen
 import com.otus.settings.presentation.components.AppIconSetting
+import com.otus.settings.presentation.components.SettingSpecRow
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
 /** Appearance, where Mail adds its app icon and mail list rows to the shared page. */
@@ -22,6 +22,7 @@ import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 internal fun AppearancePage(
     states: MailStates,
     settings: SharedSettings,
+    dateFormatter: DateFormatter,
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
@@ -33,7 +34,7 @@ internal fun AppearancePage(
         onBack = back,
         look = {
             settings.appIcon?.let { AppIconSetting(it) { style -> MailAppIcon(style) } }
-            MailLookSettings(states.behavior.behavior.list.layout) { navigation.go(MailPage.MailListSettings) }
+            SettingSpecRow(mailListRow(states.behavior, dateFormatter) { navigation.go(MailPage.MailListSettings) })
         },
     )
 }
@@ -65,19 +66,10 @@ internal fun MailBehaviorPage(
         rememberFolderPills(states),
         // Not remembered: folder colors change apart from the accounts.
         sidebarPinOptions(states.folders.all.accounts, states.folders.colors::groupColorOf),
-        open = { page -> navigation.go(page.mailPage) },
+        behaviorPages { page -> { navigation.go(page) } },
         onBack = back,
     )
 }
-
-private val BehaviorPage.mailPage: MailPage
-    get() =
-        when (this) {
-            BehaviorPage.Sidebar -> MailPage.SidebarSettings
-            BehaviorPage.FilterPanel -> MailPage.FilterPanelSettings
-            BehaviorPage.ActionBar -> MailPage.ActionBarSettings
-            BehaviorPage.Signatures -> MailPage.Signatures
-        }
 
 /** Settings › Privacy & security, or its Allowed senders page. */
 @Composable

@@ -10,25 +10,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.pages.components.Subpage
-import com.otus.designsystem.shared.selection.components.ChoiceOptions
-import com.otus.designsystem.shared.selection.components.ChoiceRow
-import com.otus.designsystem.shared.selection.components.ChoiceSheet
 import com.otus.designsystem.shared.settings.components.PreviewCard
-import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.designsystem.shared.settings.components.SettingToggleRow
-import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.core.messages.domain.ActionBarMode
 import com.otus.mail.core.messages.domain.ActionBarPlace
-import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.mailsettings.presentation.components.ActionBarCopySheet
 import com.otus.mail.feature.mailsettings.presentation.components.ActionBarEditSheet
 import com.otus.mail.feature.mailsettings.presentation.components.ActionBarPreview
+import com.otus.mail.feature.mailsettings.presentation.components.actionBarSettings
 import com.otus.mail.feature.mailsettings.presentation.components.description
-import com.otus.mail.feature.mailsettings.presentation.components.label
 import com.otus.mail.feature.mailsettings.presentation.components.marker
 import com.otus.mail.feature.mailsettings.presentation.components.title
+import com.otus.settings.presentation.components.SettingSections
 
 /**
  * Chooses whether each screen has its own action bar or one bar is used everywhere. A card per
@@ -44,18 +38,11 @@ fun ActionBarSettingsScreen(
     folderColor: (path: List<String>) -> String?,
     onBack: () -> Unit,
 ) {
-    var choosingMode by rememberSaveable { mutableStateOf(false) }
     var editing by rememberSaveable { mutableStateOf<ActionBarPlace?>(null) }
     var copying by rememberSaveable { mutableStateOf<ActionBarPlace?>(null) }
     val mode = state.behavior.actions.barMode
     Subpage("Action bar", onBack) {
-        SettingRow("Layout", { choosingMode = true }, description = mode.description) { ValueButton(mode.label) }
-        SettingToggleRow(
-            "Minimize",
-            checked = state.behavior.actions.minimizedBar,
-            onCheckedChange = { on -> state.updateActions { it.copy(minimizedBar = on) } },
-            description = "One round button for the main action",
-        )
+        SettingSections(actionBarSettings(state))
         Column(
             Modifier.padding(top = PageTokens.rowGap),
             verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap),
@@ -67,15 +54,6 @@ fun ActionBarSettingsScreen(
                 }
             }
         }
-    }
-    if (choosingMode) {
-        ChoiceSheet(
-            "Layout",
-            ChoiceOptions(ActionBarMode.entries, mode, ActionBehavior().barMode),
-            row = { ChoiceRow(it.label, it.description) },
-            onSelect = { chosen -> state.updateActions { it.copy(barMode = chosen) } },
-            onDismiss = { choosingMode = false },
-        )
     }
     editing?.let { place ->
         ActionBarEditSheet(

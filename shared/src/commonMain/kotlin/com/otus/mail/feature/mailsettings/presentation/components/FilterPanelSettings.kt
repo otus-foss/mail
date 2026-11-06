@@ -1,10 +1,6 @@
 package com.otus.mail.feature.mailsettings.presentation.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_attach_file
@@ -17,10 +13,6 @@ import com.otus.designsystem.resources.symbol_swap_vert
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.shared.selection.components.OrderedChoice
 import com.otus.designsystem.shared.selection.components.OrderedChoiceSheet
-import com.otus.designsystem.shared.settings.components.DependentSettings
-import com.otus.designsystem.shared.settings.components.SettingRow
-import com.otus.designsystem.shared.settings.components.SettingsSection
-import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.core.messages.domain.QuickFacet
 import com.otus.mail.core.messages.presentation.icon
 import com.otus.mail.core.messages.presentation.label
@@ -29,6 +21,8 @@ import com.otus.mail.core.settings.domain.QuickViewModule
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label
+import com.otus.settings.presentation.components.ChoiceRowSpec
+import com.otus.settings.presentation.components.SettingsSectionSpec
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
@@ -37,40 +31,33 @@ import org.jetbrains.compose.resources.DrawableResource
  * down, each chosen in an ordered sheet. Quick filters waits until the panel shows its section, so
  * the row stays in place but disabled until then.
  */
-@Composable
-internal fun FilterPanelSettings(state: MailBehaviorState) {
-    var choosing by rememberSaveable { mutableStateOf<FilterSetting?>(null) }
+internal fun filterPanelSettings(state: MailBehaviorState): List<SettingsSectionSpec> {
     val layout = state.behavior.list.filters
-    val quickShown = FilterSection.Quick in layout.sections
-    SettingsSection("Panel") {
-        SettingRow(
-            "Sections",
-            { choosing = FilterSetting.Sections },
-            icon = Res.drawable.symbol_tune,
-        ) { ValueButton(shownCount(layout.sections.size)) }
-        DependentSettings(enabled = quickShown) {
-            SettingRow(
+    val panel =
+        listOf(
+            ChoiceRowSpec(
+                "Sections",
+                shownCount(layout.sections.size),
+                { SectionChoices(state, it) },
+                icon = Res.drawable.symbol_tune,
+            ),
+            ChoiceRowSpec(
                 "Quick filters",
-                { choosing = FilterSetting.Quick },
-                description = QUICK_FILTERS_UNAVAILABLE.takeUnless { quickShown },
+                shownCount(layout.quick.size),
+                { QuickChoices(state, it) },
                 icon = Res.drawable.symbol_mark_email_unread,
-            ) { ValueButton(shownCount(layout.quick.size)) }
-        }
-    }
-    SettingsSection("Pull down") {
-        SettingRow(
+                unavailable = QUICK_FILTERS_UNAVAILABLE.takeUnless { FilterSection.Quick in layout.sections },
+            ),
+        )
+    val pullDown =
+        ChoiceRowSpec(
             "Quick view",
-            { choosing = FilterSetting.QuickView },
+            shownCount(state.behavior.list.quickView.size),
+            { QuickViewChoices(state, it) },
             icon = Res.drawable.symbol_grid_on,
             description = "Pull the top panel down to see it",
-        ) { ValueButton(shownCount(state.behavior.list.quickView.size)) }
-    }
-    when (choosing) {
-        FilterSetting.Sections -> SectionChoices(state) { choosing = null }
-        FilterSetting.Quick -> QuickChoices(state) { choosing = null }
-        FilterSetting.QuickView -> QuickViewChoices(state) { choosing = null }
-        null -> Unit
-    }
+        )
+    return listOf(SettingsSectionSpec("Panel", panel), SettingsSectionSpec("Pull down", listOf(pullDown)))
 }
 
 /** Why Quick filters is disabled while the panel leaves out its section; search shows it too. */
@@ -121,8 +108,6 @@ private fun QuickViewChoices(
         limit = QuickViewModule.LIMIT,
     )
 }
-
-private enum class FilterSetting { Sections, Quick, QuickView }
 
 private val QuickViewModule.title: String
     get() =

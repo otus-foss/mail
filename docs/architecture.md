@@ -56,7 +56,8 @@ Features:
 - `read`: the Read view, bodies and HTML, headers, unsubscribe, newsletters, CID images, and
   attachment downloads. The inbox shows it through a `ReadView` the app supplies.
 - `compose`: drafts, sending, the outbox, signatures, and inline images.
-- `mailsettings`: the Mail settings screens and the settings search index.
+- `mailsettings`: the Mail settings screens and the rows they declare once for the screens and
+  settings search.
 - `sidebar`: sidebar mailboxes, counts, and the folder tree; destinations are `SidebarPin`s, which
   app maps to pages.
 - `folders`: folders, rules, and filing: move targets, cleanup, sorting by rules, Rule for sender,
