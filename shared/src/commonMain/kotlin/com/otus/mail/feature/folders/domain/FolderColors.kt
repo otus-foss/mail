@@ -1,6 +1,6 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.preferences.StringMapStore
+import com.otus.storage.StringMapStore
 
 /**
  * One account's folder: the login [accountId] and the server's [mailboxId]. Colors are keyed by it,

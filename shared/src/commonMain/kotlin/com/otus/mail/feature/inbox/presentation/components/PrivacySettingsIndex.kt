@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.avatar.IconSource
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_image
@@ -8,7 +9,6 @@ import com.otus.designsystem.resources.symbol_photo_camera
 import com.otus.designsystem.resources.symbol_public
 import com.otus.designsystem.resources.symbol_verified_user
 import com.otus.designsystem.resources.symbol_visibility_off
-import com.otus.mail.core.avatar.IconSource
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.PhotoCleaning

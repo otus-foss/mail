@@ -1,6 +1,6 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.preferences.StringMapStore
+import com.otus.storage.StringMapStore
 
 /**
  * The folders the color nudge has already offered a color for, whether the user picked one or

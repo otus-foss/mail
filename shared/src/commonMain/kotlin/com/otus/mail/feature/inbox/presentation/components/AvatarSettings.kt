@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.otus.avatar.IconSource
+import com.otus.avatar.bulwarkBase
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.resources.symbol_public
@@ -14,8 +16,6 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.core.avatar.IconSource
-import com.otus.mail.core.avatar.bulwarkBase
 import com.otus.mail.feature.inbox.presentation.ICONS_UNAVAILABLE
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 

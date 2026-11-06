@@ -6,7 +6,7 @@ import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.files.InMemoryDownloadFolder
 import com.otus.mail.core.files.StoredKey
-import com.otus.mail.core.files.storedName
+import com.otus.storage.storedName
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

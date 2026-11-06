@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.preferences.StringMapStore
+import com.otus.storage.StringMapStore
 
 /** The addresses the user pinned to the top of "Show mail from". */
 data class AddressPins(

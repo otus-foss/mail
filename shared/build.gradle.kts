@@ -16,6 +16,8 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             api(libs.otus.jmap)
             api(libs.otus.avatar)
+            api(libs.otus.avatar.ui)
+            api(libs.otus.storage)
             api(libs.otus.dateformat)
             api(libs.otus.designsystem)
             api(libs.otus.settings)

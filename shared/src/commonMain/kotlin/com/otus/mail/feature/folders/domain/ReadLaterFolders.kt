@@ -1,7 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
 import com.otus.mail.core.mail.BIN_ROLES
-import com.otus.mail.core.preferences.StringMapStore
+import com.otus.storage.StringMapStore
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive

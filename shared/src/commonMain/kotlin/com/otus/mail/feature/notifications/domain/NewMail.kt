@@ -1,6 +1,6 @@
 package com.otus.mail.feature.notifications.domain
 
-import com.otus.mail.core.preferences.StringMapStore
+import com.otus.storage.StringMapStore
 import kotlin.time.Instant
 
 /** A message that arrived unread in an inbox since the last check. */

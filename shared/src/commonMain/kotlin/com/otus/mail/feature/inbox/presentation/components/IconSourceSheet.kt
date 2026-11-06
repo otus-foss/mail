@@ -7,14 +7,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.otus.avatar.IconSource
+import com.otus.avatar.bulwarkBase
 import com.otus.designsystem.shared.input.elements.InputField
 import com.otus.designsystem.shared.input.elements.InputKind
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.RadioChoiceSheet
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.core.avatar.IconSource
-import com.otus.mail.core.avatar.bulwarkBase
 
 /**
  * Picks where website icons come from, starting from [source] and [address]. Picking Bulwark shows

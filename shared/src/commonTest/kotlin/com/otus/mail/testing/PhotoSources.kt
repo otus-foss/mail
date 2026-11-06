@@ -1,4 +1,4 @@
-package com.otus.mail.core.avatar
+package com.otus.mail.testing
 
 import com.otus.avatar.AvatarImage
 import com.otus.avatar.AvatarRequest

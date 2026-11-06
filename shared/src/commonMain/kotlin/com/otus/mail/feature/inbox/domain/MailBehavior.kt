@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.avatar.IconSource
+import com.otus.avatar.IconSource
 
 /**
  * How the inbox responds to the user. Swipes are named by layout direction: [startToEnd] is a

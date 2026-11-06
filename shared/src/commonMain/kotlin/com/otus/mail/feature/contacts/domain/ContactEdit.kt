@@ -2,7 +2,7 @@ package com.otus.mail.feature.contacts.domain
 
 import com.otus.jscontact.Card
 import com.otus.jscontact.JsContactJson
-import com.otus.mail.core.preferences.StringMapStore
+import com.otus.storage.StringMapStore
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer

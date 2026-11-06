@@ -1,10 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.core.avatar.IconSource
-import com.otus.mail.core.preferences.KeyValueStore
-import com.otus.mail.core.preferences.decoded
-import com.otus.mail.core.preferences.flag
-import com.otus.mail.core.preferences.int
+import com.otus.avatar.IconSource
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
@@ -26,6 +22,10 @@ import com.otus.mail.feature.inbox.domain.decodeRemoteImages
 import com.otus.mail.feature.inbox.domain.encodeAddresses
 import com.otus.mail.feature.inbox.domain.encodeNotificationActions
 import com.otus.mail.feature.inbox.domain.storageValue
+import com.otus.storage.KeyValueStore
+import com.otus.storage.decoded
+import com.otus.storage.flag
+import com.otus.storage.int
 
 /** Keeps [MailBehavior] in [values], one key per setting. */
 class KeyValueMailBehaviorStore(

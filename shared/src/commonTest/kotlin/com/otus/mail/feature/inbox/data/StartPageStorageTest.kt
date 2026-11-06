@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.core.preferences.KeyValueEditor
-import com.otus.mail.core.preferences.KeyValueStore
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.SidebarPin
+import com.otus.storage.KeyValueEditor
+import com.otus.storage.KeyValueStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

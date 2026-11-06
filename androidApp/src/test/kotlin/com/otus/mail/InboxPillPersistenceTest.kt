@@ -2,7 +2,7 @@ package com.otus.mail
 
 import android.content.Context
 import androidx.core.content.edit
-import com.otus.mail.core.avatar.IconSource
+import com.otus.avatar.IconSource
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace

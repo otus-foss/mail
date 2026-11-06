@@ -4,8 +4,7 @@ import com.otus.avatar.AvatarImage
 import com.otus.avatar.AvatarImageLoader
 import com.otus.avatar.AvatarService
 import com.otus.avatar.ResolvedAvatar
-import com.otus.mail.core.avatar.mailAvatarOptions
-import com.otus.mail.core.avatar.photoSource
+import com.otus.avatar.avatarOptions
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -13,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.testing.photoSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -48,7 +48,7 @@ class InboxWebsiteIconsTest {
                 object : MailSource {
                     override suspend fun messages(scope: MailScope) = InboxSnapshot(listOf(message()))
                 }
-            val feed = InboxFeedState(source, this, avatars, { mailAvatarOptions(websiteIcons) })
+            val feed = InboxFeedState(source, this, avatars, { avatarOptions(websiteIcons) })
             feed.refresh()
             testScheduler.runCurrent()
             assertSame(icon, feed.senderAvatar?.image)
@@ -88,7 +88,7 @@ class InboxWebsiteIconsTest {
                 object : MailSource {
                     override suspend fun messages(scope: MailScope) = InboxSnapshot(listOf(message()))
                 }
-            val feed = InboxFeedState(source, this, avatars, { mailAvatarOptions(websiteIcons) })
+            val feed = InboxFeedState(source, this, avatars, { avatarOptions(websiteIcons) })
             feed.refresh()
             testScheduler.runCurrent()
             websiteIcons = false
@@ -109,7 +109,7 @@ class InboxWebsiteIconsTest {
         runTest {
             val websites = SlowWebsites()
             var websiteIcons = true
-            val feed = InboxFeedState(websites.source, this, websites.avatars, { mailAvatarOptions(websiteIcons) })
+            val feed = InboxFeedState(websites.source, this, websites.avatars, { avatarOptions(websiteIcons) })
             feed.refresh()
             testScheduler.runCurrent()
             val asked = websites.urls.size
@@ -129,7 +129,7 @@ class InboxWebsiteIconsTest {
             val websites = SlowWebsites()
             val page = CoroutineScope(StandardTestDispatcher(testScheduler))
             val feed =
-                InboxFeedState(websites.source, page, websites.avatars, { mailAvatarOptions(websiteIcons = true) })
+                InboxFeedState(websites.source, page, websites.avatars, { avatarOptions(websiteIcons = true) })
             feed.refresh()
             testScheduler.runCurrent()
             val asked = websites.urls.size

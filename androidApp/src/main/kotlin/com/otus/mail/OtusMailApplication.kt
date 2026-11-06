@@ -19,6 +19,7 @@ import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
 import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.storage.PreferenceMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -91,7 +92,7 @@ class OtusMailApplication :
 
     /** One per process, so its lock covers the push service, the workers, and the settings page. */
     val push: PushSubscriptions by lazy {
-        services.pushSubscriptions(AndroidPushStateStore(this), deviceClientId(), MailPush.Changes)
+        services.pushSubscriptions(PreferenceMap(this, "otus_mail_push"), deviceClientId(), MailPush.Changes)
     }
 
     /** Work that outlives any screen, such as cache upkeep. It ends with the process. */

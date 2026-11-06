@@ -3,7 +3,7 @@ package com.otus.mail.feature.folders.presentation
 import com.otus.avatar.AvatarImage
 import com.otus.avatar.AvatarImageLoader
 import com.otus.avatar.AvatarService
-import com.otus.mail.core.avatar.mailAvatarOptions
+import com.otus.avatar.avatarOptions
 import com.otus.mail.feature.folders.domain.AccountFolderRules
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
@@ -42,7 +42,7 @@ class FolderSendersTest {
                             icon
                         },
                 )
-            val senders = FolderSenders(avatars, { mailAvatarOptions(websiteIcons) }) { null }
+            val senders = FolderSenders(avatars, { avatarOptions(websiteIcons) }) { null }
             senders.resolve(listOf(rules))
             assertSame(icon, senders.ada.avatar?.image)
 

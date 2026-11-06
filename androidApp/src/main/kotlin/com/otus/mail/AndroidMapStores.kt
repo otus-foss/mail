@@ -1,7 +1,6 @@
 package com.otus.mail
 
 import android.content.Context
-import com.otus.mail.core.preferences.StringMapStore
 import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
@@ -10,6 +9,8 @@ import com.otus.mail.feature.inbox.domain.AddressPinStore
 import com.otus.mail.feature.inbox.domain.EmailChangeStore
 import com.otus.mail.feature.inbox.domain.OutboxStore
 import com.otus.mail.feature.notifications.domain.MailStateStore
+import com.otus.storage.PreferenceMap
+import com.otus.storage.StringMapStore
 
 // Each store keeps its own shared preferences file. Changing a file name loses what users saved.
 

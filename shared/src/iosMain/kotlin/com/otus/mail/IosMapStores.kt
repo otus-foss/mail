@@ -1,6 +1,5 @@
 package com.otus.mail
 
-import com.otus.mail.core.preferences.StringMapStore
 import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
@@ -8,6 +7,8 @@ import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.inbox.domain.AddressPinStore
 import com.otus.mail.feature.inbox.domain.EmailChangeStore
 import com.otus.mail.feature.inbox.domain.OutboxStore
+import com.otus.storage.StringMapStore
+import com.otus.storage.UserDefaultsMap
 
 // Each store keeps one user-defaults dictionary. Changing a key loses what users saved.
 

@@ -32,7 +32,7 @@ class ThemeSettingsTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     private val saved: String?
-        get() = AndroidThemePreferenceStore(compose.activity).read()
+        get() = compose.activity.themeChoice().read()
 
     @Test
     fun aThemeAndAnAccentApplyToTheWholeAppAndAreSaved() {

@@ -4,9 +4,9 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.PushKeys
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.push.PushEndpoint
-import com.otus.jmap.push.PushStateStore
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
+import com.otus.storage.StringMapStore
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -15,13 +15,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MailPushTest {
-    private class States : PushStateStore {
+    private class States : StringMapStore {
         var records = emptyMap<String, String>()
 
         override fun read() = records
 
-        override fun write(records: Map<String, String>) {
-            this.records = records
+        override fun write(values: Map<String, String>) {
+            records = values
         }
     }
 

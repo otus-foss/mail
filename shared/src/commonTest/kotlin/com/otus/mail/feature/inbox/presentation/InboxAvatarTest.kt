@@ -8,7 +8,6 @@ import com.otus.avatar.AvatarOrigin
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
 import com.otus.avatar.StoredAvatar
-import com.otus.mail.core.avatar.photoSource
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -16,6 +15,7 @@ import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.testing.photoSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
