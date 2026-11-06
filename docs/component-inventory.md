@@ -138,7 +138,6 @@ Folder colors use the unreleased `FolderColor`, `FolderColorSwatch`, `LocalIconT
 | File | UI declarations or supporting file | Owner | Reason |
 | --- | --- | --- | --- |
 | [App](../shared/src/commonMain/kotlin/com/otus/mail/app/App.kt) | `App` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
-| [DateFormatting](../shared/src/commonMain/kotlin/com/otus/mail/app/DateFormatting.kt) | `rememberDateFormatter` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailNavigation](../shared/src/commonMain/kotlin/com/otus/mail/app/MailNavigation.kt) | `MailNavigation` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailPage](../shared/src/commonMain/kotlin/com/otus/mail/app/MailPage.kt) | `MailPage` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |
 | [MailPages](../shared/src/commonMain/kotlin/com/otus/mail/app/MailPages.kt) | `MailPageContent`, `FolderPage`, `rememberMessageActions`, `rememberFolderPills` | `otus-mail` | Mail app composition, dependencies, destinations, or navigation. |

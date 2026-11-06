@@ -91,7 +91,7 @@ Printing on Android renders in a separate WebView with network loads off
 Avatars always try contact photos on the user's own JMAP server. Every other avatar source waits
 for Settings › Privacy & security › **Website icons**, which is off by default
 ([`MailBehavior.kt`](../shared/src/commonMain/kotlin/com/otus/mail/feature/inbox/domain/MailBehavior.kt),
-[`MailAvatarOptions.kt`](../shared/src/commonMain/kotlin/com/otus/mail/core/avatar/MailAvatarOptions.kt)).
+and otus-meta's `avatarOptions` in `avatar`).
 These requests carry no credentials or cookies, accept only public HTTPS hosts on port 443, and
 check every redirect
 ([`HttpAvatarImageLoader.kt`](https://github.com/reazndev/otus-meta/blob/main/avatar/src/commonMain/kotlin/com/otus/avatar/HttpAvatarImageLoader.kt)).

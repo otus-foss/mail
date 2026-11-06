@@ -14,7 +14,7 @@ and iOS entry points supply a `FileAvatarStore` in the app's private cache direc
 The **Website icons** switch under Settings › Privacy & security decides whether
 avatars may load images from servers other than the user's own. It is off by default and is saved
 with the other behavior settings in `MailBehavior.websiteIcons`, under a key of its own since it
-turned off by default: the earlier key held on for anyone who saved any setting. `mailAvatarOptions`
+turned off by default: the earlier key held on for anyone who saved any setting. `avatarOptions` (in otus-meta's `avatar`)
 turns it into `AvatarOptions`: while it is on, `externalContactImages` and `domainIcons` are
 enabled for inbox senders, account avatars, and the senders of folder rules. Contacts with linked
 photos and senders without a contact photo then show images automatically. Linked photo hosts and
@@ -22,7 +22,7 @@ sender websites each see the device's IP address, and a sender's website learns 
 listed.
 
 While Website icons is on, **Icons from** (`MailBehavior.iconSource`) picks where website icons
-come from. `mailAvatarOptions` turns the choice into `AvatarOptions.iconProxy`:
+come from. `avatarOptions` (in otus-meta's `avatar`) turns the choice into `AvatarOptions.iconProxy`:
 
 - **Sender websites**, the default, asks each sender's registrable domain directly.
 - **DuckDuckGo** asks `https://icons.duckduckgo.com/ip3/{domain}.ico` instead. DuckDuckGo receives
