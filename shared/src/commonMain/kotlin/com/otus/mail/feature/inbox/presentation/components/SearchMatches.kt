@@ -206,3 +206,21 @@ private fun keyboardHolds(): Boolean {
 }
 
 private const val EMPTY_KEY = "empty"
+
+/** The senders of [hits] whose name or address holds every term of [query], at most [limit] of them. */
+internal fun matchingPeople(
+    hits: List<MailMessage>,
+    query: String,
+    limit: Int = FIRST_PEOPLE,
+): List<MailSender> =
+    hits
+        .map { it.sender }
+        .distinctBy { EmailAddressKey(it.address) }
+        .filter { sender ->
+            query
+                .trim()
+                .split(Regex("\\s+"))
+                .all { sender.name.contains(it, true) || sender.address.contains(it, true) }
+        }.take(limit)
+
+private const val FIRST_PEOPLE = 2

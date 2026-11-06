@@ -6,11 +6,15 @@ import androidx.compose.material.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.pages.components.SlidingOverlay
@@ -26,7 +30,6 @@ import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
-import com.otus.mail.feature.inbox.presentation.components.HitDates
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxHeaderActions
 import com.otus.mail.feature.inbox.presentation.components.InboxLayers
@@ -42,7 +45,7 @@ import com.otus.mail.feature.inbox.presentation.components.SearchFieldActions
 import com.otus.mail.feature.inbox.presentation.components.grownWith
 import com.otus.mail.feature.inbox.presentation.components.inboxBar
 import com.otus.mail.feature.inbox.presentation.components.panelSelection
-import com.otus.mail.feature.inbox.presentation.components.rememberFilterAnchor
+import com.otus.mail.feature.inbox.presentation.components.rememberActiveFilters
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberHeaderActions
 import com.otus.mail.feature.inbox.presentation.components.rememberInboxRows
@@ -64,7 +67,9 @@ fun InboxScreen(
     val filters = context.filters ?: remember { InboxFilterState() }
     val listed = ListedMail(messages, filters.applied)
     val unreadCount = rememberUnreadCount(listed, status.loading)
-    val anchor = rememberFilterAnchor(filters, context.filterOptions, messages, dateFormatter)
+    val activeFilters = rememberActiveFilters(filters, context.filterOptions, messages, dateFormatter)
+    var panelHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
     val page = shownPage(state, context)
     val headerActions = rememberHeaderActions(state, page, filters, messages, rows, onOpenNavigation, dateFormatter)
     val overlays = headerActions.overlays
@@ -81,7 +86,7 @@ fun InboxScreen(
                         // The control panel draws behind the status bar and pads itself.
                         .belowControlPanel()
                         // What an open message or an overlay covers, accessibility services skip too.
-                        .hiddenWhen(rows.opened != null || overlays.coverPage(state)),
+                        .hiddenWhen(rows.opened != null || overlays.coverPage()),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
@@ -97,8 +102,10 @@ fun InboxScreen(
                                 page,
                                 dateFormatter,
                                 headerActions,
-                                PanelLook(collapse, unreadCount, anchor.filters, selecting),
-                                anchor.measure.then(modifier),
+                                PanelLook(collapse, unreadCount, activeFilters, selecting),
+                                Modifier
+                                    .onSizeChanged { panelHeight = with(density) { it.height.toDp() } }
+                                    .then(modifier),
                             )
                         },
                     ) { topInset, collapse ->
@@ -115,7 +122,7 @@ fun InboxScreen(
             val mixed = state.searching || filters.applied.folders.isNotEmpty() || page.folderPill != null
             page.readView.Show(OpenedMessage(it, status.notice, mixed, rows.close))
         }
-        InboxLayers(state, listed, anchor, page, HitDates(dateFormatter, context.rowLook.layout), overlays, rows)
+        InboxLayers(page, panelHeight, overlays)
     }
 }
 
@@ -136,9 +143,9 @@ private fun inboxPanelActions(
     return InboxPanelActions(
         onChange = state::update,
         onSearchingChange = { searching -> if (searching) state.startSearch() else actions.closeSearch() },
-        onFilter = {
+        onEditSearch = {
             focus.clearFocus()
-            actions.overlays.filter = it
+            state.editSearch()
         },
         onOpenFilters = {
             focus.clearFocus()
@@ -150,8 +157,8 @@ private fun inboxPanelActions(
                     focus.clearFocus()
                     if (state.searchSurfaceOpen) state.showResults()
                 },
-                // Over the results, a page whose panel grows opens the search room again.
-                onFocus = { if (actions.expansion != null) state.editSearch() },
+                // Over the results, focusing the field opens the search room again.
+                onFocus = state::editSearch,
             ),
         onFolder = state::showFolder,
         opens =
@@ -174,7 +181,7 @@ private fun InboxHeader(
 ) {
     Box(modifier) {
         InboxPanel(
-            actions.searching(state),
+            state.searching,
             state.search,
             dateFormatter,
             context,
@@ -182,9 +189,9 @@ private fun InboxHeader(
             rememberFilterSelection(messages, state.search, context.mailboxSearch.accounts),
             look.grownWith(
                 // Over a search's results the panel does not drag open, but the filter button still grows it.
-                actions.expansion.takeIf { !state.resultsShown || it?.expanded == true },
+                actions.expansion.takeIf { !state.resultsShown || it.expanded },
                 actions.grown,
-                actions.searchFocused(state),
+                state.searchSurfaceOpen,
             ),
         )
     }

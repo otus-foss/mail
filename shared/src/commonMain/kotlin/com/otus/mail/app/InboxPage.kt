@@ -2,23 +2,15 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.MailboxScope
-import com.otus.mail.core.messages.domain.inScope
 import com.otus.mail.core.settings.domain.InboxContents
-import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
-import com.otus.mail.feature.inbox.presentation.QuickJumpTarget
-import com.otus.mail.feature.inbox.presentation.QuickViewContext
-import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
-import com.otus.mail.feature.inbox.presentation.status
-import com.otus.mail.feature.sidebar.presentation.sidebarMailboxes
 
 /**
  * The unified inbox, holding what the user chose in the Inbox settings, whose folder pills load
@@ -40,38 +32,22 @@ internal fun InboxPage(
             rememberFolderPills(states),
             foldersLoaded = !states.accounts.loading && !states.folders.loading,
         )
-    val labeled = rememberLabeled(states, feed)
-    val filters = rememberPageFilters(states, MailPage.Inbox, feed)
-    val rowLook = rememberRowLook(states)
-    val messageActions = rememberMessageActions(states, feed, navigation)
-    InboxScreen(
-        labeled,
+    ListPage(
+        MailPage.Inbox,
+        feed,
+        InboxContext(
+            defaultSearch = InboxSearch(mailboxes = contents.mailboxScopes().toSet()),
+            pills = pills,
+            mailboxSearch =
+                MailboxSearch(
+                    states.searchMailboxes(),
+                    states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
+                    feed::show,
+                ),
+        ),
+        states,
         dateFormatter,
-        navigation.openSidebar,
-        feed.status(connected = states.accounts.accounts.isNotEmpty()),
-        onRefresh = states::refreshInbox,
-        context =
-            InboxContext(
-                defaultSearch = InboxSearch(mailboxes = contents.mailboxScopes().toSet()),
-                pills = pills,
-                mailboxSearch =
-                    MailboxSearch(
-                        states.searchMailboxes(),
-                        states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
-                        feed::show,
-                    ),
-                onCompose = { navigation.go(MailPage.Compose(it)) },
-                filters = filters,
-                filterOptions = rememberFilterOptions(states, MailPage.Inbox, filters.applied),
-                rowLook = rowLook,
-                readView = rememberReadView(states, feed, navigation, MailPage.Inbox, messageActions, rowLook.own),
-                nudge = rememberListNudge(states, labeled),
-                onLoadMore = feed::loadMore,
-                scope = states.scopeSwitch(states.mailScope, states.chooseScope),
-                quick = rememberQuickView(states, navigation),
-                opening = states.requests.row,
-            ),
-        messageActions = messageActions,
+        navigation,
     )
 }
 
@@ -92,26 +68,3 @@ internal fun InboxContents.mailScope(): MailScope =
  */
 private fun InboxContents.mailboxScopes(): List<MailboxScope> =
     if (ownFolders) emptyList() else roles.map { MailboxScope(null, it.title, it) }
-
-/**
- * What pulling the Inbox's control panel down shows: the modules picked in settings, and Jump to
- * with the sidebar's pins in their order, leaving out the Inbox the page already is.
- */
-@Composable
-private fun rememberQuickView(
-    states: MailStates,
-    navigation: MailNavigation,
-): QuickViewContext {
-    val behavior = states.behavior.behavior
-    val folders = states.folders.accounts.inScope(states.mailScope)
-    val pinned =
-        remember(folders, behavior.inbox, behavior.sidebar) {
-            sidebarMailboxes(folders, behavior.inbox, behavior.sidebar).filterNot { it.pin == SidebarPin.Inbox }
-        }
-    return QuickViewContext(
-        behavior.quickView,
-        pinned.map { mailbox ->
-            QuickJumpTarget(mailbox.title, mailbox.icon) { navigation.go(launchPage(mailbox.pin)) }
-        },
-    )
-}

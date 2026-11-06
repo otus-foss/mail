@@ -55,17 +55,17 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * How far the inbox's control panel is dragged open: its usual height, the quick view, or the
  * search room [searchRoom] tall while a search is in it, [typed] or not, and every filter. Past halfway to the
  * filters the panel opens the [filters] draft, and back below it drops it. Back steps down to the
- * usual height. Null for a page without [quick].
+ * usual height.
  */
 @Composable
 internal fun rememberInboxExpansion(
-    quick: QuickViewContext?,
+    quick: QuickViewContext,
     filters: InboxFilterState,
     searchRoom: Dp?,
     typed: Boolean,
     onLeaveSearch: () -> Unit,
-): PanelExpansion? {
-    val modules = quick?.modules?.size ?: 0
+): PanelExpansion {
+    val modules = quick.modules.size
     val full = filtersHeight()
     val first = searchRoom?.coerceAtMost(full) ?: quickViewHeight(modules)
     // Typing changes what the search room shows; the keyboard only moves its edge.
@@ -94,7 +94,7 @@ internal fun rememberInboxExpansion(
         isBackEnabled = expansion.expanded && searchRoom == null,
         onBackCompleted = expansion::collapse,
     )
-    return expansion.takeIf { quick != null }
+    return expansion
 }
 
 /** What the panel shows in the room it grows: the quick view or the search [room] first, then every filter. */
@@ -127,7 +127,7 @@ internal fun ExpandedInboxContent(inbox: ExpandedInbox) {
 @Composable
 private fun QuickViewContent(inbox: ExpandedInbox) {
     val sources = inbox.sources
-    val quick = sources.page.quick ?: return
+    val quick = sources.page.quick
     Column(
         Modifier.fillMaxWidth().padding(horizontal = SheetTokens.inset).padding(top = QuickViewTokens.moduleGap),
         verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),

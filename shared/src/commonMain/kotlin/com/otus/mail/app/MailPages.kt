@@ -16,8 +16,6 @@ import com.otus.mail.feature.folders.presentation.LabeledCopies
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.folderPillOptions
-import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
-import com.otus.mail.feature.inbox.presentation.status
 
 /** The page for [page], which flashes the setting a settings search found there, if any. */
 @Composable
@@ -149,31 +147,7 @@ internal fun FeedPage(
     val pageScope = rememberCoroutineScope()
     val feed = remember(mailScope) { states.feedOf(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
-    val filters = rememberPageFilters(states, page, feed)
-    val labeled = rememberLabeled(states, feed)
-    val rowLook = rememberRowLook(states)
-    val messageActions = rememberMessageActions(states, feed, navigation)
-    InboxScreen(
-        labeled,
-        dateFormatter,
-        navigation.openSidebar,
-        feed.status(connected = true),
-        onRefresh = {
-            feed.refresh()
-            states.folders.refresh()
-        },
-        context =
-            InboxContext.folder(name, states.behavior.behavior.pills).copy(
-                onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
-                filters = filters,
-                filterOptions = rememberFilterOptions(states, page, filters.applied),
-                rowLook = rowLook,
-                readView = rememberReadView(states, feed, navigation, page, messageActions, rowLook.own),
-                nudge = rememberListNudge(states, labeled),
-                onLoadMore = feed::loadMore,
-            ),
-        messageActions = messageActions,
-    )
+    ListPage(page, feed, InboxContext.folder(name, states.behavior.behavior.pills), states, dateFormatter, navigation)
 }
 
 @Composable

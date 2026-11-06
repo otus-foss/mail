@@ -39,8 +39,8 @@ data class InboxContext(
     val readView: ReadView = ReadView {},
     /** Whose mail the page shows, which the account stack opens; null shows no stack. */
     val scope: MailScopeSwitch? = null,
-    /** What pulling the control panel down shows; null keeps the panel from opening that way. */
-    val quick: QuickViewContext? = null,
+    /** What pulling the control panel down shows. */
+    val quick: QuickViewContext = QuickViewContext(),
     /** A row the app asks the list to open, such as a tapped notification's message; null for none. */
     val opening: OpenRequest? = null,
 ) {

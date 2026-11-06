@@ -30,7 +30,6 @@ import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.PanelMotion
-import com.otus.designsystem.shared.panels.components.PanelSearchField
 import com.otus.designsystem.shared.panels.components.PanelSearchPill
 import com.otus.designsystem.shared.panels.components.PillSearch
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
@@ -182,22 +181,11 @@ private fun InboxNavigation(
     )
 }
 
-/** The search field, focused with the keyboard up while [active]; the user focusing it runs [onFocus]. */
-@Composable
-internal fun InboxSearchInput(
-    query: String,
-    onChange: (String) -> Unit,
-    onSubmit: () -> Unit,
-    active: Boolean,
-) {
-    PanelSearchField(query, onChange, "Search your mailbox…", searchFieldModifier(active), onSubmit)
-}
-
 /** Focuses a search field with the keyboard up while [active]; the user focusing or tapping it runs [onFocus]. */
 @Composable
 private fun searchFieldModifier(
     active: Boolean,
-    onFocus: () -> Unit = {},
+    onFocus: () -> Unit,
 ): Modifier {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
