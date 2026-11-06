@@ -10,7 +10,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.otus.mail.feature.inbox.domain.EmailWriter
+import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.presentation.actions.runAlertButton
 import com.otus.mail.feature.notifications.domain.NewMail
 
 /**
@@ -23,19 +24,19 @@ class AlertActionWorker(
     parameters: WorkerParameters,
 ) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
-        val action = AlertAction.named(inputData.getString(ACTION))
+        val action = alertButton(inputData.getString(ACTION))
         val mail = inputData.mail()
         if (action == null || mail == null) return Result.failure()
         val writer = (applicationContext as OtusMailApplication).services.writer
         return when {
-            writer.perform(action, mail.loginId, mail.emailId) -> Result.success()
+            writer.runAlertButton(action, mail.loginId, mail.emailId) -> Result.success()
             runAttemptCount + 1 < MAX_ATTEMPTS -> Result.retry()
             else -> failed(action, mail)
         }
     }
 
     private fun failed(
-        action: AlertAction,
+        action: MailAction,
         mail: NewMail,
     ): Result {
         MailNotifications(applicationContext).showFailed(mail, action)
@@ -51,7 +52,7 @@ class AlertActionWorker(
         /** Expedited, so the change usually reaches the server within seconds, even in Doze. */
         internal fun enqueue(
             context: Context,
-            action: AlertAction,
+            action: MailAction,
             mail: NewMail,
         ) {
             val input =
@@ -72,24 +73,3 @@ class AlertActionWorker(
         }
     }
 }
-
-/** Runs [action] on the email [emailId] of the login [loginId]; false when it did not change. */
-private suspend fun EmailWriter.perform(
-    action: AlertAction,
-    loginId: String,
-    emailId: String,
-): Boolean =
-    when (action) {
-        AlertAction.Trash -> trash(loginId, emailId)
-
-        AlertAction.Archive -> archive(loginId, emailId)
-
-        AlertAction.MarkRead -> markRead(loginId, emailId)
-
-        AlertAction.Flag -> flag(loginId, emailId)
-
-        AlertAction.Spam -> reportSpam(loginId, emailId)
-
-        // Reply opens Mail instead, so it never reaches the worker.
-        AlertAction.Reply -> false
-    }

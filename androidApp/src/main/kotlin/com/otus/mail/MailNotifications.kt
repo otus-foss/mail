@@ -11,9 +11,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.ForegroundInfo
-import com.otus.mail.feature.inbox.domain.AlertAccount
 import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.alertButtons
+import com.otus.mail.feature.inbox.presentation.actions.AlertAccount
+import com.otus.mail.feature.inbox.presentation.actions.alertButtons
+import com.otus.mail.feature.inbox.presentation.actions.alertFailure
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.NewMail
@@ -90,12 +91,12 @@ class MailNotifications(
     /** [mail]'s alert again, saying that its [failed] button's change did not reach the server. */
     internal fun showFailed(
         mail: NewMail,
-        failed: AlertAction,
+        failed: MailAction,
     ) = post(listOf(mail), failed)
 
     private fun post(
         mail: List<NewMail>,
-        failed: AlertAction?,
+        failed: MailAction?,
     ) {
         // From Android 13 on, posting needs the user's permission.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -160,7 +161,7 @@ private val AlertedMail.tag get() = "$loginId/$emailId"
 /** The buttons the user [chosen] picked for alerts, and, on an alert that came back, the one that [failed]. */
 private class Buttons(
     val chosen: List<MailAction>,
-    val failed: AlertAction?,
+    val failed: MailAction?,
 )
 
 private const val CHANNEL = "new_mail"
@@ -171,7 +172,7 @@ private fun Context.detailedMessage(
 ) = mailAlert(mail)
     .setContentTitle(mail.sender)
     .setContentText(mail.subject(this))
-    .setSubText(buttons.failed?.let { failure(it) } ?: mail.accountName)
+    .setSubText(buttons.failed?.let(::alertFailure) ?: mail.accountName)
     .setStyle(NotificationCompat.BigTextStyle().bigText("${mail.subject(this)}\n${mail.preview}"))
     .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
     .setPublicVersion(newMail(mail).build())
@@ -181,10 +182,6 @@ private fun Context.detailedMessage(
 /** "New mail" alone: a hidden alert, and what a locked device shows when it hides details. */
 private fun Context.newMail(mail: NewMail) = mailAlert(mail).setContentTitle(getString(R.string.notification_new_mail))
 
-/** What an alert that came back says in place of its account: which change failed. */
-private fun Context.failure(action: AlertAction): String =
-    getString(R.string.notification_action_failed, getString(action.title))
-
 /** The [chosen] buttons that [mail]'s account can run, in order. */
 private fun NotificationCompat.Builder.addButtons(
     context: Context,
@@ -193,7 +190,6 @@ private fun NotificationCompat.Builder.addButtons(
 ): NotificationCompat.Builder {
     chosen
         .alertButtons(AlertAccount(mail.mailboxRoles, mail.canSend))
-        .mapNotNull(AlertAction::of)
         .forEach { addAction(context.alertAction(mail, it)) }
     return this
 }

@@ -6,11 +6,4 @@
   <string name="notification_no_subject">(No subject)</string>
   <string name="notification_channel_background">Background checks</string>
   <string name="notification_checking">Checking for new mail</string>
-  <string name="notification_archive">Archive</string>
-  <string name="notification_mark_read">Mark read</string>
-  <string name="notification_delete">Delete</string>
-  <string name="notification_flag">Flag</string>
-  <string name="notification_spam">Spam</string>
-  <string name="notification_reply">Reply</string>
-  <string name="notification_action_failed">%1$s didn\'t work</string>
 </resources>

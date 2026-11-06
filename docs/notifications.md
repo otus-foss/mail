@@ -156,7 +156,8 @@ The sheet offers every action that can run from an alert without seeing the mess
 Mark unread is left out, since alerts are about unread mail. Reply all, Forward, Move, and
 Read later need the message or a folder choice on screen, so they are left out too.
 
-`alertButtons` in the inbox domain resolves the choice for each alert: it keeps the chosen
+`alertButtons` in the inbox's shared action model (`presentation/actions/AlertButtons.kt`) resolves
+the choice for each alert: it keeps the chosen
 actions an alert can run, drops those the message's account cannot run, keeps the user's order,
 and stops at three. It does not fill a dropped button's place with another. `JmapNewMailChecker`
 already reads the account's mailbox roles to find its inboxes, so each `NewMail` carries those
@@ -165,8 +166,10 @@ Archive, rather than a button that fails.
 
 Every button but Reply acts without opening Mail: `AlertActionReceiver` removes the alert at
 once, and the account's summary with its last alert, then queues expedited `AlertActionWorker`
-work for when the device has a network. The worker calls the by-id changes of `EmailWriter` (`Email/set`, RFC 8621,
-section 4.6). Delete, Archive, and Spam first read the account's mailbox roles with
+work for when the device has a network. The worker runs `runAlertButton` from the same shared file,
+which calls the by-id changes of `EmailWriter` (`Email/set`, RFC 8621, section 4.6). A button's
+label is its action's own label, the one the bar shows; Android keeps only the intents, the worker,
+and the semantic actions. Delete, Archive, and Spam first read the account's mailbox roles with
 `Mailbox/get`. Like the list's own marks and moves, each change goes into the device's copy at
 once and waits in the change queue when the server cannot be reached. A refused change tries again,
 up to five runs in all. When the last run fails too, the alert comes back with the same buttons,

@@ -99,7 +99,7 @@ class AlertActionsTest {
 
     @Test
     fun aFailedChangeBringsTheAlertBackAndSaysSo() {
-        MailNotifications(app) { PreviewChoices() }.showFailed(mail("m1"), AlertAction.Archive)
+        MailNotifications(app) { PreviewChoices() }.showFailed(mail("m1"), MailAction.Archive)
         val back = posted().getValue("ada/m1")
         assertEquals("Archive didn't work", back.extras.getCharSequence(Notification.EXTRA_SUB_TEXT).toString())
         assertEquals(listOf("Delete", "Archive", "Mark read"), titles(back))

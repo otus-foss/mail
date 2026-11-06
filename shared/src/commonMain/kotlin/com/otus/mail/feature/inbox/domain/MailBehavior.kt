@@ -26,7 +26,7 @@ import com.otus.avatar.IconSource
  * recordings, and recent apps, and [incognitoKeyboard] asks the keyboard not to learn from what the
  * user types, where [DevicePrivacy] allows them. [photoCleaning] decides whether attached photos
  * lose their metadata and file names. [notificationActions] are the buttons, in order, that new-mail
- * alerts offer where the account can run them; see [alertButtons]. [startPage] is the sidebar
+ * alerts offer where the account can run them; see `alertButtons`. [startPage] is the sidebar
  * mailbox Mail opens on; while no account has it, Mail opens on the Inbox and keeps the choice.
  */
 data class MailBehavior(

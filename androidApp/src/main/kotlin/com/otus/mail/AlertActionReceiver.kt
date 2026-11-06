@@ -3,6 +3,7 @@ package com.otus.mail
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.otus.mail.feature.inbox.presentation.actions.opensMailFromAlert
 import com.otus.mail.feature.notifications.domain.AlertedMail
 
 /**
@@ -14,7 +15,7 @@ class AlertActionReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        val action = AlertAction.named(intent.action)?.takeIf { it != AlertAction.Reply } ?: return
+        val action = alertButton(intent.action)?.takeIf { !it.opensMailFromAlert } ?: return
         val mail = intent.mail() ?: return
         MailNotifications(context).clear(listOf(AlertedMail(mail.loginId, mail.emailId)))
         AlertActionWorker.enqueue(context, action, mail)
