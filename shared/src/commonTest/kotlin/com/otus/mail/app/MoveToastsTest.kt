@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,14 +15,14 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MoveToastsTest {
-    private val trash = MoveTarget("t", "Trash", FolderShortcut.Trash)
+    private val trash = MoveTarget("t", "Trash", MailboxRole.Trash)
     private val clients = MoveTarget("c", "Clients")
 
     @Test
     fun namesTheMoveByWhereTheMailWent() {
         assertEquals("Email deleted", movedText(trash, 1))
-        assertEquals("3 emails archived", movedText(MoveTarget("a", "Archive", FolderShortcut.Archive), 3))
-        assertEquals("Email marked as spam", movedText(MoveTarget("s", "Spam", FolderShortcut.Spam), 1))
+        assertEquals("3 emails archived", movedText(MoveTarget("a", "Archive", MailboxRole.Archive), 3))
+        assertEquals("Email marked as spam", movedText(MoveTarget("s", "Spam", MailboxRole.Junk), 1))
         assertEquals("Moved to Clients", movedText(clients, 1))
         assertEquals("2 emails moved to Clients", movedText(clients, 2))
     }

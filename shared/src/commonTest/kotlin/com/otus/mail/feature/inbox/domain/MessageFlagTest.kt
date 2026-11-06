@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -13,7 +14,7 @@ class MessageFlagTest {
             "Order",
             "",
             ReceivedAt("2026-10-04", "09:30"),
-            MailLocation("Inbox", "Ada"),
+            MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox),
             MailAttributes(unread = true, attachments = listOf("receipt.pdf")),
         )
 

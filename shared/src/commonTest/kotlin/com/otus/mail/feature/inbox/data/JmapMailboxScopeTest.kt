@@ -35,7 +35,7 @@ class JmapMailboxScopeTest {
                     save(ada.copy(id = "empty", name = "Empty", username = "empty@example.org"), "wrong")
                 }
             val source = source(stalwartLike(api = server::answer), store)
-            val chosen = MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox")), setOf("ada"))
+            val chosen = MailScope.Mailboxes(setOf(MailboxScope.Inbox), setOf("ada"))
             assertTrue(source.messages(chosen).unavailable.isEmpty())
             assertEquals(1, server.calls("Email/query").size)
             assertTrue(server.bodies.any { "\"inMailbox\":\"a\"" in it })

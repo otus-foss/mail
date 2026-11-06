@@ -3,6 +3,8 @@ package com.otus.mail.feature.notifications.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -41,8 +43,11 @@ class AlertOrderTest {
     fun oldAlertsGoBeforeNewOnesShow() =
         runTest {
             val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-            JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(api = ::reply)), store), states)
-                .check(alerts)
+            JmapNewMailChecker(
+                JmapConnections(JmapClient(stalwartLike(api = ::reply)), store),
+                Mailboxes(InMemoryMailCache()),
+                states,
+            ).check(alerts)
             assertEquals(listOf("clear [m1]", "show [m6]"), events, "Android must not clear the new alert's summary")
         }
 
@@ -51,12 +56,14 @@ class AlertOrderTest {
             """{"methodResponses": [["Email/changes", {"oldState": "e1", "newState": "e2",
                "hasMoreChanges": false, "created": ["m6"], "updated": ["m1"]}, "c0"]]}"""
         } else {
-            """{"methodResponses": [
-               ["Mailbox/get", {"state": "b1", "list": [{"id": "i", "role": "inbox"}]}, "c0"],
+            // Only the first request of the check reads the folders; later ones use the kept ones.
+            val folders = "Mailbox/get" in body
+            val mailboxes = if (folders) INBOX_FOLDER else ""
+            """{"methodResponses": [$mailboxes
                ["Email/get", {"state": "e2", "list": [${email(
                 "m1",
                 "{\"\$seen\": true}",
-            )}, ${email("m6", "{}")}]}, "c1"]]}"""
+            )}, ${email("m6", "{}")}]}, "${if (folders) "c1" else "c0"}"]]}"""
         }
 
     private fun email(
@@ -64,4 +71,8 @@ class AlertOrderTest {
         keywords: String,
     ) = """{"id": "$id", "mailboxIds": {"i": true}, "keywords": $keywords,
             "from": [{"email": "grace@example.org"}], "subject": "Hello", "receivedAt": "2026-10-14T08:00:00Z"}"""
+
+    private companion object {
+        const val INBOX_FOLDER = """["Mailbox/get", {"state": "b1", "list": [{"id": "i", "role": "inbox"}]}, "c0"],"""
+    }
 }

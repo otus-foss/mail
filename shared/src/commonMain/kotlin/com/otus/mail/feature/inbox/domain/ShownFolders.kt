@@ -1,10 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.mail.DRAFTS_ROLE
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.core.mailbox.MailboxRole
 
 /**
  * The folders a Read view strip names. [also] when the user came from a folder, so the strip says
@@ -39,13 +35,13 @@ fun orderedFolders(
 ): List<MessageFolder> =
     mailboxIds
         .mapNotNull(folders::get)
-        .sortedWith(compareBy<MessageFolder> { it.role != INBOX_ROLE }.thenBy { it.sortKey })
+        .sortedWith(compareBy<MessageFolder> { it.role != MailboxRole.Inbox }.thenBy { it.sortKey })
 
 /** Whether one of [mailboxIds] is the Spam folder, where remote images and unsubscribing stay off. */
 fun inJunk(
     mailboxIds: Set<String>,
     folders: Map<String, MessageFolder>,
-): Boolean = mailboxIds.any { folders[it]?.role == JUNK_ROLE }
+): Boolean = mailboxIds.any { folders[it]?.role == MailboxRole.Junk }
 
 /**
  * How a strip names these folders. One folder, or [full], shows every full path. Otherwise each
@@ -66,4 +62,4 @@ private val MessageFolder.sortKey: String
     get() = path.joinToString("/") { it.lowercase() }
 
 /** Folders the strips never name: where drafts, sent, and deleted mail and spam live. */
-private val UNHINTED = setOf(DRAFTS_ROLE, SENT_ROLE, TRASH_ROLE, JUNK_ROLE)
+private val UNHINTED = setOf(MailboxRole.Drafts, MailboxRole.Sent, MailboxRole.Trash, MailboxRole.Junk)

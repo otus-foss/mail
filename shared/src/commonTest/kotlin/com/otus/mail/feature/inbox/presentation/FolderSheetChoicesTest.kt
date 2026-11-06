@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailConversation
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -15,9 +16,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FolderSheetChoicesTest {
-    private val inbox = MessageFolder("in", listOf("Inbox"), role = "inbox")
-    private val spam = MessageFolder("sp", listOf("Junk"), role = "junk")
-    private val trash = MessageFolder("tr", listOf("Trash"), role = "trash")
+    private val inbox = MessageFolder("in", listOf("Inbox"), role = MailboxRole.Inbox)
+    private val spam = MessageFolder("sp", listOf("Junk"), role = MailboxRole.Junk)
+    private val trash = MessageFolder("tr", listOf("Trash"), role = MailboxRole.Trash)
     private val readLater = MessageFolder("rl", listOf("Read later"), readLater = true)
     private val clients = MessageFolder("cl", listOf("Clients"), color = "blue")
     private val invoices = MessageFolder("fi", listOf("Finance", "Invoices"), color = "yellow")

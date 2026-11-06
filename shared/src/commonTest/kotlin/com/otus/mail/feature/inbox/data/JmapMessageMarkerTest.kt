@@ -4,6 +4,7 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -42,7 +43,7 @@ class JmapMessageMarkerTest {
         "Order",
         "",
         ReceivedAt("2026-10-04", "09:30"),
-        MailLocation("Inbox", "Ada", loginId, mailboxId = "a"),
+        MailLocation("Inbox", "Ada", loginId, mailboxId = "a", mailboxRole = MailboxRole.Inbox),
         emailId = id,
     )
 

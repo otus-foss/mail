@@ -1,13 +1,13 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.core.mail.TRASH_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.domain.FolderColorStore
-import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.READ_LATER_NAME
 import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.testing.MemoryMapStore
@@ -49,7 +49,7 @@ class FolderColorsStateTest {
     }
 
     private val clients = MailFolder("ada", "M1", "Clients")
-    private val trash = MailFolder("ada", "M0", "Trash", role = TRASH_ROLE)
+    private val trash = MailFolder("ada", "M0", "Trash", role = MailboxRole.Trash)
     private val readLater = MailFolder("ada", "M2", READ_LATER_NAME)
     private val ada = AccountFolders("ada", "Ada", listOf(trash, clients, readLater), readLaterId = "M2")
 

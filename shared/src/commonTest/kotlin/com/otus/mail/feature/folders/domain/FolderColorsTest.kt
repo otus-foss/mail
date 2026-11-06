@@ -1,6 +1,8 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.testing.MemoryMapStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -81,7 +83,7 @@ class FolderColorsTest {
 
     @Test
     fun onlyTheUsersOwnFoldersOtherThanReadLaterCanBeColored() {
-        val inbox = MailFolder("ada login", "M0", "Inbox", role = INBOX_ROLE)
+        val inbox = MailFolder("ada login", "M0", "Inbox", role = MailboxRole.Inbox)
         val readLater = MailFolder("ada login", "M2", READ_LATER_NAME)
         val account = AccountFolders("ada login", "Ada", listOf(inbox, adaClients, readLater), readLaterId = "M2")
         assertTrue(account.colorable(adaClients))

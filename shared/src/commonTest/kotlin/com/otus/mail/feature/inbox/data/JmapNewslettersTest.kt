@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -34,7 +35,7 @@ class JmapNewslettersTest {
             "Your week",
             "",
             ReceivedAt("2026-10-15", "08:00"),
-            MailLocation("Inbox", "Ada", "ada", "ada@example.org", mailboxId = "a"),
+            MailLocation("Inbox", "Ada", "ada", "ada@example.org", mailboxId = "a", mailboxRole = MailboxRole.Inbox),
             emailId = "n5",
             to = listOf(MailSender("Ada", "ada@work.example.org")),
         )
@@ -218,10 +219,10 @@ class JmapNewslettersTest {
 
     private companion object {
         const val FIRST = """{"methodResponses": [
+            ["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"}, {"id": "t", "role": "trash"}]}, "c0"],
             ["Email/get", {"state": "e", "list": [{"id": "n5", "receivedAt": "2026-10-15T08:00:00Z",
               "from": [{"name": "Sentry", "email": "weekly@sentry.io"}],
-              "header:List-Unsubscribe:asURLs": ["https://sentry.io/u/1"], "header:List-Id:asText": "Sentry weekly digest <weekly.sentry.io>"}]}, "c0"],
-            ["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"}, {"id": "t", "role": "trash"}]}, "c1"]]}"""
+              "header:List-Unsubscribe:asURLs": ["https://sentry.io/u/1"], "header:List-Id:asText": "Sentry weekly digest <weekly.sentry.io>"}]}, "c1"]]}"""
         val WITHOUT_LIST_ID =
             FIRST.replace(", \"header:List-Id:asText\": \"Sentry weekly digest <weekly.sentry.io>\"", "")
         const val SENTRY = """"from": [{"email": "weekly@sentry.io"}], "header:List-Id:asText": "<weekly.sentry.io>""""
@@ -237,7 +238,7 @@ class JmapNewslettersTest {
                "header:List-Id:asText": "<news.weekly.sentry.io>"},
               {"id": "n3", "receivedAt": "2026-10-01T08:00:00Z", "mailboxIds": {"a": true}, $SENTRY}]}, "c1"]]}"""
         const val ARCHIVE_LOOKUP = """{"methodResponses": [
-            ["Mailbox/query", {"queryState": "q", "ids": ["arch"]}, "c0"],
+            ["Mailbox/get", {"state": "m", "list": [{"id": "a", "role": "inbox"}, {"id": "arch", "role": "archive"}]}, "c0"],
             ["Email/get", {"state": "e", "list": [
               {"id": "n4", "mailboxIds": {"a": true, "r": true}}, {"id": "n3", "mailboxIds": {"arch": true}}]}, "c1"]]}"""
     }

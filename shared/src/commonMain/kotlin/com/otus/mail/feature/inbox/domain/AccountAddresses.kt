@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.avatar.ResolvedAvatar
+import com.otus.mail.core.mailbox.MailboxRole
 
 /** The addresses one account receives mail at, as "Show mail from" lists them. */
 data class AccountAddresses(
@@ -71,7 +72,7 @@ fun addressCount(
 ): Long? {
     if (count == SidebarCount.None) return null
     return messages
-        .filter { it.location.mailbox == INBOX_MAILBOX && address.shows(it) }
+        .filter { it.location.mailboxRole == MailboxRole.Inbox && address.shows(it) }
         .count { count == SidebarCount.Total || it.attributes.unread }
         .toLong()
         .takeIf { it > 0 }

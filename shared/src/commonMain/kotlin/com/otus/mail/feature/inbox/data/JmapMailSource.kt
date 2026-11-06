@@ -12,6 +12,7 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.toMailFailure
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
@@ -51,7 +52,7 @@ class JmapMailSource(
 
     // A refresh and a next page of one login both rewrite its listings, so they take turns.
     private val locks = LoginLocks()
-    private val counts = JmapMailCounts(connections, zone, clock)
+    private val counts = JmapMailCounts(connections, Mailboxes(cache), zone, clock)
 
     override suspend fun messages(scope: MailScope): InboxSnapshot = messages(scope, MailQuery())
 
@@ -64,8 +65,6 @@ class JmapMailSource(
         scope: MailScope,
         query: MailQuery,
     ): InboxSnapshot = load(scope, query) { more(it) }
-
-    override fun beginCounting() = counts.begin()
 
     override suspend fun count(
         scope: MailScope,

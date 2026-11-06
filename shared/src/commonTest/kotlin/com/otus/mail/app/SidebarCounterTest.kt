@@ -1,6 +1,6 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.inbox.domain.SidebarCount
 import kotlin.test.Test
 import kotlin.test.assertEquals

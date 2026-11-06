@@ -2,8 +2,9 @@ package com.otus.mail.app
 
 import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -27,11 +28,11 @@ class MoveTargetPathTest {
             "ada",
             "Ada",
             listOf(
-                MailFolder("ada", "i", "Inbox", role = "inbox"),
+                MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox),
                 MailFolder("ada", "c", "Clients"),
                 MailFolder("ada", "a", "Acme", parentId = "c"),
                 MailFolder("ada", "n", "Newsletters", parentId = "i"),
-                MailFolder("ada", "t", "Trash", role = "trash"),
+                MailFolder("ada", "t", "Trash", role = MailboxRole.Trash),
                 MailFolder("ada", "o", "Old", parentId = "t"),
             ),
         )
@@ -78,7 +79,14 @@ class MoveTargetPathTest {
             "Subject",
             "Body",
             ReceivedAt("2026-10-01", "12:00"),
-            MailLocation("Inbox", "Ada", "ada", mailboxId = "i", mailboxIds = setOf("i")),
+            MailLocation(
+                "Inbox",
+                "Ada",
+                "ada",
+                mailboxId = "i",
+                mailboxIds = setOf("i"),
+                mailboxRole = MailboxRole.Inbox,
+            ),
             emailId = "m",
         )
 }

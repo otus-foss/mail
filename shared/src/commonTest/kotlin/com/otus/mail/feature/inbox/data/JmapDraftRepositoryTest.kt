@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
 import com.otus.mail.feature.inbox.domain.DraftFailure
@@ -38,7 +40,9 @@ class JmapDraftRepositoryTest {
                 calls += body
                 api(body)
             }
-        return JmapDraftRepository(JmapConnections(JmapClient(engine), store)) { "m${++saves}@otus.mail" }
+        return JmapDraftRepository(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache())) {
+            "m${++saves}@otus.mail"
+        }
     }
 
     private var saves = 0
@@ -49,7 +53,7 @@ class JmapDraftRepositoryTest {
         destroyed: String = emailSet(""""destroyed": ["old"]"""),
     ) = repository { body ->
         when {
-            "Mailbox/query" in body -> """{"methodResponses": [["Mailbox/query", {"ids": ["dr"]}, "c0"]]}"""
+            "Mailbox/get" in body -> DRAFTS
             "\"create\"" in body -> emailSet(created)
             "Email/set" in body -> destroyed
             else -> error("Unexpected call: $body")
@@ -111,7 +115,9 @@ class JmapDraftRepositoryTest {
     fun aSaveWithoutADraftsFolderFailsBeforeCreatingAnything() =
         runTest {
             val saved =
-                repository { """{"methodResponses": [["Mailbox/query", {"ids": []}, "c0"]]}""" }.save(reply)
+                repository { """{"methodResponses": [["Mailbox/get", {"state": "m", "list": []}, "c0"]]}""" }.save(
+                    reply,
+                )
             assertEquals(DraftFailure.NoDraftsFolder, saved.failure())
             assertTrue(calls.none { "Email/set" in it })
         }
@@ -162,7 +168,7 @@ class JmapDraftRepositoryTest {
             val drafts =
                 repository { body ->
                     when {
-                        "Mailbox/query" in body -> """{"methodResponses": [["Mailbox/query", {"ids": ["dr"]}, "c0"]]}"""
+                        "Mailbox/get" in body -> DRAFTS
                         lost && "\"create\"" in body -> throw IOException("The answer was lost")
                         "\"create\"" in body -> emailSet(""""created": {"draft": {"id": "e2"}}""")
                         "Email/query" in body -> """{"methodResponses": [["Email/query", $FOUND, "c0"]]}"""
@@ -238,6 +244,8 @@ class JmapDraftRepositoryTest {
 
     private companion object {
         /** The lost copy `e1` and the new copy `e2`, which share nothing but the Drafts folder. */
+        const val DRAFTS = """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
+            {"id": "dr", "role": "drafts"}]}, "c0"]]}"""
         const val FOUND = """{"queryState": "q", "ids": ["e1", "e2"], "position": 0}"""
     }
 }

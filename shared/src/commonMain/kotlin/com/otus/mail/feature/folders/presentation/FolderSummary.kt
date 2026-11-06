@@ -1,7 +1,7 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
 
 /** How many folders sit directly inside [folder] among [scope]'s folders. */
 fun AccountFolders.subfolderCount(folder: MailFolder): Int = folders.count { it.parentId == folder.id }

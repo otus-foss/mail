@@ -3,11 +3,12 @@ package com.otus.mail.feature.folders.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.feature.folders.domain.FolderFailure
-import com.otus.mail.feature.folders.domain.FolderLimits
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.FolderLimits
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -39,7 +40,7 @@ class JmapFolderRepositoryTest {
                        {"id": "z", "name": "Amazon", "parentId": "r", "sortOrder": 4}]}, "c0"]]}"""
                 }.accounts().single()
             assertEquals(FolderLimits(mayCreateTopLevel = false, maxDepth = 3, maxNameBytes = 200), account.limits)
-            assertEquals("inbox", account.inbox?.role)
+            assertEquals(MailboxRole.Inbox, account.inbox?.role)
             assertEquals(3, account.inbox?.unread)
             assertEquals(false, account.folder("r")?.rights?.mayDelete)
             val shared = requireNotNull(account.folder("r")).rights

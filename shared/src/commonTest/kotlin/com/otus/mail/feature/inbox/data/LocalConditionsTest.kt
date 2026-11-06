@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.DateFilter
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailAttributes
@@ -38,7 +39,7 @@ class LocalConditionsTest {
             subject = "Hi",
             body = "",
             received = ReceivedAt("2026-10-27", "11:00"),
-            location = MailLocation("Inbox", "ada"),
+            location = MailLocation("Inbox", "ada", mailboxRole = MailboxRole.Inbox),
             attributes = attributes,
             to = listOf(MailSender("Ada", to)),
         ),

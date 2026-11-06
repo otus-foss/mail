@@ -28,7 +28,7 @@ import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.folderNameProblem
 import com.otus.mail.feature.folders.presentation.RuleSheetActions

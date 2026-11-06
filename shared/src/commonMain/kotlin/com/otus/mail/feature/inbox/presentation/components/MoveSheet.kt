@@ -21,13 +21,10 @@ import androidx.compose.ui.platform.LocalDensity
 import com.otus.designsystem.mail.folders.components.FolderName
 import com.otus.designsystem.mail.folders.components.SuggestedFolderRow
 import com.otus.designsystem.mail.folders.elements.DestinationPill
+import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_archive
 import com.otus.designsystem.resources.symbol_auto_filter
 import com.otus.designsystem.resources.symbol_bookmark
-import com.otus.designsystem.resources.symbol_delete
-import com.otus.designsystem.resources.symbol_inbox
-import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.shared.controls.elements.IconPill
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.people.components.Recipient
@@ -38,17 +35,16 @@ import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.shownName
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.containsSearch
 import com.otus.mail.feature.inbox.presentation.matchesSearch
 import com.otus.mail.feature.inbox.presentation.ownFolders
 import com.otus.mail.feature.inbox.presentation.shortcuts
-import org.jetbrains.compose.resources.DrawableResource
 
 /**
  * Moves [messages], one or a selection, to the folder the user taps among [targets], through
@@ -132,7 +128,7 @@ private fun MovePills(
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap)) {
         FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap)) {
             // Inbox leads whenever the message can go back there, so the pills keep one order.
-            val (inbox, others) = shortcuts.partition { it.shortcut == FolderShortcut.Inbox }
+            val (inbox, others) = shortcuts.partition { it.shortcut == MailboxRole.Inbox }
             inbox.forEach { ShortcutPill(it, onMove) }
             if (onReadLater != null) DestinationPill(READ_LATER, Res.drawable.symbol_bookmark, onReadLater)
             others.forEach { ShortcutPill(it, onMove) }
@@ -155,7 +151,7 @@ private fun ShortcutPill(
     onMove: (MoveTarget) -> Unit,
 ) {
     val shortcut = target.shortcut ?: return
-    DestinationPill(shortcut.label, shortcut.icon, { onMove(target) })
+    DestinationPill(shortcut.title, folderSymbol(shortcut.wire), { onMove(target) })
 }
 
 /**
@@ -185,13 +181,3 @@ internal val RowTextInset = Modifier.padding(horizontal = PageTokens.textInset)
 private const val READ_LATER = "Read later"
 
 internal const val SORT_FUTURE_MAIL = "Also sort future mail"
-
-/** The system folder's symbol, the same one its action bar button and sidebar entry use. */
-internal val FolderShortcut.icon: DrawableResource
-    get() =
-        when (this) {
-            FolderShortcut.Inbox -> Res.drawable.symbol_inbox
-            FolderShortcut.Archive -> Res.drawable.symbol_archive
-            FolderShortcut.Spam -> Res.drawable.symbol_report
-            FolderShortcut.Trash -> Res.drawable.symbol_delete
-        }

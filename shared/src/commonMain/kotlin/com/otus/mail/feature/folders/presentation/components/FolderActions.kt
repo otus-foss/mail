@@ -1,7 +1,7 @@
 package com.otus.mail.feature.folders.presentation.components
 
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderRule
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.withAdded
 import com.otus.mail.feature.folders.presentation.FolderColorsState

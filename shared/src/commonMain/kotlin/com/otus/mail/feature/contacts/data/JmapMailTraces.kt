@@ -9,13 +9,12 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
-import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.core.mail.roleQuery
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.contacts.domain.MailTrace
 import com.otus.mail.feature.contacts.domain.MailTraceSource
 import com.otus.mail.feature.contacts.domain.MailTraces
@@ -28,6 +27,7 @@ import kotlin.time.Instant
  */
 internal class JmapMailTraces(
     private val connections: JmapConnections,
+    private val mailboxes: Mailboxes,
 ) : MailTraceSource {
     override suspend fun logins(): List<String> =
         try {
@@ -39,12 +39,12 @@ internal class JmapMailTraces(
     override suspend fun traces(loginId: String): MailTraces? =
         jmapCallOr(null) {
             connections.mailAccount(loginId)?.let { account ->
-                MailTraces(account.newest(SENT_ROLE), account.newest(INBOX_ROLE))
+                MailTraces(account.newest(MailboxRole.Sent), account.newest(MailboxRole.Inbox))
             }
         }
 
-    private suspend fun MailAccount.newest(role: String): List<MailTrace> {
-        val mailbox = connection.call(roleQuery(role)).ids.firstOrNull() ?: return emptyList()
+    private suspend fun MailAccount.newest(role: MailboxRole): List<MailTrace> {
+        val mailbox = mailboxes.of(this).firstOrNull { it.role == role }?.id ?: return emptyList()
         return connection
             .call(QueryMethod(EmailType, id, inMailbox(mailbox), NEWEST_FIRST, SCAN))
             .ids

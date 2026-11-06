@@ -3,9 +3,9 @@ package com.otus.mail.feature.folders.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest

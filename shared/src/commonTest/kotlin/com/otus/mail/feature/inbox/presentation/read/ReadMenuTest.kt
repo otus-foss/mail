@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.read
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -27,7 +28,7 @@ class ReadMenuTest {
         "Q4 launch plan",
         "",
         ReceivedAt("2026-10-12", "09:14"),
-        MailLocation("Inbox", "Work", "work"),
+        MailLocation("Inbox", "Work", "work", mailboxRole = MailboxRole.Inbox),
         attributes = MailAttributes(flagged = flagged),
         to = to,
     )

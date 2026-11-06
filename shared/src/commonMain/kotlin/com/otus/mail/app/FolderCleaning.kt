@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.presentation.FolderCleanup
@@ -32,19 +32,19 @@ internal class FolderCleaning(
             emptying = { emptying(feed) },
         )
 
-    private fun role(message: MailMessage): FolderRole? =
-        FolderRole.of(folders.folder(message.location.accountId, message.location.mailboxId)?.role)
+    private fun role(message: MailMessage): MailboxRole? =
+        folders.folder(message.location.accountId, message.location.mailboxId)?.role
 
-    private fun listRole(feed: InboxFeedState): FolderRole? =
+    private fun listRole(feed: InboxFeedState): MailboxRole? =
         shownFolders(feed.mailScope)
-            .map { FolderRole.of(it.role) }
+            .map { it.role }
             .distinct()
             .singleOrNull()
 
     /** Only loaded mail has a server id, and the folder must let messages leave. */
     private fun canDelete(message: MailMessage): Boolean =
         message.emailId.isNotEmpty() &&
-            role(message).let { it == FolderRole.Junk || it == FolderRole.Trash } &&
+            role(message)?.isBin == true &&
             folders.rightsOf(message).mayRemoveItems
 
     /** Spam keywords change only where the folder allows marks; the move happens either way. */
@@ -87,7 +87,7 @@ internal class FolderCleaning(
 
     /** Empties only the list's folders that let their messages leave. */
     private fun emptying(feed: InboxFeedState): FolderEmptying? {
-        val role = listRole(feed)?.takeIf { it != FolderRole.Sent } ?: return null
+        val role = listRole(feed)?.takeIf { it != MailboxRole.Sent } ?: return null
         return shownFolders(feed.mailScope)
             .filter { it.rights.mayRemoveItems }
             .takeIf { it.isNotEmpty() }

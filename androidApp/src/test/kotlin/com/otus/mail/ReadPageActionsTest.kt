@@ -23,11 +23,11 @@ import com.otus.designsystem.shared.feedback.components.ToastHost
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.ReadContext
@@ -72,7 +72,7 @@ class ReadPageActionsTest {
                 effects = effects,
             )
         val context = InboxContext(loadContent = { fixtures.content(it) }, read = read, rowLook = RowLook(own = OWN))
-        val actions = fixtures.actions(targets = listOf(MoveTarget("tr", "Trash", FolderShortcut.Trash)))
+        val actions = fixtures.actions(targets = listOf(MoveTarget("tr", "Trash", MailboxRole.Trash)))
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {

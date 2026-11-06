@@ -1,5 +1,6 @@
 package com.otus.mail.feature.notifications.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.storage.StringMapStore
 import kotlin.time.Instant
 
@@ -18,7 +19,7 @@ data class NewMail(
      */
     val recipients: List<String> = emptyList(),
     /** The lowercase roles of its account's mailboxes, such as `archive`, which decide the alert's buttons. */
-    val mailboxRoles: Set<String> = emptySet(),
+    val mailboxRoles: Set<MailboxRole> = emptySet(),
     /** Whether its account can send, so the alert can offer Reply. */
     val canSend: Boolean = false,
 )

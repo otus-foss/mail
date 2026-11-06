@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.Signature
 import com.otus.mail.testing.ADA_LOGIN
@@ -49,13 +51,13 @@ class InlineImagesTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-        return JmapDraftRepository(JmapConnections(JmapClient(engine), store))
+        return JmapDraftRepository(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache()))
     }
 
     private fun answer(body: String): String =
         when {
-            "Mailbox/query" in body -> {
-                """{"methodResponses": [["Mailbox/query", {"ids": ["dr"]}, "c0"]]}"""
+            "Mailbox/get" in body -> {
+                """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [{"id": "dr", "role": "drafts"}]}, "c0"]]}"""
             }
 
             "\"create\"" in body -> {

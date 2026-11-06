@@ -1,6 +1,6 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.folders.domain.FolderRights
+import com.otus.mail.core.mailbox.FolderRights
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag

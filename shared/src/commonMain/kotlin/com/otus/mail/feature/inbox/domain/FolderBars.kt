@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAction.DeleteForever
 import com.otus.mail.feature.inbox.domain.MailAction.EmptyFolder
 import com.otus.mail.feature.inbox.domain.MailAction.Filters
@@ -10,29 +11,16 @@ import com.otus.mail.feature.inbox.domain.MailAction.NotSpam
 import com.otus.mail.feature.inbox.domain.MailAction.Restore
 import com.otus.mail.feature.inbox.domain.MailAction.Search
 
-/** A system folder with bars of its own, found by its role (RFC 8621, section 2). */
-enum class FolderRole(
-    val role: String,
-) {
-    Junk("junk"),
-    Trash("trash"),
-    Sent("sent"),
-    ;
-
-    companion object {
-        fun of(role: String?): FolderRole? = entries.firstOrNull { it.role == role }
-    }
-}
-
 /**
  * [place]'s default bar on a page of [role] folders; null where the place keeps its usual one.
  * Selections in Sent keep theirs, because Follow up and Forward need one message.
  */
-fun ActionBarPlace.folderDefault(role: FolderRole): ActionBarLayout? =
+fun ActionBarPlace.folderDefault(role: MailboxRole): ActionBarLayout? =
     when (role) {
-        FolderRole.Junk -> cleanupBar(NotSpam)
-        FolderRole.Trash -> cleanupBar(Restore)
-        FolderRole.Sent -> ActionBarLayout(listOf(Forward), FollowUp).takeIf { this == ActionBarPlace.Message }
+        MailboxRole.Junk -> cleanupBar(NotSpam)
+        MailboxRole.Trash -> cleanupBar(Restore)
+        MailboxRole.Sent -> ActionBarLayout(listOf(Forward), FollowUp).takeIf { this == ActionBarPlace.Message }
+        MailboxRole.Inbox, MailboxRole.Drafts, MailboxRole.Archive -> null
     }
 
 /** Spam and Trash: messages leave with [primary] or for good, and the list can be emptied. */
@@ -50,7 +38,7 @@ private fun ActionBarPlace.cleanupBar(primary: MailAction): ActionBarLayout? =
  */
 fun MailBehavior.barLayout(
     place: ActionBarPlace,
-    role: FolderRole?,
+    role: MailboxRole?,
 ): ActionBarLayout =
     role
         ?.takeIf { actionBarMode == ActionBarMode.Adaptive && savedLayout(place) == place.defaultLayout }

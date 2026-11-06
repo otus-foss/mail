@@ -9,7 +9,9 @@ import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.putObject
-import com.otus.mail.core.mail.replaceMailboxes
+import com.otus.mail.core.mailbox.MailboxList
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.saveMailboxes
 import com.otus.mail.feature.inbox.domain.MailConversation
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -45,7 +47,15 @@ class JmapConversationMessagesTest {
             "Plans",
             "",
             ReceivedAt("2026-10-03", "09:00"),
-            MailLocation("Inbox", "Ada", "ada", "ada@example.org", mailboxId = "a", mailboxIds = setOf("a", "s")),
+            MailLocation(
+                "Inbox",
+                "Ada",
+                "ada",
+                "ada@example.org",
+                mailboxId = "a",
+                mailboxIds = setOf("a", "s"),
+                mailboxRole = MailboxRole.Inbox,
+            ),
             emailId = "r2",
             conversation =
                 MailConversation(
@@ -62,8 +72,11 @@ class JmapConversationMessagesTest {
     fun everyMessageOfTheThreadIsAPageNewestFirstWithoutDrafts() =
         runTest {
             cache.write("ada") {
-                replaceMailboxes(
-                    listOf(MailboxObject("s", "Sent", role = "sent"), MailboxObject("x", "Trash", role = "trash")),
+                saveMailboxes(
+                    MailboxList(
+                        listOf(MailboxObject("s", "Sent", role = "sent"), MailboxObject("x", "Trash", role = "trash")),
+                        state = null,
+                    ),
                 )
             }
             val messages = pages.messages(row)!!

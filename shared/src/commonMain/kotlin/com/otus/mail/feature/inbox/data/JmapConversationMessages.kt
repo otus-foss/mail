@@ -7,16 +7,15 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
-import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.objects
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.mailboxName
 import kotlinx.datetime.TimeZone
 import kotlin.time.Instant
 
@@ -36,12 +35,11 @@ class JmapConversationMessages(
         val loginId = message.location.accountId
         // A supplied message has no server id, so it stands alone.
         val emails = if (message.emailId.isEmpty()) emptyList() else emails(message) ?: return null
-        val mailboxes = cache.mailboxes(loginId)
-        val names = mailboxes.associate { it.id to mailboxName(it.name, it.role) }
+        val mailboxes = Mailboxes(cache).cached(loginId).associateBy { it.id }
         // Deleted and spam mail stay out of the pages, as in the list, unless the row itself is there.
         val hidden =
-            mailboxes
-                .filter { it.role in BIN_ROLES }
+            mailboxes.values
+                .filter { it.isBin }
                 .map { it.id }
                 .toSet()
                 .takeUnless { message.location.mailboxId in it }
@@ -50,7 +48,7 @@ class JmapConversationMessages(
             .filter { it.keywords[DRAFT_KEYWORD] != true }
             .filterNot { it.boxes.isNotEmpty() && hidden.containsAll(it.boxes) }
             .sortedByDescending { Instant.parseOrNull(it.receivedAt) }
-            .map { it.page(message, names) }
+            .map { it.page(message, mailboxes) }
             .ifEmpty { listOf(message.copy(conversation = null)) }
     }
 
@@ -86,10 +84,12 @@ class JmapConversationMessages(
      */
     private fun EmailObject.page(
         row: MailMessage,
-        names: Map<String, String>,
+        mailboxes: Map<String, MailFolder>,
     ): MailMessage {
         val listed = row.location.mailboxId.takeIf { it in boxes } ?: boxes.firstOrNull().orEmpty()
-        val mailbox = if (listed == row.location.mailboxId) row.location.mailbox else names[listed].orEmpty()
+        val inRow = listed == row.location.mailboxId
+        val mailbox = if (inRow) row.location.mailbox else mailboxes[listed]?.mailboxName.orEmpty()
+        val role = if (inRow) row.location.mailboxRole else mailboxes[listed]?.role
         val page =
             toMessage(
                 row.location.accountId,
@@ -99,6 +99,7 @@ class JmapConversationMessages(
                 row.location.accountAddress,
                 listed,
                 sites.known(row.location.accountId),
+                role,
             )
         // The list already found the row sender's photo; pages from the same address reuse it.
         val sender = if (page.sender.address.equals(row.sender.address, ignoreCase = true)) row.sender else page.sender

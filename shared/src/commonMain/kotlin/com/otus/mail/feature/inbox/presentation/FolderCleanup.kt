@@ -1,6 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.FolderRole
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailMessage
 
 /**
@@ -9,9 +9,9 @@ import com.otus.mail.feature.inbox.domain.MailMessage
  */
 class FolderCleanup(
     /** The role of the folder the message is shown in; null for other folders. */
-    val role: (MailMessage) -> FolderRole?,
+    val role: (MailMessage) -> MailboxRole?,
     /** The role every folder the list shows has; null when they differ or have none. */
-    val listRole: () -> FolderRole?,
+    val listRole: () -> MailboxRole?,
     /** Moves a message from Spam to [MoveTarget], its account's inbox. */
     val onNotSpam: (MailMessage, MoveTarget) -> Unit,
     /** Whether the message may be deleted for good from the Spam or Trash folder it is shown in. */
@@ -23,7 +23,7 @@ class FolderCleanup(
 
 /** Deleting every message in the list's [role] folders, [count] of them, for good. */
 class FolderEmptying(
-    val role: FolderRole,
+    val role: MailboxRole,
     val count: Long,
     val run: () -> Unit,
 )

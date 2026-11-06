@@ -3,11 +3,11 @@ package com.otus.mail.feature.folders.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.AccountFolderRules
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.FolderStorageException
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.RuleFailure
 import com.otus.mail.feature.folders.domain.RuleOutcome
 import kotlinx.coroutines.CoroutineScope

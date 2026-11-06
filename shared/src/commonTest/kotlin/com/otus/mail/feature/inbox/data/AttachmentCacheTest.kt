@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.files.InMemoryDownloadFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAttachment
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -179,7 +180,7 @@ class AttachmentCacheTest {
                 "Files",
                 "",
                 ReceivedAt("2026-11-04", "09:00"),
-                MailLocation("Inbox", login),
+                MailLocation("Inbox", login, mailboxRole = MailboxRole.Inbox),
             )
     }
 }

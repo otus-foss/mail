@@ -1,10 +1,12 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class NotificationActionsTest {
-    private val everything = AlertAccount(setOf("inbox", "archive", "trash", "junk"), canSend = true)
+    private val everything =
+        AlertAccount(setOf(MailboxRole.Inbox, MailboxRole.Archive, MailboxRole.Trash, MailboxRole.Junk), canSend = true)
 
     @Test
     fun alertsOfferTrashArchiveAndMarkReadUntilTheUserChooses() {
@@ -26,10 +28,10 @@ class NotificationActionsTest {
 
     @Test
     fun actionsTheAccountCannotRunAreLeftOutAndTheRestKeepTheirOrder() {
-        val inboxOnly = AlertAccount(setOf("inbox"), canSend = false)
+        val inboxOnly = AlertAccount(setOf(MailboxRole.Inbox), canSend = false)
         val chosen = listOf(MailAction.Archive, MailAction.Flag, MailAction.Trash, MailAction.Reply, MailAction.Read)
         assertEquals(listOf(MailAction.Flag, MailAction.Read), chosen.alertButtons(inboxOnly))
-        val noSpam = AlertAccount(setOf("inbox", "trash"), canSend = true)
+        val noSpam = AlertAccount(setOf(MailboxRole.Inbox, MailboxRole.Trash), canSend = true)
         assertEquals(
             listOf(MailAction.Trash, MailAction.Reply),
             listOf(MailAction.Spam, MailAction.Trash, MailAction.Reply).alertButtons(noSpam),

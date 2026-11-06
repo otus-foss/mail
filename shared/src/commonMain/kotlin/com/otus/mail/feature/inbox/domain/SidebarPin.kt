@@ -1,10 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.DRAFTS_ROLE
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.core.mailbox.MailboxRole
 
 /**
  * A mailbox pinned to the sidebar's Pinned section. A pin whose folder no account has, such as
@@ -35,9 +31,9 @@ sealed interface SidebarPin {
 
     /** Each account's folder with [role], such as `sent` (RFC 8621, section 2). */
     data class Role(
-        val role: String,
+        val role: MailboxRole,
     ) : SidebarPin {
-        override val storageValue = "$ROLE_PREFIX$role"
+        override val storageValue = "$ROLE_PREFIX${role.wire}"
     }
 
     /** One of the user's folders, merged across accounts; [key] is its lower-case path. */
@@ -51,7 +47,7 @@ sealed interface SidebarPin {
         /** Inbox, Read later and Conversations, then the system folders in the order the sidebar always listed them. */
         val defaults: List<SidebarPin> =
             listOf(Inbox, ReadLater, Conversations) +
-                listOf(DRAFTS_ROLE, SENT_ROLE, ARCHIVE_ROLE, JUNK_ROLE, TRASH_ROLE).map(::Role) +
+                MailboxRole.combined.map(::Role) +
                 Contacts
 
         /**
@@ -77,7 +73,7 @@ sealed interface SidebarPin {
                 value == ReadLater.storageValue -> ReadLater
                 value == Conversations.storageValue -> Conversations
                 value == Contacts.storageValue -> Contacts
-                value.startsWith(ROLE_PREFIX) -> Role(value.removePrefix(ROLE_PREFIX)).takeIf { it.role.isNotEmpty() }
+                value.startsWith(ROLE_PREFIX) -> MailboxRole.of(value.removePrefix(ROLE_PREFIX))?.let(::Role)
                 value.startsWith(FOLDER_PREFIX) -> folder(value.removePrefix(FOLDER_PREFIX))
                 else -> null
             }

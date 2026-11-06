@@ -7,8 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.CombinedFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.domain.SidebarPin
 import kotlinx.coroutines.flow.dropWhile
@@ -20,16 +20,36 @@ import kotlinx.coroutines.flow.first
  */
 internal fun launchPage(choice: SidebarPin): MailPage =
     when (choice) {
-        SidebarPin.Inbox -> MailPage.Inbox
-        SidebarPin.ReadLater -> MailPage.ReadLater
-        SidebarPin.Conversations -> MailPage.Conversations
-        SidebarPin.Contacts -> MailPage.Contacts
-        is SidebarPin.Role -> combinedPage(choice.role)
-        is SidebarPin.Folder -> MailPage.Shared(choice.key)
-    }
+        SidebarPin.Inbox -> {
+            MailPage.Inbox
+        }
 
-private fun combinedPage(role: String): MailPage =
-    CombinedFolder.entries.firstOrNull { it.role == role }?.let(MailPage::Combined) ?: MailPage.Inbox
+        SidebarPin.ReadLater -> {
+            MailPage.ReadLater
+        }
+
+        SidebarPin.Conversations -> {
+            MailPage.Conversations
+        }
+
+        SidebarPin.Contacts -> {
+            MailPage.Contacts
+        }
+
+        is SidebarPin.Role -> {
+            if (choice.role in
+                MailboxRole.combined
+            ) {
+                MailPage.Combined(choice.role)
+            } else {
+                MailPage.Inbox
+            }
+        }
+
+        is SidebarPin.Folder -> {
+            MailPage.Shared(choice.key)
+        }
+    }
 
 /**
  * The page Mail opens on for [choice] once [accounts] have loaded: the sidebar mailbox's page, or

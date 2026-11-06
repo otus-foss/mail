@@ -8,10 +8,10 @@ import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarMinimized
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.rememberConfirmation
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton
-import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.barLayout
@@ -90,7 +90,7 @@ internal class Minimized(
 internal fun MailBehavior.overflow(
     place: ActionBarPlace,
     offer: (BarButton) -> OfferedAction?,
-    role: FolderRole? = null,
+    role: MailboxRole? = null,
 ): List<OfferedAction> {
     val layout = barLayout(place, role)
     val hidden = if (minimizedBar) layout.secondary else emptyList()

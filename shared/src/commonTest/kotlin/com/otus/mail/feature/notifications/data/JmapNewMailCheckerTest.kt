@@ -6,6 +6,9 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -23,33 +26,6 @@ import kotlin.time.Instant
 class JmapNewMailCheckerTest {
     private val login = ADA_LOGIN
 
-    private class States(
-        var saved: Map<String, String> = emptyMap(),
-    ) : MailStateStore {
-        override fun read() = saved
-
-        override fun write(values: Map<String, String>) {
-            saved = values
-        }
-    }
-
-    private class Alerts(
-        val alerted: Set<AlertedMail> = emptySet(),
-    ) : MailAlerts {
-        val shown = mutableListOf<NewMail>()
-        val cleared = mutableListOf<AlertedMail>()
-
-        override fun showing() = alerted
-
-        override fun show(mail: List<NewMail>) {
-            shown += mail
-        }
-
-        override fun clear(mail: List<AlertedMail>) {
-            cleared += mail
-        }
-    }
-
     private suspend fun check(
         states: States,
         alerts: Alerts = Alerts(),
@@ -57,10 +33,14 @@ class JmapNewMailCheckerTest {
         reply: (String) -> String,
     ): List<NewMail> {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike(session, reply)), store), states)
-            .check(alerts)
+        checker(JmapConnections(JmapClient(stalwartLike(session, reply)), store), states).check(alerts)
         return alerts.shown
     }
+
+    private fun checker(
+        connections: JmapConnections,
+        states: States,
+    ) = JmapNewMailChecker(connections, Mailboxes(InMemoryMailCache()), states)
 
     @Test
     fun theFirstCheckOnlyRemembersTheState() =
@@ -99,7 +79,7 @@ class JmapNewMailCheckerTest {
             assertEquals(
                 listOf(
                     NewMail("ada", "Ada", "m1", "Grace", "Hello m1", "Preview", Instant.parse("2026-10-14T08:00:00Z"))
-                        .copy(mailboxRoles = setOf("inbox", "archive")),
+                        .copy(mailboxRoles = setOf(MailboxRole.Inbox, MailboxRole.Archive)),
                 ),
                 shown,
             )
@@ -182,8 +162,7 @@ class JmapNewMailCheckerTest {
                     override fun logins(): List<JmapLogin> = throw LoginStoreException("locked")
                 }
             val alerts = Alerts()
-            JmapNewMailChecker(JmapConnections(JmapClient(stalwartLike()), locked), states)
-                .check(alerts)
+            checker(JmapConnections(JmapClient(stalwartLike()), locked), states).check(alerts)
             assertEquals(emptyList(), alerts.shown)
             assertEquals(mapOf("ada" to "e1"), states.saved)
         }

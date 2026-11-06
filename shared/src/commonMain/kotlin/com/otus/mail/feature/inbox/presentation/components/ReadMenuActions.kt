@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.shared.feedback.components.ToastMessage
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -9,7 +10,6 @@ import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.domain.withContent
 import com.otus.mail.feature.inbox.domain.withFlag
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadSheet
@@ -143,7 +143,7 @@ internal class ReadMenuActions(
      */
     private fun deletePage(page: MailMessage) {
         val changes = read.services.changes ?: return
-        val target = actions?.shortcutTarget(page, FolderShortcut.Trash) ?: return
+        val target = actions?.shortcutTarget(page, MailboxRole.Trash) ?: return
         val index = state.pages.indexOfFirst { it.id == page.id }
         state.drop(page.id)
         changes.trash(row, page, target) { state.restore(page, index) }

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -10,7 +11,7 @@ class InboxPillTest {
             listOf(
                 InboxPill.ReadLater,
                 InboxPill.Filter.Flagged,
-                InboxPill.Role("archive"),
+                InboxPill.Role(MailboxRole.Archive),
                 InboxPill.Folder("work/ada", "M7"),
             )
         assertEquals(pills, InboxPill.decode(InboxPill.encode(pills)))

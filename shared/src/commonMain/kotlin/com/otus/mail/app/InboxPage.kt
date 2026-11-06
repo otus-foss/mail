@@ -4,8 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
-import com.otus.mail.feature.folders.domain.CombinedFolder
-import com.otus.mail.feature.inbox.domain.INBOX_MAILBOX
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -49,11 +48,11 @@ internal fun InboxPage(
         onRefresh = states::refreshInbox,
         context =
             InboxContext(
-                defaultSearch = InboxSearch(mailboxes = contents.mailboxNames().map { MailboxScope(null, it) }.toSet()),
+                defaultSearch = InboxSearch(mailboxes = contents.mailboxScopes().toSet()),
                 pills = pills,
                 mailboxSearch =
                     MailboxSearch(
-                        states.mailboxNames(),
+                        states.searchMailboxes(),
                         states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
                         feed::show,
                     ),
@@ -81,17 +80,15 @@ internal fun InboxContents.mailScope(): MailScope =
     if (roles.size == 1 && !ownFolders) {
         MailScope.Inbox
     } else {
-        MailScope.Roles(roles.associateWith(::roleName), ownFolders)
+        MailScope.Roles(roles, ownFolders)
     }
 
 /**
  * The names the page's messages are filed under, which its default search shows. Own folders have
  * the user's names, so with them on the search starts from every mailbox the page loaded.
  */
-private fun InboxContents.mailboxNames(): List<String> = if (ownFolders) emptyList() else roles.map(::roleName)
-
-private fun roleName(role: String): String =
-    CombinedFolder.entries.firstOrNull { it.role == role }?.title ?: INBOX_MAILBOX
+private fun InboxContents.mailboxScopes(): List<MailboxScope> =
+    if (ownFolders) emptyList() else roles.map { MailboxScope(null, it.title, it) }
 
 /**
  * What pulling the Inbox's control panel down shows: the modules picked in settings, and Jump to

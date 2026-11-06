@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -9,7 +10,7 @@ class SidebarPinTest {
         val pins =
             listOf(
                 SidebarPin.Folder(listOf("clients, 2026", "a/b 100%")),
-                SidebarPin.Role("sent"),
+                SidebarPin.Role(MailboxRole.Sent),
                 SidebarPin.ReadLater,
                 SidebarPin.Conversations,
             )

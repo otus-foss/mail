@@ -1,6 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.BIN_ROLES
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.storage.StringMapStore
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
@@ -114,7 +115,7 @@ class ReadLaterFolders(
 private fun AccountFolders.readLaterIn(saved: Map<String, String>): MailFolder? =
     saved[accountId]
         ?.let(::folder)
-        ?.takeIf { folder -> folder.isCustom && ancestors(folders, folder).none { it.role in BIN_ROLES } }
+        ?.takeIf { folder -> folder.isCustom && !inBin(folder) }
         ?: folders.firstOrNull {
             it.isCustom && it.parentId == null &&
                 it.name.equals(READ_LATER_NAME, ignoreCase = true)

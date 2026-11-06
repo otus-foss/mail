@@ -8,7 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.folders.domain.subtreeIds
+import com.otus.mail.core.mailbox.subtreeIds
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.QuickFacet
@@ -80,7 +80,6 @@ internal fun rememberPageFilters(
                     states.pageFilters.keep(page, it)
                     saved = it
                 },
-                onOpen = states.filterLookups::beginCounting,
                 findPeople = states.filterLookups::findPeople,
             )
         }

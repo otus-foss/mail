@@ -1,12 +1,12 @@
 package com.otus.mail.feature.folders.presentation
 
 import com.otus.designsystem.shared.reorder.components.TreeDropTarget
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.FolderNode
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderNode
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.feature.folders.domain.SharedBy
 import com.otus.mail.feature.folders.domain.SharedPlacement
-import com.otus.mail.feature.folders.domain.folderTree
 
 /**
  * A folder row in Settings › Folders & rules. [sharedBy] says who shares the mailbox, both for a mailbox
@@ -37,7 +37,7 @@ fun AccountFolders.folderRows(
     val sharing = here.filter { it.underOwner }.associate { it.folder.id to it.sharedBy }
     val listedHere = here.filterNot { it.underOwner }.map { it.folder.sharedIn to it.folder.id }
     // Read later is one list across accounts that its switch manages, so no account lists its folder here.
-    val own = folderTree { !it.isCustom || it.id == readLaterId }.map { FolderListRow(it, sharing[it.folder.id]) }
+    val own = folderTree { !isOwnFolder(it) }.map { FolderListRow(it, sharing[it.folder.id]) }
     val shared =
         shared.flatMap { group ->
             val folders = group.folders.filter { !allAccounts || (it.sharedIn to it.id) in listedHere }

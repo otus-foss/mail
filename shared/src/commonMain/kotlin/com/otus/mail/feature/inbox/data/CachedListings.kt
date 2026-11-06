@@ -6,13 +6,12 @@ import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.MailCache
-import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.ThreadObject
-import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.objects
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
@@ -21,7 +20,7 @@ import kotlin.time.Instant
 
 /** The list of each mailbox of [scope] among [mailboxes] that [query] keeps, with its [conditions]. */
 internal fun MailScope.listingQueries(
-    mailboxes: List<MailboxObject>,
+    mailboxes: List<MailFolder>,
     loginId: String,
     query: MailQuery,
     conditions: List<JmapFilter>,
@@ -46,7 +45,7 @@ internal suspend fun MailCache.cachedPages(
     serverSite: String,
     check: ((ListedRow) -> Boolean)? = null,
 ): List<ListingPage<ListedRow>> {
-    val mailboxes = mailboxes(login.id)
+    val mailboxes = Mailboxes(this).cached(login.id)
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
     val unfiltered = chosen.map { ListingQuery(it.id, mailFilter(listOf(it.id), emptyList()), query.filters.sort) }
@@ -59,15 +58,15 @@ internal suspend fun MailCache.cachedPages(
     val view =
         ThreadView(
             shown = chosen.map { it.id }.toSet(),
-            trashAndJunk = mailboxes.filter { it.role in BIN_ROLES }.map { it.id }.toSet(),
-            sent = mailboxes.filter { it.role == SENT_ROLE }.map { it.id }.toSet(),
+            trashAndJunk = mailboxes.filter { it.isBin }.map { it.id }.toSet(),
+            sent = mailboxes.filter { it.role == MailboxRole.Sent }.map { it.id }.toSet(),
             own = query.addresses[login.id].orEmpty() + login.username,
         )
     return try {
         jmapDecoding {
             chosen.indices.mapNotNull { index ->
                 val mailbox = chosen[index]
-                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone, serverSite)
+                val list = ListedMailbox(login, mailbox, scope.nameOf(mailbox), view, zone, serverSite)
                 val listing = listings[queries[index].key]
                 when {
                     listing != null -> held.page(listing, list)
@@ -90,7 +89,7 @@ internal class ListedRow(
 /** The mailbox a list shows, and what its rows are mapped with. */
 private class ListedMailbox(
     val login: JmapLogin,
-    val mailboxId: String,
+    val mailbox: MailFolder,
     val name: String,
     val view: ThreadView,
     val zone: TimeZone,
@@ -119,13 +118,21 @@ private class HeldMail(
         id: String,
         list: ListedMailbox,
     ): ListedRow? {
-        val row = rows[id]?.takeIf { list.mailboxId in it.boxes } ?: return null
+        val row = rows[id]?.takeIf { list.mailbox.id in it.boxes } ?: return null
         val thread = threads[row.threadId]?.emailIds.orEmpty().mapNotNull { members[it] }
         val login = list.login
         val message =
             row
-                .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId, list.serverSite)
-                .inConversation(row, thread, list.mailboxId, list.view, list.zone)
+                .toMessage(
+                    login.id,
+                    login.name,
+                    list.name,
+                    list.zone,
+                    login.username,
+                    list.mailbox.id,
+                    list.serverSite,
+                    list.mailbox.role,
+                ).inConversation(row, thread, list.mailbox.id, list.view, list.zone)
         return ListedRow(message, Instant.parse(row.receivedAt))
     }
 }

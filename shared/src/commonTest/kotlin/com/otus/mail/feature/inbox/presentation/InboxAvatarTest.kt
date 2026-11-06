@@ -8,6 +8,7 @@ import com.otus.avatar.AvatarOrigin
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
 import com.otus.avatar.StoredAvatar
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -233,7 +234,8 @@ class InboxAvatarTest {
                 AvatarService(
                     photoSource { request, _ -> image.takeIf { request.email == "me@work.example" } },
                 )
-            val location = MailLocation("Inbox", "Work", accountAddress = "me@work.example")
+            val location =
+                MailLocation("Inbox", "Work", accountAddress = "me@work.example", mailboxRole = MailboxRole.Inbox)
             val source =
                 object : MailSource {
                     override suspend fun messages(scope: MailScope) =
@@ -252,6 +254,6 @@ class InboxAvatarTest {
             "Subject",
             "Body",
             ReceivedAt("2026-10-05", "09:00"),
-            MailLocation("Inbox", "Work"),
+            MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
         )
 }

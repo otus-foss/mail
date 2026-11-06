@@ -1,9 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.core.mailbox.MailboxRole
 
 /**
  * What the Inbox page lists besides the inbox itself: Archive, the user's own folders, Spam, and
@@ -17,14 +14,14 @@ data class InboxContents(
     val archive: Boolean = false,
     val ownFolders: Boolean = false,
 ) {
-    /** The folder roles the page loads (RFC 8621, section 2), the inbox first. */
-    val roles: List<String>
+    /** The folder roles the page loads, the inbox first. */
+    val roles: List<MailboxRole>
         get() =
             buildList {
-                add(INBOX_ROLE)
-                if (archive) add(ARCHIVE_ROLE)
-                if (spam) add(JUNK_ROLE)
-                if (trash) add(TRASH_ROLE)
+                add(MailboxRole.Inbox)
+                if (archive) add(MailboxRole.Archive)
+                if (spam) add(MailboxRole.Junk)
+                if (trash) add(MailboxRole.Trash)
             }
 
     companion object {

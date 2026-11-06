@@ -2,7 +2,7 @@ package com.otus.mail.feature.folders.presentation.components
 
 import com.otus.designsystem.mail.folders.components.RuleChipLine
 import com.otus.designsystem.shared.controls.elements.UiAction
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.presentation.FolderDrop
 
 /**

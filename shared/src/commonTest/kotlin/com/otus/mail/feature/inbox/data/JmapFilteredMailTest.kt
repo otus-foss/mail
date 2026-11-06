@@ -81,7 +81,7 @@ class JmapFilteredMailTest {
 
     @OptIn(ExperimentalAtomicApi::class)
     @Test
-    fun countsReadEachLoginsMailboxesOncePerSession() =
+    fun countsReadEachLoginsMailboxesOnceAndThenKeepThem() =
         runTest {
             // The fake server answers both logins at once, on different threads.
             val mailboxLoads = AtomicInt(0)
@@ -89,13 +89,9 @@ class JmapFilteredMailTest {
                 source { body ->
                     if ("Mailbox/get" in body) MAILBOX_REPLY.also { mailboxLoads.incrementAndFetch() } else COUNT
                 }
-            source.beginCounting()
             source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Unread)))
             source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Read)))
             assertEquals(2, mailboxLoads.load(), "One per login, not one per count")
-            source.beginCounting()
-            source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Read)))
-            assertEquals(4, mailboxLoads.load(), "A new session reads them again")
         }
 
     @Test

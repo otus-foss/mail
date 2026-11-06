@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -27,6 +28,7 @@ internal fun EmailObject.toMessage(
     accountAddress: String = "",
     mailboxId: String = "",
     serverSite: String = "",
+    mailboxRole: MailboxRole? = null,
 ): MailMessage {
     val shortText = preview.displayText()
     return MailMessage(
@@ -43,6 +45,7 @@ internal fun EmailObject.toMessage(
                 accountAddress,
                 mailboxId = mailboxId,
                 mailboxIds = mailboxIds.filterValues { it }.keys,
+                mailboxRole = mailboxRole,
             ),
         attributes =
             MailAttributes(

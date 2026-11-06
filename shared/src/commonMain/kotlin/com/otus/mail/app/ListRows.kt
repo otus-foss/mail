@@ -7,8 +7,8 @@ import com.otus.accounts.domain.ownAddresses
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderKey
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.key
 import com.otus.mail.feature.folders.presentation.NUDGE_COLORS
 import com.otus.mail.feature.inbox.domain.FolderKind

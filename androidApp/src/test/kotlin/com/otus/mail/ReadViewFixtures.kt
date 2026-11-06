@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.FolderChange
@@ -61,14 +62,14 @@ internal object ReadViewFixtures {
 
     val folders =
         listOf(
-            MessageFolder("in", listOf("Inbox"), role = "inbox"),
+            MessageFolder("in", listOf("Inbox"), role = MailboxRole.Inbox),
             MessageFolder("cl", listOf("Clients"), color = "Blue"),
             MessageFolder("fn", listOf("Finance"), color = "Yellow"),
             MessageFolder("fi", listOf("Finance", "Invoices"), color = "Yellow"),
             MessageFolder("fr", listOf("Freelancing"), color = "Pink"),
             MessageFolder("ar", listOf("Archive 2025"), color = "Green"),
-            MessageFolder("sp", listOf("Junk"), role = "junk"),
-            MessageFolder("tr", listOf("Trash"), role = "trash"),
+            MessageFolder("sp", listOf("Junk"), role = MailboxRole.Junk),
+            MessageFolder("tr", listOf("Trash"), role = MailboxRole.Trash),
         )
 
     private fun message(
@@ -84,7 +85,15 @@ internal object ReadViewFixtures {
         subject,
         body,
         received,
-        MailLocation("Inbox", "Alex", "acc", "alex@otus.example", mailboxId = "in", mailboxIds = folders),
+        MailLocation(
+            "Inbox",
+            "Alex",
+            "acc",
+            "alex@otus.example",
+            mailboxId = "in",
+            mailboxIds = folders,
+            mailboxRole = MailboxRole.Inbox,
+        ),
         emailId = id,
         to = team.filter { it != from },
         preview = body.lineSequence().firstOrNull { it.isNotBlank() && it != "Hi all," }.orEmpty(),

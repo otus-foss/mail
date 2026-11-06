@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
+
 /**
  * A pill in the inbox row. A [Filter] narrows the mail shown; a [FolderPill] shows a folder's mail
  * in its place. Folder pills find their folders by role or server id, so renaming one keeps them.
@@ -27,9 +29,9 @@ sealed interface InboxPill {
 
     /** Each account's folder with [role], such as `archive` (RFC 8621, section 2). */
     data class Role(
-        val role: String,
+        val role: MailboxRole,
     ) : FolderPill {
-        override val storageValue = "$ROLE_PREFIX$role"
+        override val storageValue = "$ROLE_PREFIX${role.wire}"
     }
 
     /** One of the user's own folders: [accountId] is the login and [folderId] the server's mailbox id. */
@@ -58,7 +60,7 @@ sealed interface InboxPill {
         fun fromStorageValue(value: String): InboxPill? =
             when {
                 value == ReadLater.storageValue -> ReadLater
-                value.startsWith(ROLE_PREFIX) -> Role(value.removePrefix(ROLE_PREFIX)).takeIf { it.role.isNotEmpty() }
+                value.startsWith(ROLE_PREFIX) -> MailboxRole.of(value.removePrefix(ROLE_PREFIX))?.let(::Role)
                 value.startsWith(FOLDER_PREFIX) -> folderFrom(value)
                 else -> Filter.entries.firstOrNull { it.storageValue == value }
             }

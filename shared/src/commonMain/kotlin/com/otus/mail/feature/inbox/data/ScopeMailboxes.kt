@@ -1,11 +1,10 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.SENT_ROLE
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.mailboxName
 
 /** Whether this scope reads mail of the login with [loginId]. */
 internal fun MailScope.reads(loginId: String): Boolean =
@@ -26,12 +25,12 @@ private fun MailScope.Mailboxes.includesLogin(loginId: String): Boolean =
  * own, because a thread the user started may have no email anywhere else.
  */
 internal fun MailScope.chosen(
-    mailboxes: List<MailboxObject>,
+    mailboxes: List<MailFolder>,
     loginId: String,
     query: MailQuery,
-): List<MailboxObject> {
+): List<MailFolder> {
     val ids = query.folderIds[loginId]
-    val sent = mailboxes.filter { it.role == SENT_ROLE }
+    val sent = mailboxes.filter { it.role == MailboxRole.Sent }
     return when {
         ids != null -> mailboxes.filter { it.id in ids }
         query.filters.has(QuickFacet.AwaitingReply) -> (scoped(mailboxes, loginId) + sent).distinctBy { it.id }
@@ -40,12 +39,12 @@ internal fun MailScope.chosen(
 }
 
 private fun MailScope.scoped(
-    mailboxes: List<MailboxObject>,
+    mailboxes: List<MailFolder>,
     loginId: String,
-): List<MailboxObject> =
+): List<MailFolder> =
     when (this) {
         is MailScope.Role -> mailboxes.filter { it.role == role }
-        is MailScope.Roles -> mailboxes.filter { it.role in names || (ownFolders && it.role == null) }
+        is MailScope.Roles -> mailboxes.filter { it.role in roles || (ownFolders && it.isCustom) }
         MailScope.AllMailboxes -> mailboxes
         is MailScope.Mailboxes -> mailboxes.filter { includesMailbox(it, loginId) }
         is MailScope.Folder -> mailboxes.filter { it.id == folderId }
@@ -53,18 +52,17 @@ private fun MailScope.scoped(
     }
 
 private fun MailScope.Mailboxes.includesMailbox(
-    mailbox: MailboxObject,
+    mailbox: MailFolder,
     loginId: String,
 ): Boolean =
     mailboxes.isEmpty() ||
         mailboxes.any {
-            it.name == mailboxName(mailbox.name, mailbox.role) && (it.account == null || it.account == loginId)
+            it.holds(mailbox.mailboxName, mailbox.role) && (it.account == null || it.account == loginId)
         }
 
-/** The name [mailbox]'s messages are filed under in this scope. */
-internal fun MailScope.nameOf(mailbox: MailboxObject): String =
-    when (this) {
-        is MailScope.Role -> if (mailbox.role == role) name else mailboxName(mailbox.name, mailbox.role)
-        is MailScope.Roles -> names[mailbox.role] ?: mailboxName(mailbox.name, mailbox.role)
-        else -> mailboxName(mailbox.name, mailbox.role)
-    }
+/** The name [mailbox]'s messages are filed under in this scope: a role scope's title for its roles. */
+internal fun MailScope.nameOf(mailbox: MailFolder): String =
+    mailbox.role
+        ?.takeIf { (this is MailScope.Role && it == role) || (this is MailScope.Roles && it in roles) }
+        ?.title
+        ?: mailbox.mailboxName

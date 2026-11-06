@@ -6,6 +6,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -52,7 +53,7 @@ class JmapMessageBodiesTest {
             "Plans",
             "Short preview",
             ReceivedAt("2026-10-04", "09:30"),
-            MailLocation("Inbox", "Ada", "ada"),
+            MailLocation("Inbox", "Ada", "ada", mailboxRole = MailboxRole.Inbox),
             emailId = "e1",
             preview = "Short preview",
         )

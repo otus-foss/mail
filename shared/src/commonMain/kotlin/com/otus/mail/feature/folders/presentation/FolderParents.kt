@@ -1,8 +1,8 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.ancestors
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.ancestors
 import com.otus.mail.feature.folders.domain.folderNameProblem
 import com.otus.mail.feature.folders.domain.moveTargets
 

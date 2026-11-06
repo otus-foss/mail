@@ -1,6 +1,8 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.BIN_ROLES
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.folderTree
 
 /**
  * The user's own folders of every account, merged by path. Folders whose names match from the top
@@ -42,11 +44,8 @@ private class FolderPath(
 )
 
 private fun AccountFolders.ownFolderPaths(): List<FolderPath> {
-    val kept =
-        folders.filterNot { folder ->
-            (listOf(folder) + ancestors(folders, folder)).any { it.role in BIN_ROLES }
-        }
-    val nodes = folderTree(kept, readLaterId) { !it.isCustom || it.id == readLaterId }
+    val kept = folders.filterNot(::inBin)
+    val nodes = folderTree(kept, readLaterId) { !isOwnFolder(it) }
     // Parents come first, so a folder's path is the open path cut to its depth, plus its name.
     val open = ArrayList<String>()
     return nodes.map { node ->

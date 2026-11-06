@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.stalwartLike
@@ -37,12 +39,12 @@ class JmapKnownPeopleTest {
                 requests += body
                 when {
                     "ContactCard/query" in body -> CARDS
-                    "Mailbox/query" in body -> SENT_FOLDER
+                    "Mailbox/get" in body -> SENT_FOLDER
                     "Email/query" in body -> SENT_QUERY
                     else -> sentMail(body)
                 }
             }
-        return JmapKnownPeople(JmapConnections(JmapClient(engine), store))
+        return JmapKnownPeople(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache()))
     }
 
     @Test
@@ -86,7 +88,8 @@ class JmapKnownPeopleTest {
             ["ContactCard/query", {"queryState": "q", "ids": ["c1"]}, "c0"],
             ["ContactCard/get", {"state": "c", "list": [
               {"id": "c1", "name": {"full": "Grace"}, "emails": {"e": {"address": "Grace@Example.org"}}}]}, "c1"]]}"""
-        const val SENT_FOLDER = """{"methodResponses": [["Mailbox/query", {"queryState": "q", "ids": ["s"]}, "c0"]]}"""
+        const val SENT_FOLDER = """{"methodResponses": [["Mailbox/get", {"state": "m", "list": [
+            {"id": "s", "role": "sent"}]}, "c0"]]}"""
         const val SENT_QUERY =
             """{"methodResponses": [["Email/query", {"queryState": "q", "ids": ["m1", "m2"]}, "c0"]]}"""
         const val M1 = """{"id": "m1", "receivedAt": "2026-10-04T09:00:00Z",

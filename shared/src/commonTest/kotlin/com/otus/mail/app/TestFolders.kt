@@ -1,6 +1,6 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import kotlinx.coroutines.CoroutineScope
 

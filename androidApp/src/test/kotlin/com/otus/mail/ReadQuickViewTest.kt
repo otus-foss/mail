@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.RowLook
@@ -38,9 +38,9 @@ class ReadQuickViewTest {
     private val fixtures = ReadViewFixtures
     private val targets =
         listOf(
-            MoveTarget("in", "Inbox", FolderShortcut.Inbox),
-            MoveTarget("ar", "Archive", FolderShortcut.Archive),
-            MoveTarget("tr", "Trash", FolderShortcut.Trash),
+            MoveTarget("in", "Inbox", MailboxRole.Inbox),
+            MoveTarget("ar", "Archive", MailboxRole.Archive),
+            MoveTarget("tr", "Trash", MailboxRole.Trash),
             MoveTarget("pr", "Projects", own = true),
         )
 

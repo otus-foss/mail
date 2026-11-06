@@ -6,8 +6,8 @@ import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.resources.symbol_edit
 import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.shared.controls.elements.UiAction
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.presentation.FolderDialog
 import com.otus.mail.feature.folders.presentation.canMove
 import com.otus.mail.feature.folders.presentation.deletable

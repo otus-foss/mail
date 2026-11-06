@@ -2,9 +2,9 @@ package com.otus.mail.app
 
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderColors
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.readColors
 import com.otus.mail.feature.folders.domain.writeColors
 import com.otus.mail.testing.MemoryMapStore

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.data.BlockFolder
 import com.otus.mail.feature.folders.data.RuleBlock
 import com.otus.mail.feature.folders.data.blockText
@@ -11,7 +12,6 @@ import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.RuleFailure

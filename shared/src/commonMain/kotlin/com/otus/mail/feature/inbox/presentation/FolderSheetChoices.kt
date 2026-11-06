@@ -1,7 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.core.mail.DRAFTS_ROLE
-import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MessageFolder
 
 /**
@@ -19,9 +18,9 @@ data class FolderSheetChoices(
  * Drafts stay out, since mail is not added to them.
  */
 fun folderSheetChoices(folders: List<MessageFolder>): FolderSheetChoices {
-    val listed = folders.filter { it.role != DRAFTS_ROLE }
+    val listed = folders.filter { it.role != MailboxRole.Drafts }
     val (system, own) = listed.partition { it.role != null || it.readLater }
-    val (inbox, rest) = system.partition { it.role == INBOX_ROLE }
+    val (inbox, rest) = system.partition { it.role == MailboxRole.Inbox }
     val (readLater, others) = rest.partition { it.readLater }
     return FolderSheetChoices(inbox + readLater + others, own)
 }

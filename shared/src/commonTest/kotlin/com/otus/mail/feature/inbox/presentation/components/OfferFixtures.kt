@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -37,7 +38,7 @@ internal fun offerMessage(
     "Subject",
     "Body",
     ReceivedAt("2026-10-01", "12:00"),
-    MailLocation("Inbox", accountId, accountId, mailboxId = "inbox"),
+    MailLocation("Inbox", accountId, accountId, mailboxId = "inbox", mailboxRole = MailboxRole.Inbox),
     MailAttributes(unread = unread),
     emailId = "m$id",
 )

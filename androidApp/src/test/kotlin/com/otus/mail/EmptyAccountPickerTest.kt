@@ -18,6 +18,7 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxPills
@@ -43,7 +44,11 @@ class EmptyAccountPickerTest {
         val context =
             InboxContext(
                 pills = pills,
-                mailboxSearch = MailboxSearch(listOf("Inbox", "Receipts"), accounts) { loaded += it },
+                mailboxSearch =
+                    MailboxSearch(listOf(MailboxScope.Inbox, MailboxScope(null, "Receipts")), accounts) {
+                        loaded +=
+                            it
+                    },
             )
         compose.runOnUiThread {
             compose.activity.setContent { OtusTheme { InboxScreen(emptyList(), context = context) } }

@@ -29,7 +29,7 @@ sealed interface FilterCount {
  * [draft] while it is open, which the panel and its popups edit. Opening copies the applied
  * filters into the draft; Show applies the draft, and closing drops it. Every
  * draft change counts its messages again with [counter] in [scope], [COUNT_DELAY_MILLIS] after
- * the last change, cancelling a count still running; [onOpen] starts each panel session's counts.
+ * the last change, cancelling a count still running.
  * [onApplied] hears every new applied value, so the page can load it and keep it. [senders] and
  * [recipients] search people for the panel's From and To lines with [findPeople].
  */
@@ -38,7 +38,6 @@ class InboxFilterState(
     private val scope: CoroutineScope? = null,
     private val counter: suspend (InboxFilters) -> Long? = { null },
     private val onApplied: (InboxFilters) -> Unit = {},
-    private val onOpen: () -> Unit = {},
     findPeople: suspend (PeopleField, String) -> List<FoundPerson> = { _, _ -> emptyList() },
 ) {
     var applied by mutableStateOf(applied)
@@ -60,7 +59,6 @@ class InboxFilterState(
     private var counting: Job? = null
 
     fun open() {
-        onOpen()
         draft = applied
         recount()
     }

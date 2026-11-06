@@ -1,6 +1,12 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderLimits
+import com.otus.mail.core.mailbox.FolderRights
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.SharedMailboxes
+import com.otus.mail.core.mailbox.folderTree
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -10,7 +16,7 @@ class FolderPlacementTest {
         id: String,
         order: Long,
         parentId: String? = null,
-        role: String? = null,
+        role: MailboxRole? = null,
         rights: FolderRights = FolderRights(),
     ) = MailFolder("ada", id, id, parentId, role, order, rights = rights)
 
@@ -21,7 +27,7 @@ class FolderPlacementTest {
 
     private val spaced =
         account(
-            folder("inbox", 0, role = INBOX_ROLE),
+            folder("inbox", 0, role = MailboxRole.Inbox),
             folder("A", 10),
             folder("B", 20),
             folder("C", 30),
@@ -70,7 +76,7 @@ class FolderPlacementTest {
     fun refusedPlacesAreNull() {
         val account =
             account(
-                folder("inbox", 0, role = INBOX_ROLE),
+                folder("inbox", 0, role = MailboxRole.Inbox),
                 folder("later", 1),
                 folder("A", 10),
                 folder("A1", 10, parentId = "A"),

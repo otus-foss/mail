@@ -8,23 +8,21 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
-import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.core.mail.mailboxes
-import com.otus.mail.core.mail.replaceMailboxes
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.FolderFailure
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.mailbox.SharedMailboxes
+import com.otus.mail.core.mailbox.toFolder
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.SharedMailboxes
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -34,68 +32,42 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * Folders through `Mailbox/get` and `Mailbox/set` (RFC 8621, section 2). Logins load in parallel
+ * Folders through [Mailboxes] and `Mailbox/set` (RFC 8621, section 2). Logins load in parallel
  * and fail alone. Each login also loads the mailboxes other users share with it, from every session
  * account with mail and `isPersonal: false` (RFC 8620, section 2); a shared account that fails is
- * left out. Each login's own mailboxes replace the ones in [cache], which the inbox shares.
+ * left out. A change shows once the folders load again, which reads it as a `Mailbox` change.
  */
 class JmapFolderRepository(
     private val connections: JmapConnections,
-    private val cache: MailCache = InMemoryMailCache(),
+    cache: MailCache = InMemoryMailCache(),
 ) : FolderRepository {
+    private val mailboxes = Mailboxes(cache)
+
     override suspend fun accounts(): List<AccountFolders> =
         coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
 
     override suspend fun cachedAccounts(): List<AccountFolders> =
         folderStorage { connections.savedLogins() }.map { login ->
-            cache.withAccount(login.id) { accountCache ->
-                AccountFolders(login.id, login.name, accountCache.mailboxes(login.id).map { it.toFolder(login.id) })
-            }
+            AccountFolders(login.id, login.name, mailboxes.cached(login.id))
         }
 
     private suspend fun load(login: JmapLogin): AccountFolders =
         try {
-            cache.withAccount(login.id) { accountCache ->
-                val account = connections.mailAccount(login)
-                coroutineScope {
-                    val shared =
-                        account.sharedAccountIds().map {
-                            async {
-                                account.loadShared(it) { id -> accountCache.folders(account, id) }
-                            }
-                        }
-                    AccountFolders(
-                        login.id,
-                        login.name,
-                        accountCache.folders(account, account.id),
-                        limits(account.mailCapability(account.id)),
-                        mailboxOwner = account.ownerName(account.id),
-                        shared = shared.awaitAll().filterNotNull(),
-                    )
-                }
+            val account = connections.mailAccount(login)
+            coroutineScope {
+                val shared = account.sharedAccountIds().map { async { account.loadShared(it) } }
+                AccountFolders(
+                    login.id,
+                    login.name,
+                    jmapDecoding { mailboxes.sync(account) },
+                    limits(account.mailCapability(account.id)),
+                    mailboxOwner = account.ownerName(account.id),
+                    shared = shared.awaitAll().filterNotNull(),
+                )
             }
         } catch (error: JmapException) {
             AccountFolders(login.id, login.name, failure = error.toFolderFailure())
         }
-
-    private suspend fun MailCache.folders(
-        account: MailAccount,
-        jmapAccountId: String,
-    ): List<MailFolder> {
-        val mailboxes =
-            account.connection.call(GetMethod(MailboxType, jmapAccountId, properties = MAILBOX_PROPERTIES))
-        val sharedIn = jmapAccountId.takeIf { it != account.id }
-        val folders = jmapDecoding { mailboxes.list.map { it.toFolder(account.login.id, sharedIn) } }
-        // Only the login's own mailboxes: the cache keeps one set per login, which the inbox reads too.
-        if (sharedIn == null) {
-            try {
-                write(account.login.id) { replaceMailboxes(mailboxes.list) }
-            } catch (expected: CacheStorageException) {
-                // Fresh server folders remain usable when their local copy cannot be saved.
-            }
-        }
-        return folders
-    }
 
     override suspend fun create(
         accountId: String,
@@ -189,15 +161,14 @@ private fun MailAccount.mailCapability(jmapAccountId: String): JsonObject? =
 
 private fun String?.json(): JsonElement = this?.let(::JsonPrimitive) ?: JsonNull
 
-private suspend fun MailAccount.loadShared(
-    jmapAccountId: String,
-    folders: suspend (jmapAccountId: String) -> List<MailFolder>,
-): SharedMailboxes? =
+/** The mailboxes [jmapAccountId] shares, read whole each time: the cache keeps only the login's own. */
+private suspend fun MailAccount.loadShared(jmapAccountId: String): SharedMailboxes? =
     try {
+        val mailboxes = connection.call(GetMethod(MailboxType, jmapAccountId, properties = MAILBOX_PROPERTIES))
         SharedMailboxes(
             jmapAccountId,
             ownerName(jmapAccountId),
-            folders(jmapAccountId),
+            jmapDecoding { mailboxes.list.map { it.toFolder(login.id, sharedIn = jmapAccountId) } },
             limits(mailCapability(jmapAccountId)),
         )
     } catch (expected: JmapException) {

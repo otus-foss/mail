@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
@@ -161,7 +162,7 @@ class InboxFiltersTest {
     ): MailMessage {
         val sender = MailSender("", "$id@example.org")
         val received = ReceivedAt("2026-10-18", "10:00")
-        return MailMessage(id, sender, "", "", received, MailLocation("Inbox", "Ada"))
+        return MailMessage(id, sender, "", "", received, MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox))
             .copy(
                 conversation =
                     MailConversation(

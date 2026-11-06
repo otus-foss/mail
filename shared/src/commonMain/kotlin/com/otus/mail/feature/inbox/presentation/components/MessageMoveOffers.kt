@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 
@@ -13,7 +13,7 @@ import com.otus.mail.feature.inbox.presentation.MoveTarget
  */
 internal fun MessageActions.offerFiling(
     messages: List<MailMessage>,
-    shortcut: FolderShortcut,
+    shortcut: MailboxRole,
     action: BarButton,
 ): OfferedAction? = offerMoves(messages, action.label, action.label, action) { shortcutTarget(it, shortcut) }
 

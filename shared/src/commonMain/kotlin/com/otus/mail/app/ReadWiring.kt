@@ -2,9 +2,9 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.folderTree
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderDialog
 import com.otus.mail.feature.folders.presentation.FoldersState
@@ -14,7 +14,6 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MessageFolder
 import com.otus.mail.feature.inbox.domain.allowingSender
-import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
 import com.otus.mail.feature.inbox.presentation.ReadContext
@@ -112,18 +111,10 @@ internal class ReadWiring(
     }
 
     /** The account's folders in tree order, each with its full path and saved color. */
-    private fun AccountFolders.messageFolders(): List<MessageFolder> {
-        val byId = folders.associateBy { it.id }
-        return folderTree().map { node ->
-            val path =
-                generateSequence(node.folder) { folder -> folder.parentId?.let(byId::get) }
-                    .take(folders.size)
-                    .map { mailboxName(it.name, it.role) }
-                    .toList()
-                    .asReversed()
-            MessageFolder(node.folder.id, path, node.folder.role, colors.colorOf(node.folder), node.readLater)
+    private fun AccountFolders.messageFolders(): List<MessageFolder> =
+        folderTree().map { node ->
+            MessageFolder(node.folder.id, node.path, node.folder.role, colors.colorOf(node.folder), node.readLater)
         }
-    }
 }
 
 /** The Read view for [feed]'s list, again when the feed changes. */
@@ -136,7 +127,7 @@ internal fun rememberReadContext(
 
 private fun MailScope.Roles.folderIds(folders: List<MailFolder>): Set<String> =
     folders
-        .filter { it.role in names || (ownFolders && it.role == null) }
+        .filter { it.role in roles || (ownFolders && it.isCustom) }
         .map { it.id }
         .toSet()
 

@@ -16,11 +16,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.mail.quickview.components.QuickJump
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_code
 import com.otus.designsystem.resources.symbol_drive_file_move
-import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.Symbol
@@ -173,10 +173,10 @@ private fun ReadMoveRow(room: ReadRoom) {
 }
 
 private val MoveTarget.chipLabel: String
-    get() = shortcut?.label ?: name
+    get() = shortcut?.title ?: name
 
 private val MoveTarget.chipIcon
-    get() = shortcut?.icon ?: Res.drawable.symbol_folder
+    get() = folderSymbol(shortcut?.wire)
 
 /** Folder chips the Move to row offers before its Move button. */
 private const val MOVE_CHIPS = 6

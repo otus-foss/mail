@@ -4,10 +4,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderColors
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.colorable
 import com.otus.mail.feature.folders.domain.readColors

@@ -85,18 +85,6 @@ class InboxFilterStateTest {
     }
 
     @Test
-    fun openingStartsACountingSession() {
-        var sessions = 0
-        val state = InboxFilterState(onOpen = { sessions++ })
-        state.open()
-        state.edit { unread }
-        assertEquals(1, sessions, "Draft changes count within the same session")
-        state.close()
-        state.open()
-        assertEquals(2, sessions)
-    }
-
-    @Test
     fun peopleSearchWaitsForTheTextAndClearsWithThePanel() =
         runTest {
             val asked = mutableListOf<Pair<PeopleField, String>>()

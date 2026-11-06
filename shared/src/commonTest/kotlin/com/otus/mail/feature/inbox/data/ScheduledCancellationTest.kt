@@ -4,6 +4,8 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
 import com.otus.mail.feature.inbox.domain.SendException
@@ -198,7 +200,7 @@ class ScheduledCancellationTest {
                     }
                 """{"methodResponses": [["$method", {"newState": "n"$result}, "c0"]]}"""
             }
-        return JmapDraftSender(JmapConnections(JmapClient(engine), store))
+        return JmapDraftSender(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache()))
     }
 
     private fun also(id: String?) = id?.let { """, "$it": null""" }.orEmpty()

@@ -3,6 +3,8 @@ package com.otus.mail.feature.notifications.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -54,7 +56,11 @@ class NewMailAccountRemovalTest {
                              "preview": "Preview", "receivedAt": "2026-10-14T08:00:00Z"}]}, "c1"]]}"""
                     }
                 })
-            JmapNewMailChecker(JmapConnections(JmapClient(server), store), states).check(alerts)
+            JmapNewMailChecker(
+                JmapConnections(JmapClient(server), store),
+                Mailboxes(InMemoryMailCache()),
+                states,
+            ).check(alerts)
             assertEquals(emptyList(), shown)
             assertEquals(emptyMap(), saved)
         }

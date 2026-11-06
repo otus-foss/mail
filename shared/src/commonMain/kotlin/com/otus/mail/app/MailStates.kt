@@ -6,12 +6,12 @@ import com.otus.avatar.AvatarOptions
 import com.otus.avatar.avatarOptions
 import com.otus.avatar.ui.presentation.OwnAvatarsState
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.feature.contacts.presentation.ContactAvatarUpdates
 import com.otus.mail.feature.contacts.presentation.ContactPickers
 import com.otus.mail.feature.contacts.presentation.ContactSync
 import com.otus.mail.feature.contacts.presentation.ContactsState
 import com.otus.mail.feature.contacts.presentation.FrequentContacts
-import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderNudgeState
 import com.otus.mail.feature.folders.presentation.FolderRulesState
@@ -24,9 +24,9 @@ import com.otus.mail.feature.inbox.domain.DevicePrivacy
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.accountId
-import com.otus.mail.feature.inbox.domain.mailboxName
 import com.otus.mail.feature.inbox.presentation.AddressPinsState
 import com.otus.mail.feature.inbox.presentation.ComposeAccount
 import com.otus.mail.feature.inbox.presentation.ComposeOrigin
@@ -177,10 +177,11 @@ internal class MailStates(
     internal fun avatarOptions(): AvatarOptions =
         behavior.behavior.let { avatarOptions(it.websiteIcons, it.iconSource, it.bulwarkAddress) }
 
-    /** Every account's folder names in folder order, once each, for search to choose from. */
-    fun mailboxNames(): List<String> =
+    /** Every account's folders in folder order, once each by role or name, for search to choose from. */
+    fun searchMailboxes(): List<MailboxScope> =
         folders.accounts
-            .flatMap { account -> account.folderTree().map { mailboxName(it.folder.name, it.folder.role) } }
+            .flatMap { account -> account.folderTree().map { it.folder } }
+            .map { MailboxScope(null, it.role?.title ?: it.mailboxName, it.role) }
             .distinct()
 
     /**
@@ -295,6 +296,5 @@ internal class MailStates(
     /** The counts and people search of the filter panels. */
     val filterLookups = FilterLookups(services.mail, services.people) { mailScope.accountId?.let(::setOf) }
 
-    /** The full body of an open message. */
     suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)
 }

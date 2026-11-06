@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -35,7 +36,7 @@ class InboxFeedStateTest {
                     "Subject",
                     "Body",
                     ReceivedAt("2026-10-01", "12:00"),
-                    MailLocation("Inbox", "Ada"),
+                    MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox),
                 )
             var fail = false
             val source =
@@ -96,7 +97,7 @@ class InboxFeedStateTest {
             "Subject",
             "Body",
             ReceivedAt("2026-10-01", "12:00"),
-            MailLocation("Inbox", "Ada"),
+            MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox),
         )
 
     @Test

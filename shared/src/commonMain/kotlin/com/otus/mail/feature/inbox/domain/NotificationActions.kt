@@ -1,8 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.core.mailbox.MailboxRole
 
 /**
  * The buttons a new-mail alert can offer, in the order Settings lists them. Each runs without
@@ -18,21 +16,18 @@ val DefaultNotificationActions: List<MailAction> = listOf(MailAction.Trash, Mail
 /** Android shows at most three buttons on a notification. */
 const val NOTIFICATION_ACTION_LIMIT = 3
 
-/**
- * What one account lets an alert's buttons do: the roles of its mailboxes (RFC 8621, section 2),
- * lowercase, and whether it can send mail.
- */
+/** What one account lets an alert's buttons do: the roles of its mailboxes, and whether it can send mail. */
 data class AlertAccount(
-    val mailboxRoles: Set<String>,
+    val mailboxRoles: Set<MailboxRole>,
     val canSend: Boolean,
 )
 
 /** Whether a button running [action] works for mail of this account. */
 fun AlertAccount.allows(action: MailAction): Boolean =
     when (action) {
-        MailAction.Trash -> TRASH_ROLE in mailboxRoles
-        MailAction.Archive -> ARCHIVE_ROLE in mailboxRoles
-        MailAction.Spam -> JUNK_ROLE in mailboxRoles
+        MailAction.Trash -> MailboxRole.Trash in mailboxRoles
+        MailAction.Archive -> MailboxRole.Archive in mailboxRoles
+        MailAction.Spam -> MailboxRole.Junk in mailboxRoles
         MailAction.Read, MailAction.Flag -> true
         MailAction.Reply -> canSend
         else -> false

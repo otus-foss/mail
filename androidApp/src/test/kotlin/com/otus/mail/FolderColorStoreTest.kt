@@ -1,9 +1,9 @@
 package com.otus.mail
 
 import android.content.Context
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderColors
 import com.otus.mail.feature.folders.domain.FolderKey
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.readColors
 import com.otus.mail.feature.folders.domain.writeColors
 import org.junit.Assert.assertEquals

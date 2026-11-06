@@ -5,38 +5,10 @@ import com.otus.jmap.JmapJson
 import com.otus.jmap.SetError
 import com.otus.mail.core.mail.MailCapability
 import com.otus.mail.core.mail.MailFailure
-import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.toMailFailure
-import com.otus.mail.feature.folders.domain.FolderFailure
-import com.otus.mail.feature.folders.domain.FolderLimits
-import com.otus.mail.feature.folders.domain.FolderRights
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.FolderLimits
 import kotlinx.serialization.json.JsonObject
-
-internal fun MailboxObject.toFolder(
-    loginId: String,
-    sharedIn: String? = null,
-) = MailFolder(
-    accountId = loginId,
-    id = id,
-    name = name,
-    parentId = parentId,
-    role = role?.lowercase(),
-    sortOrder = sortOrder,
-    unread = unreadEmails,
-    total = totalEmails,
-    rights =
-        FolderRights(
-            mayAddItems = myRights.mayAddItems,
-            mayCreateChild = myRights.mayCreateChild,
-            mayRename = myRights.mayRename,
-            mayDelete = myRights.mayDelete,
-            mayRemoveItems = myRights.mayRemoveItems,
-            maySetSeen = myRights.maySetSeen,
-            maySetKeywords = myRights.maySetKeywords,
-        ),
-    sharedIn = sharedIn,
-)
 
 /** A malformed capability keeps the defaults; the server still enforces its real limits. */
 internal fun limits(capability: JsonObject?): FolderLimits {

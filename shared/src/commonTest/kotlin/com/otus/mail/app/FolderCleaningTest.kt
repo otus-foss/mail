@@ -1,10 +1,10 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.FolderRights
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderRights
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.data.conversationOf
-import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -41,10 +41,10 @@ class FolderCleaningTest {
             "ada",
             "Ada",
             listOf(
-                MailFolder("ada", "i", "Inbox", role = "inbox"),
-                MailFolder("ada", "j", "Junk Mail", role = "junk", total = 4),
-                MailFolder("ada", "t", "Deleted", role = "trash", total = 2, rights = locked),
-                MailFolder("ada", "s", "Sent", role = "sent", total = 9),
+                MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox),
+                MailFolder("ada", "j", "Junk Mail", role = MailboxRole.Junk, total = 4),
+                MailFolder("ada", "t", "Deleted", role = MailboxRole.Trash, total = 2, rights = locked),
+                MailFolder("ada", "s", "Sent", role = MailboxRole.Sent, total = 9),
             ),
         )
     private val sent = MutableStateFlow<List<String>>(emptyList())
@@ -116,20 +116,20 @@ class FolderCleaningTest {
             assertFalse(cleanup.canDelete(message("m1", "t")), "Trash here keeps its messages")
             assertFalse(cleanup.canDelete(message("m1", "i")), "The inbox has no Delete forever")
             assertFalse(cleanup.canDelete(message("m1", "j").copy(emailId = "")), "Supplied mail has no server id")
-            assertEquals(FolderRole.Junk, cleanup.role(message("m1", "j")))
+            assertEquals(MailboxRole.Junk, cleanup.role(message("m1", "j")))
             assertNull(cleanup.role(message("m1", "i")))
         }
 
     @Test
     fun onlySpamAndTrashListsThatAllowItCanBeEmptied() =
         runTest {
-            val (spam) = cleanup(MailScope.Role("junk", "Spam"))
-            assertEquals(FolderRole.Junk, spam.listRole())
+            val (spam) = cleanup(MailScope.Role(MailboxRole.Junk))
+            assertEquals(MailboxRole.Junk, spam.listRole())
             val emptying = assertNotNull(spam.emptying())
             assertEquals(4, emptying.count)
             assertNull(cleanup(MailScope.Folder("ada", "t")).first.emptying(), "Trash here keeps its messages")
             val (sentList) = cleanup(MailScope.Folder("ada", "s"))
-            assertEquals(FolderRole.Sent, sentList.listRole())
+            assertEquals(MailboxRole.Sent, sentList.listRole())
             assertNull(sentList.emptying())
             assertNull(cleanup(MailScope.Inbox).first.listRole())
         }
@@ -137,7 +137,7 @@ class FolderCleaningTest {
     @Test
     fun deletedMessagesLeaveAndKeptOnesComeBackWithANotice() =
         runTest {
-            val (cleanup, feed) = cleanup(MailScope.Role("junk", "Spam"), message("m1", "j"), message("m2", "j"))
+            val (cleanup, feed) = cleanup(MailScope.Role(MailboxRole.Junk), message("m1", "j"), message("m2", "j"))
             reply = {
                 """{"methodResponses": [["Email/set", {"newState": "e2", "destroyed": ["m1"],
                     "notDestroyed": {"m2": {"type": "forbidden"}}}, "c0"]]}"""
@@ -153,7 +153,7 @@ class FolderCleaningTest {
     @Test
     fun emptyingTakesTheLoadedMessagesOffAndDeletesTheFolder() =
         runTest {
-            val (cleanup, feed) = cleanup(MailScope.Role("junk", "Spam"), message("m1", "j"))
+            val (cleanup, feed) = cleanup(MailScope.Role(MailboxRole.Junk), message("m1", "j"))
             reply = { body ->
                 when {
                     "Email/set" in body -> DESTROYED_M1
@@ -177,7 +177,7 @@ class FolderCleaningTest {
             // m2 left Spam on another device, so emptying destroys only m1 and the row comes back.
             val members = listOf(ThreadMember("m1", setOf("j"), "j"), ThreadMember("m2", setOf("i"), "i"))
             val row = message("m1", "j").copy(conversation = conversationOf(members))
-            val (cleanup, feed) = cleanup(MailScope.Role("junk", "Spam"), row)
+            val (cleanup, feed) = cleanup(MailScope.Role(MailboxRole.Junk), row)
             reply = { body ->
                 when {
                     "Email/set" in body -> DESTROYED_M1

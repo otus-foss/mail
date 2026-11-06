@@ -1,18 +1,16 @@
 package com.otus.mail.feature.folders.data
 
-import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapPatch
 import com.otus.jmap.login.LoginStoreException
-import com.otus.mail.core.mail.ARCHIVE_ROLE
 import com.otus.mail.core.mail.EmailFoldersType
-import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.folders.domain.FolderRule
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -23,6 +21,7 @@ import kotlinx.serialization.json.JsonPrimitive
  */
 internal class ExistingMail(
     private val connections: JmapConnections,
+    private val mailboxes: Mailboxes,
 ) {
     /** How many messages match; null when JMAP cannot filter by the rule or the server cannot be read. */
     suspend fun count(
@@ -97,10 +96,9 @@ internal class ExistingMail(
         account: MailAccount,
         folderId: String,
     ): List<String> =
-        account.connection
-            .call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
-            .list
-            .filter { it.role?.lowercase() in SOURCE_ROLES && it.id != folderId }
+        mailboxes
+            .of(account)
+            .filter { it.role in SOURCE_ROLES && it.id != folderId }
             .map { it.id }
 
     private suspend fun <T> withAccount(
@@ -118,7 +116,7 @@ internal class ExistingMail(
     private companion object {
         /** At most this many batches, so a server that keeps answering with the same mail cannot loop forever. */
         const val MAX_ROUNDS = 100
-        val SOURCE_ROLES = setOf(INBOX_ROLE, ARCHIVE_ROLE)
+        val SOURCE_ROLES = setOf(MailboxRole.Inbox, MailboxRole.Archive)
         val CALCULATE_TOTAL = mapOf("calculateTotal" to JsonPrimitive(true))
     }
 }

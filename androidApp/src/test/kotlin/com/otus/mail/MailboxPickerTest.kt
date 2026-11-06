@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailScope
@@ -44,7 +45,20 @@ class MailboxPickerTest {
 
     @Before
     fun showInbox() {
-        val context = InboxContext(mailboxSearch = MailboxSearch(listOf("Inbox", "Archive", "Sent")) { loaded += it })
+        val context =
+            InboxContext(
+                mailboxSearch =
+                    MailboxSearch(
+                        listOf(
+                            MailboxScope.Inbox,
+                            MailboxScope(null, "Archive", MailboxRole.Archive),
+                            MailboxScope(null, "Sent", MailboxRole.Sent),
+                        ),
+                    ) {
+                        loaded +=
+                            it
+                    },
+            )
         compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(fixtures, context = context) } } }
         compose.openSearchResults()
         compose
@@ -68,7 +82,7 @@ class MailboxPickerTest {
             .assertIsOn()
         compose.runOnIdle {
             assertEquals(
-                MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox"), MailboxScope(null, "Archive"))),
+                MailScope.Mailboxes(setOf(MailboxScope.Inbox, MailboxScope(null, "Archive", MailboxRole.Archive))),
                 loaded.last(),
             )
         }
@@ -105,7 +119,7 @@ class MailboxPickerTest {
                 "Meeting design",
                 "",
                 ReceivedAt("2026-10-02", "10:00"),
-                MailLocation("Inbox", "Work"),
+                MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
             ),
             MailMessage(
                 "sam",
@@ -113,7 +127,7 @@ class MailboxPickerTest {
                 "Meeting plans",
                 "",
                 ReceivedAt("2026-10-05", "10:00"),
-                MailLocation("Inbox", "Personal"),
+                MailLocation("Inbox", "Personal", mailboxRole = MailboxRole.Inbox),
             ),
         )
 }

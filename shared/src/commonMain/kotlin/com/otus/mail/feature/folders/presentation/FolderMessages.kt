@@ -1,23 +1,9 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_archive
-import com.otus.designsystem.resources.symbol_bookmark
-import com.otus.designsystem.resources.symbol_delete
-import com.otus.designsystem.resources.symbol_draft
-import com.otus.designsystem.resources.symbol_folder
-import com.otus.designsystem.resources.symbol_inbox
-import com.otus.designsystem.resources.symbol_report
-import com.otus.designsystem.resources.symbol_send
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.DRAFTS_ROLE
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
-import com.otus.mail.feature.folders.domain.FolderFailure
+import com.otus.designsystem.mail.folders.elements.folderSymbol
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.feature.folders.domain.FolderNameProblem
-import com.otus.mail.feature.folders.domain.FolderNode
 import org.jetbrains.compose.resources.DrawableResource
 
 fun FolderFailure.message(): String =
@@ -45,17 +31,4 @@ fun FolderNameProblem.message(): String =
     }
 
 /** System folders and Read later have their own symbols; the user's other folders share one. */
-fun folderIcon(node: FolderNode): DrawableResource =
-    if (node.readLater) Res.drawable.symbol_bookmark else roleIcon(node.folder.role)
-
-/** The symbol of a folder with [role]; the user's own folders, without a role, share one. */
-fun roleIcon(role: String?): DrawableResource =
-    when (role) {
-        INBOX_ROLE -> Res.drawable.symbol_inbox
-        DRAFTS_ROLE -> Res.drawable.symbol_draft
-        SENT_ROLE -> Res.drawable.symbol_send
-        ARCHIVE_ROLE -> Res.drawable.symbol_archive
-        JUNK_ROLE -> Res.drawable.symbol_report
-        TRASH_ROLE -> Res.drawable.symbol_delete
-        else -> Res.drawable.symbol_folder
-    }
+fun folderIcon(node: FolderNode): DrawableResource = folderSymbol(node.folder.role?.wire, node.readLater)

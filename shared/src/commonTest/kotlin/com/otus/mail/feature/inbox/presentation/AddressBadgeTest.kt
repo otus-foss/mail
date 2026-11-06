@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -22,7 +23,7 @@ class AddressBadgeTest {
         "Hi",
         "",
         ReceivedAt("2026-10-27", "11:00"),
-        MailLocation("Inbox", login, accountAddress = address),
+        MailLocation("Inbox", login, accountAddress = address, mailboxRole = MailboxRole.Inbox),
     )
 
     private val home = message("m1", "ada", "ada@home.test")

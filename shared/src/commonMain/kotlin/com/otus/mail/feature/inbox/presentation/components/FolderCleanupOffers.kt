@@ -1,11 +1,10 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.shared.overlays.components.ConfirmQuestion
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.BarButton
-import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 
@@ -23,22 +22,22 @@ internal fun MessageActions.offerCleanup(
 
 /** Moves the messages shown in Spam to their inbox, marked as not spam. */
 private fun MessageActions.offerNotSpam(messages: List<MailMessage>): OfferedAction? =
-    cleanup?.let { offerToInbox(messages, FolderRole.Junk, MailAction.NotSpam, it.onNotSpam) }
+    cleanup?.let { offerToInbox(messages, MailboxRole.Junk, MailAction.NotSpam, it.onNotSpam) }
 
 /** Moves the messages shown in Trash to their inbox; where they were before is not stored. */
 private fun MessageActions.offerRestore(messages: List<MailMessage>): OfferedAction? =
-    offerToInbox(messages, FolderRole.Trash, MailAction.Restore, moves.onMove)
+    offerToInbox(messages, MailboxRole.Trash, MailAction.Restore, moves.onMove)
 
 private fun MessageActions.offerToInbox(
     messages: List<MailMessage>,
-    role: FolderRole,
+    role: MailboxRole,
     action: MailAction,
     move: (MailMessage, MoveTarget) -> Unit,
 ): OfferedAction? {
     val moving =
         messages
             .filter { cleanup?.role?.invoke(it) == role }
-            .mapNotNull { message -> shortcutTarget(message, FolderShortcut.Inbox)?.let { message to it } }
+            .mapNotNull { message -> shortcutTarget(message, MailboxRole.Inbox)?.let { message to it } }
     return moving.takeIf { it.isNotEmpty() }?.let {
         OfferedAction(action.label, action.symbol, leaves = true) {
             moving.forEach { (message, inbox) -> move(message, inbox) }
@@ -67,7 +66,7 @@ private fun MessageActions.offerDeleteForever(messages: List<MailMessage>): Offe
 /** Empties the list's Spam or Trash folders, once the user confirms it; null when they hold nothing. */
 internal fun MessageActions.offerEmpty(): OfferedAction? {
     val emptying = cleanup?.emptying()?.takeIf { it.count > 0 } ?: return null
-    val folder = if (emptying.role == FolderRole.Junk) "spam" else "trash"
+    val folder = if (emptying.role == MailboxRole.Junk) "spam" else "trash"
     val noun = if (emptying.count == 1L) "message" else "messages"
     val question =
         ConfirmQuestion("Empty $folder?", "This deletes ${emptying.count} $noun forever. You can't undo this.", "Empty")

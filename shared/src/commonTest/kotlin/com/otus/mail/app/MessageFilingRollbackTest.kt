@@ -3,8 +3,9 @@ package com.otus.mail.app
 import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -39,7 +40,7 @@ class MessageFilingRollbackTest {
         AccountFolders(
             "ada",
             "Ada",
-            listOf(MailFolder("ada", "i", "Inbox", role = "inbox"), MailFolder("ada", "l", "Read later")),
+            listOf(MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox), MailFolder("ada", "l", "Read later")),
             readLaterId = "l",
         )
 

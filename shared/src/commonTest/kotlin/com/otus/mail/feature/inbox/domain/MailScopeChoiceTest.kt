@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -9,7 +10,7 @@ class MailScopeChoiceTest {
         accountId: String,
         to: List<String> = emptyList(),
         cc: List<String> = emptyList(),
-        mailbox: String = INBOX_MAILBOX,
+        mailbox: String = MailboxRole.Inbox.title,
         unread: Boolean = false,
         from: String = "grace@example.org",
     ) = MailMessage(
@@ -18,7 +19,7 @@ class MailScopeChoiceTest {
         "Hello",
         "",
         ReceivedAt("2026-10-01", "09:00"),
-        MailLocation(mailbox, accountId),
+        MailLocation(mailbox, accountId, mailboxRole = MailboxRole.Inbox.takeIf { mailbox == it.title }),
         MailAttributes(unread = unread),
         to = to.map { MailSender("", it) },
         cc = cc.map { MailSender("", it) },

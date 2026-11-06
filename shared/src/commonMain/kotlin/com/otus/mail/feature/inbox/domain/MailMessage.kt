@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.avatar.ResolvedAvatar
-import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
@@ -77,15 +77,6 @@ data class ReceivedAt(
     val time: String,
 )
 
-/** The inbox's name in the app. Servers name and translate it differently, so it is found by role. */
-const val INBOX_MAILBOX = "Inbox"
-
-/** The name messages and search use for a mailbox: [INBOX_MAILBOX] for the inbox role, else the server's [name]. */
-fun mailboxName(
-    name: String,
-    role: String?,
-): String = if (role == INBOX_ROLE) INBOX_MAILBOX else name
-
 data class MailLocation(
     val mailbox: String,
     val account: String,
@@ -98,6 +89,8 @@ data class MailLocation(
     val mailboxId: String = "",
     /** Every mailbox the message is in on the server, [mailboxId] among them; empty for supplied messages. */
     val mailboxIds: Set<String> = emptySet(),
+    /** [mailbox]'s role, which finds the inbox whatever the server names it. */
+    val mailboxRole: MailboxRole? = null,
 )
 
 data class MailAttributes(

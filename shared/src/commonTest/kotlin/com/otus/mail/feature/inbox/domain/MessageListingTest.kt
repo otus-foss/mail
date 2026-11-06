@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -16,7 +17,7 @@ class MessageListingTest {
         "Order",
         "",
         ReceivedAt("2026-10-04", "09:30"),
-        MailLocation("Inbox", login, login),
+        MailLocation("Inbox", login, login, mailboxRole = MailboxRole.Inbox),
         emailId = emailId,
         conversation = members.takeIf { it.isNotEmpty() }?.let(::thread),
     )

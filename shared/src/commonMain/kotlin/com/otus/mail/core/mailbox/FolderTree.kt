@@ -1,11 +1,4 @@
-package com.otus.mail.feature.folders.domain
-
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.DRAFTS_ROLE
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
+package com.otus.mail.core.mailbox
 
 /** The account's folders in display order, with its Read later folder right after the inbox. */
 fun AccountFolders.folderTree(hidden: (MailFolder) -> Boolean = { false }): List<FolderNode> =
@@ -39,24 +32,24 @@ fun folderTree(
     fun visit(
         parent: String?,
         depth: Int,
-        prefix: String,
+        above: List<String>,
     ) {
         children[parent].orEmpty().sortedWith(order).forEach { folder ->
             if (!visited.add(folder.id)) return@forEach
             if (hidden(folder)) {
-                visit(folder.id, depth, prefix)
+                visit(folder.id, depth, above)
             } else {
-                val path = prefix + folder.name
+                val path = above + folder.mailboxName
                 result += FolderNode(folder, depth, path, readLater = folder.id == readLaterId)
-                visit(folder.id, depth + 1, "$path / ")
+                visit(folder.id, depth + 1, path)
             }
         }
     }
-    visit(null, 0, "")
+    visit(null, 0, emptyList())
     // Folders caught in a parent cycle never reach a root; show them at the top level.
     folders.filter { it.id !in visited }.sortedWith(order).forEach { folder ->
         visited += folder.id
-        result += FolderNode(folder, 0, folder.name, readLater = folder.id == readLaterId)
+        result += FolderNode(folder, 0, listOf(folder.mailboxName), readLater = folder.id == readLaterId)
     }
     return result
 }
@@ -92,23 +85,25 @@ fun ancestors(
     }
 }
 
-/** How many ancestors [folder] has. */
 fun ancestorCount(
     folders: List<MailFolder>,
     folder: MailFolder,
 ): Int = ancestors(folders, folder).size
 
-// Roles never contain spaces, so this slot cannot match a server's role.
-private const val READ_LATER_SLOT = "read later"
-
-private val ROLE_ORDER =
-    listOf(INBOX_ROLE, READ_LATER_SLOT, DRAFTS_ROLE, SENT_ROLE, ARCHIVE_ROLE, JUNK_ROLE, TRASH_ROLE)
-
 private fun siblingOrder(readLaterId: String?): Comparator<MailFolder> =
     compareBy({ it.rank(readLaterId) }, { it.sortOrder }, { it.name.lowercase() })
 
-/** System folders and Read later in their usual order, then other special uses, then the user's own folders. */
+/**
+ * System folders in sidebar order with Read later right after the inbox, then other special uses,
+ * then the user's own folders.
+ */
 private fun MailFolder.rank(readLaterId: String?): Int {
-    val slot = (if (id == readLaterId) READ_LATER_SLOT else role) ?: return ROLE_ORDER.size + 1
-    return ROLE_ORDER.indexOf(slot).takeIf { it >= 0 } ?: ROLE_ORDER.size
+    val slots = MailboxRole.entries.size + 1
+    return when {
+        role == MailboxRole.Inbox -> 0
+        id == readLaterId -> 1
+        role != null -> role.ordinal + 1
+        specialUse -> slots
+        else -> slots + 1
+    }
 }

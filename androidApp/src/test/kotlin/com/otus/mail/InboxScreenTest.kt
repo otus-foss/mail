@@ -21,6 +21,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.Density
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -153,7 +154,7 @@ class InboxScreenTest {
                     "Design review",
                     "The prototype is ready",
                     ReceivedAt("2026-10-03", "10:30"),
-                    MailLocation("Inbox", "Work"),
+                    MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
                     MailAttributes(unread = true, attachments = listOf("draft.pdf")),
                     labels = listOf(RowFolder("later", "Read later", readLater = true)),
                 ),
@@ -163,7 +164,7 @@ class InboxScreenTest {
                     "Weekend plans",
                     "A walk by the lake",
                     ReceivedAt("2026-10-02", "09:00"),
-                    MailLocation("Inbox", "Personal"),
+                    MailLocation("Inbox", "Personal", mailboxRole = MailboxRole.Inbox),
                 ),
             )
         compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(messages) } } }

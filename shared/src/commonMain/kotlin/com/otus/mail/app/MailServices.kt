@@ -23,6 +23,7 @@ import com.otus.mail.core.cache.AccountMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.core.mail.ServerChanges
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
 import com.otus.mail.feature.contacts.domain.ContactRepository
@@ -120,6 +121,9 @@ class MailServices(
     /** The device's copy of each login's mail; see docs/storage.md. */
     private val accountCache = AccountMailCache(RecoveringMailCache(stores.cache))
     internal val cache: MailCache get() = accountCache
+
+    /** Each login's folders, which every feature reads from the cache. */
+    private val mailboxes by lazy { Mailboxes(cache) }
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
@@ -161,8 +165,8 @@ class MailServices(
     val shortcuts: EmailShortcuts by lazy { JmapEmailShortcuts(connections, cache, changes) }
     internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections) }
     private val unansweredDrafts = UnansweredDrafts()
-    internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, unansweredDrafts) }
-    private val jmapSender by lazy { JmapDraftSender(connections, unansweredDrafts) }
+    internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, mailboxes, unansweredDrafts) }
+    private val jmapSender by lazy { JmapDraftSender(connections, mailboxes, unansweredDrafts) }
     internal val sender: DraftSender get() = jmapSender
     internal val scheduled: ScheduledSends get() = jmapSender
 
@@ -177,7 +181,7 @@ class MailServices(
     internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, cache) }
 
     /** Each login's recent mail, for the people the user deals with most. */
-    internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections) }
+    internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections, mailboxes) }
     internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, addressBook) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections) }
     internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, cache) }
@@ -190,7 +194,7 @@ class MailServices(
     internal val attachments by lazy {
         AttachmentCache(JmapAttachmentDownloads(connections), stores.downloads, retention)
     }
-    internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections) }
+    internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, mailboxes) }
     internal val newsletters: Newsletters by lazy {
         JmapNewsletters(connections, drafts, sender, cache)
     }
@@ -212,10 +216,10 @@ class MailServices(
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
-    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections) }
+    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, mailboxes) }
 
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */
-    fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, states)
+    fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, mailboxes, states)
 
     /**
      * Keeps each login's push subscription pointed at its push endpoint, for the changes in [push].

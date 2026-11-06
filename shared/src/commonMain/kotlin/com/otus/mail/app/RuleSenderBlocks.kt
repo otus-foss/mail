@@ -1,7 +1,7 @@
 package com.otus.mail.app
 
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.FolderRepository
@@ -57,5 +57,5 @@ internal class RuleSenderBlocks(
 private fun List<AccountFolders>.junkFolderId(accountId: String): String? =
     firstOrNull { it.accountId == accountId }
         ?.folders
-        ?.firstOrNull { it.role == JUNK_ROLE }
+        ?.firstOrNull { it.role == MailboxRole.Junk }
         ?.id

@@ -6,7 +6,6 @@ import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
-import com.otus.jmap.QueryResult
 import com.otus.jmap.allOf
 import com.otus.jmap.filterCondition
 import com.otus.jmap.jmapCallOr
@@ -14,8 +13,6 @@ import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EmailFolders
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailObject
@@ -23,11 +20,10 @@ import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.LIST_ID_PROPERTY
 import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.core.mail.roleQuery
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.DraftRepository
 import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -53,6 +49,7 @@ class JmapNewsletters(
     private val cache: MailCache = InMemoryMailCache(),
 ) : Newsletters {
     private val unsubscriber = ListUnsubscriber(drafts, sender)
+    private val mailboxes = Mailboxes(cache)
 
     override suspend fun list(message: MailMessage): MailingList? =
         jmapCallOr(null) {
@@ -80,19 +77,16 @@ class JmapNewsletters(
 
     private suspend fun MailAccount.list(message: MailMessage): MailingList? {
         lateinit var emails: JmapCall<GetResult<EmailObject>>
-        lateinit var boxes: JmapCall<GetResult<MailboxObject>>
-        val first =
-            connection.send {
+        val (folders, first) =
+            mailboxes.send(this) {
                 emails = call(GetMethod(EmailType, id, JmapIds.Of(listOf(message.emailId)), LIST_PROPERTIES))
-                boxes = call(GetMethod(MailboxType, id, properties = listOf("id", "role")))
             }
         val email =
             first[emails].list.firstOrNull()?.takeIf { it.fromList }
                 ?: return null
         val skipped =
-            first[boxes]
-                .list
-                .filter { it.role in BIN_ROLES }
+            folders
+                .filter { it.isBin }
                 .map { it.id }
                 .toSet()
         val older =
@@ -130,15 +124,13 @@ class JmapNewsletters(
 
     /** Each email out of every mailbox it is in and into Archive; null without an Archive folder. */
     private suspend fun MailAccount.archivePatches(emailIds: List<String>): Map<String, JsonObject>? {
-        lateinit var archive: JmapCall<QueryResult>
-        lateinit var folders: JmapCall<GetResult<EmailFolders>>
-        val response =
-            connection.send {
-                archive = call(roleQuery(ARCHIVE_ROLE))
-                folders = call(GetMethod(EmailFoldersType, id, JmapIds.Of(emailIds), listOf("id", "mailboxIds")))
+        lateinit var emails: JmapCall<GetResult<EmailFolders>>
+        val (folders, response) =
+            mailboxes.send(this) {
+                emails = call(GetMethod(EmailFoldersType, id, JmapIds.Of(emailIds), listOf("id", "mailboxIds")))
             }
-        val target = response[archive].ids.firstOrNull() ?: return null
-        return response[folders].list.associate { email -> email.id to movePatch(email.mailboxIds.keys, target) }
+        val target = folders.firstOrNull { it.role == MailboxRole.Archive }?.id ?: return null
+        return response[emails].list.associate { email -> email.id to movePatch(email.mailboxIds.keys, target) }
     }
 
     private companion object {

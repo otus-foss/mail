@@ -3,6 +3,7 @@ package com.otus.mail
 import android.content.Context
 import androidx.core.content.edit
 import com.otus.avatar.IconSource
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
@@ -44,7 +45,7 @@ class InboxPillPersistenceTest {
         val saved =
             MailBehavior(
                 readLater = true,
-                pills = listOf(InboxPill.Role("archive"), InboxPill.Filter.Flagged, InboxPill.ReadLater),
+                pills = listOf(InboxPill.Role(MailboxRole.Archive), InboxPill.Filter.Flagged, InboxPill.ReadLater),
                 sidebar =
                     SidebarLayout(
                         sections = listOf(SidebarSection.Folders, SidebarSection.Mailboxes),

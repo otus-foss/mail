@@ -1,7 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
-import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.time.Instant
 
 /** An account that could not be loaded; [syncedAt] is when its cached mail last matched the server. */
@@ -24,17 +24,17 @@ data class InboxSnapshot(
  * several such folders.
  */
 sealed interface MailScope {
+    /** Every account's folder with [role]; its messages are filed under the role's title. */
     data class Role(
-        val role: String,
-        val name: String,
+        val role: MailboxRole,
     ) : MailScope
 
     /**
-     * Every account's folders of several roles, such as the inbox with Spam and Trash. [names]
-     * maps each role to the name its messages are filed under.
+     * Every account's folders of several roles, such as the inbox with Spam and Trash. Their
+     * messages are filed under each role's title.
      */
     data class Roles(
-        val names: Map<String, String>,
+        val roles: List<MailboxRole>,
         /** Also every account's own folders, which have no role, under their own names. */
         val ownFolders: Boolean = false,
     ) : MailScope
@@ -60,7 +60,7 @@ sealed interface MailScope {
 
     companion object {
         /** Every account's inbox. */
-        val Inbox: MailScope = Role(INBOX_ROLE, "Inbox")
+        val Inbox: MailScope = Role(MailboxRole.Inbox)
     }
 }
 
@@ -72,12 +72,6 @@ interface MailSource {
         scope: MailScope,
         query: MailQuery,
     ): InboxSnapshot = messages(scope)
-
-    /**
-     * Starts a run of [count] calls, such as one filter panel session: the counts until the next
-     * call may reuse what they read about each account's folders.
-     */
-    fun beginCounting() {}
 
     /**
      * [scope]'s messages as the device kept them from earlier loads, without asking the server, so

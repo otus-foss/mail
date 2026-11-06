@@ -1,24 +1,28 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class InboxContentsTest {
     @Test
     fun theDefaultListsTheInboxAlone() {
-        assertEquals(listOf("inbox"), InboxContents().roles)
+        assertEquals(listOf(MailboxRole.Inbox), InboxContents().roles)
     }
 
     @Test
     fun spamAndTrashJoinTheInboxRoles() {
-        assertEquals(listOf("inbox", "junk", "trash"), InboxContents(spam = true, trash = true).roles)
-        assertEquals(listOf("inbox", "trash"), InboxContents(trash = true).roles)
+        assertEquals(
+            listOf(MailboxRole.Inbox, MailboxRole.Junk, MailboxRole.Trash),
+            InboxContents(spam = true, trash = true).roles,
+        )
+        assertEquals(listOf(MailboxRole.Inbox, MailboxRole.Trash), InboxContents(trash = true).roles)
     }
 
     @Test
     fun archiveJoinsTheRolesAndOwnFoldersAreSavedApart() {
         val contents = InboxContents(archive = true, ownFolders = true)
-        assertEquals(listOf("inbox", "archive"), contents.roles)
+        assertEquals(listOf(MailboxRole.Inbox, MailboxRole.Archive), contents.roles)
         assertEquals(contents, InboxContents.decode(InboxContents.encode(contents)))
     }
 

@@ -1,5 +1,12 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderLimits
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.ancestorCount
+import com.otus.mail.core.mailbox.folderTree
+import com.otus.mail.core.mailbox.subtreeIds
+
 /**
  * Checks a new [name] for a folder under [parentId] before anything is sent. Names are trimmed, as
  * servers do, and sibling names are compared without case, as Stalwart does, so they stay distinct

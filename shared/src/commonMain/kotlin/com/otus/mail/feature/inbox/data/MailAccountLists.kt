@@ -4,13 +4,13 @@ import com.otus.jmap.JmapConnection
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.ThreadObject
-import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.objects
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.Mailboxes
 
 /** The lists a load keeps for a login, given its mailboxes. */
-internal typealias ListingsOf = (List<MailboxObject>) -> List<ListingQuery>
+internal typealias ListingsOf = (List<MailFolder>) -> List<ListingQuery>
 
 /** One login's mail account, and how many rows a page of its lists holds. */
 internal class MailAccountLists(
@@ -42,7 +42,7 @@ internal class MailAccountLists(
      * room for newer ones, loads its first page. Only a login without cached mailboxes refreshes.
      */
     suspend fun more(listingsOf: ListingsOf) {
-        val queries = listingsOf(cache.mailboxes(loginId))
+        val queries = listingsOf(Mailboxes(cache).cached(loginId))
         if (queries.isEmpty()) return refresh(listingsOf)
         val saved = cache.listings(loginId, queries)
         val growing = queries.filter { saved[it.key]?.hasMore != false }

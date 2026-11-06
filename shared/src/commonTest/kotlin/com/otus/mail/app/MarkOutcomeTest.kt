@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -20,7 +21,7 @@ class MarkOutcomeTest {
         "Subject",
         "Body",
         ReceivedAt("2026-10-01", "12:00"),
-        MailLocation("Inbox", "Ada", "ada", mailboxId = "i"),
+        MailLocation("Inbox", "Ada", "ada", mailboxId = "i", mailboxRole = MailboxRole.Inbox),
         MailAttributes(unread = unread, flagged = flagged),
         emailId = id,
     )

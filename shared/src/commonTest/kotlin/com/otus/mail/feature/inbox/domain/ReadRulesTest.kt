@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -52,7 +53,7 @@ class ReadRulesTest {
         "Plans",
         "",
         ReceivedAt("2026-10-12", "09:14"),
-        MailLocation("Inbox", "Work", "work", "ada@example.org"),
+        MailLocation("Inbox", "Work", "work", "ada@example.org", mailboxRole = MailboxRole.Inbox),
         to = to,
         cc = cc,
     )

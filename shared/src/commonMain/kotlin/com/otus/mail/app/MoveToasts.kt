@@ -3,8 +3,8 @@ package com.otus.mail.app
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -83,10 +83,10 @@ internal fun movedText(
 ): String {
     val mail = if (count == 1) "Email" else "$count emails"
     return when (target.shortcut) {
-        FolderShortcut.Trash -> "$mail deleted"
-        FolderShortcut.Archive -> "$mail archived"
-        FolderShortcut.Spam -> "$mail marked as spam"
-        FolderShortcut.Inbox, null -> if (count == 1) "Moved to ${target.name}" else "$mail moved to ${target.name}"
+        MailboxRole.Trash -> "$mail deleted"
+        MailboxRole.Archive -> "$mail archived"
+        MailboxRole.Junk -> "$mail marked as spam"
+        else -> if (count == 1) "Moved to ${target.name}" else "$mail moved to ${target.name}"
     }
 }
 

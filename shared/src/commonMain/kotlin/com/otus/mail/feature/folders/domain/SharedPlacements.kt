@@ -1,21 +1,8 @@
 package com.otus.mail.feature.folders.domain
 
-/**
- * The mailboxes another user shares with a login: one session account with `isPersonal: false`
- * (RFC 8620, section 2) that has mail. [owner] is that account's name, such as the owner's address.
- * Each folder's [MailFolder.sharedIn] is [jmapAccountId], and its `myRights` say what the login may
- * do. These are JMAP shared mailboxes, unlike [SharedFolder], which merges a user's own folders by
- * path across logins.
- */
-data class SharedMailboxes(
-    val jmapAccountId: String,
-    val owner: String,
-    val folders: List<MailFolder>,
-    val limits: FolderLimits = FolderLimits(),
-) {
-    /** The group as an account, so the folder checks and the tree work on it unchanged. */
-    fun asAccount(loginId: String): AccountFolders = AccountFolders(loginId, owner, folders, limits)
-}
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.SharedMailboxes
 
 /** Who shares a mailbox with a login, and whether the login may add mail to it (`mayAddItems`). */
 data class SharedBy(

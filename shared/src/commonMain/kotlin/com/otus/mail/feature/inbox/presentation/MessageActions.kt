@@ -1,21 +1,9 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
-
-/**
- * A system folder a message can be filed into with one action, found by role because servers name
- * these folders differently. [label] is the app's name for it on every server.
- */
-enum class FolderShortcut(
-    val label: String,
-) {
-    Inbox("Inbox"),
-    Archive("Archive"),
-    Spam("Spam"),
-    Trash("Trash"),
-}
 
 /**
  * Read later as offered for one message: [apply] [saves] the message or removes it. The message
@@ -29,7 +17,8 @@ class ReadLaterChange(
 
 /**
  * A folder a message can move to; [label] is its full path and [name] its own name. [shortcut]
- * marks one of the account's system folders. [own] marks the user's own folders, which the move
+ * marks the account's Inbox, Archive, Spam, or Trash, which one action files into: found by role
+ * because servers name these folders differently. [own] marks the user's own folders, which the move
  * sheet lists as a tree, nested [depth] levels below other own folders. [path] is an own folder's
  * shared folder path, the names a Move to button saves; null for other folders. [color] names an
  * own folder's icon color; null keeps the plain icon.
@@ -37,7 +26,7 @@ class ReadLaterChange(
 data class MoveTarget(
     val folderId: String,
     val label: String,
-    val shortcut: FolderShortcut? = null,
+    val shortcut: MailboxRole? = null,
     val name: String = label,
     val depth: Int = 0,
     val own: Boolean = false,
@@ -67,7 +56,7 @@ class MessageActions(
     /** The folder [shortcut] files the message into; null when there is none or it is already there. */
     fun shortcutTarget(
         message: MailMessage,
-        shortcut: FolderShortcut,
+        shortcut: MailboxRole,
     ): MoveTarget? = moves.targets(message).firstOrNull { it.shortcut == shortcut }
 
     /** Marks an unread message read as it opens, when the saved behavior asks for it. */

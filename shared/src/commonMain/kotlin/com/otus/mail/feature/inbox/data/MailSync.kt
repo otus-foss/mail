@@ -14,9 +14,16 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.CacheWrite
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.core.mail.unlessRefused
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxCalls
+import com.otus.mail.core.mailbox.MailboxList
+import com.otus.mail.core.mailbox.allMailboxes
+import com.otus.mail.core.mailbox.mailboxCalls
+import com.otus.mail.core.mailbox.saveMailboxes
+import com.otus.mail.core.mailbox.savedMailboxes
+import com.otus.mail.core.mailbox.toFolder
 import kotlin.time.Instant
 
 /**
@@ -54,11 +61,12 @@ internal data class ObjectChanges(
 
 /** A login's mailboxes and what changed in its emails and threads, as one request found them. */
 internal class MailChanges(
+    private val loginId: String,
     private val mailboxList: MailboxList,
     val emails: ObjectChanges,
     val threads: ObjectChanges,
 ) {
-    val mailboxes: List<MailboxObject> get() = mailboxList.mailboxes
+    val mailboxes: List<MailFolder> get() = mailboxList.mailboxes.map { it.toFolder(loginId) }
 
     fun saveMailboxes(write: CacheWrite) = write.saveMailboxes(mailboxList)
 }
@@ -91,6 +99,7 @@ internal suspend fun JmapConnection.mailChanges(
             threadChanges = threadState?.let { call(ChangesMethod(ThreadType, accountId, it, MAX_CHANGES)) }
         }
     return MailChanges(
+        loginId = loginId,
         mailboxList = mailboxes.read(response) ?: allMailboxes(accountId),
         emails = objectChanges(EmailType, accountId, response, emailsNow, emailChanges),
         threads = objectChanges(ThreadType, accountId, response, threadsNow, threadChanges),

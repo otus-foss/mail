@@ -1,8 +1,9 @@
 package com.otus.mail.app
 
 import com.otus.jmap.JmapClient
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -24,7 +25,7 @@ class LabeledCopiesTest {
         AccountFolders(
             "ada",
             "Ada",
-            listOf(MailFolder("ada", "i", "Inbox", role = "inbox"), MailFolder("ada", "c", "Clients")),
+            listOf(MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox), MailFolder("ada", "c", "Clients")),
         )
 
     @Test
@@ -55,7 +56,14 @@ class LabeledCopiesTest {
             "Plans",
             "",
             ReceivedAt("2026-10-01", "09:00"),
-            MailLocation("Inbox", "Ada", "ada", mailboxId = "i", mailboxIds = setOf("i", "c")),
+            MailLocation(
+                "Inbox",
+                "Ada",
+                "ada",
+                mailboxId = "i",
+                mailboxIds = setOf("i", "c"),
+                mailboxRole = MailboxRole.Inbox,
+            ),
             emailId = id,
         )
 }

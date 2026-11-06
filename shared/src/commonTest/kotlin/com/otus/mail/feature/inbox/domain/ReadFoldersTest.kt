@@ -1,13 +1,14 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ReadFoldersTest {
-    private val inbox = MessageFolder("in", listOf("Inbox"), role = "inbox")
-    private val drafts = MessageFolder("dr", listOf("Drafts"), role = "drafts")
+    private val inbox = MessageFolder("in", listOf("Inbox"), role = MailboxRole.Inbox)
+    private val drafts = MessageFolder("dr", listOf("Drafts"), role = MailboxRole.Drafts)
     private val readLater = MessageFolder("rl", listOf("Read later"), readLater = true)
     private val clients = MessageFolder("cl", listOf("Clients"), color = "blue")
     private val financeInvoices = MessageFolder("fi", listOf("Finance", "Invoices"), color = "yellow")
@@ -53,9 +54,9 @@ class ReadFoldersTest {
 
     @Test
     fun stripsLeaveOutSentTrashAndSpamButTheDetailsListEveryFolder() {
-        val sent = MessageFolder("se", listOf("Sent"), role = "sent")
-        val trash = MessageFolder("tr", listOf("Trash"), role = "trash")
-        val junk = MessageFolder("sp", listOf("Junk"), role = "junk")
+        val sent = MessageFolder("se", listOf("Sent"), role = MailboxRole.Sent)
+        val trash = MessageFolder("tr", listOf("Trash"), role = MailboxRole.Trash)
+        val junk = MessageFolder("sp", listOf("Junk"), role = MailboxRole.Junk)
         val folders = all + listOf(sent, trash, junk).associateBy { it.id }
         val ids = setOf("se", "tr", "sp", "rl", "cl")
         assertEquals(listOf(clients), folderHint(ids, folders, cameFrom = emptySet()).folders)

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Density
 import com.otus.dateformat.DateFormatPreference
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -254,7 +255,7 @@ class InboxPickerTest {
                 "Meeting design",
                 "",
                 ReceivedAt("2026-10-02", "10:00"),
-                MailLocation("Inbox", "Work", accountAddress = "me@work.example"),
+                MailLocation("Inbox", "Work", accountAddress = "me@work.example", mailboxRole = MailboxRole.Inbox),
             ),
             MailMessage(
                 "sam",
@@ -262,7 +263,7 @@ class InboxPickerTest {
                 "Meeting plans",
                 "",
                 ReceivedAt("2026-10-05", "10:00"),
-                MailLocation("Inbox", "Personal", accountAddress = "me@home.example"),
+                MailLocation("Inbox", "Personal", accountAddress = "me@home.example", mailboxRole = MailboxRole.Inbox),
             ),
         )
 }

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -64,6 +65,6 @@ class AccountIdentityPickerTest {
         "Subject",
         "Body",
         ReceivedAt("2026-10-01", "12:00"),
-        MailLocation("Inbox", "Ada", id, address),
+        MailLocation("Inbox", "Ada", id, address, mailboxRole = MailboxRole.Inbox),
     )
 }

@@ -1,9 +1,10 @@
 package com.otus.mail.app
 
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.FolderNode
-import com.otus.mail.feature.folders.domain.folderTree
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderNode
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.folderTree
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.folders.presentation.folderIcon
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailScope
@@ -21,15 +22,15 @@ internal fun folderPillOptions(accounts: List<AccountFolders>): List<FolderPillO
     val readLater = everyFolder.filter { it.readLater }
     val roles =
         everyFolder
-            .filter { it.folder.role != null && it.folder.role != INBOX_ROLE && !it.readLater }
-            .groupBy { it.folder.role.orEmpty() }
+            .filter { it.folder.role != null && it.folder.role != MailboxRole.Inbox && !it.readLater }
+            .groupBy { it.folder.role }
     return buildList {
         if (readLater.isNotEmpty()) add(everyAccount(InboxPill.ReadLater, readLater, "Read later"))
         roles.forEach { (role, nodes) ->
-            add(everyAccount(InboxPill.Role(role), nodes, role.replaceFirstChar { it.uppercase() }))
+            if (role != null) add(everyAccount(InboxPill.Role(role), nodes, role.title))
         }
         trees.forEach { (account, nodes) ->
-            nodes.filter { it.folder.isCustom && !it.readLater }.forEach { add(ownFolder(account, it)) }
+            nodes.filter { it.folder.role == null && !it.readLater }.forEach { add(ownFolder(account, it)) }
         }
     }
 }
@@ -58,7 +59,7 @@ private fun ownFolder(
         folderIcon(node),
         MailScope.Folder(account.accountId, node.folder.id),
         group = account.accountName,
-        path = node.path,
+        path = node.path.pathText(),
     )
 
 private const val EVERY_ACCOUNT_GROUP = "Folders"

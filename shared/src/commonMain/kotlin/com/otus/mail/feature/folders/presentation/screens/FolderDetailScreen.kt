@@ -15,7 +15,7 @@ import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.scopeOf
 import com.otus.mail.feature.folders.presentation.FolderColorsState

@@ -1,11 +1,13 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
+
 data class InboxSearch(
     val query: String = "",
     val senders: Set<String> = emptySet(),
     val dateStart: String? = null,
     val dateEnd: String? = null,
-    val mailboxes: Set<MailboxScope> = setOf(MailboxScope(null, INBOX_MAILBOX)),
+    val mailboxes: Set<MailboxScope> = setOf(MailboxScope.Inbox),
     val accounts: Set<String> = emptySet(),
     /** Where the terms must match. */
     val field: SearchField = SearchField.Anywhere,
@@ -112,13 +114,28 @@ fun selectedAccounts(
     }
 }
 
-/** A null account scopes the mailbox name across accounts, as used by the default Inbox. */
+/**
+ * A mailbox of [account], or of every account when null. A [role] finds the folder with that role,
+ * whatever it is named; without one, [name] finds the user's folders of that name.
+ */
 data class MailboxScope(
     val account: String?,
     val name: String,
+    val role: MailboxRole? = null,
 ) {
     fun matches(location: MailLocation): Boolean =
-        location.mailbox == name && (account == null || location.accountId == account)
+        holds(location.mailbox, location.mailboxRole) && (account == null || location.accountId == account)
+
+    /** Whether a mailbox named [mailbox] with [mailboxRole] is this one. */
+    fun holds(
+        mailbox: String,
+        mailboxRole: MailboxRole?,
+    ): Boolean = if (role != null) mailboxRole == role else mailboxRole == null && mailbox == name
+
+    companion object {
+        /** Every account's inbox, the default search scope. */
+        val Inbox = MailboxScope(null, MailboxRole.Inbox.title, MailboxRole.Inbox)
+    }
 }
 
 /** Whether [query] is being typed as an email address: one word with an @ in it. */

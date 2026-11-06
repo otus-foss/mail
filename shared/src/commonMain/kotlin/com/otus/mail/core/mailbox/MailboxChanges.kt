@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.data
+package com.otus.mail.core.mailbox
 
 import com.otus.jmap.ChangesMethod
 import com.otus.jmap.ChangesResult
@@ -9,13 +9,14 @@ import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapIds
 import com.otus.jmap.JmapRequestBuilder
 import com.otus.jmap.JmapResponse
+import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.CacheWrite
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailboxObject
 import com.otus.mail.core.mail.MailboxType
-import com.otus.mail.core.mail.mailboxes
-import com.otus.mail.core.mail.replaceMailboxes
+import com.otus.mail.core.mail.allObjects
+import com.otus.mail.core.mail.putObject
 import com.otus.mail.core.mail.unlessRefused
 
 /** A login's mailboxes and the `Mailbox` state they match; null when the server gave none. */
@@ -80,10 +81,16 @@ internal suspend fun MailCache.savedMailboxes(loginId: String): MailboxList? {
 internal suspend fun JmapConnection.allMailboxes(accountId: String): MailboxList =
     call(everyMailbox(accountId)).let { MailboxList(it.list, it.state.ifEmpty { null }) }
 
+/** Replaces the login's cached mailboxes and the state they match with [list]. */
 internal fun CacheWrite.saveMailboxes(list: MailboxList) {
-    replaceMailboxes(list.mailboxes)
+    clear(CacheKind.Mailbox)
+    list.mailboxes.forEach { putObject(CacheKind.Mailbox, it.id, MailboxObject.serializer(), it) }
     putValue(MAILBOX_STATE, list.state)
 }
+
+/** The login's cached mailboxes, as the last load saved them. */
+internal suspend fun MailCache.mailboxes(loginId: String): List<MailboxObject> =
+    allObjects(loginId, CacheKind.Mailbox, MailboxObject.serializer()).values.toList()
 
 private fun everyMailbox(accountId: String) = GetMethod(MailboxType, accountId, properties = MAILBOX_PROPERTIES)
 

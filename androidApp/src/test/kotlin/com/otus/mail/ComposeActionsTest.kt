@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.ComposeRequest
@@ -45,7 +46,7 @@ class ComposeActionsTest {
             "Compilers",
             "Hello",
             ReceivedAt("2026-10-04", "09:30"),
-            MailLocation("Inbox", "Work", "work", "me@example.org"),
+            MailLocation("Inbox", "Work", "work", "me@example.org", mailboxRole = MailboxRole.Inbox),
             emailId = "m1",
             to = listOf(MailSender("Me", "ME@example.org"), MailSender("Ada", "ada@example.org")),
             cc = listOf(MailSender("Grace", "grace@example.org"), MailSender("Alan", "alan@example.org")),

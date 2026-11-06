@@ -26,11 +26,6 @@ import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFolder
@@ -127,15 +122,6 @@ private fun SystemFolderPills(
 
 /** The name the app gives a system folder, as the Move to sheet's pills do, else the server's. */
 private val MessageFolder.pillLabel: String
-    get() = if (readLater) "Read later" else ROLE_LABELS[role] ?: path.last()
-
-private val ROLE_LABELS =
-    mapOf(
-        INBOX_ROLE to "Inbox",
-        ARCHIVE_ROLE to "Archive",
-        SENT_ROLE to "Sent",
-        JUNK_ROLE to "Spam",
-        TRASH_ROLE to "Trash",
-    )
+    get() = if (readLater) "Read later" else role?.title ?: path.last()
 
 private const val NEW_FOLDER = "New folder"

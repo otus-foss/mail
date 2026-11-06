@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
+
 /** A file attached to a message, as the Read view lists it. [size] is in bytes. */
 data class MailAttachment(
     val name: String,
@@ -22,13 +24,13 @@ data class Unsubscribe(
 
 /**
  * A mailbox a message can be in, as the Read view names it: [path] runs from the top folder to this
- * one. [role] is the JMAP role, null for the user's own folders. [color] is the saved folder color's
- * name. [readLater] marks the Read later folder, which the bookmark shows instead.
+ * one. [role] is null for the user's own folders. [color] is the saved folder color's name.
+ * [readLater] marks the Read later folder, which the bookmark shows instead.
  */
 data class MessageFolder(
     val id: String,
     val path: List<String>,
-    val role: String? = null,
+    val role: MailboxRole? = null,
     val color: String? = null,
     val readLater: Boolean = false,
 ) {

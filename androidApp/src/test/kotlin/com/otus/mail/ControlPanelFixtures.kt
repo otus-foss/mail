@@ -1,5 +1,6 @@
 package com.otus.mail
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.AddressPins
 import com.otus.mail.feature.inbox.domain.MailAttributes
@@ -69,7 +70,7 @@ internal object ControlPanelFixtures {
         subject,
         "A short preview of the message.",
         ReceivedAt(today.minus(DatePeriod(days = daysAgo)).toString(), "10:42"),
-        MailLocation("Inbox", "otus@rubylabs.design", accountId = "otus"),
+        MailLocation("Inbox", "otus@rubylabs.design", accountId = "otus", mailboxRole = MailboxRole.Inbox),
         MailAttributes(unread = unread, attachments = if (files) listOf("plan.pdf") else emptyList()),
         to = listOf(MailSender("", "otus@rubylabs.design")),
     )

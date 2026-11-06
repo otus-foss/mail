@@ -1,6 +1,5 @@
-package com.otus.mail.feature.folders.domain
+package com.otus.mail.core.mailbox
 
-import com.otus.mail.core.mail.INBOX_ROLE
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -9,7 +8,7 @@ class FolderTreeTest {
         id: String,
         name: String = id,
         parentId: String? = null,
-        role: String? = null,
+        role: MailboxRole? = null,
         sortOrder: Long = 0,
     ) = MailFolder("ada", id, name, parentId, role, sortOrder)
 
@@ -17,18 +16,18 @@ class FolderTreeTest {
     fun systemFoldersComeFirstAndChildrenFollowTheirParent() {
         val folders =
             listOf(
-                folder("t", "Trash", role = "trash"),
+                folder("t", "Trash", role = MailboxRole.Trash),
                 folder("w", "work"),
                 folder("r", "Receipts"),
                 folder("a", "Amazon", parentId = "r"),
-                folder("i", "Inbox", role = "inbox"),
-                folder("s", "Sent", role = "sent"),
+                folder("i", "Inbox", role = MailboxRole.Inbox),
+                folder("s", "Sent", role = MailboxRole.Sent),
                 folder("b", "Bank", parentId = "r", sortOrder = -1),
             )
         val tree = folderTree(folders)
         assertEquals(listOf("i", "s", "t", "r", "b", "a", "w"), tree.map { it.folder.id })
         assertEquals(listOf(0, 0, 0, 0, 1, 1, 0), tree.map { it.depth })
-        assertEquals("Receipts / Bank", tree.first { it.folder.id == "b" }.path)
+        assertEquals(listOf("Receipts", "Bank"), tree.first { it.folder.id == "b" }.path)
     }
 
     @Test
@@ -48,19 +47,19 @@ class FolderTreeTest {
 
     @Test
     fun hiddenFoldersLeaveTheirChildrenInPlace() {
-        val folders = listOf(folder("i", "Inbox", role = "inbox"), folder("c", "Clients", parentId = "i"))
-        val tree = folderTree(folders) { it.role == INBOX_ROLE }
-        assertEquals(listOf(FolderNode(folders[1], 0, "Clients")), tree)
+        val folders = listOf(folder("i", "Inbox", role = MailboxRole.Inbox), folder("c", "Clients", parentId = "i"))
+        val tree = folderTree(folders) { it.role == MailboxRole.Inbox }
+        assertEquals(listOf(FolderNode(folders[1], 0, listOf("Clients"))), tree)
     }
 
     @Test
     fun readLaterFollowsTheInboxAndIsMarked() {
         val folders =
             listOf(
-                folder("s", "Sent", role = "sent"),
+                folder("s", "Sent", role = MailboxRole.Sent),
                 folder("a", "Amazon"),
                 folder("l", "Someday"),
-                folder("i", "Inbox", role = "inbox"),
+                folder("i", "Inbox", role = MailboxRole.Inbox),
             )
         val tree = folderTree(folders, readLaterId = "l")
         assertEquals(listOf("i", "l", "s", "a"), tree.map { it.folder.id })
@@ -71,14 +70,14 @@ class FolderTreeTest {
     fun readLaterTreeNestsItsSubfoldersUnderItWhereverItSits() {
         val folders =
             listOf(
-                folder("i", "Inbox", role = "inbox"),
+                folder("i", "Inbox", role = MailboxRole.Inbox),
                 folder("p", "Projects"),
                 folder("l", "Read later", parentId = "p"),
                 folder("a", "Articles", parentId = "l"),
             )
         val tree = AccountFolders("ada", "Ada", folders, readLaterId = "l").readLaterTree()
         assertEquals(listOf("l" to 0, "a" to 1), tree.map { it.folder.id to it.depth })
-        assertEquals("Read later / Articles", tree.last().path)
+        assertEquals(listOf("Read later", "Articles"), tree.last().path)
         assertEquals(emptyList(), AccountFolders("ada", "Ada", folders).readLaterTree())
     }
 

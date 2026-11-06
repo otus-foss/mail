@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -129,7 +130,7 @@ class InboxFeedPendingTest {
             "Subject",
             "Body",
             ReceivedAt("2026-10-01", "12:00"),
-            MailLocation("Inbox", "Ada"),
+            MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox),
             MailAttributes(unread = true),
         )
 }

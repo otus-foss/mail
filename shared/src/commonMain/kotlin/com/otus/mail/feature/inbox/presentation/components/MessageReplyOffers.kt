@@ -2,9 +2,9 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.FolderRole
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -19,14 +19,14 @@ import com.otus.mail.feature.inbox.domain.shownName
 internal fun replyOffer(
     message: MailMessage,
     action: BarButton,
-    role: FolderRole?,
+    role: MailboxRole?,
     onCompose: (ComposeRequest) -> Unit,
 ): OfferedAction? {
     val request =
         when {
             action == MailAction.Reply -> ComposeRequest.Reply(message.original(), all = false)
             action == MailAction.ReplyAll -> ComposeRequest.Reply(message.original(), all = true)
-            action == MailAction.FollowUp && role == FolderRole.Sent -> ComposeRequest.FollowUp(message.original())
+            action == MailAction.FollowUp && role == MailboxRole.Sent -> ComposeRequest.FollowUp(message.original())
             action == MailAction.Forward -> ComposeRequest.Forward(message.original())
             action == MailAction.NewMail -> ComposeRequest.New(message.location.accountId)
             else -> return null

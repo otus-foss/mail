@@ -1,5 +1,8 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+
 /** How Read later changes one message. */
 enum class ReadLaterStep {
     /** Adds the Read later folder; the message stays in its other folders. */

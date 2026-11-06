@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.avatar.AvatarImage
 import com.otus.avatar.AvatarService
 import com.otus.avatar.avatarOptions
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -48,6 +49,6 @@ class FeedAvatarBatchTest {
             "Subject",
             "Body",
             ReceivedAt("2026-10-05", "09:00"),
-            MailLocation("Inbox", "Work"),
+            MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
         )
 }

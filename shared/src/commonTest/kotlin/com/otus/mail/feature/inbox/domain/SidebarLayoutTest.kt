@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -47,7 +48,7 @@ class SidebarLayoutTest {
     fun aLayoutSavedBeforeContactsAndTheInboxPinnedPinsThemOnce() {
         val saved = SidebarLayout.decode("pinned=read_later,role:sent")
         assertEquals(
-            listOf(SidebarPin.Inbox, SidebarPin.ReadLater, SidebarPin.Role("sent"), SidebarPin.Contacts),
+            listOf(SidebarPin.Inbox, SidebarPin.ReadLater, SidebarPin.Role(MailboxRole.Sent), SidebarPin.Contacts),
             saved.pinned,
         )
         val unpinned = saved.copy(pinned = saved.pinned - SidebarPin.Contacts - SidebarPin.Inbox)

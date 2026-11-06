@@ -13,6 +13,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -40,7 +41,7 @@ class InboxScrollRestoreTest {
                     "Subject $n",
                     "Body $n",
                     ReceivedAt("2026-10-03", "10:30"),
-                    MailLocation("Inbox", "Work"),
+                    MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
                 )
             }
         var inboxShown by mutableStateOf(true)

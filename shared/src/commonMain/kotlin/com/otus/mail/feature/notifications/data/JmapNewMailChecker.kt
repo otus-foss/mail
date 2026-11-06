@@ -16,14 +16,14 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DELIVERED_TO_PROPERTY
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.INBOX_ROLE
 import com.otus.mail.core.mail.MUTED_KEYWORD
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
@@ -47,6 +47,7 @@ import kotlin.time.Instant
  */
 class JmapNewMailChecker(
     private val connections: JmapConnections,
+    private val mailboxes: Mailboxes,
     private val states: MailStateStore,
 ) : NewMailChecker {
     override suspend fun check(alerts: MailAlerts) {
@@ -139,14 +140,13 @@ class JmapNewMailChecker(
         ids: List<String>,
     ): List<AlertedMail> {
         if (ids.isEmpty()) return emptyList()
-        lateinit var mailboxes: JmapCall<GetResult<MailboxObject>>
         lateinit var emails: JmapCall<GetResult<EmailObject>>
-        val response =
-            account.connection.send {
-                mailboxes = call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
-                emails = call(GetMethod(EmailType, account.id, JmapIds.Of(ids), ALERTED_PROPERTIES))
+        val (folders, response) =
+            mailboxes.send(account) {
+                emails =
+                    call(GetMethod(EmailType, account.id, JmapIds.Of(ids), ALERTED_PROPERTIES))
             }
-        val inboxes = inboxIds(response[mailboxes])
+        val inboxes = inboxIds(folders)
         val waiting =
             response[emails]
                 .list
@@ -163,12 +163,10 @@ class JmapNewMailChecker(
         ids: List<String>,
     ): List<NewMail> {
         if (ids.isEmpty()) return emptyList()
-        lateinit var mailboxes: JmapCall<GetResult<MailboxObject>>
         lateinit var emails: JmapCall<GetResult<EmailObject>>
         lateinit var members: JmapCall<GetResult<EmailObject>>
-        val response =
-            account.connection.send {
-                mailboxes = call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
+        val (folders, response) =
+            mailboxes.send(account) {
                 emails = call(GetMethod(EmailType, account.id, JmapIds.Of(ids), EMAIL_PROPERTIES))
                 val threads =
                     call(GetMethod(ThreadType, account.id, JmapIds.Result(emails.resultOf("/list/*/threadId"))))
@@ -183,8 +181,8 @@ class JmapNewMailChecker(
                     )
             }
         val muted = mutedThreads(response, members) ?: mutedThreads(response, emails).orEmpty()
-        val inboxes = inboxIds(response[mailboxes])
-        val roles = response[mailboxes].list.mapNotNull { it.role?.lowercase() }.toSet()
+        val inboxes = inboxIds(folders)
+        val roles = folders.mapNotNull { it.role }.toSet()
         val canSend =
             JmapCapability.SUBMISSION in
                 account.session.accounts[account.id]
@@ -253,10 +251,9 @@ class JmapNewMailChecker(
     }
 }
 
-private fun inboxIds(mailboxes: GetResult<MailboxObject>): Set<String> =
-    mailboxes
-        .list
-        .filter { it.role?.lowercase() == INBOX_ROLE }
+private fun inboxIds(folders: List<MailFolder>): Set<String> =
+    folders
+        .filter { it.role == MailboxRole.Inbox }
         .map { it.id }
         .toSet()
 

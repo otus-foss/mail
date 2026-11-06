@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.saveable.Saver
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.contacts.domain.CardKey
-import com.otus.mail.feature.folders.domain.CombinedFolder
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 
 /** Every page, including subpages. Pages without a parent are sidebar destinations. */
@@ -117,7 +117,7 @@ internal sealed interface MailPage {
 
     /** One system folder of every account, such as the Trash of all of them. */
     data class Combined(
-        val folder: CombinedFolder,
+        val role: MailboxRole,
     ) : MailPage
 
     /** Every account's Read later folder. */
@@ -179,7 +179,7 @@ internal sealed interface MailPage {
                     when (saved.firstOrNull()) {
                         FOLDER -> Folder(saved[1], saved[2])
                         FOLDER_DETAIL -> FolderDetail(saved[1], saved[2], saved[3].ifEmpty { null })
-                        COMBINED -> CombinedFolder.entries.firstOrNull { it.name == saved[1] }?.let(::Combined) ?: Inbox
+                        COMBINED -> MailboxRole.entries.firstOrNull { it.name == saved[1] }?.let(::Combined) ?: Inbox
                         SHARED -> Shared(saved.drop(1))
                         CONTACT -> Contact(CardKey(saved[1], saved[2], saved[3]))
                         CONTACT_EDITOR -> ContactEditor(saved.getOrNull(1)?.let { CardKey(it, saved[2], saved[3]) })
@@ -193,7 +193,7 @@ internal sealed interface MailPage {
             when (page) {
                 is Folder -> listOf(FOLDER, page.accountId, page.folderId)
                 is FolderDetail -> listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
-                is Combined -> listOf(COMBINED, page.folder.name)
+                is Combined -> listOf(COMBINED, page.role.name)
                 is Shared -> listOf(SHARED) + page.key
                 is Compose -> saved(page.parent)
                 is Contact -> listOf(CONTACT, page.key.loginId, page.key.accountId, page.key.cardId)

@@ -2,6 +2,7 @@ package com.otus.mail
 
 import android.content.Intent
 import androidx.work.Data
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.notifications.domain.NewMail
 import kotlin.time.Instant
 
@@ -25,7 +26,7 @@ internal fun Intent.putMail(mail: NewMail): Intent =
         .putExtra(EXTRA_PREVIEW, mail.preview)
         .putExtra(EXTRA_RECEIVED, mail.receivedAt.toEpochMilliseconds())
         .putExtra(EXTRA_RECIPIENTS, mail.recipients.toTypedArray())
-        .putExtra(EXTRA_ROLES, mail.mailboxRoles.toTypedArray())
+        .putExtra(EXTRA_ROLES, mail.mailboxRoles.wire())
         .putExtra(EXTRA_CAN_SEND, mail.canSend)
 
 /** The alert [putMail] put in this intent; null without its ids. */
@@ -42,7 +43,7 @@ internal fun Intent.mail(): NewMail? {
         preview = getStringExtra(EXTRA_PREVIEW).orEmpty(),
         receivedAt = Instant.fromEpochMilliseconds(getLongExtra(EXTRA_RECEIVED, 0)),
         recipients = getStringArrayExtra(EXTRA_RECIPIENTS).orEmpty().toList(),
-        mailboxRoles = getStringArrayExtra(EXTRA_ROLES).orEmpty().toSet(),
+        mailboxRoles = getStringArrayExtra(EXTRA_ROLES).roles(),
         canSend = getBooleanExtra(EXTRA_CAN_SEND, false),
     )
 }
@@ -57,7 +58,7 @@ internal fun Data.Builder.putMail(mail: NewMail): Data.Builder =
         .putString(EXTRA_PREVIEW, mail.preview)
         .putLong(EXTRA_RECEIVED, mail.receivedAt.toEpochMilliseconds())
         .putStringArray(EXTRA_RECIPIENTS, mail.recipients.toTypedArray())
-        .putStringArray(EXTRA_ROLES, mail.mailboxRoles.toTypedArray())
+        .putStringArray(EXTRA_ROLES, mail.mailboxRoles.wire())
         .putBoolean(EXTRA_CAN_SEND, mail.canSend)
 
 /** The alert [Data.Builder.putMail] put in this input; null without its ids. */
@@ -74,7 +75,11 @@ internal fun Data.mail(): NewMail? {
         preview = getString(EXTRA_PREVIEW).orEmpty(),
         receivedAt = Instant.fromEpochMilliseconds(getLong(EXTRA_RECEIVED, 0)),
         recipients = getStringArray(EXTRA_RECIPIENTS).orEmpty().toList(),
-        mailboxRoles = getStringArray(EXTRA_ROLES).orEmpty().toSet(),
+        mailboxRoles = getStringArray(EXTRA_ROLES).roles(),
         canSend = getBoolean(EXTRA_CAN_SEND, false),
     )
 }
+
+private fun Set<MailboxRole>.wire(): Array<String?> = map { it.wire }.toTypedArray<String?>()
+
+private fun Array<out String?>?.roles(): Set<MailboxRole> = orEmpty().mapNotNull(MailboxRole::of).toSet()

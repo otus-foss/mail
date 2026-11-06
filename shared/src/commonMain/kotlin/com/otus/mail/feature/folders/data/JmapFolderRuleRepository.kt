@@ -8,9 +8,9 @@ import com.otus.jmap.JmapJson
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.folders.domain.AccountFolderRules
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
@@ -34,10 +34,11 @@ import kotlin.time.Clock
  */
 class JmapFolderRuleRepository(
     private val connections: JmapConnections,
+    private val mailboxes: Mailboxes,
     /** The UTC offset, such as `+0200`, that day and time conditions are written in. */
     private val zone: () -> String = ::deviceZone,
 ) : FolderRuleRepository {
-    private val existing = ExistingMail(connections)
+    private val existing = ExistingMail(connections, mailboxes)
 
     override suspend fun accounts(): List<AccountFolderRules> =
         coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
@@ -138,9 +139,10 @@ class JmapFolderRuleRepository(
         support: RuleSupport,
     ): ScriptRead {
         val scripts = account.connection.call(GetMethod(SieveScriptType, account.id, properties = SCRIPT_PROPERTIES))
-        val mailboxes = account.connection.call(GetMethod(MailboxType, account.id, properties = MAILBOX_PROPERTIES))
+        // Fresh folders, so a rule for a folder made on another device keeps its path.
+        val folders = mailboxes.sync(account)
         val plan = planScript(scripts.list, support) { download(account, it, support) }
-        return ScriptRead(scripts.state, mailboxes.list, plan)
+        return ScriptRead(scripts.state, folders, plan)
     }
 
     private suspend fun download(
@@ -169,14 +171,13 @@ class JmapFolderRuleRepository(
 
     private class ScriptRead(
         val state: String,
-        val folders: List<MailboxObject>,
+        val folders: List<MailFolder>,
         val plan: ScriptPlan?,
     )
 
     private companion object {
         const val MAX_SCRIPT_BYTES = 1024L * 1024
         val SCRIPT_PROPERTIES = listOf("id", "name", "blobId", "isActive")
-        val MAILBOX_PROPERTIES = listOf("id", "name", "parentId", "role", "sortOrder")
     }
 }
 

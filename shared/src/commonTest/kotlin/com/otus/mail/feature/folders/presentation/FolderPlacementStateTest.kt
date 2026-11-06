@@ -1,12 +1,12 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.FolderFailure
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.folderTree
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable

@@ -1,7 +1,7 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderRule
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.withAdded
 import com.otus.mail.feature.folders.domain.withRemoved
 import com.otus.mail.feature.folders.domain.withReplaced

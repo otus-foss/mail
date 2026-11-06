@@ -19,8 +19,8 @@ import com.otus.designsystem.shared.actionbar.elements.BarIconButton
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.rows.components.TrailingIcons
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn
 import com.otus.mail.feature.folders.domain.placeableChildren
 import com.otus.mail.feature.folders.domain.scopeOf

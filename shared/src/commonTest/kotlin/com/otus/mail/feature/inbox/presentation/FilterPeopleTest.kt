@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.FoundPerson
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -26,7 +27,7 @@ class FilterPeopleTest {
         "",
         "",
         ReceivedAt("2026-10-${day.toString().padStart(2, '0')}", "09:00"),
-        MailLocation("Inbox", "Ada", "ada", "ada@example.org"),
+        MailLocation("Inbox", "Ada", "ada", "ada@example.org", mailboxRole = MailboxRole.Inbox),
         to = to,
         cc = cc,
     )

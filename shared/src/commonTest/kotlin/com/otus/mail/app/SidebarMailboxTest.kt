@@ -1,9 +1,8 @@
 package com.otus.mail.app
 
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.PinSize
 import com.otus.mail.feature.inbox.domain.SidebarLayout
 import com.otus.mail.feature.inbox.domain.SidebarPin
@@ -16,8 +15,8 @@ class SidebarMailboxTest {
             "ada",
             "Ada",
             listOf(
-                MailFolder("ada", "i", "Inbox", role = INBOX_ROLE),
-                MailFolder("ada", "s", "Sent", role = SENT_ROLE),
+                MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox),
+                MailFolder("ada", "s", "Sent", role = MailboxRole.Sent),
                 MailFolder("ada", "w", "Work"),
                 MailFolder("ada", "c", "Clients", parentId = "w"),
             ),
@@ -30,10 +29,10 @@ class SidebarMailboxTest {
                 SidebarPin.Inbox,
                 SidebarPin.Folder(listOf("work", "clients")),
                 SidebarPin.ReadLater,
-                SidebarPin.Role("sent"),
+                SidebarPin.Role(MailboxRole.Sent),
                 SidebarPin.Folder(listOf("gone")),
             )
-        val layout = SidebarLayout(pinned = pinned, sizes = mapOf(SidebarPin.Role("sent") to PinSize.Wide))
+        val layout = SidebarLayout(pinned = pinned, sizes = mapOf(SidebarPin.Role(MailboxRole.Sent) to PinSize.Wide))
         val mailboxes = sidebarMailboxes(listOf(ada), layout = layout)
         assertEquals(listOf("Inbox", "Clients", "Sent"), mailboxes.map { it.title })
         assertEquals(MailPage.Shared(listOf("work", "clients")), mailboxes[1].page)
@@ -42,7 +41,8 @@ class SidebarMailboxTest {
 
     @Test
     fun anUnpinnedInboxLeavesTheSidebar() {
-        val mailboxes = sidebarMailboxes(listOf(ada), layout = SidebarLayout(pinned = listOf(SidebarPin.Role("sent"))))
+        val mailboxes =
+            sidebarMailboxes(listOf(ada), layout = SidebarLayout(pinned = listOf(SidebarPin.Role(MailboxRole.Sent))))
         assertEquals(listOf("Sent"), mailboxes.map { it.title })
     }
 
@@ -53,7 +53,7 @@ class SidebarMailboxTest {
                 SidebarPin.Inbox,
                 SidebarPin.Conversations,
                 SidebarPin.Contacts,
-                SidebarPin.Role("sent"),
+                SidebarPin.Role(MailboxRole.Sent),
                 SidebarPin.Folder(listOf("work")),
                 SidebarPin.Folder(listOf("work", "clients")),
             ),

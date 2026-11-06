@@ -19,9 +19,6 @@ internal class FilterLookups(
         query: MailQuery,
     ): Long? = mail.count(scope, query)
 
-    /** Starts the counts of one filter panel session. */
-    fun beginCounting() = mail.beginCounting()
-
     /** People of the shown accounts' mail, or contacts, that [text] finds on [field]. */
     suspend fun findPeople(
         field: PeopleField,

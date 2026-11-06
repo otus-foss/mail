@@ -1,8 +1,10 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.FolderLimits
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +22,7 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReadLaterFoldersTest {
-    private val inbox = MailFolder("ada", "i", "Inbox", role = INBOX_ROLE)
+    private val inbox = MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox)
 
     /**
      * Folders kept in memory. Loading takes 10 ms and the server applies a new folder after 20 ms,
@@ -132,7 +134,7 @@ class ReadLaterFoldersTest {
     @Test
     fun replacesASavedFolderThatWasMovedIntoTrash() =
         runTest {
-            val trash = MailFolder("ada", "t", "Trash", role = TRASH_ROLE)
+            val trash = MailFolder("ada", "t", "Trash", role = MailboxRole.Trash)
             val trashed = MailFolder("ada", "x", "Read later", parentId = "t")
             val repository = FakeFolders(listOf(ada(trash, trashed)), backgroundScope)
             val store = MemoryStore(mapOf("ada" to "x"))
@@ -144,7 +146,7 @@ class ReadLaterFoldersTest {
     @Test
     fun replacesASavedFolderThatBecameASystemFolder() =
         runTest {
-            val archive = MailFolder("ada", "x", "Archive", role = ARCHIVE_ROLE)
+            val archive = MailFolder("ada", "x", "Archive", role = MailboxRole.Archive)
             val repository = FakeFolders(listOf(ada(archive)), backgroundScope)
             val accounts = ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x"))).accounts { true }
             assertEquals("n1", accounts.single().readLaterId)

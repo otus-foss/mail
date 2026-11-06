@@ -1,14 +1,12 @@
 package com.otus.mail.app
 
-import com.otus.mail.core.mail.ARCHIVE_ROLE
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.JUNK_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
-import com.otus.mail.feature.folders.domain.FolderNode
-import com.otus.mail.feature.folders.domain.FolderRights
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.FolderNode
+import com.otus.mail.core.mailbox.FolderRights
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.folderTree
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.folders.domain.ReadLaterStep
-import com.otus.mail.feature.folders.domain.folderTree
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
 import com.otus.mail.feature.folders.domain.sharedFolders
@@ -19,7 +17,6 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.RowFolder
 import com.otus.mail.feature.inbox.domain.inFolder
 import com.otus.mail.feature.inbox.domain.suggestedFolder
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
@@ -60,7 +57,7 @@ internal class MessageFiling(
                         RowFolder(
                             it.folder.id,
                             it.folder.name,
-                            if (it.folder.role == INBOX_ROLE) FolderKind.Inbox else FolderKind.Folder,
+                            if (it.folder.role == MailboxRole.Inbox) FolderKind.Inbox else FolderKind.Folder,
                             colors.colorOf(it.folder),
                             it.readLater,
                         )
@@ -78,7 +75,7 @@ internal class MessageFiling(
     fun listedTargets(message: MailMessage): List<MoveTarget> {
         val account = folders.account(message.location.accountId)
         if (account == null || !folders.rightsOf(message).mayRemoveItems) return emptyList()
-        val own = account.folderTree { !it.isCustom || it.id == account.readLaterId }.associateBy { it.folder.id }
+        val own = account.folderTree { !account.isOwnFolder(it) }.associateBy { it.folder.id }
         val paths =
             sharedFolders(listOf(account))
                 .flatMap { it.flatten() }
@@ -91,8 +88,8 @@ internal class MessageFiling(
                 val ownNode = own[node.folder.id]
                 MoveTarget(
                     node.folder.id,
-                    node.path,
-                    shortcutFor(node.folder.role),
+                    node.path.pathText(),
+                    node.folder.role?.takeIf { it in SHORTCUTS },
                     name = node.folder.name,
                     depth = ownNode?.depth ?: 0,
                     own = ownNode != null,
@@ -189,15 +186,15 @@ internal class MessageFiling(
      */
     private fun leaving(
         message: MailMessage,
-        shortcut: FolderShortcut?,
+        shortcut: MailboxRole?,
     ): Set<String> {
         val shown = setOf(message.location.mailboxId)
         val folderIds = message.location.mailboxIds
         val inbox = folders.account(message.location.accountId)?.inbox?.id
         return when (shortcut) {
-            FolderShortcut.Trash, FolderShortcut.Spam -> shown + folderIds
-            FolderShortcut.Archive -> shown + setOfNotNull(inbox?.takeIf { it in folderIds })
-            FolderShortcut.Inbox, null -> shown
+            MailboxRole.Trash, MailboxRole.Junk -> shown + folderIds
+            MailboxRole.Archive -> shown + setOfNotNull(inbox?.takeIf { it in folderIds })
+            else -> shown
         }
     }
 }
@@ -206,14 +203,8 @@ internal class MessageFiling(
 internal fun FoldersState.rightsOf(message: MailMessage): FolderRights =
     folder(message.location.accountId, message.location.mailboxId)?.rights ?: FolderRights()
 
-private fun shortcutFor(role: String?): FolderShortcut? =
-    when (role) {
-        INBOX_ROLE -> FolderShortcut.Inbox
-        ARCHIVE_ROLE -> FolderShortcut.Archive
-        JUNK_ROLE -> FolderShortcut.Spam
-        TRASH_ROLE -> FolderShortcut.Trash
-        else -> null
-    }
+/** The system folders one action files a message into. */
+private val SHORTCUTS = setOf(MailboxRole.Inbox, MailboxRole.Archive, MailboxRole.Junk, MailboxRole.Trash)
 
 /**
  * The copies [MessageFiling.labeled] made, by message id. Keep one only while the folders and their

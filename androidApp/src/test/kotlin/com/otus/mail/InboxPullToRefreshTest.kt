@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import com.otus.designsystem.theme.OtusTheme
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -80,7 +81,7 @@ class InboxPullToRefreshTest {
                     "Design review",
                     "The prototype is ready",
                     ReceivedAt("2026-10-03", "10:30"),
-                    MailLocation("Inbox", "Work"),
+                    MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
                 ),
             ),
         )

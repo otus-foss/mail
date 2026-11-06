@@ -74,7 +74,7 @@ private fun LazyListScope.peopleChoices(
     }
 }
 
-/** Accounts, then mailbox names. A name matches that mailbox in every account the search includes. */
+/** Accounts, then mailboxes. A mailbox choice matches that mailbox in every account the search includes. */
 private fun LazyListScope.accountChoices(
     messages: List<MailMessage>,
     mailboxSearch: MailboxSearch,
@@ -92,12 +92,16 @@ private fun LazyListScope.accountChoices(
             it.account.contains(needle, ignoreCase = true) ||
                 it.accountAddress.contains(needle, ignoreCase = true)
         }
-    // Selected names stay listed so they can be cleared, even when the folder list lacks them.
-    val names =
-        if (allowMailboxSelection) (mailboxSearch.names + draft.mailboxes.map { it.name }).distinct() else emptyList()
-    val nameMatches = names.filter { it.contains(needle, ignoreCase = true) }
-    if (matches.isEmpty() && nameMatches.isEmpty()) {
-        item { EmptyChoices(accounts.isEmpty() && names.isEmpty(), "No accounts connected.") }
+    // Selected mailboxes stay listed so they can be cleared, even when the folder list lacks them.
+    val mailboxes =
+        if (allowMailboxSelection) {
+            (mailboxSearch.mailboxes + draft.mailboxes.map { it.copy(account = null) }).distinct()
+        } else {
+            emptyList()
+        }
+    val mailboxMatches = mailboxes.filter { it.name.contains(needle, ignoreCase = true) }
+    if (matches.isEmpty() && mailboxMatches.isEmpty()) {
+        item { EmptyChoices(accounts.isEmpty() && mailboxes.isEmpty(), "No accounts connected.") }
     }
     items(matches, key = { it.accountId }) { account ->
         PickRow(
@@ -109,28 +113,31 @@ private fun LazyListScope.accountChoices(
             leading = { AccountAvatar(account) },
         )
     }
-    mailboxChoices(nameMatches, draft, onChange)
+    mailboxChoices(mailboxMatches, draft, onChange)
 }
 
 private fun LazyListScope.mailboxChoices(
-    names: List<String>,
+    mailboxes: List<MailboxScope>,
     draft: InboxSearch,
     onChange: (InboxSearch) -> Unit,
 ) {
-    if (names.isEmpty()) return
+    if (mailboxes.isEmpty()) return
     item { Caption("Inboxes", Modifier.padding(top = SheetTokens.inset)) }
-    items(names, key = { "mailbox/$it" }) { name ->
+    items(mailboxes, key = { "mailbox/${it.role}/${it.name}" }) { mailbox ->
         PickRow(
-            name,
+            mailbox.name,
             null,
-            PickMark(draft.mailboxes.any { it.name == name }, multiple = true, style = PickStyle.Card),
-            { onChange(draft.copy(mailboxes = draft.mailboxes.toggledName(name))) },
+            PickMark(draft.mailboxes.any { it.sameMailbox(mailbox) }, multiple = true, style = PickStyle.Card),
+            { onChange(draft.copy(mailboxes = draft.mailboxes.toggled(mailbox))) },
         )
     }
 }
 
-private fun Set<MailboxScope>.toggledName(name: String): Set<MailboxScope> =
-    if (any { it.name == name }) filterNot { it.name == name }.toSet() else this + MailboxScope(account = null, name)
+/** These choices without [mailbox] in any account, or with it in every account. */
+private fun Set<MailboxScope>.toggled(mailbox: MailboxScope): Set<MailboxScope> =
+    if (any { it.sameMailbox(mailbox) }) filterNot { it.sameMailbox(mailbox) }.toSet() else this + mailbox
+
+private fun MailboxScope.sameMailbox(other: MailboxScope): Boolean = role == other.role && name == other.name
 
 @Composable
 private fun AccountAvatar(location: MailLocation) {

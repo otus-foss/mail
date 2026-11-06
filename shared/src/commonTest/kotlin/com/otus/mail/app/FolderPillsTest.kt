@@ -1,9 +1,8 @@
 package com.otus.mail.app
 
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.MailScope
 import kotlin.test.Test
@@ -15,8 +14,8 @@ class FolderPillsTest {
             "ada",
             "Ada",
             listOf(
-                MailFolder("ada", "i", "Inbox", role = INBOX_ROLE),
-                MailFolder("ada", "t", "Trash", role = TRASH_ROLE),
+                MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox),
+                MailFolder("ada", "t", "Trash", role = MailboxRole.Trash),
                 MailFolder("ada", "l", "Read later"),
                 MailFolder("ada", "w", "Work"),
                 MailFolder("ada", "c", "Clients", parentId = "w"),
@@ -28,8 +27,8 @@ class FolderPillsTest {
             "grace",
             "Grace",
             listOf(
-                MailFolder("grace", "gi", "Inbox", role = INBOX_ROLE),
-                MailFolder("grace", "gt", "Deleted Items", role = TRASH_ROLE),
+                MailFolder("grace", "gi", "Inbox", role = MailboxRole.Inbox),
+                MailFolder("grace", "gt", "Deleted Items", role = MailboxRole.Trash),
             ),
         )
 
@@ -39,7 +38,7 @@ class FolderPillsTest {
         assertEquals(
             listOf(
                 InboxPill.ReadLater,
-                InboxPill.Role(TRASH_ROLE),
+                InboxPill.Role(MailboxRole.Trash),
                 InboxPill.Folder("ada", "w"),
                 InboxPill.Folder("ada", "c"),
             ),

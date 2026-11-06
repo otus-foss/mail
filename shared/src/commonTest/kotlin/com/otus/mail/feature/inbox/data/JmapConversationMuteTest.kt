@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -30,7 +31,7 @@ class JmapConversationMuteTest {
             "Plans",
             "",
             ReceivedAt("2026-10-03", "09:00"),
-            MailLocation("Inbox", "Ada", "ada", mailboxId = "a"),
+            MailLocation("Inbox", "Ada", "ada", mailboxId = "a", mailboxRole = MailboxRole.Inbox),
             emailId = "r2",
         )
 

@@ -2,6 +2,7 @@ package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.mail.sidebar.components.SidebarMailboxGrid
 import com.otus.designsystem.mail.sidebar.elements.SidebarInboxEntry
 import com.otus.designsystem.mail.sidebar.elements.SidebarMailboxTile
@@ -14,14 +15,12 @@ import com.otus.designsystem.shared.controls.elements.LocalIconTint
 import com.otus.designsystem.shared.sidebar.elements.SidebarCount
 import com.otus.designsystem.shared.sidebar.elements.SidebarEntry
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.combinedFolders
 import com.otus.mail.feature.folders.domain.SharedFolder
-import com.otus.mail.feature.folders.domain.combinedFolders
 import com.otus.mail.feature.folders.domain.sharedFolders
-import com.otus.mail.feature.folders.presentation.roleIcon
 import com.otus.mail.feature.inbox.domain.InboxContents
 import com.otus.mail.feature.inbox.domain.MailboxStyle
 import com.otus.mail.feature.inbox.domain.PinSize
@@ -72,7 +71,15 @@ internal fun pinnableMailboxes(
             accounts.flatMap { account ->
                 account.folders.filter { it.role in inbox.roles || (inbox.ownFolders && it.isCustom) }
             }
-        add(SidebarPin.Inbox to SidebarMailbox("Inbox", roleIcon(INBOX_ROLE), MailPage.Inbox, inboxFolders))
+        add(
+            SidebarPin.Inbox to
+                SidebarMailbox(
+                    MailboxRole.Inbox.title,
+                    folderSymbol(MailboxRole.Inbox.wire),
+                    MailPage.Inbox,
+                    inboxFolders,
+                ),
+        )
         val readLater = accounts.mapNotNull { it.readLater }
         if (readLater.isNotEmpty()) {
             add(
@@ -81,7 +88,7 @@ internal fun pinnableMailboxes(
             )
         }
         // Conversations has no folder of its own, so it shows no count.
-        if (accounts.any { account -> account.folders.any { it.role == SENT_ROLE } }) {
+        if (accounts.any { account -> account.folders.any { it.role == MailboxRole.Sent } }) {
             add(
                 SidebarPin.Conversations to
                     SidebarMailbox("Convos", Res.drawable.symbol_forum, MailPage.Conversations, emptyList()),
@@ -91,10 +98,10 @@ internal fun pinnableMailboxes(
             SidebarPin.Contacts to
                 SidebarMailbox("Contacts", Res.drawable.symbol_contacts, MailPage.Contacts, emptyList()),
         )
-        combinedFolders(accounts).forEach { (folder, folders) ->
+        combinedFolders(accounts).forEach { (role, folders) ->
             add(
-                SidebarPin.Role(folder.role) to
-                    SidebarMailbox(folder.title, roleIcon(folder.role), MailPage.Combined(folder), folders),
+                SidebarPin.Role(role) to
+                    SidebarMailbox(role.title, folderSymbol(role.wire), MailPage.Combined(role), folders),
             )
         }
         sharedFolders(accounts).flatMap { it.flatten() }.forEach { folder ->

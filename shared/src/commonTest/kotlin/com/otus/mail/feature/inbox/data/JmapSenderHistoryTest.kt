@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -25,7 +26,7 @@ class JmapSenderHistoryTest {
             "Invoice",
             "",
             ReceivedAt("2026-10-04", "09:30"),
-            MailLocation("Inbox", "Ada", "ada", mailboxId = "a"),
+            MailLocation("Inbox", "Ada", "ada", mailboxId = "a", mailboxRole = MailboxRole.Inbox),
             emailId = "m1",
         )
 

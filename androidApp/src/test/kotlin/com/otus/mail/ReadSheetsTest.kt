@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailHeader
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -56,8 +57,8 @@ class ReadSheetsTest {
         )
     private val folders =
         listOf(
-            MessageFolder("in", listOf("Inbox"), role = "inbox"),
-            MessageFolder("sp", listOf("Junk"), role = "junk"),
+            MessageFolder("in", listOf("Inbox"), role = MailboxRole.Inbox),
+            MessageFolder("sp", listOf("Junk"), role = MailboxRole.Junk),
             MessageFolder("cl", listOf("Clients"), color = "Blue"),
             MessageFolder("fi", listOf("Finance", "Invoices"), color = "Yellow"),
             MessageFolder("ft", listOf("Finance", "Taxes"), color = "Yellow"),

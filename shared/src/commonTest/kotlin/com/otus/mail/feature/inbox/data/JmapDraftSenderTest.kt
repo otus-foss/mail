@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -47,10 +49,10 @@ class JmapDraftSenderTest {
                 calls += body
                 when {
                     "Identity/get" in body -> {
+                        val sentFolder = if (sent) """, {"id": "se", "role": "sent"}""" else ""
                         responses(
-                            """["Identity/get", {"state": "i", "list": [$identities]}, "c0"]""",
-                            """["Mailbox/query", {"ids": ["dr"]}, "c1"]""",
-                            """["Mailbox/query", {"ids": [${if (sent) "\"se\"" else ""}]}, "c2"]""",
+                            """["Mailbox/get", {"state": "m", "list": [{"id": "dr", "role": "drafts"}$sentFolder]}, "c0"]""",
+                            """["Identity/get", {"state": "i", "list": [$identities]}, "c1"]""",
                         )
                     }
 
@@ -77,7 +79,7 @@ class JmapDraftSenderTest {
                     }
                 }
             }
-        return JmapDraftSender(JmapConnections(JmapClient(engine), store))
+        return JmapDraftSender(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache()))
     }
 
     private fun responses(vararg items: String) = """{"methodResponses": [${items.joinToString()}]}"""
@@ -98,7 +100,7 @@ class JmapDraftSenderTest {
         runTest {
             assertTrue(sender().send(reply, AnsweredMessage("m1", forwarded = false), SendTime.Now).isSuccess)
             val (route, store, submit, tidy) = calls.map(::methods)
-            assertEquals(listOf("Identity/get", "Mailbox/query", "Mailbox/query"), route.map { it.name })
+            assertEquals(listOf("Mailbox/get", "Identity/get"), route.map { it.name })
             assertEquals(listOf("Email/set"), store.map { it.name })
             assertEquals(listOf("EmailSubmission/set"), submit.map { it.name })
 

@@ -1,6 +1,7 @@
 package com.otus.mail.app
 
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.data.FakeMailServer
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
@@ -14,7 +15,6 @@ import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.ThreadEmail
 import com.otus.mail.feature.inbox.domain.ThreadMember
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.testing.stalwartLike
@@ -66,7 +66,15 @@ class ReadPageChangesTest {
         "Plans",
         "",
         ReceivedAt("2026-10-01", "09:00"),
-        MailLocation("Inbox", "Ada", "ada", "ada@example.org", mailboxId = boxes.first(), mailboxIds = boxes),
+        MailLocation(
+            "Inbox",
+            "Ada",
+            "ada",
+            "ada@example.org",
+            mailboxId = boxes.first(),
+            mailboxIds = boxes,
+            mailboxRole = MailboxRole.Inbox,
+        ),
         emailId = id,
     )
 
@@ -192,7 +200,7 @@ class ReadPageChangesTest {
 
     private companion object {
         val GRACE = MailSender("Grace", "grace@example.org")
-        val TRASH = MoveTarget("tr", "Trash", FolderShortcut.Trash)
+        val TRASH = MoveTarget("tr", "Trash", MailboxRole.Trash)
 
         const val MAILBOXES = """{"id": "a", "name": "Inbox", "role": "inbox"},
             {"id": "ar", "name": "Archive", "role": "archive"}, {"id": "fi", "name": "Invoices"},

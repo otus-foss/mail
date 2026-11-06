@@ -6,20 +6,18 @@ import com.otus.jmap.JmapCall
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.QueryResult
 import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
-import com.otus.mail.core.mail.DRAFTS_ROLE
 import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityObject
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.core.mail.roleQuery
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftRestoreException
@@ -45,6 +43,7 @@ import kotlinx.serialization.json.putJsonObject
  */
 class JmapDraftSender(
     private val connections: JmapConnections,
+    private val mailboxes: Mailboxes,
     private val unanswered: UnansweredDrafts = UnansweredDrafts(),
 ) : DraftSender,
     ScheduledSends {
@@ -90,18 +89,12 @@ class JmapDraftSender(
     /** The identity that sends as [from], and the folders the sent copy moves between. */
     private suspend fun MailAccount.route(from: String): SendRoute {
         lateinit var identities: JmapCall<GetResult<IdentityObject>>
-        lateinit var drafts: JmapCall<QueryResult>
-        lateinit var sent: JmapCall<QueryResult>
-        val response =
-            connection.send {
-                identities = call(GetMethod(IdentityType, id, properties = listOf("id", "email")))
-                drafts = call(roleQuery(DRAFTS_ROLE))
-                sent = call(roleQuery(SENT_ROLE))
-            }
+        val (folders, response) =
+            mailboxes.send(this) { identities = call(GetMethod(IdentityType, id, properties = listOf("id", "email"))) }
         return SendRoute(
             identityId = response[identities].list.sendingAs(from) { it.email }?.id ?: failSend(SendFailure.NoIdentity),
-            drafts = response[drafts].ids.firstOrNull(),
-            sent = response[sent].ids.firstOrNull(),
+            drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id,
+            sent = folders.firstOrNull { it.role == MailboxRole.Sent }?.id,
         )
     }
 

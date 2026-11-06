@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.searchMessages
@@ -24,7 +25,7 @@ class AccountIdentityTest {
                 it.id
             },
         )
-        val mailbox = InboxSearch(mailboxes = setOf(MailboxScope("personal", "Inbox")))
+        val mailbox = InboxSearch(mailboxes = setOf(MailboxScope("personal", "Inbox", MailboxRole.Inbox)))
         assertEquals(listOf("personal/same-email-id"), searchMessages(messages, mailbox).map { it.id })
         assertEquals(2, searchMessages(messages, InboxSearch()).size)
         assertEquals(listOf("Ada", "Ada"), messages.map { it.location.account })

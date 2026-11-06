@@ -1,7 +1,8 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.TRASH_ROLE
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -12,11 +13,11 @@ class SharedFolderTest {
             "ada",
             "Ada",
             listOf(
-                MailFolder("ada", "i", "Inbox", role = INBOX_ROLE),
+                MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox),
                 MailFolder("ada", "c", "Clients"),
                 MailFolder("ada", "a", "Acme", parentId = "c", unread = 2),
                 MailFolder("ada", "p", "Projects", parentId = "i"),
-                MailFolder("ada", "t", "Trash", role = TRASH_ROLE),
+                MailFolder("ada", "t", "Trash", role = MailboxRole.Trash),
                 MailFolder("ada", "o", "Old", parentId = "t"),
                 MailFolder("ada", "l", "Read later"),
                 MailFolder("ada", "x", "Articles", parentId = "l"),

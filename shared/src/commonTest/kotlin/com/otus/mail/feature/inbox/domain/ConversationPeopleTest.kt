@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -25,7 +26,7 @@ class ConversationPeopleTest {
         "Plans",
         "",
         ReceivedAt("2026-10-04", "09:30"),
-        MailLocation("Inbox", "Work", "work", accountAddress),
+        MailLocation("Inbox", "Work", "work", accountAddress, mailboxRole = MailboxRole.Inbox),
         to = to,
         cc = cc,
         conversation = conversation,

@@ -1,6 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.feature.folders.domain.FolderFailure
+import com.otus.mail.core.mailbox.FolderFailure
 import com.otus.mail.feature.folders.domain.RuleFailure
 
 /** Why rules could not be saved or loaded, worded for the user. [detail] is the server's explanation. */

@@ -5,11 +5,10 @@ import com.otus.avatar.generatedAvatar
 import com.otus.avatar.ui.presentation.toChipAvatar
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.ancestors
-import com.otus.mail.feature.folders.domain.folderTree
-import com.otus.mail.feature.folders.domain.subtreeIds
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.folderTree
+import com.otus.mail.core.mailbox.subtreeIds
 import com.otus.mail.feature.folders.presentation.folderIcon
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.OwnAddress
@@ -62,7 +61,7 @@ private fun AccountFolders.filterAccount(color: (MailFolder) -> FolderColor): Fi
             FilterFolder(
                 key = FolderKey(accountId, folder.id),
                 name = folder.name,
-                ancestors = ancestors(folders, folder).reversed().map { it.name },
+                ancestors = node.path.dropLast(1),
                 icon = folderIcon(node),
                 color = color(folder),
                 system = !folder.isCustom || node.readLater,

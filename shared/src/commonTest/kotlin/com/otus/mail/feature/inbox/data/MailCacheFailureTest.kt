@@ -8,6 +8,7 @@ import com.otus.mail.core.cache.CacheWrite
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -55,7 +56,7 @@ class MailCacheFailureTest {
                     "Subject",
                     "preview",
                     ReceivedAt("2026-10-24", "12:00"),
-                    MailLocation("Inbox", "Ada", "ada"),
+                    MailLocation("Inbox", "Ada", "ada", mailboxRole = MailboxRole.Inbox),
                     emailId = "e",
                 )
             assertEquals("Keep this body", bodies.content(message)?.text)

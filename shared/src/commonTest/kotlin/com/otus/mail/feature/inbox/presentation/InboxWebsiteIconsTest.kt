@@ -5,6 +5,7 @@ import com.otus.avatar.AvatarImageLoader
 import com.otus.avatar.AvatarService
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.avatarOptions
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailLocation
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -183,5 +184,5 @@ private fun message(
     "Subject",
     "Body",
     ReceivedAt("2026-10-05", "09:00"),
-    MailLocation("Inbox", "Work", accountAddress = "me@work.org"),
+    MailLocation("Inbox", "Work", accountAddress = "me@work.org", mailboxRole = MailboxRole.Inbox),
 )

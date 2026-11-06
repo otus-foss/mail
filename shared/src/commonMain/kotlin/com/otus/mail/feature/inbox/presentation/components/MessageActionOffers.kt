@@ -21,12 +21,12 @@ import com.otus.designsystem.resources.symbol_reply_all
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.resources.symbol_send
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.hasFlag
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import org.jetbrains.compose.resources.DrawableResource
@@ -51,9 +51,9 @@ internal fun MessageActions.offer(
         MailAction.Read -> offerMark(messages, MessageFlag.Read)
         MailAction.Flag -> offerMark(messages, MessageFlag.Flagged)
         MailAction.ReadLater -> offerReadLater(messages)
-        MailAction.Archive -> offerFiling(messages, FolderShortcut.Archive, action)
-        MailAction.Trash -> offerFiling(messages, FolderShortcut.Trash, action)
-        MailAction.Spam -> offerFiling(messages, FolderShortcut.Spam, action)
+        MailAction.Archive -> offerFiling(messages, MailboxRole.Archive, action)
+        MailAction.Trash -> offerFiling(messages, MailboxRole.Trash, action)
+        MailAction.Spam -> offerFiling(messages, MailboxRole.Junk, action)
         MailAction.NotSpam, MailAction.Restore, MailAction.DeleteForever -> offerCleanup(messages, action)
         MailAction.Move -> offerMove(messages, chooseFolder)
         MailAction.SuggestedMove -> suggestion?.let { offerSuggested(messages, it) }
