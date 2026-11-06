@@ -48,15 +48,15 @@ fun themeRamp(
             easing = RampEasing.power(LIGHTNESS_EASING),
         )
     val ramp = colorRamp(RAMP_STEPS, hues, saturation, lightness)
-    val (raised, page, borders, controls) = ramp
     val (mutedText, secondaryText, text) = ramp.takeLast(TEXT_LEVELS)
     val accent = RampColor(hues.start, random.within(MIN_ACCENT, MAX_ACCENT), accentLightness(light, random))
     return ThemeRamp(
         light = light,
-        page = page,
-        raised = raised,
-        controls = controls,
-        borders = borders,
+        // The ramp starts at the raised surface, then the page, the borders, and the controls.
+        page = ramp[1],
+        raised = ramp[0],
+        controls = ramp[3],
+        borders = ramp[2],
         text = text,
         secondaryText = secondaryText,
         mutedText = mutedText,
