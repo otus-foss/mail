@@ -4,8 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.mail.brand.elements.MailAppIcon
-import com.otus.mail.feature.folders.domain.SharedFolder
-import com.otus.mail.feature.folders.domain.sharedFolders
+import com.otus.mail.core.mailbox.SharedFolder
+import com.otus.mail.core.mailbox.sharedFolders
 import com.otus.mail.feature.inbox.presentation.components.MailListPreview
 import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
 import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen

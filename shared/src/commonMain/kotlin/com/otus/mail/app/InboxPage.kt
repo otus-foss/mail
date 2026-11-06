@@ -7,7 +7,9 @@ import com.otus.dateformat.DateFormatter
 import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.messages.domain.inScope
 import com.otus.mail.core.settings.domain.InboxContents
+import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxPills
@@ -16,6 +18,7 @@ import com.otus.mail.feature.inbox.presentation.QuickJumpTarget
 import com.otus.mail.feature.inbox.presentation.QuickViewContext
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.inbox.presentation.status
+import com.otus.mail.feature.sidebar.presentation.sidebarMailboxes
 
 /**
  * The unified inbox, holding what the user chose in the Inbox settings, whose folder pills load
@@ -103,10 +106,12 @@ private fun rememberQuickView(
     val folders = states.folders.accounts.inScope(states.mailScope)
     val pinned =
         remember(folders, behavior.inbox, behavior.sidebar) {
-            sidebarMailboxes(folders, behavior.inbox, behavior.sidebar).filterNot { it.page == MailPage.Inbox }
+            sidebarMailboxes(folders, behavior.inbox, behavior.sidebar).filterNot { it.pin == SidebarPin.Inbox }
         }
     return QuickViewContext(
         behavior.quickView,
-        pinned.map { mailbox -> QuickJumpTarget(mailbox.title, mailbox.icon) { navigation.go(mailbox.page) } },
+        pinned.map { mailbox ->
+            QuickJumpTarget(mailbox.title, mailbox.icon) { navigation.go(launchPage(mailbox.pin)) }
+        },
     )
 }

@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.messages.presentation.avatar
 import com.otus.mail.feature.inbox.domain.InboxFilters
 
 /** Whether [person]'s mail is kept: one of their addresses is among the chosen senders. */

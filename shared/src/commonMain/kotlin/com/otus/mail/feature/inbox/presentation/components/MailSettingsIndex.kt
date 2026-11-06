@@ -32,6 +32,7 @@ import com.otus.mail.core.settings.domain.UNDO_SEND_CHOICES
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.PINNED_UNAVAILABLE
 import com.otus.mail.core.settings.presentation.SENDER_UNAVAILABLE
+import com.otus.mail.core.settings.presentation.SidebarPinOption
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.core.settings.presentation.pinnedSummary
@@ -40,7 +41,6 @@ import com.otus.mail.core.settings.presentation.summary
 import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.inbox.presentation.FolderPillOption
 import com.otus.mail.feature.inbox.presentation.InboxPills
-import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.inboxSummary
 import com.otus.settings.presentation.SettingsIndexScope
 

@@ -20,7 +20,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
@@ -38,6 +37,7 @@ import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
 

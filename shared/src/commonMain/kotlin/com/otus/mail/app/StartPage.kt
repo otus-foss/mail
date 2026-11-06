@@ -11,12 +11,13 @@ import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.mail.feature.folders.presentation.FoldersState
+import com.otus.mail.feature.sidebar.presentation.pinnableMailboxes
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
 
 /**
- * The page Mail opens on for [choice] before the folders have loaded. Only a system folder whose
- * role Mail does not combine has no page, so it opens the Inbox.
+ * The page of the sidebar mailbox [choice], which Mail also opens on before the folders have
+ * loaded. Only a system folder whose role Mail does not combine has no page, so it opens the Inbox.
  */
 internal fun launchPage(choice: SidebarPin): MailPage =
     when (choice) {
@@ -58,7 +59,7 @@ internal fun launchPage(choice: SidebarPin): MailPage =
 internal fun startPage(
     choice: SidebarPin,
     accounts: List<AccountFolders>,
-): MailPage = pinnableMailboxes(accounts).firstOrNull { (pin, _) -> pin == choice }?.second?.page ?: MailPage.Inbox
+): MailPage = if (pinnableMailboxes(accounts).any { it.pin == choice }) launchPage(choice) else MailPage.Inbox
 
 /**
  * Opens Inbox through [show] when the first folder load of this launch finds that no account has
@@ -83,3 +84,16 @@ internal fun StartPageFallback(
         if (accounts.none { it.failure != null } && current() == launchPage(choice)) show(startPage(choice, accounts))
     }
 }
+
+/** The sidebar mailbox this page is, or null for a page the sidebar does not list, such as Settings. */
+internal val MailPage.pin: SidebarPin?
+    get() =
+        when (this) {
+            MailPage.Inbox -> SidebarPin.Inbox
+            MailPage.ReadLater -> SidebarPin.ReadLater
+            MailPage.Conversations -> SidebarPin.Conversations
+            MailPage.Contacts -> SidebarPin.Contacts
+            is MailPage.Combined -> SidebarPin.Role(role)
+            is MailPage.Shared -> SidebarPin.Folder(key)
+            else -> null
+        }

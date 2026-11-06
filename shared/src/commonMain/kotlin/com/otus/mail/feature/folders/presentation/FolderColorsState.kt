@@ -6,9 +6,9 @@ import androidx.compose.runtime.setValue
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.SharedFolder
 import com.otus.mail.feature.folders.domain.FolderColorStore
 import com.otus.mail.feature.folders.domain.FolderColors
-import com.otus.mail.feature.folders.domain.SharedFolder
 import com.otus.mail.feature.folders.domain.colorable
 import com.otus.mail.feature.folders.domain.readColors
 import com.otus.mail.feature.folders.domain.writeColors

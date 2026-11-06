@@ -25,11 +25,11 @@ import com.otus.mail.core.settings.domain.SidebarLayout
 import com.otus.mail.core.settings.domain.SidebarSection
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.PINNED_UNAVAILABLE
+import com.otus.mail.core.settings.presentation.SidebarPinOption
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.core.settings.presentation.pinnedSummary
 import com.otus.mail.core.settings.presentation.title
-import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 
 /**
  * Arranges the sidebar for every account. Drag a section's handle to move it, or switch it off to

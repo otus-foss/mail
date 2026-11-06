@@ -26,8 +26,8 @@ import com.otus.mail.core.settings.domain.MailboxStyle
 import com.otus.mail.core.settings.domain.PinSize
 import com.otus.mail.core.settings.domain.SidebarLayout
 import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.SidebarPinOption
 import com.otus.mail.core.settings.presentation.label
-import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.components.PinnedGridEditor
 import com.otus.mail.feature.inbox.presentation.components.PinnedRowsEditor
 

@@ -5,6 +5,7 @@ import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.messages.domain.FolderRef
 import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.presentation.avatar
 import com.otus.mail.core.settings.domain.FilterLayout
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label

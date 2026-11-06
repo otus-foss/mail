@@ -8,13 +8,14 @@ import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.SharedFolder
+import com.otus.mail.core.mailbox.sharedFolder
+import com.otus.mail.core.mailbox.sharedFolders
 import com.otus.mail.core.messages.domain.MailScope
-import com.otus.mail.feature.folders.domain.SharedFolder
-import com.otus.mail.feature.folders.domain.sharedFolder
-import com.otus.mail.feature.folders.domain.sharedFolders
-import com.otus.mail.feature.inbox.presentation.SidebarPinOption
+import com.otus.mail.core.settings.presentation.SidebarPinOption
 import com.otus.mail.feature.inbox.presentation.screens.PinnedSettingsScreen
 import com.otus.mail.feature.inbox.presentation.screens.SidebarSettingsScreen
+import com.otus.mail.feature.sidebar.presentation.pinnableMailboxes
 
 /** Sidebar settings, or its Pinned page. */
 @Composable
@@ -44,10 +45,10 @@ internal fun sidebarPinOptions(
     accounts: List<AccountFolders>,
     colorOf: (SharedFolder) -> String?,
 ): List<SidebarPinOption> =
-    pinnableMailboxes(accounts).map { (pin, mailbox) ->
+    pinnableMailboxes(accounts).map { mailbox ->
         val folder = mailbox.shared
         SidebarPinOption(
-            pin,
+            mailbox.pin,
             mailbox.title,
             mailbox.icon,
             group = if (folder == null) "Mailboxes" else "Folders",

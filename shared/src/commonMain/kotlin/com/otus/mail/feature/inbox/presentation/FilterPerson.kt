@@ -8,6 +8,7 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.core.messages.domain.SenderKey
 import com.otus.mail.core.messages.domain.lastReceived
+import com.otus.mail.core.messages.presentation.avatar
 import com.otus.mail.core.settings.presentation.label
 
 /**

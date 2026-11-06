@@ -23,6 +23,7 @@ import com.otus.mail.core.messages.domain.lastReceived
 import com.otus.mail.core.messages.domain.receivedOn
 import com.otus.mail.core.messages.domain.senderLine
 import com.otus.mail.core.messages.domain.threadSubject
+import com.otus.mail.core.messages.presentation.avatar
 import com.otus.mail.core.messages.presentation.listDateLabel
 import com.otus.mail.core.settings.domain.ListOrder
 import com.otus.mail.core.settings.domain.MailListLayout

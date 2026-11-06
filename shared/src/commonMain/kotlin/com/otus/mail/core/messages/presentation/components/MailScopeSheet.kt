@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.core.messages.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -14,11 +14,10 @@ import com.otus.mail.core.messages.domain.AccountAddresses
 import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.messages.domain.avatarOf
 import com.otus.mail.core.messages.domain.searchAddresses
-import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.ALL_MAIL
+import com.otus.mail.core.messages.presentation.allMailAvatars
+import com.otus.mail.core.messages.presentation.allMailSummary
 import com.otus.mail.core.settings.domain.AddressPins
-import com.otus.mail.feature.inbox.presentation.ALL_MAIL
-import com.otus.mail.feature.inbox.presentation.allMailAvatars
-import com.otus.mail.feature.inbox.presentation.allMailSummary
 
 /** "Show mail from" in a sheet, which stays open after a choice and searches many addresses. */
 @Composable

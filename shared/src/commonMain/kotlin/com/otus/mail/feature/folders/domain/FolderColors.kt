@@ -2,6 +2,7 @@ package com.otus.mail.feature.folders.domain
 
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.SharedFolder
 import com.otus.storage.StringMapStore
 
 /**

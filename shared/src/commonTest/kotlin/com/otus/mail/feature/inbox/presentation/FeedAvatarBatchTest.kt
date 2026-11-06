@@ -8,6 +8,7 @@ import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.presentation.avatar
 import com.otus.mail.testing.photoSource
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test

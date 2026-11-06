@@ -110,13 +110,11 @@ fun App(
                     }
                 }
                 BottomToasts(states.moveToasts.toasts)
-                MailSidebar(
+                AppSidebar(
                     sidebar,
                     current = page.root,
                     states,
-                    states.mailScope,
                     footer = { build?.let { UpdatingFooter(it, nightly, states.moveToasts.toasts) } },
-                    onChooseScope = states.chooseScope,
                     onSelect = {
                         navigation.go(it)
                         scope.launch { sidebar.close() }

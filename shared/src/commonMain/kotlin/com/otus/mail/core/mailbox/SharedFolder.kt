@@ -1,8 +1,4 @@
-package com.otus.mail.feature.folders.domain
-
-import com.otus.mail.core.mailbox.AccountFolders
-import com.otus.mail.core.mailbox.MailFolder
-import com.otus.mail.core.mailbox.folderTree
+package com.otus.mail.core.mailbox
 
 /**
  * The user's own folders of every account, merged by path. Folders whose names match from the top

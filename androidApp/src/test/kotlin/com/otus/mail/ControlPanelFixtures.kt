@@ -8,8 +8,8 @@ import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.core.settings.domain.AddressPins
-import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 

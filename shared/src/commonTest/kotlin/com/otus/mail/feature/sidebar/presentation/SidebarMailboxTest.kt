@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.sidebar.presentation
 
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
@@ -35,7 +35,7 @@ class SidebarMailboxTest {
         val layout = SidebarLayout(pinned = pinned, sizes = mapOf(SidebarPin.Role(MailboxRole.Sent) to PinSize.Wide))
         val mailboxes = sidebarMailboxes(listOf(ada), layout = layout)
         assertEquals(listOf("Inbox", "Clients", "Sent"), mailboxes.map { it.title })
-        assertEquals(MailPage.Shared(listOf("work", "clients")), mailboxes[1].page)
+        assertEquals(SidebarPin.Folder(listOf("work", "clients")), mailboxes[1].pin)
         assertEquals(listOf(PinSize.Full, PinSize.Small, PinSize.Wide), mailboxes.map { it.size })
     }
 
@@ -57,7 +57,7 @@ class SidebarMailboxTest {
                 SidebarPin.Folder(listOf("work")),
                 SidebarPin.Folder(listOf("work", "clients")),
             ),
-            pinnableMailboxes(listOf(ada)).map { it.first },
+            pinnableMailboxes(listOf(ada)).map { it.pin },
         )
     }
 }

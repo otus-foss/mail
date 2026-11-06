@@ -8,6 +8,7 @@ import com.otus.avatar.avatarEmailKey
 import com.otus.avatar.generatedAvatar
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.presentation.avatar
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield

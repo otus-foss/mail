@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation
+package com.otus.mail.core.messages.presentation
 
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.mail.core.messages.domain.AccountAddresses

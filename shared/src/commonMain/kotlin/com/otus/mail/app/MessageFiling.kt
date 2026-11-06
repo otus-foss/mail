@@ -5,6 +5,7 @@ import com.otus.mail.core.mailbox.FolderRights
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.folderTree
+import com.otus.mail.core.mailbox.sharedFolders
 import com.otus.mail.core.messages.domain.FolderKind
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MessageFlag
@@ -22,7 +23,6 @@ import com.otus.mail.core.messages.presentation.setInFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStep
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
-import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState

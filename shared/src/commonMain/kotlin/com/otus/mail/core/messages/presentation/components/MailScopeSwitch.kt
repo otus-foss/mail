@@ -1,10 +1,10 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.core.messages.presentation.components
 
 import com.otus.mail.core.messages.domain.AccountAddresses
 import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.presentation.ScopeHeader
+import com.otus.mail.core.messages.presentation.scopeHeader
 import com.otus.mail.core.settings.domain.AddressPins
-import com.otus.mail.feature.inbox.presentation.ScopeHeader
-import com.otus.mail.feature.inbox.presentation.scopeHeader
 
 /**
  * What "Show mail from" chooses between: every account, one account, or one address. [count]

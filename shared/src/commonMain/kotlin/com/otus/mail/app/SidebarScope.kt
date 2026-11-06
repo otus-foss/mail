@@ -5,9 +5,9 @@ import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.messages.domain.AccountAddresses
 import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.messages.domain.addressCount
-import com.otus.mail.feature.inbox.presentation.SidebarCounter
-import com.otus.mail.feature.inbox.presentation.components.MailScopeSheet
-import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
+import com.otus.mail.core.messages.presentation.components.MailScopeSheet
+import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
+import com.otus.mail.feature.sidebar.presentation.SidebarCounter
 
 /** Each account's sign-in and sending addresses, for "Show mail from". */
 internal fun MailStates.accountAddresses(): List<AccountAddresses> =

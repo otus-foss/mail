@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.mailbox.pathText
+import com.otus.mail.core.messages.presentation.avatar
 
 /**
  * How a folder chip names its folder: the [name], after a [prefix] of parents when another folder

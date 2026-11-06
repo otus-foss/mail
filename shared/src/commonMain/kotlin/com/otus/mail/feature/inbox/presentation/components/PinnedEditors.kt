@@ -18,9 +18,9 @@ import com.otus.designsystem.shared.reorder.components.ReorderableColumn
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.mail.core.settings.domain.PinSize
 import com.otus.mail.core.settings.domain.SidebarLayout
+import com.otus.mail.core.settings.presentation.SidebarPinOption
 import com.otus.mail.core.settings.presentation.pinSize
 import com.otus.mail.core.settings.presentation.tileSize
-import com.otus.mail.feature.inbox.presentation.SidebarPinOption
 
 /**
  * The [pinned] mailboxes as the sidebar's grid draws them, in [layout]'s sizes: hold a tile to

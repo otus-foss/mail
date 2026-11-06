@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.sidebar.presentation.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
@@ -8,8 +8,9 @@ import com.otus.designsystem.shared.rows.components.Collapsible
 import com.otus.designsystem.shared.sidebar.elements.SidebarFolder
 import com.otus.designsystem.shared.sidebar.elements.SidebarFolderEntry
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.feature.folders.domain.SharedFolder
-import com.otus.mail.feature.inbox.presentation.SidebarCounter
+import com.otus.mail.core.mailbox.SharedFolder
+import com.otus.mail.core.settings.domain.SidebarPin
+import com.otus.mail.feature.sidebar.presentation.SidebarCounter
 
 /**
  * The user's folders, shared by every account, nested under their parents. A folder with
@@ -19,10 +20,10 @@ import com.otus.mail.feature.inbox.presentation.SidebarCounter
 internal class SidebarFolderTree(
     private val collapsed: Set<List<String>>,
     private val onCollapse: (key: List<String>, collapsed: Boolean) -> Unit,
-    private val current: MailPage?,
+    private val current: SidebarPin?,
     private val counter: SidebarCounter,
     private val colorOf: (SharedFolder) -> String?,
-    private val onSelect: (MailPage) -> Unit,
+    private val onSelect: (SidebarPin) -> Unit,
     private val onActions: (SharedFolder) -> Unit,
 ) {
     @Composable
@@ -32,7 +33,7 @@ internal class SidebarFolderTree(
     ) {
         folders.forEach { folder ->
             val open = folder.key !in collapsed
-            val page = MailPage.Shared(folder.key)
+            val page = SidebarPin.Folder(folder.key)
             val count = counter.of(if (open) folder.folders else folder.flatten().flatMap { it.folders })
             CompositionLocalProvider(LocalIconTint provides FolderColor.named(colorOf(folder)).tint) {
                 SidebarFolderEntry(

@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.core.messages.presentation.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
@@ -11,9 +11,9 @@ import com.otus.mail.core.messages.domain.AccountAddresses
 import com.otus.mail.core.messages.domain.DomainGroup
 import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.messages.domain.domainGroups
-import com.otus.mail.feature.inbox.presentation.addressCount
-import com.otus.mail.feature.inbox.presentation.avatar
-import com.otus.mail.feature.inbox.presentation.domainAvatar
+import com.otus.mail.core.messages.presentation.addressCount
+import com.otus.mail.core.messages.presentation.avatar
+import com.otus.mail.core.messages.presentation.domainAvatar
 
 /**
  * The rows of a [MailScopeSheet] for [accounts], whose avatars the rows show; [expanded] holds the
