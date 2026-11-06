@@ -1,5 +1,6 @@
 package com.otus.mail.feature.compose.presentation
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftFailure
@@ -60,7 +61,7 @@ class ComposeUndoPersistenceTest {
     @Test
     fun failedSaveAfterUndoKeepsTheEditsPendingForRetry() =
         runTest {
-            val drafts = FakeDrafts().apply { failure = DraftFailure.ServerProblem }
+            val drafts = FakeDrafts().apply { failure = DraftFailure.Mail(MailFailure.ServerProblem) }
             val state = state(drafts)
             state.edit { it.copy(body = "Unsaved body") }
             state.discard()

@@ -15,6 +15,7 @@ import com.otus.mail.core.mail.IdentityObject
 import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.keywordPatch
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.MailboxRole
@@ -61,7 +62,8 @@ class JmapDraftSender internal constructor(
         stored: suspend (emailId: String) -> Unit,
     ): Result<SentMessage> =
         try {
-            val account = connections.mailAccount(draft.accountId) ?: failSend(SendFailure.ServerProblem)
+            val account =
+                connections.mailAccount(draft.accountId) ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
             val from = draft.from?.address?.takeIf { account.mayUse(JmapCapability.SUBMISSION) }
             val route = account.route(from ?: failSend(SendFailure.NoIdentity))
             val sent = account.submit(draft, route, time, stored)
@@ -76,12 +78,12 @@ class JmapDraftSender internal constructor(
         } catch (error: JmapException) {
             Result.failure(SendException(error.toSendFailure(), error))
         } catch (error: LoginStoreException) {
-            Result.failure(SendException(SendFailure.ServerProblem, error))
+            Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem), error))
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
             // Anything else, such as content that cannot be encoded, fails the send rather than the app.
-            Result.failure(SendException(SendFailure.ServerProblem))
+            Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem)))
         }
 
     /** The identity that sends as [from], and the folders the sent copy moves between. */
@@ -107,12 +109,12 @@ class JmapDraftSender internal constructor(
         time: SendTime,
         stored: suspend (emailId: String) -> Unit,
     ): SentMessage {
-        val folder = route.drafts ?: route.sent ?: failSend(SendFailure.ServerProblem)
+        val folder = route.drafts ?: route.sent ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
         val email = draft.toEmail(folder, inlineImages(draft.htmlContent(), copies.images))
         val created = connection.call(SetMethod(EmailType, id, create = mapOf(EMAIL to email)))
         val creationFailure = created.notCreated[EMAIL]
         if (creationFailure != null) failSend(creationFailure.toSendFailure())
-        val copy = created.createdId(EMAIL) ?: failSend(SendFailure.ServerProblem)
+        val copy = created.createdId(EMAIL) ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
         stored(copy)
         val submitted =
             try {
@@ -122,7 +124,7 @@ class JmapDraftSender internal constructor(
             }
         val refusal = submitted.notCreated[SUBMISSION]
         if (refusal != null) refused(copy, refusal.toSendFailure())
-        val submissionId = submitted.createdId(SUBMISSION) ?: failSend(SendFailure.ServerProblem)
+        val submissionId = submitted.createdId(SUBMISSION) ?: failSend(SendFailure.Mail(MailFailure.ServerProblem))
         return SentMessage(draft.accountId, copy, submissionId, route.drafts, route.identityId)
     }
 
@@ -190,7 +192,9 @@ class JmapDraftSender internal constructor(
         submissionCall(message) { account ->
             val canceled = jmapCallOr(null) { account.cancelSubmission(message) == null } == true
             // Unless the cancel was confirmed, a submission still there goes at its time by itself.
-            val kept = !canceled && account.isSubmitted(message.emailId) ?: failSend(SendFailure.Unreachable)
+            val kept =
+                !canceled &&
+                    account.isSubmitted(message.emailId) ?: failSend(SendFailure.Mail(MailFailure.Unreachable))
             if (kept) return@submissionCall
             val refusal =
                 try {
@@ -213,7 +217,7 @@ class JmapDraftSender internal constructor(
         block: suspend (MailAccount) -> Unit,
     ): Result<Unit> =
         try {
-            block(connections.mailAccount(message.accountId) ?: failSend(SendFailure.ServerProblem))
+            block(connections.mailAccount(message.accountId) ?: failSend(SendFailure.Mail(MailFailure.ServerProblem)))
             Result.success(Unit)
         } catch (error: DraftRestoreException) {
             Result.failure(error)
@@ -222,7 +226,7 @@ class JmapDraftSender internal constructor(
         } catch (error: JmapException) {
             Result.failure(SendException(error.toSendFailure(), error))
         } catch (error: LoginStoreException) {
-            Result.failure(SendException(SendFailure.ServerProblem, error))
+            Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem), error))
         }
 
     /**

@@ -23,23 +23,15 @@ internal fun limits(capability: JsonObject?): FolderLimits {
     )
 }
 
-internal fun JmapException.toFolderFailure(): FolderFailure =
-    when (toMailFailure()) {
-        MailFailure.SignInRejected -> FolderFailure.SignInRejected
-        MailFailure.NotPermitted -> FolderFailure.NotPermitted
-        MailFailure.CredentialsUnavailable -> FolderFailure.CredentialsUnavailable
-        MailFailure.NoMail -> FolderFailure.NoMail
-        MailFailure.Unreachable -> FolderFailure.Unreachable
-        MailFailure.ServerProblem -> FolderFailure.ServerProblem
-    }
+internal fun JmapException.toFolderFailure(): FolderFailure = FolderFailure.Mail(toMailFailure())
 
 internal fun SetError.toFolderFailure(): FolderFailure =
     when (type) {
         "alreadyExists" -> FolderFailure.AlreadyExists
-        "forbidden" -> FolderFailure.NotPermitted
+        "forbidden" -> FolderFailure.Mail(MailFailure.NotPermitted)
         "invalidProperties", "willDestroy" -> FolderFailure.Invalid
         "mailboxHasChild" -> FolderFailure.HasSubfolders
         "mailboxHasEmail" -> FolderFailure.HasMail
         "notFound" -> FolderFailure.NotFound
-        else -> FolderFailure.ServerProblem
+        else -> FolderFailure.Mail(MailFailure.ServerProblem)
     }

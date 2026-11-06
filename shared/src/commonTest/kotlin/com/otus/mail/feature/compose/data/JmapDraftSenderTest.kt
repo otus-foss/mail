@@ -3,6 +3,7 @@ package com.otus.mail.feature.compose.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
@@ -198,9 +199,9 @@ class JmapDraftSenderTest {
                 mapOf(
                     "tooManyRecipients" to SendFailure.TooManyRecipients,
                     "tooLarge" to SendFailure.TooLarge,
-                    "forbiddenFrom" to SendFailure.NotPermitted,
-                    "forbiddenToSend" to SendFailure.NotPermitted,
-                    "serverFail" to SendFailure.ServerProblem,
+                    "forbiddenFrom" to SendFailure.Mail(MailFailure.NotPermitted),
+                    "forbiddenToSend" to SendFailure.Mail(MailFailure.NotPermitted),
+                    "serverFail" to SendFailure.Mail(MailFailure.ServerProblem),
                 )
             reasons.forEach { (type, expected) ->
                 val error = """"notCreated": {"send": {"type": "$type"}}"""

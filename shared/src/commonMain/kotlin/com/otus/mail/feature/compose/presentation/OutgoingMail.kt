@@ -4,6 +4,7 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.ScheduledSends
@@ -281,7 +282,7 @@ internal class OutgoingMail(
 
 private fun sent(group: Any) = ToastMessage("Sent", group = group)
 
-private fun Throwable.isOffline() = (this as? SendException)?.failure == SendFailure.Unreachable
+private fun Throwable.isOffline() = (this as? SendException)?.failure == SendFailure.Mail(MailFailure.Unreachable)
 
 private const val WILL_SEND = "Will send when online"
 private const val UNCONFIRMED = "Couldn't confirm sending"

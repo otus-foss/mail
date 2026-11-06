@@ -4,6 +4,7 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.SendException
@@ -121,7 +122,7 @@ class ScheduledCancellationTest {
         runTest {
             val calls = mutableListOf<String>()
             val result = sender(calls, lost = setOf(Lost.Cancel, Lost.Query)).sendNow(message)
-            assertEquals(SendFailure.Unreachable, (result.exceptionOrNull() as SendException).failure)
+            assertEquals(SendFailure.Mail(MailFailure.Unreachable), (result.exceptionOrNull() as SendException).failure)
             assertTrue(calls.isEmpty(), "A later run decides once the server can say")
         }
 

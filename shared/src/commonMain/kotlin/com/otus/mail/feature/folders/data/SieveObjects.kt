@@ -70,9 +70,9 @@ internal fun SetError.toRuleFailure(): RuleFailure =
         // Someone created or removed the script since it was loaded.
         "alreadyExists", "notFound" -> RuleFailure.ChangedElsewhere
 
-        "forbidden" -> RuleFailure.NotPermitted
+        "forbidden" -> RuleFailure.Mail(MailFailure.NotPermitted)
 
-        else -> RuleFailure.ServerProblem
+        else -> RuleFailure.Mail(MailFailure.ServerProblem)
     }
 
 internal fun JmapException.toRuleFailure(): RuleFailure =
@@ -84,10 +84,4 @@ internal fun JmapException.toRuleFailure(): RuleFailure =
 
 // A missing capability here is Sieve's, not mail's, so it reads as a server problem.
 private fun MailFailure.toRuleFailure(): RuleFailure =
-    when (this) {
-        MailFailure.SignInRejected -> RuleFailure.SignInRejected
-        MailFailure.NotPermitted -> RuleFailure.NotPermitted
-        MailFailure.CredentialsUnavailable -> RuleFailure.CredentialsUnavailable
-        MailFailure.Unreachable -> RuleFailure.Unreachable
-        MailFailure.NoMail, MailFailure.ServerProblem -> RuleFailure.ServerProblem
-    }
+    RuleFailure.Mail(if (this == MailFailure.NoMail) MailFailure.ServerProblem else this)

@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.feature.compose.domain.SendCheck
@@ -18,7 +19,7 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
     fun undoOfAHoldWithoutAnAnswerOpensTheDraftAndCancelsTheHoldLater() =
         runTest {
             serverDelaySeconds = 60
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             val outgoing = outgoing()
             outgoing.send(message)
             runCurrent()
@@ -56,7 +57,7 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
             serverDelaySeconds = 60
             outgoing().send(message)
             runCurrent()
-            sendNowFailure = SendFailure.Unreachable
+            sendNowFailure = SendFailure.Mail(MailFailure.Unreachable)
             swipeAway()
             runCurrent()
             assertEquals(listOf("Will send when online"), toasts.messages.map { it.text })
@@ -71,7 +72,7 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
     @Test
     fun aSendNobodyCanConfirmOffersTheMessageToOpenAtOnce() =
         runTest {
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             outgoing().send(message)
             advanceTimeBy(HOLD + 1)
             runCurrent()

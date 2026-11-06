@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.otus.designsystem.mail.compose.elements.RichText
 import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftException
@@ -176,7 +177,6 @@ class ComposeState(
         edit { it.copy(from = identity.sender, accountId = identity.accountId, emailId = kept) }
     }
 
-    /** Adds or removes the signature in this draft only. */
     fun showSignature(on: Boolean) {
         signatureOn = on
         scheduleSave()
@@ -258,7 +258,9 @@ class ComposeState(
                     notice = null
                     previous?.takeIf { it.accountId != current.accountId }?.discardCopy(drafts)
                 },
-                onFailure = { notice = ((it as? DraftException)?.failure ?: DraftFailure.ServerProblem).notice },
+                onFailure = {
+                    notice = ((it as? DraftException)?.failure ?: DraftFailure.Mail(MailFailure.ServerProblem)).notice
+                },
             )
         }
 }

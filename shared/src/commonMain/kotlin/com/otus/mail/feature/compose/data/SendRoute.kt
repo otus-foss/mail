@@ -76,11 +76,11 @@ internal fun JmapException.toSendFailure(): SendFailure =
     if (this is JmapException.MethodError) {
         sendFailure(type)
     } else {
-        when (toMailFailure()) {
-            MailFailure.NotPermitted -> SendFailure.NotPermitted
-            MailFailure.Unreachable -> SendFailure.Unreachable
-            else -> SendFailure.ServerProblem
-        }
+        // The outbox takes any other failure as one that may have sent, so the rest stay server problems.
+        SendFailure.Mail(
+            toMailFailure().takeIf { it == MailFailure.NotPermitted || it == MailFailure.Unreachable }
+                ?: MailFailure.ServerProblem,
+        )
     }
 
 private fun sendFailure(type: String): SendFailure =
@@ -88,6 +88,8 @@ private fun sendFailure(type: String): SendFailure =
         "noRecipients", "invalidRecipients" -> SendFailure.Recipients
         "tooManyRecipients" -> SendFailure.TooManyRecipients
         "tooLarge" -> SendFailure.TooLarge
-        "forbidden", "forbiddenFrom", "forbiddenMailFrom", "forbiddenToSend" -> SendFailure.NotPermitted
-        else -> SendFailure.ServerProblem
+        in FORBIDDEN -> SendFailure.Mail(MailFailure.NotPermitted)
+        else -> SendFailure.Mail(MailFailure.ServerProblem)
     }
+
+private val FORBIDDEN = setOf("forbidden", "forbiddenFrom", "forbiddenMailFrom", "forbiddenToSend")

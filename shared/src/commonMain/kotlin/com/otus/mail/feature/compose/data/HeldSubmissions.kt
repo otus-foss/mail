@@ -9,6 +9,7 @@ import com.otus.jmap.jmapCallOr
 import com.otus.jmap.noneOf
 import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SentMessage
 import kotlinx.serialization.json.JsonArray
@@ -27,7 +28,7 @@ internal suspend fun MailAccount.cancelSubmission(message: SentMessage): SendFai
             ),
         )
     return undone.notUpdated[message.submissionId]?.toSendFailure()
-        ?: SendFailure.ServerProblem.takeIf { message.submissionId !in undone.updated }
+        ?: SendFailure.Mail(MailFailure.ServerProblem).takeIf { message.submissionId !in undone.updated }
 }
 
 /** Submits [message]'s stored copy again, without a hold; why the server refused, or null. */

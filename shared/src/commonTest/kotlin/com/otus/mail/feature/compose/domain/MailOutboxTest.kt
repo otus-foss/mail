@@ -1,5 +1,6 @@
 package com.otus.mail.feature.compose.domain
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftSender
 import com.otus.mail.core.messages.domain.SendException
@@ -72,7 +73,7 @@ class MailOutboxTest {
         runTest {
             val outbox = outbox()
             val id = outbox.add(draft, null, NOW)
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             assertTrue(outbox.send(id).isFailure)
             assertTrue(outbox.waiting(), "It waits for the network")
 
@@ -89,7 +90,7 @@ class MailOutboxTest {
         runTest {
             val outbox = outbox()
             val id = outbox.add(draft, null, NOW)
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             outbox.send(id)
             failure = null
             assertTrue(outbox.send(id).isSuccess)
@@ -102,7 +103,7 @@ class MailOutboxTest {
         runTest {
             val outbox = outbox()
             val id = outbox.add(draft, null, NOW)
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             outbox.send(id)
             check = SendCheck.Unconfirmable
             assertTrue(outbox.send(id).isFailure)
@@ -137,7 +138,7 @@ class MailOutboxTest {
         runTest {
             val outbox = outbox()
             val id = outbox.add(draft, null, NOW)
-            failure = SendFailure.ServerProblem
+            failure = SendFailure.Mail(MailFailure.ServerProblem)
             assertTrue(outbox.send(id).isFailure)
             failure = null
             check = SendCheck.Sent
@@ -153,7 +154,7 @@ class MailOutboxTest {
             val outbox =
                 MailOutbox(store, storing, checker.recordingCopies(copies), wake = { woken += it }, now = { now })
             val id = outbox.add(draft, null, NOW)
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             outbox.send(id)
             assertEquals(
                 "e9",
@@ -167,7 +168,10 @@ class MailOutboxTest {
             failure = null
             check = SendCheck.Sent
             now = NOW + 30.seconds
-            assertEquals(SendFailure.Unreachable, (outbox.send(id).exceptionOrNull() as SendException).failure)
+            assertEquals(
+                SendFailure.Mail(MailFailure.Unreachable),
+                (outbox.send(id).exceptionOrNull() as SendException).failure,
+            )
             assertTrue(copies.isEmpty(), "The server may still be working on the submission")
             assertEquals(NOW + 2.minutes, woken.last())
 
@@ -195,7 +199,7 @@ class MailOutboxTest {
         runTest {
             val outbox = outbox()
             val sending = outbox.add(draft, null, NOW)
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             outbox.send(sending)
             assertTrue(outbox.cancel(sending), "It is withdrawn")
 

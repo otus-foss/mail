@@ -1,5 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.MailFailure
+
 /** What the account's server can run, from its advertised Sieve extensions (RFC 9661, section 1.3). */
 data class RuleSupport(
     val extensions: Set<String>,
@@ -88,26 +90,28 @@ data class AccountFolderRules(
     fun rulesFor(folderId: String): List<FolderRule> = rules[folderId].orEmpty()
 }
 
-enum class RuleFailure {
+sealed interface RuleFailure {
     /** Another device or app changed the script first. */
-    ChangedElsewhere,
+    data object ChangedElsewhere : RuleFailure
 
     /** The server's validation refused the script; the outcome carries its explanation. */
-    Invalid,
-    TooLarge,
-    TooMany,
-    NotPermitted,
-    NotFound,
+    data object Invalid : RuleFailure
+
+    data object TooLarge : RuleFailure
+
+    data object TooMany : RuleFailure
+
+    data object NotFound : RuleFailure
 
     /**
      * Stalwart's vacation reply is the active script. It is reserved and cannot be edited over
      * JMAP, so rules need the vacation reply turned off first.
      */
-    VacationActive,
-    SignInRejected,
-    CredentialsUnavailable,
-    Unreachable,
-    ServerProblem,
+    data object VacationActive : RuleFailure
+
+    data class Mail(
+        val failure: MailFailure,
+    ) : RuleFailure
 }
 
 sealed interface RuleOutcome {

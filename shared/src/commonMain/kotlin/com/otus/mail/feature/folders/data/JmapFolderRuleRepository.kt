@@ -8,6 +8,7 @@ import com.otus.jmap.JmapJson
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.Mailboxes
@@ -88,7 +89,7 @@ class JmapFolderRuleRepository(
         account: AccountFolderRules,
         rules: Map<String, List<FolderRule>>,
     ): RuleOutcome {
-        val support = account.support ?: return RuleOutcome.Failed(RuleFailure.NotPermitted)
+        val support = account.support ?: return RuleOutcome.Failed(RuleFailure.Mail(MailFailure.NotPermitted))
         return try {
             folderStorage { connections.mailAccount(account.accountId) }
                 ?.let { write(it, support, account.script?.state, rules) }

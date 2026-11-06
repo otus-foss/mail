@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderFailure
 import com.otus.mail.core.mailbox.FolderLimits
@@ -167,7 +168,7 @@ class ReadLaterFoldersTest {
     @Test
     fun leavesAccountsAloneThatFailedOrCannotCreateTopLevelFolders() =
         runTest {
-            val failed = AccountFolders("bob", "Bob", failure = FolderFailure.Unreachable)
+            val failed = AccountFolders("bob", "Bob", failure = FolderFailure.Mail(MailFailure.Unreachable))
             val limited = ada().copy(limits = FolderLimits(mayCreateTopLevel = false))
             val repository = FakeFolders(listOf(limited, failed), backgroundScope)
             val store = MemoryStore(mapOf("bob" to "b", "gone" to "g"))

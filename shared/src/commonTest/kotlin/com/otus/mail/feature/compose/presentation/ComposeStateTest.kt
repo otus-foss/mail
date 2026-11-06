@@ -1,5 +1,6 @@
 package com.otus.mail.feature.compose.presentation
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftFailure
@@ -110,7 +111,7 @@ class ComposeStateTest {
             val state = state(drafts)
             state.edit { it.copy(body = "Hello") }
             advanceTimeBy(DELAY + 1)
-            drafts.failure = DraftFailure.ServerProblem
+            drafts.failure = DraftFailure.Mail(MailFailure.ServerProblem)
             state.edit { it.copy(body = "Hello!") }
             advanceTimeBy(DELAY + 1)
             assertEquals("d1", state.draft.emailId)

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.compose.domain
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftSender
@@ -139,13 +140,17 @@ class MailOutbox(
         when {
             result.isSuccess -> entries.removeIf { it.id == entry.id }
 
-            failure == SendFailure.Unreachable -> wake(now())
+            failure == SendFailure.Mail(MailFailure.Unreachable) -> wake(now())
 
             // A clear refusal left nothing on the server, so the next try needs no lookup. A server
             // problem, such as a gateway error, may hide a lost answer, so that try looks first.
             else -> entries.fail(trying.copy(attempted = failure.mayHaveSent()), OutboxProblem.Refused)
         }
-        return if (result.isSuccess || failure != null) result else sendFailure(SendFailure.ServerProblem)
+        return if (result.isSuccess || failure != null) {
+            result
+        } else {
+            sendFailure(SendFailure.Mail(MailFailure.ServerProblem))
+        }
     }
 
     /**
@@ -164,7 +169,7 @@ class MailOutbox(
         val check = if (unsettled != null) SendCheck.Unreachable else checker.lookUp(entry)
         if (check == SendCheck.Unreachable) wake(unsettled ?: now())
         return when (check) {
-            SendCheck.Unreachable -> sendFailure(SendFailure.Unreachable)
+            SendCheck.Unreachable -> sendFailure(SendFailure.Mail(MailFailure.Unreachable))
             SendCheck.Sent -> entries.gone(entry)
             SendCheck.NotSent -> if (entry.withdrawn) entries.gone(entry) else null
             SendCheck.Unconfirmable -> if (entry.withdrawn) entries.gone(entry) else entries.unconfirmed(entry)
@@ -204,10 +209,10 @@ private suspend fun failSafe(send: suspend () -> Result<SentMessage>): Result<Se
     } catch (error: CancellationException) {
         throw error
     } catch (_: Exception) {
-        Result.failure(SendException(SendFailure.ServerProblem))
+        Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem)))
     }
 
-private fun SendFailure?.mayHaveSent() = this == null || this == SendFailure.ServerProblem
+private fun SendFailure?.mayHaveSent() = this == null || this == SendFailure.Mail(MailFailure.ServerProblem)
 
 private fun sendFailure(failure: SendFailure) = Result.failure<SentMessage?>(SendException(failure))
 

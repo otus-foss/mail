@@ -75,7 +75,7 @@ internal class JmapDraftRepository(
                 }
             val failure = result.notCreated[CREATION_ID]
             if (failure != null) throw DraftException(failure.toDraftFailure())
-            val id = result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.ServerProblem)
+            val id = result.createdId(CREATION_ID) ?: throw DraftException(DraftFailure.Mail(MailFailure.ServerProblem))
             // Each operation of one call succeeds or fails alone (RFC 8620, section 5.3), so the old
             // copy is destroyed only once the server has stored the new one.
             val previous = draft.emailId
@@ -112,19 +112,21 @@ internal class JmapDraftRepository(
         block: suspend (MailAccount) -> T,
     ): Result<T> =
         try {
-            val account = connections.mailAccount(loginId) ?: throw DraftException(DraftFailure.ServerProblem)
+            val account =
+                connections.mailAccount(loginId)
+                    ?: throw DraftException(DraftFailure.Mail(MailFailure.ServerProblem))
             Result.success(block(account))
         } catch (error: DraftException) {
             Result.failure(error)
         } catch (error: JmapException) {
             Result.failure(DraftException(error.toDraftFailure(), error))
         } catch (error: LoginStoreException) {
-            Result.failure(DraftException(DraftFailure.ServerProblem, error))
+            Result.failure(DraftException(DraftFailure.Mail(MailFailure.ServerProblem), error))
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
             // Anything else, such as content that cannot be encoded, fails the save rather than the app.
-            Result.failure(DraftException(DraftFailure.ServerProblem))
+            Result.failure(DraftException(DraftFailure.Mail(MailFailure.ServerProblem)))
         }
 
     private companion object {
@@ -147,12 +149,8 @@ private fun JmapException.toDraftFailure(): DraftFailure =
     if (this is JmapException.MethodError) {
         draftFailure(type)
     } else {
-        when (toMailFailure()) {
-            MailFailure.NotPermitted -> DraftFailure.NotPermitted
-            MailFailure.Unreachable -> DraftFailure.Unreachable
-            else -> DraftFailure.ServerProblem
-        }
+        DraftFailure.Mail(toMailFailure())
     }
 
 private fun draftFailure(type: String): DraftFailure =
-    if (type == "forbidden") DraftFailure.NotPermitted else DraftFailure.ServerProblem
+    DraftFailure.Mail(if (type == "forbidden") MailFailure.NotPermitted else MailFailure.ServerProblem)

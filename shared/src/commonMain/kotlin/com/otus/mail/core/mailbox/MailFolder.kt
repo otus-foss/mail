@@ -1,5 +1,7 @@
 package com.otus.mail.core.mailbox
 
+import com.otus.mail.core.mail.MailFailure
+
 /**
  * A folder is a mailbox on the server, so every mail app sees it. It is identified by the login
  * [accountId] and the server's mailbox [id], never by name: names repeat across parents.
@@ -110,18 +112,20 @@ data class FolderNode(
 )
 
 /** Why an account's folders, or a change to one, failed. */
-enum class FolderFailure {
-    AlreadyExists,
-    NotPermitted,
-    Invalid,
-    HasSubfolders,
-    HasMail,
-    NotFound,
-    NoMail,
-    SignInRejected,
-    CredentialsUnavailable,
-    Unreachable,
-    ServerProblem,
+sealed interface FolderFailure {
+    data object AlreadyExists : FolderFailure
+
+    data object Invalid : FolderFailure
+
+    data object HasSubfolders : FolderFailure
+
+    data object HasMail : FolderFailure
+
+    data object NotFound : FolderFailure
+
+    data class Mail(
+        val failure: MailFailure,
+    ) : FolderFailure
 }
 
 /**

@@ -12,6 +12,7 @@ import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.AccountFolders
@@ -139,7 +140,7 @@ class JmapFolderRepository(
                 error != null -> FolderOutcome.Failed(error.toFolderFailure())
                 target == CREATION_ID -> result.createdId(target)?.let { FolderOutcome.Done(it) }
                 else -> FolderOutcome.Done(target)
-            } ?: FolderOutcome.Failed(FolderFailure.ServerProblem)
+            } ?: FolderOutcome.Failed(FolderFailure.Mail(MailFailure.ServerProblem))
         } catch (error: JmapException) {
             FolderOutcome.Failed(error.toFolderFailure())
         }

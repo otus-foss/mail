@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderFailure
 import com.otus.mail.core.mailbox.MailFolder
@@ -45,7 +46,11 @@ class FolderColorsStateTest {
         override suspend fun place(placement: FolderPlacement) = FolderOutcome.Done(placement.folder.id)
 
         override suspend fun delete(folder: MailFolder) =
-            if (refuse) FolderOutcome.Failed(FolderFailure.NotPermitted) else FolderOutcome.Done(folder.id)
+            if (refuse) {
+                FolderOutcome.Failed(FolderFailure.Mail(MailFailure.NotPermitted))
+            } else {
+                FolderOutcome.Done(folder.id)
+            }
     }
 
     private val clients = MailFolder("ada", "M1", "Clients")

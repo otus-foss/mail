@@ -1,5 +1,6 @@
 package com.otus.mail.core.messages.domain
 
+import com.otus.mail.core.mail.MailFailure
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
@@ -26,20 +27,24 @@ fun ComposeRequest.answered(accountId: String): AnsweredMessage? {
 }
 
 /**
- * Why a draft was not sent. [Unreachable] means the outcome is unknown: the server may have sent
- * the message before the connection failed.
+ * Why a draft was not sent. [MailFailure.Unreachable] means the outcome is unknown: the server may
+ * have sent the message before the connection failed.
  */
-enum class SendFailure {
-    NoIdentity,
-    Recipients,
-    TooManyRecipients,
-    TooLarge,
-    NotPermitted,
-    Unreachable,
-    ServerProblem,
+sealed interface SendFailure {
+    data object NoIdentity : SendFailure
+
+    data object Recipients : SendFailure
+
+    data object TooManyRecipients : SendFailure
+
+    data object TooLarge : SendFailure
 
     /** A send may have gone, and the server cannot say whether it did, so only the user can tell. */
-    Unconfirmed,
+    data object Unconfirmed : SendFailure
+
+    data class Mail(
+        val failure: MailFailure,
+    ) : SendFailure
 }
 
 /** The failure a [DraftSender] result carries. */

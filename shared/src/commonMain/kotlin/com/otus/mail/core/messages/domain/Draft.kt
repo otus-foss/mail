@@ -1,5 +1,6 @@
 package com.otus.mail.core.messages.domain
 
+import com.otus.mail.core.mail.MailFailure
 import kotlinx.serialization.Serializable
 
 /**
@@ -30,7 +31,13 @@ data class Draft(
 )
 
 /** Why a draft could not be saved or discarded. */
-enum class DraftFailure { NoDraftsFolder, NotPermitted, Unreachable, ServerProblem }
+sealed interface DraftFailure {
+    data object NoDraftsFolder : DraftFailure
+
+    data class Mail(
+        val failure: MailFailure,
+    ) : DraftFailure
+}
 
 /** The failure a draft save or load carries. */
 class DraftException(

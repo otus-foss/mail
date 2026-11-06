@@ -1,5 +1,6 @@
 package com.otus.mail.feature.compose.presentation
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftException
@@ -161,7 +162,9 @@ class ComposeMigrationTest {
 
         override suspend fun save(draft: Draft): Result<String> {
             writes += draft
-            if (draft.accountId == fail) return Result.failure(DraftException(DraftFailure.ServerProblem))
+            if (draft.accountId == fail) {
+                return Result.failure(DraftException(DraftFailure.Mail(MailFailure.ServerProblem)))
+            }
             val id = writes.size.toString()
             copies[draft.accountId to id] = draft
             waitFor?.takeIf { it.first == draft.accountId }?.second?.await()

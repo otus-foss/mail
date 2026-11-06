@@ -4,6 +4,7 @@ import com.otus.mail.app.DAY_FIRST
 import com.otus.mail.app.MailPage
 import com.otus.mail.app.OutgoingMailFixture
 import com.otus.mail.app.PageRequests
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SendTime
@@ -66,7 +67,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
     @Test
     fun aFailureStaysWithRetryUntilItGoes() =
         runTest {
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             outgoing().send(message)
             advanceTimeBy(HOLD + 1)
             runCurrent()
@@ -202,7 +203,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
     fun aServerHoldWithoutAnAnswerIsLookedUpBeforeTheDeviceSendsIt() =
         runTest {
             serverDelaySeconds = 60
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             outgoing().send(message)
             runCurrent()
             assertEquals("Sending…", toasts.messages.single().text, "The device takes over the hold")

@@ -3,6 +3,7 @@ package com.otus.mail.feature.folders.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mailbox.FolderFailure
 import com.otus.mail.core.mailbox.FolderLimits
 import com.otus.mail.core.mailbox.MailFolder
@@ -76,7 +77,7 @@ class JmapFolderRepositoryTest {
             val reasons =
                 listOf(
                     "notCreated" to "alreadyExists" to FolderFailure.AlreadyExists,
-                    "notUpdated" to "forbidden" to FolderFailure.NotPermitted,
+                    "notUpdated" to "forbidden" to FolderFailure.Mail(MailFailure.NotPermitted),
                     "notDestroyed" to "mailboxHasEmail" to FolderFailure.HasMail,
                     "notDestroyed" to "mailboxHasChild" to FolderFailure.HasSubfolders,
                     "notUpdated" to "invalidProperties" to FolderFailure.Invalid,

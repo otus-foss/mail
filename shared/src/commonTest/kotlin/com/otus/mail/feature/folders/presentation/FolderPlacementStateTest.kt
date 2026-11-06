@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderFailure
 import com.otus.mail.core.mailbox.MailFolder
@@ -92,10 +93,10 @@ class FolderPlacementStateTest {
             val state = loaded()
             state.place(assertNotNull(state.folder("ada", "C")), null, 0)
             runCurrent()
-            placements.answers.single().complete(FolderOutcome.Failed(FolderFailure.NotPermitted))
+            placements.answers.single().complete(FolderOutcome.Failed(FolderFailure.Mail(MailFailure.NotPermitted)))
             runCurrent()
             assertEquals(listOf("A", "B", "C"), state.order())
-            assertEquals(FolderFailure.NotPermitted.message(), state.notice)
+            assertEquals(FolderFailure.Mail(MailFailure.NotPermitted).message(), state.notice)
             loads.last().complete(start)
             runCurrent()
         }

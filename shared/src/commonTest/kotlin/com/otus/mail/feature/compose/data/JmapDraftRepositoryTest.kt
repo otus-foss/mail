@@ -3,6 +3,7 @@ package com.otus.mail.feature.compose.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftException
 import com.otus.mail.core.messages.domain.DraftFailure
@@ -125,9 +126,9 @@ class JmapDraftRepositoryTest {
     fun aRejectedSaveReportsWhyAndKeepsTheOldCopy() =
         runTest {
             val refused = server(""""notCreated": {"draft": {"type": "forbidden"}}""").save(reply)
-            assertEquals(DraftFailure.NotPermitted, refused.failure())
+            assertEquals(DraftFailure.Mail(MailFailure.NotPermitted), refused.failure())
             val overQuota = server(""""notCreated": {"draft": {"type": "overQuota"}}""").save(reply)
-            assertEquals(DraftFailure.ServerProblem, overQuota.failure())
+            assertEquals(DraftFailure.Mail(MailFailure.ServerProblem), overQuota.failure())
             assertTrue(calls.none { "destroy" in it }, "Without a new copy, the old one is not destroyed")
         }
 
@@ -157,7 +158,7 @@ class JmapDraftRepositoryTest {
                 server(
                     destroyed = emailSet(""""notDestroyed": {"old": {"type": "forbidden"}}"""),
                 ).discard("ada", "old")
-            assertEquals(DraftFailure.NotPermitted, refused.failure())
+            assertEquals(DraftFailure.Mail(MailFailure.NotPermitted), refused.failure())
         }
 
     @Test
@@ -174,7 +175,7 @@ class JmapDraftRepositoryTest {
                         else -> emailSet(""""destroyed": ["e1"]""")
                     }
                 }
-            assertEquals(DraftFailure.Unreachable, drafts.save(reply.copy(emailId = null)).failure())
+            assertEquals(DraftFailure.Mail(MailFailure.Unreachable), drafts.save(reply.copy(emailId = null)).failure())
             lost = false
             assertEquals("e2", drafts.save(reply.copy(emailId = null)).getOrThrow())
             val query = method(calls.single { "Email/query" in it }).getValue("filter").toString()
@@ -225,8 +226,8 @@ class JmapDraftRepositoryTest {
         runTest {
             val contactsOnly = repository(CONTACTS_ONLY_SESSION) { error("No call without mail") }
             assertEquals(emptyList(), contactsOnly.identities("ada"))
-            assertEquals(DraftFailure.ServerProblem, contactsOnly.save(reply).failure())
-            assertEquals(DraftFailure.ServerProblem, contactsOnly.discard("ada", "old").failure())
+            assertEquals(DraftFailure.Mail(MailFailure.ServerProblem), contactsOnly.save(reply).failure())
+            assertEquals(DraftFailure.Mail(MailFailure.ServerProblem), contactsOnly.discard("ada", "old").failure())
         }
 
     private fun method(body: String): JsonObject =
