@@ -5,6 +5,8 @@ import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.isAnswered
 import com.otus.mail.core.mail.isFlagged
 import com.otus.mail.core.mail.isSeen
+import com.otus.mail.core.mail.received
+import com.otus.mail.core.mail.receivedTime
 import com.otus.mail.core.messages.domain.MailConversation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.ReceivedAt
@@ -13,7 +15,6 @@ import com.otus.mail.core.messages.domain.ThreadEmail
 import com.otus.mail.core.messages.domain.ThreadMember
 import com.otus.mail.core.messages.domain.lastReceived
 import kotlinx.datetime.TimeZone
-import kotlin.time.Instant
 
 /**
  * This message as the row of its conversation in [mailboxId]. [message] is the mapped [row] email,
@@ -30,7 +31,7 @@ internal fun MailMessage.inConversation(
     zone: TimeZone,
 ): MailMessage {
     // The row's own copy comes first: it has every row property, a thread member's copy fewer.
-    val newestFirst = (listOf(row) + thread).distinctBy { it.id }.sortedByDescending { Instant.parse(it.receivedAt) }
+    val newestFirst = (listOf(row) + thread).distinctBy { it.id }.sortedByDescending { it.received }
     val listed = listOf(row) + newestFirst.filter { it.id != row.id && mailboxId in it.boxes }
     val listedIds = listed.map { it.id }.toSet()
     val counted = newestFirst.filter { view.counts(it) || it.id in listedIds }
@@ -43,7 +44,7 @@ internal fun MailMessage.inConversation(
                 ThreadEmail(
                     last.from?.firstOrNull().toSender(location.accountId),
                     last.to.orEmpty().map { it.toSender(location.accountId) },
-                    receivedAt(last.receivedAt, zone),
+                    receivedAt(last.receivedTime, zone),
                 ),
             senders =
                 counted

@@ -23,6 +23,7 @@ import com.otus.mail.core.mail.isDraft
 import com.otus.mail.core.mail.isMuted
 import com.otus.mail.core.mail.isSeen
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mail.received
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
@@ -38,7 +39,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 /**
  * Reads `Email/changes` since each login's saved state (RFC 8620, section 5.2) and reports created
@@ -275,7 +275,7 @@ private fun EmailObject.toNewMail(account: MailAccount): NewMail {
         subject = subject.orEmpty(),
         preview = preview,
         // One malformed date must not stop every later check.
-        receivedAt = Instant.parseOrNull(receivedAt) ?: Clock.System.now(),
+        receivedAt = received ?: Clock.System.now(),
         recipients = (to.orEmpty() + cc.orEmpty()).map { it.email } + deliveredAddresses,
     )
 }

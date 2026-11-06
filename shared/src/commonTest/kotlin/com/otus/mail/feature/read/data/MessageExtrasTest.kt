@@ -9,6 +9,7 @@ import com.otus.mail.core.messages.domain.Unsubscribe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.time.Instant
 
 class MessageExtrasTest {
     private val logo = EmailBodyPart("2", "logo.png", "image/png", blobId = "b-logo", size = 900, cid = "Logo@x")
@@ -102,7 +103,7 @@ class MessageExtrasTest {
 
     @Test
     fun frequencyCountsTheGapsOverTheWeeksSpanned() {
-        val weekly = listOf("2026-10-15T08:00:00Z", "2026-10-08T08:00:00Z", "2026-10-01T08:00:00Z")
+        val weekly = listOf("2026-10-15T08:00:00Z", "2026-10-08T08:00:00Z", "2026-10-01T08:00:00Z").map(Instant::parse)
         assertEquals(1.0, perWeek(weekly))
         assertNull(perWeek(weekly.take(2)), "Two mails are too few to tell")
     }

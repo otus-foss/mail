@@ -7,6 +7,7 @@ import com.otus.mail.core.mail.isAnswered
 import com.otus.mail.core.mail.isFlagged
 import com.otus.mail.core.mail.isForwarded
 import com.otus.mail.core.mail.isSeen
+import com.otus.mail.core.mail.receivedTime
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailAttributes
 import com.otus.mail.core.messages.domain.MailLocation
@@ -40,7 +41,7 @@ internal fun EmailObject.toMessage(
         sender = from?.firstOrNull().toSender(accountId).withBrand(authenticationResults, serverSite),
         subject = subject.orEmpty().displayLine(),
         body = shortText,
-        received = receivedAt(receivedAt, zone),
+        received = receivedAt(receivedTime, zone),
         location =
             MailLocation(
                 mailbox,
@@ -71,12 +72,12 @@ internal fun EmailObject.toMessage(
     )
 }
 
-/** An RFC 3339 `receivedAt` as the date and minute in [zone]. */
+/** When an email arrived, as the date and minute in [zone]. */
 internal fun receivedAt(
-    value: String,
+    value: Instant,
     zone: TimeZone,
 ): ReceivedAt {
-    val local = Instant.parse(value).toLocalDateTime(zone)
+    val local = value.toLocalDateTime(zone)
     return ReceivedAt(local.date.toString(), "${local.hour.twoDigits()}:${local.minute.twoDigits()}")
 }
 

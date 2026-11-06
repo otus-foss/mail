@@ -15,8 +15,8 @@ import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.core.mail.putObject
+import com.otus.mail.core.mail.received
 import com.otus.mail.core.mail.unlessRefused
-import kotlin.time.Instant
 
 /**
  * What a list still needs from the server: [rows] to read with every row property, [threads] of
@@ -119,7 +119,7 @@ private fun FetchedMail.withRows(rows: List<EmailObject>) = FetchedMail(rows, th
 
 /** When the email arrived, in epoch milliseconds, for the cache to trim old mail by. */
 internal val EmailObject.receivedMillis: Long?
-    get() = Instant.parseOrNull(receivedAt)?.toEpochMilliseconds()
+    get() = received?.toEpochMilliseconds()
 
 /** What a conversation row reads from each email of its thread. */
 internal val MEMBER_PROPERTIES =

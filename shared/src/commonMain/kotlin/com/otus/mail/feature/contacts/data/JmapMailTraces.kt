@@ -13,12 +13,12 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mail.received
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.contacts.domain.MailTrace
 import com.otus.mail.feature.contacts.domain.MailTraceSource
 import com.otus.mail.feature.contacts.domain.MailTraces
-import kotlin.time.Instant
 
 /**
  * A login's newest [SCAN] emails in its Sent and Inbox mailboxes (RFC 8621, sections 2 and 4.4),
@@ -54,7 +54,7 @@ internal class JmapMailTraces(
     }
 
     private fun trace(email: EmailObject): MailTrace? {
-        val at = runCatching { Instant.parse(email.receivedAt) }.getOrNull() ?: return null
+        val at = email.received ?: return null
         return MailTrace(
             at,
             from = email.from.orEmpty().map { it.email },
