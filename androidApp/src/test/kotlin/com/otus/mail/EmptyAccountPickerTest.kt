@@ -19,9 +19,9 @@ import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.core.settings.domain.InboxPill
-import com.otus.mail.feature.inbox.presentation.FolderPillOption
+import com.otus.mail.core.settings.presentation.FolderPillOption
+import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals

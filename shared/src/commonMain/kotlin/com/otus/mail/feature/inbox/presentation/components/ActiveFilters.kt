@@ -13,6 +13,10 @@ import com.otus.mail.core.messages.domain.FilterSort
 import com.otus.mail.core.messages.domain.ReadStatus
 import com.otus.mail.core.messages.domain.RecipientField
 import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 

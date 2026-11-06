@@ -43,7 +43,9 @@ import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.mail.core.messages.presentation.icon
 import com.otus.mail.core.settings.domain.QuickViewModule
+import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.QuickViewContext

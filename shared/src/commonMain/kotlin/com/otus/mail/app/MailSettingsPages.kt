@@ -5,9 +5,9 @@ import androidx.compose.runtime.remember
 import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.avatar.ui.presentation.components.OwnAvatarEditor
 import com.otus.dateformat.DateFormatter
-import com.otus.mail.feature.inbox.presentation.components.NotificationActionsSetting
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
-import com.otus.mail.feature.inbox.presentation.screens.FilterPanelSettingsScreen
+import com.otus.mail.feature.mailsettings.presentation.components.NotificationActionsSetting
+import com.otus.mail.feature.mailsettings.presentation.screens.FilterPanelSettingsScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
 import com.otus.settings.presentation.screens.SettingsScreen

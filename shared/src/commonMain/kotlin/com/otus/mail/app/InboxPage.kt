@@ -10,9 +10,9 @@ import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.core.messages.domain.inScope
 import com.otus.mail.core.settings.domain.InboxContents
 import com.otus.mail.core.settings.domain.SidebarPin
+import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.QuickJumpTarget
 import com.otus.mail.feature.inbox.presentation.QuickViewContext

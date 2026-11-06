@@ -40,8 +40,10 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.lastReceived
 import com.otus.mail.core.messages.domain.shownName
 import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.label
 import com.otus.mail.core.messages.presentation.listDateLabel
 import com.otus.mail.core.settings.domain.MailListLayout
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.SearchField
 import com.otus.mail.feature.inbox.domain.searchMessages

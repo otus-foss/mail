@@ -3,6 +3,9 @@ package com.otus.mail.feature.inbox.presentation.components
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.core.messages.domain.DateFilter
 import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.messages.presentation.rangeLabel
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FolderLabel

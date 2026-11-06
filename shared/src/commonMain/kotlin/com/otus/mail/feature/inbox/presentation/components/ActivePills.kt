@@ -10,6 +10,10 @@ import com.otus.designsystem.shared.filters.components.FolderStackChip
 import com.otus.designsystem.shared.filters.components.StackedFolder
 import com.otus.mail.core.messages.domain.FolderRef
 import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterOptions

@@ -22,7 +22,9 @@ import com.otus.mail.core.messages.domain.QuickFacet
 import com.otus.mail.core.messages.domain.SenderKey
 import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.core.messages.presentation.components.firstName
+import com.otus.mail.core.messages.presentation.icon
 import com.otus.mail.core.messages.presentation.kind
+import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.frequentSenders
 import org.jetbrains.compose.resources.DrawableResource

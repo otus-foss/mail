@@ -21,6 +21,7 @@ import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.messages.presentation.MessageMarking
 import com.otus.mail.core.messages.presentation.MessageMoves
 import com.otus.mail.core.messages.presentation.MoveToasts
+import com.otus.mail.core.settings.presentation.AddressPinsState
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.compose.presentation.ComposeAccount
 import com.otus.mail.feature.compose.presentation.ComposeOrigin
@@ -40,7 +41,6 @@ import com.otus.mail.feature.folders.presentation.FolderSenders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.components.folderActions
 import com.otus.mail.feature.folders.presentation.forget
-import com.otus.mail.feature.inbox.presentation.AddressPinsState
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import kotlinx.coroutines.CoroutineScope

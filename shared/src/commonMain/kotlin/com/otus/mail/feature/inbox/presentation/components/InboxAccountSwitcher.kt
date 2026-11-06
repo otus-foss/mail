@@ -26,6 +26,8 @@ import com.otus.designsystem.theme.typography.TypeScale
 import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.messages.presentation.components.MailScopeChoices
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.label
 
 /**
  * The account switcher, unfolded from the inbox's control panel [collapsedHeight] tall: All mail,

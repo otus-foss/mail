@@ -8,6 +8,8 @@ import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.shownName
 import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.label
 
 @Composable
 internal fun PeopleFilterChip(

@@ -4,6 +4,8 @@ import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.presentation.FolderPillOption
+import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.components.ReadView

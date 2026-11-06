@@ -7,13 +7,13 @@ import com.otus.designsystem.mail.brand.elements.MailAppIcon
 import com.otus.mail.core.mailbox.SharedFolder
 import com.otus.mail.core.mailbox.sharedFolders
 import com.otus.mail.feature.inbox.presentation.components.MailListPreview
-import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
-import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
-import com.otus.mail.feature.inbox.presentation.screens.AllowedSendersScreen
-import com.otus.mail.feature.inbox.presentation.screens.BehaviorPage
-import com.otus.mail.feature.inbox.presentation.screens.MailBehaviorScreen
-import com.otus.mail.feature.inbox.presentation.screens.MailListSettingsScreen
-import com.otus.mail.feature.inbox.presentation.screens.PrivacyScreen
+import com.otus.mail.feature.mailsettings.presentation.components.MailLookSettings
+import com.otus.mail.feature.mailsettings.presentation.screens.ActionBarSettingsScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.AllowedSendersScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.BehaviorPage
+import com.otus.mail.feature.mailsettings.presentation.screens.MailBehaviorScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.MailListSettingsScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.PrivacyScreen
 import com.otus.settings.presentation.components.AppIconSetting
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 

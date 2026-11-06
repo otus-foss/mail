@@ -13,8 +13,8 @@ import com.otus.mail.core.mailbox.sharedFolder
 import com.otus.mail.core.mailbox.sharedFolders
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.settings.presentation.SidebarPinOption
-import com.otus.mail.feature.inbox.presentation.screens.PinnedSettingsScreen
-import com.otus.mail.feature.inbox.presentation.screens.SidebarSettingsScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.PinnedSettingsScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.SidebarSettingsScreen
 import com.otus.mail.feature.sidebar.presentation.pinnableMailboxes
 
 /** Sidebar settings, or its Pinned page. */

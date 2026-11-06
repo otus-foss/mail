@@ -38,6 +38,8 @@ import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
 

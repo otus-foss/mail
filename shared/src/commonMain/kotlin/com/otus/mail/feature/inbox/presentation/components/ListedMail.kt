@@ -5,6 +5,8 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.domain.InboxFilters
 
 /** The page's loaded [messages] and the [filters] applied to them. */

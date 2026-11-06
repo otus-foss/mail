@@ -5,6 +5,8 @@ import androidx.compose.runtime.remember
 import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FilterPerson

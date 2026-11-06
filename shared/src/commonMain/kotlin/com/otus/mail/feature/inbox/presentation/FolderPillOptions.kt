@@ -7,6 +7,7 @@ import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.presentation.FolderPillOption
 import com.otus.mail.core.settings.presentation.title
 
 /**

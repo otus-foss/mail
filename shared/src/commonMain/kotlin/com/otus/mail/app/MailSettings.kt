@@ -12,11 +12,11 @@ import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.core.settings.presentation.PRIVACY_TITLE
-import com.otus.mail.feature.inbox.presentation.components.BehaviorIndexPages
-import com.otus.mail.feature.inbox.presentation.components.mailBehaviorIndex
-import com.otus.mail.feature.inbox.presentation.components.mailLookIndex
-import com.otus.mail.feature.inbox.presentation.components.notificationActionsIndex
-import com.otus.mail.feature.inbox.presentation.components.privacyIndex
+import com.otus.mail.feature.mailsettings.presentation.components.BehaviorIndexPages
+import com.otus.mail.feature.mailsettings.presentation.components.mailBehaviorIndex
+import com.otus.mail.feature.mailsettings.presentation.components.mailLookIndex
+import com.otus.mail.feature.mailsettings.presentation.components.notificationActionsIndex
+import com.otus.mail.feature.mailsettings.presentation.components.privacyIndex
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.mail.feature.notifications.presentation.screens.deliveryLabel

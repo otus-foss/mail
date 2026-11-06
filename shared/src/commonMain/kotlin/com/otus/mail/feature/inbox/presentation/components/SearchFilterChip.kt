@@ -11,6 +11,8 @@ import com.otus.designsystem.resources.symbol_calendar_add_on
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import org.jetbrains.compose.resources.DrawableResource
