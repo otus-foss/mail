@@ -9,10 +9,7 @@ import com.otus.mail.core.messages.domain.DraftRestoreException
 import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SentMessage
-import com.otus.mail.feature.inbox.data.at
 import com.otus.mail.feature.inbox.data.composeMail
-import com.otus.mail.feature.inbox.data.id
-import com.otus.mail.feature.inbox.data.ids
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest

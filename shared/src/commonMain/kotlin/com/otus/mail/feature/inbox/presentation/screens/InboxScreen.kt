@@ -34,6 +34,7 @@ import com.otus.mail.feature.inbox.presentation.components.InboxPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.InboxResults
 import com.otus.mail.feature.inbox.presentation.components.ListedMail
+import com.otus.mail.feature.inbox.presentation.components.OpenedMessage
 import com.otus.mail.feature.inbox.presentation.components.PanelLook
 import com.otus.mail.feature.inbox.presentation.components.PanelOpens
 import com.otus.mail.feature.inbox.presentation.components.PanelOverList
@@ -111,8 +112,8 @@ fun InboxScreen(
                 }
             },
         ) {
-            val cameFrom = page.cameFrom(it, state.searching || filters.applied.folders.isNotEmpty())
-            MessageScreen(it, messageActions, status.notice, page, cameFrom, rows.close)
+            val mixed = state.searching || filters.applied.folders.isNotEmpty() || page.folderPill != null
+            page.readView.Show(OpenedMessage(it, status.notice, mixed, rows.close))
         }
         InboxLayers(state, listed, anchor, page, HitDates(dateFormatter, context.rowLook.layout), overlays, rows)
     }
@@ -125,21 +126,6 @@ private fun rememberInboxState(defaultSearch: InboxSearch): InboxState =
         defaultSearch,
         saver = InboxState.saver(defaultSearch),
     ) { InboxState(defaultSearch = defaultSearch) }
-
-/**
- * The folders this page shows [message] from. Search, folder pills, and the filter panel's folder
- * choices, which [filtered] says are on, mix folders, so they give none.
- */
-private fun InboxContext.cameFrom(
-    message: MailMessage,
-    filtered: Boolean,
-): Set<String> =
-    read
-        ?.folders
-        ?.cameFrom
-        ?.invoke(message)
-        ?.takeIf { !filtered && folderPill == null }
-        .orEmpty()
 
 @Composable
 private fun inboxPanelActions(

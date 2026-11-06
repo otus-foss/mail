@@ -21,8 +21,8 @@ import com.otus.mail.core.messages.presentation.actions.OfferedAction
 import com.otus.mail.core.messages.presentation.actions.barFor
 import com.otus.mail.core.messages.presentation.actions.offer
 import com.otus.mail.core.settings.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.read.ReadPage
-import com.otus.mail.feature.inbox.presentation.read.readMenu
+import com.otus.mail.feature.read.presentation.ReadPage
+import com.otus.mail.feature.read.presentation.readMenu
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

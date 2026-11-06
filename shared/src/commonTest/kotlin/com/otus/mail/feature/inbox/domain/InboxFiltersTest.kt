@@ -19,6 +19,7 @@ import com.otus.mail.core.messages.domain.SizeFilter
 import com.otus.mail.core.messages.domain.ThreadEmail
 import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.feature.read.domain.Newsletters
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test

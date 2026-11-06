@@ -12,7 +12,7 @@ import android.print.PrintManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.otus.mail.feature.inbox.domain.MessagePrinter
+import com.otus.mail.feature.read.domain.MessagePrinter
 import java.lang.ref.WeakReference
 
 /**

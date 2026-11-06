@@ -26,10 +26,8 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.OwnAddresses
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.RowLook
-import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.feature.read.presentation.components.NewFolderSheet
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -61,11 +59,7 @@ class ReadViewTest {
                 .read(pages, cameFrom, writer, { unsubscribed++ }, newFolder)
                 .let { if (showQuotes) with(fixtures) { it.showingQuotes() } else it }
         val context =
-            InboxContext(
-                loadContent = { fixtures.content(it) },
-                read = read,
-                rowLook = RowLook(own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))),
-            )
+            read.ownedBy(OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address))))
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {

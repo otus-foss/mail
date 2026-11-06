@@ -39,6 +39,8 @@ internal fun InboxPage(
         )
     val labeled = rememberLabeled(states, feed)
     val filters = rememberPageFilters(states, MailPage.Inbox, feed)
+    val rowLook = rememberRowLook(states)
+    val messageActions = rememberMessageActions(states, feed, navigation)
     InboxScreen(
         labeled,
         dateFormatter,
@@ -56,18 +58,17 @@ internal fun InboxPage(
                         feed::show,
                     ),
                 onCompose = { navigation.go(MailPage.Compose(it)) },
-                loadContent = states::messageContent,
-                read = rememberReadContext(states, feed, navigation),
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, MailPage.Inbox, filters.applied),
-                rowLook = rememberRowLook(states),
+                rowLook = rowLook,
+                readView = rememberReadView(states, feed, navigation, MailPage.Inbox, messageActions, rowLook.own),
                 nudge = rememberListNudge(states, labeled),
                 onLoadMore = feed::loadMore,
                 scope = states.scopeSwitch(states.mailScope, states.chooseScope),
                 quick = rememberQuickView(states, navigation),
                 opening = states.requests.row,
             ),
-        messageActions = rememberMessageActions(states, feed, navigation),
+        messageActions = messageActions,
     )
 }
 

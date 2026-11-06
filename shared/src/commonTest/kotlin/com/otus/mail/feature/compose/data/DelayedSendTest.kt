@@ -4,7 +4,6 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.feature.inbox.data.composeMail
-import com.otus.mail.feature.inbox.data.id
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.SUBMISSION_SESSION
 import com.otus.mail.testing.stalwartLike

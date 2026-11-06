@@ -13,11 +13,9 @@ import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.messages.domain.OwnAddresses
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadDisplay
-import com.otus.mail.feature.inbox.presentation.RowLook
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.feature.read.presentation.ReadContext
+import com.otus.mail.feature.read.presentation.ReadDisplay
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -40,11 +38,7 @@ class ReadZenTest {
         val display = ReadDisplay(zen = { zen.value }, setZen = { zen.value = it }, today = base.display.today)
         val read = ReadContext(base.pages, base.folders, base.privacy, base.files, base.services, base.effects, display)
         val context =
-            InboxContext(
-                loadContent = { fixtures.content(it) },
-                read = read,
-                rowLook = RowLook(own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))),
-            )
+            read.ownedBy(OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address))))
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {

@@ -19,9 +19,7 @@ import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.RowLook
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,10 +44,10 @@ class ReadQuickViewTest {
 
     private fun showThread() {
         val context =
-            InboxContext(
-                loadContent = { fixtures.content(it) },
-                read = fixtures.read(fixtures.thread, setOf("in")),
-                rowLook = RowLook(own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))),
+            fixtures.read(fixtures.thread, setOf("in")).ownedBy(
+                OwnAddresses(
+                    mapOf("acc" to listOf(fixtures.alex.address)),
+                ),
             )
         compose.runOnUiThread {
             compose.activity.setContent {

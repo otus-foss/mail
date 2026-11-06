@@ -1,6 +1,7 @@
 package com.otus.mail.core.messages.presentation.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.Dp
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.generatedAvatar
@@ -32,3 +33,12 @@ internal fun chipAvatar(
     name: String,
     address: String,
 ): ChipAvatar = (avatar ?: ResolvedAvatar(generatedAvatar(name, address))).toChipAvatar()
+
+/** The first word of the name, or the address's local part when the name is blank. */
+internal val MailSender.firstName: String
+    get() =
+        name
+            .trim()
+            .split(Regex("\\s+"))
+            .firstOrNull { it.isNotBlank() && '@' !in it }
+            ?: address.substringBefore('@')

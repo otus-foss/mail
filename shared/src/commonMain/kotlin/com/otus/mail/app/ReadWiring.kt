@@ -5,10 +5,13 @@ import androidx.compose.runtime.remember
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.folderTree
+import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.presentation.MailEdits
+import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.settings.domain.allowingSender
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.folders.presentation.FolderColorsState
@@ -17,16 +20,18 @@ import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.components.FolderActions
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadDisplay
-import com.otus.mail.feature.inbox.presentation.ReadEdits
-import com.otus.mail.feature.inbox.presentation.ReadEffects
-import com.otus.mail.feature.inbox.presentation.ReadFiles
-import com.otus.mail.feature.inbox.presentation.ReadFolders
-import com.otus.mail.feature.inbox.presentation.ReadPrivacy
-import com.otus.mail.feature.inbox.presentation.ReadServices
-import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
-import com.otus.mail.feature.inbox.presentation.components.PersonSheet
+import com.otus.mail.feature.inbox.presentation.components.ReadView
+import com.otus.mail.feature.read.presentation.ReadContext
+import com.otus.mail.feature.read.presentation.ReadDisplay
+import com.otus.mail.feature.read.presentation.ReadEdits
+import com.otus.mail.feature.read.presentation.ReadEffects
+import com.otus.mail.feature.read.presentation.ReadFiles
+import com.otus.mail.feature.read.presentation.ReadFolders
+import com.otus.mail.feature.read.presentation.ReadPrivacy
+import com.otus.mail.feature.read.presentation.ReadServices
+import com.otus.mail.feature.read.presentation.components.NewFolderSheet
+import com.otus.mail.feature.read.presentation.components.PersonSheet
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import kotlinx.coroutines.launch
 
 /**
@@ -57,7 +62,9 @@ internal class ReadWiring(
     /** The Read view of messages that [feed] lists, whose folder, when it shows one, is left out of strips. */
     fun context(
         feed: InboxFeedState,
-        person: PersonSheet? = null,
+        person: PersonSheet?,
+        own: OwnAddresses,
+        onCompose: (ComposeRequest) -> Unit,
     ): ReadContext =
         ReadContext(
             pages = services.conversationMessages,
@@ -84,6 +91,9 @@ internal class ReadWiring(
                     zen = { behavior.behavior.zenRead },
                     setZen = { on -> behavior.update { it.copy(zenRead = on) } },
                 ),
+            own = own,
+            loadContent = services.bodies::content,
+            onCompose = onCompose,
         )
 
     /**
@@ -113,13 +123,27 @@ internal class ReadWiring(
         }
 }
 
-/** The Read view for [feed]'s list, again when the feed changes. */
+/** The Read view of [feed]'s rows on [page], whose drafts close back to that page; again when the feed changes. */
 @Composable
-internal fun rememberReadContext(
+internal fun rememberReadView(
     states: MailStates,
     feed: InboxFeedState,
     navigation: MailNavigation,
-): ReadContext = remember(states, feed) { states.reading.context(feed, contactSheet(states, navigation)) }
+    page: MailPage,
+    actions: MessageActions,
+    own: OwnAddresses,
+): ReadView {
+    val read =
+        remember(states, feed, own) {
+            states.reading.context(feed, contactSheet(states, navigation), own) {
+                navigation.go(MailPage.Compose(it, parent = page))
+            }
+        }
+    return ReadView { opened ->
+        val cameFrom = if (opened.mixed) emptySet() else read.folders.cameFrom(opened.message)
+        MessageScreen(opened.message, actions, opened.notice, read, cameFrom, opened.close)
+    }
+}
 
 private fun MailScope.Roles.folderIds(folders: List<MailFolder>): Set<String> =
     folders

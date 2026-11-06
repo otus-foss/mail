@@ -4,7 +4,6 @@ import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftFailure
 import com.otus.mail.core.messages.domain.MailSender
-import com.otus.mail.feature.inbox.presentation.notice
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent

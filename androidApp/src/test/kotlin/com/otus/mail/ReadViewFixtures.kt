@@ -16,6 +16,7 @@ import com.otus.mail.core.messages.domain.MailingList
 import com.otus.mail.core.messages.domain.MessageContent
 import com.otus.mail.core.messages.domain.MessageFolder
 import com.otus.mail.core.messages.domain.MessageHtml
+import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.core.messages.domain.RemoteImages
 import com.otus.mail.core.messages.domain.SenderBlocks
@@ -29,24 +30,24 @@ import com.otus.mail.core.messages.presentation.MessageMoves
 import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.core.messages.presentation.MoveToasts
 import com.otus.mail.core.settings.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.ConversationMessages
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
-import com.otus.mail.feature.inbox.domain.KnownPeople
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.MessageHeaders
-import com.otus.mail.feature.inbox.domain.MessagePrinter
-import com.otus.mail.feature.inbox.domain.Newsletters
-import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadDisplay
-import com.otus.mail.feature.inbox.presentation.ReadEdits
-import com.otus.mail.feature.inbox.presentation.ReadEffects
-import com.otus.mail.feature.inbox.presentation.ReadFiles
-import com.otus.mail.feature.inbox.presentation.ReadFolders
-import com.otus.mail.feature.inbox.presentation.ReadPrivacy
-import com.otus.mail.feature.inbox.presentation.ReadServices
-import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
+import com.otus.mail.feature.read.domain.ConversationMessages
+import com.otus.mail.feature.read.domain.KnownPeople
+import com.otus.mail.feature.read.domain.MessageHeaders
+import com.otus.mail.feature.read.domain.MessagePrinter
+import com.otus.mail.feature.read.domain.Newsletters
+import com.otus.mail.feature.read.domain.UnsubscribeResult
+import com.otus.mail.feature.read.presentation.ReadContext
+import com.otus.mail.feature.read.presentation.ReadDisplay
+import com.otus.mail.feature.read.presentation.ReadEdits
+import com.otus.mail.feature.read.presentation.ReadEffects
+import com.otus.mail.feature.read.presentation.ReadFiles
+import com.otus.mail.feature.read.presentation.ReadFolders
+import com.otus.mail.feature.read.presentation.ReadPrivacy
+import com.otus.mail.feature.read.presentation.ReadServices
+import com.otus.mail.feature.read.presentation.components.NewFolderSheet
 import kotlinx.coroutines.MainScope
 import kotlinx.datetime.LocalDate
 
@@ -169,6 +170,7 @@ internal object ReadViewFixtures {
         unsubscribed: () -> Unit = {},
         newFolder: NewFolderSheet? = null,
         effects: ReadEffects = ReadEffects(),
+        own: OwnAddresses = OwnAddresses(emptyMap()),
     ) = ReadContext(
         pages = ConversationMessages { pages },
         folders =
@@ -196,6 +198,8 @@ internal object ReadViewFixtures {
             ),
         effects = effects,
         display = ReadDisplay(today = { LocalDate(2026, 10, 19) }),
+        own = own,
+        loadContent = { content(it) },
     )
 
     /** Edits that [writer] saves, run on the main thread like the app's, with their toasts in [effects]. */
@@ -210,7 +214,17 @@ internal object ReadViewFixtures {
 
     /** This context with replies showing their quotes, as the "Show quotes" setting does. */
     fun ReadContext.showingQuotes(): ReadContext =
-        ReadContext(pages, folders, privacy, files, services, effects, ReadDisplay({ true }, today = display.today))
+        ReadContext(
+            pages,
+            folders,
+            privacy,
+            files,
+            services,
+            effects,
+            ReadDisplay({ true }, today = display.today),
+            own,
+            loadContent,
+        )
 
     /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
     private fun photo(): ByteArray {
@@ -291,3 +305,7 @@ internal object ReadViewFixtures {
             "Crash-free sessions are at 99.2%.\n\n" +
             "View all issues"
 }
+
+/** This context for a user who owns [own]. */
+internal fun ReadContext.ownedBy(own: OwnAddresses): ReadContext =
+    ReadContext(pages, folders, privacy, files, services, effects, display, own, loadContent)

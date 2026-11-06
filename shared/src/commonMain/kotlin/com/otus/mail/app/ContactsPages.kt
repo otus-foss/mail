@@ -13,7 +13,7 @@ import com.otus.mail.feature.contacts.presentation.components.PersonContactSheet
 import com.otus.mail.feature.contacts.presentation.screens.ContactEditorScreen
 import com.otus.mail.feature.contacts.presentation.screens.ContactScreen
 import com.otus.mail.feature.contacts.presentation.screens.ContactsScreen
-import com.otus.mail.feature.inbox.presentation.components.PersonSheet
+import com.otus.mail.feature.read.presentation.components.PersonSheet
 
 /** The Read view's sheet for a person a message names: their card, or ways to save the address. */
 internal fun contactSheet(

@@ -41,6 +41,7 @@ import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.shownName
 import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.components.firstName
 import com.otus.mail.feature.inbox.domain.SearchField
 import com.otus.mail.feature.inbox.domain.looksLikeAddress
 import com.otus.mail.feature.inbox.domain.searchMessages

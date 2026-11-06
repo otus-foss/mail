@@ -30,7 +30,7 @@ import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 
 /** The status bar of the design's phone, which Robolectric leaves out, so the panel can fill it. */
 private const val STATUS_BAR_DP = 40
@@ -72,7 +72,7 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showControlRead(palette: Ot
                         fixtures.threadRow,
                         fixtures.actions(),
                         null,
-                        InboxContext(loadContent = { fixtures.content(it) }, read = fixtures.read(fixtures.thread)),
+                        fixtures.read(fixtures.thread),
                         emptySet(),
                         onClose = {},
                     )

@@ -5,8 +5,6 @@ import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.data.toMessage
 import com.otus.mail.core.messages.domain.MailboxScope
-import com.otus.mail.feature.inbox.data.id
-import com.otus.mail.feature.inbox.data.receivedAt
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.searchMessages
 import kotlinx.datetime.TimeZone

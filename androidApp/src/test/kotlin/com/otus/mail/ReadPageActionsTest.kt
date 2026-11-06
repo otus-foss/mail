@@ -28,11 +28,9 @@ import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MessageFlag
 import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadEffects
-import com.otus.mail.feature.inbox.presentation.RowLook
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.feature.read.presentation.ReadContext
+import com.otus.mail.feature.read.presentation.ReadEffects
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -68,7 +66,7 @@ class ReadPageActionsTest {
                 { unsubscribed++ },
                 effects = effects,
             )
-        val context = InboxContext(loadContent = { fixtures.content(it) }, read = read, rowLook = RowLook(own = OWN))
+        val context = read.ownedBy(OWN)
         val actions = fixtures.actions(targets = listOf(MoveTarget("tr", listOf("Trash"), MailboxRole.Trash)))
         compose.runOnUiThread {
             compose.activity.setContent {

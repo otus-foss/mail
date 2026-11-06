@@ -3,7 +3,7 @@ package com.otus.mail.core.messages.data
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.messages.domain.MailMessage
-import com.otus.mail.feature.inbox.data.files
+import com.otus.mail.feature.read.data.files
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertFalse

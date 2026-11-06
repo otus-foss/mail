@@ -1,13 +1,12 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.messages.domain.ComposeRequest
-import com.otus.mail.core.messages.domain.MailMessage
-import com.otus.mail.core.messages.domain.MessageContent
 import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.core.settings.presentation.title
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
+import com.otus.mail.feature.inbox.presentation.components.ReadView
 
 /**
  * What a message list shows by default, how it names itself, which other mailboxes its search
@@ -25,8 +24,6 @@ data class InboxContext(
     val folderPill: FolderPillOption? = null,
     /** Opens a draft for a new message, reply, or forward. */
     val onCompose: (ComposeRequest) -> Unit = {},
-    /** Loads an open message's full body; null keeps the preview the list loaded. */
-    val loadContent: suspend (MailMessage) -> MessageContent? = { null },
     /** The page's filters, which outlive the screen; null keeps them with the screen. */
     val filters: InboxFilterState? = null,
     val filterOptions: FilterOptions = FilterOptions(),
@@ -36,8 +33,8 @@ data class InboxContext(
     val nudge: ListNudge? = null,
     /** Loads the feed's next page, which the list asks for as it scrolls near its end. */
     val onLoadMore: () -> Unit = {},
-    /** What an open message's Read view needs beyond [loadContent]; null shows the message alone. */
-    val read: ReadContext? = null,
+    /** The Read view of an opened row, over the list. */
+    val readView: ReadView = ReadView {},
     /** Whose mail the page shows, which the account stack opens; null shows no stack. */
     val scope: MailScopeSwitch? = null,
     /** What pulling the control panel down shows; null keeps the panel from opening that way. */

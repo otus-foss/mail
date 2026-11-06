@@ -150,6 +150,8 @@ internal fun FeedPage(
     LaunchedEffect(feed) { feed.refresh() }
     val filters = rememberPageFilters(states, page, feed)
     val labeled = rememberLabeled(states, feed)
+    val rowLook = rememberRowLook(states)
+    val messageActions = rememberMessageActions(states, feed, navigation)
     InboxScreen(
         labeled,
         dateFormatter,
@@ -162,15 +164,14 @@ internal fun FeedPage(
         context =
             InboxContext.folder(name, states.behavior.behavior.pills).copy(
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
-                loadContent = states::messageContent,
-                read = rememberReadContext(states, feed, navigation),
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, page, filters.applied),
-                rowLook = rememberRowLook(states),
+                rowLook = rowLook,
+                readView = rememberReadView(states, feed, navigation, page, messageActions, rowLook.own),
                 nudge = rememberListNudge(states, labeled),
                 onLoadMore = feed::loadMore,
             ),
-        messageActions = rememberMessageActions(states, feed, navigation),
+        messageActions = messageActions,
     )
 }
 

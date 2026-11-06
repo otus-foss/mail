@@ -25,9 +25,9 @@ import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.MessageFolder
 import com.otus.mail.core.messages.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.MailHeader
-import com.otus.mail.feature.inbox.presentation.components.FoldersSheet
-import com.otus.mail.feature.inbox.presentation.components.MessageDetailsSheet
+import com.otus.mail.feature.read.domain.MailHeader
+import com.otus.mail.feature.read.presentation.components.FoldersSheet
+import com.otus.mail.feature.read.presentation.components.MessageDetailsSheet
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule

@@ -12,6 +12,7 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.messages.data.LoginLocks
+import com.otus.mail.core.messages.data.contactCards
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.AddressBook
 import com.otus.mail.core.messages.domain.MailSender
