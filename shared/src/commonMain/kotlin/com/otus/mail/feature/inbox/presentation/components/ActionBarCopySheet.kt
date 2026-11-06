@@ -24,6 +24,7 @@ import com.otus.mail.feature.inbox.domain.ActionBarMode
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.actions.label
 
 /**
  * Copies [from]'s bar to the screens the user ticks, each getting what it can offer. Done replaces

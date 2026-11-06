@@ -20,7 +20,6 @@ import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.mail.quickview.components.QuickJump
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_code
-import com.otus.designsystem.resources.symbol_drive_file_move
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.Symbol
@@ -32,12 +31,16 @@ import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.ReadQuickModule
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
+import com.otus.mail.feature.inbox.presentation.actions.offerFolder
+import com.otus.mail.feature.inbox.presentation.actions.offerMove
+import com.otus.mail.feature.inbox.presentation.actions.symbol
 import com.otus.mail.feature.inbox.presentation.ownFolders
 import com.otus.mail.feature.inbox.presentation.shortcuts
 
@@ -159,14 +162,13 @@ private fun ReadMoveRow(room: ReadRoom) {
         @Composable {
             IconButton("All folders", {
                 room.expansion.collapse()
-                parts.moveChoice.choose(listOf(row), targets)
-            }) { Symbol(Res.drawable.symbol_drive_file_move) }
+                actions.offerMove(listOf(row), parts.moveChoice::choose)?.run?.invoke()
+            }) { Symbol(MailAction.Move.symbol) }
         }
     QuickJump(move) {
         chips.forEach { target ->
             Chip(target.chipLabel, {
-                parts.close()
-                actions.moves.onMove(row, target)
+                actions.offerFolder(listOf(row), target)?.let(parts::perform)
             }) { Symbol(target.chipIcon) }
         }
     }

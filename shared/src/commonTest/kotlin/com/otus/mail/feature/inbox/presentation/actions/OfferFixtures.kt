@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.feature.inbox.presentation.actions
 
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAttributes

@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.feature.inbox.presentation.actions
 
 import com.otus.designsystem.shared.overlays.components.ConfirmQuestion
 import com.otus.mail.feature.inbox.domain.BarButton

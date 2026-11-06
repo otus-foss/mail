@@ -1,11 +1,13 @@
 package com.otus.mail.feature.inbox.presentation.read
 
+import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.OwnAddresses
 import com.otus.mail.feature.inbox.domain.Participant
 import com.otus.mail.feature.inbox.domain.isOwn
 import com.otus.mail.feature.inbox.domain.otherReply
+import com.otus.mail.feature.inbox.domain.replyAction
 
 /**
  * The Read view page the ⋯ menu acts on: its [message], at [index] of [count] in its conversation,
@@ -41,20 +43,34 @@ data class ReadMenuSection(
     val entries: List<ReadMenuEntry>,
 )
 
-/** One ⋯ menu entry. The screen maps each to its icon and action. */
+/**
+ * The ⋯ menu for a page: its [sections], and the replies it [withheld], such as both for a
+ * newsletter. The menu's last section offers every action it does not [cover][covers] that the
+ * bar leaves out.
+ */
+class ReadMenu(
+    val sections: List<ReadMenuSection>,
+    val withheld: Set<MailAction>,
+) {
+    /** Mail's actions in the menu's sections. */
+    val placed: Set<MailAction>
+        get() =
+            sections
+                .flatMap { it.entries }
+                .filterIsInstance<ReadMenuEntry.Act>()
+                .map { it.action }
+                .toSet()
+
+    val covers: Set<MailAction>
+        get() = placed + withheld
+}
+
+/** One ⋯ menu entry: one of Mail's actions, or one only the Read view offers. */
 sealed interface ReadMenuEntry {
-    /** The reply the big button does not cover; [name] is the person a plain reply goes to. */
-    data class OtherReply(
+    /** [action] as the bar would offer it; marks act on the page alone. A [detail] shows under it. */
+    data class Act(
         val action: MailAction,
-        val name: String,
-    ) : ReadMenuEntry
-
-    data object Forward : ReadMenuEntry
-
-    data object MarkUnread : ReadMenuEntry
-
-    data class Flag(
-        val flagged: Boolean,
+        val detail: String? = null,
     ) : ReadMenuEntry
 
     data object ViewDetails : ReadMenuEntry
@@ -70,18 +86,10 @@ sealed interface ReadMenuEntry {
 
     data object BlockSender : ReadMenuEntry
 
-    data object ReportSpam : ReadMenuEntry
-
-    data class MoveTo(
-        val suggestedPath: List<String>?,
-    ) : ReadMenuEntry
-
     /** A switch that stays on until the user turns it off. */
     data class Mute(
         val on: Boolean,
     ) : ReadMenuEntry
-
-    data object DeleteConversation : ReadMenuEntry
 
     /** Opens what the app offers for the sender: their card, or ways to save the address. */
     data object SenderContact : ReadMenuEntry
@@ -99,43 +107,60 @@ sealed interface ReadMenuEntry {
  * appears only while images are blocked. People appears once anyone besides the sender takes part:
  * with the conversation's entries in a thread, else with the message's.
  */
-fun readMenu(page: ReadPage): List<ReadMenuSection> =
-    buildList {
-        add(ReadMenuSection(ReadMenuPart.ThisMessage, page.messageEntries()))
-        if (!page.fromUser) {
-            val entries = listOf(ReadMenuEntry.SenderContact, ReadMenuEntry.BlockSender, ReadMenuEntry.ReportSpam)
-            add(ReadMenuSection(ReadMenuPart.Sender(page.senderName), entries))
+fun readMenu(page: ReadPage): ReadMenu =
+    ReadMenu(
+        buildList {
+            add(ReadMenuSection(ReadMenuPart.ThisMessage, page.messageEntries()))
+            if (!page.fromUser) {
+                val entries =
+                    listOf(ReadMenuEntry.SenderContact, ReadMenuEntry.BlockSender, ReadMenuEntry.Act(MailAction.Spam))
+                add(ReadMenuSection(ReadMenuPart.Sender(page.senderName), entries))
+            }
+            if (page.thread) {
+                val entries =
+                    listOf(page.moveEntry, ReadMenuEntry.Mute(page.muted), ReadMenuEntry.Act(MailAction.Trash)) +
+                        listOfNotNull(page.peopleEntry)
+                add(ReadMenuSection(ReadMenuPart.Conversation, entries))
+            }
+        },
+        page.withheldReplies,
+    )
+
+/**
+ * The replies the menu leaves out: both on a newsletter or the user's own message, and Reply all
+ * while it would reach only the sender, as Reply does.
+ */
+private val ReadPage.withheldReplies: Set<MailAction>
+    get() =
+        when {
+            !repliable -> setOf(MailAction.Reply, MailAction.ReplyAll)
+            message.replyAction(own) == MailAction.Reply -> setOf(MailAction.ReplyAll)
+            else -> emptySet()
         }
-        if (page.thread) {
-            val entries =
-                listOf(
-                    ReadMenuEntry.MoveTo(page.suggestedPath),
-                    ReadMenuEntry.Mute(page.muted),
-                    ReadMenuEntry.DeleteConversation,
-                ) + listOfNotNull(page.peopleEntry)
-            add(ReadMenuSection(ReadMenuPart.Conversation, entries))
-        }
-    }
 
 private fun ReadPage.messageEntries(): List<ReadMenuEntry> =
     buildList {
         if (imagesBlocked && !fromUser) add(ReadMenuEntry.AlwaysShowImages(senderName))
-        if (!newsletter && !fromUser) {
-            message.otherReply(own)?.let { add(ReadMenuEntry.OtherReply(it, firstName)) }
-        }
-        add(ReadMenuEntry.Forward)
-        add(ReadMenuEntry.MarkUnread)
-        add(ReadMenuEntry.Flag(message.attributes.flagged))
-        if (!thread) add(ReadMenuEntry.MoveTo(suggestedPath))
+        if (repliable) message.otherReply(own)?.let { add(ReadMenuEntry.Act(it)) }
+        add(ReadMenuEntry.Act(MailAction.Forward))
+        add(ReadMenuEntry.Act(MailAction.Read))
+        add(ReadMenuEntry.Act(MailAction.Flag))
+        if (!thread) add(moveEntry)
         add(ReadMenuEntry.ViewDetails)
         add(ReadMenuEntry.Print)
         if (thread && index > 0) add(ReadMenuEntry.DeleteThisMessage)
         if (!thread) peopleEntry?.let(::add)
     }
 
+private val ReadPage.moveEntry: ReadMenuEntry.Act
+    get() = ReadMenuEntry.Act(MailAction.Move, suggestedPath?.let { "Usually ${it.pathText()}" })
+
 /** People, once the page names someone besides its sender; the sender alone has its own entry. */
 private val ReadPage.peopleEntry: ReadMenuEntry.People?
     get() = ReadMenuEntry.People(people).takeIf { people.size > if (fromUser) 0 else 1 }
+
+private val ReadPage.repliable: Boolean
+    get() = !newsletter && !fromUser
 
 private val ReadPage.thread: Boolean
     get() = count > 1
@@ -145,6 +170,3 @@ private val ReadPage.fromUser: Boolean
 
 private val ReadPage.senderName: String
     get() = message.sender.name.ifBlank { message.sender.address }
-
-private val ReadPage.firstName: String
-    get() = senderName.substringBefore(' ')

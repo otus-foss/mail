@@ -1,18 +1,17 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_schedule_send
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.barLayout
 import com.otus.mail.feature.inbox.domain.shownName
+import com.otus.mail.feature.inbox.presentation.actions.ActionSubject
+import com.otus.mail.feature.inbox.presentation.actions.DraftSubject
+import com.otus.mail.feature.inbox.presentation.actions.barFor
+import com.otus.mail.feature.inbox.presentation.actions.offer
 import com.otus.mail.feature.inbox.presentation.recipients
 
 /**
@@ -31,23 +30,10 @@ internal fun ComposeBar(
     onDiscard: () -> Unit,
     scheduled: Boolean = false,
 ) {
-    val offer = { action: BarButton ->
-        val callback =
-            when (action) {
-                MailAction.Send -> onSend
-                MailAction.Attach -> onAttach
-                MailAction.Discard -> onDiscard
-                else -> null
-            }
-        val symbol = if (action == MailAction.Send && scheduled) Res.drawable.symbol_schedule_send else action.symbol
-        callback?.let { OfferedAction(action.buttonLabel(), symbol, leaves = true, run = it) }
-    }
+    val subject = ActionSubject(actions = null, draft = DraftSubject(onSend, onAttach, onDiscard, scheduled))
     MailActionBar(
-        behavior.barLayout(ActionBarPlace.Compose),
-        offer,
+        behavior.barFor(ActionBarPlace.Compose, role = null, subject::offer),
         onAction = { it.run() },
-        minimized = Minimized().takeIf { behavior.minimizedBar },
-        everyAction = behavior.everyAction(ActionBarPlace.Compose, offer),
         context = draft.recipients.barContext(if (scheduled) "Sends to" else "Send to"),
     )
 }

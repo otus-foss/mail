@@ -46,9 +46,13 @@ once. When the message has an HTML body, it replaces the text in the shared `Htm
 scrolls on its own. Remote images stay hidden until the user taps **Show images**, and a tapped
 link opens in the browser or mail app. While the page is open, accessibility services skip the list under it.
 
-The bar shows the **Open message** layout. **More actions** opens an `ActionDialog` with every
-action the message can take that the bar leaves out, Reply, Reply all, and Forward included; the
-button is hidden when there are none. An action that takes the message out of the list, such as
+The bar shows the **Open message** layout. **More actions** opens a menu in sections: what acts on
+the page's own message (the other reply, Forward, Mark read or unread, Flag, View details, Print),
+the sender (Add to contacts, Block sender, Spam), and the whole conversation (Move, Mute, Delete).
+Its last section lists every other action the bar leaves out, such as Read later, Archive, or Rule
+for sender, so each action of the open message is on the bar or in the menu. Mail's actions in the
+menu carry the same labels and symbols as on the bar, and one that asks to be confirmed, such as
+Delete forever, asks there too. An action that takes the message out of the list, such as
 Archive, closes the page first. Marks keep the page open and show their new state on the button.
 **Move** opens the Move to sheet (see [Folders and rules](folders.md)), and choosing a folder
 closes the page and moves the message.
@@ -233,6 +237,14 @@ The mode is saved as `adaptive` or `fixed` under `action_bar_mode` on Android an
 is saved as a boolean under `action_bar_minimized` on Android and `otus.mail.action_bar_minimized`
 on iOS, and is off when missing.
 
+One action model in `feature/inbox/presentation/actions` serves every place: `ActionSubject.offer`
+is one exhaustive `when` over `MailAction` that gives each action's label, symbol, and run for what
+the place holds (the swiped row, the selection, the open conversation and page, the list, or the
+draft), or null where it does not apply. `ActionLooks.kt` holds the labels and symbols settings
+show, `barFor` builds every bar from the saved layout and the offers, and `AlertButtons.kt` gives
+the alert buttons. The swipes, the four bars, the Read view's menu and Move row, and the alert
+buttons all draw from it, so a new `MailAction` fails to compile until each of them handles it.
+
 `MailAction` replaced `MessageSwipe`. The swipe storage values are unchanged, and a saved
 "none" still reads as no swipe, so existing swipe settings carry over.
 
@@ -315,7 +327,8 @@ every slot in place, that the shell is one button naming its context, and that l
 the shell but not the group. `ActionBarLayoutTest` and `MailBehaviorTest` cover the layout model,
 each place's default, its storage format, mode resolution, and Read later's removal.
 `BarButtonTest` and `ActionBarLayoutTest` cover Move to's storage, the
-migration of older bars, and switching folders. `MoveToOffersTest` covers moving across accounts,
+migration of older bars, and switching folders. `ActionReachTest` checks that every action of the open message is on its bar or in its menu, and
+every selection action on the bar or in its menus, in some folder. `MoveToOffersTest` covers moving across accounts,
 the disabled button, and Suggested move, and `MoveTargetPathTest` the folder paths move targets
 carry. `MoveToButtonsTest` picks Move to buttons with different folders for two slots, switches
 one slot's folder through its `ValuePicker`, and moves the open message with one. `FolderBarsTest`

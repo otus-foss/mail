@@ -26,6 +26,8 @@ import com.otus.mail.feature.inbox.domain.ActionTarget
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.BarSlot
 import com.otus.mail.feature.inbox.domain.MailAction
+import com.otus.mail.feature.inbox.presentation.actions.label
+import com.otus.mail.feature.inbox.presentation.actions.symbol
 
 /**
  * Picks the action for [slot] of [layout] from [choices], grouped by what each acts on and narrowed

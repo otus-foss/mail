@@ -28,6 +28,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.overlays.components.LocalSheetPull
 import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.designsystem.shared.overlays.components.rememberConfirmation
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.pages.elements.hiddenWhen
 import com.otus.designsystem.shared.pages.elements.holdsSpace
@@ -64,7 +65,7 @@ import com.otus.mail.feature.inbox.presentation.components.rememberFoldSwipe
 import com.otus.mail.feature.inbox.presentation.components.rememberMoveChoice
 import com.otus.mail.feature.inbox.presentation.components.rememberPageLook
 import com.otus.mail.feature.inbox.presentation.components.rememberPageSwipe
-import com.otus.mail.feature.inbox.presentation.components.rememberReadBar
+import com.otus.mail.feature.inbox.presentation.components.rememberReadActions
 import com.otus.mail.feature.inbox.presentation.components.rememberReadExpansion
 import com.otus.mail.feature.inbox.presentation.components.rememberReadMenu
 import com.otus.mail.feature.inbox.presentation.components.rememberStripFolds
@@ -116,8 +117,12 @@ fun MessageScreen(
     val page = state.pages[index].withContent(parts.content(state.pages[index]))
     SideEffect { state.shownId = page.id }
     val look = rememberPageLook(parts)
-    val bar = rememberReadBar(message, page, context.rowLook.own, actions, moveChoice, context.onCompose)
-    val menu = rememberReadMenu(parts, look, bar, index)
+    val readActions = rememberReadActions(message, page, context.rowLook.own, actions, moveChoice, context.onCompose)
+    val confirmation = rememberConfirmation()
+    val menu =
+        rememberReadMenu(parts, look, readActions, page, index) { action ->
+            confirmation.run(action.confirm) { parts.perform(action) }
+        }
     val today = remember { read.display.today() }
     var barPadding by remember { mutableStateOf(PaddingValues()) }
     val scope = rememberCoroutineScope()
@@ -127,7 +132,7 @@ fun MessageScreen(
     val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
         ActionBarHost(
-            bar = bar.layout?.let { { ReadActionBar(bar, page, parts::perform) } },
+            bar = readActions.bar?.let { bar -> { ReadActionBar(bar, page, parts::perform) } },
             // The control panel draws behind the status bar and pads itself.
             Modifier.belowControlPanel(),
         ) { padding ->
@@ -143,6 +148,7 @@ fun MessageScreen(
     }
     // A drag on the folders strip pulls the folders sheet up with the finger.
     CompositionLocalProvider(LocalSheetPull provides folds.folderPull) { ReadSheets(parts, look) }
+    confirmation.Dialog()
     actions?.let { moveChoice.Sheet(it) }
 }
 

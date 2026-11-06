@@ -207,9 +207,9 @@ class ReadViewTest {
         strip("Grace Hopper, message 1 of 6")
         openMenu()
         listOf(
-            "Reply to Grace",
+            "Reply",
             "Forward",
-            "Mark as unread",
+            "Mark unread",
             "Grace Hopper",
             "Block sender",
             "Whole conversation",

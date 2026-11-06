@@ -3,37 +3,11 @@ package com.otus.mail.feature.inbox.presentation.components
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
 import com.otus.mail.core.mail.EmailAddressKey
-import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.BarButton
-import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.original
 import com.otus.mail.feature.inbox.domain.shownName
-
-/**
- * Reply, Reply all, Forward, and New mail for an open [message], and Follow up when its folder
- * [role] is Sent; null for any other action. Each starts a draft through [onCompose]. New mail
- * sends from the message's account.
- */
-internal fun replyOffer(
-    message: MailMessage,
-    action: BarButton,
-    role: MailboxRole?,
-    onCompose: (ComposeRequest) -> Unit,
-): OfferedAction? {
-    val request =
-        when {
-            action == MailAction.Reply -> ComposeRequest.Reply(message.original(), all = false)
-            action == MailAction.ReplyAll -> ComposeRequest.Reply(message.original(), all = true)
-            action == MailAction.FollowUp && role == MailboxRole.Sent -> ComposeRequest.FollowUp(message.original())
-            action == MailAction.Forward -> ComposeRequest.Forward(message.original())
-            action == MailAction.NewMail -> ComposeRequest.New(message.location.accountId)
-            else -> return null
-        }
-    return plainOffer(action) { onCompose(request) }
-}
 
 /**
  * Who [primary] writes to, shown beside it: the sender for Reply, everyone for Reply all, and the

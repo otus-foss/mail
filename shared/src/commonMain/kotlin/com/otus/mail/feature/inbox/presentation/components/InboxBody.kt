@@ -35,6 +35,8 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.ConversationRowModel
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.ListFrame
+import com.otus.mail.feature.inbox.presentation.actions.ActionSubject
+import com.otus.mail.feature.inbox.presentation.actions.swipe
 import com.otus.mail.feature.inbox.presentation.conversationRows
 
 @Composable
@@ -142,9 +144,10 @@ private fun LazyItemScope.ConversationItem(
     val selection = rowSelection(ids, index, gestures.selectedIds)
     val actions = gestures.actions
     val swipes = actions?.behavior?.invoke()
+    val subject = ActionSubject(actions, listOf(message))
     SwipeActions(
-        startToEnd = swipes?.let { actions.swipeAction(message, it.startToEnd) },
-        endToStart = swipes?.let { actions.swipeAction(message, it.endToStart) },
+        startToEnd = swipes?.let { subject.swipe(it.startToEnd) },
+        endToStart = swipes?.let { subject.swipe(it.endToStart) },
         // Inset outside the swipe, so its accent card sits exactly behind the row's card.
         modifier =
             Modifier

@@ -107,7 +107,7 @@ class ReadPageActionsTest {
     fun marksOnAnOlderPageGoToItsOwnEmailOnly() {
         openPage("Radia Perlman")
         strip("Radia Perlman, message 3 of 6")
-        menu("Mark as unread")
+        menu("Mark unread")
         menu("Flag")
         compose.waitForIdle()
         assertEquals(listOf("r" to MessageFlag.Read, "r" to MessageFlag.Flagged), writer.marks)

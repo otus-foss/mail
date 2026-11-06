@@ -8,31 +8,26 @@ import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarMinimized
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.rememberConfirmation
-import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.barLayout
+import com.otus.mail.feature.inbox.presentation.actions.MailBar
+import com.otus.mail.feature.inbox.presentation.actions.OfferedAction
+import com.otus.mail.feature.inbox.presentation.actions.buttonLabel
+import com.otus.mail.feature.inbox.presentation.actions.symbol
 
 /**
- * Any screen's bar for [layout]. [offer] gives each action as it applies on this screen; one it
- * cannot offer stays in its slot, disabled, so the buttons never move. All actions opens
- * [everyAction] in a menu, and stays disabled while there is none; a drag up on the buttons opens
- * it too. [context] describes what the
- * primary applies to, such as a reply's recipient. A [minimized] bar shows only the primary;
- * without one the bar is full. An action that asks to be confirmed reaches [onAction] only once
- * the user confirms it.
+ * Any screen's [bar]. An action it cannot offer stays in its slot, disabled, so the buttons never
+ * move. All actions opens every action in a menu, and stays disabled while there is none; a drag
+ * up on the buttons opens it too. [context] describes what the primary applies to, such as a
+ * reply's recipient. A minimized bar shows only the primary, as [minimized] says. An action that
+ * asks to be confirmed reaches [onAction] only once the user confirms it.
  */
 @Composable
 internal fun MailActionBar(
-    layout: ActionBarLayout,
-    offer: (BarButton) -> OfferedAction?,
+    bar: MailBar,
     onAction: (OfferedAction) -> Unit,
-    minimized: Minimized?,
-    everyAction: List<OfferedAction>,
     modifier: Modifier = Modifier,
+    minimized: Minimized = Minimized(),
     context: BarContext? = null,
 ) {
     val confirmation = rememberConfirmation()
@@ -47,11 +42,11 @@ internal fun MailActionBar(
         if (button == MailAction.AllActions) {
             val label = button.buttonLabel(primary)
             return BarAction(
-                UiAction(label, button.symbol, enabled = everyAction.isNotEmpty()) {},
-                menu = menuOf(everyAction),
+                UiAction(label, button.symbol, enabled = bar.every.isNotEmpty()) {},
+                menu = menuOf(bar.every),
             )
         }
-        val offered = offer(button)
+        val offered = bar.offer(button)
         return BarAction(
             UiAction(
                 (if (primary) offered?.primaryLabel else offered?.label) ?: button.buttonLabel(primary),
@@ -62,13 +57,14 @@ internal fun MailActionBar(
             },
         )
     }
+    val layout = bar.layout
     ActionBar(
         barAction(layout.primary, primary = true),
         modifier,
-        secondary = if (minimized != null) emptyList() else layout.secondary.map { barAction(it, primary = false) },
+        secondary = if (bar.minimized) emptyList() else layout.secondary.map { barAction(it, primary = false) },
         context = context,
-        minimized = minimized?.let { BarMinimized(it.hidden, menuOf(it.more)) },
-        allActions = menuOf(everyAction),
+        minimized = minimized.takeIf { bar.minimized }?.let { BarMinimized(it.hidden, menuOf(it.more)) },
+        allActions = menuOf(bar.every),
     )
     confirmation.Dialog()
 }
@@ -81,24 +77,3 @@ internal class Minimized(
     val hidden: Boolean = false,
     val more: List<OfferedAction> = emptyList(),
 )
-
-/**
- * Actions [place] can offer that its bar leaves out, for a page's menu, after the secondary
- * buttons while the bar is minimized. [offer] drops those that do not apply. [role] is the page's
- * folder, whose bar may differ.
- */
-internal fun MailBehavior.overflow(
-    place: ActionBarPlace,
-    offer: (BarButton) -> OfferedAction?,
-    role: MailboxRole? = null,
-): List<OfferedAction> {
-    val layout = barLayout(place, role)
-    val hidden = if (minimizedBar) layout.secondary else emptyList()
-    return (hidden + barChoices(place).filter { it !in layout.buttons }).mapNotNull(offer)
-}
-
-/** Every action [place] offers, for the All actions menu; [offer] drops those that do not apply. */
-internal fun MailBehavior.everyAction(
-    place: ActionBarPlace,
-    offer: (BarButton) -> OfferedAction?,
-): List<OfferedAction> = barChoices(place).filter { it != MailAction.AllActions }.mapNotNull(offer)

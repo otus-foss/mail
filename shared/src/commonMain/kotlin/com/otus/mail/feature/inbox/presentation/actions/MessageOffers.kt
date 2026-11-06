@@ -1,11 +1,54 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.feature.inbox.presentation.actions
 
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_bookmark
+import com.otus.designsystem.resources.symbol_flag
+import com.otus.designsystem.resources.symbol_mark_email_read
+import com.otus.designsystem.resources.symbol_mark_email_unread
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.feature.inbox.domain.MessageFlag
+import com.otus.mail.feature.inbox.domain.hasFlag
 import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.feature.inbox.presentation.MessageMarks
 import com.otus.mail.feature.inbox.presentation.MoveTarget
+
+/** Opens the Move to sheet for some messages, offering the targets every one of them can move to. */
+internal typealias ChooseFolder = (messages: List<MailMessage>, targets: List<MoveTarget>) -> Unit
+
+/** Turns [flag] on for all [messages] while any lacks it, and off otherwise. */
+internal fun MessageMarks.offer(
+    messages: List<MailMessage>,
+    flag: MessageFlag,
+): OfferedAction? {
+    val markable = messages.filter { can(it, flag) }
+    if (markable.isEmpty()) return null
+    val on = markable.all { it.hasFlag(flag) }
+    val symbol =
+        when {
+            flag == MessageFlag.Flagged -> Res.drawable.symbol_flag
+            on -> Res.drawable.symbol_mark_email_unread
+            else -> Res.drawable.symbol_mark_email_read
+        }
+    return OfferedAction(flag.label(on), symbol, leaves = false) { set(markable, flag, !on) }
+}
+
+/** Saves the messages not saved yet; once all are saved, removes them. */
+internal fun MessageActions.offerReadLater(messages: List<MailMessage>): OfferedAction? {
+    val changes = messages.mapNotNull(readLater)
+    val saving = changes.filter { it.saves }
+    val chosen = saving.ifEmpty { changes }.ifEmpty { return null }
+    return OfferedAction(chosen.first().label, Res.drawable.symbol_bookmark, chosen.any { it.leaves }) {
+        chosen.forEach { it.apply() }
+    }
+}
+
+internal fun MessageActions.offerRule(messages: List<MailMessage>): OfferedAction? =
+    messages.singleOrNull()?.let(ruleForSender)?.let { start ->
+        OfferedAction(MailAction.RuleForSender.label, MailAction.RuleForSender.symbol, leaves = true, run = start)
+    }
 
 /**
  * Files each message into its account's [shortcut] folder, skipping those already there or without
@@ -32,7 +75,7 @@ internal fun MessageActions.offerMove(
             emptyList()
         }
     if (targets.isEmpty()) return null
-    return OfferedAction("Move", MailAction.Move.symbol, leaves = false, asks = true) {
+    return OfferedAction(MailAction.Move.label, MailAction.Move.symbol, leaves = false, asks = true) {
         chooseFolder(messages, targets)
     }
 }
@@ -49,13 +92,13 @@ internal fun MessageActions.offerMoveTo(
     return offerMoves(messages, "Move to $name", name, button, target)
 }
 
-/** Moves the messages to [suggestion], the folder the sender's mail usually goes to. */
-internal fun MessageActions.offerSuggested(
+/** Moves the messages to [folder], such as the one the sender's mail usually goes to. */
+internal fun MessageActions.offerFolder(
     messages: List<MailMessage>,
-    suggestion: MoveTarget,
+    folder: MoveTarget,
 ): OfferedAction? =
-    offerMoves(messages, "Move to ${suggestion.name}", suggestion.name, MailAction.SuggestedMove) { message ->
-        moves.targets(message).firstOrNull { it.folderId == suggestion.folderId }
+    offerMoves(messages, "Move to ${folder.name}", folder.name, MailAction.SuggestedMove) { message ->
+        moves.targets(message).firstOrNull { it.folderId == folder.folderId }
     }
 
 /** Moves each message to its [target]; null when none has one. The main button shows [primaryLabel]. */

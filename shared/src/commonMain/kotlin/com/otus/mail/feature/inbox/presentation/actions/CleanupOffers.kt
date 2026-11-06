@@ -1,31 +1,18 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.feature.inbox.presentation.actions
 
 import com.otus.designsystem.shared.overlays.components.ConfirmQuestion
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
 
-/** Not spam, Restore, or Delete forever for [messages]; null for any other action. */
-internal fun MessageActions.offerCleanup(
-    messages: List<MailMessage>,
-    action: BarButton,
-): OfferedAction? =
-    when (action) {
-        MailAction.NotSpam -> offerNotSpam(messages)
-        MailAction.Restore -> offerRestore(messages)
-        MailAction.DeleteForever -> offerDeleteForever(messages)
-        else -> null
-    }
-
 /** Moves the messages shown in Spam to their inbox, marked as not spam. */
-private fun MessageActions.offerNotSpam(messages: List<MailMessage>): OfferedAction? =
+internal fun MessageActions.offerNotSpam(messages: List<MailMessage>): OfferedAction? =
     cleanup?.let { offerToInbox(messages, MailboxRole.Junk, MailAction.NotSpam, it.onNotSpam) }
 
 /** Moves the messages shown in Trash to their inbox; where they were before is not stored. */
-private fun MessageActions.offerRestore(messages: List<MailMessage>): OfferedAction? =
+internal fun MessageActions.offerRestore(messages: List<MailMessage>): OfferedAction? =
     offerToInbox(messages, MailboxRole.Trash, MailAction.Restore, moves.onMove)
 
 private fun MessageActions.offerToInbox(
@@ -46,7 +33,7 @@ private fun MessageActions.offerToInbox(
 }
 
 /** Deletes the messages in Spam or Trash for good, once the user confirms it. */
-private fun MessageActions.offerDeleteForever(messages: List<MailMessage>): OfferedAction? {
+internal fun MessageActions.offerDeleteForever(messages: List<MailMessage>): OfferedAction? {
     val actions = cleanup ?: return null
     val deleting = messages.filter(actions.canDelete)
     val title = if (deleting.size == 1) "Delete this message forever?" else "Delete ${deleting.size} messages forever?"

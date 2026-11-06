@@ -18,6 +18,7 @@ import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
+import com.otus.mail.feature.inbox.presentation.actions.OfferedAction
 import com.otus.mail.feature.inbox.presentation.read.ReadPage
 import com.otus.mail.feature.inbox.presentation.read.readMenu
 import kotlinx.datetime.LocalDate
@@ -95,13 +96,18 @@ internal fun rememberPageLook(parts: ReadParts): ReadPageLook {
     )
 }
 
-/** The ⋯ menu for the page at [index], with what the [bar] offers beyond it at the end. */
+/**
+ * The ⋯ menu for [page], the page at [index], with what the bar of [actions] leaves out at the end.
+ * Each action runs through [perform].
+ */
 @Composable
 internal fun rememberReadMenu(
     parts: ReadParts,
     look: ReadPageLook,
-    bar: ReadBar,
+    actions: ReadActions,
+    page: MailMessage,
     index: Int,
+    perform: (OfferedAction) -> Unit,
 ): List<OptionsItem> {
     val row = parts.row
     val suggested by produceState<String?>(null, row.id) {
@@ -112,33 +118,23 @@ internal fun rememberReadMenu(
                 ?.label
     }
     val state = parts.state
-    val page = state.pages[index]
     val content = parts.content(page)
-    val readPage =
-        ReadPage(
-            page,
-            parts.context.rowLook.own,
-            index,
-            state.pages.size,
-            newsletter = content?.unsubscribe != null,
-            imagesBlocked = look.blocked(page, state.bodies.body(page)),
-            muted = state.muted == true,
-            suggestedPath = suggested?.let(::listOf),
-            people = participants(state.pages, parts.context.rowLook.own),
-        )
     val menu =
-        ReadMenuActions(
-            row,
-            parts.actions,
-            parts.read,
-            state,
-            parts.context.onCompose,
-            parts::perform,
-        ) { messages, targets ->
-            parts.moveChoice.choose(messages, targets)
-        }
-    val entries = menu.available(readMenu(readPage))
-    return readMenuItems(entries, { menu.run(it, page, content) }, bar.more, parts::perform, page.attributes.unread)
+        readMenu(
+            ReadPage(
+                page,
+                parts.context.rowLook.own,
+                index,
+                state.pages.size,
+                newsletter = content?.unsubscribe != null,
+                imagesBlocked = look.blocked(page, state.bodies.body(page)),
+                muted = state.muted == true,
+                suggestedPath = suggested?.let(::listOf),
+                people = participants(state.pages, parts.context.rowLook.own),
+            ),
+        )
+    return ReadMenuActions(actions.subject, page, content, parts.read, state, perform)
+        .items(menu, actions.bar?.more(menu.covers).orEmpty())
 }
 
 /** The sheets over the Read view: the conversation's folders, a new folder, and a page's headers. */

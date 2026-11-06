@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.feature.inbox.presentation.actions
 
 import com.otus.mail.feature.inbox.domain.BarButton.MoveTo
 import com.otus.mail.feature.inbox.domain.MailAction
@@ -40,7 +40,7 @@ class MoveToOffersTest {
     private fun offer(
         messages: List<MailMessage>,
         button: MoveTo,
-    ) = actions.offer(messages, button, chooseFolder = { _, _ -> })
+    ) = ActionSubject(actions, messages).offer(button)
 
     @Test
     fun aMoveToButtonMovesEachMessageWithinItsOwnAccount() {
@@ -71,9 +71,9 @@ class MoveToOffersTest {
     @Test
     fun suggestedMoveGoesToTheSuggestedFolderAndIsOffOtherwise() {
         val messages = listOf(offerMessage("1", "ada"))
-        assertNull(actions.offer(messages, MailAction.SuggestedMove, { _, _ -> }))
-        val offered =
-            assertNotNull(actions.offer(messages, MailAction.SuggestedMove, { _, _ -> }, targets.getValue("ada")[1]))
+        assertNull(ActionSubject(actions, messages).offer(MailAction.SuggestedMove))
+        val suggested = ActionSubject(actions, messages, suggestion = targets.getValue("ada")[1])
+        val offered = assertNotNull(suggested.offer(MailAction.SuggestedMove))
         assertEquals("Move to Acme", offered.label)
         assertEquals("Acme", offered.primaryLabel)
         offered.run()

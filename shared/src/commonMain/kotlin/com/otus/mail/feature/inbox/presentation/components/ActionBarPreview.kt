@@ -8,6 +8,8 @@ import com.otus.designsystem.shared.settings.components.SketchMarker
 import com.otus.mail.feature.inbox.domain.ActionBarLayout
 import com.otus.mail.feature.inbox.domain.ActionBarPlace
 import com.otus.mail.feature.inbox.domain.BarSlot
+import com.otus.mail.feature.inbox.presentation.actions.buttonLabel
+import com.otus.mail.feature.inbox.presentation.actions.symbol
 
 /**
  * [layout] as its bar shows it; each button runs [onSlot] with its slot instead of its action.

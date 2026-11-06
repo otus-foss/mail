@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation.components
+package com.otus.mail.feature.inbox.presentation.actions
 
 import com.otus.mail.feature.inbox.domain.MailAction
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -19,7 +19,7 @@ class MarkOffersTest {
         )
 
     private fun list(vararg results: MailMessage) =
-        ListActions(results.toList(), null, actions, onSearch = {}, onFilters = {}, onCompose = {})
+        ActionSubject(actions, list = ListSubject(results.toList(), null, onSearch = {}, onFilters = {}))
 
     @Test
     fun markAllReadMarksEveryUnreadMessageItMayChangeAtOnce() {
@@ -37,7 +37,7 @@ class MarkOffersTest {
     @Test
     fun aSelectionIsMarkedAtOnce() {
         val selection = listOf(offerMessage("1", unread = true), offerMessage("2"))
-        assertNotNull(actions.offer(selection, MailAction.Read, chooseFolder = { _, _ -> })).run()
+        assertNotNull(ActionSubject(actions, selection).offer(MailAction.Read)).run()
         assertEquals(listOf(Triple(listOf("1", "2"), MessageFlag.Read, true)), marked)
     }
 

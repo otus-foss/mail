@@ -73,8 +73,8 @@ class MessageActionsTest {
         val read = lastUpdate()
         assertTrue(read, "\"update\":{\"m1\":{\"keywords/\$seen\":true}}" in read)
 
-        chooseFromMenu("Mark as unread")
-        assertTrue(menuOffers("Mark as read"))
+        chooseFromMenu("Mark unread")
+        assertTrue(menuOffers("Mark read"))
         compose.waitUntil(TIMEOUT) { server.calls.count { "Email/set" in it } == 2 }
         val unread = lastUpdate()
         assertTrue(unread, "\"update\":{\"m1\":{\"keywords/\$seen\":null}}" in unread)
@@ -89,7 +89,7 @@ class MessageActionsTest {
     @Test
     fun aMessageStaysUnreadWhenOpeningIsSetNotToMarkIt() {
         openMessage(MailBehavior(markReadOnOpen = false))
-        assertTrue(menuOffers("Mark as read"))
+        assertTrue(menuOffers("Mark read"))
         assertEquals(0, server.calls.count { "Email/set" in it })
     }
 
@@ -156,7 +156,7 @@ class MessageActionsTest {
         // Unavailable actions keep their slots, disabled, so the bar never shifts.
         listOf("Archive", "Delete").forEach { button(it).assertIsNotEnabled() }
         assertFalse(menuOffers("Flag"))
-        assertTrue(menuOffers("Mark as read"))
+        assertTrue(menuOffers("Mark read"))
         button("Read later").assertDoesNotExist()
     }
 

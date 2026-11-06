@@ -14,6 +14,8 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.NOTIFICATION_ACTION_LIMIT
 import com.otus.mail.feature.inbox.domain.NotificationActionChoices
 import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.feature.inbox.presentation.actions.buttonLabel
+import com.otus.mail.feature.inbox.presentation.actions.symbol
 import com.otus.settings.presentation.SettingsIndexScope
 
 /**
