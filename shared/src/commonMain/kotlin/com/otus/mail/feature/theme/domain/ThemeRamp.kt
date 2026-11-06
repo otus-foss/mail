@@ -39,7 +39,7 @@ fun themeRamp(
             end = random.within(MIN_GREY, MAX_GREY),
             easing = RampEasing.power(SATURATION_EASING),
         )
-    val deep = random.within(0f, MAX_DEPTH)
+    val deep = random.within(0f, MAX_SURFACE_DEPTH)
     val strong = random.within(0f, MAX_DEPTH)
     val lightness =
         RampRange(
@@ -86,12 +86,16 @@ private const val MAX_TINT = 0.35f
 private const val MIN_GREY = 0.03f
 private const val MAX_GREY = 0.12f
 
-/** RampenSau's defaults: saturation eases by `x²` and lightness by `x^1.5`, so the surfaces stay close together. */
+/**
+ * Saturation eases by `x²`, RampenSau's default. Lightness eases by `x^1.8`, steeper than its
+ * `x^1.5`, so the page stays close to the raised surface: darker in a dark set, lighter in a light one.
+ */
 private const val SATURATION_EASING = 2f
-private const val LIGHTNESS_EASING = 1.5f
+private const val LIGHTNESS_EASING = 1.8f
 
-/** RampenSau starts lightness at up to 0.1; Otus surfaces sit a little above black, and text a little below white. */
-private const val MIN_DARK_SURFACE = 0.04f
+/** RampenSau starts lightness at up to 0.1; Otus surfaces sit just above black, and text a little below white. */
+private const val MIN_DARK_SURFACE = 0.03f
+private const val MAX_SURFACE_DEPTH = 0.03f
 private const val MAX_DEPTH = 0.06f
 private const val MIN_ACCENT = 0.5f
 private const val MAX_ACCENT = 0.75f
