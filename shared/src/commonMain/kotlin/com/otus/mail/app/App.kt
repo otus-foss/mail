@@ -35,6 +35,7 @@ import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.messages.presentation.components.SortedMoveSheet
 import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.feature.folders.presentation.components.SenderRuleSheets
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
@@ -124,7 +125,15 @@ fun App(
             }
             // Outlives the page a move closed, such as the open message.
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
-            SenderRuleSheets(states)
+            SenderRuleSheets(
+                states.senderRules,
+                states.folders,
+                states.rules,
+                known = states::knownAddresses,
+            ) {
+                states.folders.refresh()
+                states.feed.refresh()
+            }
         }
     }
 }

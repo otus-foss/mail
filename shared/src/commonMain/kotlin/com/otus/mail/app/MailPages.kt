@@ -12,6 +12,7 @@ import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.within
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.settings.presentation.FolderPillOption
+import com.otus.mail.feature.folders.presentation.LabeledCopies
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.folderPillOptions

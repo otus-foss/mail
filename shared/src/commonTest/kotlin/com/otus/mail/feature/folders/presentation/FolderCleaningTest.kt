@@ -1,5 +1,9 @@
-package com.otus.mail.app
+package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.app.adaServices
+import com.otus.mail.app.settle
+import com.otus.mail.app.testEdits
+import com.otus.mail.app.testFolders
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderRights
 import com.otus.mail.core.mailbox.MailFolder

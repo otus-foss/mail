@@ -13,6 +13,7 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.feature.folders.presentation.FolderColorsState
+import com.otus.mail.feature.folders.presentation.MessageFiling
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.presentation.InboxFeedState

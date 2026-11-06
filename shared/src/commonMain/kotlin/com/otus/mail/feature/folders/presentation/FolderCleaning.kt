@@ -1,17 +1,16 @@
-package com.otus.mail.app
+package com.otus.mail.feature.folders.presentation
 
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.presentation.EditedList
 import com.otus.mail.core.messages.presentation.FolderCleanup
 import com.otus.mail.core.messages.presentation.FolderEmptying
 import com.otus.mail.core.messages.presentation.MailEdits
 import com.otus.mail.core.messages.presentation.delete
 import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.core.messages.presentation.notSpam
-import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.inbox.presentation.InboxFeedState
 
 /**
  * Not spam, deleting for good, and emptying Spam and Trash where the folders allow them, as [edits]
@@ -22,7 +21,7 @@ internal class FolderCleaning(
     private val edits: MailEdits,
 ) {
     /** The cleanup actions for the messages [feed] shows. */
-    fun cleanup(feed: InboxFeedState): FolderCleanup =
+    fun cleanup(feed: EditedList): FolderCleanup =
         FolderCleanup(
             role = ::role,
             listRole = { listRole(feed) },
@@ -38,7 +37,7 @@ internal class FolderCleaning(
     private fun role(message: MailMessage): MailboxRole? =
         folders.folder(message.location.accountId, message.location.mailboxId)?.role
 
-    private fun listRole(feed: InboxFeedState): MailboxRole? =
+    private fun listRole(feed: EditedList): MailboxRole? =
         shownFolders(feed.mailScope)
             .map { it.role }
             .distinct()
@@ -51,7 +50,7 @@ internal class FolderCleaning(
             folders.rightsOf(message).mayRemoveItems
 
     /** Empties only the list's folders that let their messages leave. */
-    private fun emptying(feed: InboxFeedState): FolderEmptying? {
+    private fun emptying(feed: EditedList): FolderEmptying? {
         val role = listRole(feed)?.takeIf { it != MailboxRole.Sent } ?: return null
         return shownFolders(feed.mailScope)
             .filter { it.rights.mayRemoveItems }

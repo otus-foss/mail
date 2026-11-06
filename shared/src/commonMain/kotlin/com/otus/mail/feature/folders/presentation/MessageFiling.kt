@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.folders.presentation
 
 import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.core.mailbox.FolderRights
@@ -12,6 +12,7 @@ import com.otus.mail.core.messages.domain.MessageFlag
 import com.otus.mail.core.messages.domain.RowFolder
 import com.otus.mail.core.messages.domain.SenderHistory
 import com.otus.mail.core.messages.domain.suggestedFolder
+import com.otus.mail.core.messages.presentation.EditedList
 import com.otus.mail.core.messages.presentation.MailEdits
 import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.core.messages.presentation.ReadLaterChange
@@ -23,9 +24,6 @@ import com.otus.mail.core.messages.presentation.setInFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStep
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
-import com.otus.mail.feature.folders.presentation.FolderColorsState
-import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.inbox.presentation.InboxFeedState
 
 /**
  * Files messages into folders and in and out of Read later, as [edits] that show at once and are
@@ -111,21 +109,21 @@ internal class MessageFiling(
 
     /** Moves [message] to [target] with the Undo toast; see [MailEdits.move]. */
     fun move(
-        feed: InboxFeedState,
+        feed: EditedList,
         message: MailMessage,
         target: MoveTarget,
     ) = edits.moveWithUndo(feed, message, target, leaving(message, target.shortcut))
 
     /** Undoes a move of [message] to [target]; see [MailEdits.moveBack]. */
     suspend fun moveBack(
-        feed: InboxFeedState,
+        feed: EditedList,
         message: MailMessage,
         target: MoveTarget,
     ) = edits.moveBack(feed, message, target, leaving(message, target.shortcut))
 
     /** Read later for a loaded message shown in [feed]; supplied messages have no server id. */
     fun readLater(
-        feed: InboxFeedState,
+        feed: EditedList,
         message: MailMessage,
     ): ReadLaterChange? {
         val account = folders.account(message.location.accountId)
@@ -145,7 +143,7 @@ internal class MessageFiling(
     }
 
     private fun setReadLater(
-        feed: InboxFeedState,
+        feed: EditedList,
         message: MailMessage,
         folder: MailFolder,
         saved: Boolean,
@@ -154,7 +152,7 @@ internal class MessageFiling(
 
     /** A move into Read later offers no Undo toast; the Read later control itself undoes it. */
     private fun moveAlone(
-        feed: InboxFeedState,
+        feed: EditedList,
         message: MailMessage,
         target: MoveTarget,
     ) {

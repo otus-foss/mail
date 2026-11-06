@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.folders.presentation
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.presentation.EditedList
 import com.otus.mail.core.messages.presentation.FutureSorting
 import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.core.messages.presentation.OlderMail
@@ -18,14 +19,6 @@ import com.otus.mail.feature.folders.domain.SortCondition
 import com.otus.mail.feature.folders.domain.sortConditions
 import com.otus.mail.feature.folders.domain.withAdded
 import com.otus.mail.feature.folders.domain.withRemoved
-import com.otus.mail.feature.folders.presentation.FolderRulesState
-import com.otus.mail.feature.folders.presentation.FoldersState
-import com.otus.mail.feature.folders.presentation.catches
-import com.otus.mail.feature.folders.presentation.keyword
-import com.otus.mail.feature.folders.presentation.phrase
-import com.otus.mail.feature.folders.presentation.reach
-import com.otus.mail.feature.folders.presentation.shown
-import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -53,7 +46,7 @@ internal class MessageSorting(
      */
     fun futureSorting(
         message: MailMessage,
-        feed: InboxFeedState,
+        feed: EditedList,
     ): FutureSorting? {
         val account = rules.account(message.location.accountId)
         if (account?.support == null) return null
@@ -78,7 +71,7 @@ internal class MessageSorting(
         person: MailSender?,
         target: MoveTarget,
         moved: List<MailMessage>,
-        feed: InboxFeedState,
+        feed: EditedList,
     ) {
         val rule = FolderRule(sort.condition)
         rules.submit(
@@ -95,7 +88,7 @@ internal class MessageSorting(
         rule: FolderRule,
         target: MoveTarget,
         moved: List<MailMessage>,
-        feed: InboxFeedState,
+        feed: EditedList,
     ) = SortedMove(
         target.name,
         catches,
