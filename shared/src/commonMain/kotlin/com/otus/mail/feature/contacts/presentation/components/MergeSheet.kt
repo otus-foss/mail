@@ -21,14 +21,14 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.shared.contacts.components.ContactValueRow
-import com.otus.designsystem.shared.controls.elements.ActionButton
+import com.otus.designsystem.shared.controls.components.ButtonPair
+import com.otus.designsystem.shared.controls.components.PairButton
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.feedback.components.InfoTip
 import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.OptionsMenu
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.rows.components.RowGroup
@@ -66,7 +66,6 @@ internal fun MergeSheet(
     ClosableSheet(
         "Same person?",
         onDismiss,
-        SheetConfirm("Merge", { onMerge(plan) }, enabled = plan.addresses.isNotEmpty()),
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -90,7 +89,11 @@ internal fun MergeSheet(
                 },
                 Inset,
             )
-            ActionButton(alternative, onAlternative, Inset.fillMaxWidth())
+            ButtonPair(
+                PairButton(alternative, onAlternative),
+                PairButton("Merge", { onMerge(plan) }, enabled = plan.addresses.isNotEmpty()),
+                Inset.padding(SheetTokens.inset),
+            )
         }
     }
 }
