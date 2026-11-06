@@ -227,9 +227,6 @@ imperative verbs, accurate claims, breaking-change explanations, and the 72-char
 Git-generated merge messages are exempt during a merge. Temporary `fixup!`, `squash!`, and
 `amend!` messages are exempt; review the final squash message before committing it.
 
-The hook also removes AI attribution lines, such as `Co-authored-by` trailers that name Claude,
-Anthropic, or Cursor and "Generated with Claude Code" lines, before Git saves the commit.
-
 `checkAll`, and so CI, runs the checker's regression tests, including Git rejection in a
 temporary repository. They do not inspect commit history or install local hooks. New clones must
 enable the hook with the command above. See [the decision](decisions/0004-commit-messages.md).
