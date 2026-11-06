@@ -17,7 +17,7 @@ import com.otus.settings.presentation.screens.ThemeSettingsScreen
 /** Settings and its subpages. */
 @Composable
 internal fun SettingsPageContent(
-    page: MailPage,
+    page: MailPage.SettingsPage,
     states: MailStates,
     settings: SharedSettings,
     dateFormatter: DateFormatter,
@@ -37,7 +37,6 @@ internal fun SettingsPageContent(
         MailPage.MailListSettings -> MailListSettingsPage(states, dateFormatter, back)
         MailPage.Folders -> FoldersPage(states, navigation, back)
         is MailPage.FolderDetail -> FolderDetailPage(page, states, navigation, back)
-        else -> Unit
     }
 }
 

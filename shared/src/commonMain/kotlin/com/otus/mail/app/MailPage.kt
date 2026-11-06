@@ -18,59 +18,65 @@ internal sealed interface MailPage {
     val depth: Int
         get() = parent?.let { it.depth + 1 } ?: 0
 
-    data object Inbox : MailPage
+    /** A page without arguments, which saves as its name. */
+    sealed interface Fixed : MailPage
 
-    data object Settings : MailPage
+    /** A page of Settings, which the settings routing draws. */
+    sealed interface SettingsPage : MailPage
 
-    data object EmailAccounts : MailPage {
+    data object Inbox : Fixed
+
+    data object Settings : Fixed, SettingsPage
+
+    data object EmailAccounts : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object Appearance : MailPage {
+    data object Appearance : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object Notifications : MailPage {
+    data object Notifications : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object NotificationOverrides : MailPage {
+    data object NotificationOverrides : Fixed, SettingsPage {
         override val parent = Notifications
     }
 
-    data object Behavior : MailPage {
+    data object Behavior : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object SidebarSettings : MailPage {
+    data object SidebarSettings : Fixed, SettingsPage {
         override val parent = Behavior
     }
 
-    data object FilterPanelSettings : MailPage {
+    data object FilterPanelSettings : Fixed, SettingsPage {
         override val parent = Behavior
     }
 
-    data object PinnedSettings : MailPage {
+    data object PinnedSettings : Fixed, SettingsPage {
         override val parent = SidebarSettings
     }
 
-    data object ThemeSettings : MailPage {
+    data object ThemeSettings : Fixed, SettingsPage {
         override val parent = Appearance
     }
 
-    data object MailListSettings : MailPage {
+    data object MailListSettings : Fixed, SettingsPage {
         override val parent = Appearance
     }
 
-    data object ActionBarSettings : MailPage {
+    data object ActionBarSettings : Fixed, SettingsPage {
         override val parent = Behavior
     }
 
-    data object Privacy : MailPage {
+    data object Privacy : Fixed {
         override val parent = Settings
     }
 
-    data object AllowedSenders : MailPage {
+    data object AllowedSenders : Fixed {
         override val parent = Privacy
     }
 
@@ -80,11 +86,11 @@ internal sealed interface MailPage {
         override val parent: MailPage = Inbox,
     ) : MailPage
 
-    data object Folders : MailPage {
+    data object Folders : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object Signatures : MailPage {
+    data object Signatures : Fixed {
         override val parent = Behavior
     }
 
@@ -104,7 +110,7 @@ internal sealed interface MailPage {
         val accountId: String,
         val folderId: String,
         val sharedIn: String? = null,
-    ) : MailPage {
+    ) : SettingsPage {
         override val parent = Folders
     }
 
@@ -120,10 +126,10 @@ internal sealed interface MailPage {
     ) : MailPage
 
     /** Every account's Read later folder. */
-    data object ReadLater : MailPage
+    data object ReadLater : Fixed
 
     /** Every thread where the user and someone else both wrote, across accounts. */
-    data object Conversations : MailPage
+    data object Conversations : Fixed
 
     /** One of the user's folders, merged across accounts; [key] is its lower-case path. */
     data class Shared(
@@ -131,7 +137,7 @@ internal sealed interface MailPage {
     ) : MailPage
 
     /** Every login's contacts. */
-    data object Contacts : MailPage
+    data object Contacts : Fixed
 
     /** One person, opened from the card [key]; a group card opens its members. */
     data class Contact(
@@ -145,5 +151,32 @@ internal sealed interface MailPage {
         val key: CardKey? = null,
     ) : MailPage {
         override val parent: MailPage = key?.let(::Contact) ?: Contacts
+    }
+
+    companion object {
+        /** Every page without arguments. */
+        val fixed: List<Fixed> =
+            listOf(
+                Inbox,
+                Settings,
+                EmailAccounts,
+                Appearance,
+                Notifications,
+                NotificationOverrides,
+                Behavior,
+                SidebarSettings,
+                FilterPanelSettings,
+                PinnedSettings,
+                ThemeSettings,
+                MailListSettings,
+                ActionBarSettings,
+                Privacy,
+                AllowedSenders,
+                Folders,
+                Signatures,
+                ReadLater,
+                Conversations,
+                Contacts,
+            )
     }
 }
