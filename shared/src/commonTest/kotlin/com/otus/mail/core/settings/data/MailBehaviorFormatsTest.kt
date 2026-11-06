@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.core.settings.data
 
 import com.otus.avatar.IconSource
 import com.otus.mail.core.mailbox.MailboxRole
@@ -9,7 +9,6 @@ import com.otus.mail.core.messages.domain.BarButton
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.domain.QuickFacet
 import com.otus.mail.core.messages.domain.RemoteImages
-import com.otus.mail.core.settings.data.KeyValueMailBehaviorStore
 import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.core.settings.domain.AvatarBehavior
 import com.otus.mail.core.settings.domain.DateStyle

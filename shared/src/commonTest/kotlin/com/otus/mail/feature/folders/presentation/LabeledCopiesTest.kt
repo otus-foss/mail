@@ -1,6 +1,7 @@
-package com.otus.mail.app
+package com.otus.mail.feature.folders.presentation
 
 import com.otus.jmap.JmapClient
+import com.otus.mail.app.MailServices
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
@@ -8,9 +9,6 @@ import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
-import com.otus.mail.feature.folders.presentation.FolderColorsState
-import com.otus.mail.feature.folders.presentation.LabeledCopies
-import com.otus.mail.feature.folders.presentation.MessageFiling
 import com.otus.mail.testing.testEdits
 import com.otus.mail.testing.testFolders
 import io.ktor.client.engine.mock.MockEngine
