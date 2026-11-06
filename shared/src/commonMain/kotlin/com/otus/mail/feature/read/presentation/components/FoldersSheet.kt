@@ -26,6 +26,7 @@ import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
+import com.otus.mail.core.mailbox.presentation.READ_LATER_TITLE
 import com.otus.mail.core.messages.domain.FolderChange
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MessageFolder
@@ -124,6 +125,6 @@ private fun SystemFolderPills(
 
 /** The name the app gives a system folder, as the Move to sheet's pills do, else the server's. */
 private val MessageFolder.pillLabel: String
-    get() = if (readLater) "Read later" else role?.title ?: path.last()
+    get() = if (readLater) READ_LATER_TITLE else role?.title ?: path.last()
 
 private const val NEW_FOLDER = "New folder"

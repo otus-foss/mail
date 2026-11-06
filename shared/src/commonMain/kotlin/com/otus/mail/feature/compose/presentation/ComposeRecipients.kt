@@ -10,6 +10,7 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.parseRecipients
 import com.otus.mail.core.messages.domain.recipientText
 import com.otus.mail.core.messages.presentation.empty
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,7 +30,6 @@ class ComposeRecipients(
     private val accountId: () -> String,
     private val people: (RecipientField) -> List<MailSender>,
     private val change: (RecipientField, List<MailSender>) -> Unit,
-    private val suggestDelayMillis: Long = SUGGEST_DELAY_MILLIS,
 ) {
     var typed by mutableStateOf(RecipientField.entries.associateWith { "" })
         private set
@@ -109,7 +109,7 @@ class ComposeRecipients(
         lookup?.cancel()
         lookup =
             scope.launch {
-                delay(suggestDelayMillis)
+                delay(TYPING_PAUSE_MILLIS)
                 val taken = people(field).map { EmailAddressKey(it.address) }.toSet()
                 val found =
                     addressBook
@@ -128,7 +128,6 @@ class ComposeRecipients(
     )
 
     private companion object {
-        const val SUGGEST_DELAY_MILLIS = 200L
         val SEPARATORS = setOf(',', ';')
     }
 }

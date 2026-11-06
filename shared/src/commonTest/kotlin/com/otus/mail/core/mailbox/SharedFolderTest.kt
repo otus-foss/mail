@@ -1,6 +1,5 @@
 package com.otus.mail.core.mailbox
 
-import com.otus.mail.feature.folders.domain.key
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

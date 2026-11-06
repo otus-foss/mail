@@ -1,10 +1,11 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.folderTree
+import com.otus.mail.core.mailbox.presentation.READ_LATER_TITLE
+import com.otus.mail.core.mailbox.presentation.symbol
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.core.settings.presentation.FolderPillOption
@@ -25,7 +26,7 @@ internal fun folderPillOptions(accounts: List<AccountFolders>): List<FolderPillO
             .filter { !it.folder.isCustom && it.folder.role != MailboxRole.Inbox && !it.readLater }
             .groupBy { it.folder.role?.wire ?: it.folder.otherRole.orEmpty() }
     return buildList {
-        if (readLater.isNotEmpty()) add(everyAccount(InboxPill.ReadLater, readLater, "Read later"))
+        if (readLater.isNotEmpty()) add(everyAccount(InboxPill.ReadLater, readLater, READ_LATER_TITLE))
         roles.forEach { (wire, nodes) ->
             val role = MailboxRole.of(wire)
             val pill = role?.let(InboxPill::Role) ?: InboxPill.OtherRole(wire)
@@ -46,7 +47,7 @@ private fun everyAccount(
     FolderPillOption(
         pill,
         nodes.map { it.folder.name }.distinct().singleOrNull() ?: fallback,
-        nodes.first().let { folderSymbol(it.folder.role?.wire, it.readLater) },
+        nodes.first().symbol,
         MailScope.Folders(nodes.map { MailScope.Folder(it.folder.accountId, it.folder.id) }.toSet()),
         group = EVERY_ACCOUNT_GROUP,
     )
@@ -58,7 +59,7 @@ private fun ownFolder(
     FolderPillOption(
         InboxPill.Folder(account.accountId, node.folder.id),
         node.folder.name,
-        folderSymbol(node.folder.role?.wire, node.readLater),
+        node.symbol,
         MailScope.Folder(account.accountId, node.folder.id),
         group = account.accountName,
         path = node.path,

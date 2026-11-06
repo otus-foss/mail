@@ -4,6 +4,7 @@ import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.files.DownloadFolder
 import com.otus.mail.core.files.InMemoryDownloadFolder
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.messages.domain.EmailChangeStore
 import com.otus.mail.core.settings.domain.AddressPinStore
 import com.otus.mail.core.storage.DeviceStore
@@ -11,7 +12,6 @@ import com.otus.mail.core.storage.StoreSpec
 import com.otus.mail.feature.compose.domain.OutboxStore
 import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.folders.domain.FolderColorStore
-import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.notifications.domain.MailStateStore

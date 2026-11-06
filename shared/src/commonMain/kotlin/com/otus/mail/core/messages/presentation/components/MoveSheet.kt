@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.LocalDensity
 import com.otus.designsystem.mail.folders.components.FolderName
 import com.otus.designsystem.mail.folders.components.SuggestedFolderRow
 import com.otus.designsystem.mail.folders.elements.DestinationPill
-import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_auto_filter
 import com.otus.designsystem.resources.symbol_bookmark
@@ -37,6 +36,8 @@ import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.presentation.READ_LATER_TITLE
+import com.otus.mail.core.mailbox.presentation.symbol
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.shownName
@@ -89,7 +90,7 @@ internal fun MoveSheet(
         ) {
             MoveSummary(messages, oneSender)
             PickerSearch(query, { query = it }, "Search folders…", Modifier.onFocusChanged { searching = it.hasFocus })
-            val readLater = saving.takeIf { it.isNotEmpty() && READ_LATER.containsSearch(query) }
+            val readLater = saving.takeIf { it.isNotEmpty() && READ_LATER_TITLE.containsSearch(query) }
             val shortcuts = targets.shortcuts().filter { it.matchesSearch(query) }
             val suggestion = suggested?.takeIf { it.matchesSearch(query) }
             val folders = listed.ownFolders().filter { it.matchesSearch(query) }
@@ -131,7 +132,7 @@ private fun MovePills(
             // Inbox leads whenever the message can go back there, so the pills keep one order.
             val (inbox, others) = shortcuts.partition { it.shortcut == MailboxRole.Inbox }
             inbox.forEach { ShortcutPill(it, onMove) }
-            if (onReadLater != null) DestinationPill(READ_LATER, Res.drawable.symbol_bookmark, onReadLater)
+            if (onReadLater != null) DestinationPill(READ_LATER_TITLE, Res.drawable.symbol_bookmark, onReadLater)
             others.forEach { ShortcutPill(it, onMove) }
         }
         if (sorting.future != null) {
@@ -152,7 +153,7 @@ private fun ShortcutPill(
     onMove: (MoveTarget) -> Unit,
 ) {
     val shortcut = target.shortcut ?: return
-    DestinationPill(shortcut.title, folderSymbol(shortcut.wire), { onMove(target) })
+    DestinationPill(shortcut.title, shortcut.symbol, { onMove(target) })
 }
 
 /**
@@ -178,7 +179,5 @@ private fun MoveSuggestion(
 
 /** Lines captions up with the text inside the settings rows below them. */
 internal val RowTextInset = Modifier.padding(horizontal = PageTokens.textInset)
-
-private const val READ_LATER = "Read later"
 
 internal const val SORT_FUTURE_MAIL = "Also sort future mail"

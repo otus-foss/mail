@@ -7,6 +7,7 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.PeopleField
 import com.otus.mail.core.messages.domain.ReadStatus
 import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailQuery
@@ -97,7 +98,7 @@ class InboxFilterStateTest {
             state.open()
             state.senders.search("gr")
             state.senders.search("grace ")
-            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            advanceTimeBy(TYPING_PAUSE_MILLIS + 1)
             runCurrent()
             assertEquals(listOf(PeopleField.From to "grace"), asked)
             assertEquals(listOf(grace), state.senders.found)
@@ -118,13 +119,13 @@ class InboxFilterStateTest {
                     7
                 })
             state.open()
-            advanceTimeBy(InboxFilterState.COUNT_DELAY_MILLIS + 1)
+            advanceTimeBy(TYPING_PAUSE_MILLIS + 1)
             assertEquals(FilterCount.Counting, state.count)
             blocking = false
             state.edit { unread }
-            advanceTimeBy(InboxFilterState.COUNT_DELAY_MILLIS / 2)
+            advanceTimeBy(TYPING_PAUSE_MILLIS / 2)
             state.edit { it.copy(date = DateFilter.Today) }
-            advanceTimeBy(InboxFilterState.COUNT_DELAY_MILLIS + 1)
+            advanceTimeBy(TYPING_PAUSE_MILLIS + 1)
             runCurrent()
             assertEquals(FilterCount.Known(7), state.count)
             assertEquals(listOf(InboxFilters(), unread.copy(date = DateFilter.Today)), counted)

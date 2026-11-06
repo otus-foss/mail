@@ -6,8 +6,8 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailServices
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.storage.DeviceStore
-import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.notifications.domain.InstantPush
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope

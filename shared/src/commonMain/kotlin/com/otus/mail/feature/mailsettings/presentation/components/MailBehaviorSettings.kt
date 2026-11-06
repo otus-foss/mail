@@ -7,6 +7,7 @@ import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_menu
 import com.otus.designsystem.resources.symbol_tune
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.settings.presentation.FolderPillOption
 import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.core.settings.presentation.MailBehaviorState
@@ -62,7 +63,7 @@ private fun inboxRows(
             inboxSummary(behavior.list.inbox),
             { InboxContentsSheet(state, it) },
             icon = Res.drawable.symbol_inbox,
-            keywords = listOf("Archive", "Spam", "Trash", "All mail"),
+            keywords = listOf(MailboxRole.Archive.title, MailboxRole.Junk.title, MailboxRole.Trash.title, "All mail"),
         ),
         ChoiceRowSpec(
             "Pills",

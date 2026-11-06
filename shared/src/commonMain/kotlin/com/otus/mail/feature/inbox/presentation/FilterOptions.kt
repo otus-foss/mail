@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.messages.domain.FolderRef
 import com.otus.mail.core.messages.domain.OwnAddress
 import com.otus.mail.core.messages.domain.QuickFacet
@@ -29,12 +30,6 @@ data class FilterFolder(
     val hasChildren: Boolean
         get() = descendants.isNotEmpty()
 }
-
-/** A folder of one login, without a subfolder choice. */
-data class FolderKey(
-    val loginId: String,
-    val mailboxId: String,
-)
 
 val FolderRef.key: FolderKey
     get() = FolderKey(loginId, mailboxId)

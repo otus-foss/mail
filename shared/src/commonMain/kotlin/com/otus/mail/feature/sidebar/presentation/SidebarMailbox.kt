@@ -1,11 +1,7 @@
 package com.otus.mail.feature.sidebar.presentation
 
-import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_bookmark
-import com.otus.designsystem.resources.symbol_contacts
 import com.otus.designsystem.resources.symbol_folder
-import com.otus.designsystem.resources.symbol_forum
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
@@ -16,6 +12,8 @@ import com.otus.mail.core.settings.domain.InboxContents
 import com.otus.mail.core.settings.domain.PinSize
 import com.otus.mail.core.settings.domain.SidebarLayout
 import com.otus.mail.core.settings.domain.SidebarPin
+import com.otus.mail.core.settings.presentation.symbol
+import com.otus.mail.core.settings.presentation.title
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
@@ -60,34 +58,15 @@ internal fun pinnableMailboxes(
             accounts.flatMap { account ->
                 account.folders.filter { it.role in inbox.roles || (inbox.ownFolders && it.isCustom) }
             }
-        add(
-            SidebarMailbox(
-                MailboxRole.Inbox.title,
-                folderSymbol(MailboxRole.Inbox.wire),
-                SidebarPin.Inbox,
-                inboxFolders,
-            ),
-        )
+        add(pinned(SidebarPin.Inbox, inboxFolders))
         val readLater = accounts.mapNotNull { it.readLater }
-        if (readLater.isNotEmpty()) {
-            add(
-                SidebarMailbox("Read later", Res.drawable.symbol_bookmark, SidebarPin.ReadLater, readLater),
-            )
-        }
+        if (readLater.isNotEmpty()) add(pinned(SidebarPin.ReadLater, readLater))
         // Conversations has no folder of its own, so it shows no count.
         if (accounts.any { account -> account.folders.any { it.role == MailboxRole.Sent } }) {
-            add(
-                SidebarMailbox("Convos", Res.drawable.symbol_forum, SidebarPin.Conversations, emptyList()),
-            )
+            add(pinned(SidebarPin.Conversations, emptyList()))
         }
-        add(
-            SidebarMailbox("Contacts", Res.drawable.symbol_contacts, SidebarPin.Contacts, emptyList()),
-        )
-        combinedFolders(accounts).forEach { (role, folders) ->
-            add(
-                SidebarMailbox(role.title, folderSymbol(role.wire), SidebarPin.Role(role), folders),
-            )
-        }
+        add(pinned(SidebarPin.Contacts, emptyList()))
+        combinedFolders(accounts).forEach { (role, folders) -> add(pinned(SidebarPin.Role(role), folders)) }
         sharedFolders(accounts).flatMap { it.flatten() }.forEach { folder ->
             add(
                 SidebarMailbox(
@@ -100,3 +79,9 @@ internal fun pinnableMailboxes(
             )
         }
     }
+
+/** The mailbox of a pin that is not one of the user's folders, under the pin's own title and symbol. */
+private fun pinned(
+    pin: SidebarPin,
+    folders: List<MailFolder>,
+): SidebarMailbox = SidebarMailbox(checkNotNull(pin.title), pin.symbol, pin, folders)

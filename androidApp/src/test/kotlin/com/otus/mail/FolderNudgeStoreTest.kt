@@ -1,6 +1,6 @@
 package com.otus.mail
 
-import com.otus.mail.feature.folders.domain.FolderKey
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.feature.folders.domain.FolderNudges
 import org.junit.Assert.assertEquals
 import org.junit.Test

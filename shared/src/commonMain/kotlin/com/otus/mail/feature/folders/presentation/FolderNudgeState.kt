@@ -5,11 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.key
 import com.otus.mail.core.storage.DeviceStore
-import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.FolderNudges
-import com.otus.mail.feature.folders.domain.key
 
 /** The colors the nudge offers, in order; it leaves out Red. */
 val NUDGE_COLORS: List<FolderColor> =

@@ -23,8 +23,8 @@ import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.shared.reorder.components.ReorderableScope
 import com.otus.designsystem.shared.sidebar.elements.SidebarFolder
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mailbox.presentation.symbol
 import com.otus.mail.feature.folders.presentation.FolderListRow
-import com.otus.mail.feature.folders.presentation.folderIcon
 
 /**
  * A folder in Settings › Folders & rules: its icon in the folder's color, the name, the first of its rules
@@ -50,7 +50,7 @@ fun ReorderableScope.FolderRow(
             SidebarFolder(
                 folder.name,
                 row.node.depth,
-                icon = if (shared != null) Res.drawable.symbol_folder_shared else folderIcon(row.node),
+                icon = if (shared != null) Res.drawable.symbol_folder_shared else row.node.symbol,
             ),
             expanded,
             onExpandedChange,

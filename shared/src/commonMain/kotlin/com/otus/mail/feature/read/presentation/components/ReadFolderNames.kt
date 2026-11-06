@@ -1,8 +1,8 @@
 package com.otus.mail.feature.read.presentation.components
 
 import com.otus.designsystem.mail.folders.components.FolderName
-import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mailbox.presentation.symbol
 import com.otus.mail.core.messages.domain.MessageFolder
 import com.otus.mail.core.messages.domain.displayPaths
 
@@ -15,7 +15,7 @@ internal fun folderName(
         path,
         folder.color?.let(FolderColor::named),
         folder.system,
-        folder.role?.let { folderSymbol(it.wire) },
+        folder.role?.symbol,
     )
 
 /** [folders] named as a strip names several: leaves only, or full paths where leaves clash. */

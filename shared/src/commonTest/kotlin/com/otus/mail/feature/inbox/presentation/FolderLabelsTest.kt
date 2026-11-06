@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.people.components.ChipAvatar
+import com.otus.mail.core.mailbox.FolderKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

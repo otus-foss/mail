@@ -2,13 +2,12 @@ package com.otus.mail.feature.mailsettings.presentation.components
 
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_archive
-import com.otus.designsystem.resources.symbol_delete
 import com.otus.designsystem.resources.symbol_folder
-import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.presentation.symbol
 import com.otus.mail.core.settings.domain.InboxContents
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.icon
@@ -30,10 +29,10 @@ internal fun InboxContentsSheet(
     }
     SheetFrame("Inbox shows", onDismiss) {
         SettingToggleRow(
-            "Archive",
+            MailboxRole.Archive.title,
             checked = contents.archive,
             onCheckedChange = { on -> change { it.copy(archive = on) } },
-            icon = Res.drawable.symbol_archive,
+            icon = MailboxRole.Archive.symbol,
         )
         SettingToggleRow(
             "Your folders",
@@ -42,16 +41,16 @@ internal fun InboxContentsSheet(
             icon = Res.drawable.symbol_folder,
         )
         SettingToggleRow(
-            "Spam",
+            MailboxRole.Junk.title,
             checked = contents.spam,
             onCheckedChange = { on -> change { it.copy(spam = on) } },
-            icon = Res.drawable.symbol_report,
+            icon = MailboxRole.Junk.symbol,
         )
         SettingToggleRow(
-            "Trash",
+            MailboxRole.Trash.title,
             checked = contents.trash,
             onCheckedChange = { on -> change { it.copy(trash = on) } },
-            icon = Res.drawable.symbol_delete,
+            icon = MailboxRole.Trash.symbol,
         )
         PageNote("Mail stays in its own folders.")
     }

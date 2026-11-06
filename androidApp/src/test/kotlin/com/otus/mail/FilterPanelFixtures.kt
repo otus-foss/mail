@@ -7,6 +7,7 @@ import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailAttributes
 import com.otus.mail.core.messages.domain.MailLocation
@@ -19,7 +20,6 @@ import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterAddress
 import com.otus.mail.feature.inbox.presentation.FilterFolder
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import com.otus.mail.feature.inbox.presentation.FolderKey
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import org.jetbrains.compose.resources.DrawableResource

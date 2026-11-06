@@ -1,11 +1,8 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mailbox.FolderFailure
-import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.feature.folders.domain.FolderNameProblem
-import org.jetbrains.compose.resources.DrawableResource
 
 fun FolderFailure.message(): String =
     when (this) {
@@ -36,6 +33,3 @@ fun FolderNameProblem.message(): String =
         FolderNameProblem.TooLong -> "This server doesn't allow names that long."
         FolderNameProblem.Taken -> "A folder with that name already exists there."
     }
-
-/** System folders and Read later have their own symbols; the user's other folders share one. */
-fun folderIcon(node: FolderNode): DrawableResource = folderSymbol(node.folder.role?.wire, node.readLater)

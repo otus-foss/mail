@@ -17,6 +17,7 @@ import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.overlays.components.SheetHeaderAction
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.presentation.KnownAddress
@@ -103,12 +104,9 @@ private fun rememberExistingCount(
     LaunchedEffect(condition) {
         found = null
         if (condition != null) {
-            delay(COUNT_PAUSE_MILLIS)
+            delay(TYPING_PAUSE_MILLIS)
             found = count(FolderRule(condition))
         }
     }
     return found
 }
-
-/** Typing pauses this long before the server counts the matching mail. */
-private const val COUNT_PAUSE_MILLIS = 400L

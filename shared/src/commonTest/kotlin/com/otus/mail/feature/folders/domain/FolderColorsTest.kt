@@ -1,6 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
 import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.sharedFolders

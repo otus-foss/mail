@@ -1,7 +1,7 @@
 package com.otus.mail.app
 
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.storage.DeviceStore
-import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.FolderNudges
 import com.otus.mail.testing.MemoryMapStore

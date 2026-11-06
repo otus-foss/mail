@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import com.otus.designsystem.mail.folders.elements.folderSymbol
 import com.otus.designsystem.mail.quickview.components.QuickJump
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_code
@@ -31,6 +30,7 @@ import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.mail.core.mailbox.presentation.symbol
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.OwnAddresses
@@ -179,7 +179,7 @@ private val MoveTarget.chipLabel: String
     get() = shortcut?.title ?: name
 
 private val MoveTarget.chipIcon
-    get() = folderSymbol(shortcut?.wire)
+    get() = shortcut.symbol
 
 /** Folder chips the Move to row offers before its Move button. */
 private const val MOVE_CHIPS = 6

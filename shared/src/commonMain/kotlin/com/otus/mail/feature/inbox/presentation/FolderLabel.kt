@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.core.messages.presentation.avatar
 

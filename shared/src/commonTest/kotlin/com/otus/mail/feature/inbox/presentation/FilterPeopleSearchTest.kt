@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import com.otus.mail.core.messages.domain.FoundPerson
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.PeopleField
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -33,7 +34,7 @@ class FilterPeopleSearchTest {
             val search = FilterPeopleSearch(PeopleField.From, scope) { _, _ -> error("The server went away") }
             search.search("grace")
             assertTrue(search.searching)
-            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            advanceTimeBy(TYPING_PAUSE_MILLIS + 1)
             runCurrent()
             assertFalse(search.searching)
             assertEquals(1, failures.size, "The failure still reaches the scope")
@@ -45,12 +46,12 @@ class FilterPeopleSearchTest {
             val answer = CompletableDeferred<List<FoundPerson>>()
             val search = FilterPeopleSearch(PeopleField.From, backgroundScope) { _, _ -> answer.await() }
             search.search("gr")
-            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            advanceTimeBy(TYPING_PAUSE_MILLIS + 1)
             runCurrent()
             search.search("grace")
             runCurrent()
             assertTrue(search.searching, "Cancelling the first search does not end the second")
-            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            advanceTimeBy(TYPING_PAUSE_MILLIS + 1)
             answer.complete(listOf(grace))
             runCurrent()
             assertFalse(search.searching)
@@ -70,11 +71,11 @@ class FilterPeopleSearchTest {
                     if (calls++ == 0) listOf(grace) else error("The server went away")
                 }
             search.search("gr")
-            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            advanceTimeBy(TYPING_PAUSE_MILLIS + 1)
             runCurrent()
             assertEquals(listOf(grace), search.found)
             search.search("grace")
-            advanceTimeBy(FilterPeopleSearch.SEARCH_DELAY_MILLIS + 1)
+            advanceTimeBy(TYPING_PAUSE_MILLIS + 1)
             runCurrent()
             assertEquals(emptyList(), search.found, "Results for other text do not stay on screen")
         }

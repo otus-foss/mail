@@ -1,5 +1,6 @@
 package com.otus.mail.feature.mailsettings.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.presentation.ownFolders
 import com.otus.mail.core.settings.domain.InboxContents
 
@@ -7,12 +8,18 @@ import com.otus.mail.core.settings.domain.InboxContents
 fun inboxSummary(contents: InboxContents): String {
     val extras =
         listOfNotNull(
-            "Archive".takeIf { contents.archive },
+            MailboxRole.Archive.title.takeIf { contents.archive },
             "Your folders".takeIf { contents.ownFolders },
-            "Spam".takeIf { contents.spam },
-            "Trash".takeIf { contents.trash },
+            MailboxRole.Junk.title.takeIf { contents.spam },
+            MailboxRole.Trash.title.takeIf { contents.trash },
         )
-    return if (extras.size == EVERY_EXTRA) "All mail" else (listOf("Inbox") + extras).joinToString(" + ")
+    return if (extras.size ==
+        EVERY_EXTRA
+    ) {
+        "All mail"
+    } else {
+        (listOf(MailboxRole.Inbox.title) + extras).joinToString(" + ")
+    }
 }
 
 private const val EVERY_EXTRA = 4

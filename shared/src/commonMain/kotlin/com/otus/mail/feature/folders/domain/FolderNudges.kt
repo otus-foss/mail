@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.storage.StoreSpec
 import com.otus.mail.core.storage.TextCodec
 

@@ -1,13 +1,13 @@
 package com.otus.mail.feature.folders.presentation
 
 import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.key
 import com.otus.mail.core.storage.DeviceStore
-import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.READ_LATER_NAME
-import com.otus.mail.feature.folders.domain.key
 import com.otus.mail.testing.MemoryMapStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
