@@ -3,7 +3,8 @@ package com.otus.mail.feature.folders.domain
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.SharedFolder
-import com.otus.storage.StringMapStore
+import com.otus.mail.core.storage.StoreSpec
+import com.otus.mail.core.storage.TextCodec
 
 /**
  * One account's folder: the login [accountId] and the server's [mailboxId]. Colors are keyed by it,
@@ -67,25 +68,14 @@ data class FolderColors(
     }
 
     fun without(folder: MailFolder): FolderColors = FolderColors(names - folder.key)
-
-    fun withoutAccount(accountId: String): FolderColors = FolderColors(names.filterKeys { it.accountId != accountId })
 }
 
 /**
- * App-private storage for [FolderColors]: color names by [FolderKey.storageValue]. Implementations
- * skip entries that [read] cannot parse, so unknown or blank values read as the default.
+ * App-private storage for [FolderColors]: color names by [FolderKey.storageValue]. Entries it cannot
+ * parse, and blank names, read as the default.
  */
-interface FolderColorStore : StringMapStore
-
-fun FolderColorStore.readColors(): FolderColors =
-    FolderColors(
-        read()
-            .filterValues { it.isNotBlank() }
-            .mapNotNull { (key, name) -> FolderKey.fromStorageValue(key)?.let { it to name } }
-            .toMap(),
-    )
-
-fun FolderColorStore.writeColors(colors: FolderColors) = write(colors.names.mapKeys { (key, _) -> key.storageValue })
-
-/** Forgets a removed account's colors. */
-fun FolderColorStore.forgetAccount(accountId: String) = writeColors(readColors().withoutAccount(accountId))
+object FolderColorStore : StoreSpec<FolderKey, String>(
+    "folder_colors",
+    TextCodec({ it.storageValue }, FolderKey::fromStorageValue),
+    TextCodec.NonBlank,
+)

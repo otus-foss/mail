@@ -3,6 +3,7 @@ package com.otus.mail.feature.folders.presentation
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.READ_LATER_NAME
@@ -13,9 +14,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class FolderNudgeStateTest {
-    private class MemoryStore :
-        MemoryMapStore(),
-        FolderNudgeStore
+    private class MemoryStore : MemoryMapStore() {
+        val typed = DeviceStore(this, FolderNudgeStore)
+    }
 
     private val trash = MailFolder("ada", "M0", "Trash", role = MailboxRole.Trash)
     private val clients = MailFolder("ada", "M1", "Clients")
@@ -29,7 +30,7 @@ class FolderNudgeStateTest {
     private fun state(
         store: MemoryStore = MemoryStore(),
         enabled: () -> Boolean = { true },
-    ) = FolderNudgeState(store, colors, { listOf(ada) }, enabled)
+    ) = FolderNudgeState(store.typed, colors, { listOf(ada) }, enabled)
 
     private val visible =
         mapOf(

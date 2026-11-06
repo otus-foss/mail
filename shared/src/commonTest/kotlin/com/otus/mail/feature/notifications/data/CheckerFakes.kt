@@ -1,19 +1,17 @@
 package com.otus.mail.feature.notifications.data
 
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
 import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
+import com.otus.mail.testing.MemoryMapStore
 
 /** Saved check states, read and written in memory. */
 internal class States(
-    var saved: Map<String, String> = emptyMap(),
-) : MailStateStore {
-    override fun read() = saved
-
-    override fun write(values: Map<String, String>) {
-        saved = values
-    }
+    saved: Map<String, String> = emptyMap(),
+) : MemoryMapStore(saved) {
+    val typed = DeviceStore(this, MailStateStore)
 }
 
 /** The alerts a check showed and cleared, with [alerted] already showing. */

@@ -8,6 +8,7 @@ import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SendTime
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.accountId
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -21,11 +22,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 class MailOutboxTest {
-    private class Store :
-        MemoryMapStore(),
-        OutboxStore
-
-    private val store = Store()
+    private val store = MemoryMapStore()
+    private val outboxStore = DeviceStore(store, OutboxStore)
     private val sent = mutableListOf<Pair<Draft, SendTime>>()
     private val checks = mutableListOf<Draft>()
     private val heldCancels = mutableListOf<Boolean>()
@@ -49,7 +47,9 @@ class MailOutboxTest {
             check
         }
 
-    private fun outbox() = MailOutbox(store, sender, checker, now = { now })
+    private fun savedEntries() = OutboxStore.ENTRIES.of(store.saved).orEmpty()
+
+    private fun outbox() = MailOutbox(outboxStore, sender, checker, now = { now })
 
     @Test
     fun aMessageOutlivesTheAppUntilItIsDue() =
@@ -65,7 +65,7 @@ class MailOutboxTest {
             assertEquals(SendTime.Now, time)
             assertEquals("Lunch", went.subject)
             assertNotNull(went.messageId, "Each message gets a Message-ID to find it by")
-            assertTrue(OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).isEmpty())
+            assertTrue(savedEntries().isEmpty())
         }
 
     @Test
@@ -114,7 +114,7 @@ class MailOutboxTest {
             assertEquals(OutboxProblem.Unconfirmed, restarted.offers().single().problem)
             assertTrue(restarted.offers().isEmpty(), "A recreated screen does not offer it again")
             restarted.drop(id)
-            assertTrue(OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).isEmpty())
+            assertTrue(savedEntries().isEmpty())
         }
 
     @Test
@@ -152,14 +152,13 @@ class MailOutboxTest {
             val copies = mutableListOf<String?>()
             val woken = mutableListOf<Instant>()
             val outbox =
-                MailOutbox(store, storing, checker.recordingCopies(copies), wake = { woken += it }, now = { now })
+                MailOutbox(outboxStore, storing, checker.recordingCopies(copies), wake = { woken += it }, now = { now })
             val id = outbox.add(draft, null, NOW)
             failure = SendFailure.Mail(MailFailure.Unreachable)
             outbox.send(id)
             assertEquals(
                 "e9",
-                OutboxEntry
-                    .decode(store.saved[OutboxStore.ENTRIES])
+                savedEntries()
                     .single()
                     .storedCopy
                     ?.emailId,
@@ -188,7 +187,7 @@ class MailOutboxTest {
         runTest {
             val outbox = outbox()
             assertTrue(outbox.cancel(outbox.add(draft, null, NOW + 5.seconds)))
-            assertTrue(OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).isEmpty())
+            assertTrue(savedEntries().isEmpty())
             val went = outbox.add(draft, null, NOW)
             outbox.send(went)
             assertFalse(outbox.cancel(went))
@@ -210,7 +209,7 @@ class MailOutboxTest {
             outbox.resume()
             assertEquals(1, sent.size, "A withdrawn message never goes again")
             assertEquals(listOf(true, true), heldCancels, "A hold found there is canceled")
-            assertTrue(OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).isEmpty())
+            assertTrue(savedEntries().isEmpty())
         }
 
     @Test
@@ -232,16 +231,16 @@ class MailOutboxTest {
                     tries++
                     throw IllegalArgumentException("Not base64")
                 }
-            val outbox = MailOutbox(store, throwing, checker, now = { now })
+            val outbox = MailOutbox(outboxStore, throwing, checker, now = { now })
             val id = outbox.add(draft, null, NOW)
             outbox.resume()
-            val restarted = MailOutbox(store, throwing, checker, now = { now })
+            val restarted = MailOutbox(outboxStore, throwing, checker, now = { now })
             restarted.resume()
             assertEquals(OutboxProblem.Refused, restarted.offers().single().problem)
             assertEquals(1, tries, "It does not go again by itself")
 
             check = SendCheck.Sent
-            val unsure = MailOutbox(store, sender, { _, _, _ -> error("Unreadable answer") }, now = { now })
+            val unsure = MailOutbox(outboxStore, sender, { _, _, _ -> error("Unreadable answer") }, now = { now })
             assertEquals(SendFailure.Unconfirmed, (unsure.send(id).exceptionOrNull() as SendException).failure)
             assertTrue(sent.isEmpty(), "A lookup that throws never lets the message go again")
         }
@@ -249,10 +248,10 @@ class MailOutboxTest {
     @Test
     fun messagesThatNoLongerReadAreSetAsideInsteadOfOverwritten() =
         runTest {
-            store.saved = mapOf(OutboxStore.ENTRIES to "[{\"from an older\": \"format\"}]")
+            store.saved = mapOf(OutboxStore.ENTRIES.key to "[{\"from an older\": \"format\"}]")
             outbox().add(draft, null, NOW)
             assertEquals("[{\"from an older\": \"format\"}]", store.saved[OutboxStore.UNREADABLE])
-            assertEquals(listOf("Lunch"), OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).map { it.draft.subject })
+            assertEquals(listOf("Lunch"), savedEntries().map { it.draft.subject })
         }
 
     @Test
@@ -262,7 +261,7 @@ class MailOutboxTest {
             outbox.add(draft, null, NOW + 5.seconds)
             outbox.add(draft.copy(accountId = "b2"), null, NOW + 5.seconds)
             outbox.forget("a1")
-            assertEquals(listOf("b2"), OutboxEntry.decode(store.saved[OutboxStore.ENTRIES]).map { it.draft.accountId })
+            assertEquals(listOf("b2"), savedEntries().map { it.draft.accountId })
         }
 
     private companion object {

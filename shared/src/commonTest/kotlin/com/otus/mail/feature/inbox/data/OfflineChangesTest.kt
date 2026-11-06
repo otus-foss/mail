@@ -9,6 +9,7 @@ import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.EmailChangeStore
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.MessageFlag
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.MemoryMapStore
@@ -26,15 +27,15 @@ import kotlin.test.assertTrue
 
 /** Marks and moves made offline wait on the device, show at once, and reach the server later. */
 class OfflineChangesTest {
-    private class Store :
-        MemoryMapStore(),
-        EmailChangeStore
+    private class Store : MemoryMapStore() {
+        val typed = DeviceStore(this, EmailChangeStore)
+    }
 
     private val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
     private val cache = InMemoryMailCache()
     private val changes = Store()
     private val server = FakeMailServer(INBOX, email("m1", 10))
-    private val queue = EmailChangeQueue(server.connections(store), cache, changes)
+    private val queue = EmailChangeQueue(server.connections(store), cache, changes.typed)
     private val source = server.source(store, cache, queue = queue)
     private val writer = emailWriter(server.connections(store), cache, queue)
 
@@ -62,7 +63,7 @@ class OfflineChangesTest {
 
             server.down = false
             val restarted =
-                server.source(store, cache, queue = EmailChangeQueue(server.connections(store), cache, changes))
+                server.source(store, cache, queue = EmailChangeQueue(server.connections(store), cache, changes.typed))
             assertFalse(
                 restarted
                     .messages(MailScope.Inbox, MailQuery())
@@ -152,7 +153,7 @@ class OfflineChangesTest {
         runTest {
             store.save(GRACE_LOGIN, "secret")
             val io = StandardTestDispatcher(testScheduler)
-            val both = EmailChangeQueue(server.connections(store), cache, changes, io = io)
+            val both = EmailChangeQueue(server.connections(store), cache, changes.typed, io = io)
             server.down = true
             val patch = mapOf("m1" to JsonObject(mapOf("keywords/\$seen" to JsonPrimitive(true))))
             listOf(ADA_LOGIN.id, GRACE_LOGIN.id)

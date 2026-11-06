@@ -6,12 +6,10 @@ import androidx.compose.runtime.setValue
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.folders.domain.FolderKey
-import com.otus.mail.feature.folders.domain.FolderNudgeStore
 import com.otus.mail.feature.folders.domain.FolderNudges
 import com.otus.mail.feature.folders.domain.key
-import com.otus.mail.feature.folders.domain.readNudges
-import com.otus.mail.feature.folders.domain.writeNudges
 
 /** The colors the nudge offers, in order; it leaves out Red. */
 val NUDGE_COLORS: List<FolderColor> =
@@ -38,12 +36,12 @@ data class NudgeCandidate(
  * colors or the Folder icons switch is off. Shown and closed folders are written to [store].
  */
 class FolderNudgeState(
-    private val store: FolderNudgeStore? = null,
+    private val store: DeviceStore<String, List<String>>? = null,
     private val colors: FolderColorsState,
     private val accounts: () -> List<AccountFolders>,
     private val enabled: () -> Boolean = { true },
 ) {
-    var nudges by mutableStateOf(store?.readNudges() ?: FolderNudges())
+    var nudges by mutableStateOf(saved() ?: FolderNudges())
         private set
 
     private var showing by mutableStateOf<FolderKey?>(null)
@@ -84,8 +82,10 @@ class FolderNudgeState(
 
     /** Starts from the stored nudges, so it never writes back an account removed since the last read. */
     private fun record(folder: FolderKey) {
-        val next = (store?.readNudges() ?: nudges).with(folder)
-        store?.writeNudges(next)
+        val next = (saved() ?: nudges).with(folder)
+        store?.write(next.byLogin())
         nudges = next
     }
+
+    private fun saved(): FolderNudges? = store?.read()?.let(FolderNudges::of)
 }

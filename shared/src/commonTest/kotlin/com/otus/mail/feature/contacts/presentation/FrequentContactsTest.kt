@@ -1,5 +1,6 @@
 package com.otus.mail.feature.contacts.presentation
 
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.contacts.domain.MailTrace
 import com.otus.mail.feature.contacts.domain.MailTraceSource
@@ -21,7 +22,7 @@ class FrequentContactsTest {
     private val store = MemoryStore()
     private val source = CountingSource()
 
-    private fun TestScope.frequent() = FrequentContacts(source, store, this) { now }
+    private fun TestScope.frequent() = FrequentContacts(source, store.typed, this) { now }
 
     @Test
     fun scoresEveryLoginAndKeepsThemOnTheDevice() =
@@ -31,7 +32,7 @@ class FrequentContactsTest {
 
             val again = frequent()
             assertEquals(10.0, again.scores["jana@example.org"])
-            assertTrue(store.saved.getValue(ContactStore.FREQUENT).isNotEmpty())
+            assertTrue(store.saved.getValue(ContactStore.FREQUENT.key).isNotEmpty())
         }
 
     @Test
@@ -61,12 +62,12 @@ class FrequentContactsTest {
     @Test
     fun savingScoresKeepsTheOtherSavedValues() =
         runTest {
-            store.write(mapOf(ContactStore.EDITS to "[]"))
+            store.write(mapOf(ContactStore.EDITS.key to "[]"))
 
             frequent().refresh()
             advanceUntilIdle()
 
-            assertEquals("[]", store.saved[ContactStore.EDITS])
+            assertEquals("[]", store.saved[ContactStore.EDITS.key])
         }
 
     private inner class CountingSource : MailTraceSource {
@@ -83,7 +84,7 @@ class FrequentContactsTest {
         }
     }
 
-    private class MemoryStore :
-        MemoryMapStore(),
-        ContactStore
+    private class MemoryStore : MemoryMapStore() {
+        val typed = DeviceStore(this, ContactStore)
+    }
 }

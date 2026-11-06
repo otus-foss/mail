@@ -6,6 +6,7 @@ import com.otus.mail.core.mailbox.FolderFailure
 import com.otus.mail.core.mailbox.FolderLimits
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -77,8 +78,9 @@ class ReadLaterFoldersTest {
 
     private class MemoryStore(
         saved: Map<String, String> = emptyMap(),
-    ) : MemoryMapStore(saved),
-        ReadLaterStore
+    ) : MemoryMapStore(saved) {
+        val typed = DeviceStore(this, ReadLaterStore)
+    }
 
     private fun ada(vararg folders: MailFolder) = AccountFolders("ada", "Ada", listOf(inbox, *folders))
 
@@ -98,14 +100,14 @@ class ReadLaterFoldersTest {
             val repository = FakeFolders(listOf(ada(saved)), backgroundScope)
             assertEquals(
                 listOf("i"),
-                ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x")))
+                ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x")).typed)
                     .accounts {
                         false
                     }.single()
                     .folders
                     .map { it.id },
             )
-            val unsaved = ReadLaterFolders(repository, MemoryStore()).accounts { false }.single()
+            val unsaved = ReadLaterFolders(repository, MemoryStore().typed).accounts { false }.single()
             assertEquals(listOf("i", "x"), unsaved.folders.map { it.id }, "Never saved, so it is the user's own folder")
         }
 
@@ -114,7 +116,7 @@ class ReadLaterFoldersTest {
         runTest {
             val repository = FakeFolders(listOf(ada()), backgroundScope)
             val store = MemoryStore()
-            val accounts = ReadLaterFolders(repository, store).accounts { true }
+            val accounts = ReadLaterFolders(repository, store.typed).accounts { true }
             assertEquals(listOf<Pair<String, String?>>(READ_LATER_NAME to null), repository.created)
             assertEquals("n1", accounts.single().readLaterId)
             assertEquals(mapOf("ada" to "n1"), store.saved)
@@ -127,7 +129,7 @@ class ReadLaterFoldersTest {
             val renamed = MailFolder("ada", "x", "Someday", parentId = "p")
             val other = MailFolder("ada", "y", "Read later")
             val repository = FakeFolders(listOf(ada(projects, renamed, other)), backgroundScope)
-            val accounts = ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x"))).accounts { true }
+            val accounts = ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x")).typed).accounts { true }
             assertEquals("x", accounts.single().readLaterId)
             assertTrue(repository.created.isEmpty())
         }
@@ -139,7 +141,7 @@ class ReadLaterFoldersTest {
             val trashed = MailFolder("ada", "x", "Read later", parentId = "t")
             val repository = FakeFolders(listOf(ada(trash, trashed)), backgroundScope)
             val store = MemoryStore(mapOf("ada" to "x"))
-            val accounts = ReadLaterFolders(repository, store).accounts { true }
+            val accounts = ReadLaterFolders(repository, store.typed).accounts { true }
             assertEquals("n1", accounts.single().readLaterId)
             assertEquals(mapOf("ada" to "n1"), store.saved)
         }
@@ -149,7 +151,7 @@ class ReadLaterFoldersTest {
         runTest {
             val archive = MailFolder("ada", "x", "Archive", role = MailboxRole.Archive)
             val repository = FakeFolders(listOf(ada(archive)), backgroundScope)
-            val accounts = ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x"))).accounts { true }
+            val accounts = ReadLaterFolders(repository, MemoryStore(mapOf("ada" to "x")).typed).accounts { true }
             assertEquals("n1", accounts.single().readLaterId)
         }
 
@@ -160,7 +162,7 @@ class ReadLaterFoldersTest {
             val top = MailFolder("ada", "t", "READ LATER")
             val repository = FakeFolders(listOf(ada(nested, top)), backgroundScope)
             val store = MemoryStore()
-            val accounts = ReadLaterFolders(repository, store).accounts { true }
+            val accounts = ReadLaterFolders(repository, store.typed).accounts { true }
             assertEquals("t", accounts.single().readLaterId)
             assertEquals(mapOf("ada" to "t"), store.saved)
         }
@@ -172,7 +174,7 @@ class ReadLaterFoldersTest {
             val limited = ada().copy(limits = FolderLimits(mayCreateTopLevel = false))
             val repository = FakeFolders(listOf(limited, failed), backgroundScope)
             val store = MemoryStore(mapOf("bob" to "b", "gone" to "g"))
-            val accounts = ReadLaterFolders(repository, store).accounts { true }
+            val accounts = ReadLaterFolders(repository, store.typed).accounts { true }
             assertTrue(repository.created.isEmpty())
             assertEquals(listOf(null, null), accounts.map { it.readLaterId })
             // Bob's folder is kept for when his account loads; the removed account is forgotten.
@@ -219,7 +221,7 @@ class ReadLaterFoldersTest {
         runTest {
             val repository = FakeFolders(listOf(ada()), backgroundScope)
             val store = MemoryStore()
-            val readLater = ReadLaterFolders(repository, store)
+            val readLater = ReadLaterFolders(repository, store.typed)
             val first = launch { readLater.accounts { true } }
             testScheduler.advanceTimeBy(15)
             runCurrent()

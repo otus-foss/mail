@@ -26,9 +26,9 @@ import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
-import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NewMailChecker
 import kotlinx.coroutines.Dispatchers
@@ -50,7 +50,7 @@ import kotlin.time.Instant
 class JmapNewMailChecker(
     private val connections: JmapConnections,
     private val mailboxes: Mailboxes,
-    private val states: MailStateStore,
+    private val states: DeviceStore<String, String>,
 ) : NewMailChecker {
     override suspend fun check(alerts: MailAlerts) {
         val logins =

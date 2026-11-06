@@ -3,6 +3,7 @@ package com.otus.mail.feature.contacts.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactEdit
 import com.otus.mail.feature.contacts.domain.ContactLinks
@@ -11,7 +12,6 @@ import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.contacts.domain.ContactWriteException
 import com.otus.mail.feature.contacts.domain.ContactWriteFailure
 import com.otus.mail.feature.contacts.domain.ContactsSnapshot
-import com.otus.mail.feature.contacts.domain.KeySets
 import com.otus.mail.feature.contacts.domain.afterSent
 import com.otus.mail.feature.contacts.domain.enqueue
 import com.otus.mail.feature.contacts.domain.isHeld
@@ -89,7 +89,7 @@ internal typealias SentChange = ((ContactsSnapshot) -> ContactsSnapshot) -> Unit
  */
 internal class ContactSync(
     private val repository: ContactRepository,
-    private val store: ContactStore?,
+    private val store: DeviceStore<String, String>?,
     private val scope: CoroutineScope,
 ) {
     var edits by mutableStateOf(emptyList<ContactEdit>())
@@ -119,9 +119,13 @@ internal class ContactSync(
     /** Reads the store again, as after an account is removed and its changes with it. */
     fun reload() {
         val saved = store?.read().orEmpty()
-        edits = ContactEdit.decode(saved[ContactStore.EDITS])
-        links = ContactLinks(KeySets.decode(saved[ContactStore.LINKS]))
-        dismissed = KeySets.decode(saved[ContactStore.DISMISSED]).toSet()
+        edits = ContactStore.EDITS.of(saved).orEmpty()
+        links = ContactLinks(ContactStore.LINKS.of(saved).orEmpty())
+        dismissed =
+            ContactStore.DISMISSED
+                .of(saved)
+                .orEmpty()
+                .toSet()
         refused = refused.filterKeys { id -> edits.any { it.id == id } }
         tries.keep(edits)
     }
@@ -242,16 +246,15 @@ internal class ContactSync(
     }
 
     private fun save() {
-        // A write replaces every saved value, so the others, such as the frequent scores, are kept.
-        val storage = store ?: return
-        storage.write(
-            storage.read() +
-                mapOf(
-                    ContactStore.EDITS to ContactEdit.encode(edits),
-                    ContactStore.LINKS to KeySets.encode(links.sets),
-                    ContactStore.DISMISSED to KeySets.encode(dismissed.toList()),
-                ),
-        )
+        // Only these three change; the others, such as the frequent scores, stay.
+        store?.update { saved ->
+            saved +
+                listOf(
+                    ContactStore.EDITS.entry(edits),
+                    ContactStore.LINKS.entry(links.sets),
+                    ContactStore.DISMISSED.entry(dismissed.toList()),
+                )
+        }
     }
 }
 

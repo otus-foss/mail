@@ -37,6 +37,7 @@ import com.otus.mail.core.messages.domain.ScheduledSends
 import com.otus.mail.core.messages.domain.SenderBlocks
 import com.otus.mail.core.messages.domain.SenderHistory
 import com.otus.mail.core.messages.presentation.MoveToasts
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.compose.data.JmapAttachmentUploads
 import com.otus.mail.feature.compose.data.JmapComposeMail
 import com.otus.mail.feature.compose.data.JmapSendChecker
@@ -65,7 +66,6 @@ import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.data.PushServices
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.MailPush
-import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMailChecker
 import com.otus.mail.feature.read.data.AttachmentCache
 import com.otus.mail.feature.read.data.AttachmentRetention
@@ -207,7 +207,8 @@ class MailServices(
     internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, mailboxes) }
 
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */
-    fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, mailboxes, states)
+    fun newMail(states: DeviceStore<String, String>): NewMailChecker =
+        JmapNewMailChecker(connections, mailboxes, states)
 
     /** Create one per process. */
     override fun pushSubscriptions(

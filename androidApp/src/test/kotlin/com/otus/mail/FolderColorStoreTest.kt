@@ -4,8 +4,6 @@ import android.content.Context
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderColors
 import com.otus.mail.feature.folders.domain.FolderKey
-import com.otus.mail.feature.folders.domain.readColors
-import com.otus.mail.feature.folders.domain.writeColors
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,13 +25,14 @@ class FolderColorStoreTest {
         testStores(context)
             .folders.colors
             .let(::checkNotNull)
-            .writeColors(saved)
+            .write(saved.names)
         assertEquals(
             saved,
             testStores(context)
                 .folders.colors
                 .let(::checkNotNull)
-                .readColors(),
+                .read()
+                .let(::FolderColors),
         )
     }
 
@@ -53,8 +52,7 @@ class FolderColorStoreTest {
             testStores(context)
                 .folders.colors
                 .let(::checkNotNull)
-                .readColors()
-                .names,
+                .read(),
         )
     }
 }

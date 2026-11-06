@@ -11,7 +11,6 @@ import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
-import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.STALWART_SESSION
@@ -40,7 +39,7 @@ class JmapNewMailCheckerTest {
     private fun checker(
         connections: JmapConnections,
         states: States,
-    ) = JmapNewMailChecker(connections, Mailboxes(InMemoryMailCache()), states)
+    ) = JmapNewMailChecker(connections, Mailboxes(InMemoryMailCache()), states.typed)
 
     @Test
     fun theFirstCheckOnlyRemembersTheState() =

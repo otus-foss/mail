@@ -10,6 +10,7 @@ import com.otus.mail.core.messages.domain.SendTime
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.accountId
 import com.otus.mail.core.messages.domain.answered
+import com.otus.mail.core.storage.DeviceStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -31,7 +32,7 @@ import kotlin.uuid.Uuid
  * Without a store, messages last as long as the process.
  */
 class MailOutbox(
-    store: OutboxStore?,
+    store: DeviceStore<String, String>?,
     private val sender: DraftSender,
     private val checker: SendChecker,
     private val wake: (Instant) -> Unit = {},

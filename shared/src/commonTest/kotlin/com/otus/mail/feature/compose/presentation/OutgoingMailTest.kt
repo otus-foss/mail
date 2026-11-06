@@ -9,6 +9,7 @@ import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SendTime
 import com.otus.mail.core.messages.domain.SentMessage
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.compose.domain.MailOutbox
 import com.otus.mail.feature.compose.domain.OutboxStore
 import com.otus.mail.feature.compose.domain.SendCheck
@@ -218,7 +219,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
     @Test
     fun aMessageAnEarlierRunCouldNotSendIsOfferedToOpen() =
         runTest {
-            val store = object : MemoryMapStore(), OutboxStore {}
+            val store = DeviceStore(MemoryMapStore(), OutboxStore)
             val earlier = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
             failure = SendFailure.Recipients
             earlier.send(earlier.add(draft, null, NOW))
@@ -240,7 +241,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
     @Test
     fun anOfferedMessageLeavesTheOutboxOnlyOnceAPageShowsIt() =
         runTest {
-            val store = object : MemoryMapStore(), OutboxStore {}
+            val store = DeviceStore(MemoryMapStore(), OutboxStore)
             val earlier = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
             failure = SendFailure.Recipients
             earlier.send(earlier.add(draft, null, NOW))

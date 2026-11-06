@@ -7,7 +7,6 @@ import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
-import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
@@ -32,12 +31,7 @@ class AlertOrderTest {
             }
         }
 
-    private val states =
-        object : MailStateStore {
-            override fun read() = mapOf(ADA_LOGIN.id to "e1")
-
-            override fun write(values: Map<String, String>) = Unit
-        }
+    private val states = States(mapOf(ADA_LOGIN.id to "e1"))
 
     @Test
     fun oldAlertsGoBeforeNewOnesShow() =
@@ -46,7 +40,7 @@ class AlertOrderTest {
             JmapNewMailChecker(
                 JmapConnections(JmapClient(stalwartLike(api = ::reply)), store),
                 Mailboxes(InMemoryMailCache()),
-                states,
+                states.typed,
             ).check(alerts)
             assertEquals(listOf("clear [m1]", "show [m6]"), events, "Android must not clear the new alert's summary")
         }

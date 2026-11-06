@@ -20,7 +20,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import com.otus.mail.app.App
 import com.otus.mail.core.settings.presentation.MailBehaviorState
-import com.otus.mail.feature.folders.domain.readColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -38,7 +37,7 @@ class FolderColorsUiTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer()
     private val behavior = MailBehaviorState()
-    private val store = InMemoryFolderColorStore()
+    private val store = inMemoryFolderColorStore()
 
     /** Starts the app and opens the sidebar, where a long press offers a folder's color. */
     private fun openSidebar() {
@@ -63,7 +62,7 @@ class FolderColorsUiTest {
         compose.waitUntil(TIMEOUT) { compose.onAllNodes(hasText("Done")).fetchSemanticsNodes().isEmpty() }
     }
 
-    private fun storedColors() = store.readColors().names.mapKeys { it.key.mailboxId }
+    private fun storedColors() = store.read().mapKeys { it.key.mailboxId }
 
     @Test
     fun theColorSheetListsDefaultFirstAndReadsEachColorByName() {

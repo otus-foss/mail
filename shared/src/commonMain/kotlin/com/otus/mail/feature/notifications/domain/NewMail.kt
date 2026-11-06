@@ -1,7 +1,8 @@
 package com.otus.mail.feature.notifications.domain
 
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.storage.StringMapStore
+import com.otus.mail.core.storage.StoreSpec
+import com.otus.mail.core.storage.TextCodec
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -49,7 +50,7 @@ data class NewMail(
 }
 
 /** Each login's Email state from the last check, keyed by login id. */
-interface MailStateStore : StringMapStore
+object MailStateStore : StoreSpec<String, String>("states", TextCodec.Text, TextCodec.Text)
 
 /** A message the device has an alert for. */
 data class AlertedMail(

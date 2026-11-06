@@ -1,5 +1,6 @@
 package com.otus.mail.feature.compose.domain
 
+import com.otus.mail.core.storage.DeviceStore
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 
@@ -8,7 +9,7 @@ import kotlin.coroutines.CoroutineContext
  * the process. It also knows which messages the user was offered in this process.
  */
 internal class OutboxEntries(
-    private val store: OutboxStore?,
+    private val store: DeviceStore<String, String>?,
     private val io: CoroutineContext,
 ) {
     private var memory = emptyList<OutboxEntry>()
@@ -20,13 +21,13 @@ internal class OutboxEntries(
         val saved = store ?: return memory
         return withContext(io) {
             val values = saved.read()
-            val text = values[OutboxStore.ENTRIES]
-            val entries = text?.let(OutboxEntry::decodeOrNull)
+            val text = values[OutboxStore.ENTRIES.key]
+            val entries = OutboxStore.ENTRIES.of(values)
             // Saving over messages that no longer read would lose them, so they are set aside first,
             // under a key of their own, beside any set aside before.
             if (text != null && entries == null) {
                 val aside = OutboxStore.unreadableKeys().first { it !in values }
-                saved.write(values - OutboxStore.ENTRIES + (aside to text))
+                saved.write(values - OutboxStore.ENTRIES.key + (aside to text))
             }
             entries.orEmpty()
         }
@@ -35,7 +36,7 @@ internal class OutboxEntries(
     suspend fun save(entries: List<OutboxEntry>) {
         memory = entries
         val saved = store ?: return
-        withContext(io) { saved.write(saved.read() + (OutboxStore.ENTRIES to OutboxEntry.encode(entries))) }
+        withContext(io) { saved.update { it + OutboxStore.ENTRIES.entry(entries) } }
     }
 
     suspend fun replace(entry: OutboxEntry) = save(all().map { if (it.id == entry.id) entry else it })

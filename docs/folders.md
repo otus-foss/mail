@@ -240,8 +240,8 @@ row background, and selected state keep their usual look. Default keeps the plai
   A rename or move keeps the color. A folder deleted and made again gets a new id and starts
   without one.
 - RFC 8621, section 2 gives a Mailbox no color property, so the app does not write one to the
-  server. Colors stay on the device in `AndroidFolderColorStore` (SharedPreferences) or
-  `IosFolderColorStore` (NSUserDefaults) and do not sync. The store keeps the color's name, such
+  server. Colors stay on the device in the `FolderColorStore` (SharedPreferences on Android,
+  NSUserDefaults on iOS) and do not sync. The store keeps the color's name, such
   as `Teal`. The design system's `FolderColor.named` turns it into a tint for the current theme,
   and an unknown or missing name reads as Default.
 - A [shared folder](#shared-folders) row has one color. Setting it writes the same name for every

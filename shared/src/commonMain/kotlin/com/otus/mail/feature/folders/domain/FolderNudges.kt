@@ -1,6 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.storage.StringMapStore
+import com.otus.mail.core.storage.StoreSpec
+import com.otus.mail.core.storage.TextCodec
 
 /**
  * The folders the color nudge has already offered a color for, whether the user picked one or
@@ -13,30 +14,17 @@ data class FolderNudges(
 
     fun with(folder: FolderKey): FolderNudges = FolderNudges(folders + folder)
 
-    fun withoutAccount(accountId: String): FolderNudges =
-        FolderNudges(folders.filterNot { it.accountId == accountId }.toSet())
+    /** Each login's mailbox ids, as [FolderNudgeStore] keeps them. */
+    fun byLogin(): Map<String, List<String>> = folders.groupBy({ it.accountId }, { it.mailboxId })
+
+    companion object {
+        fun of(byLogin: Map<String, List<String>>): FolderNudges =
+            FolderNudges(byLogin.flatMap { (accountId, ids) -> ids.map { FolderKey(accountId, it) } }.toSet())
+    }
 }
 
 /**
  * App-private storage for [FolderNudges]: each account's mailbox ids, one per line, under its
  * login id. Login ids may hold spaces and colons, and JMAP ids never hold a line break.
  */
-interface FolderNudgeStore : StringMapStore
-
-fun FolderNudgeStore.readNudges(): FolderNudges =
-    FolderNudges(
-        read()
-            .flatMap { (accountId, lines) ->
-                lines.lines().filter(String::isNotBlank).map { FolderKey(accountId, it) }
-            }.toSet(),
-    )
-
-fun FolderNudgeStore.writeNudges(nudges: FolderNudges) =
-    write(
-        nudges.folders
-            .groupBy({ it.accountId }, { it.mailboxId })
-            .mapValues { (_, ids) -> ids.joinToString("\n") },
-    )
-
-/** Forgets a removed account's nudges. */
-fun FolderNudgeStore.forgetAccount(accountId: String) = writeNudges(readNudges().withoutAccount(accountId))
+object FolderNudgeStore : StoreSpec<String, List<String>>("folder_nudges", TextCodec.Text, TextCodec.Lines)

@@ -4,10 +4,10 @@ import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.IosLoginStore
 import com.otus.mail.app.MailDeviceStores
-import com.otus.mail.app.MailDeviceStores.Companion.READ_LATER
 import com.otus.mail.app.MailServices
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
+import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.storage.UserDefaultsMap
 import platform.Foundation.NSApplicationSupportDirectory
@@ -26,7 +26,9 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
         avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
         stores =
             MailDeviceStores.named(
-                { name, _ -> UserDefaultsMap("otus.mail." + if (name == READ_LATER) "read_later_folders" else name) },
+                { name, _ ->
+                    UserDefaultsMap("otus.mail." + if (name == ReadLaterStore.name) "read_later_folders" else name)
+                },
                 SqlMailCache(cacheDriver(cacheDirectory)),
                 IosDownloadFolder("${userDirectory(NSApplicationSupportDirectory)}/attachments"),
             ),

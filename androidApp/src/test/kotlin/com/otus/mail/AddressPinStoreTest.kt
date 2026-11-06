@@ -2,8 +2,6 @@ package com.otus.mail
 
 import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.settings.domain.AddressPins
-import com.otus.mail.core.settings.domain.readPins
-import com.otus.mail.core.settings.domain.writePins
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,7 +25,7 @@ class AddressPinStoreTest {
                     MailScopeChoice.Address("bob https://mail.example.com/jmap/session", "bob@example.com"),
                 ),
             )
-        testStores(context).addressPins.let(::checkNotNull).writePins(pins)
-        assertEquals(pins, testStores(context).addressPins.let(::checkNotNull).readPins())
+        testStores(context).addressPins.let(::checkNotNull).write(pins.byLogin())
+        assertEquals(pins, AddressPins.of(testStores(context).addressPins.let(::checkNotNull).read()))
     }
 }

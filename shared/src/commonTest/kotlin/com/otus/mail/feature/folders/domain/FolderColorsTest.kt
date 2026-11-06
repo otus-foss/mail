@@ -4,6 +4,7 @@ import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.sharedFolders
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.testing.MemoryMapStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,11 +13,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class FolderColorsTest {
-    /** Keeps names as a platform store would, by storage value. */
-    private class MemoryStore(
-        saved: Map<String, String> = emptyMap(),
-    ) : MemoryMapStore(saved),
-        FolderColorStore
+    private fun store(saved: Map<String, String> = emptyMap()) = DeviceStore(MemoryMapStore(saved), FolderColorStore)
 
     private val adaClients = MailFolder("ada login", "M1", "Clients")
     private val bobClients = MailFolder("bob login", "M1", "Clients")
@@ -25,19 +22,19 @@ class FolderColorsTest {
 
     @Test
     fun colorsSurviveTheStoreKeyedByAccountAndMailbox() {
-        val store = MemoryStore()
+        val store = store()
         val colors = FolderColors().with(listOf(adaClients), "Red").with(listOf(bobClients), "Blue")
-        store.writeColors(colors)
-        assertEquals(colors, store.readColors())
-        assertEquals("Red", store.readColors().of(adaClients))
-        assertEquals("Blue", store.readColors().of(bobClients))
+        store.write(colors.names)
+        assertEquals(colors, FolderColors(store.read()))
+        assertEquals("Red", FolderColors(store.read()).of(adaClients))
+        assertEquals("Blue", FolderColors(store.read()).of(bobClients))
     }
 
     @Test
     fun unreadableEntriesReadAsTheDefault() {
-        val store = MemoryStore(mapOf("M1" to "Red", ":ada" to "Red", "M1:ada login" to " ", "M2:ada login" to "Teal"))
-        assertEquals(mapOf(FolderKey("ada login", "M2") to "Teal"), store.readColors().names)
-        assertNull(store.readColors().of(adaClients))
+        val store = store(mapOf("M1" to "Red", ":ada" to "Red", "M1:ada login" to " ", "M2:ada login" to "Teal"))
+        assertEquals(mapOf(FolderKey("ada login", "M2") to "Teal"), store.read())
+        assertNull(FolderColors(store.read()).of(adaClients))
     }
 
     @Test
@@ -72,14 +69,6 @@ class FolderColorsTest {
                 ),
             )
         assertEquals(listOf("Purple", "Purple"), unlinked.map(colors::of))
-    }
-
-    @Test
-    fun removingAnAccountForgetsOnlyItsColors() {
-        val store = MemoryStore()
-        store.writeColors(FolderColors().with(listOf(adaClients), "Red").with(listOf(bobClients), "Blue"))
-        store.forgetAccount("ada login")
-        assertEquals(mapOf(bobClients.key to "Blue"), store.readColors().names)
     }
 
     @Test

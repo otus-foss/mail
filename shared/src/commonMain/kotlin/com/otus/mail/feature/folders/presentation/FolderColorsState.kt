@@ -7,11 +7,10 @@ import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.SharedFolder
-import com.otus.mail.feature.folders.domain.FolderColorStore
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.folders.domain.FolderColors
+import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.colorable
-import com.otus.mail.feature.folders.domain.readColors
-import com.otus.mail.feature.folders.domain.writeColors
 
 /**
  * The saved folder colors and the color each folder shows. [accounts] supplies the loaded folders,
@@ -19,11 +18,11 @@ import com.otus.mail.feature.folders.domain.writeColors
  * [store] before they are shown.
  */
 class FolderColorsState(
-    private val store: FolderColorStore? = null,
+    private val store: DeviceStore<FolderKey, String>? = null,
     private val accounts: () -> List<AccountFolders> = { emptyList() },
     private val shown: () -> Boolean = { true },
 ) {
-    var colors by mutableStateOf(store?.readColors() ?: FolderColors())
+    var colors by mutableStateOf(saved() ?: FolderColors())
         private set
 
     /** The color name [folder] shows; null for the default icon color. */
@@ -56,7 +55,7 @@ class FolderColorsState(
 
     /** Reads the store again, as after an account is removed. */
     fun reload() {
-        colors = store?.readColors() ?: colors
+        colors = saved() ?: colors
     }
 
     private fun tinted(folder: MailFolder): Boolean = shown() && colorable(folder)
@@ -66,10 +65,12 @@ class FolderColorsState(
 
     /** Starts from the stored colors, so it never writes back an account removed since the last read. */
     private fun update(change: (FolderColors) -> FolderColors) {
-        val next = change(store?.readColors() ?: colors)
-        store?.writeColors(next)
+        val next = change(saved() ?: colors)
+        store?.write(next.names)
         colors = next
     }
+
+    private fun saved(): FolderColors? = store?.read()?.let(::FolderColors)
 }
 
 /**

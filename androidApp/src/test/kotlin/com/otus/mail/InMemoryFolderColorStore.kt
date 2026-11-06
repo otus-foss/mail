@@ -1,14 +1,21 @@
 package com.otus.mail
 
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.folders.domain.FolderColorStore
+import com.otus.mail.feature.folders.domain.FolderKey
+import com.otus.storage.StringMapStore
 
-/** Folder colors kept in [saved], so a test can read what the app stored. */
-internal class InMemoryFolderColorStore : FolderColorStore {
-    var saved = emptyMap<String, String>()
+/** Folder colors kept in memory, so a test can read what the app stored. */
+internal fun inMemoryFolderColorStore(): DeviceStore<FolderKey, String> =
+    DeviceStore(
+        object : StringMapStore {
+            private var saved = emptyMap<String, String>()
 
-    override fun read() = saved
+            override fun read() = saved
 
-    override fun write(values: Map<String, String>) {
-        saved = values
-    }
-}
+            override fun write(values: Map<String, String>) {
+                saved = values
+            }
+        },
+        FolderColorStore,
+    )

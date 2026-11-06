@@ -1,6 +1,7 @@
 package com.otus.mail.core.settings.domain
 
 import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.testing.MemoryMapStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,10 +9,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AddressPinsTest {
-    private class MemoryStore :
-        MemoryMapStore(),
-        AddressPinStore
-
     // Login ids hold a space and the session URL's colons.
     private val ada = "ada https://mail.example.org/jmap/session"
     private val bob = "bob https://mail.example.com/jmap/session"
@@ -26,7 +23,7 @@ class AddressPinsTest {
 
     @Test
     fun pinsSurviveTheStore() {
-        val store = MemoryStore()
+        val store = DeviceStore(MemoryMapStore(), AddressPinStore)
         val pins =
             AddressPins(
                 listOf(
@@ -35,19 +32,7 @@ class AddressPinsTest {
                     MailScopeChoice.Address(bob, "hi@company.com"),
                 ),
             )
-        store.writePins(pins)
-        assertEquals(pins, store.readPins())
-    }
-
-    @Test
-    fun forgettingAnAccountKeepsOnlyTheOtherAccountsPins() {
-        val store = MemoryStore()
-        store.writePins(
-            AddressPins(
-                listOf(MailScopeChoice.Address(ada, "hi@design.ch"), MailScopeChoice.Address(bob, "hi@company.com")),
-            ),
-        )
-        store.forgetAccount(ada)
-        assertEquals(AddressPins(listOf(MailScopeChoice.Address(bob, "hi@company.com"))), store.readPins())
+        store.write(pins.byLogin())
+        assertEquals(pins, AddressPins.of(store.read()))
     }
 }

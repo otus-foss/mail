@@ -2,7 +2,6 @@ package com.otus.mail.core.messages.data
 
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.JmapJson
 import com.otus.jmap.SetMethod
 import com.otus.jmap.isTemporary
 import com.otus.jmap.login.LoginLifecycle
@@ -14,15 +13,12 @@ import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.core.messages.domain.EmailChangeStore
+import com.otus.mail.core.storage.DeviceStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.JsonObject
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
@@ -40,7 +36,7 @@ import kotlin.time.Instant
 class EmailChangeQueue(
     private val connections: JmapConnections,
     private val cache: MailCache,
-    private val store: EmailChangeStore?,
+    private val store: DeviceStore<String, Map<String, JsonObject>>?,
     private val wake: (Instant) -> Unit = {},
     private val now: () -> Instant = { Clock.System.now() },
     private val io: CoroutineContext = Dispatchers.IO,
@@ -50,7 +46,7 @@ class EmailChangeQueue(
 
     // Every login's changes share one store value, so its read and rewrite happen one at a time.
     private val storeLock = Mutex()
-    private var memory = emptyMap<String, String>()
+    private var memory = emptyMap<String, Map<String, JsonObject>>()
 
     /**
      * Queues [patches] of [loginId]'s emails and sends every change the login has waiting. Returns
@@ -81,7 +77,7 @@ class EmailChangeQueue(
     }
 
     /** The changes of [loginId] the server has not confirmed yet, by email id. */
-    internal suspend fun pending(loginId: String): Map<String, JsonObject> = saved()[loginId]?.let(::decoded).orEmpty()
+    internal suspend fun pending(loginId: String): Map<String, JsonObject> = saved()[loginId].orEmpty()
 
     /** Drops [loginId]'s changes, as when the account is removed. */
     suspend fun forget(loginId: String) {
@@ -134,14 +130,15 @@ class EmailChangeQueue(
         return refused
     }
 
-    private suspend fun saved(): Map<String, String> = store?.let { withContext(io) { it.read() } } ?: memory
+    private suspend fun saved(): Map<String, Map<String, JsonObject>> =
+        store?.let { withContext(io) { it.read() } } ?: memory
 
     private suspend fun write(
         loginId: String,
         changes: Map<String, JsonObject>,
     ) {
         storeLock.withLock {
-            val all = saved() - loginId + if (changes.isEmpty()) emptyMap() else mapOf(loginId to encoded(changes))
+            val all = saved() - loginId + if (changes.isEmpty()) emptyMap() else mapOf(loginId to changes)
             memory = all
             store?.let { saving -> withContext(io) { saving.write(all) } }
         }
@@ -218,16 +215,3 @@ private suspend fun MailCache.forgetEmails(
 private val TEMPORARY_SET_ERRORS = setOf("rateLimit")
 
 private val RATE_LIMIT_WAIT = 1.minutes
-
-private val CHANGES = MapSerializer(String.serializer(), JsonObject.serializer())
-
-private fun encoded(changes: Map<String, JsonObject>): String = JmapJson.encodeToString(CHANGES, changes)
-
-private fun decoded(text: String): Map<String, JsonObject>? =
-    try {
-        JmapJson.decodeFromString(CHANGES, text)
-    } catch (expected: SerializationException) {
-        null
-    } catch (expected: IllegalArgumentException) {
-        null
-    }

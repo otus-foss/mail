@@ -45,6 +45,8 @@ folder page. It holds no feature behavior and does not draw.
 - `core/settings`: the settings models, their store, and the labels settings and lists share.
 - `core/cache`, `core/files`, `core/text`: the mail cache, picked, saved, and downloaded files,
   and size text.
+- `core/storage`: `StoreSpec` and `DeviceStore`, the typed app-private stores each feature
+  declares.
 
 Features:
 
@@ -95,8 +97,11 @@ defined.
 Mail keeps each login's mailboxes, emails, threads, bodies, and sync states in an SQLite database
 behind `core/cache/MailCache`, and downloaded attachments as files behind `core/files/DownloadFolder`,
 which each platform implements. See [storage](storage.md) for what they hold, where the files
-live, and how long they keep them. `MailDeviceStores.named` opens every app-private store from one
-name table, and removing an account drops what each store keeps for it.
+live, and how long they keep them. Each other app-private store is a `StoreSpec` in
+`core/storage`, declared once beside the feature that owns it: its name on the device and the text
+form of its keys and values. A `DeviceStore` reads and writes its values typed.
+`MailDeviceStores.named` opens every spec, and removing an account drops what each store keeps for
+it.
 
 ## Network destinations
 

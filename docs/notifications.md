@@ -77,7 +77,7 @@ Each run calls `JmapNewMailChecker`:
   login starts again from the current state without notifying, and every showing notification of
   that login is checked again.
 
-`AndroidMailStateStore` keeps the states in app-private preferences, keyed by login id.
+`MailStateStore` keeps the states in app-private preferences, keyed by login id.
 
 ## What the user sees
 
