@@ -83,7 +83,9 @@ import com.otus.mail.feature.read.presentation.NewsletterSteps
 import com.otus.storage.StringMapStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Connects data implementations to feature contracts. Create one per process: it owns the HTTP
@@ -97,6 +99,8 @@ class MailServices(
     internal val instantPush: InstantPush? = null,
     internal val pickers: MailPickers = MailPickers(),
     private val host: MailPlatform = MailPlatform(),
+    /** Where saved logins and waiting changes are read and written, off the main thread. */
+    private val io: CoroutineContext = Dispatchers.IO,
     createClient: () -> JmapClient = { JmapClient() },
 ) : PushServices {
     internal val nightly: NightlyUpdates get() = host.nightly
@@ -117,7 +121,7 @@ class MailServices(
     /** Each login's folders, which every feature reads from the cache. */
     private val mailboxes by lazy { Mailboxes(cache) }
     private val client by lazy(createClient)
-    private val connections by lazy { JmapConnections(client, logins) }
+    private val connections by lazy { JmapConnections(client, logins, io) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
     private val domains by lazy { PublicSuffixDomainResolver() }
     private val serverSites by lazy { ServerSites(domains) }
@@ -145,7 +149,9 @@ class MailServices(
     }
 
     /** Marks and moves that wait for the server; see docs/storage.md. */
-    private val changes by lazy { EmailChangeQueue(connections, cache, stores.waiting.changes, host.wakeOutbox) }
+    private val changes by lazy {
+        EmailChangeQueue(connections, cache, stores.waiting.changes, host.wakeOutbox, io = io)
+    }
     private val jmapWriter by lazy { JmapEmailWriter(connections, cache, changes, mailboxes) }
 
     /** Every change to emails, also for a notification's buttons, which act without opening Mail. */
@@ -161,7 +167,7 @@ class MailServices(
 
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {
-        MailOutbox(stores.waiting.outbox, compose.sender, JmapSendChecker(connections), host.wakeOutbox)
+        MailOutbox(stores.waiting.outbox, compose.sender, JmapSendChecker(connections), host.wakeOutbox, io = io)
     }
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections) }

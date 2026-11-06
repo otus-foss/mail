@@ -17,7 +17,6 @@ import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.adaServices
 import com.otus.mail.testing.conversationOf
 import com.otus.mail.testing.settle
-import com.otus.mail.testing.stalwartLike
 import com.otus.mail.testing.testEdits
 import com.otus.mail.testing.testFolders
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -73,8 +72,8 @@ class FolderCleaningTest {
         scope: MailScope,
         vararg messages: MailMessage,
     ): Pair<FolderCleanup, InboxFeedState> {
-        val engine =
-            stalwartLike { body ->
+        val services =
+            adaServices { body ->
                 sent.update { it + body }
                 val membershipRead = "Email/get" in body && "Email/query" !in body
                 val response = if (membershipRead) membership(body, messages.toList()) else reply(body)
@@ -93,7 +92,6 @@ class FolderCleaningTest {
                 removed.update { it + destroyed }
                 response
             }
-        val services = adaServices(engine)
         val folders = testFolders(services) { listOf(account) }
         folders.refresh()
         val source =
@@ -168,8 +166,6 @@ class FolderCleaningTest {
             assertNotNull(cleanup.emptying()).run()
             assertTrue(feed.messages.isEmpty())
             settle { sent.value.any { "Email/set" in it } }
-            // A refused deletion would bring the message back; give it the chance.
-            settle { false }
             assertTrue(feed.messages.isEmpty())
             assertNull(feed.notice)
             assertTrue(sent.value.any { "\"destroy\":[\"m1\"]" in it }, sent.value.toString())
@@ -191,7 +187,6 @@ class FolderCleaningTest {
             }
             assertNotNull(cleanup.emptying()).run()
             settle { sent.value.any { "Email/set" in it } }
-            settle { false }
             assertTrue(feed.messages.isEmpty(), "The refresh drops the destroyed row")
             assertNull(feed.notice)
         }

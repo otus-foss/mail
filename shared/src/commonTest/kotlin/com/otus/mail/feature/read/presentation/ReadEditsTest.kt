@@ -21,7 +21,6 @@ import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.FakeMailServer
 import com.otus.mail.testing.adaServices
 import com.otus.mail.testing.settle
-import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -90,7 +89,7 @@ class ReadEditsTest {
      * Toasts run their work in the test's scope, as in the process's.
      */
     private fun TestScope.changes(composition: CoroutineScope = this): Pair<ReadEdits, InboxFeedState> {
-        val services = adaServices(stalwartLike(api = server::answer))
+        val services = adaServices(server::answer)
         val source =
             object : MailSource {
                 override suspend fun messages(scope: MailScope): InboxSnapshot {
@@ -130,7 +129,6 @@ class ReadEditsTest {
                 ),
                 updates(),
             )
-            settle { false }
             assertEquals(listOf(setOf("a", "cl"), setOf("a", "cl")), state.pages.map { it.location.mailboxIds })
             val shown = feed.messages.single()
             assertEquals(setOf("a", "cl"), shown.location.mailboxIds)
@@ -199,7 +197,7 @@ class ReadEditsTest {
             val composition = CoroutineScope(coroutineContext + Job(coroutineContext[Job]))
             val (changes, _) = changes(composition)
             changes.trash(row, email("e1"), TRASH)
-            settle { false }
+            settle { updates().isNotEmpty() }
             composition.cancel()
             toasts.messages
                 .single()

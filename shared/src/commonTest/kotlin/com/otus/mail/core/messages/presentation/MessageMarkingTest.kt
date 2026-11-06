@@ -14,7 +14,6 @@ import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.adaServices
 import com.otus.mail.testing.settle
-import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -62,12 +61,11 @@ class MessageMarkingTest {
         screen: CoroutineScope = this,
     ): Pair<MessageMarking, InboxFeedState> {
         serverMessages.value = messages.toList()
-        val engine =
-            stalwartLike { body ->
+        val services =
+            adaServices { body ->
                 sent.update { it + body }
                 setReply(body)
             }
-        val services = adaServices(engine)
         val source =
             object : MailSource {
                 override suspend fun messages(scope: MailScope): InboxSnapshot {
@@ -120,8 +118,6 @@ class MessageMarkingTest {
             assertEquals(emptyList(), feed.unread(), "Every message shows read at once")
             assertEquals(listOf("3 emails marked as read"), toasts.messages.map { it.text })
             settle { countChanges > 0 }
-            // Another refresh would follow here; give it the chance.
-            settle { false }
             assertEquals(1, sent.value.count { "Email/set" in it }, sent.value.toString())
             assertEquals(1, countChanges)
             assertEquals(emptyList(), feed.unread())
@@ -147,7 +143,6 @@ class MessageMarkingTest {
             sent.value = emptyList()
             tap(failure)
             settle { feed.unread().isEmpty() && sent.value.isNotEmpty() }
-            settle { false }
             assertEquals(listOf(listOf("m2" to "true")), sent.value.filter { "Email/set" in it }.map(::patched))
             assertEquals(emptyList(), feed.unread())
         }
@@ -160,7 +155,6 @@ class MessageMarkingTest {
             marking.mark(feed, feed.messages, MessageFlag.Read, on = true)
             assertEquals(emptyList(), feed.unread())
             settle { toasts.messages.any { it.text == "Couldn't mark the email as read" } }
-            settle { false }
             assertEquals(listOf("m1"), feed.unread())
             assertEquals(0, countChanges, "Nothing changed, so the folder counts stay")
             assertEquals(2, messageLoads)
@@ -176,7 +170,6 @@ class MessageMarkingTest {
             sent.value = emptyList()
             tap("2 emails marked as read")
             settle { feed.unread().size == 2 }
-            settle { false }
             assertEquals(listOf("m2", "m3"), feed.unread(), "m1 was read before, so it stays read")
             val undo = sent.value.single { "Email/set" in it }
             assertEquals(listOf("m2" to "null", "m3" to "null"), patched(undo))
@@ -192,7 +185,6 @@ class MessageMarkingTest {
             screen.cancel()
             tap("2 emails marked as read")
             settle { sent.value.any { "Email/set" in it } }
-            settle { false }
             val undo = sent.value.last { "Email/set" in it }
             assertEquals(listOf("m1" to "null", "m2" to "null"), patched(undo), "Undo sets back every message")
         }

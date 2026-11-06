@@ -7,21 +7,25 @@ import com.otus.mail.app.MailServices
 import com.otus.mail.core.messages.presentation.MailEdits
 import com.otus.mail.core.messages.presentation.MoveToasts
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import io.ktor.client.engine.HttpClientEngine
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.withContext
+import kotlin.test.assertTrue
 
-/** Services signed in to Ada's account alone, on the server that [engine] mocks. */
-internal fun adaServices(engine: HttpClientEngine): MailServices =
-    MailServices(
+/**
+ * Services signed in to Ada's account alone, at a [stalwartLike] server that answers API calls
+ * with [api]. Their JMAP calls and storage run on this test's scheduler, so [settle] finishes them.
+ */
+internal fun TestScope.adaServices(api: (String) -> String): MailServices {
+    val scheduler = StandardTestDispatcher(testScheduler)
+    return MailServices(
         logins = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") },
-        createClient = { JmapClient(engine) },
+        createClient = { JmapClient(stalwartLike(STALWART_SESSION, emptyMap(), api, scheduler)) },
+        io = scheduler,
     )
+}
 
 /** Edits saved in this scope that [feeds] show, with toasts whose work runs here too. */
 internal fun CoroutineScope.testEdits(
@@ -33,14 +37,9 @@ internal fun CoroutineScope.testEdits(
     return edits
 }
 
-/** Lets the JMAP calls, which read logins off the test thread, finish until [done], or for a short while. */
+/** Runs the work that is due now, the JMAP calls of [adaServices] included, then checks [done]. */
 @OptIn(ExperimentalCoroutinesApi::class)
-internal suspend fun TestScope.settle(done: () -> Boolean) {
-    repeat(SETTLE_STEPS) {
-        runCurrent()
-        if (done()) return
-        withContext(Dispatchers.Default) { delay(10) }
-    }
+internal fun TestScope.settle(done: () -> Boolean) {
+    runCurrent()
+    assertTrue(done(), "Pending work did not reach the expected state")
 }
-
-private const val SETTLE_STEPS = 50
