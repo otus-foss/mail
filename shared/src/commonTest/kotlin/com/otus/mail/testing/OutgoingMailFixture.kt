@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.testing
 
 import com.otus.dateformat.DateFormatPreference
 import com.otus.dateformat.DateFormatter

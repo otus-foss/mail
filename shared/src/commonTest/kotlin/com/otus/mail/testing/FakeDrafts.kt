@@ -1,4 +1,4 @@
-package com.otus.mail.feature.compose.presentation
+package com.otus.mail.testing
 
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftException

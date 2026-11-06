@@ -15,10 +15,10 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.Unsubscribe
-import com.otus.mail.feature.compose.presentation.FakeDrafts
-import com.otus.mail.feature.inbox.data.emailWriter
 import com.otus.mail.feature.read.domain.UnsubscribeResult
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeDrafts
+import com.otus.mail.testing.emailWriter
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test

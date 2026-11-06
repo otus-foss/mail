@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.data
+package com.otus.mail.testing
 
 import com.otus.jmap.JmapConnections
 import com.otus.mail.core.cache.InMemoryMailCache

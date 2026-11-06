@@ -10,6 +10,8 @@ import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.emailWriter
 import com.otus.mail.testing.stalwartLike
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest

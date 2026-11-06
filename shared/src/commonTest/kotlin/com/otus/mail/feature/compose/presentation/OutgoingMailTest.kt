@@ -1,8 +1,6 @@
 package com.otus.mail.feature.compose.presentation
 
-import com.otus.mail.app.DAY_FIRST
 import com.otus.mail.app.MailPage
-import com.otus.mail.app.OutgoingMailFixture
 import com.otus.mail.app.PageRequests
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
@@ -13,7 +11,9 @@ import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.compose.domain.MailOutbox
 import com.otus.mail.feature.compose.domain.OutboxStore
 import com.otus.mail.feature.compose.domain.SendCheck
+import com.otus.mail.testing.DAY_FIRST
 import com.otus.mail.testing.MemoryMapStore
+import com.otus.mail.testing.OutgoingMailFixture
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy

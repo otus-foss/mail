@@ -5,6 +5,7 @@ import com.otus.mail.core.messages.domain.SendIdentityKey
 import com.otus.mail.core.messages.domain.Signature
 import com.otus.mail.core.messages.domain.SignatureImage
 import com.otus.mail.feature.compose.domain.SignatureRepository
+import com.otus.mail.testing.FakeDrafts
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope

@@ -5,7 +5,11 @@ import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
 import com.otus.mail.testing.STALWART_SESSION
+import com.otus.mail.testing.id
+import com.otus.mail.testing.ids
+import com.otus.mail.testing.source
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

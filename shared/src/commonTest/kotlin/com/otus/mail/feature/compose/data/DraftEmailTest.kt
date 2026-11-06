@@ -4,7 +4,7 @@ import com.otus.mail.core.messages.domain.AttachmentBlob
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftAttachment
 import com.otus.mail.core.messages.domain.Signature
-import com.otus.mail.feature.inbox.data.at
+import com.otus.mail.testing.at
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive

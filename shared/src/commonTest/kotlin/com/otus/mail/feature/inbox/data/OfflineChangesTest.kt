@@ -12,7 +12,12 @@ import com.otus.mail.core.messages.domain.MessageFlag
 import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
 import com.otus.mail.testing.MemoryMapStore
+import com.otus.mail.testing.connections
+import com.otus.mail.testing.emailWriter
+import com.otus.mail.testing.id
+import com.otus.mail.testing.source
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.StandardTestDispatcher

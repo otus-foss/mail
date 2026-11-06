@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.data
+package com.otus.mail.testing
 
 import com.otus.mail.core.messages.data.boxes
 import com.otus.mail.core.messages.data.receivedAt

@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.data
+package com.otus.mail.testing
 
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
@@ -11,8 +11,7 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.core.messages.domain.ThreadEmail
 import com.otus.mail.core.messages.domain.ThreadMember
-import com.otus.mail.testing.STALWART_SESSION
-import com.otus.mail.testing.stalwartLike
+import com.otus.mail.feature.inbox.data.JmapMailSource
 import kotlinx.datetime.TimeZone
 
 /** A mail source that reads this server, which offers [session], for the saved logins of [store], in UTC. */

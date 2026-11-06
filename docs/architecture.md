@@ -23,6 +23,7 @@ shared/src/
   androidMain/kotlin/<package>/     Android implementations
   iosMain/kotlin/<package>/         iOS implementations and framework entry point
   commonTest/kotlin/<package>/      Tests mirroring production packages
+  commonTest/kotlin/<package>/testing/  Fakes and fixtures that tests of several slices share
 ```
 
 A feature has only the layers it needs. Only create directories when they contain real

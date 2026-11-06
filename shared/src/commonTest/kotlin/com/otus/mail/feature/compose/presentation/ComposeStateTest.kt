@@ -9,6 +9,7 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.OriginalMessage
 import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.core.messages.presentation.delete
+import com.otus.mail.testing.FakeDrafts
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope

@@ -1,8 +1,6 @@
 package com.otus.mail.feature.read.presentation
 
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.mail.app.adaServices
-import com.otus.mail.app.settle
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.FolderChange
 import com.otus.mail.core.messages.domain.MailConversation
@@ -17,10 +15,12 @@ import com.otus.mail.core.messages.domain.ThreadMember
 import com.otus.mail.core.messages.presentation.MailEdits
 import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.core.messages.presentation.MoveToasts
-import com.otus.mail.feature.inbox.data.FakeMailServer
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.adaServices
+import com.otus.mail.testing.settle
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi

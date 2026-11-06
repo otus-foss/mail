@@ -4,6 +4,7 @@ import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.feature.compose.domain.SendCheck
+import com.otus.mail.testing.OutgoingMailFixture
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent

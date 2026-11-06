@@ -1,5 +1,6 @@
-package com.otus.mail.app
+package com.otus.mail.testing
 
+import com.otus.mail.app.MailServices
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.feature.folders.presentation.FoldersState
 import kotlinx.coroutines.CoroutineScope

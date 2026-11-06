@@ -13,6 +13,7 @@ import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.MessageFiling
+import com.otus.mail.testing.testEdits
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope

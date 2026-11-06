@@ -13,6 +13,8 @@ import com.otus.mail.core.messages.domain.ReadStatus
 import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.source
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.concurrent.atomics.AtomicInt

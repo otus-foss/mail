@@ -6,9 +6,9 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftRepository
 import com.otus.mail.core.messages.domain.Signature
-import com.otus.mail.feature.inbox.data.composeMail
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.ADA_SECRET_HEADER
+import com.otus.mail.testing.composeMail
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders

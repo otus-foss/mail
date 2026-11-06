@@ -18,6 +18,8 @@ import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.testing.STALWART_SESSION
+import com.otus.mail.testing.testEdits
+import com.otus.mail.testing.testFolders
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders

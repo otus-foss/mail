@@ -10,12 +10,12 @@ import com.otus.mail.core.messages.domain.DraftFailure
 import com.otus.mail.core.messages.domain.DraftRepository
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.SendIdentity
-import com.otus.mail.feature.inbox.data.composeMail
-import com.otus.mail.feature.inbox.data.ids
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.SUBMISSION_SESSION
+import com.otus.mail.testing.composeMail
+import com.otus.mail.testing.ids
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException

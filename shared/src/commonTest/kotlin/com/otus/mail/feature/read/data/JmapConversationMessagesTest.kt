@@ -19,8 +19,8 @@ import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.core.messages.domain.ThreadEmail
-import com.otus.mail.feature.inbox.data.FakeMailServer
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.TimeZone

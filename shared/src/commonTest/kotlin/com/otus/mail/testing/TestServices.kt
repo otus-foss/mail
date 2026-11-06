@@ -1,12 +1,12 @@
-package com.otus.mail.app
+package com.otus.mail.testing
 
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.jmap.JmapClient
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.app.MailServices
 import com.otus.mail.core.messages.presentation.MailEdits
 import com.otus.mail.core.messages.presentation.MoveToasts
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.testing.ADA_LOGIN
 import io.ktor.client.engine.HttpClientEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

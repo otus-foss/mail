@@ -7,11 +7,11 @@ import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.feature.compose.domain.SendCheck
-import com.otus.mail.feature.inbox.data.ids
-import com.otus.mail.feature.inbox.data.only
-import com.otus.mail.feature.inbox.data.receivedAt
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.SUBMISSION_SESSION
+import com.otus.mail.testing.ids
+import com.otus.mail.testing.only
+import com.otus.mail.testing.receivedAt
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json

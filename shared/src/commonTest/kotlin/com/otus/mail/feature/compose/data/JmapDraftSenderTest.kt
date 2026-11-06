@@ -12,12 +12,12 @@ import com.otus.mail.core.messages.domain.SendException
 import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SendTime
 import com.otus.mail.core.messages.domain.SentMessage
-import com.otus.mail.feature.inbox.data.at
-import com.otus.mail.feature.inbox.data.composeMail
-import com.otus.mail.feature.inbox.data.receivedAt
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.STALWART_SESSION
 import com.otus.mail.testing.SUBMISSION_SESSION
+import com.otus.mail.testing.at
+import com.otus.mail.testing.composeMail
+import com.otus.mail.testing.receivedAt
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json

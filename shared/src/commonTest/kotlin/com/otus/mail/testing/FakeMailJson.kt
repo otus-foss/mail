@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.data
+package com.otus.mail.testing
 
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement

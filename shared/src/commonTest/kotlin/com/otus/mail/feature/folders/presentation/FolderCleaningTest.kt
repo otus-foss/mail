@@ -1,9 +1,5 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.app.adaServices
-import com.otus.mail.app.settle
-import com.otus.mail.app.testEdits
-import com.otus.mail.app.testFolders
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.FolderRights
 import com.otus.mail.core.mailbox.MailFolder
@@ -15,11 +11,15 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.core.messages.domain.ThreadMember
 import com.otus.mail.core.messages.presentation.FolderCleanup
-import com.otus.mail.feature.inbox.data.conversationOf
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.testing.adaServices
+import com.otus.mail.testing.conversationOf
+import com.otus.mail.testing.settle
 import com.otus.mail.testing.stalwartLike
+import com.otus.mail.testing.testEdits
+import com.otus.mail.testing.testFolders
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
