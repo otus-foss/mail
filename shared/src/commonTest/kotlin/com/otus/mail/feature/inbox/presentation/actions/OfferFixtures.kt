@@ -26,6 +26,7 @@ internal fun offerActions(
     ruleForSender = { null },
     readLater = { null },
     behavior = { MailBehavior() },
+    cleanup = null,
 )
 
 /** A message from Ada in [accountId]'s Inbox, whose email id is "m" and [id]. */

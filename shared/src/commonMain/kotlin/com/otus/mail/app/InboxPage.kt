@@ -9,7 +9,6 @@ import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.core.settings.domain.InboxContents
 import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 
 /**
@@ -35,7 +34,9 @@ internal fun InboxPage(
     ListPage(
         MailPage.Inbox,
         feed,
-        InboxContext(
+        ListBase(
+            title = "Inbox",
+            emptyTitle = "Your inbox is empty",
             defaultSearch = InboxSearch(mailboxes = contents.mailboxScopes().toSet()),
             pills = pills,
             mailboxSearch =

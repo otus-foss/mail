@@ -134,7 +134,7 @@ class InboxScreenTest {
             compose.activity.setContent {
                 val density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                    OtusTheme { InboxScreen(emptyList()) }
+                    OtusTheme { InboxScreen(emptyList(), context = inboxContext()) }
                 }
             }
         }
@@ -167,7 +167,16 @@ class InboxScreenTest {
                     MailLocation("Inbox", "Personal", mailboxRole = MailboxRole.Inbox),
                 ),
             )
-        compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(messages) } } }
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                OtusTheme {
+                    InboxScreen(
+                        messages,
+                        context = inboxContext(),
+                    )
+                }
+            }
+        }
     }
 
     private fun screenshot(name: String) = compose.windowBitmap().savePng("build/reports/inbox/$name.png")

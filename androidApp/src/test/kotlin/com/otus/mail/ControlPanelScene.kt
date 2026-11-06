@@ -48,11 +48,11 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(palette: O
                     InboxScreen(
                         ControlPanelFixtures.messages,
                         context =
-                            InboxContext(
-                                filters = filters,
-                                filterOptions = FilterPanelFixtures.options,
-                                scope = ControlPanelFixtures.scope(),
-                            ),
+                            inboxContext {
+                                this.filters = filters
+                                filterOptions = FilterPanelFixtures.options
+                                this.scope = ControlPanelFixtures.scope()
+                            },
                     )
                 }
             }

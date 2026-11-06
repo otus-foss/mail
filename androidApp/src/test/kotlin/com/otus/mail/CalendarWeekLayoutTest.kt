@@ -51,7 +51,13 @@ class CalendarWeekLayoutTest {
             compose.activity.setContent {
                 val density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                    OtusTheme { InboxScreen(emptyList(), DateFormatter(DateFormatPreference.YearMonthDayDashes)) }
+                    OtusTheme {
+                        InboxScreen(
+                            emptyList(),
+                            DateFormatter(DateFormatPreference.YearMonthDayDashes),
+                            context = inboxContext(),
+                        )
+                    }
                 }
             }
         }

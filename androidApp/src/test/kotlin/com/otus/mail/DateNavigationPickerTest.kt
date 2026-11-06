@@ -47,6 +47,7 @@ class DateNavigationPickerTest {
                     InboxScreen(
                         emptyList(),
                         dateFormatter = DateFormatter(DateFormatPreference.YearMonthDayDashes),
+                        context = inboxContext(),
                     )
                 }
             }

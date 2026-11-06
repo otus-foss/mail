@@ -63,13 +63,14 @@ class ComposeActionsTest {
                 ruleForSender = { null },
                 readLater = { null },
                 behavior = { behavior },
+                cleanup = null,
             )
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
                     InboxScreen(
                         listOf(shown),
-                        context = InboxContext(onCompose = { requests += it }),
+                        context = inboxContext { onCompose = { requests += it } },
                         messageActions = actions,
                     )
                 }

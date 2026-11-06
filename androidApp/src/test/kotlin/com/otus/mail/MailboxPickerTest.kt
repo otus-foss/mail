@@ -46,7 +46,7 @@ class MailboxPickerTest {
     @Before
     fun showInbox() {
         val context =
-            InboxContext(
+            inboxContext {
                 mailboxSearch =
                     MailboxSearch(
                         listOf(
@@ -54,11 +54,8 @@ class MailboxPickerTest {
                             MailboxScope(null, "Archive", MailboxRole.Archive),
                             MailboxScope(null, "Sent", MailboxRole.Sent),
                         ),
-                    ) {
-                        loaded +=
-                            it
-                    },
-            )
+                    ) { loaded += it }
+            }
         compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(fixtures, context = context) } } }
         compose.openSearchResults()
         compose

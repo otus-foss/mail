@@ -34,11 +34,16 @@ class ReadZenTest {
     private val zen = mutableStateOf(false)
 
     private fun showDigest() {
-        val base = fixtures.read(listOf(fixtures.digest))
-        val display = ReadDisplay(zen = { zen.value }, setZen = { zen.value = it }, today = base.display.today)
-        val read = ReadContext(base.pages, base.folders, base.privacy, base.files, base.services, base.effects, display)
         val context =
-            read.ownedBy(OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address))))
+            fixtures.read(listOf(fixtures.digest), own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))) {
+                display =
+                    ReadDisplay(
+                        showQuotes = { false },
+                        zen = { zen.value },
+                        setZen = { zen.value = it },
+                        today = display.today,
+                    )
+            }
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {

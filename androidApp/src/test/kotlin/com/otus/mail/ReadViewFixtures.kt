@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailAttachment
@@ -39,7 +40,7 @@ import com.otus.mail.feature.read.domain.MessageHeaders
 import com.otus.mail.feature.read.domain.MessagePrinter
 import com.otus.mail.feature.read.domain.Newsletters
 import com.otus.mail.feature.read.domain.UnsubscribeResult
-import com.otus.mail.feature.read.presentation.ReadContext
+import com.otus.mail.feature.read.presentation.NewsletterSteps
 import com.otus.mail.feature.read.presentation.ReadDisplay
 import com.otus.mail.feature.read.presentation.ReadEdits
 import com.otus.mail.feature.read.presentation.ReadEffects
@@ -162,54 +163,55 @@ internal object ReadViewFixtures {
             listName = "Sentry weekly digest",
         )
 
-    /** The Read view of [pages], whose changes reach [writer], on behalf of a list that shows none. */
+    /**
+     * The Read view of [pages] for a user who owns [own], whose changes reach [writer], on behalf of
+     * a list that shows none. Its toasts show in [toasts], and [launch] runs the work they wait for.
+     * [block] changes the rest, such as the display.
+     */
     fun read(
         pages: List<MailMessage>,
         cameFrom: Set<String> = emptySet(),
         writer: RecordingWriter = RecordingWriter(),
         unsubscribed: () -> Unit = {},
         newFolder: NewFolderSheet? = null,
-        effects: ReadEffects = ReadEffects(),
         own: OwnAddresses = OwnAddresses(emptyMap()),
-    ) = ReadContext(
-        pages = ConversationMessages { pages },
-        folders =
-            ReadFolders(
-                of = { folders },
-                cameFrom = { cameFrom },
-                newFolder = newFolder,
-            ),
+        toasts: ToastState = ToastState(),
+        launch: (suspend () -> Unit) -> Unit = {},
+        block: ReadContextBuilder.() -> Unit = {},
+    ) = readContext {
+        this.pages = ConversationMessages { pages }
+        folders = ReadFolders(of = { ReadViewFixtures.folders }, cameFrom = { cameFrom }, newFolder = newFolder)
         privacy =
             ReadPrivacy(
                 { RemoteImages.Known },
+                allowed = { emptyList() },
                 known = KnownPeople { team.map { EmailAddressKey(it.address) }.toSet() },
-            ),
-        files =
-            ReadFiles(
-                downloads = PhotoAttachments(::photo),
-                printer = MessagePrinter { _, _ -> },
-            ),
+                allowSender = {},
+            )
+        files = ReadFiles(downloads = PhotoAttachments(::photo), saved = null, printer = MessagePrinter { _, _ -> })
         services =
             ReadServices(
                 newsletters = FakeNewsletters(unsubscribed),
                 headers = MessageHeaders { emptyList() },
                 blocks = SenderBlocks { true },
-                edits = edits(writer, effects),
-            ),
-        effects = effects,
-        display = ReadDisplay(today = { LocalDate(2026, 10, 19) }),
-        own = own,
-        loadContent = { content(it) },
-    )
+                edits = edits(writer, toasts),
+                person = null,
+            )
+        effects = ReadEffects(toasts, launch, NewsletterSteps())
+        display = ReadDisplay(showQuotes = { false }, zen = { false }, setZen = {}, today = { LocalDate(2026, 10, 19) })
+        this.own = own
+        loadContent = { content(it) }
+        block()
+    }
 
-    /** Edits that [writer] saves, run on the main thread like the app's, with their toasts in [effects]. */
+    /** Edits that [writer] saves, run on the main thread like the app's, with their toasts in [toasts]. */
     private fun edits(
         writer: RecordingWriter,
-        effects: ReadEffects,
+        toasts: ToastState,
     ): ReadEdits {
         val scope = MainScope()
         val feed = InboxFeedState(NoMail, scope)
-        return ReadEdits(MailEdits(writer, scope, MoveToasts(effects.toasts, scope)), feed)
+        return ReadEdits(MailEdits(writer, scope, MoveToasts(toasts, scope)), feed)
     }
 
     /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
@@ -238,6 +240,7 @@ internal object ReadViewFixtures {
         ruleForSender = { null },
         readLater = { null },
         behavior = { behavior },
+        cleanup = null,
     )
 
     private class FakeNewsletters(

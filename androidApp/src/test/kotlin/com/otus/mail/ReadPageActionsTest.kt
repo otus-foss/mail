@@ -57,16 +57,16 @@ class ReadPageActionsTest {
         pages: List<MailMessage>,
     ) {
         // Work that waits for a toast runs at once, so the test sees when it was sent.
-        val effects = ReadEffects(toasts, launch = { work -> runBlocking { work() } })
-        val read: ReadContext =
+        val context =
             fixtures.read(
                 pages,
                 setOf("in"),
                 writer,
                 { unsubscribed++ },
-                effects = effects,
+                own = OWN,
+                toasts = toasts,
+                launch = { work -> runBlocking { work() } },
             )
-        val context = read.ownedBy(OWN)
         val actions = fixtures.actions(targets = listOf(MoveTarget("tr", listOf("Trash"), MailboxRole.Trash)))
         compose.runOnUiThread {
             compose.activity.setContent {

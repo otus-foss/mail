@@ -43,7 +43,11 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showFilterPanel(
                 CompositionLocalProvider(LocalToday provides PinnedToday) {
                     InboxScreen(
                         FilterPanelFixtures.messages,
-                        context = InboxContext(filters = filters, filterOptions = options),
+                        context =
+                            inboxContext {
+                                this.filters = filters
+                                filterOptions = options
+                            },
                     )
                 }
             }

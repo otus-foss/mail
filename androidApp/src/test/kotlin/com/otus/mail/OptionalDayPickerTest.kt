@@ -75,7 +75,11 @@ class OptionalDayPickerTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
-                    InboxScreen(emptyList(), dateFormatter = DateFormatter(DateFormatPreference.YearMonthDayDashes))
+                    InboxScreen(
+                        emptyList(),
+                        dateFormatter = DateFormatter(DateFormatPreference.YearMonthDayDashes),
+                        context = inboxContext(),
+                    )
                 }
             }
         }

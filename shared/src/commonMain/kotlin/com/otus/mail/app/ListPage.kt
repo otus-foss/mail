@@ -4,8 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.core.messages.domain.inScope
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.presentation.InboxPills
+import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.QuickJumpTarget
 import com.otus.mail.feature.inbox.presentation.QuickViewContext
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
@@ -21,7 +25,7 @@ import com.otus.mail.feature.sidebar.presentation.sidebarMailboxes
 internal fun ListPage(
     page: MailPage,
     feed: InboxFeedState,
-    base: InboxContext,
+    base: ListBase,
     states: MailStates,
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
@@ -40,7 +44,12 @@ internal fun ListPage(
             states.folders.all.refresh()
         },
         context =
-            base.copy(
+            InboxContext(
+                defaultSearch = base.defaultSearch,
+                title = base.title,
+                emptyTitle = base.emptyTitle,
+                mailboxSearch = base.mailboxSearch,
+                pills = base.pills,
                 onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
                 filters = filters,
                 filterOptions = rememberFilterOptions(states, page, filters.applied),
@@ -55,6 +64,33 @@ internal fun ListPage(
             ),
         messageActions = messageActions,
     )
+}
+
+/**
+ * What a list page calls itself, by [title] and when it is empty by [emptyTitle], what its search
+ * starts from and can widen to, and its row of [pills].
+ */
+internal class ListBase(
+    val title: String,
+    val emptyTitle: String,
+    val defaultSearch: InboxSearch,
+    val mailboxSearch: MailboxSearch,
+    val pills: InboxPills,
+) {
+    companion object {
+        /** A folder's page shows only the filter pills of [pills]: folder pills would leave the folder. */
+        fun folder(
+            name: String,
+            pills: List<InboxPill>,
+        ): ListBase =
+            ListBase(
+                title = name,
+                emptyTitle = "$name is empty",
+                defaultSearch = InboxSearch(mailboxes = emptySet()),
+                mailboxSearch = MailboxSearch(),
+                pills = InboxPills(pills.filterIsInstance<InboxPill.Filter>()),
+            )
+    }
 }
 
 /**

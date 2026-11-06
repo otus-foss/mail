@@ -49,7 +49,13 @@ class InboxScrollRestoreTest {
             compose.activity.setContent {
                 OtusTheme {
                     val pages = rememberSaveableStateHolder()
-                    if (inboxShown) pages.SaveableStateProvider("inbox") { InboxScreen(messages) } else Text("Settings")
+                    if (inboxShown) {
+                        pages.SaveableStateProvider("inbox") {
+                            InboxScreen(messages, context = inboxContext())
+                        }
+                    } else {
+                        Text("Settings")
+                    }
                 }
             }
         }

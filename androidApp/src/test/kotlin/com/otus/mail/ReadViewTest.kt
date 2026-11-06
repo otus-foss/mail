@@ -26,6 +26,7 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.feature.read.presentation.ReadDisplay
 import com.otus.mail.feature.read.presentation.components.NewFolderSheet
 import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Assert.assertEquals
@@ -54,12 +55,11 @@ class ReadViewTest {
         newFolder: NewFolderSheet? = null,
         showQuotes: Boolean = false,
     ) {
-        val read =
-            fixtures
-                .read(pages, cameFrom, writer, { unsubscribed++ }, newFolder)
-                .let { if (showQuotes) it.showingQuotes() else it }
+        val own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))
         val context =
-            read.ownedBy(OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address))))
+            fixtures.read(pages, cameFrom, writer, { unsubscribed++ }, newFolder, own) {
+                if (showQuotes) display = quotesShown(display)
+            }
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
@@ -71,6 +71,10 @@ class ReadViewTest {
         }
         compose.waitForIdle()
     }
+
+    /** [display] with replies showing their quotes, as the "Show quotes" setting does. */
+    private fun quotesShown(display: ReadDisplay) =
+        ReadDisplay(showQuotes = { true }, zen = { false }, setZen = {}, today = display.today)
 
     private fun strip(description: String): SemanticsNodeInteraction {
         val strip = hasContentDescription(description, substring = true)

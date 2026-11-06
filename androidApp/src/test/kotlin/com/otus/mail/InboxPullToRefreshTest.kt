@@ -98,6 +98,7 @@ class InboxPullToRefreshTest {
                         InboxScreen(
                             messages,
                             status = InboxStatus(connected = true, loading = loading),
+                            context = inboxContext(),
                             onRefresh = {
                                 refreshes++
                                 loading = true

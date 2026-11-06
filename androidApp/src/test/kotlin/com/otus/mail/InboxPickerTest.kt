@@ -54,7 +54,9 @@ class InboxPickerTest {
 
     @Before
     fun showMessages() {
-        compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(fixtures, dateFormatter) } } }
+        compose.runOnUiThread {
+            compose.activity.setContent { OtusTheme { InboxScreen(fixtures, dateFormatter, context = inboxContext()) } }
+        }
         compose.openSearchResults()
     }
 
@@ -207,7 +209,7 @@ class InboxPickerTest {
             compose.activity.setContent {
                 val density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                    OtusTheme { InboxScreen(fixtures, dateFormatter) }
+                    OtusTheme { InboxScreen(fixtures, dateFormatter, context = inboxContext()) }
                 }
             }
         }

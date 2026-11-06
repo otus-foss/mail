@@ -31,16 +31,16 @@ import kotlin.time.Clock
  * a reply or forward.
  */
 class ReadContext(
-    val pages: ConversationMessages = ConversationMessages { null },
-    val folders: ReadFolders = ReadFolders(),
-    val privacy: ReadPrivacy = ReadPrivacy(),
-    val files: ReadFiles = ReadFiles(),
-    val services: ReadServices = ReadServices(),
-    val effects: ReadEffects = ReadEffects(),
-    val display: ReadDisplay = ReadDisplay(),
-    val own: OwnAddresses = OwnAddresses(emptyMap()),
-    val loadContent: suspend (MailMessage) -> MessageContent? = { null },
-    val onCompose: (ComposeRequest) -> Unit = {},
+    val pages: ConversationMessages,
+    val folders: ReadFolders,
+    val privacy: ReadPrivacy,
+    val files: ReadFiles,
+    val services: ReadServices,
+    val effects: ReadEffects,
+    val display: ReadDisplay,
+    val own: OwnAddresses,
+    val loadContent: suspend (MailMessage) -> MessageContent?,
+    val onCompose: (ComposeRequest) -> Unit,
 )
 
 /**
@@ -49,9 +49,9 @@ class ReadContext(
  * panel, and its bar, which [setZen] saves, and [today] is the day dates are shown against.
  */
 class ReadDisplay(
-    val showQuotes: () -> Boolean = { false },
-    val zen: () -> Boolean = { false },
-    val setZen: (Boolean) -> Unit = {},
+    val showQuotes: () -> Boolean,
+    val zen: () -> Boolean,
+    val setZen: (Boolean) -> Unit,
     val today: () -> LocalDate = {
         Clock.System
             .now()
@@ -67,9 +67,9 @@ class ReadDisplay(
  * folders cannot be made.
  */
 class ReadFolders(
-    val of: (MailMessage) -> List<MessageFolder> = { emptyList() },
-    val cameFrom: (MailMessage) -> Set<String> = { emptySet() },
-    val newFolder: NewFolderSheet? = null,
+    val of: (MailMessage) -> List<MessageFolder>,
+    val cameFrom: (MailMessage) -> Set<String>,
+    val newFolder: NewFolderSheet?,
 )
 
 /**
@@ -77,10 +77,10 @@ class ReadFolders(
  * an account. [allowSender] adds an address to the allowed senders.
  */
 class ReadPrivacy(
-    val setting: () -> RemoteImages = { RemoteImages.Always },
-    val allowed: () -> List<String> = { emptyList() },
-    val known: KnownPeople = KnownPeople { emptySet() },
-    val allowSender: (String) -> Unit = {},
+    val setting: () -> RemoteImages,
+    val allowed: () -> List<String>,
+    val known: KnownPeople,
+    val allowSender: (String) -> Unit,
 )
 
 /**
@@ -88,9 +88,9 @@ class ReadPrivacy(
  * opens and saves them. Each is null where the platform or account has none.
  */
 class ReadFiles(
-    val downloads: OfflineAttachments? = null,
-    val saved: SavedFiles? = null,
-    val printer: MessagePrinter? = null,
+    val downloads: OfflineAttachments?,
+    val saved: SavedFiles?,
+    val printer: MessagePrinter?,
 )
 
 /**
@@ -99,11 +99,11 @@ class ReadFiles(
  * is wired, and without [person] the pills stay plain.
  */
 class ReadServices(
-    val newsletters: Newsletters? = null,
-    val headers: MessageHeaders? = null,
-    val blocks: SenderBlocks? = null,
-    val edits: ReadEdits? = null,
-    val person: PersonSheet? = null,
+    val newsletters: Newsletters?,
+    val headers: MessageHeaders?,
+    val blocks: SenderBlocks?,
+    val edits: ReadEdits?,
+    val person: PersonSheet?,
 )
 
 /**
@@ -112,7 +112,7 @@ class ReadServices(
  * closed. [newsletters] remembers each newsletter strip's step, so a reopened message shows it.
  */
 class ReadEffects(
-    val toasts: ToastState = ToastState(),
-    val launch: (suspend () -> Unit) -> Unit = {},
-    val newsletters: NewsletterSteps = NewsletterSteps(),
+    val toasts: ToastState,
+    val launch: (suspend () -> Unit) -> Unit,
+    val newsletters: NewsletterSteps,
 )

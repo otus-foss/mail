@@ -44,10 +44,10 @@ class ReadQuickViewTest {
 
     private fun showThread() {
         val context =
-            fixtures.read(fixtures.thread, setOf("in")).ownedBy(
-                OwnAddresses(
-                    mapOf("acc" to listOf(fixtures.alex.address)),
-                ),
+            fixtures.read(
+                fixtures.thread,
+                setOf("in"),
+                own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address))),
             )
         compose.runOnUiThread {
             compose.activity.setContent {

@@ -75,7 +75,7 @@ class PanelHeaderAlignmentTest {
             compose.activity.setContent {
                 val density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                    OtusTheme { InboxScreen(emptyList()) }
+                    OtusTheme { InboxScreen(emptyList(), context = inboxContext()) }
                 }
             }
         }

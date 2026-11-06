@@ -42,14 +42,13 @@ class EmptyAccountPickerTest {
 
     private fun show(pills: InboxPills = InboxPills()) {
         val context =
-            InboxContext(
-                pills = pills,
+            inboxContext {
+                this.pills = pills
                 mailboxSearch =
                     MailboxSearch(listOf(MailboxScope.Inbox, MailboxScope(null, "Receipts")), accounts) {
-                        loaded +=
-                            it
-                    },
-            )
+                        loaded += it
+                    }
+            }
         compose.runOnUiThread {
             compose.activity.setContent { OtusTheme { InboxScreen(emptyList(), context = context) } }
         }

@@ -48,7 +48,7 @@ class InboxHeaderActionsTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 CompositionLocalProvider(LocalSoftwareKeyboardController provides keyboard) {
-                    OtusTheme { InboxScreen(emptyList()) }
+                    OtusTheme { InboxScreen(emptyList(), context = inboxContext()) }
                 }
             }
         }
@@ -77,7 +77,7 @@ class InboxHeaderActionsTest {
         fun show(pills: List<InboxPill>) =
             compose.runOnUiThread {
                 compose.activity.setContent {
-                    OtusTheme { InboxScreen(emptyList(), context = InboxContext(pills = InboxPills(pills))) }
+                    OtusTheme { InboxScreen(emptyList(), context = inboxContext { this.pills = InboxPills(pills) }) }
                 }
             }
 

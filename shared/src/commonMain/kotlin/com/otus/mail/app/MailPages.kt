@@ -13,7 +13,6 @@ import com.otus.mail.core.messages.domain.within
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.settings.presentation.FolderPillOption
 import com.otus.mail.feature.folders.presentation.LabeledCopies
-import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.folderPillOptions
 
@@ -142,7 +141,7 @@ internal fun FeedPage(
     val pageScope = rememberCoroutineScope()
     val feed = remember(mailScope) { states.list.feedOf(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
-    ListPage(page, feed, InboxContext.folder(name, states.behavior.behavior.pills), states, dateFormatter, navigation)
+    ListPage(page, feed, ListBase.folder(name, states.behavior.behavior.pills), states, dateFormatter, navigation)
 }
 
 @Composable

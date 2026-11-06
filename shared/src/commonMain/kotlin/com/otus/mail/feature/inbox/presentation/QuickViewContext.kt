@@ -17,6 +17,6 @@ class QuickJumpTarget(
  * picked, in order, then Jump to with the [targets], usually the sidebar's pins.
  */
 data class QuickViewContext(
-    val modules: List<QuickViewModule> = QuickViewModule.Defaults,
-    val targets: List<QuickJumpTarget> = emptyList(),
+    val modules: List<QuickViewModule>,
+    val targets: List<QuickJumpTarget>,
 )

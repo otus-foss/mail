@@ -59,7 +59,7 @@ fun InboxScreen(
     onOpenNavigation: () -> Unit = {},
     status: InboxStatus = InboxStatus(),
     onRefresh: () -> Unit = {},
-    context: InboxContext = InboxContext(),
+    context: InboxContext,
     messageActions: MessageActions? = null,
 ) {
     val state = rememberInboxState(context.defaultSearch)
