@@ -179,7 +179,7 @@ internal sealed interface MailPage {
                     when (saved.firstOrNull()) {
                         FOLDER -> Folder(saved[1], saved[2])
                         FOLDER_DETAIL -> FolderDetail(saved[1], saved[2], saved[3].ifEmpty { null })
-                        COMBINED -> MailboxRole.entries.firstOrNull { it.name == saved[1] }?.let(::Combined) ?: Inbox
+                        COMBINED -> combinedRole(saved[1])?.let(::Combined) ?: Inbox
                         SHARED -> Shared(saved.drop(1))
                         CONTACT -> Contact(CardKey(saved[1], saved[2], saved[3]))
                         CONTACT_EDITOR -> ContactEditor(saved.getOrNull(1)?.let { CardKey(it, saved[2], saved[3]) })
@@ -193,7 +193,7 @@ internal sealed interface MailPage {
             when (page) {
                 is Folder -> listOf(FOLDER, page.accountId, page.folderId)
                 is FolderDetail -> listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
-                is Combined -> listOf(COMBINED, page.role.name)
+                is Combined -> listOf(COMBINED, page.role.wire)
                 is Shared -> listOf(SHARED) + page.key
                 is Compose -> saved(page.parent)
                 is Contact -> listOf(CONTACT, page.key.loginId, page.key.accountId, page.key.cardId)
@@ -206,6 +206,18 @@ internal sealed interface MailPage {
 
         private const val FOLDER = "Folder"
         private const val FOLDER_DETAIL = "FolderDetail"
+
+        /**
+         * The combined role saved as its JMAP role, or by builds before 2026-11-06 under the old
+         * folder names, such as `Spam`; null for anything else.
+         */
+        internal fun combinedRole(saved: String): MailboxRole? =
+            (MailboxRole.of(saved) ?: MailboxRole.Junk.takeIf { saved == OLD_SPAM })?.takeIf {
+                it in
+                    MailboxRole.combined
+            }
+
+        private const val OLD_SPAM = "Spam"
         private const val COMBINED = "Combined"
         private const val SHARED = "Shared"
         private const val CONTACT = "Contact"

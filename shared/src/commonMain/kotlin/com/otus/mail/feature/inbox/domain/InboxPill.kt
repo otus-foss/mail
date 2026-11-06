@@ -34,6 +34,16 @@ sealed interface InboxPill {
         override val storageValue = "$ROLE_PREFIX${role.wire}"
     }
 
+    /**
+     * Each account's folder with a [role] Mail has no place of its own for, such as `important`,
+     * as the server spells it in lower case.
+     */
+    data class OtherRole(
+        val role: String,
+    ) : FolderPill {
+        override val storageValue = "$ROLE_PREFIX$role"
+    }
+
     /** One of the user's own folders: [accountId] is the login and [folderId] the server's mailbox id. */
     data class Folder(
         val accountId: String,
@@ -60,10 +70,13 @@ sealed interface InboxPill {
         fun fromStorageValue(value: String): InboxPill? =
             when {
                 value == ReadLater.storageValue -> ReadLater
-                value.startsWith(ROLE_PREFIX) -> MailboxRole.of(value.removePrefix(ROLE_PREFIX))?.let(::Role)
+                value.startsWith(ROLE_PREFIX) -> rolePill(value.removePrefix(ROLE_PREFIX))
                 value.startsWith(FOLDER_PREFIX) -> folderFrom(value)
                 else -> Filter.entries.firstOrNull { it.storageValue == value }
             }
+
+        private fun rolePill(role: String): FolderPill? =
+            MailboxRole.of(role)?.let(::Role) ?: OtherRole(role.lowercase()).takeIf { role.isNotEmpty() }
 
         private fun folderFrom(value: String): Folder? {
             val ids = value.removePrefix(FOLDER_PREFIX)

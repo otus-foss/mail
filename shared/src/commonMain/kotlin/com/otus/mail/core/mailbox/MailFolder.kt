@@ -17,12 +17,12 @@ data class MailFolder(
     val rights: FolderRights = FolderRights(),
     /** The JMAP account another user shares this mailbox from; null for the login's own mailboxes. */
     val sharedIn: String? = null,
-    /** Whether the server gives the folder any role, such as `all` or `important` beside [role]'s. */
-    val specialUse: Boolean = role != null,
+    /** A role Mail has no place of its own for, such as `important`, in lower case; null otherwise. */
+    val otherRole: String? = null,
 ) {
     /** Folders the user made. System folders keep their place and name. */
     val isCustom: Boolean
-        get() = !specialUse
+        get() = role == null && otherRole == null
 
     /** Whether it is Trash or Spam. */
     val isBin: Boolean

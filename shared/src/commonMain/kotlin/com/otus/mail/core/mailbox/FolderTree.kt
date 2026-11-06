@@ -103,7 +103,7 @@ private fun MailFolder.rank(readLaterId: String?): Int {
         role == MailboxRole.Inbox -> 0
         id == readLaterId -> 1
         role != null -> role.ordinal + 1
-        specialUse -> slots
+        otherRole != null -> slots
         else -> slots + 1
     }
 }

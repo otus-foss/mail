@@ -109,5 +109,5 @@ internal fun MailboxObject.toFolder(
             maySetKeywords = myRights.maySetKeywords,
         ),
     sharedIn = sharedIn,
-    specialUse = role != null,
+    otherRole = role?.lowercase()?.takeIf { MailboxRole.of(it) == null },
 )

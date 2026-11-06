@@ -20,15 +20,17 @@ internal fun folderPillOptions(accounts: List<AccountFolders>): List<FolderPillO
     val readLater = everyFolder.filter { it.readLater }
     val roles =
         everyFolder
-            .filter { it.folder.role != null && it.folder.role != MailboxRole.Inbox && !it.readLater }
-            .groupBy { it.folder.role }
+            .filter { !it.folder.isCustom && it.folder.role != MailboxRole.Inbox && !it.readLater }
+            .groupBy { it.folder.role?.wire ?: it.folder.otherRole.orEmpty() }
     return buildList {
         if (readLater.isNotEmpty()) add(everyAccount(InboxPill.ReadLater, readLater, "Read later"))
-        roles.forEach { (role, nodes) ->
-            if (role != null) add(everyAccount(InboxPill.Role(role), nodes, role.title))
+        roles.forEach { (wire, nodes) ->
+            val role = MailboxRole.of(wire)
+            val pill = role?.let(InboxPill::Role) ?: InboxPill.OtherRole(wire)
+            add(everyAccount(pill, nodes, role?.title ?: wire.replaceFirstChar { it.uppercase() }))
         }
         trees.forEach { (account, nodes) ->
-            nodes.filter { it.folder.role == null && !it.readLater }.forEach { add(ownFolder(account, it)) }
+            nodes.filter { it.folder.isCustom && !it.readLater }.forEach { add(ownFolder(account, it)) }
         }
     }
 }

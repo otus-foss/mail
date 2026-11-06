@@ -25,13 +25,11 @@ internal val InboxSearchSaver =
         restore = { values ->
             val names = (values["mailboxNames"] as List<*>).map { it as String }
             val accounts = (values["mailboxAccounts"] as List<*>).map { it as String? }
+            // State saved before roles were kept names the inbox only by its name.
             val roles =
-                (values["mailboxRoles"] as List<*>).map { role ->
-                    MailboxRole.entries.firstOrNull {
-                        it.name ==
-                            role
-                    }
-                }
+                (values["mailboxRoles"] as List<*>?)
+                    ?.map { role -> MailboxRole.entries.firstOrNull { it.name == role } }
+                    ?: names.map { name -> MailboxRole.Inbox.takeIf { name == it.title } }
             InboxSearch(
                 query = values["query"] as String,
                 senders = (values["senders"] as List<*>).map { it as String }.toSet(),
