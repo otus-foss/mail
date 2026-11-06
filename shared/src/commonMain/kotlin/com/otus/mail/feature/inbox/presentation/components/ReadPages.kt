@@ -34,6 +34,7 @@ import com.otus.mail.feature.inbox.presentation.ReadContext
 import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
 import com.otus.mail.feature.inbox.presentation.read.fullLabel
+import com.otus.settings.presentation.components.LocalDateFormatter
 
 /**
  * How the Read view's pages look: whether each one's remote images load, by the privacy setting,
@@ -144,7 +145,7 @@ internal class ReadPageLook(
     fun Details(page: MailMessage) {
         ReadSenderDetails(
             page,
-            page.received.fullLabel(),
+            LocalDateFormatter.current.fullLabel(page.received),
             orderedFolders(page.location.mailboxIds, folders),
             onFolders = { state.sheet = ReadSheet.Folders },
             onPerson = read.services.person?.let { { person -> state.sheet = ReadSheet.Person(person) } },

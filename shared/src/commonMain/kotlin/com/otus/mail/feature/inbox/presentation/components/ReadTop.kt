@@ -25,6 +25,7 @@ import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.ReadQuickModule
 import com.otus.mail.feature.inbox.presentation.ReadLaterChange
 import com.otus.mail.feature.inbox.presentation.read.fullLabel
+import com.otus.settings.presentation.components.LocalDateFormatter
 import kotlinx.coroutines.launch
 
 /**
@@ -81,7 +82,7 @@ internal fun ReadTop(
             parts.row.subject,
             page,
             text.date,
-            page.received.fullLabel(),
+            LocalDateFormatter.current.fullLabel(page.received),
             headerActions(parts, text.menu),
             PanelMotion(expansion = expansion) { ReadExpandedContent(room, quick.modules) },
         )

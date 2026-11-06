@@ -22,6 +22,7 @@ import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ComposeState
 import com.otus.mail.feature.inbox.presentation.recipients
+import com.otus.settings.presentation.components.LocalDateFormatter
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
@@ -44,13 +45,18 @@ internal fun ComposeBottom(
 ) {
     var linking by remember { mutableStateOf(false) }
     val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
-    val at = state.sendAt?.sendLaterLabel(now)
+    val at = state.sendAt?.let { LocalDateFormatter.current.sendLaterLabel(it, now) }
     var showingThread by remember { mutableStateOf(false) }
     val scheduled = state.sendAt
     val thread = state.thread
     Column(verticalArrangement = Arrangement.spacedBy(ActionBarTokens.gap)) {
         if (scheduled != null) {
-            BarNotice(Res.drawable.symbol_schedule, scheduled.scheduledLabel(), "Change", onChangeSchedule)
+            BarNotice(
+                Res.drawable.symbol_schedule,
+                LocalDateFormatter.current.scheduledLabel(scheduled),
+                "Change",
+                onChangeSchedule,
+            )
         }
         if (thread != null && !keyboardUp) ReplyThreadStrip(thread) { showingThread = true }
         Bottom(state, behavior, keyboardUp, onSend, onDiscard, at) { linking = true }

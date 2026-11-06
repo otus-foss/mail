@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.otus.dateformat.DateFormatter
+import com.otus.dateformat.formatNamedDay
 import com.otus.designsystem.mail.read.components.ThreadEntry
 import com.otus.designsystem.mail.read.components.ThreadMessageRow
 import com.otus.designsystem.mail.read.components.ThreadStrip
@@ -17,6 +19,7 @@ import com.otus.mail.feature.inbox.domain.QuoteMode
 import com.otus.mail.feature.inbox.domain.ThreadMessage
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ReplyThread
+import com.otus.settings.presentation.components.LocalDateFormatter
 
 /** The earlier messages of a reply's thread above its bar; tapping it runs [onOpen]. */
 @Composable
@@ -24,12 +27,13 @@ internal fun ReplyThreadStrip(
     thread: ReplyThread,
     onOpen: () -> Unit,
 ) {
-    val entries = thread.messages.map { it.entry() }
+    val dates = LocalDateFormatter.current
+    val entries = thread.messages.map { it.entry(dates) }
     val latest = thread.messages.first()
     ThreadStrip(
         entries,
         summary = "${entries.size} earlier messages",
-        detail = "Latest: ${latest.sender.shownName}, ${latest.date.dayAndMonth}",
+        detail = "Latest: ${latest.sender.shownName}, ${dates.formatNamedDay(latest.date)}",
         onOpen = onOpen,
     )
 }
@@ -45,7 +49,8 @@ internal fun ThreadSheet(
             Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
-            RowGroup(thread.messages.map { message -> { ThreadMessageRow(message.entry()) } })
+            val dates = LocalDateFormatter.current
+            RowGroup(thread.messages.map { message -> { ThreadMessageRow(message.entry(dates)) } })
             ListCaption("Quote in your reply")
             SegmentedToggle(
                 QuoteMode.entries.map { it.label },
@@ -56,8 +61,8 @@ internal fun ThreadSheet(
     }
 }
 
-private fun ThreadMessage.entry(): ThreadEntry =
-    ThreadEntry(sender.shownName, sender.chipAvatar, date.dayAndMonth, preview)
+private fun ThreadMessage.entry(dates: DateFormatter): ThreadEntry =
+    ThreadEntry(sender.shownName, sender.chipAvatar, dates.formatNamedDay(date), preview)
 
 private val QuoteMode.label: String
     get() =

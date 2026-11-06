@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.read
 
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.domain.ReceivedAt
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -8,7 +10,9 @@ import kotlin.test.assertEquals
 class ReadDatesTest {
     private val today = LocalDate(2026, 10, 19)
 
-    private fun short(date: String) = ReceivedAt(date, "09:14").shortLabel(today)
+    private val dates = DateFormatter(DateFormatPreference.DayMonthYearDots)
+
+    private fun short(date: String) = dates.shortLabel(ReceivedAt(date, "09:14"), today)
 
     @Test
     fun shortLabelShowsTheTimeToday() = assertEquals("09:14", short("2026-10-19"))
@@ -33,7 +37,7 @@ class ReadDatesTest {
 
     @Test
     fun fullLabelShowsDateYearAndTime() =
-        assertEquals("12 Oct 2026, 09:14", ReceivedAt("2026-10-12", "09:14").fullLabel())
+        assertEquals("12 Oct 2026, 09:14", dates.fullLabel(ReceivedAt("2026-10-12", "09:14")))
 
     @Test
     fun positionDetailCountsFromOne() {

@@ -8,6 +8,7 @@ import com.otus.designsystem.shared.rows.components.SummaryCard
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
+import com.otus.settings.presentation.components.LocalDateFormatter
 
 /**
  * What the move sheet moves: one message's subject, sender, and date, or how many messages and who
@@ -24,7 +25,7 @@ internal fun MoveSummary(
     val title =
         messages.singleOrNull()?.subject?.ifBlank { "(No subject)" } ?: "${messages.size} messages"
     if (oneSender) {
-        val date = messages.singleOrNull()?.received?.shortLabel(today)
+        val date = messages.singleOrNull()?.received?.let { LocalDateFormatter.current.shortLabel(it, today) }
         SummaryCard(
             title,
             listOfNotNull(sender.shownName, date).joinToString(" · "),

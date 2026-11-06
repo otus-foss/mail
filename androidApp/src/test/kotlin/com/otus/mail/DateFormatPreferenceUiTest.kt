@@ -8,10 +8,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.dateformat.DateFormatPreference
 import com.otus.mail.app.App
 import com.otus.settings.presentation.DateFormatSettingsState
+import com.otus.storage.inMemoryChoice
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,7 +29,7 @@ class DateFormatPreferenceUiTest {
 
     @Test
     fun changingThePreferenceUpdatesAnOpenDatePickerAndItsAppliedPill() {
-        val settings = DateFormatSettingsState(initialPreference = DateFormatPreference.DayMonthYearDots)
+        val settings = DateFormatSettingsState(inMemoryChoice(DateFormatPreference.DayMonthYearDots.storageValue))
         compose.runOnUiThread { compose.activity.setContent { App(settings) } }
         openDatePicker()
         compose.onNodeWithText("Last 7 days").performClick()
@@ -48,7 +48,7 @@ class DateFormatPreferenceUiTest {
 
     @Test
     fun productionEntryPointRestoresTheSavedChoiceOnActivityRecreation() {
-        AndroidDateFormatPreferenceStore(compose.activity).write(DateFormatPreference.DayMonthYearSlashes)
+        compose.activity.dateFormatChoice().write(DateFormatPreference.DayMonthYearSlashes.storageValue)
         compose.activityRule.scenario.recreate()
         openDatePicker()
         compose.onNodeWithText("Last 7 days").performClick()

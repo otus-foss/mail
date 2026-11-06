@@ -34,6 +34,7 @@ import com.otus.mail.feature.inbox.presentation.ReadSheet
 import com.otus.mail.feature.inbox.presentation.ReadState
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
 import com.otus.mail.feature.inbox.presentation.read.subtitle
+import com.otus.settings.presentation.components.LocalDateFormatter
 
 /**
  * The strips above the action bar, from the bottom up: one context strip, then the page's files.
@@ -166,9 +167,10 @@ internal fun ConversationStrip(
     val folders = folderHint(everyFolder, source.folders, source.cameFrom)
     val open = { state.threadOpen = true }
     // Until the pages load, the row's count may name pages not here yet; the strip never shows them.
+    val dates = LocalDateFormatter.current
     val pageAt = { index: Int ->
         val shown = state.pages.getOrNull(index) ?: page
-        ThreadPosition(shown, index, count, shown.received.shortLabel(source.today))
+        ThreadPosition(shown, index, count, dates.shortLabel(shown.received, source.today))
     }
     ReadThreadStrip(pageAt, current, count, folders, row.attributes.flagged, open, slide)
 }

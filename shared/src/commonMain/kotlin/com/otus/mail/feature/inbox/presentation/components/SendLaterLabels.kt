@@ -1,48 +1,40 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.dateformat.DateFormatter
+import com.otus.dateformat.clockTime
+import com.otus.dateformat.formatNamedDay
+import com.otus.dateformat.formatRelative
+import com.otus.dateformat.shortWeekday
 import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.plus
 
 /**
  * When a scheduled message goes, as the Send later sheet shows it: "Today, 18:00", tomorrow's
- * weekday such as "Sat, 8:00", or a date such as "Mon 19 Oct, 8:00".
+ * weekday such as "Sat, 8:00", or a date such as "Mon Oct 19, 8:00".
  */
-internal fun LocalDateTime.sendLaterLabel(now: LocalDateTime): String {
+internal fun DateFormatter.sendLaterLabel(
+    at: LocalDateTime,
+    now: LocalDateTime,
+): String {
     val day =
-        when {
-            date == now.date -> "Today"
-            date == now.date.plus(DatePeriod(days = 1)) -> weekday
-            else -> "$weekday $dayAndMonth"
+        when (at.date) {
+            now.date -> formatRelative(at.date, today = now.date)
+            now.date.plus(DatePeriod(days = 1)) -> shortWeekday(at.dayOfWeek)
+            else -> datedDay(at)
         }
-    return "$day, $clock"
+    return "$day, ${clockTime(at.time)}"
 }
 
-/** When cached mail last matched the server: the time today, such as "14:32", or else the date, "30 Oct". */
-internal fun LocalDateTime.syncedLabel(now: LocalDateTime): String = if (date == now.date) clock else dayAndMonth
+/** When cached mail last matched the server: the time today, such as "14:32", or else the date, "Oct 30". */
+internal fun DateFormatter.syncedLabel(
+    at: LocalDateTime,
+    now: LocalDateTime,
+): String = if (at.date == now.date) clockTime(at.time) else formatNamedDay(at.date)
 
-/** When a scheduled message goes, with its date, as the notice and toast say: "Scheduled for Mon 19 Oct, 8:00". */
-internal fun LocalDateTime.scheduledLabel(): String = "Scheduled for $weekday $dayAndMonth, $clock"
+/** When a scheduled message goes, with its date, as the notice and toast say: "Scheduled for Mon Oct 19, 8:00". */
+internal fun DateFormatter.scheduledLabel(at: LocalDateTime): String =
+    "Scheduled for ${datedDay(at)}, ${clockTime(at.time)}"
 
-private val LocalDateTime.dayAndMonth: String
-    get() = date.dayAndMonth
-
-/** A date as the day and the short month, such as "11 Oct". */
-internal val LocalDate.dayAndMonth: String
-    get() = "$day ${month.name.abbreviated()}"
-
-/** A date as the short month and the day, such as "Oct 11", as the mail list's month names show it. */
-internal val LocalDate.monthAndDay: String
-    get() = "${month.name.abbreviated()} $day"
-
-private val LocalDateTime.weekday: String
-    get() = date.dayOfWeek.name.abbreviated()
-
-private val LocalDateTime.clock: String
-    get() = "$hour:${minute.toString().padStart(2, '0')}"
-
-/** An enum's name, such as MONDAY, as its first three letters: "Mon". */
-private fun String.abbreviated(): String = take(ABBREVIATION).lowercase().replaceFirstChar(Char::uppercase)
-
-private const val ABBREVIATION = 3
+private fun DateFormatter.datedDay(at: LocalDateTime): String =
+    "${shortWeekday(at.dayOfWeek)} ${formatNamedDay(at.date)}"

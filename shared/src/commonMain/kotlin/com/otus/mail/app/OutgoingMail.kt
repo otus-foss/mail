@@ -1,5 +1,6 @@
 package com.otus.mail.app
 
+import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.designsystem.shared.feedback.elements.ToastAction
@@ -51,6 +52,7 @@ internal class OutgoingMail(
     private val toasts: ToastState,
     private val scheduled: ScheduledSends,
     private val outbox: MailOutbox,
+    private val dates: () -> DateFormatter,
     private val now: () -> Instant = { Clock.System.now() },
     private val holdMillis: () -> Long,
 ) {
@@ -145,7 +147,7 @@ internal class OutgoingMail(
             onSuccess = { sent ->
                 outgoing.draft.sent()
                 val undo = sent?.let { ToastAction("Undo") { scope.launch { unschedule(outgoing, it) } } }
-                toasts.show(ToastMessage(at.scheduledLabel(), undo))
+                toasts.show(ToastMessage(dates().scheduledLabel(at), undo))
             },
             onFailure = { error ->
                 val retry = ToastAction("Retry") { scope.launch { schedule(outgoing, id, at) } }

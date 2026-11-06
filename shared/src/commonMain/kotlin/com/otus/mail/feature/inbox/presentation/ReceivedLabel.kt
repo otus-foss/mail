@@ -1,12 +1,12 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.dateformat.DateFormatter
+import com.otus.dateformat.formatNamedDay
+import com.otus.dateformat.formatRecentDay
 import com.otus.mail.feature.inbox.domain.DateStyle
 import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.presentation.components.monthAndDay
 import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 
@@ -39,19 +39,13 @@ fun DateFormatter.dateStyleExample(
 }
 
 /** The [time] for [today], "Yesterday", or the weekday within the last week; null for other dates. */
-internal fun recentDayLabel(
+internal fun DateFormatter.recentDayLabel(
     date: LocalDate,
     time: String,
     today: LocalDate,
-): String? =
-    when {
-        date == today -> time
-        date == today.minus(DatePeriod(days = 1)) -> "Yesterday"
-        date > today.minus(DatePeriod(days = WEEK)) && date < today -> date.dayOfWeek.shortName
-        else -> null
-    }
+): String? = if (date == today) time else formatRecentDay(date, today)
 
-/** The date alone, such as 08.10.2026, 08.10, Oct 8, 2026, or Oct 8. */
+/** The date alone, such as 08.10.2026, 08.10, Oct 8, 2026, or Oct 8, in the order of the date format. */
 private fun DateFormatter.dayLabel(
     date: LocalDate,
     today: LocalDate,
@@ -59,16 +53,10 @@ private fun DateFormatter.dayLabel(
 ): String {
     val withYear = layout.showThisYear || date.year != today.year
     return when {
-        layout.dateStyle.monthNames -> if (withYear) "${date.monthAndDay}, ${date.year}" else date.monthAndDay
+        layout.dateStyle.monthNames -> formatNamedDay(date, withYear)
         withYear -> format(date)
         else -> formatDayMonth(date)
     }
 }
 
-private const val WEEK = 7
 private const val SAMPLE_DAYS_AGO = 21
-private const val SHORT_DAY = 3
-
-/** The weekday's three-letter name, such as "Mon". */
-private val DayOfWeek.shortName: String
-    get() = name.take(SHORT_DAY).lowercase().replaceFirstChar { it.uppercase() }

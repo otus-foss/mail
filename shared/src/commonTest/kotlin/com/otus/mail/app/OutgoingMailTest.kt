@@ -227,7 +227,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             earlier.send(earlier.add(draft, null, NOW))
 
             val restarted = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
-            OutgoingMail(backgroundScope, toasts, scheduled, restarted) { hold }.resume { opened += it }
+            OutgoingMail(backgroundScope, toasts, scheduled, restarted, { DAY_FIRST }) { hold }.resume { opened += it }
             runCurrent()
             val offer = toasts.messages.single()
             assertEquals("Couldn't send", offer.text)
@@ -250,7 +250,7 @@ internal class OutgoingMailTest : OutgoingMailFixture() {
             val pages = PageRequests(backgroundScope)
 
             val restarted = MailOutbox(store, sender, checker, io = EmptyCoroutineContext)
-            OutgoingMail(backgroundScope, toasts, scheduled, restarted) { hold }
+            OutgoingMail(backgroundScope, toasts, scheduled, restarted, { DAY_FIRST }) { hold }
                 .resume { pages.show(MailPage.Compose(it)) }
             runCurrent()
             // The user taps Open while no activity shows pages, as during a rotation.

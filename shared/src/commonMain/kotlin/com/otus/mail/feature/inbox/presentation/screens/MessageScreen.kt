@@ -69,6 +69,7 @@ import com.otus.mail.feature.inbox.presentation.components.rememberReadMenu
 import com.otus.mail.feature.inbox.presentation.components.rememberStripFolds
 import com.otus.mail.feature.inbox.presentation.components.rememberUnfoldDrag
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
+import com.otus.settings.presentation.components.LocalDateFormatter
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
@@ -171,7 +172,7 @@ private fun ReadLayout(
     val page = state.pages[layout.index]
     val uriHandler = LocalUriHandler.current
     val strips = remember(read) { ReadStripActions(read) { openLink(uriHandler::openUri, it) } }
-    val date = page.received.shortLabel(layout.today)
+    val date = LocalDateFormatter.current.shortLabel(page.received, layout.today)
     val zen = read.display.zen()
     var stripsHeight by remember { mutableStateOf(0.dp) }
     // Zen hides the strips but keeps their room, so the text does not move and reload.

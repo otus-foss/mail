@@ -1,16 +1,22 @@
 package com.otus.mail.feature.inbox.presentation.read
 
-import com.otus.mail.feature.inbox.presentation.components.dayAndMonth
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatter
+import com.otus.dateformat.formatNamedDay
 import kotlinx.datetime.LocalDate
 
 /** [written] as "10 Oct 2026, 17:50" when it names a day, month, and year; otherwise as written. */
 internal fun fullDateLabel(written: String): String =
     parseDate(written)?.let { day ->
-        "${day.dayAndMonth} ${day.year}" + TIME.find(written)?.let { ", ${it.value}" }.orEmpty()
+        QUOTE_DATES.formatNamedDay(day, withYear = true) + TIME.find(written)?.let { ", ${it.value}" }.orEmpty()
     } ?: written
 
 /** [written] as "10 Oct" when it names a day, month, and year; otherwise as written. */
-internal fun dateLabel(written: String): String = parseDate(written)?.dayAndMonth ?: written
+internal fun dateLabel(written: String): String = parseDate(written)?.let(QUOTE_DATES::formatNamedDay) ?: written
+
+// Quote headers are read while the message is parsed, away from the user's date format, so they
+// name the day first as before. Following the format needs a QuoteHeader that keeps the date.
+private val QUOTE_DATES = DateFormatter(DateFormatPreference.DayMonthYearDots)
 
 private fun parseDate(written: String): LocalDate? =
     ISO_DATE.find(written)?.destructured?.let { (year, month, day) -> date(year, month, day) }

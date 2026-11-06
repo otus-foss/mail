@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.mail.read.components.ThreadEntry
 import com.otus.designsystem.mail.read.components.ThreadList
 import com.otus.designsystem.shared.rows.components.Unfold
@@ -30,6 +31,7 @@ import com.otus.mail.feature.inbox.domain.isOwn
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.ReadState
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
+import com.otus.settings.presentation.components.LocalDateFormatter
 import kotlinx.datetime.LocalDate
 
 /**
@@ -62,7 +64,8 @@ internal fun ReadThreadOverlay(
                     .clickable(remember { MutableInteractionSource() }, indication = null, onClick = fold),
             )
         }
-        val entries = state.pages.map { page -> threadEntry(page, own, source.today) }
+        val dates = LocalDateFormatter.current
+        val entries = state.pages.map { page -> threadEntry(page, own, source.today, dates) }
         val still = StripGestures(Modifier, { current.toFloat() }, Modifier)
         // It grows from the thread strip's own height, so its top edge starts at the strip's.
         UnfoldingStripCard(
@@ -91,12 +94,13 @@ private fun threadEntry(
     page: MailMessage,
     own: OwnAddresses,
     today: LocalDate,
+    dates: DateFormatter,
 ): ThreadEntry {
     val name = if (page.isOwn(own, page.sender)) "You" else page.sender.shownName
     return ThreadEntry(
         name,
         page.sender.chipAvatar,
-        page.received.shortLabel(today),
+        dates.shortLabel(page.received, today),
         page.preview.ifBlank { page.body },
     )
 }

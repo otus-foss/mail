@@ -45,9 +45,16 @@ class ReceivedLabelTest {
     fun monthNamesKeepRecentLabelsAndNameTheMonth() {
         val months = MailListLayout(dateStyle = DateStyle.RelativeMonths)
         assertEquals("Yesterday", label("2026-10-10", months))
-        assertEquals("Oct 4, 2026", label("2026-10-04", months))
-        assertEquals("Jan 1, 2025", label("2025-01-01", months))
-        assertEquals("Oct 11, 2026 16:15", label("2026-10-11", MailListLayout(dateStyle = DateStyle.FullMonths)))
+        assertEquals("4 Oct 2026", label("2026-10-04", months))
+        assertEquals("1 Jan 2025", label("2025-01-01", months))
+        assertEquals("11 Oct 2026 16:15", label("2026-10-11", MailListLayout(dateStyle = DateStyle.FullMonths)))
+    }
+
+    @Test
+    fun monthNamesFollowTheOrderOfTheDateFormat() {
+        val monthFirst = DateFormatter(DateFormatPreference.MonthDayYearSlashes)
+        val months = MailListLayout(dateStyle = DateStyle.RelativeMonths)
+        assertEquals("Oct 4, 2026", monthFirst.listDateLabel(ReceivedAt("2026-10-04", "16:15"), today, months))
     }
 
     @Test
@@ -55,7 +62,7 @@ class ReceivedLabelTest {
         val noYear = MailListLayout(showThisYear = false)
         assertEquals("04.10", label("2026-10-04", noYear))
         assertEquals("01.01.2025", label("2025-01-01", noYear))
-        assertEquals("Oct 4", label("2026-10-04", noYear.copy(dateStyle = DateStyle.RelativeMonths)))
+        assertEquals("4 Oct", label("2026-10-04", noYear.copy(dateStyle = DateStyle.RelativeMonths)))
         assertEquals("11.10 16:15", label("2026-10-11", noYear.copy(dateStyle = DateStyle.Full)))
     }
 
@@ -63,7 +70,7 @@ class ReceivedLabelTest {
     fun eachStyleExplainsItselfWithOneOlderDate() {
         assertEquals("Yesterday, then 20.09.2026", formatter.dateStyleExample(MailListLayout(), today))
         assertEquals(
-            "Always the date, like Sep 20",
+            "Always the date, like 20 Sep",
             formatter.dateStyleExample(MailListLayout(dateStyle = DateStyle.FullMonths, showThisYear = false), today),
         )
     }

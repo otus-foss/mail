@@ -1,5 +1,7 @@
 package com.otus.mail.app
 
+import com.otus.dateformat.DateFormatPreference
+import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
@@ -75,7 +77,9 @@ internal abstract class OutgoingMailFixture {
 
     protected fun TestScope.outgoing(): OutgoingMail {
         val now = { NOW + testScheduler.currentTime.milliseconds }
-        return OutgoingMail(backgroundScope, toasts, scheduled, MailOutbox(null, sender, checker, now = now), now) {
+        return OutgoingMail(backgroundScope, toasts, scheduled, MailOutbox(null, sender, checker, now = now), {
+            DAY_FIRST
+        }, now) {
             hold
         }
     }
@@ -94,3 +98,6 @@ internal abstract class OutgoingMailFixture {
         val NOW = Instant.parse("2026-10-30T12:00:00Z")
     }
 }
+
+/** Dates with the day first, as the toasts were written before they followed the date format. */
+internal val DAY_FIRST = DateFormatter(DateFormatPreference.DayMonthYearDots)

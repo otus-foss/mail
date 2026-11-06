@@ -25,6 +25,7 @@ import com.otus.mail.feature.inbox.domain.SendLaterChoice
 import com.otus.mail.feature.inbox.domain.earliestPick
 import com.otus.mail.feature.inbox.domain.pickableTimes
 import com.otus.mail.feature.inbox.domain.sendLaterChoices
+import com.otus.settings.presentation.components.LocalDateFormatter
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -62,7 +63,14 @@ internal fun SendLaterSheet(
                 sendLaterChoices(now)
                     .filter { it.second <= latest }
                     .map { (choice, at) ->
-                        { GroupRow(choice.symbol, choice.label, { choose(at) }, value = at.sendLaterLabel(now)) }
+                        {
+                            GroupRow(
+                                choice.symbol,
+                                choice.label,
+                                { choose(at) },
+                                value = LocalDateFormatter.current.sendLaterLabel(at, now),
+                            )
+                        }
                     },
             )
             // A limit shorter than the next pickable step leaves nothing to pick.

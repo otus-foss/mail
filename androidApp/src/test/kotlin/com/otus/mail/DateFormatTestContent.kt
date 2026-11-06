@@ -7,12 +7,13 @@ import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.formatRelative
 import com.otus.mail.app.App
 import com.otus.settings.presentation.DateFormatSettingsState
+import com.otus.storage.inMemoryChoice
 import kotlinx.datetime.LocalDate
 
 /** Gesture tests select ISO explicitly so their assertions do not depend on the host locale. */
 fun MainActivity.showIsoDateApp() {
     setContent {
-        App(remember { DateFormatSettingsState(initialPreference = DateFormatPreference.YearMonthDayDashes) })
+        App(remember { DateFormatSettingsState(inMemoryChoice(DateFormatPreference.YearMonthDayDashes.storageValue)) })
     }
 }
 
