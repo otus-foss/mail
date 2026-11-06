@@ -141,7 +141,7 @@ internal fun FeedPage(
     val pageScope = rememberCoroutineScope()
     val feed = remember(mailScope) { states.list.feedOf(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
-    ListPage(page, feed, ListBase.folder(name, states.behavior.behavior.pills), states, dateFormatter, navigation)
+    ListPage(page, feed, ListBase.folder(name, states.behavior.behavior.list.pills), states, dateFormatter, navigation)
 }
 
 @Composable
@@ -169,7 +169,7 @@ internal fun rememberLabeled(
     feed: InboxFeedState,
 ): List<MailMessage> {
     val scope = states.mailScope
-    val colors = states.folders.colors.colors to states.behavior.behavior.sidebar.folderColors
+    val colors = states.folders.colors.colors to states.behavior.behavior.sidebar.layout.folderColors
     // A message that did not change, as when another sender's avatar arrives, keeps its copy.
     val copies = remember(states.folders.all.accounts, colors) { LabeledCopies() }
     return remember(feed.messages, scope, copies) { states.folders.filing.labeled(feed.messages.within(scope), copies) }

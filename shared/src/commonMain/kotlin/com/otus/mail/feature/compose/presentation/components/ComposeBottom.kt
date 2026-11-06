@@ -19,7 +19,7 @@ import com.otus.designsystem.shared.actionbar.components.BarMorph
 import com.otus.designsystem.shared.actionbar.components.BarNotice
 import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
 import com.otus.mail.core.messages.domain.shownName
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.compose.presentation.ComposeState
 import com.otus.mail.feature.compose.presentation.recipients
 import com.otus.settings.presentation.components.LocalDateFormatter
@@ -37,7 +37,7 @@ import kotlin.time.Clock
 @Composable
 internal fun ComposeBottom(
     state: ComposeState,
-    behavior: MailBehavior,
+    actions: ActionBehavior,
     keyboardUp: Boolean,
     onSend: (() -> Unit)?,
     onDiscard: () -> Unit,
@@ -59,7 +59,7 @@ internal fun ComposeBottom(
             )
         }
         if (thread != null && !keyboardUp) ReplyThreadStrip(thread) { showingThread = true }
-        Bottom(state, behavior, keyboardUp, onSend, onDiscard, at) { linking = true }
+        Bottom(state, actions, keyboardUp, onSend, onDiscard, at) { linking = true }
     }
     if (linking) LinkSheet(state.body::addLink) { linking = false }
     if (showingThread && thread != null) ThreadSheet(thread) { showingThread = false }
@@ -71,7 +71,7 @@ internal fun ComposeBottom(
 @Composable
 private fun Bottom(
     state: ComposeState,
-    behavior: MailBehavior,
+    actions: ActionBehavior,
     keyboardUp: Boolean,
     onSend: (() -> Unit)?,
     onDiscard: () -> Unit,
@@ -88,7 +88,7 @@ private fun Bottom(
         when (bar) {
             BottomBar.Image -> ComposeImageBar(state)
             BottomBar.Formatting -> FormattingRow(state, onSend, at, onLink)
-            BottomBar.Actions -> DraftActions(state, behavior, onSend, onDiscard, scheduled = at != null)
+            BottomBar.Actions -> DraftActions(state, actions, onSend, onDiscard, scheduled = at != null)
         }
     }
 }
@@ -96,13 +96,13 @@ private fun Bottom(
 @Composable
 private fun DraftActions(
     state: ComposeState,
-    behavior: MailBehavior,
+    actions: ActionBehavior,
     onSend: (() -> Unit)?,
     onDiscard: () -> Unit,
     scheduled: Boolean,
 ) {
     ComposeBar(
-        behavior,
+        actions,
         state.draft,
         onSend = onSend,
         onAttach = state.attachments::attach.takeIf { state.attachments.canAttach },

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.mail.app.App
 import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -35,7 +36,10 @@ class FolderActionsTest {
             compose.activity.setContent {
                 App(
                     services = server.services(),
-                    behaviorState = MailBehaviorState(initial = MailBehavior(markReadOnOpen = false)),
+                    behaviorState =
+                        MailBehaviorState(
+                            initial = MailBehavior(read = ReadBehavior(markReadOnOpen = false)),
+                        ),
                 )
             }
         }

@@ -127,7 +127,7 @@ private fun headerActions(
         },
         // A change that takes the message off this list closes the page first, as filing does.
         readLater =
-            actions?.readLater(parts.row)?.takeIf { actions.behavior().readLater }?.let { change ->
+            actions?.readLater(parts.row)?.let { change ->
                 if (change.leaves) {
                     ReadLaterChange(change.saves, leaves = true) {
                         parts.close()

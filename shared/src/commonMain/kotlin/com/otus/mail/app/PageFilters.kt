@@ -104,6 +104,6 @@ internal fun rememberFilterOptions(
         states.accounts.accounts,
         states.mailScope,
         states.folders.colors.colors,
-        states.behavior.behavior.sidebar,
-        states.behavior.behavior.filters,
+        states.behavior.behavior.sidebar.layout,
+        states.behavior.behavior.list.filters,
     ) { states.filterOptions(page) }

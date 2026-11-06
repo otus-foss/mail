@@ -51,14 +51,14 @@ internal class ComposeStates(
                 account.id,
                 all.map { ComposeAccount(it.id, it.name) },
                 account.emailAddresses + account.username,
-                behavior.behavior.recentFrom,
-                behavior.behavior.signatureInReplies,
-                photoCleaning = { behavior.behavior.photoCleaning },
+                behavior.behavior.write.recentFrom,
+                behavior.behavior.write.signatureInReplies,
+                photoCleaning = { behavior.behavior.write.photoCleaning },
                 ownAvatar = { accountId, address ->
                     all.firstOrNull { it.id == accountId }?.let { ownAvatars.avatar(it.own, address) }
                 },
             ),
-            onSent = { from -> behavior.update { it.sentFrom(from.address) } },
+            onSent = { from -> behavior.updateWrite { it.sentFrom(from.address) } },
         )
     }
 
@@ -74,6 +74,6 @@ internal class ComposeStates(
      */
     val outgoing =
         OutgoingMail(services.work, services.moveToasts.toasts, services.scheduled, services.outbox, dates) {
-            behavior.behavior.undoSendSeconds.seconds.inWholeMilliseconds
+            behavior.behavior.write.undoSendSeconds.seconds.inWholeMilliseconds
         }
 }

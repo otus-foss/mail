@@ -42,7 +42,6 @@ import com.otus.mail.core.messages.domain.withContent
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.messages.presentation.components.rememberMoveChoice
 import com.otus.mail.core.messages.presentation.shortLabel
-import com.otus.mail.core.settings.domain.ReadQuickModule
 import com.otus.mail.feature.read.presentation.ReadContext
 import com.otus.mail.feature.read.presentation.ReadState
 import com.otus.mail.feature.read.presentation.components.ReadActionBar
@@ -188,7 +187,7 @@ private fun ReadLayout(
     // Zen hides the strips but keeps their room, so the text does not move and reload.
     val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
     val headerHeight = remember { mutableStateOf(0.dp) }
-    val modules = parts.actions?.behavior()?.readQuickView ?: ReadQuickModule.Defaults
+    val modules = read.display.quickView()
     val expansion = rememberReadExpansion(modules.size, readDetailsHeight(headerHeight.value, padding))
     // A screen reader finds only the grown panel, not the page and strips it covers.
     val covered = expansion.expanded

@@ -30,7 +30,7 @@ fun WritingSettings(
     onOpenSignatures: () -> Unit,
 ) {
     var choosing by rememberSaveable { mutableStateOf(false) }
-    val seconds = state.behavior.undoSendSeconds
+    val seconds = state.behavior.write.undoSendSeconds
     SettingsSection("Writing") {
         SettingRow(
             "Undo send",
@@ -49,7 +49,7 @@ fun WritingSettings(
             "Undo send",
             ChoiceOptions(UNDO_SEND_CHOICES, selected = seconds, default = DEFAULT_UNDO_SEND_SECONDS),
             row = { ChoiceRow(it.undoLabel, "Default".takeIf { _ -> it == DEFAULT_UNDO_SEND_SECONDS }) },
-            onSelect = { chosen -> state.update { it.copy(undoSendSeconds = chosen) } },
+            onSelect = { chosen -> state.updateWrite { it.copy(undoSendSeconds = chosen) } },
             onDismiss = { choosing = false },
         )
     }

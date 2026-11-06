@@ -23,7 +23,7 @@ import com.otus.mail.core.files.UploadException
 import com.otus.mail.core.files.UploadFailure
 import com.otus.mail.core.messages.domain.AttachmentBlob
 import com.otus.mail.core.messages.domain.ComposeRequest
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.core.settings.domain.PhotoCleaning
 import com.otus.mail.feature.compose.presentation.ComposeAccount
 import com.otus.mail.feature.compose.presentation.ComposeExits
@@ -165,7 +165,7 @@ class ComposeAttachmentScreenTest {
                                 saveDelayMillis = 60_000,
                             )
                         }
-                    ComposeScreen(state, MailBehavior(), NoExits)
+                    ComposeScreen(state, ActionBehavior(), emptyList(), NoExits)
                 }
             }
         }

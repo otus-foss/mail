@@ -22,12 +22,12 @@ internal fun InboxPage(
     navigation: MailNavigation,
 ) {
     val feed = states.list.feed
-    val contents = states.behavior.behavior.inbox
+    val contents = states.behavior.behavior.list.inbox
     val ownScope = contents.mailScope()
     LaunchedEffect(ownScope) { feed.defaultScope = ownScope }
     val pills =
         InboxPills(
-            states.behavior.behavior.pills,
+            states.behavior.behavior.list.pills,
             rememberFolderPills(states),
             foldersLoaded = !states.accounts.loading && !states.folders.all.loading,
         )

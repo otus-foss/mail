@@ -10,7 +10,7 @@ import com.otus.mail.core.messages.domain.MailAction.NewMail
 import com.otus.mail.core.messages.domain.MailAction.NotSpam
 import com.otus.mail.core.messages.domain.MailAction.Restore
 import com.otus.mail.core.messages.domain.MailAction.Search
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 
 /**
  * [place]'s default bar on a page of [role] folders; null where the place keeps its usual one.
@@ -37,11 +37,11 @@ private fun ActionBarPlace.cleanupBar(primary: MailAction): ActionBarLayout? =
  * default, in Per screen mode, the folder's default replaces it. A bar the user changed, and the
  * Same everywhere bar, look the same in every folder.
  */
-fun MailBehavior.barLayout(
+fun ActionBehavior.barLayout(
     place: ActionBarPlace,
     role: MailboxRole?,
 ): ActionBarLayout =
     role
-        ?.takeIf { actionBarMode == ActionBarMode.Adaptive && savedLayout(place) == place.defaultLayout }
+        ?.takeIf { barMode == ActionBarMode.Adaptive && savedLayout(place) == place.defaultLayout }
         ?.let(place::folderDefault)
         ?: barLayout(place)

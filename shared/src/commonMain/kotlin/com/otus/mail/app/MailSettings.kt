@@ -10,7 +10,8 @@ import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_visibility_off
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.core.settings.domain.MailListLayout
 import com.otus.mail.core.settings.presentation.PRIVACY_TITLE
 import com.otus.mail.feature.mailsettings.presentation.components.BehaviorIndexPages
 import com.otus.mail.feature.mailsettings.presentation.components.mailBehaviorIndex
@@ -50,8 +51,8 @@ internal fun mailSettingsIndex(
             Res.drawable.symbol_alternate_email,
             summary = accountsSummary(states.accounts.accounts.size),
         ) { keywords("JMAP", "Server", "Sign in") }
-        states.notifications?.let { notifications(it, behavior, states.accounts.accounts.isNotEmpty(), open) }
-        appearance(settings, behavior, open)
+        states.notifications?.let { notifications(it, behavior.actions, states.accounts.accounts.isNotEmpty(), open) }
+        appearance(settings, behavior.list.layout, open)
         page(
             "Mail behavior",
             open(MailPage.Behavior),
@@ -91,7 +92,7 @@ private fun behaviorPages(open: (MailPage) -> (String?) -> Unit): BehaviorIndexP
 /** The Appearance page, with Mail's App icon and Mail list rows among the shared ones. */
 private fun SettingsIndexScope.appearance(
     settings: SharedSettings,
-    behavior: MailBehavior,
+    layout: MailListLayout,
     open: (MailPage) -> (String?) -> Unit,
 ) {
     page(
@@ -102,7 +103,7 @@ private fun SettingsIndexScope.appearance(
     ) {
         appearanceIndex(settings.dateFormat, settings.theme, settings.animation, open(MailPage.ThemeSettings)) {
             settings.appIcon?.let { appIconIndex(it) }
-            mailLookIndex(behavior, open(MailPage.MailListSettings))
+            mailLookIndex(layout, open(MailPage.MailListSettings))
         }
     }
 }
@@ -113,7 +114,7 @@ private fun SettingsIndexScope.appearance(
  */
 private fun SettingsIndexScope.notifications(
     state: NotificationSettingsState,
-    behavior: MailBehavior,
+    actions: ActionBehavior,
     hasAccounts: Boolean,
     open: (MailPage) -> (String?) -> Unit,
 ) {
@@ -136,7 +137,7 @@ private fun SettingsIndexScope.notifications(
             )
             if (hasAccounts) page("Accounts and addresses", open(MailPage.NotificationOverrides))
         }
-        section("Buttons") { notificationActionsIndex(behavior) }
+        section("Buttons") { notificationActionsIndex(actions) }
     }
 }
 

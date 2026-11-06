@@ -73,9 +73,9 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = light
                 }
             }
-            val secure = behaviorState.behavior.screenSecurity
+            val secure = behaviorState.behavior.privacy.screenSecurity
             SideEffect { keepScreenPrivate(secure) }
-            IncognitoKeyboard(behaviorState.behavior.incognitoKeyboard) {
+            IncognitoKeyboard(behaviorState.behavior.privacy.incognitoKeyboard) {
                 App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
             }
         }

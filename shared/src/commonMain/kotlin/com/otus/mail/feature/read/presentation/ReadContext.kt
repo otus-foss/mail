@@ -10,6 +10,7 @@ import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.domain.RemoteImages
 import com.otus.mail.core.messages.domain.SenderBlocks
 import com.otus.mail.core.messages.presentation.empty
+import com.otus.mail.core.settings.domain.ReadQuickModule
 import com.otus.mail.feature.read.domain.ConversationMessages
 import com.otus.mail.feature.read.domain.KnownPeople
 import com.otus.mail.feature.read.domain.MessageHeaders
@@ -46,11 +47,13 @@ class ReadContext(
 /**
  * How the Read view shows its pages: [showQuotes] tells whether replies show text quoted from
  * earlier messages of the conversation, [zen] whether the view keeps to the message, its control
- * panel, and its bar, which [setZen] saves, and [today] is the day dates are shown against.
+ * panel, and its bar, which [setZen] saves, [quickView] the modules its control panel shows when
+ * pulled down, and [today] is the day dates are shown against.
  */
 class ReadDisplay(
     val showQuotes: () -> Boolean,
     val zen: () -> Boolean,
+    val quickView: () -> List<ReadQuickModule>,
     val setZen: (Boolean) -> Unit,
     val today: () -> LocalDate = {
         Clock.System

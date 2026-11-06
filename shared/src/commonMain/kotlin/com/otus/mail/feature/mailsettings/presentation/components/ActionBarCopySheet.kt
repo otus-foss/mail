@@ -40,16 +40,17 @@ internal fun ActionBarCopySheet(
 ) {
     var ticked by rememberSaveable { mutableStateOf(emptyList<ActionBarPlace>()) }
     val behavior = state.behavior
-    val source = behavior.savedLayout(from)
+    val readLater = behavior.readLater
+    val source = behavior.actions.savedLayout(from)
     val (targets, unusable) =
-        (ActionBarPlace.entries - from).partition { behavior.copiedBar(from, it).shares(source) }
+        (ActionBarPlace.entries - from).partition { behavior.actions.copiedBar(from, it, readLater).shares(source) }
     SheetFrame(
         "Copy to",
         onDismiss,
         done =
             UiAction("Done", onClick = {
-                state.update { now ->
-                    now.copy(actionBar = now.actionBar + ticked.associateWith { now.copiedBar(from, it) })
+                state.updateActions { now ->
+                    now.copy(bars = now.bars + ticked.associateWith { now.copiedBar(from, it, readLater) })
                 }
                 onDismiss()
             }),
@@ -85,15 +86,15 @@ private fun MailBehavior.copySummary(
     from: ActionBarPlace,
     to: ActionBarPlace,
 ): String {
-    val source = savedLayout(from)
-    val copy = copiedBar(from, to)
+    val source = actions.savedLayout(from)
+    val copy = actions.copiedBar(from, to, readLater)
     val buttons = listOf(copy.secondary.joinToString { it.label }, copy.primary.label).filter { it.isNotEmpty() }
     return buildList {
         add(if (copy == source) "An exact copy." else buttons.joinToString(" · ") + ".")
         if (copy.primary != source.primary) {
             add("${source.primary.label} isn't offered there, so ${copy.primary.label} stays the main button.")
         }
-        if (to == ActionBarPlace.Everywhere && actionBarMode == ActionBarMode.Adaptive) {
+        if (to == ActionBarPlace.Everywhere && actions.barMode == ActionBarMode.Adaptive) {
             add("Used when Layout is Same everywhere.")
         }
     }.joinToString(" ")

@@ -3,6 +3,7 @@ package com.otus.mail
 import android.content.Context
 import com.otus.mail.core.messages.domain.RemoteImages
 import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,16 +38,16 @@ class RemoteImagesPersistenceTest {
             )
         earlier.forEach { (key, values) ->
             values.forEach { stored ->
-                assertEquals(RemoteImages.Known, readWithEarlierSetting(key, stored).remoteImages)
+                assertEquals(RemoteImages.Known, readWithEarlierSetting(key, stored).read.remoteImages)
             }
         }
-        assertEquals(emptyList<String>(), readWithEarlierSetting("load_remote_images", "always").allowedSenders)
+        assertEquals(emptyList<String>(), readWithEarlierSetting("load_remote_images", "always").read.allowedSenders)
     }
 
     @Test
     fun neverSavedUnderAnEarlierKeyStaysNever() {
         listOf("load_remote_images", "remote_images").forEach { key ->
-            assertEquals(RemoteImages.Never, readWithEarlierSetting(key, "never").remoteImages)
+            assertEquals(RemoteImages.Never, readWithEarlierSetting(key, "never").read.remoteImages)
         }
     }
 
@@ -54,8 +55,11 @@ class RemoteImagesPersistenceTest {
     fun theImageSettingAndAllowedSendersSurviveReopeningTheStore() {
         val saved =
             MailBehavior(
-                remoteImages = RemoteImages.Never,
-                allowedSenders = listOf("grace@example.org", "news@sentry.io"),
+                read =
+                    ReadBehavior(
+                        remoteImages = RemoteImages.Never,
+                        allowedSenders = listOf("grace@example.org", "news@sentry.io"),
+                    ),
             )
         AndroidMailBehaviorStore(context).write(saved)
         assertEquals(saved, AndroidMailBehaviorStore(context).read())

@@ -110,7 +110,7 @@ class SidebarEditTest {
         compose.onNodeWithText("Mail behavior").performClick()
         compose.onNode(hasText("Sidebar") and hasText("2 sections")).performScrollTo().performClick()
         compose.onNode(hasText("Folders") and isToggleable()).performClick()
-        assertEquals(setOf(SidebarSection.Folders), behavior.behavior.sidebar.hidden)
+        assertEquals(setOf(SidebarSection.Folders), behavior.behavior.sidebar.layout.hidden)
         compose.onNode(hasText("Counts") and hasClickAction()).performClick()
         compose.onNodeWithText("Off").performClick()
         closeChoice()
@@ -119,8 +119,8 @@ class SidebarEditTest {
         compose.onNodeWithText("Grid").performClick()
         compose.onNodeWithText("Rows").performClick()
         closeChoice()
-        assertEquals(MailboxStyle.Rows, behavior.behavior.sidebar.mailboxes)
-        assertEquals(SidebarCount.None, behavior.behavior.sidebar.counts)
+        assertEquals(MailboxStyle.Rows, behavior.behavior.sidebar.layout.mailboxes)
+        assertEquals(SidebarCount.None, behavior.behavior.sidebar.layout.counts)
         // Back leads to Sidebar, then Mail behavior, then Settings.
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
@@ -141,9 +141,12 @@ class SidebarEditTest {
         // The Inbox and Contacts need no folder of their own, so they are the pins shown at first.
         compose.onNode(hasContentDescription("Remove Contacts")).assertIsDisplayed()
         row("Receipts").performScrollTo().performClick()
-        assertEquals(SidebarPin.defaults + SidebarPin.Folder(listOf("receipts")), behavior.behavior.sidebar.pinned)
+        assertEquals(
+            SidebarPin.defaults + SidebarPin.Folder(listOf("receipts")),
+            behavior.behavior.sidebar.layout.pinned,
+        )
         compose.onNode(hasContentDescription("Remove Inbox")).performClick()
-        assertEquals(false, SidebarPin.Inbox in behavior.behavior.sidebar.pinned)
+        assertEquals(false, SidebarPin.Inbox in behavior.behavior.sidebar.layout.pinned)
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
@@ -155,7 +158,7 @@ class SidebarEditTest {
 
     @Test
     fun rowsSwapTheTileEditorForOrderedRowsAndHiddenPinsWaitForTheirSection() {
-        behavior.update { it.copy(sidebar = it.sidebar.copy(mailboxes = MailboxStyle.Rows)) }
+        behavior.updateSidebar { it.copy(layout = it.layout.copy(mailboxes = MailboxStyle.Rows)) }
         openSidebar()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("Mail behavior").performClick()
@@ -164,7 +167,7 @@ class SidebarEditTest {
         // Rows have no sizes, so each pin is a row with a reorder handle rather than a tile to resize.
         compose.onNodeWithContentDescription("Reorder Contacts").assertIsDisplayed()
         compose.onNodeWithContentDescription("Remove Contacts").performClick()
-        assertFalse(SidebarPin.Contacts in behavior.behavior.sidebar.pinned)
+        assertFalse(SidebarPin.Contacts in behavior.behavior.sidebar.layout.pinned)
         compose.onNodeWithContentDescription("Back").performClick()
         // With the Pinned section off nothing shows the pins, so their page waits and says why.
         compose.onNode(hasText("Pinned") and isToggleable()).performClick()

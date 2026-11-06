@@ -21,8 +21,7 @@ import com.otus.mail.core.messages.domain.original
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.messages.presentation.MessageMarks
 import com.otus.mail.core.messages.presentation.MessageMoves
-import com.otus.mail.core.settings.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.InboxContext
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -53,16 +52,17 @@ class ComposeActionsTest {
         )
 
     private fun start(
-        behavior: MailBehavior = MailBehavior(),
+        actions: ActionBehavior = ActionBehavior(),
         shown: MailMessage = message,
     ) {
-        val actions =
+        val messageActions =
             MessageActions(
                 moves = MessageMoves(targets = { emptyList() }, onMove = { _, _ -> }, suggested = { null }) { null },
                 marks = MessageMarks(can = { _, _ -> false }, set = { _, _, _ -> }),
                 ruleForSender = { null },
                 readLater = { null },
-                behavior = { behavior },
+                saved = { actions },
+                markReadOnOpen = { true },
                 cleanup = null,
             )
         compose.runOnUiThread {
@@ -71,7 +71,7 @@ class ComposeActionsTest {
                     InboxScreen(
                         listOf(shown),
                         context = inboxContext { onCompose = { requests += it } },
-                        messageActions = actions,
+                        messageActions = messageActions,
                     )
                 }
             }
@@ -100,7 +100,7 @@ class ComposeActionsTest {
     @Test
     fun replyAllCountsEveryoneElseOnceAndForwardIsInTheMenu() {
         val replyAll = ActionBarLayout(listOf(MailAction.Archive), MailAction.ReplyAll)
-        start(MailBehavior(actionBar = MailBehavior().actionBar + (ActionBarPlace.Message to replyAll)))
+        start(ActionBehavior(bars = ActionBehavior().bars + (ActionBarPlace.Message to replyAll)))
         compose.onNodeWithText("Compilers").performClick()
         // Grace, Ada, and Alan; the account's own address is left out.
         button("Reply all, to 3 people").performClick()

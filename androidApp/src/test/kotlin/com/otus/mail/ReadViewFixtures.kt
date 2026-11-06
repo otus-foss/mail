@@ -30,7 +30,7 @@ import com.otus.mail.core.messages.presentation.MessageMarks
 import com.otus.mail.core.messages.presentation.MessageMoves
 import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.core.messages.presentation.MoveToasts
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
@@ -198,7 +198,8 @@ internal object ReadViewFixtures {
                 person = null,
             )
         effects = ReadEffects(toasts, launch, NewsletterSteps())
-        display = ReadDisplay(showQuotes = { false }, zen = { false }, setZen = {}, today = { LocalDate(2026, 10, 19) })
+        display =
+            ReadDisplay(display.showQuotes, display.zen, display.quickView, display.setZen) { LocalDate(2026, 10, 19) }
         this.own = own
         loadContent = { content(it) }
         block()
@@ -231,17 +232,16 @@ internal object ReadViewFixtures {
         return bitmap.pngBytes()
     }
 
-    fun actions(
-        behavior: MailBehavior = MailBehavior(),
-        targets: List<MoveTarget> = emptyList(),
-    ) = MessageActions(
-        moves = MessageMoves(targets = { targets }, onMove = { _, _ -> }, suggested = { null }) { null },
-        marks = MessageMarks(can = { _, _ -> true }, set = { _, _, _ -> }),
-        ruleForSender = { null },
-        readLater = { null },
-        behavior = { behavior },
-        cleanup = null,
-    )
+    fun actions(targets: List<MoveTarget> = emptyList()) =
+        MessageActions(
+            moves = MessageMoves(targets = { targets }, onMove = { _, _ -> }, suggested = { null }) { null },
+            marks = MessageMarks(can = { _, _ -> true }, set = { _, _, _ -> }),
+            ruleForSender = { null },
+            readLater = { null },
+            saved = { ActionBehavior() },
+            markReadOnOpen = { true },
+            cleanup = null,
+        )
 
     private class FakeNewsletters(
         private val unsubscribed: () -> Unit,

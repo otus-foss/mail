@@ -14,11 +14,11 @@ import com.otus.mail.core.messages.presentation.actions.offer
 import com.otus.mail.core.messages.presentation.components.MailActionBar
 import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.core.messages.presentation.components.groupContext
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.compose.presentation.recipients
 
 /**
- * The compose page's bar as [behavior] lays it out. Send runs [onSend], and stays disabled while that is null;
+ * The compose page's bar as [actions] lays it out. Send runs [onSend], and stays disabled while that is null;
  * Attach runs [onAttach], disabled while that is null, and actions for messages, which Fixed mode may
  * place here, do not apply. The main button reads Send to, or Sends to with the schedule-send
  * symbol while [scheduled], and names the draft's recipients once it has any. A minimized bar
@@ -26,7 +26,7 @@ import com.otus.mail.feature.compose.presentation.recipients
  */
 @Composable
 internal fun ComposeBar(
-    behavior: MailBehavior,
+    actions: ActionBehavior,
     draft: Draft,
     onSend: (() -> Unit)?,
     onAttach: (() -> Unit)?,
@@ -35,7 +35,7 @@ internal fun ComposeBar(
 ) {
     val subject = ActionSubject(actions = null, draft = DraftSubject(onSend, onAttach, onDiscard, scheduled))
     MailActionBar(
-        behavior.barFor(ActionBarPlace.Compose, role = null, subject::offer),
+        actions.barFor(ActionBarPlace.Compose, role = null, subject::offer),
         onAction = { it.run() },
         context = draft.recipients.barContext(if (scheduled) "Sends to" else "Send to"),
     )

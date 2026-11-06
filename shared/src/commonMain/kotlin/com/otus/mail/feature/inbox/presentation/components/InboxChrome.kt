@@ -29,7 +29,7 @@ internal fun inboxBar(
             { SearchResultsBar(listed, state) { header.expansion.let { !it.moving && it.position >= 1f } } }
         }
 
-        actions == null || (state.searching && !actions.behavior().minimizedBar) -> {
+        actions == null || (state.searching && !actions.saved().minimizedBar) -> {
             null
         }
 

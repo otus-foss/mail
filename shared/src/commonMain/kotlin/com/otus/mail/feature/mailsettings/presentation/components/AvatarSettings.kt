@@ -27,30 +27,30 @@ import com.otus.mail.core.settings.presentation.icon
  */
 @Composable
 internal fun AvatarSettings(state: MailBehaviorState) {
-    val behavior = state.behavior
+    val avatars = state.behavior.avatars
     var choosing by rememberSaveable { mutableStateOf(false) }
     SettingsSection("Avatars") {
         SettingToggleRow(
             "Website icons",
-            checked = behavior.websiteIcons,
-            onCheckedChange = { on -> state.update { it.copy(websiteIcons = on) } },
+            checked = avatars.websiteIcons,
+            onCheckedChange = { on -> state.updateAvatars { it.copy(websiteIcons = on) } },
             icon = Res.drawable.symbol_person,
             info = IconSourceInfo,
         )
         // The only line under the row says why no icons load, since nothing else would.
-        val unset = behavior.iconSource == IconSource.Bulwark && bulwarkBase(behavior.bulwarkAddress) == null
-        DependentSettings(enabled = behavior.websiteIcons) {
+        val unset = avatars.iconSource == IconSource.Bulwark && bulwarkBase(avatars.bulwarkAddress) == null
+        DependentSettings(enabled = avatars.websiteIcons) {
             SettingRow(
                 "Icons from",
                 { choosing = true },
-                description = iconsNote(behavior.websiteIcons, unset),
+                description = iconsNote(avatars.websiteIcons, unset),
                 icon = Res.drawable.symbol_public,
-            ) { ValueButton(behavior.iconSource.title) }
+            ) { ValueButton(avatars.iconSource.title) }
         }
         SettingToggleRow(
             "Photos from all accounts",
-            checked = behavior.allAccountPhotos,
-            onCheckedChange = { on -> state.update { it.copy(allAccountPhotos = on) } },
+            checked = avatars.allAccountPhotos,
+            onCheckedChange = { on -> state.updateAvatars { it.copy(allAccountPhotos = on) } },
             icon = Res.drawable.symbol_person,
             info =
                 InfoText(
@@ -61,9 +61,11 @@ internal fun AvatarSettings(state: MailBehaviorState) {
     }
     if (choosing) {
         IconSourceSheet(
-            behavior.iconSource,
-            behavior.bulwarkAddress,
-            onSave = { source, address -> state.update { it.copy(iconSource = source, bulwarkAddress = address) } },
+            avatars.iconSource,
+            avatars.bulwarkAddress,
+            onSave = { source, address ->
+                state.updateAvatars { it.copy(iconSource = source, bulwarkAddress = address) }
+            },
             onDismiss = { choosing = false },
         )
     }

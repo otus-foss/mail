@@ -34,7 +34,7 @@ import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.compose.presentation.ComposeExits
 import com.otus.mail.feature.compose.presentation.ComposeState
 import com.otus.mail.feature.compose.presentation.RecipientField
@@ -60,7 +60,8 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun ComposeScreen(
     state: ComposeState,
-    behavior: MailBehavior,
+    actions: ActionBehavior,
+    recentFrom: List<String>,
     exits: ComposeExits,
 ) {
     val onClose = exits::close
@@ -85,7 +86,7 @@ fun ComposeScreen(
             bar = {
                 ComposeBottom(
                     state,
-                    behavior,
+                    actions,
                     keyboardUp = isKeyboardUp(),
                     onSend = send.takeIf { state.canSend },
                     onDiscard = discard,
@@ -96,7 +97,7 @@ fun ComposeScreen(
         ) { padding ->
             ComposePage(
                 state,
-                behavior,
+                recentFrom,
                 shown,
                 onAddCc = { shown = shown + RecipientField.Cc }.takeIf { RecipientField.Cc !in shown },
                 onClose = onClose,
@@ -122,7 +123,7 @@ fun ComposeScreen(
 @Composable
 private fun ComposePage(
     state: ComposeState,
-    behavior: MailBehavior,
+    recentFrom: List<String>,
     shown: Set<RecipientField>,
     onAddCc: (() -> Unit)?,
     onClose: () -> Unit,
@@ -133,7 +134,7 @@ private fun ComposePage(
         ComposePanel(
             state,
             state.request.title,
-            behavior.recentFrom,
+            recentFrom,
             onBack = onClose,
             onAddCc = onAddCc,
             options = options,

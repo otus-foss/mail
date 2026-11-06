@@ -124,7 +124,7 @@ class FolderColorsUiTest {
             .onNode(hasText("Folder colors") and isToggleable())
             .performScrollTo()
             .performClick()
-        assertFalse(behavior.behavior.sidebar.folderColors)
+        assertFalse(behavior.behavior.sidebar.layout.folderColors)
         assertEquals(mapOf("r" to "Purple"), storedColors())
         // The sheet still shows the saved color, ready for when the switch is back on.
         compose.onNodeWithContentDescription("Back").performClick()

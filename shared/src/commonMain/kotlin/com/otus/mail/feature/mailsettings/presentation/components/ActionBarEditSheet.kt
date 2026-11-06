@@ -45,8 +45,9 @@ internal fun ActionBarEditSheet(
     // Set before the menu slides the sheet away, so its Done path opens the copy sheet.
     var copyNext by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<BarSlot?>(null) }
-    val layout = state.behavior.savedLayout(place)
-    val save = { changed: ActionBarLayout -> state.update { it.copy(actionBar = it.actionBar + (place to changed)) } }
+    val behavior = state.behavior
+    val layout = behavior.actions.savedLayout(place)
+    val save = { changed: ActionBarLayout -> state.updateActions { it.copy(bars = it.bars + (place to changed)) } }
     SheetFrame(
         place.title,
         onDismiss,
@@ -71,7 +72,9 @@ internal fun ActionBarEditSheet(
         slot,
         layout,
         // An empty slot takes only what the bar lacks; a filled one can trade with any button.
-        state.behavior.barChoices(place).filter { layout.actionAt(slot) != null || layout.slotOf(it) == null },
+        behavior.actions
+            .barChoices(place, behavior.readLater)
+            .filter { layout.actionAt(slot) != null || layout.slotOf(it) == null },
         folders.map(BarButton::MoveTo).filter(place::offers).associateWith { folderColor(it.path) },
         onPick = { save(layout.with(slot, it)) },
         onRemove =

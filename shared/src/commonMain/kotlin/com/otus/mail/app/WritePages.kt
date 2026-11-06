@@ -51,7 +51,7 @@ internal fun ComposePage(
                 }
             }
         }
-    ComposeScreen(compose, states.behavior.behavior, exits)
+    ComposeScreen(compose, states.behavior.behavior.actions, states.behavior.behavior.write.recentFrom, exits)
 }
 
 /** Settings › Mail behavior › Signatures; tapping an address opens its signature. */
@@ -63,8 +63,8 @@ internal fun SignaturesPage(
 ) {
     SignaturesScreen(
         states.compose.signatures,
-        states.behavior.behavior.signatureInReplies,
-        onInRepliesChange = { on -> states.behavior.update { it.copy(signatureInReplies = on) } },
+        states.behavior.behavior.write.signatureInReplies,
+        onInRepliesChange = { on -> states.behavior.updateWrite { it.copy(signatureInReplies = on) } },
         onBack = onBack,
     ) { navigation.go(MailPage.SignatureEditor(it.accountId, it.id)) }
 }

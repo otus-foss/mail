@@ -14,7 +14,7 @@ import com.otus.designsystem.theme.OtusTheme
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.OriginalMessage
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.compose.domain.ThreadMessage
 import com.otus.mail.feature.compose.presentation.ComposeAccount
 import com.otus.mail.feature.compose.presentation.ComposeExits
@@ -82,7 +82,7 @@ class ReplyThreadScreenTest {
                                 saveDelayMillis = 60_000,
                             )
                         }
-                    ComposeScreen(state, MailBehavior(), exits)
+                    ComposeScreen(state, ActionBehavior(), emptyList(), exits)
                 }
             }
         }

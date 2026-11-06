@@ -39,8 +39,8 @@ internal fun rememberReadActions(
     onCompose: (ComposeRequest) -> Unit,
 ): ReadActions {
     val role = actions?.cleanup?.role?.invoke(row)
-    val behavior = actions?.behavior()
-    val wanted = behavior?.showsSuggestedMove(ActionBarPlace.Message, role) == true
+    val saved = actions?.saved()
+    val wanted = saved?.showsSuggestedMove(ActionBarPlace.Message, role) == true
     val suggestion = rememberSuggestedMove(listOf(row), actions, wanted)
     val subject =
         ActionSubject(
@@ -52,7 +52,7 @@ internal fun rememberReadActions(
             role = role,
             onCompose = onCompose,
         )
-    return ReadActions(subject, behavior?.barFor(ActionBarPlace.Message, role, subject::offer, page.replyAction(own)))
+    return ReadActions(subject, saved?.barFor(ActionBarPlace.Message, role, subject::offer, page.replyAction(own)))
 }
 
 /** The [bar], with the big button saying who the reply to the [page] goes to. */

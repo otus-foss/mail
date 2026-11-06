@@ -8,6 +8,7 @@ import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.domain.RemoteImages
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.core.settings.domain.QuickViewModule
+import com.otus.mail.core.settings.domain.ReadQuickModule
 import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.FilterOptions
@@ -100,7 +101,8 @@ internal class ReadContextBuilder {
     var files = ReadFiles(downloads = null, saved = null, printer = null)
     var services = ReadServices(newsletters = null, headers = null, blocks = null, edits = null, person = null)
     var effects = ReadEffects(ToastState(), launch = {}, NewsletterSteps())
-    var display = ReadDisplay(showQuotes = { false }, zen = { false }, setZen = {})
+    var display =
+        ReadDisplay(showQuotes = { false }, zen = { false }, quickView = { ReadQuickModule.Defaults }, setZen = {})
     var own = OwnAddresses(emptyMap())
     var loadContent: suspend (MailMessage) -> MessageContent? = { null }
     var onCompose: (ComposeRequest) -> Unit = {}

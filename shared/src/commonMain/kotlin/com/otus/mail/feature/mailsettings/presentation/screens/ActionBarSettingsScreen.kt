@@ -20,7 +20,7 @@ import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.core.messages.domain.ActionBarMode
 import com.otus.mail.core.messages.domain.ActionBarPlace
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.mailsettings.presentation.components.ActionBarCopySheet
 import com.otus.mail.feature.mailsettings.presentation.components.ActionBarEditSheet
@@ -47,13 +47,13 @@ fun ActionBarSettingsScreen(
     var choosingMode by rememberSaveable { mutableStateOf(false) }
     var editing by rememberSaveable { mutableStateOf<ActionBarPlace?>(null) }
     var copying by rememberSaveable { mutableStateOf<ActionBarPlace?>(null) }
-    val mode = state.behavior.actionBarMode
+    val mode = state.behavior.actions.barMode
     Subpage("Action bar", onBack) {
         SettingRow("Layout", { choosingMode = true }, description = mode.description) { ValueButton(mode.label) }
         SettingToggleRow(
             "Minimize",
-            checked = state.behavior.minimizedBar,
-            onCheckedChange = { on -> state.update { it.copy(minimizedBar = on) } },
+            checked = state.behavior.actions.minimizedBar,
+            onCheckedChange = { on -> state.updateActions { it.copy(minimizedBar = on) } },
             description = "One round button for the main action",
         )
         Column(
@@ -63,7 +63,7 @@ fun ActionBarSettingsScreen(
             ActionBarPlace.entries.filter { it.adaptive == (mode == ActionBarMode.Adaptive) }.forEach { place ->
                 val open = { editing = place }
                 PreviewCard(place.marker, title = place.title, description = place.description, onClick = open) {
-                    ActionBarPreview(state.behavior.savedLayout(place), { open() })
+                    ActionBarPreview(state.behavior.actions.savedLayout(place), { open() })
                 }
             }
         }
@@ -71,9 +71,9 @@ fun ActionBarSettingsScreen(
     if (choosingMode) {
         ChoiceSheet(
             "Layout",
-            ChoiceOptions(ActionBarMode.entries, mode, MailBehavior().actionBarMode),
+            ChoiceOptions(ActionBarMode.entries, mode, ActionBehavior().barMode),
             row = { ChoiceRow(it.label, it.description) },
-            onSelect = { chosen -> state.update { it.copy(actionBarMode = chosen) } },
+            onSelect = { chosen -> state.updateActions { it.copy(barMode = chosen) } },
             onDismiss = { choosingMode = false },
         )
     }

@@ -29,7 +29,7 @@ internal fun AppSidebar(
     onSelect: (MailPage) -> Unit,
 ) {
     val scope = states.mailScope
-    val layout = states.behavior.behavior.sidebar
+    val layout = states.behavior.behavior.sidebar.layout
     val actions = rememberFolderActions(states.folders.colors)
     var picking by rememberSaveable { mutableStateOf(false) }
     MailSidebar(
@@ -39,7 +39,7 @@ internal fun AppSidebar(
             states.folders.all.accounts
                 .inScope(scope),
             layout,
-            states.behavior.behavior.inbox,
+            states.behavior.behavior.list.inbox,
             scopeHeader(scope, states.accountAddresses()),
             SidebarCounter(scope.accountId, layout.counts),
             states.folders.colors::groupColorOf,

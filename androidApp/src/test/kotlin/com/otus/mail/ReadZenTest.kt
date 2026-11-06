@@ -13,7 +13,6 @@ import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.messages.domain.OwnAddresses
-import com.otus.mail.feature.read.presentation.ReadContext
 import com.otus.mail.feature.read.presentation.ReadDisplay
 import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Assert.assertTrue
@@ -40,6 +39,7 @@ class ReadZenTest {
                     ReadDisplay(
                         showQuotes = { false },
                         zen = { zen.value },
+                        quickView = display.quickView,
                         setZen = { zen.value = it },
                         today = display.today,
                     )

@@ -7,7 +7,7 @@ class AllowedSendersTest {
     @Test
     fun aSenderIsAllowedOnceInLowercaseNewestFirst() {
         val behavior =
-            MailBehavior(allowedSenders = listOf("grace@example.org", "news@sentry.io"))
+            ReadBehavior(allowedSenders = listOf("grace@example.org", "news@sentry.io"))
                 .allowingSender(" News@Sentry.io ")
         assertEquals(listOf("news@sentry.io", "grace@example.org"), behavior.allowedSenders)
     }
@@ -15,14 +15,14 @@ class AllowedSendersTest {
     @Test
     fun removingASenderIgnoresCase() {
         val behavior =
-            MailBehavior(allowedSenders = listOf("grace@example.org", "news@sentry.io"))
+            ReadBehavior(allowedSenders = listOf("grace@example.org", "news@sentry.io"))
                 .withoutSender("Grace@Example.org")
         assertEquals(listOf("news@sentry.io"), behavior.allowedSenders)
     }
 
     @Test
     fun aBlankAddressChangesNothing() {
-        val behavior = MailBehavior(allowedSenders = listOf("grace@example.org"))
+        val behavior = ReadBehavior(allowedSenders = listOf("grace@example.org"))
         assertEquals(behavior, behavior.allowingSender("  "))
     }
 }

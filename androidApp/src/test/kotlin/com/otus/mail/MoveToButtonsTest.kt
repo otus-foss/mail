@@ -15,7 +15,9 @@ import com.otus.mail.core.messages.domain.ActionBarLayout
 import com.otus.mail.core.messages.domain.ActionBarPlace
 import com.otus.mail.core.messages.domain.BarButton.MoveTo
 import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -76,7 +78,10 @@ class MoveToButtonsTest {
                 listOf(MoveTo(listOf("Receipts", "Amazon")), MoveTo(listOf("Travel")), MailAction.Move),
                 MailAction.Reply,
             )
-        assertEquals(expected, AndroidMailBehaviorStore(compose.activity).read().savedLayout(ActionBarPlace.Message))
+        assertEquals(
+            expected,
+            AndroidMailBehaviorStore(compose.activity).read().actions.savedLayout(ActionBarPlace.Message),
+        )
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
@@ -90,7 +95,11 @@ class MoveToButtonsTest {
     @Test
     fun theMainButtonNamesItsFolderAndMovesTheMessage() {
         val bar = ActionBarLayout(listOf(MailAction.Archive, MoveTo(listOf("receipts"))), MoveTo(listOf("Travel")))
-        val behavior = MailBehavior(markReadOnOpen = false, actionBar = mapOf(ActionBarPlace.Message to bar))
+        val behavior =
+            MailBehavior(
+                read = ReadBehavior(markReadOnOpen = false),
+                actions = ActionBehavior(bars = mapOf(ActionBarPlace.Message to bar)),
+            )
         compose.showInbox(server, MailBehaviorState(initial = behavior))
         compose.onNodeWithText("Welcome").performClick()
         compose.waitForNode(hasContentDescription("Travel") and hasClickAction())

@@ -14,13 +14,13 @@ import com.otus.mail.core.messages.domain.MailAction.NewMail
 import com.otus.mail.core.messages.domain.MailAction.NotSpam
 import com.otus.mail.core.messages.domain.MailAction.Restore
 import com.otus.mail.core.messages.domain.MailAction.Search
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FolderBarsTest {
-    private val behavior = MailBehavior()
+    private val behavior = ActionBehavior()
 
     @Test
     fun spamAndTrashOfferTheirWayOutAndDeletingForGood() {
@@ -50,7 +50,7 @@ class FolderBarsTest {
     @Test
     fun aBarTheUserChangedLooksTheSameInEveryFolder() {
         val custom = ActionBarLayout(listOf(MailAction.Archive), MailAction.Move)
-        val changed = behavior.copy(actionBar = behavior.actionBar + (Message to custom))
+        val changed = behavior.copy(bars = behavior.bars + (Message to custom))
         assertEquals(custom, changed.barLayout(Message, MailboxRole.Trash))
         // Other places the user left alone still change with the folder.
         assertEquals(ActionBarLayout(listOf(DeleteForever), Restore), changed.barLayout(Selection, MailboxRole.Trash))
@@ -58,7 +58,7 @@ class FolderBarsTest {
 
     @Test
     fun theSameEverywhereBarIgnoresTheFolder() {
-        val fixed = behavior.copy(actionBarMode = ActionBarMode.Fixed)
+        val fixed = behavior.copy(barMode = ActionBarMode.Fixed)
         MailboxRole.entries.forEach { role ->
             assertEquals(ActionBarPlace.Everywhere.defaultLayout, fixed.barLayout(Message, role))
         }

@@ -21,7 +21,7 @@ internal class ContactStates(
     onPhotos: () -> Unit,
 ) {
     val avatars =
-        ContactAvatarUpdates(services.avatars, services.work, { behavior.behavior.allAccountPhotos }, onPhotos)
+        ContactAvatarUpdates(services.avatars, services.work, { behavior.behavior.avatars.allAccountPhotos }, onPhotos)
 
     val cards: ContactsState =
         ContactsState(

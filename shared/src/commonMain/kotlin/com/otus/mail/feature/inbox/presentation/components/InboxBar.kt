@@ -35,7 +35,7 @@ internal fun InboxBar(
     val list = ListSubject(results, matching.accounts.singleOrNull(), state::startSearch, onFilters)
     val subject = ActionSubject(actions, list = list, onCompose = onCompose)
     MailActionBar(
-        actions.behavior().barFor(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke(), subject::offer),
+        actions.saved().barFor(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke(), subject::offer),
         onAction = { it.run() },
         minimized = Minimized(hidden = state.searching),
     )

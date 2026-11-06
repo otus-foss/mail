@@ -12,7 +12,7 @@ import com.otus.mail.core.messages.presentation.MessageMarks
 import com.otus.mail.core.messages.presentation.MessageMoves
 import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.core.messages.presentation.actions.offer
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 
 /** Message actions with no suggestions, rules, or Read later, for testing what bars offer. */
 internal fun offerActions(
@@ -25,7 +25,8 @@ internal fun offerActions(
     marks = MessageMarks(can = canMark, set = onMark),
     ruleForSender = { null },
     readLater = { null },
-    behavior = { MailBehavior() },
+    saved = { ActionBehavior() },
+    markReadOnOpen = { true },
     cleanup = null,
 )
 

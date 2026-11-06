@@ -28,7 +28,7 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.OriginalMessage
 import com.otus.mail.core.messages.domain.ScheduledSends
 import com.otus.mail.core.messages.domain.SentMessage
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.compose.domain.earliestPick
 import com.otus.mail.feature.compose.presentation.ComposeAccount
 import com.otus.mail.feature.compose.presentation.ComposeExits
@@ -97,7 +97,8 @@ class ComposeScreenTest {
                             }
                         ComposeScreen(
                             state,
-                            MailBehavior(recentFrom = listOf("this@companya.com")),
+                            ActionBehavior(),
+                            listOf("this@companya.com"),
                             object : ComposeExits {
                                 override fun close() {
                                     shown = false

@@ -50,7 +50,7 @@ class QuickViewTest {
 
     @Test
     fun theDefaultShowsCountsAndPeople() {
-        assertEquals(listOf(QuickViewModule.Counts, QuickViewModule.People), MailBehavior().quickView)
+        assertEquals(listOf(QuickViewModule.Counts, QuickViewModule.People), MailBehavior().list.quickView)
     }
 
     @Test

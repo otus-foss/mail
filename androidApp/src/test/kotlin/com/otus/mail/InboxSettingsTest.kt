@@ -46,7 +46,7 @@ class InboxSettingsTest {
         openInboxSettings()
         toggle("Spam").assertIsOff().performClick()
         toggle("Trash").performClick()
-        assertEquals(InboxContents(spam = true, trash = true), behavior.behavior.inbox)
+        assertEquals(InboxContents(spam = true, trash = true), behavior.behavior.list.inbox)
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Inbox + Spam + Trash").assertIsDisplayed()
     }

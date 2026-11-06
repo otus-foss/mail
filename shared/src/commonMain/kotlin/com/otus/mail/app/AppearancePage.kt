@@ -33,7 +33,7 @@ internal fun AppearancePage(
         onBack = back,
         look = {
             settings.appIcon?.let { AppIconSetting(it) { style -> MailAppIcon(style) } }
-            MailLookSettings(states.behavior.behavior) { navigation.go(MailPage.MailListSettings) }
+            MailLookSettings(states.behavior.behavior.list.layout) { navigation.go(MailPage.MailListSettings) }
         },
     )
 }

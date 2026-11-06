@@ -10,7 +10,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.mail.core.messages.domain.ActionBarMode
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -28,7 +30,7 @@ class InboxActionBarTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer()
 
-    private fun start(behavior: MailBehavior = MailBehavior(markReadOnOpen = false)) =
+    private fun start(behavior: MailBehavior = MailBehavior(read = ReadBehavior(markReadOnOpen = false))) =
         compose.showInbox(server, MailBehaviorState(initial = behavior))
 
     private fun button(label: String) = compose.onNode(hasContentDescription(label) and hasClickAction())
@@ -65,7 +67,12 @@ class InboxActionBarTest {
     @Test
     fun aFixedBarIsTheSameOnEveryScreenWithInapplicableButtonsDisabled() {
         server.folders += """{"id": "x", "name": "Old mail", "role": "archive"}"""
-        start(MailBehavior(markReadOnOpen = false, actionBarMode = ActionBarMode.Fixed))
+        start(
+            MailBehavior(
+                read = ReadBehavior(markReadOnOpen = false),
+                actions = ActionBehavior(barMode = ActionBarMode.Fixed),
+            ),
+        )
         button("Search").assertIsEnabled()
         button("New mail").assertIsEnabled()
         listOf("Archive", "Delete").forEach { button(it).assertIsNotEnabled() }

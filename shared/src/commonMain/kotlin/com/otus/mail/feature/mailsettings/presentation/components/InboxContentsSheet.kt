@@ -24,9 +24,9 @@ internal fun InboxContentsSheet(
     state: MailBehaviorState,
     onDismiss: () -> Unit,
 ) {
-    val contents = state.behavior.inbox
+    val contents = state.behavior.list.inbox
     val change: ((InboxContents) -> InboxContents) -> Unit = { update ->
-        state.update { it.copy(inbox = update(it.inbox)) }
+        state.updateList { it.copy(inbox = update(it.inbox)) }
     }
     SheetFrame("Inbox shows", onDismiss) {
         SettingToggleRow(

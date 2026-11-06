@@ -34,7 +34,7 @@ import com.otus.designsystem.R as DesignR
 class MailNotifications(
     context: Context,
     private val chosenActions: () -> List<MailAction> = {
-        AndroidMailBehaviorStore(context).read().notificationActions
+        AndroidMailBehaviorStore(context).read().actions.notificationActions
     },
     private val previews: () -> PreviewChoices = { AndroidNotificationPreviewStore(context).read() },
 ) : MailAlerts {

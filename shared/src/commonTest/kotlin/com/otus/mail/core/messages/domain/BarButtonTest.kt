@@ -1,7 +1,6 @@
 package com.otus.mail.core.messages.domain
 
 import com.otus.mail.core.messages.domain.BarButton.MoveTo
-import com.otus.mail.core.settings.domain.storageValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals

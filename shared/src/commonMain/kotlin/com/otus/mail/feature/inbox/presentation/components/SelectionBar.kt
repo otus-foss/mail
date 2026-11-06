@@ -27,12 +27,12 @@ internal fun SelectionBar(
     onDone: () -> Unit,
 ) {
     val moveChoice = rememberMoveChoice(onDone)
-    val behavior = actions.behavior()
+    val saved = actions.saved()
     val role = actions.cleanup?.listRole?.invoke()
     val suggestion =
-        rememberSuggestedMove(selected, actions, behavior.showsSuggestedMove(ActionBarPlace.Selection, role))
+        rememberSuggestedMove(selected, actions, saved.showsSuggestedMove(ActionBarPlace.Selection, role))
     val subject = ActionSubject(actions, selected, chooseFolder = moveChoice::choose, suggestion = suggestion)
-    val bar = behavior.barFor(ActionBarPlace.Selection, role, subject::offer)
+    val bar = saved.barFor(ActionBarPlace.Selection, role, subject::offer)
     MailActionBar(
         bar,
         onAction = { action ->

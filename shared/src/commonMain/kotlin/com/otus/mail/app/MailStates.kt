@@ -98,7 +98,7 @@ internal class MailStates(
 
     /** Avatars load from outside the user's servers only while Website icons is on. */
     internal fun avatarOptions(): AvatarOptions =
-        behavior.behavior.let { avatarOptions(it.websiteIcons, it.iconSource, it.bulwarkAddress) }
+        behavior.behavior.avatars.let { avatarOptions(it.websiteIcons, it.iconSource, it.bulwarkAddress) }
 
     suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)
 }

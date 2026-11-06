@@ -1,6 +1,5 @@
 package com.otus.mail.core.messages.domain
 
-import com.otus.mail.core.settings.domain.storageValue
 import kotlinx.datetime.LocalDate
 
 /** Whether the list keeps all mail, only unread mail, or only read mail. */

@@ -18,7 +18,7 @@ fun AllowedSendersScreen(
     state: MailBehaviorState,
     onBack: () -> Unit,
 ) {
-    val senders = state.behavior.allowedSenders
+    val senders = state.behavior.read.allowedSenders
     Subpage("Allowed senders", onBack) {
         if (senders.isEmpty()) {
             PageNote("No allowed senders yet. Show a mail's images, then tap Always.")
@@ -28,7 +28,7 @@ fun AllowedSendersScreen(
                     SettingRow(address, onClick = null) {
                         RowButton(
                             "Remove",
-                            { state.update { it.withoutSender(address) } },
+                            { state.updateRead { it.withoutSender(address) } },
                             accessibilityLabel = "Remove $address",
                         )
                     }

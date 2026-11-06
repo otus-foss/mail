@@ -27,7 +27,7 @@ fun SettingsIndexScope.privacyIndex(
     section("Load remote images") {
         setting(
             "Load images",
-            behavior.remoteImages.title,
+            behavior.read.remoteImages.title,
             RemoteImages.entries.map { it.title },
             Res.drawable.symbol_image,
             keywords = listOf("Remote content", "Tracking pixels"),
@@ -36,13 +36,13 @@ fun SettingsIndexScope.privacyIndex(
             "Allowed senders",
             openAllowed,
             Res.drawable.symbol_verified_user,
-            value = allowedSummary(behavior.allowedSenders.size, behavior.remoteImages),
+            value = allowedSummary(behavior.read.allowedSenders.size, behavior.read.remoteImages),
         )
     }
     section("Photos you attach") {
         setting(
             "Photo details",
-            behavior.photoCleaning.title,
+            behavior.write.photoCleaning.title,
             PhotoCleaning.entries.map { it.title },
             Res.drawable.symbol_photo_camera,
             keywords = listOf("Location", "Metadata", "EXIF"),
@@ -50,18 +50,18 @@ fun SettingsIndexScope.privacyIndex(
     }
     section("Avatars") {
         val icons = listOf("Favicons", "Logos")
-        toggle("Website icons", behavior.websiteIcons, Res.drawable.symbol_person, keywords = icons)
-        unavailable(ICONS_UNAVAILABLE.takeUnless { behavior.websiteIcons }) {
+        toggle("Website icons", behavior.avatars.websiteIcons, Res.drawable.symbol_person, keywords = icons)
+        unavailable(ICONS_UNAVAILABLE.takeUnless { behavior.avatars.websiteIcons }) {
             val sources = IconSource.entries.map { it.title }
-            setting("Icons from", behavior.iconSource.title, sources, Res.drawable.symbol_public)
+            setting("Icons from", behavior.avatars.iconSource.title, sources, Res.drawable.symbol_public)
         }
-        toggle("Photos from all accounts", behavior.allAccountPhotos, Res.drawable.symbol_person)
+        toggle("Photos from all accounts", behavior.avatars.allAccountPhotos, Res.drawable.symbol_person)
     }
     section("This device") {
         if (device.screen) {
             toggle(
                 "Screen security",
-                behavior.screenSecurity,
+                behavior.privacy.screenSecurity,
                 Res.drawable.symbol_visibility_off,
                 keywords = listOf("Screenshots", "Recent apps"),
             )
@@ -69,7 +69,7 @@ fun SettingsIndexScope.privacyIndex(
         if (device.keyboard) {
             toggle(
                 "Incognito keyboard",
-                behavior.incognitoKeyboard,
+                behavior.privacy.incognitoKeyboard,
                 Res.drawable.symbol_edit,
                 keywords = listOf("Typing", "Learning"),
             )

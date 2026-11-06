@@ -20,7 +20,7 @@ import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.presentation.actions.label
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label
@@ -38,11 +38,11 @@ fun ActionSettings(
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     var choosing by rememberSaveable { mutableStateOf<SwipeSide?>(null) }
-    val behavior = state.behavior
+    val actions = state.behavior.actions
     SettingsSection("Actions") {
         SwipeSide.entries.forEach { side ->
             SettingRow(side.title(rtl), { choosing = side }, icon = side.icon(rtl)) {
-                ValueButton(side.of(behavior).swipeLabel)
+                ValueButton(side.of(actions).swipeLabel)
             }
         }
         SettingPageRow("Action bar", onOpenActionBar, icon = Res.drawable.symbol_view_agenda)
@@ -62,12 +62,12 @@ private fun SwipeChoice(
         title = title,
         choices =
             ChoiceOptions(
-                listOf(null) + state.behavior.swipeChoices,
-                selected = side.of(state.behavior),
+                listOf(null) + state.behavior.actions.swipeChoices(state.behavior.readLater),
+                selected = side.of(state.behavior.actions),
                 default = side.default,
             ),
         row = { swipe -> ChoiceRow(swipe.swipeLabel, "Default".takeIf { swipe == side.default }) },
-        onSelect = { swipe -> state.update { side.with(it, swipe) } },
+        onSelect = { swipe -> state.updateActions { side.with(it, swipe) } },
         onDismiss = onDismiss,
     )
 }
@@ -84,21 +84,21 @@ internal enum class SwipeSide {
 
     /** What this swipe does until the user changes it. */
     val default: MailAction?
-        get() = of(MailBehavior())
+        get() = of(ActionBehavior())
 
-    fun of(behavior: MailBehavior): MailAction? =
+    fun of(actions: ActionBehavior): MailAction? =
         when (this) {
-            StartToEnd -> behavior.startToEnd
-            EndToStart -> behavior.endToStart
+            StartToEnd -> actions.startToEnd
+            EndToStart -> actions.endToStart
         }
 
     fun with(
-        behavior: MailBehavior,
+        actions: ActionBehavior,
         swipe: MailAction?,
-    ): MailBehavior =
+    ): ActionBehavior =
         when (this) {
-            StartToEnd -> behavior.copy(startToEnd = swipe)
-            EndToStart -> behavior.copy(endToStart = swipe)
+            StartToEnd -> actions.copy(startToEnd = swipe)
+            EndToStart -> actions.copy(endToStart = swipe)
         }
 }
 

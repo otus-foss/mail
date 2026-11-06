@@ -64,7 +64,7 @@ fun App(
     val dateFormatter = rememberDateFormatter(dateFormatState)
     val currentDates = rememberUpdatedState(dateFormatter)
     // The start page is read once per launch; changing it in settings applies at the next launch.
-    val start = remember(behaviorState) { behaviorState.behavior.startPage }
+    val start = remember(behaviorState) { behaviorState.behavior.sidebar.startPage }
     var page by rememberSaveable(stateSaver = MailPageSaver) { mutableStateOf(launchPage(start)) }
     val sidebar = rememberSidebarState()
     // Whose mail the pages show; it lasts for the process, like the page.
@@ -213,7 +213,7 @@ private fun AvatarEffects(
     // changes which of those photos the avatars take.
     LaunchedEffect(states) {
         states.contacts.cards.loadCards()
-        snapshotFlow { behaviorState.behavior.allAccountPhotos }
+        snapshotFlow { behaviorState.behavior.avatars.allAccountPhotos }
             .drop(1)
             .collect { states.contacts.avatars.apply() }
     }

@@ -45,9 +45,9 @@ fun SidebarSettingsScreen(
     onPinned: () -> Unit,
     onBack: () -> Unit,
 ) {
-    val layout = state.behavior.sidebar
+    val layout = state.behavior.sidebar.layout
     val change: ((SidebarLayout) -> SidebarLayout) -> Unit = { update ->
-        state.update { it.copy(sidebar = update(it.sidebar)) }
+        state.updateSidebar { it.copy(layout = update(it.layout)) }
     }
     var choosingCounts by rememberSaveable { mutableStateOf(false) }
     val pinned = layout.pinned.mapNotNull { pin -> pins.firstOrNull { it.pin == pin } }

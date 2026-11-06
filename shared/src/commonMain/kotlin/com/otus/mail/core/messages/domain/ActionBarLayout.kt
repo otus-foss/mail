@@ -13,7 +13,6 @@ import com.otus.mail.core.messages.domain.MailAction.Reply
 import com.otus.mail.core.messages.domain.MailAction.Search
 import com.otus.mail.core.messages.domain.MailAction.Send
 import com.otus.mail.core.messages.domain.MailAction.Trash
-import com.otus.mail.core.settings.domain.storageValue
 
 /** Whether each place has its own bar, or one bar is used everywhere. */
 enum class ActionBarMode(

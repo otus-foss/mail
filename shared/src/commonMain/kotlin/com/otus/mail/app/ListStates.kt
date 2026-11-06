@@ -33,7 +33,12 @@ internal class ListStates(
     private val avatarOptions: () -> AvatarOptions,
     mailScope: () -> MailScopeChoice,
 ) {
-    val feed = feedOf(behavior.behavior.inbox.mailScope(), scope)
+    val feed =
+        feedOf(
+            behavior.behavior.list.inbox
+                .mailScope(),
+            scope,
+        )
 
     val pageFilters = PageFilters()
 
@@ -75,8 +80,9 @@ internal class ListStates(
                 ),
             marks = marking.marks(feed, folders.all::mayMark),
             ruleForSender = folders.senderRules::start,
-            readLater = { folders.filing.readLater(feed, it) },
-            behavior = { behavior.behavior },
+            readLater = { message -> folders.filing.readLater(feed, message)?.takeIf { behavior.behavior.readLater } },
+            saved = { behavior.behavior.actions },
+            markReadOnOpen = { behavior.behavior.read.markReadOnOpen },
             cleanup = folders.cleaning.cleanup(feed),
         )
 }

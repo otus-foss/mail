@@ -108,11 +108,11 @@ private fun rememberQuickView(
         states.folders.all.accounts
             .inScope(states.mailScope)
     val pinned =
-        remember(folders, behavior.inbox, behavior.sidebar, page) {
-            sidebarMailboxes(folders, behavior.inbox, behavior.sidebar).filterNot { it.pin == page.pin }
+        remember(folders, behavior.list.inbox, behavior.sidebar.layout, page) {
+            sidebarMailboxes(folders, behavior.list.inbox, behavior.sidebar.layout).filterNot { it.pin == page.pin }
         }
     return QuickViewContext(
-        behavior.quickView,
+        behavior.list.quickView,
         pinned.map { mailbox ->
             QuickJumpTarget(mailbox.title, mailbox.icon) { navigation.go(launchPage(mailbox.pin)) }
         },

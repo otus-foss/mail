@@ -1,7 +1,5 @@
 package com.otus.mail.core.messages.domain
 
-import com.otus.mail.core.settings.domain.storageValue
-
 /** What an action works on, which decides the places that can offer it. */
 enum class ActionTarget {
     /** One message or a selection. */

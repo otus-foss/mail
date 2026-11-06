@@ -50,10 +50,10 @@ internal class ReadWiring(
         ReadEffects(edits.toasts.toasts, launch = { task -> services.work.launch { task() } }, services.newsletterSteps)
     private val privacy =
         ReadPrivacy(
-            setting = { behavior.behavior.remoteImages },
-            allowed = { behavior.behavior.allowedSenders },
+            setting = { behavior.behavior.read.remoteImages },
+            allowed = { behavior.behavior.read.allowedSenders },
             known = services.knownPeople,
-            allowSender = { address -> behavior.update { it.allowingSender(address) } },
+            allowSender = { address -> behavior.updateRead { it.allowingSender(address) } },
         )
     private val files = ReadFiles(services.attachments, services.pickers.savedFiles, services.pickers.printer)
 
@@ -90,9 +90,10 @@ internal class ReadWiring(
             effects = effects,
             display =
                 ReadDisplay(
-                    showQuotes = { behavior.behavior.showQuotes },
-                    zen = { behavior.behavior.zenRead },
-                    setZen = { on -> behavior.update { it.copy(zenRead = on) } },
+                    showQuotes = { behavior.behavior.read.showQuotes },
+                    zen = { behavior.behavior.read.zen },
+                    quickView = { behavior.behavior.read.quickView },
+                    setZen = { on -> behavior.updateRead { it.copy(zen = on) } },
                 ),
             own = own,
             loadContent = services.bodies::content,

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso
 import com.otus.mail.app.App
 import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -88,7 +89,7 @@ class MessageActionsTest {
 
     @Test
     fun aMessageStaysUnreadWhenOpeningIsSetNotToMarkIt() {
-        openMessage(MailBehavior(markReadOnOpen = false))
+        openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         assertTrue(menuOffers("Mark read"))
         assertEquals(0, server.calls.count { "Email/set" in it })
     }
@@ -96,7 +97,7 @@ class MessageActionsTest {
     @Test
     fun archiveFilesTheMessageIntoTheArchiveFolderAndTheRowStaysOut() {
         server.folders += """{"id": "x", "name": "Old mail", "role": "archive"}"""
-        openMessage(MailBehavior(markReadOnOpen = false))
+        openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         button("Archive").performClick()
         val archive = lastUpdate()
         assertTrue(archive, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/x\":true}}" in archive)
@@ -113,7 +114,7 @@ class MessageActionsTest {
     @Test
     fun trashFilesTheMessageIntoTheTrashFolder() {
         server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
-        openMessage(MailBehavior(markReadOnOpen = false))
+        openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         button("Delete").performClick()
         val trash = lastUpdate()
         assertTrue(trash, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/t\":true}}" in trash)
@@ -122,7 +123,7 @@ class MessageActionsTest {
     @Test
     fun readLaterSavesTheMessageInPlaceAndCanRemoveIt() {
         server.folders += """{"id": "l", "name": "Read later"}"""
-        openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
+        openMessage(MailBehavior(readLater = true, read = ReadBehavior(markReadOnOpen = false)))
         button("Read later").performClick()
         val save = lastUpdate()
         assertTrue(save, "\"update\":{\"m1\":{\"mailboxIds/l\":true}}" in save)
@@ -139,7 +140,7 @@ class MessageActionsTest {
         server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
         server.folders += """{"id": "l", "name": "Read later"}"""
         server.alsoIn += "l"
-        openMessage(MailBehavior(markReadOnOpen = false, readLater = true))
+        openMessage(MailBehavior(readLater = true, read = ReadBehavior(markReadOnOpen = false)))
         button("Delete").performClick()
         val trash = lastUpdate()
         val patch = "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/l\":null,\"mailboxIds/t\":true}}"
@@ -152,7 +153,7 @@ class MessageActionsTest {
             """{"id": "a", "name": "Inbox", "role": "inbox", "myRights": {"maySetKeywords": false}}"""
         // Read later is off, so its folder is an ordinary one.
         server.folders += """{"id": "l", "name": "Read later"}"""
-        openMessage(MailBehavior(markReadOnOpen = false))
+        openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         // Unavailable actions keep their slots, disabled, so the bar never shifts.
         listOf("Archive", "Delete").forEach { button(it).assertIsNotEnabled() }
         assertFalse(menuOffers("Flag"))
@@ -163,7 +164,7 @@ class MessageActionsTest {
     @Test
     fun aRefusedMarkIsUndoneAndReported() {
         server.refuseUpdates = true
-        openMessage(MailBehavior(markReadOnOpen = false))
+        openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         chooseFromMenu("Flag")
         compose.waitForText("Couldn't change the message")
         assertTrue(menuOffers("Flag"))
@@ -173,7 +174,7 @@ class MessageActionsTest {
     @Test
     fun moveFilesTheMessageIntoTheChosenFolderAndClosesIt() {
         server.folders += """{"id": "p", "name": "Projects"}"""
-        openMessage(MailBehavior(markReadOnOpen = false))
+        openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         button("Move").performClick()
         compose.onNodeWithText("Projects").performClick()
         val move = lastUpdate()
@@ -184,7 +185,7 @@ class MessageActionsTest {
     @Test
     fun theAlsoInStripsFoldersSheetAddsTheConversationToATickedFolder() {
         server.alsoIn += "r"
-        openMessage(MailBehavior(markReadOnOpen = false))
+        openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         // The inbox is the folder the message was opened from, so the strip names only Receipts.
         compose.waitForText("Also in")
         compose.onNodeWithText("Also in").performClick()
@@ -197,7 +198,7 @@ class MessageActionsTest {
 
     @Test
     fun backClosesTheMessage() {
-        openMessage(MailBehavior(markReadOnOpen = false))
+        openMessage(MailBehavior(read = ReadBehavior(markReadOnOpen = false)))
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
         compose.onNodeWithText("Welcome").assertIsDisplayed()

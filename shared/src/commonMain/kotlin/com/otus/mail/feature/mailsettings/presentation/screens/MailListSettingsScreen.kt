@@ -38,9 +38,9 @@ fun MailListSettingsScreen(
     preview: @Composable (MailListLayout) -> Unit,
     onBack: () -> Unit,
 ) {
-    val list = state.behavior.list
+    val list = state.behavior.list.layout
     val change: ((MailListLayout) -> MailListLayout) -> Unit = { update ->
-        state.update { it.copy(list = update(it.list)) }
+        state.updateList { it.copy(layout = update(it.layout)) }
     }
     var choosing by rememberSaveable { mutableStateOf<ListChoice?>(null) }
     val example = { layout: MailListLayout -> dateFormatter.dateStyleExample(layout, currentLocalDate()) }

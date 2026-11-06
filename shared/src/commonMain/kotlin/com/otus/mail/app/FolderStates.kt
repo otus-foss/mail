@@ -46,12 +46,12 @@ internal class FolderStates(
         FolderColorsState(
             services.stores.folders.colors,
             { all.accounts },
-        ) { behavior.behavior.sidebar.folderColors }
+        ) { behavior.behavior.sidebar.layout.folderColors }
 
     /** Which folder the color nudge offers a color for; only while folder colors and folder icons are on. */
     val nudge =
         FolderNudgeState(services.stores.folders.nudges, colors, { all.accounts }) {
-            behavior.behavior.sidebar.folderColors && behavior.behavior.list.folderIcons
+            behavior.behavior.sidebar.layout.folderColors && behavior.behavior.list.layout.folderIcons
         }
 
     /** Each account's folder rules, kept in the Otus block of its active Sieve script. */

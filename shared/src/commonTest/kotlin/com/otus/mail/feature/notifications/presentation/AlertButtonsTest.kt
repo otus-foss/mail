@@ -12,7 +12,7 @@ class AlertButtonsTest {
 
     @Test
     fun alertsOfferTrashArchiveAndMarkReadUntilTheUserChooses() {
-        val buttons = MailBehavior().notificationActions.alertButtons(everything)
+        val buttons = MailBehavior().actions.notificationActions.alertButtons(everything)
         assertEquals(listOf(MailAction.Trash, MailAction.Archive, MailAction.Read), buttons)
     }
 

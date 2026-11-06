@@ -27,14 +27,14 @@ internal fun ReadQuickViewSetting(state: MailBehaviorState) {
         { choosing = true },
         icon = Res.drawable.symbol_grid_on,
         description = "Pull the top panel down while reading",
-    ) { ValueButton(shownCount(state.behavior.readQuickView.size)) }
+    ) { ValueButton(shownCount(state.behavior.read.quickView.size)) }
     if (!choosing) return
     OrderedChoiceSheet(
         "Quick view",
-        state.behavior.readQuickView,
+        state.behavior.read.quickView,
         ReadQuickModule.entries.map { OrderedChoice(it, it.storageValue, it.title, it.icon, "Modules") },
         ReadQuickModule::storageValue,
-        onApply = { modules -> state.update { it.copy(readQuickView = modules) } },
+        onApply = { modules -> state.updateRead { it.copy(quickView = modules) } },
         onDismiss = { choosing = false },
         limit = ReadQuickModule.LIMIT,
     )

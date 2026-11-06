@@ -21,6 +21,7 @@ import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.core.settings.domain.InboxPill.Filter.Attachments
 import com.otus.mail.core.settings.domain.InboxPill.Filter.Flagged
 import com.otus.mail.core.settings.domain.InboxPill.Filter.Unread
+import com.otus.mail.core.settings.domain.ListBehavior
 import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
@@ -78,19 +79,19 @@ class InboxPillsTest {
 
     @Test
     fun draggingAHandleMovesAPillAndDoneSavesTheOrder() {
-        start(MailBehavior(pills = listOf(Unread, Attachments, Flagged)))
+        start(MailBehavior(list = ListBehavior(pills = listOf(Unread, Attachments, Flagged))))
         openPillsSheet()
         // Far past the last row: the row stops at the end of the list.
         compose.onNodeWithContentDescription("Reorder Unread", useUnmergedTree = true).performTouchInput {
             swipe(center, center + Offset(0f, height * 20f), durationMillis = 600)
         }
         compose.onNodeWithText("Done").performClick()
-        compose.runOnIdle { assertEquals(listOf(Attachments, Flagged, Unread), behavior.behavior.pills) }
+        compose.runOnIdle { assertEquals(listOf(Attachments, Flagged, Unread), behavior.behavior.list.pills) }
     }
 
     @Test
     fun accessibilityServicesMoveAPillWithoutDragging() {
-        start(MailBehavior(pills = listOf(Unread, Attachments)))
+        start(MailBehavior(list = ListBehavior(pills = listOf(Unread, Attachments))))
         openPillsSheet()
         val moveUp =
             compose
@@ -100,7 +101,7 @@ class InboxPillsTest {
                 .single { it.label == "Move up" }
         compose.runOnUiThread { moveUp.action() }
         compose.onNodeWithText("Done").performClick()
-        compose.runOnIdle { assertEquals(listOf(Attachments, Unread), behavior.behavior.pills) }
+        compose.runOnIdle { assertEquals(listOf(Attachments, Unread), behavior.behavior.list.pills) }
     }
 
     @Test
@@ -117,7 +118,7 @@ class InboxPillsTest {
         compose.onNodeWithText("3 shown").assertIsDisplayed()
         assertEquals(
             InboxPill.defaults(readLater = false) + InboxPill.Folder("ada", "r"),
-            behavior.behavior.pills,
+            behavior.behavior.list.pills,
         )
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Open navigation").performClick()

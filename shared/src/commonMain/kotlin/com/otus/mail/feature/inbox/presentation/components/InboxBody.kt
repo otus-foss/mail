@@ -145,7 +145,7 @@ private fun LazyItemScope.ConversationItem(
 ) {
     val selection = rowSelection(ids, index, gestures.selectedIds)
     val actions = gestures.actions
-    val swipes = actions?.behavior?.invoke()
+    val swipes = actions?.saved?.invoke()
     val subject = ActionSubject(actions, listOf(message))
     SwipeActions(
         startToEnd = swipes?.let { subject.swipe(it.startToEnd) },

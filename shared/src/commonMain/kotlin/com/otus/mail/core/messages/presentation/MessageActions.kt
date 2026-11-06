@@ -4,7 +4,7 @@ import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.pathText
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MessageFlag
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label
 
@@ -43,7 +43,7 @@ data class MoveTarget(
 
 /**
  * What the user can do with a message besides reading it, from an open message or by swiping its
- * row. The app supplies these from its folders, rules, and saved [behavior]; an action without a
+ * row. The app supplies these from its folders, rules, and saved [ActionBehavior]; an action without a
  * target or permission is not offered.
  */
 class MessageActions(
@@ -55,8 +55,10 @@ class MessageActions(
     val ruleForSender: (MailMessage) -> (() -> Unit)?,
     /** Read later for the message, shown at once when applied; null while it is off or cannot change it. */
     val readLater: (MailMessage) -> ReadLaterChange?,
-    /** The saved swipes and bars, and whether opening a message marks it read. */
-    val behavior: () -> MailBehavior,
+    /** The saved swipes and bars. */
+    val saved: () -> ActionBehavior,
+    /** Whether opening an unread message marks it read. */
+    val markReadOnOpen: () -> Boolean,
     /** Not spam, Restore, Delete forever, and emptying; null where the page has no folders. */
     val cleanup: FolderCleanup?,
 ) {
@@ -66,9 +68,9 @@ class MessageActions(
         shortcut: MailboxRole,
     ): MoveTarget? = moves.targets(message).firstOrNull { it.shortcut == shortcut }
 
-    /** Marks an unread message read as it opens, when the saved behavior asks for it. */
+    /** Marks an unread message read as it opens, when [markReadOnOpen] asks for it. */
     fun opened(message: MailMessage) {
-        val markRead = behavior().markReadOnOpen && message.attributes.unread
+        val markRead = markReadOnOpen() && message.attributes.unread
         if (markRead && marks.can(message, MessageFlag.Read)) marks.opened(message)
     }
 }

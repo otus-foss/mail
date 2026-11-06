@@ -40,7 +40,7 @@ import org.jetbrains.compose.resources.DrawableResource
 @Composable
 internal fun FilterPanelSettings(state: MailBehaviorState) {
     var choosing by rememberSaveable { mutableStateOf<FilterSetting?>(null) }
-    val layout = state.behavior.filters
+    val layout = state.behavior.list.filters
     val quickShown = FilterSection.Quick in layout.sections
     SettingsSection("Panel") {
         SettingRow(
@@ -63,7 +63,7 @@ internal fun FilterPanelSettings(state: MailBehaviorState) {
             { choosing = FilterSetting.QuickView },
             icon = Res.drawable.symbol_grid_on,
             description = "Pull the top panel down to see it",
-        ) { ValueButton(shownCount(state.behavior.quickView.size)) }
+        ) { ValueButton(shownCount(state.behavior.list.quickView.size)) }
     }
     when (choosing) {
         FilterSetting.Sections -> SectionChoices(state) { choosing = null }
@@ -83,10 +83,10 @@ private fun SectionChoices(
 ) {
     OrderedChoiceSheet(
         "Sections",
-        state.behavior.filters.sections,
+        state.behavior.list.filters.sections,
         FilterSection.entries.map { OrderedChoice(it, it.storageValue, it.title, it.icon, "Sections") },
         FilterSection::storageValue,
-        onApply = { sections -> state.update { it.copy(filters = it.filters.copy(sections = sections)) } },
+        onApply = { sections -> state.updateList { it.copy(filters = it.filters.copy(sections = sections)) } },
         onDismiss = onDismiss,
     )
 }
@@ -98,10 +98,10 @@ private fun QuickChoices(
 ) {
     OrderedChoiceSheet(
         "Quick filters",
-        state.behavior.filters.quick,
+        state.behavior.list.filters.quick,
         QuickFacet.entries.map { OrderedChoice(it, it.storageValue, it.label, it.icon, "Quick filters") },
         QuickFacet::storageValue,
-        onApply = { quick -> state.update { it.copy(filters = it.filters.copy(quick = quick)) } },
+        onApply = { quick -> state.updateList { it.copy(filters = it.filters.copy(quick = quick)) } },
         onDismiss = onDismiss,
     )
 }
@@ -113,10 +113,10 @@ private fun QuickViewChoices(
 ) {
     OrderedChoiceSheet(
         "Quick view",
-        state.behavior.quickView,
+        state.behavior.list.quickView,
         QuickViewModule.entries.map { OrderedChoice(it, it.storageValue, it.title, it.icon, "Modules") },
         QuickViewModule::storageValue,
-        onApply = { modules -> state.update { it.copy(quickView = modules) } },
+        onApply = { modules -> state.updateList { it.copy(quickView = modules) } },
         onDismiss = onDismiss,
         limit = QuickViewModule.LIMIT,
     )

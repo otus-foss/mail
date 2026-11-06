@@ -26,7 +26,7 @@ internal fun MailStates.accountAddresses(): List<AccountAddresses> =
  * their inboxes on the server; an address counts the loaded inbox mail sent to it.
  */
 internal fun MailStates.scopeCount(choice: MailScopeChoice): String? {
-    val counts = behavior.behavior.sidebar.counts
+    val counts = behavior.behavior.sidebar.layout.counts
     return when (choice) {
         is MailScopeChoice.Address -> addressCount(list.feed.messages, choice, counts)?.toString()
         else -> SidebarCounter(choice.accountId, counts).of(folders.all.accounts.mapNotNull { it.inbox })

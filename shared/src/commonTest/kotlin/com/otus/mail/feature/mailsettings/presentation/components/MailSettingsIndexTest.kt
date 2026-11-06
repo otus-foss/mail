@@ -3,8 +3,10 @@ package com.otus.mail.feature.mailsettings.presentation.components
 import com.otus.mail.core.messages.domain.DevicePrivacy
 import com.otus.mail.core.settings.domain.FilterLayout
 import com.otus.mail.core.settings.domain.FilterSection
+import com.otus.mail.core.settings.domain.ListBehavior
 import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.core.settings.domain.MailListLayout
+import com.otus.mail.core.settings.domain.SidebarBehavior
 import com.otus.mail.core.settings.domain.SidebarLayout
 import com.otus.mail.core.settings.domain.SidebarSection
 import com.otus.mail.core.settings.presentation.MailBehaviorState
@@ -29,7 +31,7 @@ class MailSettingsIndexTest {
             )
         return settingsIndex {
             page("Appearance", { opened += "Appearance: $it" }) {
-                mailLookIndex(behavior) { opened += "Mail list: $it" }
+                mailLookIndex(behavior.list.layout) { opened += "Mail list: $it" }
             }
             page("Mail behavior", { opened += "Mail behavior: $it" }) {
                 mailBehaviorIndex(MailBehaviorState(initial = behavior), emptyList(), emptyList(), rtl = false, pages)
@@ -63,9 +65,12 @@ class MailSettingsIndexTest {
     fun aSettingWaitingOnAnotherSaysWhy() {
         val behavior =
             MailBehavior(
-                filters = FilterLayout(sections = FilterSection.entries - FilterSection.Quick),
-                list = MailListLayout(showSender = false),
-                sidebar = SidebarLayout(hidden = setOf(SidebarSection.Mailboxes)),
+                list =
+                    ListBehavior(
+                        filters = FilterLayout(sections = FilterSection.entries - FilterSection.Quick),
+                        layout = MailListLayout(showSender = false),
+                    ),
+                sidebar = SidebarBehavior(SidebarLayout(hidden = setOf(SidebarSection.Mailboxes))),
             )
         val found = index(behavior)
         assertEquals(QUICK_FILTERS_UNAVAILABLE, found.unavailable("Quick filters"))

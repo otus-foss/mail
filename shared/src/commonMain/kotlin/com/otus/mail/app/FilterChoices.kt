@@ -36,7 +36,7 @@ internal fun MailStates.filterOptions(page: MailPage): FilterOptions {
         accounts = accounts,
         folders = page == MailPage.Inbox,
         readLater = shown.any { it.readLaterId != null },
-        layout = behavior.behavior.filters,
+        layout = behavior.behavior.list.filters,
     )
 }
 

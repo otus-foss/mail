@@ -8,7 +8,7 @@ import com.otus.mail.core.messages.domain.ActionBarPlace
 import com.otus.mail.core.messages.domain.BarButton
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.domain.barLayout
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 
 /**
  * One place's bar: its [layout], each button as [offer] gives it, whether it is [minimized] to its
@@ -34,14 +34,14 @@ internal class MailBar(
  * gives. A [reply] primary, such as Reply all for a message to several people, takes the place
  * of a saved Reply or Reply all primary.
  */
-internal fun MailBehavior.barFor(
+internal fun ActionBehavior.barFor(
     place: ActionBarPlace,
     role: MailboxRole?,
     offer: (BarButton) -> OfferedAction?,
     reply: MailAction? = null,
 ): MailBar {
     val layout = barLayout(place, role).let { if (reply == null) it else it.following(reply) }
-    val choices = barChoices(place).filter { it != MailAction.AllActions }
+    val choices = place.actions.filter { it != MailAction.AllActions }
     val hidden = if (minimizedBar) layout.secondary else emptyList()
     return MailBar(
         layout,
@@ -67,7 +67,7 @@ internal fun ActionSubject.swipe(action: MailAction?): SwipeAction? =
         ?.let { SwipeAction(UiAction(it.label, it.symbol, onClick = it.run), dismisses = it.leaves) }
 
 /** Whether [place]'s bar on a page of [role] folders has Suggested move, which asks the server for its folder. */
-internal fun MailBehavior.showsSuggestedMove(
+internal fun ActionBehavior.showsSuggestedMove(
     place: ActionBarPlace,
     role: MailboxRole?,
 ): Boolean = MailAction.SuggestedMove in barLayout(place, role).buttons

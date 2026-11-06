@@ -39,9 +39,9 @@ internal fun StartPageSheet(
     val pins = options.map { it.pin }
     ChoiceSheet(
         "Start page",
-        ChoiceOptions(pins, selected = state.behavior.startPage, default = SidebarPin.Inbox),
+        ChoiceOptions(pins, selected = state.behavior.sidebar.startPage, default = SidebarPin.Inbox),
         row = { pin -> options.first { it.pin == pin }.startPageRow() },
-        onSelect = { pin -> state.update { it.copy(startPage = pin) } },
+        onSelect = { pin -> state.updateSidebar { it.copy(startPage = pin) } },
         onDismiss = onDismiss,
     )
 }

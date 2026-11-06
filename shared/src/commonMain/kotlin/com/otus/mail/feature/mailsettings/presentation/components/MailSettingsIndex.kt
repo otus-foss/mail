@@ -49,17 +49,17 @@ import com.otus.settings.presentation.SettingsIndexScope
 
 /** The Mail row of the Appearance page: the Mail list page. */
 fun SettingsIndexScope.mailLookIndex(
-    behavior: MailBehavior,
+    layout: MailListLayout,
     openMailList: (String?) -> Unit,
 ) {
     page(
         "Mail list",
         openMailList,
         Res.drawable.symbol_format_list_bulleted,
-        value = behavior.list.summary,
+        value = layout.summary,
     ) {
         keywords("Rows", "Density")
-        mailListIndex(behavior.list)
+        mailListIndex(layout)
     }
 }
 
@@ -104,13 +104,13 @@ fun SettingsIndexScope.mailBehaviorIndex(
     section("Inbox") {
         setting(
             "Inbox shows",
-            inboxSummary(behavior.inbox),
+            inboxSummary(behavior.list.inbox),
             icon = Res.drawable.symbol_inbox,
             keywords = listOf("Archive", "Spam", "Trash", "All mail"),
         )
         setting(
             "Pills",
-            shownCount(InboxPills(behavior.pills, folderPills).shown.size),
+            shownCount(InboxPills(behavior.list.pills, folderPills).shown.size),
             icon = Res.drawable.symbol_filter_list,
             keywords = listOf("Chips", "Tabs"),
         )
@@ -119,14 +119,14 @@ fun SettingsIndexScope.mailBehaviorIndex(
     panelsIndex(behavior, startPages, pages)
     actionsIndex(behavior, rtl, pages.actionBar)
     section("Reading") {
-        toggle("Mark as read when opened", behavior.markReadOnOpen, Res.drawable.symbol_mark_email_read)
-        toggle("Show quoted text", behavior.showQuotes, Res.drawable.symbol_forum)
-        setting("Quick view", shownCount(behavior.readQuickView.size), icon = Res.drawable.symbol_grid_on)
+        toggle("Mark as read when opened", behavior.read.markReadOnOpen, Res.drawable.symbol_mark_email_read)
+        toggle("Show quoted text", behavior.read.showQuotes, Res.drawable.symbol_forum)
+        setting("Quick view", shownCount(behavior.read.quickView.size), icon = Res.drawable.symbol_grid_on)
     }
     section("Writing") {
         setting(
             "Undo send",
-            behavior.undoSendSeconds.undoLabel,
+            behavior.write.undoSendSeconds.undoLabel,
             UNDO_SEND_CHOICES.map { it.undoLabel },
             Res.drawable.symbol_schedule_send,
             keywords = listOf("Delay", "Cancel sending"),
@@ -136,7 +136,7 @@ fun SettingsIndexScope.mailBehaviorIndex(
             pages.signatures,
             Res.drawable.symbol_signature,
             summary = "One for each address you send from",
-        ) { toggle("Add to replies", behavior.signatureInReplies) }
+        ) { toggle("Add to replies", behavior.write.signatureInReplies) }
     }
 }
 
@@ -149,7 +149,7 @@ private fun SettingsIndexScope.panelsIndex(
     section("Panels") {
         setting(
             "Start page",
-            startPageLabel(behavior.startPage, startPages),
+            startPageLabel(behavior.sidebar.startPage, startPages),
             startPages.map { it.path.pathText() },
             Res.drawable.symbol_home,
             keywords = listOf("Open on", "Launch", "Home"),
@@ -158,19 +158,19 @@ private fun SettingsIndexScope.panelsIndex(
             "Sidebar",
             pages.sidebar,
             Res.drawable.symbol_menu,
-            value = behavior.sidebar.sectionSummary,
+            value = behavior.sidebar.layout.sectionSummary,
         ) {
             keywords("Navigation", "Drawer")
-            sidebarIndex(behavior.sidebar, pages.pinned)
+            sidebarIndex(behavior.sidebar.layout, pages.pinned)
         }
         page(
             "Filter panel",
             pages.filterPanel,
             Res.drawable.symbol_tune,
-            value = filterPanelSummary(behavior.filters.sections.size),
+            value = filterPanelSummary(behavior.list.filters.sections.size),
         ) {
             keywords("Control panel", "Filters")
-            filterPanelIndex(behavior.filters, behavior.quickView.size)
+            filterPanelIndex(behavior.list.filters, behavior.list.quickView.size)
         }
     }
 }
@@ -182,14 +182,20 @@ private fun SettingsIndexScope.actionsIndex(
     openActionBar: (String?) -> Unit,
 ) {
     section("Actions") {
-        val swipes = (listOf(null) + behavior.swipeChoices).map { it.swipeLabel }
+        val swipes = (listOf(null) + behavior.actions.swipeChoices(behavior.readLater)).map { it.swipeLabel }
         SwipeSide.entries.forEach {
-            setting(it.title(rtl), it.of(behavior).swipeLabel, swipes, it.icon(rtl), keywords = listOf("Gestures"))
+            setting(
+                it.title(rtl),
+                it.of(behavior.actions).swipeLabel,
+                swipes,
+                it.icon(rtl),
+                keywords = listOf("Gestures"),
+            )
         }
         page("Action bar", openActionBar, Res.drawable.symbol_view_agenda) {
             keywords("Toolbar", "Buttons")
-            setting("Layout", behavior.actionBarMode.label, ActionBarMode.entries.map { it.label })
-            toggle("Minimize", behavior.minimizedBar)
+            setting("Layout", behavior.actions.barMode.label, ActionBarMode.entries.map { it.label })
+            toggle("Minimize", behavior.actions.minimizedBar)
         }
     }
 }

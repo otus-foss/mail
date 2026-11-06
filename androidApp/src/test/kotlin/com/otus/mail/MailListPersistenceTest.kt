@@ -2,6 +2,7 @@ package com.otus.mail
 
 import android.content.Context
 import com.otus.mail.core.settings.domain.DateStyle
+import com.otus.mail.core.settings.domain.ListBehavior
 import com.otus.mail.core.settings.domain.ListOrder
 import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.core.settings.domain.MailListLayout
@@ -26,7 +27,7 @@ class MailListPersistenceTest {
             .clear()
             .putBoolean("read_later", true)
             .apply()
-        assertEquals(MailListLayout(), AndroidMailBehaviorStore(context).read().list)
+        assertEquals(MailListLayout(), AndroidMailBehaviorStore(context).read().list.layout)
     }
 
     @Test
@@ -34,12 +35,15 @@ class MailListPersistenceTest {
         val saved =
             MailBehavior(
                 list =
-                    MailListLayout(
-                        order = ListOrder.SenderFirst,
-                        preview = PreviewLines.One,
-                        showSender = false,
-                        folderIcons = false,
-                        dateStyle = DateStyle.Full,
+                    ListBehavior(
+                        layout =
+                            MailListLayout(
+                                order = ListOrder.SenderFirst,
+                                preview = PreviewLines.One,
+                                showSender = false,
+                                folderIcons = false,
+                                dateStyle = DateStyle.Full,
+                            ),
                     ),
             )
         AndroidMailBehaviorStore(context).write(saved)

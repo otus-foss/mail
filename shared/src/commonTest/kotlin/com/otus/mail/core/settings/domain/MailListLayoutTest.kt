@@ -14,7 +14,7 @@ class MailListLayoutTest {
                 folderIcons = true,
                 dateStyle = DateStyle.Relative,
             ),
-            MailBehavior().list,
+            ListBehavior().layout,
         )
     }
 

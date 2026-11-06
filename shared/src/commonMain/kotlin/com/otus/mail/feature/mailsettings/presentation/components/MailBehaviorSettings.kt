@@ -17,7 +17,7 @@ import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.MailListLayout
 import com.otus.mail.core.settings.presentation.FolderPillOption
 import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.core.settings.presentation.MailBehaviorState
@@ -30,13 +30,13 @@ import com.otus.mail.feature.mailsettings.presentation.inboxSummary
 /** Mail's row in the Appearance page's Look section: the mail list's page, opened with [onMailList]. */
 @Composable
 fun MailLookSettings(
-    behavior: MailBehavior,
+    layout: MailListLayout,
     onMailList: () -> Unit,
 ) {
     SettingPageRow(
         "Mail list",
         onMailList,
-        description = behavior.list.summary,
+        description = layout.summary,
         icon = Res.drawable.symbol_format_list_bulleted,
     )
 }
@@ -55,9 +55,9 @@ fun InboxBehaviorSettings(
     val behavior = state.behavior
     SettingsSection("Inbox") {
         SettingRow("Inbox shows", { choosingInbox = true }, icon = Res.drawable.symbol_inbox) {
-            ValueButton(inboxSummary(behavior.inbox))
+            ValueButton(inboxSummary(behavior.list.inbox))
         }
-        val shown = InboxPills(behavior.pills, folderPills).shown.size
+        val shown = InboxPills(behavior.list.pills, folderPills).shown.size
         SettingRow(
             "Pills",
             { choosingPills = true },
@@ -75,9 +75,9 @@ fun InboxBehaviorSettings(
     if (choosingInbox) InboxContentsSheet(state) { choosingInbox = false }
     if (choosingPills) {
         InboxPillsSheet(
-            behavior.pills,
+            behavior.list.pills,
             folderPills,
-            onApply = { pills -> state.update { it.copy(pills = pills) } },
+            onApply = { pills -> state.updateList { it.copy(pills = pills) } },
             onDismiss = { choosingPills = false },
         )
     }
@@ -98,17 +98,17 @@ fun PanelSettings(
     var choosingStart by rememberSaveable { mutableStateOf(false) }
     val behavior = state.behavior
     SettingsSection("Panels") {
-        StartPageRow(behavior.startPage, startPages) { choosingStart = true }
+        StartPageRow(behavior.sidebar.startPage, startPages) { choosingStart = true }
         SettingPageRow(
             "Sidebar",
             onSidebar,
-            description = behavior.sidebar.sectionSummary,
+            description = behavior.sidebar.layout.sectionSummary,
             icon = Res.drawable.symbol_menu,
         )
         SettingPageRow(
             "Filter panel",
             onFilterPanel,
-            description = filterPanelSummary(behavior.filters.sections.size),
+            description = filterPanelSummary(behavior.list.filters.sections.size),
             icon = Res.drawable.symbol_tune,
         )
     }

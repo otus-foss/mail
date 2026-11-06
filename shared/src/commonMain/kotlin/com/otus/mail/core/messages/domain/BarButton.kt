@@ -1,7 +1,5 @@
 package com.otus.mail.core.messages.domain
 
-import com.otus.mail.core.settings.domain.storageValue
-
 /**
  * What an action bar slot holds: a plain [MailAction], or an action with a target the user
  * picked, such as [MoveTo] a folder. [storageValue] names it in a saved bar, and [target] decides

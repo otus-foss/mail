@@ -20,7 +20,7 @@ import com.otus.mail.core.messages.presentation.actions.MailBar
 import com.otus.mail.core.messages.presentation.actions.OfferedAction
 import com.otus.mail.core.messages.presentation.actions.barFor
 import com.otus.mail.core.messages.presentation.actions.offer
-import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ActionBehavior
 import com.otus.mail.feature.read.presentation.ReadPage
 import com.otus.mail.feature.read.presentation.readMenu
 import kotlin.test.Test
@@ -45,9 +45,9 @@ class ActionReachTest {
     /** Full and minimized bars, each with the default buttons and with a Read bar that has no reply. */
     private val behaviors =
         listOf(false, true).flatMap { minimized ->
-            val base = MailBehavior(readLater = true, minimizedBar = minimized)
+            val base = ActionBehavior(minimizedBar = minimized)
             val noReply = ActionBarPlace.Message to ActionBarLayout(emptyList(), MailAction.Read)
-            listOf(base, base.copy(actionBar = base.actionBar + noReply))
+            listOf(base, base.copy(bars = base.bars + noReply))
         }
 
     private val roles = listOf(MailboxRole.Inbox, MailboxRole.Sent, MailboxRole.Junk, MailboxRole.Trash)
@@ -63,7 +63,7 @@ class ActionReachTest {
 
     @Test
     fun readLaterIsInTheMenuWhileTheBarLeavesItOut() {
-        val reached = readViewReach(MailBehavior(readLater = true), MailboxRole.Inbox, count = 3)
+        val reached = readViewReach(ActionBehavior(), MailboxRole.Inbox, count = 3)
         assertEquals(true, MailAction.ReadLater in reached)
     }
 
@@ -88,7 +88,7 @@ class ActionReachTest {
 
     /** What the Read view reaches for a page of [count] messages in a [role] folder. */
     private fun readViewReach(
-        behavior: MailBehavior,
+        behavior: ActionBehavior,
         role: MailboxRole,
         count: Int,
     ): List<BarButton> {
@@ -101,7 +101,7 @@ class ActionReachTest {
     }
 
     private fun barOf(
-        behavior: MailBehavior,
+        behavior: ActionBehavior,
         place: ActionBarPlace,
         role: MailboxRole,
         subject: ActionSubject,
@@ -139,7 +139,8 @@ class ActionReachTest {
             marks = MessageMarks(can = { _, _ -> true }, set = { _, _, _ -> }),
             ruleForSender = { {} },
             readLater = { ReadLaterChange(saves = true, leaves = false) {} },
-            behavior = { MailBehavior(readLater = true) },
+            saved = { ActionBehavior() },
+            markReadOnOpen = { true },
             cleanup =
                 FolderCleanup(
                     role = { role },

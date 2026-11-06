@@ -21,7 +21,7 @@ import com.otus.mail.feature.inbox.presentation.RowLook
 /** The Mail list settings and every account's sign-in and sending addresses and their avatars, for the rows. */
 @Composable
 internal fun rememberRowLook(states: MailStates): RowLook {
-    val layout = states.behavior.behavior.list
+    val layout = states.behavior.behavior.list.layout
     val accounts = states.accounts.accounts
     LaunchedEffect(accounts) { states.ownAvatars.load(accounts.map { it.own }) }
     val avatars =

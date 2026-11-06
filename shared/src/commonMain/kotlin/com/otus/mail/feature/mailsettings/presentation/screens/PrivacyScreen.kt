@@ -23,8 +23,9 @@ import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.shared.settings.elements.ValueButton
 import com.otus.mail.core.messages.domain.DevicePrivacy
 import com.otus.mail.core.messages.domain.RemoteImages
-import com.otus.mail.core.settings.domain.MailBehavior
 import com.otus.mail.core.settings.domain.PhotoCleaning
+import com.otus.mail.core.settings.domain.ReadBehavior
+import com.otus.mail.core.settings.domain.WriteBehavior
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.PRIVACY_TITLE
 import com.otus.mail.core.settings.presentation.allowedSummary
@@ -51,40 +52,39 @@ fun PrivacyScreen(
     Subpage(PRIVACY_TITLE, onBack) {
         SettingsSection("Load remote images", info = ImagesInfo) {
             SettingRow("Load images", { choosingImages = true }, icon = Res.drawable.symbol_image) {
-                ValueButton(behavior.remoteImages.title)
+                ValueButton(behavior.read.remoteImages.title)
             }
-            val count = behavior.allowedSenders.size
+            val count = behavior.read.allowedSenders.size
             SettingPageRow(
                 "Allowed senders",
                 onOpenAllowed,
-                description = allowedSummary(count, behavior.remoteImages),
+                description = allowedSummary(count, behavior.read.remoteImages),
                 icon = Res.drawable.symbol_verified_user,
             )
         }
         SettingsSection("Photos you attach", info = PhotosInfo) {
             SettingRow("Photo details", { choosingPhotos = true }, icon = Res.drawable.symbol_photo_camera) {
-                ValueButton(behavior.photoCleaning.title)
+                ValueButton(behavior.write.photoCleaning.title)
             }
         }
         AvatarSettings(state)
         if (device.screen || device.keyboard) DeviceSection(state, device)
     }
-    val defaults = MailBehavior()
     if (choosingImages) {
         ChoiceSheet(
             "Load images",
-            ChoiceOptions(RemoteImages.entries, behavior.remoteImages, defaults.remoteImages),
+            ChoiceOptions(RemoteImages.entries, behavior.read.remoteImages, ReadBehavior().remoteImages),
             row = { ChoiceRow(it.title, it.description) },
-            onSelect = { choice -> state.update { it.copy(remoteImages = choice) } },
+            onSelect = { choice -> state.updateRead { it.copy(remoteImages = choice) } },
             onDismiss = { choosingImages = false },
         )
     }
     if (choosingPhotos) {
         ChoiceSheet(
             "Photo details",
-            ChoiceOptions(PhotoCleaning.entries, behavior.photoCleaning, defaults.photoCleaning),
+            ChoiceOptions(PhotoCleaning.entries, behavior.write.photoCleaning, WriteBehavior().photoCleaning),
             row = { ChoiceRow(it.title, it.description) },
-            onSelect = { choice -> state.update { it.copy(photoCleaning = choice) } },
+            onSelect = { choice -> state.updateWrite { it.copy(photoCleaning = choice) } },
             onDismiss = { choosingPhotos = false },
         )
     }
@@ -96,13 +96,13 @@ private fun DeviceSection(
     state: MailBehaviorState,
     device: DevicePrivacy,
 ) {
-    val behavior = state.behavior
+    val privacy = state.behavior.privacy
     SettingsSection("This device") {
         if (device.screen) {
             SettingToggleRow(
                 "Screen security",
-                checked = behavior.screenSecurity,
-                onCheckedChange = { on -> state.update { it.copy(screenSecurity = on) } },
+                checked = privacy.screenSecurity,
+                onCheckedChange = { on -> state.updatePrivacy { it.copy(screenSecurity = on) } },
                 description = "Hides Mail from recent apps and screenshots",
                 icon = Res.drawable.symbol_visibility_off,
             )
@@ -110,8 +110,8 @@ private fun DeviceSection(
         if (device.keyboard) {
             SettingToggleRow(
                 "Incognito keyboard",
-                checked = behavior.incognitoKeyboard,
-                onCheckedChange = { on -> state.update { it.copy(incognitoKeyboard = on) } },
+                checked = privacy.incognitoKeyboard,
+                onCheckedChange = { on -> state.updatePrivacy { it.copy(incognitoKeyboard = on) } },
                 description = "Asks the keyboard not to learn what you type",
                 info = InfoText("Incognito keyboard", "Some keyboards ignore the request and learn anyway."),
                 icon = Res.drawable.symbol_edit,
