@@ -26,6 +26,7 @@ import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.mail.core.settings.domain.WriteBehavior
 import com.otus.mail.core.settings.domain.decodeNotificationActions
 import com.otus.mail.core.settings.domain.encodeNotificationActions
+import com.otus.mail.core.storage.TextCodec
 import com.otus.storage.KeyValueEditor
 import com.otus.storage.KeyValueStore
 import com.otus.storage.decoded
@@ -94,7 +95,7 @@ private fun KeyValueStore.readBehavior(): ReadBehavior {
         remoteImages =
             decodeRemoteImages(string(REMOTE_IMAGES), string(ALWAYS_REMOTE_IMAGES), string(EARLIER_REMOTE_IMAGES))
                 ?: defaults.remoteImages,
-        allowedSenders = decodeAddresses(string(ALLOWED_SENDERS)),
+        allowedSenders = string(ALLOWED_SENDERS)?.let(TextCodec.Lines.decode).orEmpty(),
     )
 }
 
@@ -104,13 +105,13 @@ private fun KeyValueEditor.put(read: ReadBehavior) {
     put(ZEN_READ, read.zen)
     put(READ_QUICK_VIEW, ReadQuickModule.encode(read.quickView))
     put(REMOTE_IMAGES, read.remoteImages.storageValue)
-    put(ALLOWED_SENDERS, encodeAddresses(read.allowedSenders))
+    put(ALLOWED_SENDERS, TextCodec.Lines.encode(read.allowedSenders))
 }
 
 private fun KeyValueStore.writeBehavior(): WriteBehavior {
     val defaults = WriteBehavior()
     return WriteBehavior(
-        recentFrom = decodeAddresses(string(RECENT_FROM)),
+        recentFrom = string(RECENT_FROM)?.let(TextCodec.Lines.decode).orEmpty(),
         signatureInReplies = flag(SIGNATURE_IN_REPLIES, defaults.signatureInReplies),
         undoSendSeconds = int(UNDO_SEND_SECONDS, defaults.undoSendSeconds),
         photoCleaning = PhotoCleaning.decode(string(PHOTO_CLEANING)),
@@ -118,7 +119,7 @@ private fun KeyValueStore.writeBehavior(): WriteBehavior {
 }
 
 private fun KeyValueEditor.put(write: WriteBehavior) {
-    put(RECENT_FROM, encodeAddresses(write.recentFrom))
+    put(RECENT_FROM, TextCodec.Lines.encode(write.recentFrom))
     put(SIGNATURE_IN_REPLIES, write.signatureInReplies)
     put(UNDO_SEND_SECONDS, write.undoSendSeconds)
     put(PHOTO_CLEANING, write.photoCleaning.storageValue)
@@ -191,11 +192,6 @@ private fun KeyValueEditor.put(sidebar: SidebarBehavior) {
     put(SIDEBAR, SidebarLayout.encode(sidebar.layout))
     put(START_PAGE, sidebar.startPage.storageValue)
 }
-
-/** A list of addresses as one stored line, and back. Addresses cannot hold a newline. */
-private fun encodeAddresses(addresses: List<String>): String = addresses.joinToString("\n")
-
-private fun decodeAddresses(stored: String?): List<String> = stored?.lines()?.filter(String::isNotBlank).orEmpty()
 
 private val RemoteImages.storageValue: String
     get() = name.lowercase()

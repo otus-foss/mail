@@ -1,7 +1,7 @@
 package com.otus.mail.core.cache
 
-import com.otus.accounts.domain.AccountStorageException
 import com.otus.jmap.login.LoginLifecycle
+import com.otus.jmap.login.LoginLifecycleException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -61,7 +61,7 @@ internal class AccountMailCache(
         try {
             forget(loginId)
         } catch (error: CacheStorageException) {
-            throw AccountStorageException(error)
+            throw LoginLifecycleException(error)
         }
     }
 

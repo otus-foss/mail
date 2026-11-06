@@ -1,7 +1,7 @@
 package com.otus.mail.feature.read.data
 
-import com.otus.accounts.domain.AccountStorageException
 import com.otus.jmap.login.LoginLifecycle
+import com.otus.jmap.login.LoginLifecycleException
 import com.otus.mail.core.files.DownloadFolder
 import com.otus.mail.core.files.DownloadFolderException
 import com.otus.mail.core.files.StoredEntry
@@ -66,7 +66,7 @@ class AttachmentRetention(
         try {
             forget(loginId)
         } catch (error: DownloadFolderException) {
-            throw AccountStorageException(error)
+            throw LoginLifecycleException(error)
         }
     }
 

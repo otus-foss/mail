@@ -20,7 +20,7 @@ import com.otus.mail.core.messages.domain.DraftFailure
 import com.otus.mail.core.messages.domain.DraftRepository
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.SendIdentity
-import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.SerializationException
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -122,11 +122,9 @@ internal class JmapDraftRepository(
             Result.failure(DraftException(error.toDraftFailure(), error))
         } catch (error: LoginStoreException) {
             Result.failure(DraftException(DraftFailure.Mail(MailFailure.ServerProblem), error))
-        } catch (error: CancellationException) {
-            throw error
-        } catch (_: Exception) {
-            // Anything else, such as content that cannot be encoded, fails the save rather than the app.
-            Result.failure(DraftException(DraftFailure.Mail(MailFailure.ServerProblem)))
+        } catch (error: SerializationException) {
+            // Content that cannot be encoded fails the save rather than the app.
+            Result.failure(DraftException(DraftFailure.Mail(MailFailure.ServerProblem), error))
         }
 
     private companion object {

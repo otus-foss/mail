@@ -16,6 +16,7 @@ import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jscontact.Card
 import com.otus.jscontact.Media
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -45,11 +46,11 @@ internal class JmapContactRepository(
             val loaded =
                 connections
                     .savedLogins()
-                    .map { login -> async { login to runCatching { loadLogin(login) } } }
+                    .map { login -> async { login to loadedOrNull(login) } }
                     .awaitAll()
-            val failed = loaded.filter { (_, result) -> result.isFailure }.map { it.first }
+            val failed = loaded.filter { (_, contacts) -> contacts == null }.map { it.first }
             // A login the server did not answer for shows what the device kept of it.
-            val found = loaded.mapNotNull { (_, result) -> result.getOrNull() } + failed.mapNotNull { cachedLogin(it) }
+            val found = loaded.mapNotNull { (_, contacts) -> contacts } + failed.mapNotNull { cachedLogin(it) }
             snapshot(found, failed.map { it.id })
         }
 
@@ -157,6 +158,16 @@ internal class JmapContactRepository(
                     }
             scoped.saveContacts(login.id, before, now)
             loginContacts(login, now)
+        }
+
+    /** [loadLogin], or null when the server did not answer or the device could not keep its answer. */
+    private suspend fun loadedOrNull(login: JmapLogin): LoginContacts? =
+        try {
+            loadLogin(login)
+        } catch (expected: JmapException) {
+            null
+        } catch (expected: CacheStorageException) {
+            null
         }
 
     private suspend fun cachedLogin(login: JmapLogin): LoginContacts? =

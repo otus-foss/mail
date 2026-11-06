@@ -8,6 +8,12 @@ class TextCodec<T>(
     val encode: (T) -> String,
     val decode: (String) -> T?,
 ) {
+    /** This codec for values that become a [T] through [from] and come back through [to]. */
+    fun <R> map(
+        to: (T) -> R,
+        from: (R) -> T,
+    ): TextCodec<R> = TextCodec({ encode(from(it)) }, { text -> decode(text)?.let(to) })
+
     companion object {
         val Text = TextCodec<String>({ it }, { it })
 
@@ -24,7 +30,19 @@ class TextCodec<T>(
         ): TextCodec<T> =
             TextCodec(
                 { json.encodeToString(serializer, it) },
-                { text -> runCatching { json.decodeFromString(serializer, text) }.getOrNull() },
+                { text -> decodedOrNull(json, serializer, text) },
             )
     }
 }
+
+private fun <T> decodedOrNull(
+    json: Json,
+    serializer: KSerializer<T>,
+    text: String,
+): T? =
+    try {
+        json.decodeFromString(serializer, text)
+    } catch (expected: IllegalArgumentException) {
+        // Not JSON, or JSON that no longer fits the type; SerializationException is one of these.
+        null
+    }

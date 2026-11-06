@@ -51,13 +51,6 @@ object ContactStore : StoreSpec<String, String>("contacts", TextCodec.Text, Text
 
 /** Sets of card keys as JSON, for [ContactLinks] and dismissed duplicates. */
 private val KEY_SETS =
-    ListSerializer(ListSerializer(CardKey.serializer())).let { serializer ->
-        TextCodec<List<Set<CardKey>>>(
-            { sets -> JsContactJson.encodeToString(serializer, sets.map { it.toList() }) },
-            { text ->
-                runCatching { JsContactJson.decodeFromString(serializer, text) }
-                    .getOrNull()
-                    ?.map { it.toSet() }
-            },
-        )
-    }
+    TextCodec
+        .json(ListSerializer(ListSerializer(CardKey.serializer())), JsContactJson)
+        .map<List<Set<CardKey>>>({ lists -> lists.map { it.toSet() } }, { sets -> sets.map { it.toList() } })
