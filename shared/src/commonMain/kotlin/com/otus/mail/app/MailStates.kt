@@ -37,12 +37,16 @@ internal class MailStates(
     val mailScope: MailScopeChoice
         get() = chosenScope().within(accounts.accounts.map { it.id })
 
-    /** The changes the user makes to mail, which every list and Read view shows at once. */
-    val edits = MailEdits(services.writer, scope, services.moveToasts, afterUndo = services.serverChanges::changed)
+    /** The changes the user makes to mail, which every list and Read view shows at once; an Undo reloads them. */
+    val edits: MailEdits =
+        MailEdits(services.writer, scope, services.moveToasts) {
+            folders.all.refresh()
+            list.refreshAll()
+        }
 
     val folders: FolderStates = FolderStates(services, scope, behavior, edits)
 
-    val list = ListStates(services, scope, behavior, edits, folders, dates, ::avatarOptions) { mailScope }
+    val list: ListStates = ListStates(services, scope, behavior, edits, folders, dates, ::avatarOptions) { mailScope }
 
     val contacts =
         ContactStates(
@@ -54,7 +58,7 @@ internal class MailStates(
                     .map { EmailAddressKey(it) }
                     .toSet()
             },
-        ) { list.feed.refresh() }
+        ) { list.refreshAll() }
 
     val addressPins = AddressPinsState(services.stores.addressPins)
 
@@ -63,12 +67,12 @@ internal class MailStates(
     /** The avatars of the user's own addresses; a change redraws the mail that shows them. */
     val ownAvatars =
         OwnAvatarsState(services.ownAvatars(::avatarOptions), services.pickers.avatarPhotos, scope) {
-            list.feed.refresh()
+            list.refreshAll()
         }
 
     val accounts: AccountsState =
         AccountsState(services.accounts, scope) {
-            list.feed.refresh()
+            list.refreshAll()
             contacts.reload()
             folders.reload()
             addressPins.reload()

@@ -15,6 +15,7 @@ import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.folders.presentation.mayMark
 import com.otus.mail.feature.inbox.presentation.FilterLookups
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.feature.inbox.presentation.mailScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 
@@ -34,11 +35,14 @@ internal class ListStates(
     mailScope: () -> MailScopeChoice,
 ) {
     val feed =
-        feedOf(
+        feedIn(
             behavior.behavior.list.inbox
                 .mailScope(),
             scope,
         )
+
+    /** The feeds of the list pages open now, besides the Inbox's [feed]. */
+    private val pageFeeds = mutableSetOf<InboxFeedState>()
 
     val pageFilters = PageFilters()
 
@@ -48,16 +52,39 @@ internal class ListStates(
 
     /**
      * The mail of [mailScope], loaded in [pageScope], so leaving a folder page stops its loads and
-     * avatar lookups. It shows edits until then. Avatars share the inbox's cache.
+     * avatar lookups. It shows edits and reloads with [refreshPages] until then. Avatars share the
+     * inbox's cache.
      */
     fun feedOf(
         mailScope: MailScope,
         pageScope: CoroutineScope,
+    ): InboxFeedState = feedIn(mailScope, pageScope).also { feed -> opened(feed, pageScope) }
+
+    private fun feedIn(
+        mailScope: MailScope,
+        scope: CoroutineScope,
     ): InboxFeedState {
-        val feed = InboxFeedState(services.mail, pageScope, services.avatars, avatarOptions, mailScope, dates)
+        val feed = InboxFeedState(services.mail, scope, services.avatars, avatarOptions, mailScope, dates)
         val stop = edits.observe(feed.edits)
-        pageScope.coroutineContext.job.invokeOnCompletion { stop() }
+        scope.coroutineContext.job.invokeOnCompletion { stop() }
         return feed
+    }
+
+    private fun opened(
+        feed: InboxFeedState,
+        pageScope: CoroutineScope,
+    ) {
+        pageFeeds += feed
+        pageScope.coroutineContext.job.invokeOnCompletion { pageFeeds -= feed }
+    }
+
+    /** Loads the open list pages again, apart from the Inbox; [keepReport] keeps a failed action's notice. */
+    fun refreshPages(keepReport: Boolean = false) = pageFeeds.toList().forEach { it.refresh(keepReport = keepReport) }
+
+    /** Loads the Inbox and every open list page again, as when what their rows show changed. */
+    fun refreshAll() {
+        feed.refresh()
+        refreshPages()
     }
 
     /** Every account's folders in folder order, once each by role or name, for search to choose from. */

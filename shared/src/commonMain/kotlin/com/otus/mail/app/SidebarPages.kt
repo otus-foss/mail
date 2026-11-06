@@ -1,18 +1,19 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
-import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.SharedFolder
+import com.otus.mail.core.mailbox.presentation.READ_LATER_TITLE
 import com.otus.mail.core.mailbox.sharedFolder
 import com.otus.mail.core.mailbox.sharedFolders
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.settings.presentation.SidebarPinOption
+import com.otus.mail.feature.inbox.presentation.ListBase
+import com.otus.mail.feature.inbox.presentation.conversationsScope
 import com.otus.mail.feature.mailsettings.presentation.screens.PinnedSettingsScreen
 import com.otus.mail.feature.mailsettings.presentation.screens.SidebarSettingsScreen
 import com.otus.mail.feature.sidebar.presentation.pinnableMailboxes
@@ -57,7 +58,6 @@ internal fun sidebarPinOptions(
         )
     }
 
-/** Every account's Read later folder. */
 @Composable
 internal fun ReadLaterPage(
     states: MailStates,
@@ -67,22 +67,31 @@ internal fun ReadLaterPage(
     val folders =
         states.folders.all.accounts
             .mapNotNull { it.readLater }
-    LeaveWhenGone(states, navigation, gone = folders.isEmpty())
-    FeedPage(MailPage.ReadLater, folders.toScope(), "Read later", states, dateFormatter, navigation)
+    LeaveWhenGone(states.folders.all, gone = folders.isEmpty()) { navigation.go(MailPage.Inbox) }
+    FeedPage(
+        MailPage.ReadLater,
+        folders.toScope(),
+        states.folderBase(READ_LATER_TITLE),
+        states,
+        dateFormatter,
+        navigation,
+    )
 }
 
-/**
- * Every conversation: each account's inbox and Sent, kept to threads where the user and someone
- * else both wrote. Sent lists what the user sent whether or not anyone answered.
- */
 @Composable
 internal fun ConversationsPage(
     states: MailStates,
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val scope = MailScope.Roles(listOf(MailboxRole.Inbox, MailboxRole.Sent))
-    FeedPage(MailPage.Conversations, scope, "Convos", states, dateFormatter, navigation)
+    FeedPage(
+        MailPage.Conversations,
+        conversationsScope,
+        ListBase.conversations(states.behavior.behavior.list.pills),
+        states,
+        dateFormatter,
+        navigation,
+    )
 }
 
 /** One of the user's folders, holding each account's folder at its path. */
@@ -95,25 +104,15 @@ internal fun SharedFolderPage(
 ) {
     val accounts = states.folders.all.accounts
     val folder = remember(accounts, page) { sharedFolder(sharedFolders(accounts), page.key) }
-    LeaveWhenGone(states, navigation, gone = folder == null)
-    FeedPage(page, folder?.folders.orEmpty().toScope(), folder?.name ?: "Folder", states, dateFormatter, navigation)
-}
-
-/**
- * Opens Inbox when the page's folders are [gone], such as after a rename elsewhere, once every
- * account's folders have loaded. An account that failed to load may still hold them, so the page stays.
- */
-@Composable
-private fun LeaveWhenGone(
-    states: MailStates,
-    navigation: MailNavigation,
-    gone: Boolean,
-) {
-    val accounts = states.folders.all.accounts
-    val loaded = !states.folders.all.loading && accounts.isNotEmpty() && accounts.none { it.failure != null }
-    LaunchedEffect(loaded, gone) {
-        if (loaded && gone) navigation.go(MailPage.Inbox)
-    }
+    LeaveWhenGone(states.folders.all, gone = folder == null) { navigation.go(MailPage.Inbox) }
+    FeedPage(
+        page,
+        folder?.folders.orEmpty().toScope(),
+        states.folderBase(folder?.name ?: "Folder"),
+        states,
+        dateFormatter,
+        navigation,
+    )
 }
 
 private fun List<MailFolder>.toScope(): MailScope =

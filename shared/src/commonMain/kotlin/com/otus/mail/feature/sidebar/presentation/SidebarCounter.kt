@@ -1,7 +1,26 @@
 package com.otus.mail.feature.sidebar.presentation
 
+import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.addressCount
 import com.otus.mail.core.settings.domain.SidebarCount
+
+/**
+ * The count beside a "Show mail from" [choice], by the [counts] setting. Accounts and All mail
+ * count their inboxes in [accounts] on the server; an address counts the loaded [inboxMail] sent to it.
+ */
+fun scopeCount(
+    choice: MailScopeChoice,
+    counts: SidebarCount,
+    inboxMail: List<MailMessage>,
+    accounts: List<AccountFolders>,
+): String? =
+    when (choice) {
+        is MailScopeChoice.Address -> addressCount(inboxMail, choice, counts)?.toString()
+        else -> SidebarCounter(choice.accountId, counts).of(accounts.mapNotNull { it.inbox })
+    }
 
 /**
  * The counts beside sidebar mailboxes and folders: those of [accountId] alone, or of every

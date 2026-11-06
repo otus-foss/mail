@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.first
  * opens on another page, not the [inbox], the inbox does not load, so the animation plays once.
  */
 @Composable
-internal fun LaunchCover(
+fun LaunchCover(
     feed: InboxFeedState,
     style: AppIconStyle,
     inbox: Boolean,

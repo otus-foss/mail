@@ -36,6 +36,7 @@ import com.otus.mail.core.messages.presentation.components.SortedMoveSheet
 import com.otus.mail.core.settings.domain.SidebarPin
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.folders.presentation.components.SenderRuleSheets
+import com.otus.mail.feature.inbox.presentation.components.LaunchCover
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
@@ -137,7 +138,7 @@ fun App(
                 known = states::knownAddresses,
             ) {
                 states.folders.all.refresh()
-                states.list.feed.refresh()
+                states.list.refreshAll()
             }
         }
     }
@@ -178,8 +179,8 @@ private fun PageRequestEffects(
 }
 
 /**
- * Shows mail that arrives or changes elsewhere without a pull: each push reloads the folders, and
- * the inbox while [inboxShown]. Other pages reload when shown. While Mail is off screen, pushes
+ * Shows mail that arrives or changes elsewhere without a pull: each push reloads the folders, the
+ * open list pages, and the inbox while [inboxShown]; the inbox reloads anyway when shown. While Mail is off screen, pushes
  * wait, and one reload follows when it comes back. A push often follows the user's own action, so
  * the inbox keeps a notice about that action's failure.
  */
@@ -192,6 +193,7 @@ private fun ServerChangeEffects(
     LaunchedEffect(states) {
         reloadWhileShown(services.serverChanges.changes, services.visibility.shown) {
             states.folders.all.refresh()
+            states.list.refreshPages(keepReport = true)
             if (inboxShown()) states.list.feed.refresh(keepReport = true)
         }
     }
@@ -203,11 +205,11 @@ private fun AvatarEffects(
     states: MailStates,
     behaviorState: MailBehaviorState,
 ) {
-    // Changing where avatars load from stops the inbox's avatar lookups and looks again with the new choice.
+    // Changing where avatars load from stops the lists' avatar lookups and looks again with the new choice.
     LaunchedEffect(states) {
         snapshotFlow { states.avatarOptions() }
             .drop(1)
-            .collect { states.list.feed.refresh() }
+            .collect { states.list.refreshAll() }
     }
     // Contacts load at launch so sender avatars can show their photos. Photos from all accounts
     // changes which of those photos the avatars take.

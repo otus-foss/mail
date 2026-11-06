@@ -3,37 +3,32 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailScopeChoice
-import com.otus.mail.core.messages.domain.listing
 import com.otus.mail.core.messages.domain.original
 import com.otus.mail.core.messages.domain.withContent
+import com.otus.mail.feature.inbox.presentation.LEFT_INBOX_NOTICE
 import com.otus.mail.feature.inbox.presentation.OpenRequest
+import com.otus.mail.feature.inbox.presentation.reloadedListing
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 
 /**
- * Opens the message a tapped notification names on the Inbox: the feed goes back to the page's
- * own mail and loads again, then [MailRequests.row] asks the Inbox to open the row that lists the
- * message. When the chosen scope hides the message's account, the pages show that account. A
- * message that left every inbox or was deleted meanwhile shows a toast instead. A reply request
- * starts a reply to the message, with its full body to quote, instead of opening it.
+ * Opens the message a tapped notification names on the Inbox: once the Inbox's feed finds the row
+ * that lists it, [MailRequests.row] asks the Inbox to open that row. When the chosen scope hides
+ * the message's account, the pages show that account. A message that left every inbox or was
+ * deleted meanwhile shows a toast instead. A reply request starts a reply to the message, with its
+ * full body to quote, instead of opening it.
  */
 internal class MessageOpens(
     private val states: MailStates,
 ) {
     suspend fun open(request: MessageRequest) {
         val mail = request.mail
-        val feed = states.list.feed
-        feed.show(null)
-        feed.refresh()
         // The scope a cold start restores counts only once the accounts are known.
-        snapshotFlow { feed.loading || states.accounts.loading }.first { !it }
-        val row = feed.messages.listing(mail.loginId, mail.emailId)
+        val row = states.list.feed.reloadedListing(mail.loginId, mail.emailId) { states.accounts.loading }
         if (row == null) {
-            states.moveToasts.toasts.show(ToastMessage("This message is no longer in your inbox"))
+            states.moveToasts.toasts.show(ToastMessage(LEFT_INBOX_NOTICE))
             return
         }
         if (!states.mailScope.shows(row)) states.chooseScope(MailScopeChoice.Account(mail.loginId))

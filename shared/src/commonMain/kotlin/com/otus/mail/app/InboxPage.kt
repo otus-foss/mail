@@ -4,16 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.core.messages.domain.MailLocation
-import com.otus.mail.core.messages.domain.MailScope
-import com.otus.mail.core.messages.domain.MailboxScope
-import com.otus.mail.core.settings.domain.InboxContents
 import com.otus.mail.core.settings.presentation.InboxPills
-import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.presentation.ListBase
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
+import com.otus.mail.feature.inbox.presentation.mailScope
 
 /**
  * The unified inbox, holding what the user chose in the Inbox settings, whose folder pills load
- * in place of its own mail.
+ * in place of its own mail. A tapped notification opens its message here, in the feed
+ * [MessageOpens] loads.
  */
 @Composable
 internal fun InboxPage(
@@ -34,38 +33,18 @@ internal fun InboxPage(
     ListPage(
         MailPage.Inbox,
         feed,
-        ListBase(
-            title = "Inbox",
-            emptyTitle = "Your inbox is empty",
-            defaultSearch = InboxSearch(mailboxes = contents.mailboxScopes().toSet()),
-            pills = pills,
-            mailboxSearch =
-                MailboxSearch(
-                    states.list.searchMailboxes(),
-                    states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
-                    feed::show,
-                ),
+        ListBase.inbox(
+            contents,
+            pills,
+            MailboxSearch(
+                states.list.searchMailboxes(),
+                states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
+                feed::show,
+            ),
         ),
         states,
         dateFormatter,
         navigation,
+        opening = states.requests.row,
     )
 }
-
-/**
- * What the Inbox page loads: every account's inbox, the chosen system folders under the app's
- * names, and the user's own folders when chosen.
- */
-internal fun InboxContents.mailScope(): MailScope =
-    if (roles.size == 1 && !ownFolders) {
-        MailScope.Inbox
-    } else {
-        MailScope.Roles(roles, ownFolders)
-    }
-
-/**
- * The names the page's messages are filed under, which its default search shows. Own folders have
- * the user's names, so with them on the search starts from every mailbox the page loaded.
- */
-private fun InboxContents.mailboxScopes(): List<MailboxScope> =
-    if (ownFolders) emptyList() else roles.map { MailboxScope(null, it.title, it) }

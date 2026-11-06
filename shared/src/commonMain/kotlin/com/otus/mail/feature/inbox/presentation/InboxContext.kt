@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.presentation.ListNudge
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.core.settings.domain.InboxPill

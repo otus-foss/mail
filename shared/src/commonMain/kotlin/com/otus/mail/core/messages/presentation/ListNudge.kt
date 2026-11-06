@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.presentation
+package com.otus.mail.core.messages.presentation
 
 import com.otus.designsystem.theme.colors.FolderColor
 

@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.mail.folders.components.FolderColorNudge
 import com.otus.designsystem.theme.tokens.feedback.NudgeTokens
-import com.otus.mail.feature.inbox.presentation.ListNudge
+import com.otus.mail.core.messages.presentation.ListNudge
 
 /** The folder color nudge as the list's first item, scrolling with the rows. */
 @Composable

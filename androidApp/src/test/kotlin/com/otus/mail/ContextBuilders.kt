@@ -6,6 +6,7 @@ import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MessageContent
 import com.otus.mail.core.messages.domain.OwnAddresses
 import com.otus.mail.core.messages.domain.RemoteImages
+import com.otus.mail.core.messages.presentation.ListNudge
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.core.settings.domain.QuickViewModule
 import com.otus.mail.core.settings.domain.ReadQuickModule
@@ -14,7 +15,6 @@ import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.ListNudge
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.OpenRequest
 import com.otus.mail.feature.inbox.presentation.QuickViewContext

@@ -12,8 +12,10 @@ import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.within
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.settings.presentation.FolderPillOption
+import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.LabeledCopies
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.feature.inbox.presentation.ListBase
 import com.otus.mail.feature.inbox.presentation.folderPillOptions
 
 /** The page for [page], which flashes the setting a settings search found there, if any. */
@@ -57,11 +59,7 @@ private fun PageContent(
             SignatureEditorPage(page, states, back)
         }
 
-        MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
-        MailPage.NotificationOverrides, MailPage.SidebarSettings, MailPage.PinnedSettings, MailPage.ThemeSettings,
-        MailPage.MailListSettings, MailPage.ActionBarSettings, MailPage.FilterPanelSettings, MailPage.Folders,
-        is MailPage.FolderDetail,
-        -> {
+        is MailPage.SettingsPage -> {
             SettingsPageContent(page, states, settings, dateFormatter, navigation, back)
         }
 
@@ -102,7 +100,7 @@ private fun CombinedPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    FeedPage(page, MailScope.Role(page.role), page.role.title, states, dateFormatter, navigation)
+    FeedPage(page, MailScope.Role(page.role), states.folderBase(page.role.title), states, dateFormatter, navigation)
 }
 
 @Composable
@@ -112,28 +110,24 @@ private fun FolderPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val account = states.folders.all.account(page.accountId)
-    val folder = account?.folder(page.folderId)
-    // A folder deleted elsewhere leaves its page once the account's folders have loaded without it.
-    LaunchedEffect(account, folder) {
-        if (account != null && account.failure == null && folder == null) navigation.go(MailPage.Inbox)
-    }
+    val folder = states.folders.all.folder(page.accountId, page.folderId)
+    LeaveWhenGone(states.folders.all, gone = folder == null, page.accountId) { navigation.go(MailPage.Inbox) }
     FeedPage(
         page,
         MailScope.Folder(page.accountId, page.folderId),
-        folder?.name ?: "Folder",
+        states.folderBase(folder?.name ?: "Folder"),
         states,
         dateFormatter,
         navigation,
     )
 }
 
-/** The messages [mailScope] loads, on [page], which calls their folder [name]. */
+/** The messages [mailScope] loads, on [page], which [base] names. */
 @Composable
 internal fun FeedPage(
     page: MailPage,
     mailScope: MailScope,
-    name: String,
+    base: ListBase,
     states: MailStates,
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
@@ -141,7 +135,25 @@ internal fun FeedPage(
     val pageScope = rememberCoroutineScope()
     val feed = remember(mailScope) { states.list.feedOf(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
-    ListPage(page, feed, ListBase.folder(name, states.behavior.behavior.list.pills), states, dateFormatter, navigation)
+    ListPage(page, feed, base, states, dateFormatter, navigation)
+}
+
+/** A folder page called [name], with the pills the user chose. */
+internal fun MailStates.folderBase(name: String): ListBase = ListBase.folder(name, behavior.behavior.list.pills)
+
+/**
+ * Runs [leave] when the page's folders are [gone], such as after a delete or rename elsewhere,
+ * once the folders of [accountId], or of every account without one, have loaded without failing.
+ */
+@Composable
+internal fun LeaveWhenGone(
+    folders: FoldersState,
+    gone: Boolean,
+    accountId: String? = null,
+    leave: () -> Unit,
+) {
+    val settled = folders.settled(accountId)
+    LaunchedEffect(settled, gone) { if (settled && gone) leave() }
 }
 
 @Composable

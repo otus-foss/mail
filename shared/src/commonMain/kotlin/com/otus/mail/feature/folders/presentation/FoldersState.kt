@@ -42,6 +42,15 @@ class FoldersState(
 
     fun account(accountId: String): AccountFolders? = accounts.firstOrNull { it.accountId == accountId }
 
+    /**
+     * Whether the folders of [accountId], or of every account without one, have loaded without
+     * failing, so a folder they lack is gone. An account that failed may still hold it.
+     */
+    fun settled(accountId: String? = null): Boolean {
+        val loaded = if (accountId == null) accounts else listOfNotNull(account(accountId))
+        return !loading && loaded.isNotEmpty() && loaded.none { it.failure != null }
+    }
+
     /** The folder with [folderId] in [accountId]'s own folders, or in the shared account [sharedIn]. */
     fun folder(
         accountId: String,
