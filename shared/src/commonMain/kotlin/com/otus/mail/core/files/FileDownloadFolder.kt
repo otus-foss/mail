@@ -1,10 +1,5 @@
-package com.otus.mail
+package com.otus.mail.core.files
 
-import com.otus.mail.core.files.DownloadFolder
-import com.otus.mail.core.files.DownloadFolderException
-import com.otus.mail.core.files.StoredEntry
-import com.otus.mail.core.files.StoredKey
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -14,24 +9,18 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readByteArray
-import platform.Foundation.NSDate
-import platform.Foundation.NSFileManager
-import platform.Foundation.NSFileModificationDate
-import platform.Foundation.NSFileProtectionCompleteUntilFirstUserAuthentication
-import platform.Foundation.NSFileProtectionKey
-import platform.Foundation.NSURL
-import platform.Foundation.NSURLIsExcludedFromBackupKey
-import platform.Foundation.timeIntervalSince1970
 
 /**
- * Downloaded files in [root], in Application Support, which iOS does not empty, marked to stay out
- * of backups and readable only after the first unlock. Each file has a folder `group/id/` holding
- * the file under its own name, plus a `.kept` mark when the user keeps it and a `.partial` file
- * while it downloads. The file's modification date records its last use.
+ * Downloaded files in the folder at [root], which each platform keeps out of backups; see
+ * docs/storage.md. Each file has a folder `group/id/` holding the file under its own name, so the
+ * app that opens it sees that name, plus a `.kept` mark when the user keeps it and a `.partial`
+ * file while it downloads. The file's modification time records its last use.
  */
-class IosDownloadFolder(
-    private val root: String,
+class FileDownloadFolder(
+    root: String,
 ) : DownloadFolder {
+    private val root = Path(root)
+
     override suspend fun find(key: StoredKey): StoredEntry? =
         disk("find") {
             val file = contentOf(folderOf(key)) ?: return@disk null
@@ -45,16 +34,15 @@ class IosDownloadFolder(
         fill: suspend (append: suspend (ByteArray) -> Unit) -> Unit,
     ): StoredEntry =
         disk("write") {
-            prepareRoot(root)
+            prepareDownloadRoot(root)
             val folder = folderOf(key)
             val partial = Path(folder, PARTIAL)
             try {
                 SystemFileSystem.createDirectories(folder)
                 SystemFileSystem.sink(partial).buffered().use { output -> fill { piece -> output.append(piece) } }
-                val replaced = contentOf(folder)
-                if (replaced != null) SystemFileSystem.delete(replaced)
+                contentOf(folder)?.let { SystemFileSystem.delete(it) }
                 val file = Path(folder, safeName(name))
-                SystemFileSystem.atomicMove(partial, file)
+                moveFile(partial, file)
                 entryOf(key, file)
             } finally {
                 SystemFileSystem.delete(partial, mustExist = false)
@@ -81,7 +69,7 @@ class IosDownloadFolder(
 
     override suspend fun entries(): List<StoredEntry> =
         disk("list") {
-            childFolders(Path(root))
+            childFolders(root)
                 .flatMap { group -> childFolders(group).map { StoredKey(group.name, it.name) to it } }
                 .mapNotNull { (key, folder) -> contentOf(folder)?.let { entryOf(key, it) } }
         }
@@ -96,7 +84,7 @@ class IosDownloadFolder(
 
     override suspend fun dropUnfinished() {
         disk("clean") {
-            childFolders(Path(root))
+            childFolders(root)
                 .flatMap(::childFolders)
                 .forEach { folder ->
                     SystemFileSystem.delete(Path(folder, PARTIAL), mustExist = false)
@@ -110,11 +98,13 @@ class IosDownloadFolder(
     private fun entryOf(
         key: StoredKey,
         file: Path,
-    ): StoredEntry {
-        val size = SystemFileSystem.metadataOrNull(file)?.size ?: 0L
-        val kept = SystemFileSystem.exists(Path(file.parent ?: Path(root), KEPT))
-        return StoredEntry(key, file.toString(), size, usedAtMillis(file), kept)
-    }
+    ) = StoredEntry(
+        key,
+        file.toString(),
+        SystemFileSystem.metadataOrNull(file)?.size ?: 0L,
+        modifiedAtMillis(file),
+        SystemFileSystem.exists(Path(file.parent ?: root, KEPT)),
+    )
 
     private companion object {
         const val PARTIAL = ".partial"
@@ -122,40 +112,26 @@ class IosDownloadFolder(
     }
 }
 
-/** Creates [root] with its protection class, which files made inside take, and keeps it out of backups. */
-@OptIn(ExperimentalForeignApi::class)
-private fun prepareRoot(root: String) {
-    if (SystemFileSystem.exists(Path(root))) return
-    val protection = mapOf<Any?, Any?>(NSFileProtectionKey to NSFileProtectionCompleteUntilFirstUserAuthentication)
-    if (!NSFileManager.defaultManager.createDirectoryAtPath(root, true, protection, null)) {
-        throw IOException("Cannot create $root")
-    }
-    NSURL.fileURLWithPath(root).setResourceValue(true, NSURLIsExcludedFromBackupKey, null)
-}
+/** Prepares [root] before the first file goes in, such as with the platform's file protection. */
+internal expect fun prepareDownloadRoot(root: Path)
 
-/** When [file] was last written or found, from its modification date. */
-@OptIn(ExperimentalForeignApi::class)
-private fun usedAtMillis(file: Path): Long {
-    val attributes = NSFileManager.defaultManager.attributesOfItemAtPath(file.toString(), null)
-    val modified = attributes?.get(NSFileModificationDate) as? NSDate
-    return ((modified?.timeIntervalSince1970 ?: 0.0) * MILLIS_PER_SECOND).toLong()
-}
+/** When [file] was last written or marked used, from its modification time. */
+internal expect fun modifiedAtMillis(file: Path): Long
 
-/** Sets [file]'s modification date to now, which records it as used. */
-@OptIn(ExperimentalForeignApi::class)
-private fun markUsed(file: Path) {
-    val now = mapOf<Any?, Any?>(NSFileModificationDate to NSDate())
-    NSFileManager.defaultManager.setAttributes(now, file.toString(), null)
-}
+/** Sets [file]'s modification time to now, which records it as used. */
+internal expect fun markUsed(file: Path)
 
-/** Deletes [path] and everything in it; nothing to delete counts as done. */
-@OptIn(ExperimentalForeignApi::class)
-private fun deleteAll(path: Path) {
-    if (!SystemFileSystem.exists(path)) return
-    if (!NSFileManager.defaultManager.removeItemAtPath(path.toString(), null)) throw IOException("Cannot delete $path")
-}
+/** Moves [source] over [destination] in the same folder. */
+internal expect fun moveFile(
+    source: Path,
+    destination: Path,
+)
 
-private const val MILLIS_PER_SECOND = 1000.0
+/** Runs [block], turning each error that means the disk failed into [failure]. */
+internal expect suspend fun <T> reportingDiskFailures(
+    failure: (Exception) -> Exception,
+    block: suspend () -> T,
+): T
 
 /** The finished file in [folder]: the one whose name does not start with a dot. */
 private fun contentOf(folder: Path): Path? =
@@ -173,6 +149,12 @@ private fun childFolders(folder: Path): List<Path> =
     } else {
         SystemFileSystem.list(folder).filter { SystemFileSystem.metadataOrNull(it)?.isDirectory == true }
     }
+
+/** Deletes [path] and everything in it; nothing to delete counts as done. */
+private fun deleteAll(path: Path) {
+    if (SystemFileSystem.metadataOrNull(path)?.isDirectory == true) SystemFileSystem.list(path).forEach(::deleteAll)
+    SystemFileSystem.delete(path, mustExist = false)
+}
 
 /**
  * Writes [piece], reporting a full or failing disk as [DownloadFolderException]. A plain
@@ -204,9 +186,5 @@ private suspend fun <T> disk(
     block: suspend () -> T,
 ): T =
     withContext(Dispatchers.IO) {
-        try {
-            block()
-        } catch (error: IOException) {
-            throw DownloadFolderException("Cannot $action a downloaded file", error)
-        }
+        reportingDiskFailures({ DownloadFolderException("Cannot $action a downloaded file", it) }, block)
     }

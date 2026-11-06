@@ -15,6 +15,7 @@ import com.otus.mail.app.NightlyUpdates
 import com.otus.mail.app.trimCache
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
+import com.otus.mail.core.files.FileDownloadFolder
 import com.otus.mail.core.messages.domain.DevicePrivacy
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.notifications.domain.MailPush
@@ -41,7 +42,7 @@ class OtusMailApplication :
             { name, commit -> mailPreferences(this, name, commit) },
             SqlMailCache(AndroidSqliteDriver(MailDatabase.Schema, this, CACHE_DATABASE)),
             // Matches the `files-path` in `res/xml/shared_files.xml`, so Open can lend these files.
-            AndroidDownloadFolder(File(filesDir, "attachments")),
+            FileDownloadFolder(File(filesDir, "attachments").absolutePath),
             AndroidNotificationPreviewStore(this),
         )
     }

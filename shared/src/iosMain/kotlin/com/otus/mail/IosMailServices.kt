@@ -7,6 +7,7 @@ import com.otus.mail.app.MailDeviceStores
 import com.otus.mail.app.MailServices
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
+import com.otus.mail.core.files.FileDownloadFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStore
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.storage.UserDefaultsMap
@@ -30,7 +31,7 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
                     UserDefaultsMap("otus.mail." + if (name == ReadLaterStore.name) "read_later_folders" else name)
                 },
                 SqlMailCache(cacheDriver(cacheDirectory)),
-                IosDownloadFolder("${userDirectory(NSApplicationSupportDirectory)}/attachments"),
+                FileDownloadFolder("${userDirectory(NSApplicationSupportDirectory)}/attachments"),
             ),
     )
 }

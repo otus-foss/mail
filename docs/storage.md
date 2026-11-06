@@ -40,8 +40,9 @@ its write, so a file of any size downloads without the JMAP client's 16 MiB resp
 server that sends more than the size the message gives for the part, its decoded size (RFC 8621,
 section 4.1.4), is stopped, so it cannot fill the disk.
 
-- `core/files/DownloadFolder` is the platform contract. A file lives in `<group>/<id>/` under its
-  own name, so the app that opens it sees that name. The group is the SHA-256 of the login id and
+- `core/files/DownloadFolder` is the contract, and `FileDownloadFolder` keeps it on disk on both
+  platforms through kotlinx-io; each platform adds only file times, its folder setup, and which
+  errors mean the disk failed. A file lives in `<group>/<id>/` under its own name, so the app that opens it sees that name. The group is the SHA-256 of the login id and
   the id the SHA-256 of the blob id and file name, so names from the sender never become paths.
 - While a file downloads, its bytes go to a `.partial` file that nothing else reads. A failure,
   a cancel, or a server that sends too much deletes it and keeps any earlier copy. One file

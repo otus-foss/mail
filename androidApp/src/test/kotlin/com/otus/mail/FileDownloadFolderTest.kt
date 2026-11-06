@@ -1,6 +1,7 @@
 package com.otus.mail
 
 import com.otus.mail.core.files.DownloadFolderException
+import com.otus.mail.core.files.FileDownloadFolder
 import com.otus.mail.core.files.StoredKey
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertArrayEquals
@@ -14,13 +15,13 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 
-class AndroidDownloadFolderTest {
+class FileDownloadFolderTest {
     @get:Rule
     val temporary = TemporaryFolder()
 
     private val key = StoredKey("ada", "report")
 
-    private fun folder() = AndroidDownloadFolder(File(temporary.root, "attachments"))
+    private fun folder() = FileDownloadFolder(File(temporary.root, "attachments").absolutePath)
 
     @Test
     fun aKeptFileIsFoundAgainByTheNextProcess() =
@@ -88,7 +89,10 @@ class AndroidDownloadFolderTest {
     fun anUnwritableFolderIsReportedAsAStorageFailure() {
         val blocked = File(temporary.root, "attachments").apply { writeBytes(byteArrayOf()) }
         assertThrows(DownloadFolderException::class.java) {
-            runBlocking { AndroidDownloadFolder(blocked).write(key, "report.pdf") { append -> append(byteArrayOf(1)) } }
+            runBlocking {
+                FileDownloadFolder(blocked.absolutePath)
+                    .write(key, "report.pdf") { append -> append(byteArrayOf(1)) }
+            }
         }
     }
 }

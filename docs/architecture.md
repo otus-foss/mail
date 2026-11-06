@@ -96,7 +96,7 @@ defined.
 
 Mail keeps each login's mailboxes, emails, threads, bodies, and sync states in an SQLite database
 behind `core/cache/MailCache`, and downloaded attachments as files behind `core/files/DownloadFolder`,
-which each platform implements. See [storage](storage.md) for what they hold, where the files
+which `FileDownloadFolder` keeps in a folder each platform names. See [storage](storage.md) for what they hold, where the files
 live, and how long they keep them. Each other app-private store is a `StoreSpec` in
 `core/storage`, declared once beside the feature that owns it: its name on the device and the text
 form of its keys and values. A `DeviceStore` reads and writes its values typed.
