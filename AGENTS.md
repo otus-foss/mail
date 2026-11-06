@@ -225,6 +225,10 @@ the pull request. The `issue link` workflow warns about a pull request that clos
 CI runs once, when the pull request is marked ready. To check later pushes too, add the
 `ci on every push` label; each push then runs CI again.
 
+The user lands pull requests with the `ready to land` label, which also merges the partners from the
+same branch name in the other repositories. Add that label only when the user asks you to land a pull
+request. See [landing](https://github.com/reazndev/otus-meta/blob/main/docs/landing.md).
+
 ## Agent workflow
 
 During development, prefer `./gradlew spotlessCheck detekt ruffCheck ruffFormatCheck` and run
