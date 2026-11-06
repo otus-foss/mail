@@ -36,10 +36,13 @@ import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
 import com.otus.mail.feature.updates.presentation.components.BuildFooter
+import com.otus.mail.feature.updates.presentation.components.UpdateSheets
+import com.otus.mail.feature.updates.presentation.components.UpdateToastEffect
 import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.AppIconSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
 import com.otus.settings.presentation.ThemeSettingsState
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
@@ -69,6 +72,7 @@ fun App(
             MailStates(services, scope, behaviorState, { chosenScope }) { chosenScope = it }
         }
     val nightly = rememberNightlyUpdate(services, build)
+    var updateOpen by rememberSaveable { mutableStateOf(false) }
     LoadEffects(states, behaviorState, start, current = { page }) { page = it }
     // Reload whenever the inbox is shown, including at launch.
     LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
@@ -98,12 +102,15 @@ fun App(
                     }
                 }
                 BottomToasts(states.moveToasts.toasts)
+                UpdateToastEffect(nightly, behaviorState.behavior.updateToasts, states.moveToasts.toasts) {
+                    updateOpen = true
+                }
                 MailSidebar(
                     sidebar,
                     current = page.root,
                     states,
                     states.mailScope,
-                    footer = { build?.let { UpdatingFooter(it, nightly, states.moveToasts.toasts) } },
+                    footer = { build?.let { BuildFooter(it, nightly) { updateOpen = true } } },
                     onChooseScope = states.chooseScope,
                     onSelect = {
                         navigation.go(it)
@@ -115,6 +122,9 @@ fun App(
             // Outlives the page a move closed, such as the open message.
             states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
             SenderRuleSheets(states)
+            if (updateOpen && nightly != null) {
+                InstallingUpdateSheets(nightly, states.moveToasts.toasts, scope) { updateOpen = false }
+            }
         }
     }
 }
@@ -211,19 +221,24 @@ private fun MailServices.nightlyState(build: InstalledBuild?): NightlyUpdateStat
         ?.takeIf { it.channel == ReleaseChannel.Nightly }
         ?.let { installed -> nightly.installer?.let { NightlyUpdateState(nightly.feed, installed.versionCode, it) } }
 
-/** The [BuildFooter], which installs [nightly] in the background and says in [toasts] when that fails. */
+/**
+ * The [UpdateSheets], which install [nightly] in [scope] and say in [toasts] when that fails. The
+ * sheet closes as the download starts, so the download runs in a scope that outlives it.
+ */
 @Composable
-private fun UpdatingFooter(
-    build: InstalledBuild,
-    nightly: NightlyUpdateState?,
+private fun InstallingUpdateSheets(
+    nightly: NightlyUpdateState,
     toasts: ToastState,
+    scope: CoroutineScope,
+    onDismiss: () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-    BuildFooter(build, nightly) {
-        scope.launch {
-            if (nightly?.install() == false) toasts.show(ToastMessage("Couldn't download the update"))
-        }
-    }
+    UpdateSheets(
+        nightly,
+        onInstall = {
+            scope.launch { if (!nightly.install()) toasts.show(ToastMessage("Couldn't download the update")) }
+        },
+        onDismiss = onDismiss,
+    )
 }
 
 /** Shows [toasts] at the bottom, above the page's action bar when it has one. */

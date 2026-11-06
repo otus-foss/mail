@@ -67,6 +67,7 @@ class KeyValueMailBehaviorStore(
                 notificationActions =
                     decoded(NOTIFICATION_ACTIONS, defaults.notificationActions, ::decodeNotificationActions),
                 startPage = decoded(START_PAGE, SidebarPin::fromStorageValue) ?: defaults.startPage,
+                updateToasts = flag(UPDATE_TOASTS, defaults.updateToasts),
             )
         }
 
@@ -102,6 +103,7 @@ class KeyValueMailBehaviorStore(
             put(ALLOWED_SENDERS, encodeAddresses(behavior.allowedSenders))
             put(NOTIFICATION_ACTIONS, encodeNotificationActions(behavior.notificationActions))
             put(START_PAGE, behavior.startPage.storageValue)
+            put(UPDATE_TOASTS, behavior.updateToasts)
         }
     }
 
@@ -139,6 +141,7 @@ class KeyValueMailBehaviorStore(
         const val DUCKDUCKGO_ICONS = "duckduckgo_icons"
         const val ALL_ACCOUNT_PHOTOS = "all_account_photos"
         const val SHOW_QUOTES = "show_quotes"
+        const val UPDATE_TOASTS = "update_toasts"
         const val ZEN_READ = "read_zen"
         const val SCREEN_SECURITY = "screen_security"
         const val INCOGNITO_KEYBOARD = "incognito_keyboard"

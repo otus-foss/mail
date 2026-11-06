@@ -13,6 +13,7 @@ import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.mail.feature.inbox.domain.MailBehavior
 import com.otus.mail.feature.inbox.presentation.PRIVACY_TITLE
 import com.otus.mail.feature.inbox.presentation.components.BehaviorIndexPages
+import com.otus.mail.feature.inbox.presentation.components.UPDATE_TOAST_TITLE
 import com.otus.mail.feature.inbox.presentation.components.mailBehaviorIndex
 import com.otus.mail.feature.inbox.presentation.components.mailLookIndex
 import com.otus.mail.feature.inbox.presentation.components.notificationActionsIndex
@@ -134,6 +135,7 @@ private fun SettingsIndexScope.notifications(
             if (hasAccounts) page("Accounts and addresses", open(MailPage.NotificationOverrides))
         }
         section("Buttons") { notificationActionsIndex(behavior) }
+        section("Updates") { toggle(UPDATE_TOAST_TITLE, behavior.updateToasts, keywords = listOf("New version")) }
     }
 }
 
