@@ -39,10 +39,13 @@ navigation. Keep business behavior out of composables.
 
 ## Feature and dependency boundaries
 
-Use `feature/<name>/{domain,data,presentation}`. Domain owns portable models/contracts and
-meaningful use cases. Data implements domain contracts. Presentation depends on domain, never data
-implementations. App wiring connects the implementations. Features do not import other features
-directly: put a genuinely shared contract in `core` or compose features through app wiring.
+Use `feature/<name>/{domain,data,presentation}`, with only the layers the feature needs. Domain
+owns portable models/contracts and meaningful use cases. Data implements domain contracts.
+Presentation depends on domain, never data implementations. `app` constructs services and routes
+pages; it holds no feature behavior. Features do not import other features directly: what two
+features need moves to `core`, and a feature that shows another's screen takes a slot `app` fills.
+A shared slice of `core` may use the same `domain`/`data`/`presentation` layers, with the same
+rules.
 
 `core` cannot depend on features, design system, or app. Domain cannot depend on Compose, Android,
 UIKit, networking clients, databases, presentation, or data implementations. `commonMain` cannot
