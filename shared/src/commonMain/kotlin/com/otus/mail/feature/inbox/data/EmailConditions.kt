@@ -7,6 +7,7 @@ import com.otus.jmap.anyOf
 import com.otus.jmap.filterCondition
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.inMailbox
+import com.otus.mail.core.mail.utcDate
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.FilterSort
 import com.otus.mail.core.messages.domain.QuickFacet
@@ -127,9 +128,6 @@ private fun keyword(
     name: String,
     keyword: String,
 ): JmapFilter = filterCondition(name, JsonPrimitive(keyword))
-
-/** A `UTCDate` (RFC 8620, section 1.4): whole seconds and a `Z`. */
-internal fun Instant.utcDate(): String = Instant.fromEpochSeconds(epochSeconds).toString()
 
 /** Headers lists and newsletters add (RFC 2919, RFC 2369); `header` with only a name asks whether it is there. */
 private val LIST_HEADERS = listOf("List-Id", "List-Unsubscribe")

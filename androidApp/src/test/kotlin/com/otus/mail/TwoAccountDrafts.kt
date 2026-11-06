@@ -1,9 +1,9 @@
 package com.otus.mail
 
 import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftRepository
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.SendIdentity
-import com.otus.mail.feature.inbox.domain.DraftRepository
 
 /**
  * A Drafts folder in memory with two identities in Company A (`a1`), plus [moreCompanyAddresses],

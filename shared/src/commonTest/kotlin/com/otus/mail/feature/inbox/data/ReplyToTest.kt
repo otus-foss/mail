@@ -5,7 +5,7 @@ import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.data.toMessage
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.original
-import com.otus.mail.feature.inbox.domain.startDraft
+import com.otus.mail.feature.compose.domain.startDraft
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json
 import kotlin.test.Test

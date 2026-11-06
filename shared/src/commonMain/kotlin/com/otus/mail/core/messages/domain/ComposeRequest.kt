@@ -88,3 +88,14 @@ internal val ComposeRequest.answeredOriginal: OriginalMessage?
             is ComposeRequest.Resume -> from.answeredOriginal
             is ComposeRequest.New, is ComposeRequest.Forward -> null
         }
+
+/** The account a draft for this request comes from, when the request names one. */
+val ComposeRequest.accountId: String?
+    get() =
+        when (this) {
+            is ComposeRequest.New -> accountId
+            is ComposeRequest.Reply -> original.accountId
+            is ComposeRequest.FollowUp -> original.accountId
+            is ComposeRequest.Forward -> original.accountId
+            is ComposeRequest.Resume -> draft.accountId
+        }

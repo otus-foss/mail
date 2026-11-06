@@ -42,7 +42,6 @@ import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.shownName
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.messages.presentation.MoveTarget
-import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.core.messages.presentation.containsSearch
 import com.otus.mail.core.messages.presentation.matchesSearch
 import com.otus.mail.core.messages.presentation.ownFolders

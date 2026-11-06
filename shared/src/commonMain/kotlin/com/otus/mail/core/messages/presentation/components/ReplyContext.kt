@@ -8,7 +8,6 @@ import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.shownName
-import com.otus.mail.core.messages.presentation.components.chipAvatar
 
 /**
  * Who [primary] writes to, shown beside it: the sender for Reply, everyone for Reply all, and the

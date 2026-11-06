@@ -2,8 +2,8 @@ package com.otus.mail.feature.inbox.presentation
 
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.messages.presentation.syncedLabel
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
-import com.otus.mail.feature.inbox.presentation.components.syncedLabel
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime

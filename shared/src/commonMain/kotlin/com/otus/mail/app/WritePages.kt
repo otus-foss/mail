@@ -6,13 +6,14 @@ import androidx.compose.runtime.remember
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.mail.core.messages.domain.SendIdentityKey
-import com.otus.mail.feature.inbox.presentation.ComposeExits
-import com.otus.mail.feature.inbox.presentation.OutgoingDraft
-import com.otus.mail.feature.inbox.presentation.SignatureEditorState
-import com.otus.mail.feature.inbox.presentation.reopening
-import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
-import com.otus.mail.feature.inbox.presentation.screens.SignatureEditorScreen
-import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
+import com.otus.mail.feature.compose.presentation.ComposeExits
+import com.otus.mail.feature.compose.presentation.Outgoing
+import com.otus.mail.feature.compose.presentation.OutgoingDraft
+import com.otus.mail.feature.compose.presentation.SignatureEditorState
+import com.otus.mail.feature.compose.presentation.reopening
+import com.otus.mail.feature.compose.presentation.screens.ComposeScreen
+import com.otus.mail.feature.compose.presentation.screens.SignatureEditorScreen
+import com.otus.mail.feature.compose.presentation.screens.SignaturesScreen
 import kotlinx.datetime.LocalDateTime
 
 /**

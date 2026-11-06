@@ -1,8 +1,8 @@
 package com.otus.mail.app
 
 import com.otus.mail.core.messages.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.SendCheck
-import com.otus.mail.feature.inbox.domain.SendFailure
+import com.otus.mail.core.messages.domain.SendFailure
+import com.otus.mail.feature.compose.domain.SendCheck
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent

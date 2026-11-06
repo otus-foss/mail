@@ -1,6 +1,6 @@
 package com.otus.mail.core.messages.domain
 
-import com.otus.mail.feature.inbox.domain.startDraft
+import com.otus.mail.feature.compose.domain.startDraft
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

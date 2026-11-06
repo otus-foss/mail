@@ -16,7 +16,6 @@ import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.ChoiceSheet
 import com.otus.designsystem.shared.selection.components.ValuePicker
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.core.messages.presentation.components.chipAvatar
 
 /**
  * The condition a new rule will use, pinned below the folders while the sort pill is on. Nothing

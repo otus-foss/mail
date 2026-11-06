@@ -3,7 +3,7 @@ package com.otus.mail.app
 import com.otus.accounts.domain.AccountService
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.login.LoginLifecycle
-import com.otus.mail.feature.inbox.domain.MailOutbox
+import com.otus.mail.feature.compose.domain.MailOutbox
 import com.otus.mail.feature.notifications.domain.InstantPush
 
 /** JMAP Mail (RFC 8621), which connecting checks with `Mailbox/get`. */

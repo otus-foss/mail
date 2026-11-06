@@ -48,6 +48,7 @@ import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.shownName
 import com.otus.mail.core.messages.presentation.ReadLaterChange
+import com.otus.mail.core.messages.presentation.components.OptionsButton
 import com.otus.mail.core.messages.presentation.components.chipAvatar
 
 /**

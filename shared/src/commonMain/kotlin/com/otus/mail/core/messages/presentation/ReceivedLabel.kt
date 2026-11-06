@@ -1,6 +1,7 @@
 package com.otus.mail.core.messages.presentation
 
 import com.otus.dateformat.DateFormatter
+import com.otus.dateformat.clockTime
 import com.otus.dateformat.formatNamedDay
 import com.otus.dateformat.formatRecentDay
 import com.otus.mail.core.messages.domain.ReceivedAt
@@ -8,7 +9,9 @@ import com.otus.mail.core.settings.domain.DateStyle
 import com.otus.mail.core.settings.domain.MailListLayout
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 /**
  * When a message arrived, as the mail list's [layout] shows it. A relative style names recent
@@ -60,3 +63,9 @@ private fun DateFormatter.dayLabel(
 }
 
 private const val SAMPLE_DAYS_AGO = 21
+
+/** When cached mail last matched the server: the time today, such as "14:32", or else the date, "Oct 30". */
+internal fun DateFormatter.syncedLabel(
+    at: LocalDateTime,
+    now: LocalDateTime,
+): String = if (at.date == now.date) clockTime(at.time) else formatNamedDay(at.date)

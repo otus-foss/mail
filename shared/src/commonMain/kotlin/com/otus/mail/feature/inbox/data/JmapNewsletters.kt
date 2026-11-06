@@ -24,11 +24,11 @@ import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.core.messages.data.JmapEmailWriter
 import com.otus.mail.core.messages.data.boxes
 import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.DraftRepository
+import com.otus.mail.core.messages.domain.DraftSender
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailingList
 import com.otus.mail.core.messages.domain.Unsubscribe
-import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.DraftSender
 import com.otus.mail.feature.inbox.domain.Newsletters
 import com.otus.mail.feature.inbox.domain.UnsubscribeResult
 import kotlinx.serialization.json.JsonArray

@@ -1,4 +1,5 @@
 package com.otus.mail.core.messages.domain
+import com.otus.mail.core.mail.EmailAddressKey
 
 /**
  * An address an account may send from: a JMAP Identity (RFC 8621, section 6). [sender] carries the
@@ -19,3 +20,17 @@ data class SendIdentityKey(
     val accountId: String,
     val identityId: String,
 )
+
+/**
+ * The identity for [address], whose own address [addressOf] gives: one with that exact address,
+ * else a wildcard such as `*@example.org`.
+ */
+internal fun <T> List<T>.sendingAs(
+    address: String,
+    addressOf: (T) -> String,
+): T? {
+    val wanted = EmailAddressKey(address)
+    val domain = wanted.value.substringAfterLast('@', missingDelimiterValue = "")
+    return firstOrNull { EmailAddressKey(addressOf(it)) == wanted }
+        ?: firstOrNull { domain.isNotEmpty() && EmailAddressKey(addressOf(it)) == EmailAddressKey("*@$domain") }
+}

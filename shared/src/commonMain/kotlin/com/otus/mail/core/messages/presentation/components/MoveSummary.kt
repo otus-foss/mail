@@ -8,7 +8,6 @@ import com.otus.designsystem.shared.rows.components.SummaryCard
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.shownName
-import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.core.messages.presentation.shortLabel
 import com.otus.settings.presentation.components.LocalDateFormatter
 
