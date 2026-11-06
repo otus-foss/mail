@@ -4,6 +4,7 @@ import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /** Mailbox objects (RFC 8621, section 2). */
@@ -88,6 +89,16 @@ data class MailCapability(
     val maxMailboxDepth: Long? = null,
     val maxSizeMailboxName: Long? = null,
     val maxMailboxesPerEmail: Long? = null,
+)
+
+/**
+ * The submission account capability (RFC 8621, section 1.3.2): how many seconds ahead a send may
+ * be held, and the SMTP extensions the server offers, by name.
+ */
+@Serializable
+data class SubmissionCapability(
+    val maxDelayedSend: Long = 0,
+    val submissionExtensions: Map<String, JsonElement> = emptyMap(),
 )
 
 @Serializable

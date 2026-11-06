@@ -1,23 +1,20 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheStorageException
-import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
-import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.toMailFailure
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.core.messages.data.EmailChangeQueue
-import com.otus.mail.core.messages.data.LoginLocks
+import com.otus.mail.core.messages.data.ListingPage
 import com.otus.mail.core.messages.data.ServerSites
 import com.otus.mail.core.messages.data.merged
 import com.otus.mail.core.messages.data.mergedByThread
-import com.otus.mail.core.messages.data.patchEmails
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
@@ -29,7 +26,6 @@ import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -40,22 +36,21 @@ import kotlin.time.Instant
  * rows without the server. Logins load in parallel and fail alone; a failed login still shows what
  * the cache holds. Each list loads [limit] conversations at a time. [sites] holds each login's
  * server domain, which a sender's DMARC result must come from to show a brand logo; a load finds
- * it, and the cached list reads only what is already known. Marks and moves waiting in [queue] go
- * to the server before a sync, and still show after it when the server could not take them.
+ * it, and the cached list reads only what is already known. Each load of a login runs inside
+ * [queue]'s sync of it (see [EmailChangeQueue.syncing]), so waiting marks and moves go first and
+ * still show after it. The lists read the folders [mailboxes] keeps.
  */
 class JmapMailSource(
     private val connections: JmapConnections,
-    private val cache: MailCache = InMemoryMailCache(),
+    private val cache: MailCache,
+    private val queue: EmailChangeQueue,
+    private val mailboxes: Mailboxes,
     private val limit: Int = DEFAULT_LIMIT,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     private val sites: ServerSites = ServerSites { null },
-    private val queue: EmailChangeQueue? = null,
 ) : MailSource {
     private val clock: Clock = Clock.System
-
-    // A refresh and a next page of one login both rewrite its listings, so they take turns.
-    private val locks = LoginLocks()
-    private val counts = JmapMailCounts(connections, Mailboxes(cache), zone, clock)
+    private val counts = JmapMailCounts(connections, mailboxes, zone, clock)
 
     override suspend fun messages(scope: MailScope): InboxSnapshot = messages(scope, MailQuery())
 
@@ -127,18 +122,12 @@ class JmapMailSource(
         val conditions = emailConditions(query, login.id, now, zone()) ?: return null
         return try {
             cache.withAccount(login.id) { accountCache ->
-                val connection = connections.connection(login)
-                val accountId =
-                    connection.session().accountFor(JmapCapability.MAIL)
-                        ?: return@withAccount UnavailableAccount(login.name, MailFailure.NoMail)
                 val lists =
-                    MailAccountLists(connection, accountId, login.id, accountCache, limit) {
+                    MailAccountLists(connections.mailAccount(login), mailboxes, accountCache, limit) {
                         clock.now().toEpochMilliseconds()
                     }
-                locks.of(login.id).withLock {
-                    queue?.flush(login.id)
-                    lists.sync { mailboxes -> scope.listingQueries(mailboxes, login.id, query, conditions) }
-                    if (queue != null) accountCache.patchEmails(login.id, queue.pending(login.id))
+                queue.syncing(login.id) {
+                    lists.sync { folders -> scope.listingQueries(folders, login.id, query, conditions) }
                 }
                 null
             }
@@ -164,17 +153,8 @@ class JmapMailSource(
         val pages =
             coroutineScope {
                 selected
-                    .map { login ->
-                        async {
-                            emailConditions(query, login.id, now, local)
-                                ?.let { conditions ->
-                                    val check = localCheck(query, login.id, now, local)
-                                    cache.withAccount(login.id) {
-                                        it.cachedPages(login, scope, query, conditions, local, siteOf(login), check)
-                                    }
-                                }.orEmpty()
-                        }
-                    }.awaitAll()
+                    .map { login -> async { cachedPages(login, scope, query, now, local, siteOf) } }
+                    .awaitAll()
                     .flatten()
             }
         val merged = pages.merged(query.filters.sort) { it.receivedAt }
@@ -186,6 +166,24 @@ class JmapMailSource(
                 .flatMap { it.mergedByThread() }
                 .filter(query.filters::keepsLoaded)
         return InboxSnapshot(messages, unavailable, merged.hasMore)
+    }
+
+    /** [login]'s cached pages for [query]; none when the query reads none of its mail. */
+    private suspend fun cachedPages(
+        login: JmapLogin,
+        scope: MailScope,
+        query: MailQuery,
+        now: Instant,
+        zone: TimeZone,
+        siteOf: suspend (JmapLogin) -> String,
+    ): List<ListingPage<ListedRow>> {
+        val conditions = emailConditions(query, login.id, now, zone) ?: return emptyList()
+        val check = localCheck(query, login.id, now, zone)
+        val folders = mailboxes.cached(login.id)
+        val site = siteOf(login)
+        return cache.withAccount(login.id) { kept ->
+            kept.cachedPages(login, folders, scope, query, conditions, zone, site, check)
+        }
     }
 
     private companion object {

@@ -7,21 +7,33 @@ import com.otus.jmap.jmapCallOr
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.keywordPatch
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.core.messages.data.keyword
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.AnsweredMessage
 
-/** Deletes a sent draft's earlier copy [draftId] and marks the message it [answered]. */
+/**
+ * Deletes a sent draft's earlier copy [draftId] and marks the message it [answered] through
+ * [changes], which shows the mark in the cached lists and keeps it until the server has it.
+ */
 internal suspend fun MailAccount.tidySent(
     draftId: String?,
     answered: AnsweredMessage?,
+    changes: EmailChangeQueue,
 ) {
-    val update = answered?.let { mapOf(it.emailId to keywordPatch(it.keyword, true)) }
-    if (draftId == null && update == null) return
-    // The message is already sent, so a leftover draft or a missing mark is not a failure.
-    jmapCallOr(Unit) {
-        connection.call(SetMethod(EmailType, id, update = update.orEmpty(), destroy = listOfNotNull(draftId)))
-    }
+    // The message is already sent, so a leftover draft is not a failure; the next save or send of
+    // a draft does not see it either, and the user can delete it.
+    if (draftId != null) jmapCallOr(Unit) { connection.call(SetMethod(EmailType, id, destroy = listOf(draftId))) }
+    if (answered != null) changes.mark(login.id, answered, on = true)
+}
+
+/** Sets or clears the mark of the message a send [answered]. */
+internal suspend fun EmailChangeQueue.mark(
+    loginId: String,
+    answered: AnsweredMessage,
+    on: Boolean,
+) {
+    update(loginId, mapOf(answered.emailId to keywordPatch(answered.keyword, on)))
 }
 
 /**

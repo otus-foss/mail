@@ -16,8 +16,12 @@ internal fun emailWriter(
     queue: EmailChangeQueue = EmailChangeQueue(connections, cache, store = null),
 ): JmapEmailWriter = JmapEmailWriter(connections, cache, queue, Mailboxes(cache))
 
-/** Saving and sending over [connections], as the app builds them. */
+/** Saving and sending over [connections], as the app builds them, with one cache for folders and marks. */
 internal fun composeMail(
     connections: JmapConnections,
     newMessageId: () -> String = ::draftMessageId,
-): JmapComposeMail = JmapComposeMail(connections, Mailboxes(InMemoryMailCache()), newMessageId)
+): JmapComposeMail {
+    val cache = InMemoryMailCache()
+    val changes = EmailChangeQueue(connections, cache, store = null)
+    return JmapComposeMail(connections, Mailboxes(cache), changes, newMessageId)
+}

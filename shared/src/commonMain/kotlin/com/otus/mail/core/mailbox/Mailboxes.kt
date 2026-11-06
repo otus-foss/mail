@@ -1,6 +1,5 @@
 package com.otus.mail.core.mailbox
 
-import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapRequestBuilder
 import com.otus.jmap.JmapResponse
 import com.otus.mail.core.cache.CacheStorageException
@@ -10,9 +9,9 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailboxObject
 
 /**
- * Each login's own mailboxes as folders. The cache keeps them with the `Mailbox` state they match,
- * so every load after the first asks only `Mailbox/changes` (RFC 8620, section 5.2), and features
- * read them without asking the server. Mailboxes other users share are not kept.
+ * Each login's own mailboxes as folders, and the one keeper of them and the `Mailbox` state they
+ * match in the cache. After the first load, bringing them up to date asks only `Mailbox/changes`
+ * (RFC 8620, section 5.2). Mailboxes other users share are not kept.
  */
 class Mailboxes(
     private val cache: MailCache,
@@ -21,21 +20,17 @@ class Mailboxes(
     internal suspend fun cached(loginId: String): List<MailFolder> =
         cache.withAccount(loginId) { accountCache -> accountCache.mailboxes(loginId).map { it.toFolder(loginId) } }
 
-    /** The kept folders, or the server's when the device has none it can read. */
+    /**
+     * The kept folders, or the server's when the device has none it can read. For reads that can
+     * wait for the next sync to see a new or renamed folder, such as counts and suggestions.
+     */
     internal suspend fun of(account: MailAccount): List<MailFolder> =
         keptOrNull { cached(account.login.id) }
             .orEmpty()
             .ifEmpty { sync(account) }
 
-    /**
-     * The server's folders now, read as changes since the kept ones where the server can say them,
-     * and kept with their state.
-     */
-    internal suspend fun sync(account: MailAccount): List<MailFolder> {
-        val loginId = account.login.id
-        val saved = cache.withAccount(loginId) { keptOrNull { it.savedMailboxes(loginId) } }
-        return keep(account, account.connection.mailboxList(account.id, saved))
-    }
+    /** The server's folders now, read as changes since the kept ones where the server can say them. */
+    internal suspend fun sync(account: MailAccount): List<MailFolder> = sendFresh(account) {}.first
 
     /**
      * Sends [calls] to [account] and gives the folders with the response: the kept ones, or, when
@@ -46,14 +41,33 @@ class Mailboxes(
         calls: JmapRequestBuilder.() -> Unit,
     ): Pair<List<MailFolder>, JmapResponse> {
         val kept = keptOrNull { cached(account.login.id) }.orEmpty()
-        var mailboxes: MailboxCalls? = null
+        if (kept.isEmpty()) return request(account, saved = null, calls)
+        return kept to account.connection.send(calls)
+    }
+
+    /** Sends [calls] to [account] with the calls that bring its folders up to date, and gives both. */
+    internal suspend fun sendFresh(
+        account: MailAccount,
+        calls: JmapRequestBuilder.() -> Unit,
+    ): Pair<List<MailFolder>, JmapResponse> {
+        val loginId = account.login.id
+        val saved = cache.withAccount(loginId) { keptOrNull { it.savedMailboxes(loginId) } }
+        return request(account, saved, calls)
+    }
+
+    private suspend fun request(
+        account: MailAccount,
+        saved: MailboxList?,
+        calls: JmapRequestBuilder.() -> Unit,
+    ): Pair<List<MailFolder>, JmapResponse> {
+        lateinit var mailboxes: MailboxCalls
         val response =
             account.connection.send {
-                if (kept.isEmpty()) mailboxes = mailboxCalls(account.id, saved = null)
+                mailboxes = mailboxCalls(account.id, saved)
                 calls()
             }
-        val read = mailboxes?.let { it.read(response) ?: account.connection.allMailboxes(account.id) }
-        return (read?.let { keep(account, it) } ?: kept) to response
+        val list = mailboxes.read(response) ?: account.connection.allMailboxes(account.id)
+        return keep(account, list) to response
     }
 
     private suspend fun keep(
@@ -61,9 +75,9 @@ class Mailboxes(
         list: MailboxList,
     ): List<MailFolder> {
         val loginId = account.login.id
-        cache.withAccount(
-            loginId,
-        ) { accountCache -> keptOrNull { accountCache.write(loginId) { saveMailboxes(list) } } }
+        cache.withAccount(loginId) { accountCache ->
+            keptOrNull { accountCache.write(loginId) { saveMailboxes(list) } }
+        }
         return list.mailboxes.map { it.toFolder(loginId) }
     }
 }
@@ -75,15 +89,6 @@ private suspend fun <T> keptOrNull(use: suspend () -> T): T? =
     } catch (expected: CacheStorageException) {
         null
     }
-
-private suspend fun JmapConnection.mailboxList(
-    accountId: String,
-    saved: MailboxList?,
-): MailboxList {
-    lateinit var calls: MailboxCalls
-    val response = send { calls = mailboxCalls(accountId, saved) }
-    return calls.read(response) ?: allMailboxes(accountId)
-}
 
 /** [loginId]'s folder for this mailbox; [sharedIn] names the account another user shares it from. */
 internal fun MailboxObject.toFolder(

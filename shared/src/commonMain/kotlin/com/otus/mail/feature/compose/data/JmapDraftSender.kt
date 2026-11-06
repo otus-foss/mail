@@ -16,10 +16,10 @@ import com.otus.mail.core.mail.IdentityType
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.MailFailure
-import com.otus.mail.core.mail.keywordPatch
+import com.otus.mail.core.mail.SubmissionCapability
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.core.messages.data.keyword
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
 import com.otus.mail.core.messages.domain.DraftRestoreException
@@ -30,11 +30,8 @@ import com.otus.mail.core.messages.domain.SendFailure
 import com.otus.mail.core.messages.domain.SendTime
 import com.otus.mail.core.messages.domain.SentMessage
 import com.otus.mail.core.messages.domain.sendingAs
-import kotlinx.coroutines.CancellationException
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
@@ -47,6 +44,7 @@ import kotlinx.serialization.json.putJsonObject
 class JmapDraftSender internal constructor(
     private val connections: JmapConnections,
     private val copies: DraftCopies,
+    private val changes: EmailChangeQueue,
 ) : DraftSender,
     ScheduledSends {
     override suspend fun send(
@@ -69,7 +67,7 @@ class JmapDraftSender internal constructor(
             val sent = account.submit(draft, route, time, stored)
             // Undo or a cancel can still stop a held or scheduled send, so it takes back a mark it added.
             val marked = if (time == SendTime.Now) null else answered?.let { account.unmarked(it) }
-            account.tidySent(draft.emailId, answered)
+            account.tidySent(draft.emailId, answered, changes)
             // A save whose answer was lost may have left a copy that no later save will remove.
             route.drafts?.let { copies.unanswered.destroy(account, it, kept = sent.emailId) }
             Result.success(sent.copy(marked = marked))
@@ -79,11 +77,9 @@ class JmapDraftSender internal constructor(
             Result.failure(SendException(error.toSendFailure(), error))
         } catch (error: LoginStoreException) {
             Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem), error))
-        } catch (error: CancellationException) {
-            throw error
-        } catch (_: Exception) {
-            // Anything else, such as content that cannot be encoded, fails the send rather than the app.
-            Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem)))
+        } catch (error: SerializationException) {
+            // Content that cannot be encoded fails the send rather than the app.
+            Result.failure(SendException(SendFailure.Mail(MailFailure.ServerProblem), error))
         }
 
     /** The identity that sends as [from], and the folders the sent copy moves between. */
@@ -231,7 +227,7 @@ class JmapDraftSender internal constructor(
 
     /**
      * Marks the copy of a canceled [message] as a draft again, back in Drafts if it moved to Sent,
-     * and takes back the mark its send gave the original it answered.
+     * and then takes back the mark its send gave the original it answered.
      */
     private suspend fun MailAccount.restoreCanceledDraft(message: SentMessage) {
         val emailId = message.emailId
@@ -240,18 +236,13 @@ class JmapDraftSender internal constructor(
                 put("keywords/${Keywords.DRAFT}", true)
                 if (message.draftsId != null) putJsonObject("mailboxIds") { put(message.draftsId, true) }
             }
-        val unmarked =
-            listOfNotNull(message.marked).associate {
-                it.emailId to
-                    keywordPatch(it.keyword, false)
-            }
         try {
-            // Only the copy decides: an original deleted since then keeps nothing to take back.
-            val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch) + unmarked))
+            val restored = connection.call(SetMethod(EmailType, id, update = mapOf(emailId to patch)))
             if (emailId !in restored.updated || emailId in restored.notUpdated) throw DraftRestoreException()
         } catch (error: JmapException) {
             throw DraftRestoreException(error)
         }
+        message.marked?.let { changes.mark(login.id, it, on = false) }
     }
 
     private companion object {
@@ -275,10 +266,9 @@ private suspend fun MailAccount.refused(
  * (RFC 4865) a held or scheduled send puts in its envelope.
  */
 private fun MailAccount.delayedSendSeconds(): Long? {
-    val submission = session.accounts[id]?.capabilityObjects?.get(JmapCapability.SUBMISSION) ?: return null
-    val extensions = (submission["submissionExtensions"] as? JsonObject)?.keys.orEmpty()
-    val holds = extensions.any { it.equals(FUTURE_RELEASE, ignoreCase = true) }
-    return submission["maxDelayedSend"]?.jsonPrimitive?.longOrNull?.takeIf { holds }
+    val submission = capability(JmapCapability.SUBMISSION, SubmissionCapability.serializer()) ?: return null
+    val holds = submission.submissionExtensions.keys.any { it.equals(FUTURE_RELEASE, ignoreCase = true) }
+    return submission.maxDelayedSend.takeIf { holds }
 }
 
 private const val FUTURE_RELEASE = "FUTURERELEASE"

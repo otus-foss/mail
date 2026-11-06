@@ -90,7 +90,12 @@ into the waiting patch. The patches only set or remove keys, so sending one twic
 more.
 
 - The waiting changes go to the server before each refresh, and after it they show again on top
-  of what the server sent.
+  of what the server sent. A refresh holds the login's queue lock while it runs, so a mark made
+  meanwhile waits for it and a confirmed mark never shows reverted.
+- After a failure, the queue wakes the background job again only when the network or the server
+  was at fault; a rejected sign-in or a missing secret waits for the next refresh.
+- The mark a send gives the message it answers, and the moves of "Move the N already here", go
+  through the queue too.
 - A change the server refuses is dropped, and its email leaves the cache, so the next refresh
   reads it again. A server that is down for now (`serverUnavailable`, `serverFail`, or
   `serverPartialFail`, RFC 8620, section 3.6.2) refuses nothing: the change waits. So does an

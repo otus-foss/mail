@@ -3,6 +3,8 @@ package com.otus.mail.feature.compose.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
@@ -81,7 +83,8 @@ class JmapSendCheckerTest {
                     }
                 """{"methodResponses": [${responses.joinToString()}]}"""
             }
-        return JmapSendChecker(JmapConnections(JmapClient(engine), store))
+        val connections = JmapConnections(JmapClient(engine), store)
+        return JmapSendChecker(connections, EmailChangeQueue(connections, InMemoryMailCache(), store = null))
     }
 
     /** Records an `Email/set` and confirms every update and destroy in it. */

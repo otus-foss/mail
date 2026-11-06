@@ -4,7 +4,6 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.CacheKind
-import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailObject
@@ -12,6 +11,7 @@ import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.isDraft
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.objects
+import com.otus.mail.core.mail.received
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.core.messages.data.ServerSites
@@ -22,7 +22,6 @@ import com.otus.mail.core.messages.data.toMessage
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.read.domain.ConversationMessages
 import kotlinx.datetime.TimeZone
-import kotlin.time.Instant
 
 /**
  * Reads every email of a message's thread with the row properties (RFC 8621, sections 3 and 4.2),
@@ -32,7 +31,8 @@ import kotlin.time.Instant
  */
 class JmapConversationMessages(
     private val connections: JmapConnections,
-    private val cache: MailCache = InMemoryMailCache(),
+    private val cache: MailCache,
+    private val mailboxes: Mailboxes,
     private val zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
     private val sites: ServerSites = ServerSites { null },
 ) : ConversationMessages {
@@ -40,10 +40,10 @@ class JmapConversationMessages(
         val loginId = message.location.accountId
         // A supplied message has no server id, so it stands alone.
         val emails = if (message.emailId.isEmpty()) emptyList() else emails(message) ?: return null
-        val mailboxes = Mailboxes(cache).cached(loginId).associateBy { it.id }
+        val folders = mailboxes.cached(loginId).associateBy { it.id }
         // Deleted and spam mail stay out of the pages, as in the list, unless the row itself is there.
         val hidden =
-            mailboxes.values
+            folders.values
                 .filter { it.isBin }
                 .map { it.id }
                 .toSet()
@@ -52,8 +52,8 @@ class JmapConversationMessages(
         return emails
             .filter { !it.isDraft }
             .filterNot { it.boxes.isNotEmpty() && hidden.containsAll(it.boxes) }
-            .sortedByDescending { Instant.parseOrNull(it.receivedAt) }
-            .map { it.page(message, mailboxes) }
+            .sortedByDescending { it.received }
+            .map { it.page(message, folders) }
             .ifEmpty { listOf(message.copy(conversation = null)) }
     }
 
@@ -89,12 +89,12 @@ class JmapConversationMessages(
      */
     private fun EmailObject.page(
         row: MailMessage,
-        mailboxes: Map<String, MailFolder>,
+        folders: Map<String, MailFolder>,
     ): MailMessage {
         val listed = row.location.mailboxId.takeIf { it in boxes } ?: boxes.firstOrNull().orEmpty()
         val inRow = listed == row.location.mailboxId
-        val mailbox = if (inRow) row.location.mailbox else mailboxes[listed]?.mailboxName.orEmpty()
-        val role = if (inRow) row.location.mailboxRole else mailboxes[listed]?.role
+        val mailbox = if (inRow) row.location.mailbox else folders[listed]?.mailboxName.orEmpty()
+        val role = if (inRow) row.location.mailboxRole else folders[listed]?.role
         val page =
             toMessage(
                 row.location.accountId,

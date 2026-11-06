@@ -4,7 +4,6 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.JmapJson
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.MailAccount
@@ -12,6 +11,7 @@ import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.feature.folders.domain.AccountFolderRules
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
@@ -36,10 +36,11 @@ import kotlin.time.Clock
 class JmapFolderRuleRepository(
     private val connections: JmapConnections,
     private val mailboxes: Mailboxes,
+    changes: EmailChangeQueue,
     /** The UTC offset, such as `+0200`, that day and time conditions are written in. */
     private val zone: () -> String = ::deviceZone,
 ) : FolderRuleRepository {
-    private val existing = ExistingMail(connections, mailboxes)
+    private val existing = ExistingMail(connections, mailboxes, changes)
 
     override suspend fun accounts(): List<AccountFolderRules> =
         coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
@@ -184,13 +185,10 @@ class JmapFolderRuleRepository(
 
 /** Rules need Sieve with `fileinto`; other extensions only unlock more conditions and filing by id. */
 private fun availability(account: MailAccount): RuleAvailability {
-    val sieve =
-        account.session.accounts[account.id]
-            ?.capabilityObjects
-            ?.get(JmapCapability.SIEVE)
+    val capability =
+        account.capability(JmapCapability.SIEVE, SieveCapability.serializer())
             ?: return RuleAvailability.RulesUnavailable
-    val capability = runCatching { JmapJson.decodeFromJsonElement(SieveCapability.serializer(), sieve) }.getOrNull()
-    val support = RuleSupport(capability?.sieveExtensions.orEmpty().toSet(), capability?.maxSizeScript)
+    val support = RuleSupport(capability.sieveExtensions.toSet(), capability.maxSizeScript)
     return if ("fileinto" in support.extensions) {
         RuleAvailability.Available(support)
     } else {

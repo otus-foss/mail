@@ -3,11 +3,13 @@ package com.otus.mail.feature.folders.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mailbox.FolderFailure
 import com.otus.mail.core.mailbox.FolderLimits
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.testing.ADA_LOGIN
@@ -25,7 +27,7 @@ class JmapFolderRepositoryTest {
         val store = InMemoryLoginStore().apply { save(login, "secret") }
         val api = { body: String -> reply(body).also { sent += body } }
         val client = JmapClient(stalwartLike(session = SESSION, api = api))
-        return JmapFolderRepository(JmapConnections(client, store))
+        return JmapFolderRepository(JmapConnections(client, store), Mailboxes(InMemoryMailCache()))
     }
 
     @Test

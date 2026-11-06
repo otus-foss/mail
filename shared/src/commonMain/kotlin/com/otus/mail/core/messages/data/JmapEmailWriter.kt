@@ -4,6 +4,7 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.jmapPatch
 import com.otus.jmap.login.LoginStoreException
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.keywordPatch
@@ -27,8 +28,8 @@ import kotlinx.serialization.json.put
  * which shows each one in [cache] and keeps it until the server has it. Marks set or clear one
  * keyword; a cleared keyword is removed, because keyword values must be true. Moves name only the
  * mailboxes that change, so a message keeps any other mailbox it is in. Deleting for good goes
- * straight to the server; see [EmailRemoval]. By-id changes find the account's folder by role in
- * [mailboxes].
+ * straight to the server; see [EmailRemoval]. By-id changes find the account's folder by role
+ * among the server's folders now, or the kept ones offline.
  */
 class JmapEmailWriter(
     private val connections: JmapConnections,
@@ -81,7 +82,7 @@ class JmapEmailWriter(
         accountId: String,
         mailboxes: Map<String, Set<String>>,
     ): Set<String> =
-        update(
+        queue.update(
             accountId,
             mailboxes.mapValues { (_, boxes) ->
                 buildJsonObject { put("mailboxIds", JsonObject(boxes.associateWith { JsonPrimitive(true) })) }
@@ -107,7 +108,7 @@ class JmapEmailWriter(
                         }
                     }
             }
-        return update(message.location.accountId, patches).containsAll(patches.keys)
+        return queue.update(message.location.accountId, patches).containsAll(patches.keys)
     }
 
     override suspend fun delete(messages: List<MailMessage>): Set<String> =
@@ -133,7 +134,7 @@ class JmapEmailWriter(
     ): Boolean {
         val ids = muting.emailIds(message).ifEmpty { return false }
         val patch = keywordPatch(Keywords.MUTED, muted)
-        return update(message.location.accountId, ids.associateWith { patch }).containsAll(ids)
+        return queue.update(message.location.accountId, ids.associateWith { patch }).containsAll(ids)
     }
 
     override suspend fun markRead(
@@ -146,7 +147,7 @@ class JmapEmailWriter(
         emailId: String,
     ): Boolean = updateOne(loginId, emailId, keywordPatch(Keywords.FLAGGED, true))
 
-    /** Leaves only the inbox, like the list's Archive. */
+    /** Takes the email out of the Inbox and into Archive; any other mailbox, such as Read later, stays. */
     override suspend fun archive(
         loginId: String,
         emailId: String,
@@ -168,15 +169,6 @@ class JmapEmailWriter(
     ): Boolean = discard(loginId, emailId, MailboxRole.Junk)
 
     /**
-     * Applies [patches] to [loginId]'s emails by Email id; returns the ones that changed or wait for
-     * the server.
-     */
-    internal suspend fun update(
-        loginId: String,
-        patches: Map<String, JsonObject>,
-    ): Set<String> = queue.update(loginId, patches)
-
-    /**
      * Puts the email in the account's mailbox with [role] alone, as the list's Delete and Spam do:
      * it leaves every other mailbox, Read later included.
      */
@@ -193,17 +185,28 @@ class JmapEmailWriter(
         loginId: String,
         emailId: String,
         patch: JsonObject,
-    ): Boolean = emailId in update(loginId, mapOf(emailId to patch))
+    ): Boolean = emailId in queue.update(loginId, mapOf(emailId to patch))
 
     private fun List<MailFolder>.withRole(role: MailboxRole): MailFolder? = firstOrNull { it.role == role }
 
-    /** The login's folders; none when the login is gone or the server cannot be reached. */
+    /**
+     * The login's folders on the server now, since another client may have added or re-roled one
+     * since the last sync; the kept ones when the server cannot be reached, so the change still
+     * waits in the queue. None when the login is gone, or neither the server nor the device can say.
+     */
     private suspend fun folders(loginId: String): List<MailFolder> =
         try {
-            connections.mailAccount(loginId)?.let { mailboxes.of(it) }.orEmpty()
+            val account = connections.mailAccount(loginId) ?: return emptyList()
+            try {
+                mailboxes.sync(account)
+            } catch (expected: JmapException) {
+                mailboxes.cached(loginId)
+            }
         } catch (expected: JmapException) {
             emptyList()
         } catch (expected: LoginStoreException) {
+            emptyList()
+        } catch (expected: CacheStorageException) {
             emptyList()
         }
 }

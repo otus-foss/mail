@@ -9,9 +9,9 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.objects
+import com.otus.mail.core.mail.receivedTime
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.core.messages.data.ListingPage
 import com.otus.mail.core.messages.data.ServerSites
 import com.otus.mail.core.messages.data.ThreadView
@@ -38,14 +38,15 @@ internal fun MailScope.listingQueries(
     }
 
 /**
- * [login]'s lists of [scope] as the cache holds them, one page per mailbox, mapped like loaded
- * rows, trusting DMARC results only from [serverSite] (see [ServerSites]). A mailbox without a saved
- * list for [query] shows the rows of its unfiltered list that pass [check], or nothing without
- * one. A row whose email has left the mailbox since, such as after a move, is left out. A row that
- * no longer reads leaves the login out.
+ * [login]'s lists of [scope] among its kept [mailboxes] as the cache holds them, one page per
+ * mailbox, mapped like loaded rows, trusting DMARC results only from [serverSite] (see
+ * [ServerSites]). A mailbox without a saved list for [query] shows the rows of its unfiltered list
+ * that pass [check], or nothing without one. A row whose email has left the mailbox since, such
+ * as after a move, is left out. A row that no longer reads leaves the login out.
  */
 internal suspend fun MailCache.cachedPages(
     login: JmapLogin,
+    mailboxes: List<MailFolder>,
     scope: MailScope,
     query: MailQuery,
     conditions: List<JmapFilter>,
@@ -53,7 +54,6 @@ internal suspend fun MailCache.cachedPages(
     serverSite: String,
     check: ((ListedRow) -> Boolean)? = null,
 ): List<ListingPage<ListedRow>> {
-    val mailboxes = Mailboxes(this).cached(login.id)
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
     val unfiltered = chosen.map { ListingQuery(it.id, mailFilter(listOf(it.id), emptyList()), query.filters.sort) }
@@ -141,7 +141,7 @@ private class HeldMail(
                     list.serverSite,
                     list.mailbox.role,
                 ).inConversation(row, thread, list.mailbox.id, list.view, list.zone)
-        return ListedRow(message, Instant.parse(row.receivedAt))
+        return ListedRow(message, row.receivedTime)
     }
 }
 

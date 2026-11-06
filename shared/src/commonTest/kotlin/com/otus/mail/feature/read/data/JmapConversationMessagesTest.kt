@@ -11,6 +11,7 @@ import com.otus.mail.core.mail.ThreadObject
 import com.otus.mail.core.mail.putObject
 import com.otus.mail.core.mailbox.MailboxList
 import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.core.mailbox.saveMailboxes
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.MailConversation
@@ -38,6 +39,7 @@ class JmapConversationMessagesTest {
         JmapConversationMessages(
             JmapConnections(JmapClient(stalwartLike(api = server::answer)), store),
             cache,
+            Mailboxes(cache),
             zone = { TimeZone.UTC },
         )
 

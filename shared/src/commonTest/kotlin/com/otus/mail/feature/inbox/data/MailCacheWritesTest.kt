@@ -12,6 +12,7 @@ import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.FakeMailServer
 import com.otus.mail.testing.emailWriter
+import com.otus.mail.testing.mailSource
 import com.otus.mail.testing.stalwartLike
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest
@@ -50,7 +51,7 @@ class MailCacheWritesTest {
             return JmapConnections(JmapClient(routed), store)
         }
 
-    private fun source(limit: Int = 50) = JmapMailSource(connections, cache, limit, zone = { TimeZone.UTC })
+    private fun source(limit: Int = 50) = mailSource(connections, cache, limit, zone = { TimeZone.UTC })
 
     @Test
     fun rowsPastWhereAnotherAccountStopsWaitForTheNextPage() =

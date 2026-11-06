@@ -14,6 +14,7 @@ import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
 import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.mailSource
 import com.otus.mail.testing.source
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
@@ -118,7 +119,7 @@ class JmapFilteredMailTest {
 
     private fun source(respond: (String) -> String) =
         stalwartLike(api = respond).let {
-            JmapMailSource(JmapConnections(JmapClient(it), store))
+            mailSource(JmapConnections(JmapClient(it), store))
         }
 
     private companion object {

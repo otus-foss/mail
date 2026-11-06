@@ -1,8 +1,10 @@
 package com.otus.mail.core.messages.data
 
 import com.otus.jmap.JmapConnections
+import com.otus.jmap.JmapErrorCategory
 import com.otus.jmap.JmapException
 import com.otus.jmap.SetMethod
+import com.otus.jmap.category
 import com.otus.jmap.isTemporary
 import com.otus.jmap.login.LoginLifecycle
 import com.otus.jmap.login.LoginStoreException
@@ -65,19 +67,29 @@ class EmailChangeQueue(
             shown
         }
 
-    /** Sends [loginId]'s waiting changes, as before a sync reads the server's mail. */
-    internal suspend fun flush(loginId: String) {
-        locks.of(loginId).withLock { send(loginId) }
-    }
+    /**
+     * Sends [loginId]'s waiting changes, then runs [sync], which rewrites the login's cached mail
+     * from the server, and shows what still waits on top of it. Changes made meanwhile wait for the
+     * sync to end, so it never writes back a copy the server had before it confirmed one of them.
+     */
+    internal suspend fun <T> syncing(
+        loginId: String,
+        sync: suspend () -> T,
+    ): T =
+        locks.of(loginId).withLock {
+            send(loginId)
+            val result = sync()
+            cache.show(loginId, pending(loginId))
+            result
+        }
 
     /** Sends every login's waiting changes. True when some still wait for the network. */
     suspend fun flushAll(): Boolean {
-        saved().keys.forEach { flush(it) }
+        saved().keys.forEach { loginId -> locks.of(loginId).withLock { send(loginId) } }
         return saved().isNotEmpty()
     }
 
-    /** The changes of [loginId] the server has not confirmed yet, by email id. */
-    internal suspend fun pending(loginId: String): Map<String, JsonObject> = saved()[loginId].orEmpty()
+    private suspend fun pending(loginId: String): Map<String, JsonObject> = saved()[loginId].orEmpty()
 
     /** Drops [loginId]'s changes, as when the account is removed. */
     suspend fun forget(loginId: String) {
@@ -100,6 +112,7 @@ class EmailChangeQueue(
         var left = waiting
         var refused = emptySet<String>()
         var limited = false
+        var retry = true
         try {
             val account =
                 try {
@@ -118,14 +131,17 @@ class EmailChangeQueue(
                 left = left - answered
                 refused = refused + notTaken
             }
-        } catch (expected: JmapException) {
-            // Offline or a server error: what is left goes with the next sync or background run.
+        } catch (error: JmapException) {
+            // What is left goes with the next sync or background run. Only being offline or a server
+            // error passes by itself; a rejected sign-in or a lost secret waits for the user.
+            retry = error.category == JmapErrorCategory.Offline || error.category == JmapErrorCategory.Server
         } catch (expected: LoginStoreException) {
-            // The login cannot be read now; its changes wait.
+            // The saved logins cannot be read now; the changes wait for the next sync.
+            retry = false
         }
         write(loginId, left)
         // A server that asked to slow down gets the next try only after a while.
-        if (left.isNotEmpty()) wake(if (limited) now() + RATE_LIMIT_WAIT else now())
+        if (left.isNotEmpty() && retry) wake(if (limited) now() + RATE_LIMIT_WAIT else now())
         if (refused.isNotEmpty()) cache.forgetEmails(loginId, refused)
         return refused
     }

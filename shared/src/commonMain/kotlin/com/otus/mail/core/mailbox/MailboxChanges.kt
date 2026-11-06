@@ -81,7 +81,7 @@ internal suspend fun MailCache.savedMailboxes(loginId: String): MailboxList? {
 internal suspend fun JmapConnection.allMailboxes(accountId: String): MailboxList =
     call(everyMailbox(accountId)).let { MailboxList(it.list, it.state.ifEmpty { null }) }
 
-/** Replaces the login's cached mailboxes and the state they match with [list]. */
+/** Replaces the login's cached mailboxes and the state they match with [list]; only [Mailboxes] keeps them. */
 internal fun CacheWrite.saveMailboxes(list: MailboxList) {
     clear(CacheKind.Mailbox)
     list.mailboxes.forEach { putObject(CacheKind.Mailbox, it.id, MailboxObject.serializer(), it) }

@@ -27,7 +27,7 @@ class JmapFolderCacheTest {
                {"id": "a", "name": "Inbox", "role": "inbox", "unreadEmails": 3, "totalEmails": 9},
                {"id": "r", "name": "Receipts", "parentId": "a"}]}, "c0"]]}"""
         }
-        return JmapFolderRepository(JmapConnections(JmapClient(stalwartLike(api = api)), store), cache)
+        return JmapFolderRepository(JmapConnections(JmapClient(stalwartLike(api = api)), store), Mailboxes(cache))
     }
 
     @Test

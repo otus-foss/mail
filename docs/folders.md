@@ -10,7 +10,10 @@ script, so they keep working while the app is closed.
   sort order, counts, and `myRights`. Accounts load in parallel and fail alone. The first load
   reads every mailbox with `Mailbox/get`; later loads ask `Mailbox/changes` from the saved state.
 - Each load saves the login's own mailboxes and their `Mailbox` state in the device's mail cache.
-  The inbox, rules, drafts, sending, notifications, and the other features read them there.
+  One `Mailboxes`, built by `MailServices`, is the only writer of both; the inbox sync asks it for
+  its mailbox calls. The inbox, rules, drafts, sending, notifications, and the other features read
+  the folders there. A notification's Archive, Delete, and Spam, and "Move the N already here",
+  ask the server for its folders first, since another client may have added or re-roled one.
   While no folders show, as at launch, a load first shows the cached ones with their counts, so the
   sidebar fills before the server answers. Loading stays on until the server's folders replace
   them. The cache keeps no shared mailboxes or server limits, so those arrive with the server load.
@@ -465,8 +468,9 @@ line, get those rules converted on the first load. The first save writes them in
 Sieve sees mail only as it arrives. Once typing pauses, the sheet asks how much mail in the Inbox
 and Archive the rule matches, with `Email/query` and `calculateTotal`. When there is some, the
 switch "Move the N that are already here", "From Inbox and Archive", appears. It starts on, as in
-the design. While it is on, a saved rule moves that mail with `Email/set` patches of `mailboxIds`, in batches within
-`maxObjectsInSet`.
+the design. While it is on, a saved rule moves that mail with `Email/set` patches of `mailboxIds`
+through the waiting-changes queue, in batches within `maxObjectsInSet`, so the lists show the
+moves at once. It reads the Inbox and Archive from the server's folders at that moment.
 
 The query maps conditions to `Email/query` filters (RFC 8621, section 4.4.1): addresses to `from`,
 `to`, or `cc` text, subject and body "contains" to `subject` and `body`, headers "contains" and

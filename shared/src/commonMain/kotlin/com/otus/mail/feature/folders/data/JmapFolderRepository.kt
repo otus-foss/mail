@@ -8,10 +8,9 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.MAILBOX_PROPERTIES
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.MailCapability
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.mailAccount
@@ -40,10 +39,8 @@ import kotlinx.serialization.json.JsonPrimitive
  */
 class JmapFolderRepository(
     private val connections: JmapConnections,
-    cache: MailCache = InMemoryMailCache(),
+    private val mailboxes: Mailboxes,
 ) : FolderRepository {
-    private val mailboxes = Mailboxes(cache)
-
     override suspend fun accounts(): List<AccountFolders> =
         coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
 
@@ -157,8 +154,8 @@ private fun MailAccount.sharedAccountIds(): List<String> =
         .keys
         .toList()
 
-private fun MailAccount.mailCapability(jmapAccountId: String): JsonObject? =
-    session.accounts[jmapAccountId]?.capabilityObjects?.get(JmapCapability.MAIL)
+private fun MailAccount.mailCapability(jmapAccountId: String): MailCapability? =
+    session.accountCapability(jmapAccountId, JmapCapability.MAIL, MailCapability.serializer())
 
 private fun String?.json(): JsonElement = this?.let(::JsonPrimitive) ?: JsonNull
 

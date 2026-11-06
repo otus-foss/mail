@@ -6,6 +6,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.FolderRule
@@ -83,9 +84,12 @@ class JmapFolderRuleRepositoryTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
+        val connections = JmapConnections(JmapClient(engine), store)
+        val cache = InMemoryMailCache()
         return JmapFolderRuleRepository(
-            JmapConnections(JmapClient(engine), store),
-            Mailboxes(InMemoryMailCache()),
+            connections,
+            Mailboxes(cache),
+            EmailChangeQueue(connections, cache, store = null),
         ) { "+0200" }
     }
 
@@ -221,9 +225,12 @@ class JmapFolderRuleRepositoryTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
+        val connections = JmapConnections(JmapClient(engine), store)
+        val cache = InMemoryMailCache()
         return JmapFolderRuleRepository(
-            JmapConnections(JmapClient(engine), store),
-            Mailboxes(InMemoryMailCache()),
+            connections,
+            Mailboxes(cache),
+            EmailChangeQueue(connections, cache, store = null),
         ) { "+0200" }
     }
 

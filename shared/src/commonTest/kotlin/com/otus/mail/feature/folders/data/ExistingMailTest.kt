@@ -6,6 +6,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.FolderRule
@@ -131,8 +132,10 @@ class ExistingMailTest {
                 }
             val login = JmapLogin("ada", "https://mail.example.org/jmap/session", "ada@example.org", "Ada")
             val store = InMemoryLoginStore().apply { save(login, "secret") }
-            val repository =
-                JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store), Mailboxes(InMemoryMailCache()))
+            val connections = JmapConnections(JmapClient(engine), store)
+            val cache = InMemoryMailCache()
+            val changes = EmailChangeQueue(connections, cache, store = null)
+            val repository = JmapFolderRuleRepository(connections, Mailboxes(cache), changes)
             assertEquals(14, repository.existingCount("ada", "P", FolderRule(agency)))
             val count = calls.last()
             assertTrue(

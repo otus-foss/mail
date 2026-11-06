@@ -18,6 +18,7 @@ import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.AnsweredMessage
 import com.otus.mail.core.messages.domain.Draft
@@ -41,6 +42,7 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 class JmapSendChecker(
     private val connections: JmapConnections,
+    private val changes: EmailChangeQueue,
 ) : SendChecker {
     override suspend fun check(
         draft: Draft,
@@ -56,10 +58,11 @@ class JmapSendChecker(
     ): SendCheck =
         try {
             val account = connections.mailAccount(draft.accountId)
+            val draftId = draft.emailId
             when {
                 account == null -> SendCheck.Unconfirmable
-                storedCopy != null -> account.findCopy(storedCopy, cancelHeld, draft.emailId, answered)
-                draft.messageId != null -> account.findSent(draft.messageId, cancelHeld, draft.emailId, answered)
+                storedCopy != null -> account.findCopy(storedCopy, cancelHeld, draftId, answered, changes)
+                draft.messageId != null -> account.findSent(draft.messageId, cancelHeld, draftId, answered, changes)
                 else -> SendCheck.Unconfirmable
             }
         } catch (error: JmapException.MethodError) {
@@ -79,6 +82,7 @@ private suspend fun MailAccount.findCopy(
     cancelHeld: Boolean,
     draftId: String?,
     answered: AnsweredMessage?,
+    changes: EmailChangeQueue,
 ): SendCheck {
     lateinit var query: JmapCall<QueryResult>
     lateinit var submissions: JmapCall<GetResult<JsonObject>>
@@ -103,7 +107,7 @@ private suspend fun MailAccount.findCopy(
     val nothingLeft = stored == null && all.isEmpty()
     if (!went && nothingLeft && !cancelHeld) return SendCheck.Unconfirmable
     if (!went && stored != null) connection.call(SetMethod(EmailType, id, destroy = listOf(copy)))
-    if (went) tidySent(draftId?.takeIf { it != copy }, answered)
+    if (went) tidySent(draftId?.takeIf { it != copy }, answered, changes)
     return if (went) SendCheck.Sent else SendCheck.NotSent
 }
 
@@ -112,6 +116,7 @@ private suspend fun MailAccount.findSent(
     cancelHeld: Boolean,
     draftId: String?,
     answered: AnsweredMessage?,
+    changes: EmailChangeQueue,
 ): SendCheck {
     lateinit var query: JmapCall<QueryResult>
     lateinit var found: JmapCall<GetResult<EmailObject>>
@@ -128,7 +133,7 @@ private suspend fun MailAccount.findSent(
         connection.call(SetMethod(EmailType, id, destroy = (stored + sent).map { it.id }))
     }
     // As after a send: the saved draft goes, and the answered message gets its mark.
-    if (went) tidySent(draftId?.takeIf { copy -> sent.none { it.id == copy } }, answered)
+    if (went) tidySent(draftId?.takeIf { copy -> sent.none { it.id == copy } }, answered, changes)
     return if (went) SendCheck.Sent else SendCheck.NotSent
 }
 

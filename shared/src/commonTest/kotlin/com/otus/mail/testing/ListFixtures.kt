@@ -5,6 +5,7 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.core.messages.domain.MailConversation
 import com.otus.mail.core.messages.domain.MailSender
@@ -14,6 +15,18 @@ import com.otus.mail.core.messages.domain.ThreadMember
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import kotlinx.datetime.TimeZone
 
+/**
+ * A mail source over [connections] as the app builds one: its changes wait in [queue], and its
+ * folders are the ones [cache] keeps.
+ */
+internal fun mailSource(
+    connections: JmapConnections,
+    cache: MailCache = InMemoryMailCache(),
+    limit: Int = PAGE,
+    zone: () -> TimeZone = { TimeZone.currentSystemDefault() },
+    queue: EmailChangeQueue = EmailChangeQueue(connections, cache, store = null),
+): JmapMailSource = JmapMailSource(connections, cache, queue, Mailboxes(cache), limit, zone)
+
 /** A mail source that reads this server, which offers [session], for the saved logins of [store], in UTC. */
 internal fun FakeMailServer.source(
     store: LoginStore,
@@ -21,10 +34,11 @@ internal fun FakeMailServer.source(
     limit: Int = PAGE,
     queue: EmailChangeQueue? = null,
     session: String = STALWART_SESSION,
-): JmapMailSource =
-    JmapMailSource(connections(store, session), cache, limit, zone = {
-        TimeZone.UTC
-    }, queue = queue)
+): JmapMailSource {
+    val connections = connections(store, session)
+    val changes = queue ?: EmailChangeQueue(connections, cache, store = null)
+    return mailSource(connections, cache, limit, { TimeZone.UTC }, changes)
+}
 
 /** Connections to this server, which offers [session], for the saved logins of [store]. */
 internal fun FakeMailServer.connections(

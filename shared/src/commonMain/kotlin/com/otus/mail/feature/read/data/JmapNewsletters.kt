@@ -18,21 +18,20 @@ import com.otus.mail.core.mail.LIST_UNSUBSCRIBE_PROPERTY
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.mailAccount
-import com.otus.mail.core.mail.movePatch
+import com.otus.mail.core.mail.received
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
-import com.otus.mail.core.messages.data.JmapEmailWriter
 import com.otus.mail.core.messages.data.boxes
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.domain.DraftRepository
 import com.otus.mail.core.messages.domain.DraftSender
+import com.otus.mail.core.messages.domain.EmailWriter
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailingList
 import com.otus.mail.core.messages.domain.Unsubscribe
 import com.otus.mail.feature.read.domain.Newsletters
 import com.otus.mail.feature.read.domain.UnsubscribeResult
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -46,7 +45,7 @@ class JmapNewsletters(
     private val connections: JmapConnections,
     drafts: DraftRepository,
     sender: DraftSender,
-    private val writer: JmapEmailWriter,
+    private val writer: EmailWriter,
     private val mailboxes: Mailboxes,
 ) : Newsletters {
     private val unsubscriber = ListUnsubscriber(drafts, sender)
@@ -66,9 +65,9 @@ class JmapNewsletters(
         emailIds: List<String>,
     ): Boolean {
         if (emailIds.isEmpty()) return true
-        val patches =
-            jmapCallOr(null) { connections.mailAccount(accountId)?.archivePatches(emailIds) } ?: return false
-        return patches.isEmpty() || writer.update(accountId, patches).containsAll(patches.keys)
+        val archived =
+            jmapCallOr(null) { connections.mailAccount(accountId)?.archived(emailIds) } ?: return false
+        return archived.isEmpty() || writer.setMailboxes(accountId, archived).containsAll(archived.keys)
     }
 
     private suspend fun MailAccount.list(message: MailMessage): MailingList? {
@@ -90,7 +89,7 @@ class JmapNewsletters(
                 .filter { it.id != email.id && it.boxes.none { box -> box in skipped } }
         return MailingList(
             name = listName(email.listId) ?: message.sender.name,
-            perWeek = perWeek(listOf(email.receivedAt) + older.map { it.receivedAt }),
+            perWeek = perWeek((listOf(email) + older).mapNotNull { it.received }),
             olderIds = older.map { it.id },
         )
     }
@@ -118,15 +117,18 @@ class JmapNewsletters(
             .filter { it.sameList(listId, address) }
     }
 
-    /** Each email out of every mailbox it is in and into Archive; null without an Archive folder. */
-    private suspend fun MailAccount.archivePatches(emailIds: List<String>): Map<String, JsonObject>? {
+    /**
+     * The emails of [emailIds] that still exist, each in Archive alone, out of every mailbox it is
+     * in; null without an Archive folder on the server now.
+     */
+    private suspend fun MailAccount.archived(emailIds: List<String>): Map<String, Set<String>>? {
         lateinit var emails: JmapCall<GetResult<EmailFolders>>
         val (folders, response) =
-            mailboxes.send(this) {
-                emails = call(GetMethod(EmailFoldersType, id, JmapIds.Of(emailIds), listOf("id", "mailboxIds")))
+            mailboxes.sendFresh(this) {
+                emails = call(GetMethod(EmailFoldersType, id, JmapIds.Of(emailIds), listOf("id")))
             }
         val target = folders.firstOrNull { it.role == MailboxRole.Archive }?.id ?: return null
-        return response[emails].list.associate { email -> email.id to movePatch(email.mailboxIds.keys, target) }
+        return response[emails].list.associate { email -> email.id to setOf(target) }
     }
 
     private companion object {
@@ -149,11 +151,10 @@ private fun EmailObject.sameList(
     }
 
 /**
- * How many mails a week arrive at the times [received]: the gaps between them over the weeks they
+ * How many mails a week arrive at the [times]: the gaps between them over the weeks they
  * span. Null below [MIN_MAILS] mails or when they all came at once.
  */
-internal fun perWeek(received: List<String>): Double? {
-    val times = received.mapNotNull { Instant.parseOrNull(it) }
+internal fun perWeek(times: List<Instant>): Double? {
     if (times.size < MIN_MAILS) return null
     val weeks = (times.max() - times.min()) / 7.days
     return if (weeks > 0) (times.size - 1) / weeks else null

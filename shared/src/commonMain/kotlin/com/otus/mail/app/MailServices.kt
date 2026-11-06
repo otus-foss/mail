@@ -118,7 +118,7 @@ class MailServices(
     private val accountCache = AccountMailCache(RecoveringMailCache(stores.cache))
     internal val cache: MailCache get() = accountCache
 
-    /** Each login's folders, which every feature reads from the cache. */
+    /** Each login's folders, the one keeper of them in the cache, which every feature reads. */
     private val mailboxes by lazy { Mailboxes(cache) }
     private val client by lazy(createClient)
     private val connections by lazy { JmapConnections(client, logins, io) }
@@ -152,22 +152,22 @@ class MailServices(
     private val changes by lazy {
         EmailChangeQueue(connections, cache, stores.waiting.changes, host.wakeOutbox, io = io)
     }
-    private val jmapWriter by lazy { JmapEmailWriter(connections, cache, changes, mailboxes) }
 
     /** Every change to emails, also for a notification's buttons, which act without opening Mail. */
-    val writer: EmailWriter get() = jmapWriter
+    val writer: EmailWriter by lazy { JmapEmailWriter(connections, cache, changes, mailboxes) }
     internal val mail: MailSource by lazy {
-        JmapMailSource(connections, cache, sites = serverSites, queue = changes)
+        JmapMailSource(connections, cache, changes, mailboxes, sites = serverSites)
     }
     internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, cache) }
-    private val compose by lazy { JmapComposeMail(connections, mailboxes) }
+    private val compose by lazy { JmapComposeMail(connections, mailboxes, changes) }
     internal val drafts: DraftRepository get() = compose.drafts
     internal val sender: DraftSender get() = compose.sender
     internal val scheduled: ScheduledSends get() = compose.sender
 
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {
-        MailOutbox(stores.waiting.outbox, compose.sender, JmapSendChecker(connections), host.wakeOutbox, io = io)
+        val checker = JmapSendChecker(connections, changes)
+        MailOutbox(stores.waiting.outbox, compose.sender, checker, host.wakeOutbox, io = io)
     }
     internal val signatures: SignatureRepository by lazy { JmapSignatures(connections) }
     internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections) }
@@ -179,9 +179,9 @@ class MailServices(
     internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections, mailboxes) }
     internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, addressBook) }
     internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections) }
-    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, cache) }
+    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, mailboxes) }
     internal val conversationMessages: ConversationMessages by lazy {
-        JmapConversationMessages(connections, cache, sites = serverSites)
+        JmapConversationMessages(connections, cache, mailboxes, sites = serverSites)
     }
 
     /** Attachments streamed to the device, the ones kept offline, and when the others go; see docs/storage.md. */
@@ -191,7 +191,7 @@ class MailServices(
     }
     internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, mailboxes) }
     internal val newsletters: Newsletters by lazy {
-        JmapNewsletters(connections, drafts, sender, jmapWriter, mailboxes)
+        JmapNewsletters(connections, drafts, sender, writer, mailboxes)
     }
     internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
@@ -210,7 +210,7 @@ class MailServices(
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
-    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, mailboxes) }
+    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, mailboxes, changes) }
 
     /** Finds mail that arrived since the check that last wrote [states], for notifications. */
     fun newMail(states: DeviceStore<String, String>): NewMailChecker =
@@ -225,7 +225,6 @@ class MailServices(
     ): PushSubscriptions =
         PushSubscriptions(
             connections,
-            logins,
             states,
             deviceClientId,
             push.types,

@@ -8,6 +8,7 @@ import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.mailSource
 import com.otus.mail.testing.stalwartLike
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -92,7 +93,7 @@ class JmapMailboxScopeTest {
     private fun source(
         engine: MockEngine,
         store: LoginStore,
-    ) = JmapMailSource(JmapConnections(JmapClient(engine), store))
+    ) = mailSource(JmapConnections(JmapClient(engine), store))
 
     private companion object {
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {"maxConcurrentRequests": 1},
