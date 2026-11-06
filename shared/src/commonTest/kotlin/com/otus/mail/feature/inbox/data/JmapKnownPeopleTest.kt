@@ -52,7 +52,7 @@ class JmapKnownPeopleTest {
         runTest {
             val known = people().addresses("ada")
             val expected = setOf("grace@example.org", "radia@example.org", "bo@example.org", "kay@example.org")
-            assertEquals(expected + "ken@example.org", known)
+            assertEquals(expected + "ken@example.org", known.map { it.value }.toSet())
             assertTrue(requests.any { "\"inMailbox\":\"s\"" in it && "\"limit\":500" in it }, requests.toString())
         }
 
@@ -61,7 +61,7 @@ class JmapKnownPeopleTest {
         runTest {
             val small = STALWART_SESSION.replace("$CORE: {}", "$CORE: {\"maxObjectsInGet\": 1}")
             val known = setOf("radia@example.org", "bo@example.org", "kay@example.org", "ken@example.org")
-            assertEquals(known, people(small).addresses("ada"))
+            assertEquals(known, people(small).addresses("ada").map { it.value }.toSet())
             assertEquals(2, requests.count { "Email/get" in it }, requests.toString())
         }
 
@@ -72,7 +72,7 @@ class JmapKnownPeopleTest {
             people.addresses("ada")
             val asked = requests.size
             val known = setOf("radia@example.org", "bo@example.org", "kay@example.org", "ken@example.org")
-            assertEquals(known, people.addresses("ada"))
+            assertEquals(known, people.addresses("ada").map { it.value }.toSet())
             assertEquals(asked, requests.size, "The second open asks nothing")
         }
 

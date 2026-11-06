@@ -1,6 +1,8 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.isDraft
 
 /**
  * The mailboxes a list [shown], and its account's Trash and Junk mailboxes. A thread counts a
@@ -14,21 +16,21 @@ internal class ThreadView(
     private val sent: Set<String> = emptySet(),
     own: Set<String> = emptySet(),
 ) {
-    private val own = own.map { it.trim().lowercase() }.toSet()
+    private val own = own.map { EmailAddressKey(it) }.toSet()
 
     /** Whether the user sent [email]: it is in the account's Sent folder. */
     fun isSent(email: EmailObject): Boolean = email.boxes.any { it in sent }
 
     /** Whether the user wrote [email]: it is from one of their addresses, or in Sent. */
     fun isMine(email: EmailObject): Boolean =
-        isSent(email) || email.from.orEmpty().any { it.email.trim().lowercase() in own }
+        isSent(email) || email.from.orEmpty().any { EmailAddressKey(it.email) in own }
 
     /** Whether one of the user's addresses is in [email]'s To field, not only in Cc. */
-    fun isToMe(email: EmailObject): Boolean = email.to.orEmpty().any { it.email.trim().lowercase() in own }
+    fun isToMe(email: EmailObject): Boolean = email.to.orEmpty().any { EmailAddressKey(it.email) in own }
 
     fun counts(email: EmailObject): Boolean {
         val boxes = email.boxes
         return boxes.any { it in shown } ||
-            (email.keywords[DRAFT_KEYWORD] != true && boxes.none { it in trashAndJunk })
+            (!email.isDraft && boxes.none { it in trashAndJunk })
     }
 }

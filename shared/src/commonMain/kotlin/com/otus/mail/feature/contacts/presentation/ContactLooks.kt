@@ -14,6 +14,7 @@ import com.otus.designsystem.shared.contacts.components.ContactRowLabel
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.jscontact.PartialDate
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
@@ -92,8 +93,8 @@ internal fun initialsAvatar(
 ): ChipAvatar = ResolvedAvatar(generatedAvatar(name, address)).toChipAvatar()
 
 /** Whether one of the person's cards holds the avatar of one of the user's [own] addresses. */
-internal fun ContactPerson.isOwnAvatar(own: Set<String>): Boolean =
-    cards.any { it.card.isAvatarCard } && emails.any { it.value.lowercase() in own }
+internal fun ContactPerson.isOwnAvatar(own: Set<EmailAddressKey>): Boolean =
+    cards.any { it.card.isAvatarCard } && emails.any { EmailAddressKey(it.value) in own }
 
 /** The pill on a contact list row of a card that holds one of the user's own avatars. */
 internal val AvatarLabel = ContactRowLabel("You", Res.drawable.symbol_badge)

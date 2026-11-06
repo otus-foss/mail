@@ -72,26 +72,6 @@ internal suspend fun updateEmails(
     }
 
 /**
- * The patch that puts [key] into the set-like [property], such as `keywords` or `mailboxIds`
- * (RFC 8621, section 4.1.1), or takes it out when it is no [member]. Other keys stay as they are.
- */
-internal fun membershipPatch(
-    property: String,
-    key: String,
-    member: Boolean,
-): JsonObject = jmapPatch { if (member) set(JsonPrimitive(true), property, key) else remove(property, key) }
-
-/** The patch that takes an email out of the mailboxes [from] and files it in [to]. */
-internal fun movePatch(
-    from: Collection<String>,
-    to: String,
-): JsonObject =
-    jmapPatch {
-        from.filter { it != to }.forEach { remove("mailboxIds", it) }
-        set(JsonPrimitive(true), "mailboxIds", to)
-    }
-
-/**
  * The emails an action on this row changes: every listed email of its conversation, or only its
  * own email when it stands alone.
  */

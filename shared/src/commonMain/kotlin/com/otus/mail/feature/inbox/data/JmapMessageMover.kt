@@ -5,6 +5,8 @@ import com.otus.jmap.jmapPatch
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.mail.mailboxPatch
+import com.otus.mail.core.mail.movePatch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageMover
 import kotlinx.serialization.json.JsonObject
@@ -50,7 +52,7 @@ class JmapMessageMover(
         message: MailMessage,
         folderId: String,
         inFolder: Boolean,
-    ): Boolean = updateEmail(connections, message, membershipPatch("mailboxIds", folderId, inFolder), cache, queue)
+    ): Boolean = updateEmail(connections, message, mailboxPatch(folderId, inFolder), cache, queue)
 
     /** Sends each email's whole `mailboxIds`, so one call files a conversation whose emails differ. */
     override suspend fun setMailboxes(

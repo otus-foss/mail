@@ -1,6 +1,10 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.isAnswered
+import com.otus.mail.core.mail.isFlagged
+import com.otus.mail.core.mail.isSeen
 import com.otus.mail.feature.inbox.domain.MailConversation
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.ReceivedAt
@@ -46,8 +50,8 @@ internal fun MailMessage.inConversation(
                     .flatMap { it.from.orEmpty() }
                     .map { it.toSender(location.accountId) }
                     .filter { it.address.isNotBlank() }
-                    .distinctBy { it.address.lowercase() },
-            answered = counted.any { it.keywords[ANSWERED_KEYWORD] == true },
+                    .distinctBy { EmailAddressKey(it.address) },
+            answered = counted.any { it.isAnswered },
             invite = counted.any { it.hasInvite },
             members = listed.map { ThreadMember(it.id, it.boxes, mailboxId) },
             exchanged = counted.any(view::isSent) && counted.any { !view.isSent(it) },
@@ -63,8 +67,8 @@ internal fun MailMessage.inConversation(
         conversation = conversation,
         attributes =
             attributes.copy(
-                unread = listed.any { it.keywords[SEEN_KEYWORD] != true },
-                flagged = counted.any { it.keywords[FLAGGED_KEYWORD] == true },
+                unread = listed.any { !it.isSeen },
+                flagged = counted.any { it.isFlagged },
                 hasAttachment = counted.any { it.hasFile },
             ),
         location = location.copy(mailboxIds = newestFirst.flatMap { it.boxes }.toSet()),

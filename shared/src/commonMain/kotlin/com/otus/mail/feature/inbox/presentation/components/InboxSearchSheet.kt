@@ -34,6 +34,7 @@ import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.MailListLayout
 import com.otus.mail.feature.inbox.domain.MailMessage
@@ -233,7 +234,7 @@ internal fun matchingPeople(
 ): List<MailSender> =
     hits
         .map { it.sender }
-        .distinctBy { it.address.lowercase() }
+        .distinctBy { EmailAddressKey(it.address) }
         .filter { sender ->
             query
                 .trim()

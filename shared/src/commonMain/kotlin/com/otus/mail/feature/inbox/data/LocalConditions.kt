@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
@@ -26,10 +27,10 @@ internal fun localCheck(
     zone: TimeZone,
 ): ((ListedRow) -> Boolean)? {
     val filters = query.filters
-    val recipients = recipientAddresses(query, loginId)?.map(String::lowercase)?.toSet()
+    val recipients = recipientAddresses(query, loginId)?.map { EmailAddressKey(it) }?.toSet()
     if (!filters.checkedOnDevice(recipients != null)) return null
     val dates = filters.date.bounds(now, zone)
-    val from = filters.fromAddresses.map(String::lowercase).toSet()
+    val from = filters.fromAddresses.map { EmailAddressKey(it) }.toSet()
     val readLater = query.readLaterIds[loginId]
     return { row ->
         val message = row.message
@@ -67,10 +68,10 @@ private fun QuickFacet.keeps(
         QuickFacet.NeedsMyReply, QuickFacet.AwaitingReply, QuickFacet.Conversations -> true
     }
 
-private val MailMessage.senderAddresses: List<String>
-    get() = (listOf(sender) + conversation?.senders.orEmpty()).map { it.address.lowercase() }
+private val MailMessage.senderAddresses: List<EmailAddressKey>
+    get() = (listOf(sender) + conversation?.senders.orEmpty()).map { EmailAddressKey(it.address) }
 
-private fun MailMessage.recipientAddresses(fields: Set<RecipientField>): List<String> =
+private fun MailMessage.recipientAddresses(fields: Set<RecipientField>): List<EmailAddressKey> =
     fields
         .flatMap { field ->
             when (field) {
@@ -78,4 +79,4 @@ private fun MailMessage.recipientAddresses(fields: Set<RecipientField>): List<St
                 RecipientField.Cc -> cc
                 RecipientField.Bcc -> emptyList()
             }
-        }.map { it.address.lowercase() }
+        }.map { EmailAddressKey(it.address) }

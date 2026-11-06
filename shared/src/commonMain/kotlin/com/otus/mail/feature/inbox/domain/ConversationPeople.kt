@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /**
  * The person a row names and how many other people take part: everyone who wrote in the thread,
  * and the recipients of the user's own newest email. [others] never counts the user. When
@@ -44,7 +46,7 @@ internal fun MailMessage.isOwn(
         (person.address.isNotBlank() && person.address.equals(location.accountAddress, ignoreCase = true))
 
 private val MailSender.key: String
-    get() = address.trim().lowercase().ifBlank { name }
+    get() = EmailAddressKey(address).value.ifBlank { name }
 
 /** Names the recipient of a note the user wrote only to themselves. */
 const val SELF_NAME = "yourself"

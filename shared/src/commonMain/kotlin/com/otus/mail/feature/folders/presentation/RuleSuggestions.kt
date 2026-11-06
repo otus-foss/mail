@@ -1,5 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.RuleCondition
@@ -47,7 +48,7 @@ fun ruleSuggestions(
             }
     val addresses =
         seen
-            .groupBy { it.address.lowercase() }
+            .groupBy { EmailAddressKey(it.address) }
             .filterValues { mail -> mail.any(matches) }
             .map { (_, mail) ->
                 val name = mail.firstNotNullOfOrNull { it.name.takeIf(String::isNotBlank) }

@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /** The account a draft for this request comes from, when the request names one. */
 val ComposeRequest.accountId: String?
     get() =
@@ -22,7 +24,7 @@ fun ComposeRequest.startDraft(
 ): Draft =
     when (this) {
         is ComposeRequest.New -> Draft(accountId, to = to, cc = cc, bcc = bcc, subject = subject, body = body)
-        is ComposeRequest.Reply -> original.reply(accountId, all, ownAddresses.map(String::lowercase).toSet())
+        is ComposeRequest.Reply -> original.reply(accountId, all, ownAddresses.map { EmailAddressKey(it) }.toSet())
         is ComposeRequest.FollowUp -> original.followUp(accountId, ownAddresses)
         is ComposeRequest.Forward -> original.forward(accountId)
         is ComposeRequest.Resume -> draft
@@ -31,7 +33,7 @@ fun ComposeRequest.startDraft(
 private fun OriginalMessage.followUp(
     accountId: String,
     ownAddresses: Collection<String>,
-): Draft = reply(accountId, all = true, ownAddresses.map(String::lowercase).toSet(), fromSelf = true)
+): Draft = reply(accountId, all = true, ownAddresses.map { EmailAddressKey(it) }.toSet(), fromSelf = true)
 
 private fun OriginalMessage.forward(accountId: String): Draft =
     Draft(accountId, subject = subject.prefixed(FORWARD_PREFIX, forwardPattern), quote = forwardBody())
@@ -49,8 +51,8 @@ fun ComposeRequest.preferredIdentity(
 ): MailSender? {
     if (this is ComposeRequest.Resume) return draft.from ?: from.preferredIdentity(identities, recent)
     val home = accountId
-    val addressed = addressedTo().map { it.address.lowercase() }.toSet()
-    val matching = identities.filter { it.address.lowercase() in addressed }
+    val addressed = addressedTo().map { EmailAddressKey(it.address) }.toSet()
+    val matching = identities.filter { EmailAddressKey(it.address) in addressed }
     val lastUsed =
         recent.firstNotNullOfOrNull { address ->
             identities.firstOrNull { it.address.equals(address, ignoreCase = true) }
@@ -79,20 +81,20 @@ private fun ComposeRequest.addressedTo(): List<MailSender> =
 private fun OriginalMessage.reply(
     accountId: String,
     all: Boolean,
-    own: Set<String>,
-    fromSelf: Boolean = from.address.lowercase() in own,
+    own: Set<EmailAddressKey>,
+    fromSelf: Boolean = EmailAddressKey(from.address) in own,
 ): Draft {
     val primary = if (fromSelf) to else replyTo.ifEmpty { listOf(from) }
     val recipients = if (all && !fromSelf) primary + to else primary
     val kept =
         (recipients + if (all) cc else emptyList())
-            .distinctBy { it.address.lowercase() }
-            .filterNot { it.address.lowercase() in own }
-    val toAddresses = recipients.map { it.address.lowercase() }.toSet()
+            .distinctBy { EmailAddressKey(it.address) }
+            .filterNot { EmailAddressKey(it.address) in own }
+    val toAddresses = recipients.map { EmailAddressKey(it.address) }.toSet()
     return Draft(
         accountId,
-        to = kept.filter { it.address.lowercase() in toAddresses },
-        cc = kept.filterNot { it.address.lowercase() in toAddresses },
+        to = kept.filter { EmailAddressKey(it.address) in toAddresses },
+        cc = kept.filterNot { EmailAddressKey(it.address) in toAddresses },
         subject = subject.prefixed(REPLY_PREFIX, replyPattern),
         quote = replyBody(),
         inReplyTo = messageIds,

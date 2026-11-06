@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.contacts.components.ContactRow
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.rows.elements.SectionCaption
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.Participant
 import com.otus.mail.feature.inbox.domain.ParticipantRole
@@ -29,7 +30,7 @@ internal fun PeopleSheet(
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
             people.groupBy { it.role }.forEach { (role, group) ->
                 item(role) { SectionCaption(role.title) }
-                items(group, key = { it.person.address.lowercase() }) { participant ->
+                items(group, key = { EmailAddressKey(it.person.address) }) { participant ->
                     val person = participant.person
                     val name = person.shownName
                     ContactRow(name, person.address, chipAvatar(null, name, person.address), { onPick(person) })

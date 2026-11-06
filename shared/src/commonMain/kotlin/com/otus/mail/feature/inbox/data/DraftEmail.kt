@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.data
 
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftAttachment
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -28,8 +29,8 @@ internal fun Draft.toEmail(
     buildJsonObject {
         putJsonObject("mailboxIds") { put(draftsId, true) }
         putJsonObject("keywords") {
-            put(DRAFT_KEYWORD, true)
-            put(SEEN_KEYWORD, true)
+            put(Keywords.DRAFT, true)
+            put(Keywords.SEEN, true)
         }
         if (from != null) put("from", addresses(listOf(from)))
         mapOf("to" to to, "cc" to cc, "bcc" to bcc)

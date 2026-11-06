@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 
 /** A file attached to a message, as the Read view lists it. [size] is in bytes. */
@@ -53,8 +54,8 @@ fun interface ConversationMessages {
 
 /** The addresses the user knows on an account: their contacts and the people they wrote to. */
 fun interface KnownPeople {
-    /** Lowercase addresses; empty when none could be loaded. */
-    suspend fun addresses(accountId: String): Set<String>
+    /** Empty when none could be loaded. */
+    suspend fun addresses(accountId: String): Set<EmailAddressKey>
 }
 
 /**

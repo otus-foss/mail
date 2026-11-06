@@ -14,7 +14,9 @@ import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.IdentityObject
 import com.otus.mail.core.mail.IdentityType
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.keywordPatch
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
@@ -235,13 +237,13 @@ class JmapDraftSender(
         val emailId = message.emailId
         val patch =
             buildJsonObject {
-                put("keywords/$DRAFT_KEYWORD", true)
+                put("keywords/${Keywords.DRAFT}", true)
                 if (message.draftsId != null) putJsonObject("mailboxIds") { put(message.draftsId, true) }
             }
         val unmarked =
             listOfNotNull(message.marked).associate {
                 it.emailId to
-                    membershipPatch("keywords", it.keyword, member = false)
+                    keywordPatch(it.keyword, false)
             }
         try {
             // Only the copy decides: an original deleted since then keeps nothing to take back.

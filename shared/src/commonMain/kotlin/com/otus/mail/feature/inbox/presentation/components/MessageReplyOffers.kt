@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.BarButton
 import com.otus.mail.feature.inbox.domain.ComposeRequest
@@ -75,8 +76,8 @@ private fun personContext(person: MailSender): BarContext {
 
 /** [people], each address once, without the account itself. */
 private fun MailMessage.others(people: List<MailSender>): List<MailSender> {
-    val own = location.accountAddress.lowercase()
+    val own = EmailAddressKey(location.accountAddress)
     return people
-        .filter { it.address.isNotBlank() && it.address.lowercase() != own }
-        .distinctBy { it.address.lowercase() }
+        .filter { it.address.isNotBlank() && EmailAddressKey(it.address) != own }
+        .distinctBy { EmailAddressKey(it.address) }
 }

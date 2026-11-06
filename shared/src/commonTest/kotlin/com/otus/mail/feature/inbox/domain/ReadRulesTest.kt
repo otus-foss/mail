@@ -1,5 +1,6 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,7 +9,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ReadRulesTest {
-    private val known = setOf("grace@example.org")
+    private val known = setOf(EmailAddressKey("grace@example.org"))
     private val allowed = listOf("News@Sentry.io")
 
     private fun shows(

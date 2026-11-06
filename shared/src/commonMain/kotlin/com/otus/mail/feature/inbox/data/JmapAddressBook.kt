@@ -7,6 +7,7 @@ import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
@@ -58,7 +59,7 @@ class JmapAddressBook(
         jmapCallOr(null) {
             connections.mailAccount(accountId)?.let { account ->
                 (account.contactCards(CONTACT_SCAN) + correspondents(account))
-                    .distinctBy { it.address.lowercase() }
+                    .distinctBy { EmailAddressKey(it.address) }
                     .map { it.copy(accountKey = accountId) }
             }
         }
@@ -73,7 +74,7 @@ class JmapAddressBook(
             emails.list
                 .flatMap { it.from.orEmpty() + it.to.orEmpty() + it.cc.orEmpty() }
                 .filter { it.email.isNotBlank() }
-                .groupBy { it.email.lowercase() }
+                .groupBy { EmailAddressKey(it.email) }
                 .values
                 .sortedByDescending { it.size }
                 .map { seen ->

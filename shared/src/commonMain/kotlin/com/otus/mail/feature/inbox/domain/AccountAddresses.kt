@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
 import com.otus.avatar.ResolvedAvatar
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 
 /** The addresses one account receives mail at, as "Show mail from" lists them. */
@@ -8,11 +9,11 @@ data class AccountAddresses(
     val accountId: String,
     val name: String,
     val addresses: List<String>,
-    /** The avatar the user gave each address, by lowercase address; an address without one is missing. */
-    val avatars: Map<String, ResolvedAvatar> = emptyMap(),
+    /** The avatar the user gave each address; an address without one is missing. */
+    val avatars: Map<EmailAddressKey, ResolvedAvatar> = emptyMap(),
 ) {
     /** The avatar the user gave [address], if any. */
-    fun avatarOf(address: String): ResolvedAvatar? = avatars[address.lowercase()]
+    fun avatarOf(address: String): ResolvedAvatar? = avatars[EmailAddressKey(address)]
 
     companion object {
         /**

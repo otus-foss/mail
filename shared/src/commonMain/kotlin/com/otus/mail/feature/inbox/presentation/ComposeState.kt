@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import com.otus.designsystem.mail.compose.elements.RichText
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.ComposeRequest
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.DraftException
@@ -274,7 +275,7 @@ private fun List<SendIdentity>.signatureOf(from: MailSender?): Signature =
 
 /** Every recipient once, in line order, for the bar's context. */
 val Draft.recipients: List<MailSender>
-    get() = (to + cc + bcc).distinctBy { it.address.lowercase() }
+    get() = (to + cc + bcc).distinctBy { EmailAddressKey(it.address) }
 
 /**
  * What the user wrote, without the sending identity, the account, the stored copy's id, or the

@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.ThreadMember
 import kotlinx.datetime.TimeZone
@@ -23,7 +24,7 @@ class ConversationsTest {
         box: String,
         from: EmailAddress = grace,
         to: List<EmailAddress> = listOf(ada),
-        keywords: Set<String> = setOf(SEEN_KEYWORD),
+        keywords: Set<String> = setOf(Keywords.SEEN),
         hasAttachment: Boolean = false,
     ) = EmailObject(
         id = id,
@@ -49,9 +50,9 @@ class ConversationsTest {
     private val first = email("e1", 1, "inbox", to = listOf(ada)).copy(cc = listOf(radia))
     private val second = email("e2", 3, "inbox", keywords = emptySet(), hasAttachment = true)
     private val reply =
-        email("e3", 4, "sent", from = ada, to = listOf(grace), keywords = setOf(SEEN_KEYWORD, ANSWERED_KEYWORD))
-    private val draft = email("e4", 5, "drafts", from = ada, keywords = setOf(DRAFT_KEYWORD))
-    private val deleted = email("e5", 6, "trash", from = radia, keywords = setOf(SEEN_KEYWORD, FLAGGED_KEYWORD))
+        email("e3", 4, "sent", from = ada, to = listOf(grace), keywords = setOf(Keywords.SEEN, Keywords.ANSWERED))
+    private val draft = email("e4", 5, "drafts", from = ada, keywords = setOf(Keywords.DRAFT))
+    private val deleted = email("e5", 6, "trash", from = radia, keywords = setOf(Keywords.SEEN, Keywords.FLAGGED))
 
     @Test
     fun aThreadIsAConversationOnlyWhenBothSidesWrote() {

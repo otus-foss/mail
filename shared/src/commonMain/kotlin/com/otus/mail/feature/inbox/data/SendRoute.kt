@@ -3,6 +3,8 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapException
 import com.otus.jmap.SetError
 import com.otus.jmap.jmapPatch
+import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.core.mail.toMailFailure
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
@@ -34,12 +36,12 @@ internal data class SendRoute(
                 remove("mailboxIds", folder)
                 set(JsonPrimitive(true), "mailboxIds", sent)
             }
-            remove("keywords", DRAFT_KEYWORD)
+            remove("keywords", Keywords.DRAFT)
         }
 }
 
 /** The patch for a held copy: it stays where it was stored and only loses `$draft`. */
-internal fun SendRoute.heldPatch(): JsonObject = jmapPatch { remove("keywords", DRAFT_KEYWORD) }
+internal fun SendRoute.heldPatch(): JsonObject = jmapPatch { remove("keywords", Keywords.DRAFT) }
 
 /**
  * The envelope that holds a draft until [at] (RFC 4865 HOLDUNTIL), from its From address to every
@@ -52,7 +54,12 @@ internal fun Draft.heldEnvelope(at: Instant): JsonObject =
             putJsonObject("parameters") { put("HOLDUNTIL", at.utcDate()) }
         }
         putJsonArray("rcptTo") {
-            (to + cc + bcc).distinctBy { it.address.lowercase() }.forEach { addJsonObject { put("email", it.address) } }
+            (to + cc + bcc)
+                .distinctBy {
+                    EmailAddressKey(
+                        it.address,
+                    )
+                }.forEach { addJsonObject { put("email", it.address) } }
         }
     }
 
@@ -64,14 +71,14 @@ internal fun <T> List<T>.sendingAs(
     address: String,
     addressOf: (T) -> String,
 ): T? {
-    val wanted = address.lowercase()
-    val domain = wanted.substringAfterLast('@', missingDelimiterValue = "")
-    return firstOrNull { addressOf(it).lowercase() == wanted }
-        ?: firstOrNull { domain.isNotEmpty() && addressOf(it).lowercase() == "*@$domain" }
+    val wanted = EmailAddressKey(address)
+    val domain = wanted.value.substringAfterLast('@', missingDelimiterValue = "")
+    return firstOrNull { EmailAddressKey(addressOf(it)) == wanted }
+        ?: firstOrNull { domain.isNotEmpty() && EmailAddressKey(addressOf(it)) == EmailAddressKey("*@$domain") }
 }
 
 internal val AnsweredMessage.keyword: String
-    get() = if (forwarded) FORWARDED_KEYWORD else ANSWERED_KEYWORD
+    get() = if (forwarded) Keywords.FORWARDED else Keywords.ANSWERED
 
 internal fun failSend(failure: SendFailure): Nothing = throw SendException(failure)
 
@@ -97,6 +104,3 @@ private fun sendFailure(type: String): SendFailure =
         "forbidden", "forbiddenFrom", "forbiddenMailFrom", "forbiddenToSend" -> SendFailure.NotPermitted
         else -> SendFailure.ServerProblem
     }
-
-internal const val ANSWERED_KEYWORD = "\$answered"
-internal const val FORWARDED_KEYWORD = "\$forwarded"

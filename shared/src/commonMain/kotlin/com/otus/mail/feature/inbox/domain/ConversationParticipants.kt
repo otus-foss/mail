@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /** How someone took part in a conversation, from the most to the least direct. */
 enum class ParticipantRole { Sender, Recipient, Copied }
 
@@ -25,7 +27,7 @@ fun participants(
                     message.to.map { it to ParticipantRole.Recipient } +
                     message.cc.map { it to ParticipantRole.Copied }
             ).filterNot { (person, _) -> person.address.isBlank() || message.isOwn(own, person) }
-        }.groupBy { (person, _) -> person.address.trim().lowercase() }
+        }.groupBy { (person, _) -> EmailAddressKey(person.address) }
         .map { (_, named) ->
             val person = named.firstOrNull { it.first.name.isNotBlank() }?.first ?: named.first().first
             Participant(person, named.minOf { it.second })

@@ -3,6 +3,7 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.AddressBook
 import com.otus.mail.feature.inbox.domain.Draft
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -95,7 +96,7 @@ class ComposeRecipients(
         field: RecipientField,
         found: List<MailSender>,
     ) {
-        change(field, (people(field) + found).distinctBy { it.address.lowercase() })
+        change(field, (people(field) + found).distinctBy { EmailAddressKey(it.address) })
         typed += field to ""
         dismissSuggestions()
     }
@@ -108,8 +109,13 @@ class ComposeRecipients(
         lookup =
             scope.launch {
                 delay(suggestDelayMillis)
-                val taken = people(field).map { it.address.lowercase() }.toSet()
-                val found = addressBook.suggestions(accountId(), text).filterNot { it.address.lowercase() in taken }
+                val taken = people(field).map { EmailAddressKey(it.address) }.toSet()
+                val found =
+                    addressBook
+                        .suggestions(
+                            accountId(),
+                            text,
+                        ).filterNot { EmailAddressKey(it.address) in taken }
                 suggestions = Suggestions(field, found)
             }
     }

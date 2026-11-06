@@ -6,6 +6,7 @@ import com.otus.jmap.SetMethod
 import com.otus.jmap.jmapCallOr
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.keywordPatch
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
 
 /** Deletes a sent draft's earlier copy [draftId] and marks the message it [answered]. */
@@ -13,7 +14,7 @@ internal suspend fun MailAccount.tidySent(
     draftId: String?,
     answered: AnsweredMessage?,
 ) {
-    val update = answered?.let { mapOf(it.emailId to membershipPatch("keywords", it.keyword, member = true)) }
+    val update = answered?.let { mapOf(it.emailId to keywordPatch(it.keyword, true)) }
     if (draftId == null && update == null) return
     // The message is already sent, so a leftover draft or a missing mark is not a failure.
     jmapCallOr(Unit) {

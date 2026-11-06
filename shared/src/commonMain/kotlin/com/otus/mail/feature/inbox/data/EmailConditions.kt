@@ -5,6 +5,7 @@ import com.otus.jmap.JmapSort
 import com.otus.jmap.allOf
 import com.otus.jmap.anyOf
 import com.otus.jmap.filterCondition
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.feature.inbox.domain.FilterSort
 import com.otus.mail.feature.inbox.domain.InboxFilters
@@ -55,8 +56,8 @@ internal fun emailConditions(
 private fun ReadStatus.condition(): JmapFilter? =
     when (this) {
         ReadStatus.All -> null
-        ReadStatus.Unread -> keyword("notKeyword", SEEN_KEYWORD)
-        ReadStatus.Read -> keyword("hasKeyword", SEEN_KEYWORD)
+        ReadStatus.Unread -> keyword("notKeyword", Keywords.SEEN)
+        ReadStatus.Read -> keyword("hasKeyword", Keywords.SEEN)
     }
 
 /** This choice's condition for [loginId]; null for the choices the caller checks on loaded threads. */
@@ -65,10 +66,10 @@ private fun QuickFacet.condition(
     loginId: String,
 ): JmapFilter? =
     when (this) {
-        QuickFacet.Flagged -> keyword("hasKeyword", FLAGGED_KEYWORD)
+        QuickFacet.Flagged -> keyword("hasKeyword", Keywords.FLAGGED)
         QuickFacet.ReadLater -> inMailbox(query.readLaterIds.getValue(loginId))
         QuickFacet.Attachments -> filterCondition("hasAttachment", JsonPrimitive(true))
-        QuickFacet.Forwarded -> keyword("hasKeyword", FORWARDED_KEYWORD)
+        QuickFacet.Forwarded -> keyword("hasKeyword", Keywords.FORWARDED)
         QuickFacet.NeedsMyReply, QuickFacet.AwaitingReply, QuickFacet.Conversations -> null
     }
 

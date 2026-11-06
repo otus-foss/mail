@@ -1,5 +1,7 @@
 package com.otus.mail.feature.notifications.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /**
  * What a new-mail alert shows. [Device] shows the sender and subject and leaves the lock screen to
  * the device's own setting, which may show them, show only "New mail", or show nothing. [Hidden]
@@ -68,7 +70,7 @@ data class PreviewChoices(
     fun forAddress(
         loginId: String,
         address: String,
-    ): NotificationPreviews? = addresses[loginId]?.get(address.lowercase())
+    ): NotificationPreviews? = addresses[loginId]?.get(EmailAddressKey(address).value)
 
     fun withLogin(
         loginId: String,
@@ -80,7 +82,7 @@ data class PreviewChoices(
         address: String,
         choice: NotificationPreviews?,
     ): PreviewChoices {
-        val key = address.lowercase()
+        val key = EmailAddressKey(address).value
         val own = addresses[loginId].orEmpty().let { if (choice == null) it - key else it + (key to choice) }
         return copy(addresses = if (own.isEmpty()) addresses - loginId else addresses + (loginId to own))
     }

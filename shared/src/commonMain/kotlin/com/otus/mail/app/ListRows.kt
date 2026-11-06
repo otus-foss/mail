@@ -7,6 +7,7 @@ import com.otus.accounts.domain.ownAddresses
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderKey
 import com.otus.mail.feature.folders.domain.key
@@ -27,7 +28,7 @@ internal fun rememberRowLook(states: MailStates): RowLook {
         accounts
             .flatMap { account ->
                 account.ownAddresses.mapNotNull { email ->
-                    states.ownAvatars.avatar(account.own, email)?.let { (account.id to email.lowercase()) to it }
+                    states.ownAvatars.avatar(account.own, email)?.let { (account.id to EmailAddressKey(email)) to it }
                 }
             }.toMap()
     return remember(layout, accounts, avatars) {

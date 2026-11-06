@@ -35,6 +35,7 @@ import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.MoveTokens
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -61,7 +62,7 @@ internal fun MoveSheet(
     onDismiss: () -> Unit,
 ) {
     val first = messages.first()
-    val oneSender = messages.distinctBy { it.sender.address.lowercase() }.size == 1
+    val oneSender = messages.distinctBy { EmailAddressKey(it.sender.address) }.size == 1
     var query by rememberSaveable { mutableStateOf("") }
     var searching by remember { mutableStateOf(false) }
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0

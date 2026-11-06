@@ -1,8 +1,10 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /** [address] added to [MailBehavior.allowedSenders], lowercase, newest first, and listed once. */
 fun MailBehavior.allowingSender(address: String): MailBehavior {
-    val allowed = address.trim().lowercase()
+    val allowed = EmailAddressKey(address).value
     if (allowed.isEmpty()) return this
     return copy(allowedSenders = listOf(allowed) + allowedSenders.filterNot { it == allowed })
 }

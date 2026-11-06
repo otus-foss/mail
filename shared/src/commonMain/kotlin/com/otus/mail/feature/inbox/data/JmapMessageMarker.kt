@@ -4,6 +4,8 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.mail.Keywords
+import com.otus.mail.core.mail.keywordPatch
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MessageMarker
@@ -23,16 +25,12 @@ class JmapMessageMarker(
         messages: List<MailMessage>,
         flag: MessageFlag,
         on: Boolean,
-    ): Set<String> = updateEmails(connections, messages, membershipPatch("keywords", flag.keyword, on), cache, queue)
+    ): Set<String> = updateEmails(connections, messages, keywordPatch(flag.keyword, on), cache, queue)
 }
 
 internal val MessageFlag.keyword: String
     get() =
         when (this) {
-            MessageFlag.Read -> SEEN_KEYWORD
-            MessageFlag.Flagged -> FLAGGED_KEYWORD
+            MessageFlag.Read -> Keywords.SEEN
+            MessageFlag.Flagged -> Keywords.FLAGGED
         }
-
-internal const val SEEN_KEYWORD = "\$seen"
-internal const val FLAGGED_KEYWORD = "\$flagged"
-internal const val DRAFT_KEYWORD = "\$draft"

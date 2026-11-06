@@ -6,7 +6,10 @@ import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
+import com.otus.mail.core.mail.Keywords
+import com.otus.mail.core.mail.keywordPatch
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mail.movePatch
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
@@ -29,12 +32,12 @@ class JmapEmailShortcuts(
     override suspend fun markRead(
         loginId: String,
         emailId: String,
-    ): Boolean = update(loginId, emailId, membershipPatch("keywords", SEEN_KEYWORD, member = true))
+    ): Boolean = update(loginId, emailId, keywordPatch(Keywords.SEEN, true))
 
     override suspend fun flag(
         loginId: String,
         emailId: String,
-    ): Boolean = update(loginId, emailId, membershipPatch("keywords", FLAGGED_KEYWORD, member = true))
+    ): Boolean = update(loginId, emailId, keywordPatch(Keywords.FLAGGED, true))
 
     override suspend fun archive(
         loginId: String,

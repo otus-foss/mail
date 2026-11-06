@@ -6,6 +6,7 @@ import com.otus.avatar.AvatarOptions
 import com.otus.avatar.avatarOptions
 import com.otus.avatar.ui.presentation.OwnAvatarsState
 import com.otus.dateformat.DateFormatter
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.feature.contacts.presentation.ContactAvatarUpdates
 import com.otus.mail.feature.contacts.presentation.ContactPickers
@@ -115,7 +116,7 @@ internal class MailStates(
             ownAddresses = {
                 accounts.accounts
                     .flatMap { it.ownAddresses }
-                    .map(String::lowercase)
+                    .map { EmailAddressKey(it) }
                     .toSet()
             },
         )
@@ -231,7 +232,6 @@ internal class MailStates(
         folders.refresh()
     }
 
-    /** Moves messages between folders and in and out of Read later. */
     val filing = MessageFiling(services, folders, folderColors, scope)
 
     /** The toasts that offer to undo moves; the process holds them, see [MailServices.work]. */

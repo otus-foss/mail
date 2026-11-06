@@ -36,6 +36,7 @@ import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.designsystem.theme.tokens.rows.InboxTokens
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.SearchField
@@ -79,9 +80,9 @@ internal fun SearchMatches(
         remember(hits, query, own, accounts, field) {
             // A search in the subject or body is not looking for anyone.
             if (field != SearchField.Anywhere) return@remember emptyList()
-            val addresses = accounts.flatMap { it.addresses }.map(String::lowercase).toSet()
+            val addresses = accounts.flatMap { it.addresses }.map { EmailAddressKey(it) }.toSet()
             matchingPeople(hits, query, limit = Int.MAX_VALUE).filterNot {
-                own.isMineAnywhere(it.address) || it.address.lowercase() in addresses
+                own.isMineAnywhere(it.address) || EmailAddressKey(it.address) in addresses
             }
         }
     val fold = rememberSectionFold()

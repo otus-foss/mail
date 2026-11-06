@@ -1,4 +1,4 @@
-package com.otus.mail.core.mail
+package com.otus.mail.app
 
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow

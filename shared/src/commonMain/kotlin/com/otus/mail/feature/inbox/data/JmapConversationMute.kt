@@ -11,15 +11,17 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.MUTED_KEYWORD
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
+import com.otus.mail.core.mail.isMuted
+import com.otus.mail.core.mail.keywordPatch
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.objects
 import com.otus.mail.feature.inbox.domain.ConversationMute
 import com.otus.mail.feature.inbox.domain.MailMessage
 
 /**
- * Mutes a conversation by setting [MUTED_KEYWORD] on every email of its thread with `Email/set`
+ * Mutes a conversation by setting [Keywords.MUTED] on every email of its thread with `Email/set`
  * (RFC 8621, sections 4.1.1 and 4.6), so another device sees it too. It reads the thread's ids
  * first, since the row lists only the emails in its folder. Muting marks every email, so reading
  * the keywords of the oldest ones that fit one `Email/get` tells whether it is muted. The emails it
@@ -35,7 +37,7 @@ class JmapConversationMute(
             account.connection
                 .call(GetMethod(EmailType, account.id, JmapIds.Of(oldest), PROPERTIES))
                 .list
-                .any { it.keywords[MUTED_KEYWORD] == true }
+                .any { it.isMuted }
         } ?: cachedMuted(message)
 
     override suspend fun setMuted(
@@ -44,7 +46,7 @@ class JmapConversationMute(
     ): Boolean =
         cache.withAccount(message.location.accountId) { accountCache ->
             val ids = fromServer(message) { _, ids -> ids } ?: return@withAccount false
-            val patch = membershipPatch("keywords", MUTED_KEYWORD, muted)
+            val patch = keywordPatch(Keywords.MUTED, muted)
             updateAccountEmails(
                 connections,
                 message.location.accountId,
@@ -72,7 +74,7 @@ class JmapConversationMute(
             cache
                 .objects(message.location.accountId, kind, EmailObject.serializer(), message.memberIds)
                 .values
-                .any { it.keywords[MUTED_KEYWORD] == true }
+                .any { it.isMuted }
         }
 
     private companion object {

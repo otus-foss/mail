@@ -22,7 +22,6 @@ import com.otus.jmap.push.PushSubscriptions
 import com.otus.mail.core.cache.AccountMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
-import com.otus.mail.core.mail.ServerChanges
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces

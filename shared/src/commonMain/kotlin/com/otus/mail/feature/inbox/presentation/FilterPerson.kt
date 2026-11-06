@@ -1,6 +1,7 @@
 package com.otus.mail.feature.inbox.presentation
 
 import com.otus.avatar.ResolvedAvatar
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.FoundPerson
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -59,7 +60,7 @@ fun toPeople(
     query: String = "",
     limit: Int = MAX_PEOPLE,
 ): List<FilterPerson> {
-    val mine = own.map { it.address.lowercase() }.toSet()
+    val mine = own.map { EmailAddressKey(it.address) }.toSet()
     val received = messages.map { message -> message to (message.to + message.cc) }
     val accountAvatars = messages.associate { it.location.accountId to it.location.accountAvatar }
     val ownPeople =
@@ -82,8 +83,8 @@ fun toPeople(
         }
     val others =
         ranked(
-            loaded.filter { it.person.address.lowercase() !in mine },
-            found.filter { it.person.address.lowercase() !in mine },
+            loaded.filter { EmailAddressKey(it.person.address) !in mine },
+            found.filter { EmailAddressKey(it.person.address) !in mine },
             query,
             avatars(received.flatMap { (_, people) -> people }),
             limit,
@@ -105,7 +106,7 @@ private class Seen(
     val mergeKey: String
         get() {
             val name = sender.name.trim().lowercase()
-            val address = sender.address.lowercase()
+            val address = EmailAddressKey(sender.address).value
             return if (name.isEmpty()) address else "$name@${address.substringAfter('@')}"
         }
 }
@@ -114,15 +115,15 @@ private fun ranked(
     loaded: List<FoundPerson>,
     found: List<FoundPerson>,
     query: String,
-    avatars: Map<String, ResolvedAvatar>,
+    avatars: Map<EmailAddressKey, ResolvedAvatar>,
     limit: Int,
 ): List<FilterPerson> {
     val wanted = { candidate: FoundPerson ->
         val person = candidate.person
         person.address.isNotBlank() && (person.name.matches(query) || person.address.matches(query))
     }
-    val rows = loaded.filter(wanted).groupBy { it.person.address.lowercase() }
-    val searched = found.filter(wanted).groupBy { it.person.address.lowercase() }
+    val rows = loaded.filter(wanted).groupBy { EmailAddressKey(it.person.address) }
+    val searched = found.filter(wanted).groupBy { EmailAddressKey(it.person.address) }
     return (rows.keys + searched.keys)
         .map { address ->
             val seen = rows[address].orEmpty() + searched[address].orEmpty()
@@ -144,14 +145,14 @@ private fun ranked(
             FilterPerson(
                 name = group.first().sender.name,
                 addresses = group.map { it.sender.address },
-                avatar = group.firstNotNullOfOrNull { avatars[it.sender.address.lowercase()] },
+                avatar = group.firstNotNullOfOrNull { avatars[EmailAddressKey(it.sender.address)] },
                 conversations = group.sumOf { it.conversations },
             )
         }
 }
 
-private fun avatars(people: List<MailSender>): Map<String, ResolvedAvatar> =
-    people.mapNotNull { sender -> sender.avatar?.let { sender.address.lowercase() to it } }.toMap()
+private fun avatars(people: List<MailSender>): Map<EmailAddressKey, ResolvedAvatar> =
+    people.mapNotNull { sender -> sender.avatar?.let { EmailAddressKey(sender.address) to it } }.toMap()
 
 private fun MailSender.isAt(address: String): Boolean = this.address.equals(address, ignoreCase = true)
 

@@ -16,10 +16,12 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DELIVERED_TO_PROPERTY
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.MUTED_KEYWORD
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.ThreadType
+import com.otus.mail.core.mail.isDraft
+import com.otus.mail.core.mail.isMuted
+import com.otus.mail.core.mail.isSeen
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.core.mailbox.MailboxRole
@@ -208,7 +210,7 @@ class JmapNewMailChecker(
         try {
             response[found]
                 .list
-                .filter { it.keywords[MUTED_KEYWORD] == true }
+                .filter { it.isMuted }
                 .map { it.threadId }
                 .toSet()
         } catch (expected: JmapException) {
@@ -260,8 +262,8 @@ private fun inboxIds(folders: List<MailFolder>): Set<String> =
 /** Unread, not a draft, and in one of [inboxes]: mail worth an alert. */
 private fun EmailObject.waitsIn(inboxes: Set<String>): Boolean =
     mailboxIds.any { it.value && it.key in inboxes } &&
-        keywords["\$seen"] != true &&
-        keywords["\$draft"] != true
+        !isSeen &&
+        !isDraft
 
 private fun EmailObject.toNewMail(account: MailAccount): NewMail {
     val from = from?.firstOrNull()

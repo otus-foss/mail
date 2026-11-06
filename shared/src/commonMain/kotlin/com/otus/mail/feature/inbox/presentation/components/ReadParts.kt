@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.FolderChange
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailSender
@@ -82,7 +83,7 @@ fun interface NewFolderSheet {
 @Composable
 internal fun rememberPageLook(parts: ReadParts): ReadPageLook {
     val account = parts.row.location.accountId
-    val known by produceState<Set<String>?>(null, account) {
+    val known by produceState<Set<EmailAddressKey>?>(null, account) {
         value =
             parts.read.privacy.known
                 .addresses(account)

@@ -1,5 +1,6 @@
 package com.otus.mail.feature.contacts.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
 import kotlinx.serialization.Serializable
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -37,7 +38,7 @@ data class FrequentScan(
 )
 
 /**
- * How much the user deals with each address, by lowercase address. Writing counts most: each sent
+ * How much the user deals with each address, by [EmailAddressKey] value. Writing counts most: each sent
  * email gives its To recipients [SENT_TO] and its Cc and Bcc recipients [SENT_COPY], shared out by
  * the square root of how many it went to, so a long list counts for little. Received mail counts
  * [RECEIVED] per email, and only from people the user wrote to, so notifications and no-reply
@@ -71,7 +72,7 @@ fun frequencyScores(
         .mapValues { (_, scores) -> scores.sum() }
 }
 
-private fun key(address: String): String = address.trim().lowercase()
+private fun key(address: String): String = EmailAddressKey(address).value
 
 private const val SENT_TO = 10.0
 private const val SENT_COPY = 5.0

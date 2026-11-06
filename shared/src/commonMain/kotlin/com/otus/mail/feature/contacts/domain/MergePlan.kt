@@ -2,6 +2,7 @@ package com.otus.mail.feature.contacts.domain
 
 import com.otus.jscontact.Card
 import com.otus.jscontact.Relation
+import com.otus.mail.core.mail.EmailAddressKey
 
 /**
  * What a merge of [cards] keeps: the [name] of one of them, the [addresses] ticked, and the
@@ -37,8 +38,8 @@ data class MergePlan(
                         .orEmpty()
                         .entries
                         .map { it.key to it.value }
-                }.filter { (_, email) -> email.address.lowercase() in addresses.map(String::lowercase) }
-                .distinctBy { (_, email) -> email.address.lowercase() }
+                }.filter { (_, email) -> EmailAddressKey(email.address) in addresses.map { EmailAddressKey(it) } }
+                .distinctBy { (_, email) -> EmailAddressKey(email.address) }
                 .mapIndexed { index, (_, email) -> "e${index + 1}" to email }
                 .toMap()
         val phones =

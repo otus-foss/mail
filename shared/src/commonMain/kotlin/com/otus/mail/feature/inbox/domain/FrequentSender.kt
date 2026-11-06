@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /** Someone the user deals with often: as they appear on mail, and whether they sent [unread] mail. */
 data class FrequentSender(
     val person: MailSender,
@@ -41,8 +43,8 @@ fun frequentSenders(
         .mapNotNull { (key, _) -> faces[key]?.let { FrequentSender(it, key in unread) } }
 }
 
-private val MailSender.key: String
-    get() = address.trim().lowercase()
+private val MailSender.key: EmailAddressKey
+    get() = EmailAddressKey(address)
 
 private const val PEOPLE_LIMIT = 5
 private const val WROTE_TO = 10

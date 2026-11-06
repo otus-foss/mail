@@ -1,6 +1,7 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.AccountAddresses
 import com.otus.mail.feature.inbox.domain.MailScopeChoice
 import com.otus.mail.feature.inbox.domain.addressCount
@@ -14,7 +15,7 @@ internal fun MailStates.accountAddresses(): List<AccountAddresses> =
         addresses.copy(
             avatars =
                 addresses.addresses
-                    .mapNotNull { email -> ownAvatars.avatar(account.own, email)?.let { email.lowercase() to it } }
+                    .mapNotNull { email -> ownAvatars.avatar(account.own, email)?.let { EmailAddressKey(email) to it } }
                     .toMap(),
         )
     }

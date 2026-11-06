@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.MessageActions
 import com.otus.mail.feature.inbox.presentation.MoveTarget
@@ -19,6 +20,6 @@ internal fun rememberSuggestedMove(
 ): MoveTarget? =
     produceState<MoveTarget?>(null, messages.map { it.id }, wanted && actions != null) {
         // One sender also means at least one message.
-        val oneSender = messages.distinctBy { it.sender.address.lowercase() }.size == 1
+        val oneSender = messages.distinctBy { EmailAddressKey(it.sender.address) }.size == 1
         value = if (wanted && oneSender && actions != null) actions.moves.suggested(messages.first()) else null
     }.value

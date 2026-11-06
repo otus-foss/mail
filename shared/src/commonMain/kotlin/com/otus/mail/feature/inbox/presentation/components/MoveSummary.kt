@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.shared.rows.components.SummaryCard
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.read.shortLabel
@@ -32,7 +33,7 @@ internal fun MoveSummary(
             leading = { SenderAvatar(sender) },
         )
     } else {
-        val people = messages.map { it.sender }.distinctBy { it.address.lowercase() }
+        val people = messages.map { it.sender }.distinctBy { EmailAddressKey(it.address) }
         SummaryCard(title, people.map { NamedAvatar(it.name, it.chipAvatar) })
     }
 }

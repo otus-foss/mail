@@ -1,5 +1,7 @@
 package com.otus.mail.feature.contacts.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /**
  * One person as the list shows them: usually one card, or several the user chose to show as one
  * with [ContactLinks]. The cards stay separate on the server. The first card speaks for the person.
@@ -12,7 +14,7 @@ data class ContactPerson(
 
     /** Every address once, the main card's first. */
     val emails: List<ContactValue>
-        get() = cards.flatMap { it.emails }.distinctBy { it.value.lowercase() }
+        get() = cards.flatMap { it.emails }.distinctBy { EmailAddressKey(it.value) }
 
     /** The person's name with their preferred address, to write to; null without an address. */
     val preferredAddress: ContactAddress? get() = emails.firstOrNull()?.let { ContactAddress(name, it.value) }
@@ -88,12 +90,12 @@ fun duplicates(
 ): List<PossibleDuplicate> =
     cards
         .filterNot { it.isGroup }
-        .flatMap { card -> card.emails.map { it.value.lowercase() to card } }
+        .flatMap { card -> card.emails.map { EmailAddressKey(it.value) to card } }
         .groupBy({ it.first }, { it.second })
         .flatMap { (address, sharing) ->
             sharing
                 .distinctBy { it.key }
                 .zipWithNext()
-                .map { (a, b) -> PossibleDuplicate(a, b, address) }
+                .map { (a, b) -> PossibleDuplicate(a, b, address.value) }
         }.filterNot { links.linked(it.first.key, it.second.key) || setOf(it.first.key, it.second.key) in dismissed }
         .distinctBy { setOf(it.first.key, it.second.key) }

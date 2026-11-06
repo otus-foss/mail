@@ -4,11 +4,11 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
-import com.otus.jmap.jmapPatch
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mail.movePatch
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.folders.domain.FolderRule
@@ -62,11 +62,7 @@ internal class ExistingMail(
         rule: FolderRule,
     ): Int {
         val filter = emailFilter(rule, listOf(source)) ?: return 0
-        val patch =
-            jmapPatch {
-                remove("mailboxIds", source)
-                set(JsonPrimitive(true), "mailboxIds", target)
-            }
+        val patch = movePatch(listOf(source), target)
         var moved = 0
         var rounds = 0
         var more = true

@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.feature.inbox.domain.MailConversation
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
@@ -27,7 +28,7 @@ class ConversationRepliesTest {
         var from: EmailAddress = grace
         var to: List<EmailAddress> = listOf(ada)
         var cc: List<EmailAddress>? = null
-        var keywords: Set<String> = setOf(SEEN_KEYWORD)
+        var keywords: Set<String> = setOf(Keywords.SEEN)
         var listId: String? = null
     }
 
@@ -97,7 +98,7 @@ class ConversationRepliesTest {
         val draft =
             email("e3", 3, "drafts") {
                 from = ada
-                keywords = setOf(DRAFT_KEYWORD)
+                keywords = setOf(Keywords.DRAFT)
             }
         val deleted = email("e4", 4, "trash") { from = ada }
         val withDraft = conversation(question, listOf(question, draft, deleted))

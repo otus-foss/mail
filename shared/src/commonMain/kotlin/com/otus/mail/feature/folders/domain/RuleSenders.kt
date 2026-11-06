@@ -1,12 +1,14 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /**
  * For each folder id, the senders whose mail a rule moves there, in rule order and once each
  * regardless of letter case.
  */
 fun AccountFolderRules.sendersByFolder(): Map<String, List<String>> =
     rules
-        .mapValues { (_, folderRules) -> folderRules.flatMap { it.senders() }.distinctBy { it.lowercase() } }
+        .mapValues { (_, folderRules) -> folderRules.flatMap { it.senders() }.distinctBy { EmailAddressKey(it) } }
         .filterValues { it.isNotEmpty() }
 
 /**

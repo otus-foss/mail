@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mail.EmailAddressKey
+
 /**
  * Whether a message's remote images load before the user asks. Never in Spam, whatever the
  * [setting]. With [RemoteImages.Known], only when the [sender] is in [known] (contacts and people
@@ -8,16 +10,16 @@ package com.otus.mail.feature.inbox.domain
 fun showsRemoteImages(
     setting: RemoteImages,
     sender: String,
-    known: Set<String>,
+    known: Set<EmailAddressKey>,
     allowed: List<String>,
     inSpam: Boolean,
 ): Boolean {
-    val address = sender.trim().lowercase()
+    val address = EmailAddressKey(sender)
     return when {
         inSpam -> false
         setting == RemoteImages.Always -> true
         setting == RemoteImages.Never -> false
-        else -> known.any { it.lowercase() == address } || allowed.any { it.trim().lowercase() == address }
+        else -> address in known || allowed.any { EmailAddressKey(it) == address }
     }
 }
 
@@ -40,4 +42,4 @@ fun MailMessage.otherReply(own: OwnAddresses): MailAction? =
 fun MailMessage.otherPeople(own: OwnAddresses): List<MailSender> =
     (listOf(sender) + to + cc)
         .filter { it.address.isNotBlank() && !isOwn(own, it) }
-        .distinctBy { it.address.trim().lowercase() }
+        .distinctBy { EmailAddressKey(it.address) }

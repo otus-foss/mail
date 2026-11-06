@@ -26,6 +26,7 @@ import com.otus.designsystem.shared.rows.components.rowSelection
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.CardSync
 import com.otus.mail.feature.contacts.domain.ContactBook
@@ -50,8 +51,8 @@ internal class ContactListContent(
     val booksOf: (ContactCard) -> List<ContactBook>,
     val membersOf: (ContactCard) -> Int,
     val frequent: List<ContactPerson> = emptyList(),
-    /** The user's own addresses, lowercase, whose avatar cards get a You pill. */
-    val ownAddresses: Set<String> = emptySet(),
+    /** The user's own addresses, whose avatar cards get a You pill. */
+    val ownAddresses: Set<EmailAddressKey> = emptySet(),
 )
 
 /** What tapping and holding rows does; while [selected] is not empty a tap toggles a row. */

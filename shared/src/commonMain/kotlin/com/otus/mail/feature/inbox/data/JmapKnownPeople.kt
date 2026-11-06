@@ -6,6 +6,7 @@ import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
@@ -37,7 +38,7 @@ class JmapKnownPeople(
     private val lock = Mutex()
     private var known: Map<String, Known> = emptyMap()
 
-    override suspend fun addresses(accountId: String): Set<String> {
+    override suspend fun addresses(accountId: String): Set<EmailAddressKey> {
         val cached = lock.withLock { known[accountId] }?.takeIf { it.loadedAt.elapsedNow() < maxAge }
         if (cached != null) return cached.addresses
         val loaded = load(accountId)
@@ -45,12 +46,12 @@ class JmapKnownPeople(
         return loaded.orEmpty()
     }
 
-    private suspend fun load(accountId: String): Set<String>? =
+    private suspend fun load(accountId: String): Set<EmailAddressKey>? =
         jmapCallOr(null) {
             connections.mailAccount(accountId)?.let { account ->
                 (account.contactCards(CONTACT_SCAN).map { it.address } + account.sentTo())
-                    .map { it.trim().lowercase() }
-                    .filter { it.isNotEmpty() }
+                    .map { EmailAddressKey(it) }
+                    .filter { it.value.isNotEmpty() }
                     .toSet()
             }
         }
@@ -71,7 +72,7 @@ class JmapKnownPeople(
     }
 
     private class Known(
-        val addresses: Set<String>,
+        val addresses: Set<EmailAddressKey>,
         val loadedAt: TimeMark,
     )
 

@@ -12,6 +12,7 @@ import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailAddress
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.NEWEST_FIRST
@@ -94,7 +95,7 @@ private fun people(
     emails
         .flatMap { email -> field.addresses(email).map { it to email.receivedAt } }
         .filter { (address) -> address.email.isNotBlank() }
-        .groupBy { (address) -> address.email.lowercase() }
+        .groupBy { (address) -> EmailAddressKey(address.email) }
         .values
         .map { seen ->
             val name = seen.firstNotNullOfOrNull { (address) -> address.name?.ifBlank { null } }.orEmpty()

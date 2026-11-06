@@ -16,6 +16,7 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailSubmissionType
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.AnsweredMessage
@@ -96,7 +97,7 @@ private suspend fun MailAccount.findCopy(
     val stored = response[found].list.singleOrNull()
     // `$draft` goes only when a submission was made, so a copy without it whose submission the
     // server has since dropped went.
-    val sentAndForgotten = all.isEmpty() && stored != null && DRAFT_KEYWORD !in stored.keywords
+    val sentAndForgotten = all.isEmpty() && stored != null && Keywords.DRAFT !in stored.keywords
     val went = if (live.isEmpty()) sentAndForgotten else !(cancelHeld && cancelHeld(listOf(copy)))
     // Neither a copy nor a submission: the user may have deleted what went, so only they can tell.
     val nothingLeft = stored == null && all.isEmpty()
@@ -121,7 +122,7 @@ private suspend fun MailAccount.findSent(
         }
     // The query's own error says why; the lookup that depends on it would only fail its reference.
     response[query]
-    val (stored, sent) = response[found].list.partition { DRAFT_KEYWORD in it.keywords }
+    val (stored, sent) = response[found].list.partition { Keywords.DRAFT in it.keywords }
     val went = sent.isNotEmpty() && !(cancelHeld && cancelHeld(sent.map { it.id }))
     if (!went && (stored + sent).isNotEmpty()) {
         connection.call(SetMethod(EmailType, id, destroy = (stored + sent).map { it.id }))

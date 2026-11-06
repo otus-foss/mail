@@ -13,6 +13,7 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_reply
 import com.otus.designsystem.shared.folders.elements.FolderGlyphKind
 import com.otus.designsystem.theme.colors.FolderColor
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.FolderKind
 import com.otus.mail.feature.inbox.domain.ListOrder
 import com.otus.mail.feature.inbox.domain.MailListLayout
@@ -31,8 +32,8 @@ import kotlinx.datetime.LocalDate
 data class RowLook(
     val layout: MailListLayout = MailListLayout(),
     val own: OwnAddresses = OwnAddresses(emptyMap()),
-    /** The avatar of each own address, by login id and lowercase address. */
-    val ownAvatars: Map<Pair<String, String>, ResolvedAvatar> = emptyMap(),
+    /** The avatar of each own address, by login id and address. */
+    val ownAvatars: Map<Pair<String, EmailAddressKey>, ResolvedAvatar> = emptyMap(),
 )
 
 /**
@@ -122,7 +123,7 @@ private fun MailMessage.rowModel(
         read = !attributes.unread,
         badge =
             receivedOn?.let {
-                look.ownAvatars[location.accountId to it.lowercase()]
+                look.ownAvatars[location.accountId to EmailAddressKey(it)]
                     ?: ResolvedAvatar(generatedAvatar(location.account, it))
             },
     )

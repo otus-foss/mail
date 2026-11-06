@@ -22,6 +22,7 @@ import com.otus.designsystem.resources.symbol_image
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.shared.swipe.components.SwipeToDismiss
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageContent
 import com.otus.mail.feature.inbox.domain.MessageFolder
@@ -45,7 +46,7 @@ internal class ReadPageLook(
     private val read: ReadContext,
     private val state: ReadState,
     private val row: MailMessage,
-    private val known: Set<String>?,
+    private val known: Set<EmailAddressKey>?,
     val folders: Map<String, MessageFolder>,
 ) {
     /**

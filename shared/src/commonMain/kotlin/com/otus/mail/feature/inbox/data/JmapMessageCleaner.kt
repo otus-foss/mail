@@ -13,9 +13,12 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.EMAIL_FOLDERS_PROPERTIES
 import com.otus.mail.core.mail.EmailFoldersType
 import com.otus.mail.core.mail.EmailType
+import com.otus.mail.core.mail.Keywords
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.inMailbox
 import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mail.mailboxPatch
+import com.otus.mail.core.mail.movePatch
 import com.otus.mail.feature.inbox.domain.Deletion
 import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MessageCleaner
@@ -45,8 +48,8 @@ class JmapMessageCleaner(
                     jmapPatch {
                         include(movePatch(listOf(member.folderId), inboxId))
                         if (keywords) {
-                            remove("keywords", JUNK_KEYWORD)
-                            set(JsonPrimitive(true), "keywords", NOT_JUNK_KEYWORD)
+                            remove("keywords", Keywords.JUNK)
+                            set(JsonPrimitive(true), "keywords", Keywords.NOT_JUNK)
                         }
                     }
             }
@@ -109,7 +112,7 @@ class JmapMessageCleaner(
                     id,
                     update =
                         elsewhere.associate {
-                            it.emailId to membershipPatch("mailboxIds", it.folderId, member = false)
+                            it.emailId to mailboxPatch(it.folderId, false)
                         },
                     destroy = onlyHere.map { it.emailId },
                     ifInState = fresh.state,
@@ -173,6 +176,3 @@ private class FolderEmail(
 ) {
     val elsewhere: Boolean = (mailboxIds - folderId).isNotEmpty()
 }
-
-internal const val JUNK_KEYWORD = "\$junk"
-internal const val NOT_JUNK_KEYWORD = "\$notjunk"

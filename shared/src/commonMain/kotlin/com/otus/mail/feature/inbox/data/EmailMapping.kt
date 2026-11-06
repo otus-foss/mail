@@ -3,6 +3,10 @@ package com.otus.mail.feature.inbox.data
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.isAnswered
+import com.otus.mail.core.mail.isFlagged
+import com.otus.mail.core.mail.isForwarded
+import com.otus.mail.core.mail.isSeen
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.inbox.domain.MailAttributes
 import com.otus.mail.feature.inbox.domain.MailLocation
@@ -49,12 +53,12 @@ internal fun EmailObject.toMessage(
             ),
         attributes =
             MailAttributes(
-                unread = keywords[SEEN_KEYWORD] != true,
+                unread = !isSeen,
                 attachments = if (hasAttachment) attachments.orEmpty().map { it.displayName() } else emptyList(),
-                flagged = keywords[FLAGGED_KEYWORD] == true,
+                flagged = isFlagged,
                 invite = hasInvite,
-                answered = keywords[ANSWERED_KEYWORD] == true,
-                forwarded = keywords[FORWARDED_KEYWORD] == true,
+                answered = isAnswered,
+                forwarded = isForwarded,
                 hasAttachment = hasFile,
             ),
         emailId = id,

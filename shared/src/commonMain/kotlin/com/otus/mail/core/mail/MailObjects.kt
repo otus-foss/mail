@@ -212,12 +212,6 @@ data class IdentityObject(
     val htmlSignature: String = "",
 )
 
-/**
- * Marks an email of a muted conversation. A conversation is muted while any of its emails has it,
- * so new mail in it does not notify. Not a registered keyword, so other apps ignore it.
- */
-const val MUTED_KEYWORD = "\$muted"
-
 /** Only the thread of each Email, to find the rest of a conversation (RFC 8621, section 3). */
 val EmailThreadType: JmapType<EmailThread> = JmapType("Email", JmapCapability.MAIL, EmailThread.serializer())
 

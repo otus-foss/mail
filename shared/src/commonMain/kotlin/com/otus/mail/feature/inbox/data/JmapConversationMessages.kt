@@ -10,6 +10,7 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EMAIL_PROPERTIES
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.ThreadObject
+import com.otus.mail.core.mail.isDraft
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.mail.objects
 import com.otus.mail.core.mailbox.MailFolder
@@ -45,7 +46,7 @@ class JmapConversationMessages(
                 .takeUnless { message.location.mailboxId in it }
                 .orEmpty()
         return emails
-            .filter { it.keywords[DRAFT_KEYWORD] != true }
+            .filter { !it.isDraft }
             .filterNot { it.boxes.isNotEmpty() && hidden.containsAll(it.boxes) }
             .sortedByDescending { Instant.parseOrNull(it.receivedAt) }
             .map { it.page(message, mailboxes) }

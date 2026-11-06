@@ -5,6 +5,7 @@ import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.mail.isDraft
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.ThreadHistory
@@ -42,7 +43,7 @@ class JmapThreadHistory(
     private fun List<EmailObject>.upTo(emailId: String): List<EmailObject> {
         val received = associate { it.id to Instant.parse(it.receivedAt) }
         val cutoff = received[emailId] ?: return emptyList()
-        return filter { it.keywords[DRAFT_KEYWORD] != true && received.getValue(it.id) <= cutoff }
+        return filter { !it.isDraft && received.getValue(it.id) <= cutoff }
             .sortedByDescending { received.getValue(it.id) }
     }
 
