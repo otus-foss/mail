@@ -28,6 +28,7 @@ import com.otus.mail.core.avatar.IconSource
  * lose their metadata and file names. [notificationActions] are the buttons, in order, that new-mail
  * alerts offer where the account can run them; see [alertButtons]. [startPage] is the sidebar
  * mailbox Mail opens on; while no account has it, Mail opens on the Inbox and keeps the choice.
+ * [updateToasts] shows a toast when a newer build is out, at most once per launch.
  */
 data class MailBehavior(
     val startToEnd: MailAction? = MailAction.Read,
@@ -60,6 +61,7 @@ data class MailBehavior(
     val photoCleaning: PhotoCleaning = PhotoCleaning.Ask,
     val notificationActions: List<MailAction> = DefaultNotificationActions,
     val startPage: SidebarPin = SidebarPin.Inbox,
+    val updateToasts: Boolean = true,
 ) {
     /** [address] first among [recentFrom], keeping the [RECENT_FROM_LIMIT] newest. */
     fun sentFrom(address: String): MailBehavior =

@@ -30,7 +30,7 @@ import com.otus.mail.feature.notifications.presentation.title
 
 /**
  * Delivery choices, registration status, and, where alerts can show mail, what they show and the
- * [buttons] setting for what their buttons do.
+ * [buttons] setting for what their buttons do. [updates] holds the settings for update notices.
  */
 @Composable
 fun NotificationsScreen(
@@ -38,6 +38,7 @@ fun NotificationsScreen(
     accounts: List<ConnectedAccount>,
     onBack: () -> Unit,
     buttons: (@Composable () -> Unit)? = null,
+    updates: (@Composable () -> Unit)? = null,
     onOpenOverrides: () -> Unit,
 ) {
     LaunchedEffect(state) { state.watch() }
@@ -59,6 +60,7 @@ fun NotificationsScreen(
         // Only alerts that show the message have buttons, so they come with previews.
         if (state.previews != null && buttons != null) SettingsSection("Buttons", info = ButtonsInfo) { buttons() }
         if (current != null) NotInstantSection(state, accounts)
+        if (updates != null) SettingsSection("Updates") { updates() }
     }
     if (choosing) {
         ChoiceSheet(

@@ -6,6 +6,7 @@ import com.otus.accounts.presentation.screens.AccountSetupScreen
 import com.otus.dateformat.DateFormatter
 import com.otus.mail.feature.inbox.presentation.components.NotificationActionsSetting
 import com.otus.mail.feature.inbox.presentation.components.ThemeInboxPreview
+import com.otus.mail.feature.inbox.presentation.components.UpdateToastSetting
 import com.otus.mail.feature.inbox.presentation.screens.FilterPanelSettingsScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationOverridesScreen
 import com.otus.mail.feature.notifications.presentation.screens.NotificationsScreen
@@ -73,6 +74,7 @@ private fun NotificationPages(
             states.accounts.accounts,
             onBack = back,
             buttons = { NotificationActionsSetting(states.behavior) },
+            updates = { UpdateToastSetting(states.behavior) },
         ) {
             navigation.go(MailPage.NotificationOverrides)
         }
