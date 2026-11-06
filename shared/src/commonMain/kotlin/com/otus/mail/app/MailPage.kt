@@ -1,6 +1,5 @@
 package com.otus.mail.app
 
-import androidx.compose.runtime.saveable.Saver
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.feature.contacts.domain.CardKey
@@ -146,81 +145,5 @@ internal sealed interface MailPage {
         val key: CardKey? = null,
     ) : MailPage {
         override val parent: MailPage = key?.let(::Contact) ?: Contacts
-    }
-
-    companion object {
-        private val fixed =
-            listOf(
-                Inbox,
-                Settings,
-                EmailAccounts,
-                Appearance,
-                Notifications,
-                NotificationOverrides,
-                Behavior,
-                ActionBarSettings,
-                Folders,
-                ReadLater,
-                Conversations,
-                Contacts,
-                SidebarSettings,
-                PinnedSettings,
-                FilterPanelSettings,
-                ThemeSettings,
-                MailListSettings,
-                Privacy,
-                AllowedSenders,
-            )
-
-        val Saver: Saver<MailPage, List<String>> =
-            Saver(
-                save = { page -> saved(page) },
-                restore = { saved ->
-                    when (saved.firstOrNull()) {
-                        FOLDER -> Folder(saved[1], saved[2])
-                        FOLDER_DETAIL -> FolderDetail(saved[1], saved[2], saved[3].ifEmpty { null })
-                        COMBINED -> combinedRole(saved[1])?.let(::Combined) ?: Inbox
-                        SHARED -> Shared(saved.drop(1))
-                        CONTACT -> Contact(CardKey(saved[1], saved[2], saved[3]))
-                        CONTACT_EDITOR -> ContactEditor(saved.getOrNull(1)?.let { CardKey(it, saved[2], saved[3]) })
-                        else -> fixed.firstOrNull { it.toString() == saved.firstOrNull() } ?: Inbox
-                    }
-                },
-            )
-
-        /** A draft's request holds a whole message, so a restored app returns to the page that opened it. */
-        private fun saved(page: MailPage): List<String> =
-            when (page) {
-                is Folder -> listOf(FOLDER, page.accountId, page.folderId)
-                is FolderDetail -> listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
-                is Combined -> listOf(COMBINED, page.role.wire)
-                is Shared -> listOf(SHARED) + page.key
-                is Compose -> saved(page.parent)
-                is Contact -> listOf(CONTACT, page.key.loginId, page.key.accountId, page.key.cardId)
-                is ContactEditor -> listOf(CONTACT_EDITOR) + savedKey(page.key)
-                else -> listOf(page.toString())
-            }
-
-        private fun savedKey(key: CardKey?): List<String> =
-            key?.let { listOf(it.loginId, it.accountId, it.cardId) }.orEmpty()
-
-        private const val FOLDER = "Folder"
-        private const val FOLDER_DETAIL = "FolderDetail"
-
-        /**
-         * The combined role saved as its JMAP role, or by builds before 2026-11-06 under the old
-         * folder names, such as `Spam`; null for anything else.
-         */
-        internal fun combinedRole(saved: String): MailboxRole? =
-            (MailboxRole.of(saved) ?: MailboxRole.Junk.takeIf { saved == OLD_SPAM })?.takeIf {
-                it in
-                    MailboxRole.combined
-            }
-
-        private const val OLD_SPAM = "Spam"
-        private const val COMBINED = "Combined"
-        private const val SHARED = "Shared"
-        private const val CONTACT = "Contact"
-        private const val CONTACT_EDITOR = "ContactEditor"
     }
 }

@@ -65,7 +65,7 @@ fun App(
     val currentDates = rememberUpdatedState(dateFormatter)
     // The start page is read once per launch; changing it in settings applies at the next launch.
     val start = remember(behaviorState) { behaviorState.behavior.startPage }
-    var page by rememberSaveable(stateSaver = MailPage.Saver) { mutableStateOf(launchPage(start)) }
+    var page by rememberSaveable(stateSaver = MailPageSaver) { mutableStateOf(launchPage(start)) }
     val sidebar = rememberSidebarState()
     // Whose mail the pages show; it lasts for the process, like the page.
     var chosenScope by rememberSaveable(stateSaver = MailScopeChoiceSaver) {

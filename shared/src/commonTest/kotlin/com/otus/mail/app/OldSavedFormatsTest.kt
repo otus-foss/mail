@@ -11,12 +11,12 @@ import kotlin.test.assertNull
 class OldSavedFormatsTest {
     @Test
     fun combinedPagesReadTheOldFolderNamesAndTheRoles() {
-        assertEquals(MailboxRole.Junk, MailPage.combinedRole("Spam"))
+        assertEquals(MailboxRole.Junk, combinedRole("Spam"))
         listOf("Drafts", "Sent", "Archive", "Trash").forEach { old ->
-            assertEquals(old, MailPage.combinedRole(old)?.name)
+            assertEquals(old, combinedRole(old)?.name)
         }
-        assertEquals(MailboxRole.Junk, MailPage.combinedRole("junk"))
-        assertNull(MailPage.combinedRole("inbox"), "The inbox has a page of its own")
+        assertEquals(MailboxRole.Junk, combinedRole("junk"))
+        assertNull(combinedRole("inbox"), "The inbox has a page of its own")
     }
 
     @Test
