@@ -64,8 +64,14 @@ class InboxHeaderActionsTest {
     @Test
     fun defaultFilterButtonOpensFiltersWithoutStartingSearch() {
         compose.onNodeWithContentDescription("Open filters").assertIsDisplayed().performClick()
+        // Held clock: the count settles 250 ms after a change, and the demo inbox has no unread mail,
+        // so Show would turn into "No mails" while an animation plays.
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
         compose.filterTab("Unread").performClick()
+        compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithContentDescription("Show ", substring = true).performClick()
+        compose.mainClock.autoAdvance = true
         compose.onNodeWithText("Search Inbox").assertIsDisplayed()
         compose.searchField().assertDoesNotExist()
         compose.onNodeWithText("Unread").assertIsOn()
