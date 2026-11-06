@@ -16,7 +16,6 @@ import com.otus.mail.core.settings.domain.allowingSender
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderDialog
-import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.components.FolderActions
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
@@ -43,8 +42,7 @@ import kotlinx.coroutines.launch
 internal class ReadWiring(
     private val services: MailServices,
     private val behavior: MailBehaviorState,
-    private val folders: FoldersState,
-    private val colors: FolderColorsState,
+    private val folders: FolderStates,
     private val edits: MailEdits,
     private val folderActions: FolderActions,
 ) {
@@ -70,12 +68,17 @@ internal class ReadWiring(
             pages = services.conversationMessages,
             folders =
                 ReadFolders(
-                    of = { message -> folders.account(message.location.accountId)?.messageFolders().orEmpty() },
+                    of = { message ->
+                        folders.all
+                            .account(message.location.accountId)
+                            ?.messageFolders(folders.colors)
+                            .orEmpty()
+                    },
                     cameFrom = { message -> cameFrom(feed.mailScope, message) },
                     newFolder =
                         NewFolderSheet { accountId, onDismiss ->
                             val dialog = FolderDialog.Create(accountId, parentId = null)
-                            FolderDialogs(dialog, folders.account(accountId), folderActions) {
+                            FolderDialogs(dialog, folders.all.account(accountId), folderActions) {
                                 if (it == null) onDismiss()
                             }
                         },
@@ -106,7 +109,11 @@ internal class ReadWiring(
         message: MailMessage,
     ): Set<String> {
         val accountId = message.location.accountId
-        val own = folders.account(accountId)?.folders.orEmpty()
+        val own =
+            folders.all
+                .account(accountId)
+                ?.folders
+                .orEmpty()
         return when (scope) {
             is MailScope.Folder -> if (scope.accountId == accountId) setOf(scope.folderId) else emptySet()
             is MailScope.Folders -> scope.folderIds(accountId)
@@ -117,7 +124,7 @@ internal class ReadWiring(
     }
 
     /** The account's folders in tree order, each with its full path and saved color. */
-    private fun AccountFolders.messageFolders(): List<MessageFolder> =
+    private fun AccountFolders.messageFolders(colors: FolderColorsState): List<MessageFolder> =
         folderTree().map { node ->
             MessageFolder(node.folder.id, node.path, node.folder.role, colors.colorOf(node.folder), node.readLater)
         }
@@ -135,7 +142,7 @@ internal fun rememberReadView(
 ): ReadView {
     val read =
         remember(states, feed, own) {
-            states.reading.context(feed, contactSheet(states, navigation), own) {
+            states.reading.context(feed, contactSheet(states.contacts.cards, navigation), own) {
                 navigation.go(MailPage.Compose(it, parent = page))
             }
         }

@@ -43,7 +43,7 @@ internal class PageFilters {
  */
 internal fun MailStates.mailQuery(filters: InboxFilters): MailQuery {
     if (filters.isDefault) return MailQuery()
-    val accounts = folders.accounts
+    val accounts = folders.all.accounts
     val descendants = { login: String, id: String ->
         val account = accounts.firstOrNull { it.accountId == login }
         account?.folder(id)?.let { subtreeIds(account.folders, it) - id }.orEmpty()
@@ -69,21 +69,22 @@ internal fun rememberPageFilters(
 ): InboxFilterState {
     val scope = rememberCoroutineScope()
     // Saved too, so the filters outlast an activity recreation, which starts new state holders.
-    var saved by rememberSaveable(page, stateSaver = InboxFiltersSaver) { mutableStateOf(states.pageFilters.of(page)) }
+    val pageFilters = states.list.pageFilters
+    var saved by rememberSaveable(page, stateSaver = InboxFiltersSaver) { mutableStateOf(pageFilters.of(page)) }
     val filters =
         remember(states, page, feed) {
             InboxFilterState(
                 saved,
                 scope,
-                counter = { states.filterLookups.count(feed.mailScope, states.mailQuery(it)) },
+                counter = { states.list.filterLookups.count(feed.mailScope, states.mailQuery(it)) },
                 onApplied = {
-                    states.pageFilters.keep(page, it)
+                    pageFilters.keep(page, it)
                     saved = it
                 },
-                findPeople = states.filterLookups::findPeople,
+                findPeople = states.list.filterLookups::findPeople,
             )
         }
-    LaunchedEffect(filters.applied, states.folders.accounts, states.mailScope) {
+    LaunchedEffect(filters.applied, states.folders.all.accounts, states.mailScope) {
         feed.query = states.mailQuery(filters.applied)
     }
     return filters
@@ -99,10 +100,10 @@ internal fun rememberFilterOptions(
     remember(
         page,
         applied,
-        states.folders.accounts,
+        states.folders.all.accounts,
         states.accounts.accounts,
         states.mailScope,
-        states.folderColors.colors,
+        states.folders.colors.colors,
         states.behavior.behavior.sidebar,
         states.behavior.behavior.filters,
     ) { states.filterOptions(page) }

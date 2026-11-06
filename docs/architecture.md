@@ -32,8 +32,9 @@ functionality.
 
 `app/` builds the services and routes pages: `App`, `MailPage` and `MailPageSaver`, `MailPages`,
 `MailNavigation`, page requests, `MailServices` and `MailDeviceStores` (construction), the
-settings routing, and one input builder per page kind, such as `ListPage` for the Inbox and every
-folder page. It holds no feature behavior and does not draw.
+state bundles `MailStates` holds for the pages (`FolderStates`, `ListStates`, `ContactStates`,
+`ComposeStates`, `ReadWiring`), the settings routing, and one input builder per page kind, such
+as `ListPage` for the Inbox and every folder page. It holds no feature behavior and does not draw.
 
 `core/` holds what more than one feature needs:
 

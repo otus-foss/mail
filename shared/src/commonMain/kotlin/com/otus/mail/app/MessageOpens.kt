@@ -26,7 +26,7 @@ internal class MessageOpens(
 ) {
     suspend fun open(request: MessageRequest) {
         val mail = request.mail
-        val feed = states.feed
+        val feed = states.list.feed
         feed.show(null)
         feed.refresh()
         // The scope a cold start restores counts only once the accounts are known.

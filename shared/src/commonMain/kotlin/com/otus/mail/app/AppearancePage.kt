@@ -64,7 +64,7 @@ internal fun MailBehaviorPage(
         states.behavior,
         rememberFolderPills(states),
         // Not remembered: folder colors change apart from the accounts.
-        sidebarPinOptions(states.folders.accounts, states.folderColors::groupColorOf),
+        sidebarPinOptions(states.folders.all.accounts, states.folders.colors::groupColorOf),
         open = { page -> navigation.go(page.mailPage) },
         onBack = back,
     )
@@ -109,7 +109,7 @@ internal fun ActionBarSettingsPage(
     ActionBarSettingsScreen(
         states.behavior,
         shared.map { it.path },
-        folderColor = { path -> shared.firstOrNull { it.path == path }?.let(states.folderColors::groupColorOf) },
+        folderColor = { path -> shared.firstOrNull { it.path == path }?.let(states.folders.colors::groupColorOf) },
         onBack = back,
     )
 }
@@ -117,4 +117,4 @@ internal fun ActionBarSettingsPage(
 /** Every account's own folders, nested ones included, for Move to buttons. */
 @Composable
 private fun rememberSharedFolders(states: MailStates): List<SharedFolder> =
-    remember(states.folders.accounts) { sharedFolders(states.folders.accounts).flatMap { it.flatten() } }
+    remember(states.folders.all.accounts) { sharedFolders(states.folders.all.accounts).flatMap { it.flatten() } }

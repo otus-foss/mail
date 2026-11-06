@@ -22,7 +22,7 @@ internal fun InboxPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val feed = states.feed
+    val feed = states.list.feed
     val contents = states.behavior.behavior.inbox
     val ownScope = contents.mailScope()
     LaunchedEffect(ownScope) { feed.defaultScope = ownScope }
@@ -30,7 +30,7 @@ internal fun InboxPage(
         InboxPills(
             states.behavior.behavior.pills,
             rememberFolderPills(states),
-            foldersLoaded = !states.accounts.loading && !states.folders.loading,
+            foldersLoaded = !states.accounts.loading && !states.folders.all.loading,
         )
     ListPage(
         MailPage.Inbox,
@@ -40,7 +40,7 @@ internal fun InboxPage(
             pills = pills,
             mailboxSearch =
                 MailboxSearch(
-                    states.searchMailboxes(),
+                    states.list.searchMailboxes(),
                     states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
                     feed::show,
                 ),

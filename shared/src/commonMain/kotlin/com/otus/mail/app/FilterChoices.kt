@@ -26,7 +26,7 @@ import com.otus.mail.feature.inbox.presentation.FolderKey
 internal fun MailStates.filterOptions(page: MailPage): FilterOptions {
     val choice = mailScope
     val shown =
-        folders.accounts.filter {
+        folders.all.accounts.filter {
             it.failure == null &&
                 (choice.accountId == null || it.accountId == choice.accountId)
         }
@@ -40,7 +40,7 @@ internal fun MailStates.filterOptions(page: MailPage): FilterOptions {
     )
 }
 
-private fun MailStates.folderColor(folder: MailFolder): FolderColor = FolderColor.named(folderColors.colorOf(folder))
+private fun MailStates.folderColor(folder: MailFolder): FolderColor = FolderColor.named(folders.colors.colorOf(folder))
 
 private fun MailStates.filterAddresses(choice: MailScopeChoice): List<FilterAddress> =
     accountAddresses()

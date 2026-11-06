@@ -58,7 +58,7 @@ internal fun mailSettingsIndex(
             Res.drawable.symbol_tune,
             summary = "Inbox, sidebar, swipes, reading, and writing",
         ) {
-            val startPages = sidebarPinOptions(states.folders.accounts, states.folderColors::groupColorOf)
+            val startPages = sidebarPinOptions(states.folders.all.accounts, states.folders.colors::groupColorOf)
             mailBehaviorIndex(states.behavior, folderPills, startPages, rtl, behaviorPages(open))
         }
         page(

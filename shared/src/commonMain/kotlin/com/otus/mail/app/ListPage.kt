@@ -37,7 +37,7 @@ internal fun ListPage(
         feed.status(connected = states.accounts.accounts.isNotEmpty()),
         onRefresh = {
             feed.refresh()
-            states.folders.refresh()
+            states.folders.all.refresh()
         },
         context =
             base.copy(
@@ -51,7 +51,7 @@ internal fun ListPage(
                 scope = states.scopeSwitch(states.mailScope, states.chooseScope),
                 quick = rememberQuickView(states, page, navigation),
                 // A tapped notification opens its message in the feed MessageOpens loads, the Inbox's.
-                opening = states.requests.row.takeIf { feed === states.feed },
+                opening = states.requests.row.takeIf { feed === states.list.feed },
             ),
         messageActions = messageActions,
     )
@@ -68,7 +68,9 @@ private fun rememberQuickView(
     navigation: MailNavigation,
 ): QuickViewContext {
     val behavior = states.behavior.behavior
-    val folders = states.folders.accounts.inScope(states.mailScope)
+    val folders =
+        states.folders.all.accounts
+            .inScope(states.mailScope)
     val pinned =
         remember(folders, behavior.inbox, behavior.sidebar, page) {
             sidebarMailboxes(folders, behavior.inbox, behavior.sidebar).filterNot { it.pin == page.pin }

@@ -17,13 +17,14 @@ internal fun FolderDetailPage(
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
-    val account = states.folders.account(page.accountId)
-    val folder = states.folders.folder(page.accountId, page.folderId, page.sharedIn)
+    val account = states.folders.all.account(page.accountId)
+    val folder = states.folders.all.folder(page.accountId, page.folderId, page.sharedIn)
     // Deleting the folder, here or elsewhere, removes it from the next load.
     LaunchedEffect(account, folder) { if (account != null && account.failure == null && folder == null) back() }
     if (folder == null) return Subpage("", back) {}
-    val detail = remember(states) { FolderDetailStates(states.folders, states.folderColors, states.rules) }
-    val known = remember(states.feed.messages, page.accountId) { states.knownAddresses(page.accountId) }
+    val detail =
+        remember(states) { FolderDetailStates(states.folders.all, states.folders.colors, states.folders.rules) }
+    val known = remember(states.list.feed.messages, page.accountId) { states.knownAddresses(page.accountId) }
     FolderDetailScreen(
         folder,
         detail,
@@ -35,7 +36,7 @@ internal fun FolderDetailPage(
 
 /** The senders and recipients of [accountId]'s loaded mail, once per message, for rule suggestions. */
 internal fun MailStates.knownAddresses(accountId: String): List<KnownAddress> =
-    feed.messages
+    list.feed.messages
         .filter { it.location.accountId == accountId }
         .flatMap { message ->
             listOf(KnownAddress(AddressField.From, message.sender.address, message.sender.name)) +

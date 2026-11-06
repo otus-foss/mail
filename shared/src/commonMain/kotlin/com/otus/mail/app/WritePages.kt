@@ -27,7 +27,7 @@ internal fun ComposePage(
     states: MailStates,
     onClose: () -> Unit,
 ) {
-    val compose = remember(page) { states.compose(page.request) } ?: return LaunchedEffect(page) { onClose() }
+    val compose = remember(page) { states.compose.draft(page.request) } ?: return LaunchedEffect(page) { onClose() }
     val exits =
         remember(compose) {
             object : ComposeExits {
@@ -46,7 +46,7 @@ internal fun ComposePage(
                 ) {
                     val outgoing =
                         Outgoing(draft, compose.reopening()) { states.requests.pages.show(page.copy(request = it)) }
-                    if (at == null) states.outgoing.send(outgoing) else states.outgoing.schedule(outgoing, at)
+                    with(states.compose.outgoing) { if (at == null) send(outgoing) else schedule(outgoing, at) }
                     onClose()
                 }
             }
@@ -62,7 +62,7 @@ internal fun SignaturesPage(
     onBack: () -> Unit,
 ) {
     SignaturesScreen(
-        states.signatures,
+        states.compose.signatures,
         states.behavior.behavior.signatureInReplies,
         onInRepliesChange = { on -> states.behavior.update { it.copy(signatureInReplies = on) } },
         onBack = onBack,
@@ -76,7 +76,7 @@ internal fun SignatureEditorPage(
     states: MailStates,
     onBack: () -> Unit,
 ) {
-    val signatures = states.signatures
+    val signatures = states.compose.signatures
     val key = SendIdentityKey(page.accountId, page.identityId)
     LaunchedEffect(page) { if (signatures.identity(key) == null) signatures.load() }
     val identity = signatures.identity(key) ?: return

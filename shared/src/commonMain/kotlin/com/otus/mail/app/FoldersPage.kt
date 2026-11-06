@@ -16,17 +16,19 @@ internal fun FoldersPage(
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
-    LaunchedEffect(Unit) { states.rules.refresh() }
+    LaunchedEffect(Unit) { states.folders.rules.refresh() }
     FoldersScreen(
-        states.folders,
-        states.folderColors,
-        states.rules,
+        states.folders.all,
+        states.folders.colors,
+        states.folders.rules,
         known = states::knownAddresses,
         rulesOf = { folder ->
             if (folder.sharedIn != null) {
                 emptyList()
             } else {
-                states.rules.rules(folder).mapNotNull { it.chipTexts().firstOrNull()?.chipLine() }
+                states.folders.rules
+                    .rules(folder)
+                    .mapNotNull { it.chipTexts().firstOrNull()?.chipLine() }
             }
         },
         onBack = back,

@@ -25,9 +25,9 @@ internal fun SidebarSettingsPage(
     navigation: MailNavigation,
     onBack: () -> Unit,
 ) {
-    val accounts = states.folders.accounts
+    val accounts = states.folders.all.accounts
     // Not remembered: folder colors change apart from the accounts.
-    val options = sidebarPinOptions(accounts, states.folderColors::groupColorOf)
+    val options = sidebarPinOptions(accounts, states.folders.colors::groupColorOf)
     if (page == MailPage.PinnedSettings) {
         PinnedSettingsScreen(states.behavior, options, onBack)
     } else {
@@ -64,7 +64,9 @@ internal fun ReadLaterPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val folders = states.folders.accounts.mapNotNull { it.readLater }
+    val folders =
+        states.folders.all.accounts
+            .mapNotNull { it.readLater }
     LeaveWhenGone(states, navigation, gone = folders.isEmpty())
     FeedPage(MailPage.ReadLater, folders.toScope(), "Read later", states, dateFormatter, navigation)
 }
@@ -91,7 +93,7 @@ internal fun SharedFolderPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val accounts = states.folders.accounts
+    val accounts = states.folders.all.accounts
     val folder = remember(accounts, page) { sharedFolder(sharedFolders(accounts), page.key) }
     LeaveWhenGone(states, navigation, gone = folder == null)
     FeedPage(page, folder?.folders.orEmpty().toScope(), folder?.name ?: "Folder", states, dateFormatter, navigation)
@@ -107,8 +109,8 @@ private fun LeaveWhenGone(
     navigation: MailNavigation,
     gone: Boolean,
 ) {
-    val accounts = states.folders.accounts
-    val loaded = !states.folders.loading && accounts.isNotEmpty() && accounts.none { it.failure != null }
+    val accounts = states.folders.all.accounts
+    val loaded = !states.folders.all.loading && accounts.isNotEmpty() && accounts.none { it.failure != null }
     LaunchedEffect(loaded, gone) {
         if (loaded && gone) navigation.go(MailPage.Inbox)
     }

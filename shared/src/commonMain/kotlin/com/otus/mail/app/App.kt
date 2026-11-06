@@ -79,7 +79,7 @@ fun App(
     val nightly = rememberNightlyUpdate(services, build)
     LoadEffects(states, behaviorState, start, current = { page }) { page = it }
     // Reload whenever the inbox is shown, including at launch.
-    LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.feed.refresh() }
+    LaunchedEffect(page == MailPage.Inbox) { if (page == MailPage.Inbox) states.list.feed.refresh() }
     ServerChangeEffects(services, states) { page == MailPage.Inbox }
     AvatarEffects(states, behaviorState)
     // Each page keeps its own saved state, such as an inbox search, while another page is shown.
@@ -121,18 +121,23 @@ fun App(
                         scope.launch { sidebar.close() }
                     },
                 )
-                LaunchCover(states.feed, appIconState?.style ?: AppIconStyle.Accent, inbox = start == SidebarPin.Inbox)
+                LaunchCover(
+                    states.list.feed,
+                    appIconState?.style ?: AppIconStyle.Accent,
+                    inbox = start == SidebarPin.Inbox,
+                )
             }
             // Outlives the page a move closed, such as the open message.
-            states.sorting.sorted?.let { SortedMoveSheet(it, onDismiss = states.sorting::dismiss) }
+            states.folders.sorting.sorted
+                ?.let { SortedMoveSheet(it, onDismiss = states.folders.sorting::dismiss) }
             SenderRuleSheets(
-                states.senderRules,
-                states.folders,
-                states.rules,
+                states.folders.senderRules,
+                states.folders.all,
+                states.folders.rules,
                 known = states::knownAddresses,
             ) {
-                states.folders.refresh()
-                states.feed.refresh()
+                states.folders.all.refresh()
+                states.list.feed.refresh()
             }
         }
     }
@@ -152,10 +157,10 @@ private fun LoadEffects(
     show: (MailPage) -> Unit,
 ) {
     // Rules decide whether an open message offers to start one.
-    LaunchedEffect(states) { states.rules.refresh() }
+    LaunchedEffect(states) { states.folders.rules.refresh() }
     // Folders fill the sidebar. Turning Read later on finds or creates its folders; off unmarks them.
-    LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.refresh() }
-    StartPageFallback(start, states.folders, current, show)
+    LaunchedEffect(states, behaviorState.behavior.readLater) { states.folders.all.refresh() }
+    StartPageFallback(start, states.folders.all, current, show)
 }
 
 /**
@@ -169,7 +174,7 @@ private fun PageRequestEffects(
     show: (MailPage) -> Unit,
 ) {
     LaunchedEffect(services) { services.requests.pages.collect { show(it) } }
-    LaunchedEffect(states) { states.outgoing.resume { states.requests.pages.show(MailPage.Compose(it)) } }
+    LaunchedEffect(states) { states.compose.outgoing.resume { states.requests.pages.show(MailPage.Compose(it)) } }
 }
 
 /**
@@ -186,8 +191,8 @@ private fun ServerChangeEffects(
 ) {
     LaunchedEffect(states) {
         reloadWhileShown(services.serverChanges.changes, services.visibility.shown) {
-            states.folders.refresh()
-            if (inboxShown()) states.feed.refresh(keepReport = true)
+            states.folders.all.refresh()
+            if (inboxShown()) states.list.feed.refresh(keepReport = true)
         }
     }
 }
@@ -202,15 +207,15 @@ private fun AvatarEffects(
     LaunchedEffect(states) {
         snapshotFlow { states.avatarOptions() }
             .drop(1)
-            .collect { states.feed.refresh() }
+            .collect { states.list.feed.refresh() }
     }
     // Contacts load at launch so sender avatars can show their photos. Photos from all accounts
     // changes which of those photos the avatars take.
     LaunchedEffect(states) {
-        states.contacts.loadCards()
+        states.contacts.cards.loadCards()
         snapshotFlow { behaviorState.behavior.allAccountPhotos }
             .drop(1)
-            .collect { states.contactAvatars.apply() }
+            .collect { states.contacts.avatars.apply() }
     }
 }
 

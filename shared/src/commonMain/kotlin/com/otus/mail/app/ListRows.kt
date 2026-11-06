@@ -46,13 +46,14 @@ internal fun rememberListNudge(
     messages: List<MailMessage>,
 ): ListNudge? {
     val visible = remember(messages) { messages.folderCounts() }
-    val folder = states.folderNudge.pick(visible)?.folder ?: return null
-    LaunchedEffect(folder.key) { states.folderNudge.markShown(folder.key) }
+    val nudge = states.folders.nudge
+    val folder = nudge.pick(visible)?.folder ?: return null
+    LaunchedEffect(folder.key) { nudge.markShown(folder.key) }
     return ListNudge(
         folder.name,
         NUDGE_COLORS,
         onPick = { color -> states.colorFolder(folder, color) },
-        onDismiss = { states.folderNudge.dismiss(folder.key) },
+        onDismiss = { nudge.dismiss(folder.key) },
     )
 }
 
@@ -69,7 +70,7 @@ private fun MailStates.colorFolder(
     folder: MailFolder,
     color: FolderColor,
 ) {
-    folderColors.setColor(listOf(folder), color.name)
-    val undo = UiAction("Undo") { folderColors.setColor(listOf(folder), null) }
+    folders.colors.setColor(listOf(folder), color.name)
+    val undo = UiAction("Undo") { folders.colors.setColor(listOf(folder), null) }
     moveToasts.toasts.show(ToastMessage("${folder.name} is now ${color.label.lowercase()}", undo))
 }

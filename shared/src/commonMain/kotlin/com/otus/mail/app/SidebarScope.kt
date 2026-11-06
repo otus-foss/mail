@@ -28,8 +28,8 @@ internal fun MailStates.accountAddresses(): List<AccountAddresses> =
 internal fun MailStates.scopeCount(choice: MailScopeChoice): String? {
     val counts = behavior.behavior.sidebar.counts
     return when (choice) {
-        is MailScopeChoice.Address -> addressCount(feed.messages, choice, counts)?.toString()
-        else -> SidebarCounter(choice.accountId, counts).of(folders.accounts.mapNotNull { it.inbox })
+        is MailScopeChoice.Address -> addressCount(list.feed.messages, choice, counts)?.toString()
+        else -> SidebarCounter(choice.accountId, counts).of(folders.all.accounts.mapNotNull { it.inbox })
     }
 }
 

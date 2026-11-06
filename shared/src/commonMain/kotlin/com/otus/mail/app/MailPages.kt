@@ -91,12 +91,7 @@ private fun PageContent(
         }
 
         MailPage.Contacts, is MailPage.Contact, is MailPage.ContactEditor -> {
-            ContactsPages(
-                page,
-                states,
-                navigation,
-                back,
-            )
+            ContactsPages(page, states.contacts.cards, states.moveToasts.toasts, navigation, back)
         }
     }
 }
@@ -118,7 +113,7 @@ private fun FolderPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val account = states.folders.account(page.accountId)
+    val account = states.folders.all.account(page.accountId)
     val folder = account?.folder(page.folderId)
     // A folder deleted elsewhere leaves its page once the account's folders have loaded without it.
     LaunchedEffect(account, folder) {
@@ -145,7 +140,7 @@ internal fun FeedPage(
     navigation: MailNavigation,
 ) {
     val pageScope = rememberCoroutineScope()
-    val feed = remember(mailScope) { states.feedOf(mailScope, pageScope) }
+    val feed = remember(mailScope) { states.list.feedOf(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
     ListPage(page, feed, InboxContext.folder(name, states.behavior.behavior.pills), states, dateFormatter, navigation)
 }
@@ -157,13 +152,13 @@ internal fun rememberMessageActions(
     navigation: MailNavigation,
 ): MessageActions =
     remember(states, feed, navigation) {
-        states.messageActions(feed)
+        states.list.messageActions(feed)
     }
 
 /** The folder pills the loaded folders can fill, again whenever they change. */
 @Composable
 internal fun rememberFolderPills(states: MailStates): List<FolderPillOption> =
-    remember(states.folders.accounts) { folderPillOptions(states.folders.accounts) }
+    remember(states.folders.all.accounts) { folderPillOptions(states.folders.all.accounts) }
 
 /**
  * The feed's messages that the chosen "Show mail from" scope shows, with their other folders named,
@@ -175,8 +170,8 @@ internal fun rememberLabeled(
     feed: InboxFeedState,
 ): List<MailMessage> {
     val scope = states.mailScope
-    val colors = states.folderColors.colors to states.behavior.behavior.sidebar.folderColors
+    val colors = states.folders.colors.colors to states.behavior.behavior.sidebar.folderColors
     // A message that did not change, as when another sender's avatar arrives, keeps its copy.
-    val copies = remember(states.folders.accounts, colors) { LabeledCopies() }
-    return remember(feed.messages, scope, copies) { states.filing.labeled(feed.messages.within(scope), copies) }
+    val copies = remember(states.folders.all.accounts, colors) { LabeledCopies() }
+    return remember(feed.messages, scope, copies) { states.folders.filing.labeled(feed.messages.within(scope), copies) }
 }

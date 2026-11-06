@@ -3,6 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.otus.designsystem.shared.feedback.components.ToastMessage
+import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.feature.contacts.domain.ContactAddress
@@ -17,14 +18,14 @@ import com.otus.mail.feature.read.presentation.components.PersonSheet
 
 /** The Read view's sheet for a person a message names: their card, or ways to save the address. */
 internal fun contactSheet(
-    states: MailStates,
+    contacts: ContactsState,
     navigation: MailNavigation,
 ): PersonSheet =
     PersonSheet { person, onDismiss ->
-        LaunchedEffect(Unit) { if (states.contacts.snapshot == null) states.contacts.refresh() }
+        LaunchedEffect(Unit) { if (contacts.snapshot == null) contacts.refresh() }
         PersonContactSheet(
             ContactAddress(person.name, person.address),
-            states.contacts,
+            contacts,
             onNew = {
                 onDismiss()
                 navigation.go(MailPage.ContactEditor())
@@ -41,15 +42,15 @@ internal fun contactSheet(
 @Composable
 internal fun ContactsPages(
     page: MailPage,
-    states: MailStates,
+    contacts: ContactsState,
+    toasts: ToastState,
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
-    val contacts = states.contacts
     LaunchedEffect(Unit) { contacts.refresh() }
     LaunchedEffect(contacts.notice) {
         val notice = contacts.notice
-        if (notice != null) states.moveToasts.toasts.show(ToastMessage(notice))
+        if (notice != null) toasts.show(ToastMessage(notice))
         contacts.notice = null
     }
     val write = { to: List<ContactAddress> ->
