@@ -1,4 +1,4 @@
-package com.otus.mail.app
+package com.otus.mail.feature.inbox.presentation
 
 import com.otus.mail.core.messages.domain.FoundPerson
 import com.otus.mail.core.messages.domain.MailScope

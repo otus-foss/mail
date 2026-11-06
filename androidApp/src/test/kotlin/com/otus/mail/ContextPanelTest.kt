@@ -24,7 +24,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.mail.feature.welcome.presentation.screens.WelcomeScreen
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -45,7 +44,7 @@ class ContextPanelTest {
 
     @Before
     fun showPlayground() {
-        compose.runOnUiThread { compose.activity.setContent { OtusTheme { WelcomeScreen() } } }
+        compose.runOnUiThread { compose.activity.setContent { OtusTheme { ContextPanelPlayground() } } }
     }
 
     @Test
@@ -130,7 +129,7 @@ class ContextPanelTest {
             compose.activity.setContent {
                 val density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                    OtusTheme { WelcomeScreen() }
+                    OtusTheme { ContextPanelPlayground() }
                 }
             }
         }
