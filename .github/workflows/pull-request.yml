@@ -27,8 +27,20 @@ jobs:
           repository: reazndev/otus-meta
           path: otus-meta
           sparse-checkout: .github/actions
+          fetch-depth: 0
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
       - id: gate
         uses: ./otus-meta/.github/actions/ready-gate
 
@@ -48,8 +60,20 @@ jobs:
           repository: reazndev/otus-meta
           path: otus-meta
           sparse-checkout: .github/actions
+          fetch-depth: 0
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
       - uses: ./otus-meta/.github/actions/size-label
       - uses: ./otus-meta/.github/actions/screenshot-comment
 
@@ -75,17 +99,11 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
-      - id: meta
-        uses: ./otus-meta/.github/actions/meta-partner
-        with:
-          branch: ${{ github.head_ref }}
       - name: Label the pull request
-        env:
-          PARTNER: ${{ steps.meta.outputs.partner }}
         run: |
           gh label create "needs meta" --force --color 5319e7 \
             --description "Builds against a Meta branch of the same name; merge that first"
-          if [ "$PARTNER" = true ]; then
+          if git -C otus-meta rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
             echo "::notice title=Needs Meta::Merge reazndev/otus-meta branch $BRANCH first."
             gh pr edit "$PR" --add-label "needs meta"
           else

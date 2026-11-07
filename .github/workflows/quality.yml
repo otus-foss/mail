@@ -40,8 +40,20 @@ jobs:
           repository: reazndev/otus-meta
           path: otus-meta
           sparse-checkout: .github/actions
+          fetch-depth: 0
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
       - id: gate
         uses: ./otus-meta/.github/actions/ready-gate
       - id: files
@@ -87,9 +99,17 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
-      - uses: ./otus-meta/.github/actions/meta-partner
-        with:
-          branch: ${{ github.head_ref || github.ref_name }}
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
       - uses: ./otus-meta/.github/actions/setup-build
         with:
           directory: otus-mail
@@ -167,9 +187,17 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
-      - uses: ./otus-meta/.github/actions/meta-partner
-        with:
-          branch: ${{ github.head_ref || github.ref_name }}
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
       # Compose Multiplatform links iOS 26 SDK symbols, so the app needs Xcode 26.
       - run: sudo xcode-select -s /Applications/Xcode_26.3.app && xcodebuild -version
       - uses: ./otus-meta/.github/actions/setup-build
