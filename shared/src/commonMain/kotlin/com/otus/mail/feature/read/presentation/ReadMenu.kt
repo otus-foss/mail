@@ -49,8 +49,8 @@ data class ReadMenuSection(
 )
 
 /**
- * The ⋯ menu for a page: its [sections], and the replies it [withheld], such as both for a
- * newsletter. The menu's last section offers every action it does not [cover][covers] that the
+ * The ⋯ menu for a page: its [sections], and the actions it [withheld], such as both replies for
+ * a newsletter. The menu's last section offers every action it does not [cover][covers] that the
  * bar leaves out.
  */
 class ReadMenu(
@@ -138,20 +138,21 @@ fun readMenu(page: ReadPage): ReadMenu =
                 add(ReadMenuSection(ReadMenuPart.Conversation, entries))
             }
         },
-        page.withheldReplies,
+        page.withheld,
     )
 
 /**
- * The replies the menu leaves out: both on a newsletter or the user's own message, and Reply all
- * while it would reach only the sender, as Reply does.
+ * What the menu leaves out: both replies on a newsletter or the user's own message, Reply all
+ * while it would reach only the sender, as Reply does, and Spam on the user's own message, whose
+ * sender section it lives in.
  */
-private val ReadPage.withheldReplies: Set<MailAction>
+private val ReadPage.withheld: Set<MailAction>
     get() =
         when {
             !repliable -> setOf(MailAction.Reply, MailAction.ReplyAll)
             message.replyAction(own) == MailAction.Reply -> setOf(MailAction.ReplyAll)
             else -> emptySet()
-        }
+        } + setOfNotNull(MailAction.Spam.takeIf { fromUser })
 
 private fun ReadPage.messageEntries(): List<ReadMenuEntry> =
     buildList {

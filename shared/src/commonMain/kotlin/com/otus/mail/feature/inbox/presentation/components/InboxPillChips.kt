@@ -7,6 +7,8 @@ import com.otus.designsystem.resources.symbol_label
 import com.otus.designsystem.resources.symbol_newspaper
 import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipRole
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.controls.elements.CountBadge
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.panels.components.ContextPanelScope
@@ -107,7 +109,13 @@ private fun ContextPanelScope.CategoryPills(tabs: CategoryTabs) {
     tabs.settings.tabs.forEach { category ->
         item(category) {
             val count = tabs.unread[category]?.takeIf { it > 0 }?.badgeText()
-            Chip(category.label, { tabs.press(category) }, selected = category == tabs.selected) {
+            // One category is always on, so screen readers hear a radio button, not a checkbox.
+            Chip(
+                category.label,
+                { tabs.press(category) },
+                selected = category == tabs.selected,
+                style = ChipStyle(ChipRole.Radio),
+            ) {
                 if (count != null) CountBadge(count) else Symbol(category.icon)
             }
         }

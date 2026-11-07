@@ -86,7 +86,8 @@ class JmapDraftSender internal constructor(
     private suspend fun MailAccount.route(from: String): SendRoute {
         lateinit var identities: JmapCall<GetResult<IdentityObject>>
         val identityGet = GetMethod(IdentityType, id, properties = listOf("id", "email"))
-        val (folders, response) = copies.mailboxes.send(this) { identities = call(identityGet) }
+        // Fresh folders, so a Sent re-created on another client still gets the sent copy.
+        val (folders, response) = copies.mailboxes.sendFresh(this) { identities = call(identityGet) }
         return SendRoute(
             identityId = response[identities].list.sendingAs(from) { it.email }?.id ?: failSend(SendFailure.NoIdentity),
             drafts = folders.firstOrNull { it.role == MailboxRole.Drafts }?.id,

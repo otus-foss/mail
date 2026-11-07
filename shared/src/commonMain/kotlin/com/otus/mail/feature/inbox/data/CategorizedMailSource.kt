@@ -42,12 +42,15 @@ class CategorizedMailSource(
 
     private suspend fun InboxSnapshot.sorted(): InboxSnapshot {
         if (!records.active) return this
+        // Reported like the inner source's own cache reads, so a locked cache shows its notice.
         val verdicts =
-            messages
-                .filter { it.emailId.isNotEmpty() }
-                .groupBy { it.location.accountId }
-                .flatMap { (loginId, rows) -> verdictsOf(loginId, rows).entries }
-                .associate { it.key to it.value }
+            cacheErrors {
+                messages
+                    .filter { it.emailId.isNotEmpty() }
+                    .groupBy { it.location.accountId }
+                    .flatMap { (loginId, rows) -> verdictsOf(loginId, rows).entries }
+                    .associate { it.key to it.value }
+            }
         return copy(messages = messages.map { row -> verdicts[row.id]?.let { row.copy(category = it) } ?: row })
     }
 

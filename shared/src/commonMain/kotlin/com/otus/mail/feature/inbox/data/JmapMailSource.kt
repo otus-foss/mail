@@ -187,7 +187,7 @@ class JmapMailSource(
     }
 }
 
-private suspend fun <T> cacheErrors(operation: suspend () -> T): T =
+internal suspend fun <T> cacheErrors(operation: suspend () -> T): T =
     try {
         operation()
     } catch (error: CacheStorageException) {
