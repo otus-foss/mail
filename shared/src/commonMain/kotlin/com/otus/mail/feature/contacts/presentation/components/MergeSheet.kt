@@ -66,6 +66,7 @@ internal fun MergeSheet(
     SheetFrame(
         "Same person?",
         onDismiss,
+        done = null,
         closeButton = true,
     ) {
         Column(

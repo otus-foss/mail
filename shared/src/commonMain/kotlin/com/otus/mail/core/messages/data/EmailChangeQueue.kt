@@ -83,6 +83,20 @@ class EmailChangeQueue(
             result
         }
 
+    /**
+     * Sends [loginId]'s waiting changes, then runs [remove] only once none wait, so deleting for
+     * good reads the folders as the user left them. Null when some still wait, such as offline or
+     * after a server error.
+     */
+    internal suspend fun <T> afterSending(
+        loginId: String,
+        remove: suspend () -> T,
+    ): T? =
+        locks.of(loginId).withLock {
+            send(loginId)
+            if (pending(loginId).isEmpty()) remove() else null
+        }
+
     /** Sends every login's waiting changes. True when some still wait for the network. */
     suspend fun flushAll(): Boolean {
         saved().keys.forEach { loginId -> locks.of(loginId).withLock { send(loginId) } }
@@ -91,15 +105,13 @@ class EmailChangeQueue(
 
     private suspend fun pending(loginId: String): Map<String, JsonObject> = saved()[loginId].orEmpty()
 
-    /** Drops [loginId]'s changes, as when the account is removed. */
-    suspend fun forget(loginId: String) {
+    /** Drops [loginId]'s changes, as the account is removed. */
+    override suspend fun removing(loginId: String) {
         locks.of(loginId).withLock { write(loginId, emptyMap()) }
     }
 
-    override suspend fun removing(loginId: String): Unit = forget(loginId)
-
     // A change queued while the login was being removed must not wait for it to come back.
-    override suspend fun removed(loginId: String): Unit = forget(loginId)
+    override suspend fun removed(loginId: String): Unit = removing(loginId)
 
     /**
      * Sends the waiting changes batch by batch and drops each one the server answered. A refused

@@ -37,12 +37,12 @@ internal class MailStates(
     val mailScope: MailScopeChoice
         get() = chosenScope().within(accounts.accounts.map { it.id })
 
-    /** The changes the user makes to mail, which every list and Read view shows at once; an Undo reloads them. */
-    val edits: MailEdits =
-        MailEdits(services.writer, scope, services.moveToasts) {
-            folders.all.refresh()
-            list.refreshAll()
-        }
+    /**
+     * The changes the user makes to mail, which every list and Read view shows at once. An Undo or
+     * Retry can outlive this screen, so it reloads through [MailServices.serverChanges], which the
+     * screen shown by then follows.
+     */
+    val edits: MailEdits = MailEdits(services.writer, scope, services.moveToasts, services.serverChanges::changed)
 
     val folders: FolderStates = FolderStates(services, scope, behavior, edits)
 

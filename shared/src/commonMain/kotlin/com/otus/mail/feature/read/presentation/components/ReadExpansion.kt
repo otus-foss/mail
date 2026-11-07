@@ -2,12 +2,9 @@ package com.otus.mail.feature.read.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,7 +62,9 @@ internal fun rememberReadExpansion(
     quick: Dp?,
     details: Dp,
 ): PanelExpansion {
-    val expansion = rememberPanelExpansion(listOf(quick?.let(::grownStopHeight) ?: quickViewHeight(modules), details))
+    // The expanded stop stays a row shorter than the full one, so long details never swap them.
+    val expanded = quick?.let(::grownStopHeight)?.coerceAtMost(details - QuickViewTokens.jumpHeight)
+    val expansion = rememberPanelExpansion(listOf(expanded ?: quickViewHeight(modules), details))
     NavigationBackHandler(
         rememberNavigationEventState(NavigationEventInfo.None),
         isBackEnabled = expansion.expanded,
@@ -156,12 +155,7 @@ internal fun ReadExpandedContent(
 /** What the full stop adds under the details: the message's original source. */
 @Composable
 private fun ReadDetails(room: ReadRoom) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .sheetInset(),
-    ) {
+    Column(Modifier.fillMaxWidth().sheetInset()) {
         SettingPageRow(
             "Show original",
             { room.open(ReadSheet.Details(room.page)) },

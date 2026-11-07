@@ -49,9 +49,9 @@ internal class FolderCleaning(
             role(message)?.isBin == true &&
             folders.rightsOf(message).mayRemoveItems
 
-    /** Empties only the list's folders that let their messages leave. */
+    /** Empties a Spam or Trash list's folders that let their messages leave; no other list. */
     private fun emptying(feed: EditedList): FolderEmptying? {
-        val role = listRole(feed)?.takeIf { it != MailboxRole.Sent } ?: return null
+        val role = listRole(feed)?.takeIf { it.isBin } ?: return null
         return shownFolders(feed.mailScope)
             .filter { it.rights.mayRemoveItems }
             .takeIf { it.isNotEmpty() }
