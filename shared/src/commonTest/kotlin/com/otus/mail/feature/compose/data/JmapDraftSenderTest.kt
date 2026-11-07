@@ -102,7 +102,7 @@ class JmapDraftSenderTest {
     fun sendingStoresTheDraftThenSubmitsThatCopyByIdAndFilesItInSent() =
         runTest {
             assertTrue(sender().send(reply, AnsweredMessage("m1", forwarded = false), SendTime.Now).isSuccess)
-            val (route, store, submit, tidy) = calls.map(::methods)
+            val (route, store, submit, destroy, mark) = calls.map(::methods)
             assertEquals(listOf("Mailbox/get", "Identity/get"), route.map { it.name })
             assertEquals(listOf("Email/set"), store.map { it.name })
             assertEquals(listOf("EmailSubmission/set"), submit.map { it.name })
@@ -124,12 +124,11 @@ class JmapDraftSenderTest {
             assertEquals(Json.parseToJsonElement(filed), submission["onSuccessUpdateEmail"])
             assertTrue("envelope" !in submission.at("create", "send"), "The server builds the envelope")
 
-            val (set) = tidy
+            assertEquals(Json.parseToJsonElement("""["old"]"""), destroy.single().arguments["destroy"])
             assertEquals(
                 Json.parseToJsonElement("""{"m1": {"keywords/${'$'}answered": true}}"""),
-                set.arguments["update"],
+                mark.single().arguments["update"],
             )
-            assertEquals(Json.parseToJsonElement("""["old"]"""), set.arguments["destroy"])
         }
 
     @Test

@@ -52,12 +52,11 @@ class InboxHeaderActionsTest {
                 }
             }
         }
-        compose.openSearchResults()
+        compose.openSearch()
         compose.searchField().assertIsFocused()
-        compose.onNodeWithText("People").assertIsDisplayed()
-        compose.onNodeWithText("Date").assertIsDisplayed()
-        compose.onNodeWithText("All accounts").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Inboxes").assertDoesNotExist()
+        compose.onNodeWithText("Subject").assertIsDisplayed()
+        compose.onNodeWithText("Has files").assertIsDisplayed()
+        compose.onNodeWithContentDescription("All filters").assertIsDisplayed()
         compose.runOnIdle { assertTrue("Opening search requests the software keyboard", keyboardRequested) }
     }
 

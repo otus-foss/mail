@@ -58,6 +58,16 @@ internal fun mailboxChanges(arguments: JsonObject) =
         put("destroyed", JsonArray(emptyList()))
     }
 
+/**
+ * The responses a hand-written fake gives a request that brings kept mailboxes up to date: no
+ * `Mailbox/changes`, so neither `Mailbox/get` of what it names holds anything.
+ */
+internal const val UNCHANGED_MAILBOXES =
+    """["Mailbox/changes", {"oldState": "m", "newState": "m", "hasMoreChanges": false,
+    "created": [], "updated": [], "destroyed": []}, "c0"],
+    ["Mailbox/get", {"state": "m", "list": []}, "c1"],
+    ["Mailbox/get", {"state": "m", "list": []}, "c2"]"""
+
 /** [path] is a property, which [value] replaces, or `property/key`, which it sets or clears. */
 internal fun JsonObject.at(
     path: String,

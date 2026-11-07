@@ -111,9 +111,9 @@ class JmapSendCheckerTest {
                     found = """{"id": "e9", $RECEIVED, "keywords": {"${'$'}seen": true}}""",
                 ).check(draft, answered, false)
             assertEquals(SendCheck.Sent, check)
-            val tidy = sets.single()
-            assertEquals(listOf("d1"), (tidy.getValue("destroy") as JsonArray).map { it.jsonPrimitive.content })
-            assertTrue("o1" in tidy.getValue("update").jsonObject, "The answered message gets its mark")
+            val (destroy, mark) = sets
+            assertEquals(listOf("d1"), (destroy.getValue("destroy") as JsonArray).map { it.jsonPrimitive.content })
+            assertTrue("o1" in mark.getValue("update").jsonObject, "The answered message gets its mark")
         }
 
     @Test
@@ -150,7 +150,7 @@ class JmapSendCheckerTest {
             assertEquals(
                 listOf("d1"),
                 sets
-                    .single()
+                    .first()
                     .getValue("destroy")
                     .jsonArray
                     .map { it.jsonPrimitive.content },
@@ -165,7 +165,7 @@ class JmapSendCheckerTest {
             assertEquals(
                 listOf("e9"),
                 sets
-                    .single()
+                    .first()
                     .getValue("destroy")
                     .jsonArray
                     .map { it.jsonPrimitive.content },

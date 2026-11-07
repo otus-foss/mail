@@ -219,8 +219,7 @@ class JmapNewslettersTest {
                 }
             assertTrue(newsletters.archive("ada", listOf("n4", "n3")))
             val set = requests.last()
-            assertTrue("\"mailboxIds/a\":null" in set && "\"mailboxIds/r\":null" in set, set)
-            assertTrue("\"mailboxIds/arch\":true" in set, set)
+            listOf("n4", "n3").forEach { id -> assertTrue("\"$id\":{\"mailboxIds\":{\"arch\":true}}" in set, set) }
         }
 
     private companion object {

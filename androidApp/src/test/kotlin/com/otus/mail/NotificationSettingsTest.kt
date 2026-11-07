@@ -38,7 +38,7 @@ class NotificationSettingsTest {
     fun choosingAPushAppConnectsEachAccount() {
         val push = FakeNotificationPush(listOf(ntfy))
         open(push)
-        compose.onNodeWithText("New mail every 15 minutes").assertIsDisplayed()
+        compose.onNodeWithText("Off, checks about every 15 minutes").assertIsDisplayed()
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithText("Off, checks about every 15 minutes").assertIsDisplayed()
         compose.onNodeWithText("Instant delivery").performClick()
@@ -81,7 +81,7 @@ class NotificationSettingsTest {
                 status = PushDeliveryStatus.VapidRequired
             }
         open(push)
-        compose.onNodeWithText("Delivery through Google Play services").assertIsDisplayed()
+        compose.onNodeWithText("Through Google Play services").assertIsDisplayed()
         compose.screenshot("notifications/google-settings")
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithText("The server doesn't support Google delivery.").assertIsDisplayed()

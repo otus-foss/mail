@@ -116,9 +116,14 @@ class ReadPageActionsTest {
         openPage("Margaret Knuth")
         strip("Margaret Knuth, message 5 of 6")
         menu("Delete this message")
-        strip("message 5 of 5")
-        assertEquals(listOf("m"), writer.moved)
+        // The toast closes on its timer, which an idle wait would run out.
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(FRAME)
+        compose.onNode(hasContentDescription("message 5 of 5", substring = true)).assertExists()
         compose.onNode(hasText("Undo") and hasClickAction()).performClick()
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertEquals(listOf("m"), writer.moved)
         strip(" of 6")
     }
 
@@ -134,7 +139,8 @@ class ReadPageActionsTest {
         compose.onNode(hasText("Inbox") and isToggleable()).performClick()
         compose.onNode(hasText("Clients") and hasClickAction()).performScrollTo().performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
-        compose.waitUntil(TIMEOUT) { writer.refiled != null }
+        // The edit saves on the main thread, which the idle wait runs.
+        compose.waitForIdle()
         val after = checkNotNull(writer.refiled)
         assertEquals(fixtures.thread.map { it.emailId }.toSet(), after.keys)
         assertEquals(setOf("in", "fi", "cl"), after.getValue("g"))

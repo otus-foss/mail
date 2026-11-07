@@ -80,7 +80,7 @@ class JmapDraftRepositoryTest {
         runTest {
             val saved = server().save(reply)
             assertEquals("e9", saved.getOrThrow())
-            assertTrue("\"filter\":{\"role\":\"drafts\"}" in calls.first(), "The Drafts folder is found by role")
+            assertTrue("Mailbox/get" in calls.first(), "The Drafts folder comes from the account's mailboxes")
             val (set, destroy) = calls.drop(1).map(::method)
             assertTrue("destroy" !in set, "The old copy stays until the new one is stored")
             assertEquals(setOf("accountId", "destroy"), destroy.keys)
@@ -226,8 +226,8 @@ class JmapDraftRepositoryTest {
         runTest {
             val contactsOnly = repository(CONTACTS_ONLY_SESSION) { error("No call without mail") }
             assertEquals(emptyList(), contactsOnly.identities("ada"))
-            assertEquals(DraftFailure.Mail(MailFailure.ServerProblem), contactsOnly.save(reply).failure())
-            assertEquals(DraftFailure.Mail(MailFailure.ServerProblem), contactsOnly.discard("ada", "old").failure())
+            assertEquals(DraftFailure.Mail(MailFailure.NoMail), contactsOnly.save(reply).failure())
+            assertEquals(DraftFailure.Mail(MailFailure.NoMail), contactsOnly.discard("ada", "old").failure())
         }
 
     private fun method(body: String): JsonObject =

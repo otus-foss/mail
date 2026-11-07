@@ -175,7 +175,8 @@ class ReadViewTest {
         compose.onNodeWithText("Also in").performClick()
         compose.onNode(hasText("Freelancing") and hasClickAction()).performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
-        compose.waitUntil(TIMEOUT) { writer.refiled != null }
+        // The edit saves on the main thread, which the idle wait runs.
+        compose.waitForIdle()
         val after = checkNotNull(writer.refiled).getValue(fixtures.invoice.emailId)
         assertEquals("Freelancing is added, nothing removed", setOf("fr"), after - fixtures.invoice.location.mailboxIds)
         assertTrue(after.containsAll(fixtures.invoice.location.mailboxIds))
@@ -245,7 +246,7 @@ class ReadViewTest {
     fun theSenderPillShowsTheFullRecord() {
         showThread()
         compose.onNodeWithContentDescription("From Grace Hopper. Show details").performClick()
-        compose.onNodeWithText("12 Oct 2026, 09:14").assertIsDisplayed()
+        compose.onNodeWithText("Oct 12, 2026, 09:14").assertIsDisplayed()
         compose.onNodeWithText("Folders").assertIsDisplayed()
         compose.screenshot("read/sender_details")
     }

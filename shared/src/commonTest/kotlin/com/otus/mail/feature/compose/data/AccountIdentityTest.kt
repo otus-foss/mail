@@ -4,6 +4,7 @@ import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.domain.searchMessages
@@ -15,8 +16,14 @@ class AccountIdentityTest {
     private val email = EmailObject(id = "same-email-id", receivedAt = "2026-10-01T12:00:00Z")
     private val messages =
         listOf(
-            email.toMessage("work", "Ada", "Inbox", TimeZone.UTC, "ada@work.example"),
-            email.toMessage("personal", "Ada", "Inbox", TimeZone.UTC, "ada@home.example"),
+            email.toMessage(
+                MailLocation("Inbox", "Ada", "work", "ada@work.example", mailboxRole = MailboxRole.Inbox),
+                TimeZone.UTC,
+            ),
+            email.toMessage(
+                MailLocation("Inbox", "Ada", "personal", "ada@home.example", mailboxRole = MailboxRole.Inbox),
+                TimeZone.UTC,
+            ),
         )
 
     @Test
@@ -35,7 +42,11 @@ class AccountIdentityTest {
 
     @Test
     fun renamingAnAccountDoesNotChangeSavedFilterIdentity() {
-        val renamed = email.toMessage("work", "New name", "Inbox", TimeZone.UTC)
+        val renamed =
+            email.toMessage(
+                MailLocation("Inbox", "New name", "work", mailboxRole = MailboxRole.Inbox),
+                TimeZone.UTC,
+            )
         assertEquals(listOf(renamed), searchMessages(listOf(renamed), InboxSearch(accounts = setOf("work"))))
     }
 }

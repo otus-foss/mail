@@ -15,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusPalette
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
@@ -51,6 +52,8 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showFilterPanel(
         }
     }
     if (open) onNodeWithContentDescription("Open filters", substring = true).performClick()
+    // The panel counts its draft after the typing pause.
+    mainClock.advanceTimeBy(TYPING_PAUSE_MILLIS * 2)
     waitForIdle()
 }
 

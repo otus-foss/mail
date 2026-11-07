@@ -119,7 +119,7 @@ class FolderCleaningTest {
             assertFalse(cleanup.canDelete(message("m1", "i")), "The inbox has no Delete forever")
             assertFalse(cleanup.canDelete(message("m1", "j").copy(emailId = "")), "Supplied mail has no server id")
             assertEquals(MailboxRole.Junk, cleanup.role(message("m1", "j")))
-            assertNull(cleanup.role(message("m1", "i")))
+            assertEquals(MailboxRole.Inbox, cleanup.role(message("m1", "i")))
         }
 
     @Test
@@ -133,7 +133,7 @@ class FolderCleaningTest {
             val (sentList) = cleanup(MailScope.Folder("ada", "s"))
             assertEquals(MailboxRole.Sent, sentList.listRole())
             assertNull(sentList.emptying())
-            assertNull(cleanup(MailScope.Inbox).first.listRole())
+            assertEquals(MailboxRole.Inbox, cleanup(MailScope.Inbox).first.listRole())
         }
 
     @Test

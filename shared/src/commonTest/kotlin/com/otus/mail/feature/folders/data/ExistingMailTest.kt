@@ -15,6 +15,7 @@ import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.TextField
 import com.otus.mail.feature.folders.domain.TextOperator
 import com.otus.mail.feature.folders.domain.WEEKEND
+import com.otus.mail.testing.UNCHANGED_MAILBOXES
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
@@ -46,7 +47,7 @@ class ExistingMailTest {
                 """{"operator":"OR","conditions":[{"inMailbox":"I"},{"inMailbox":"A"}]},""" +
                 """{"from":"@agency.example"},{"operator":"NOT","conditions":[{"subject":"Invoice"}]},""" +
                 """{"minSize":1001},{"header":["List-Id","<news.example>"]}]}""",
-            emailFilter(rule, listOf("I", "A")).toString(),
+            emailFilter(rule, listOf("I", "A"))?.toJson().toString(),
         )
         val more =
             listOf(
@@ -63,7 +64,7 @@ class ExistingMailTest {
             )
         more.forEach { (condition, filter) ->
             val expected = """{"operator":"AND","conditions":[{"inMailbox":"I"},$filter]}"""
-            assertEquals(expected, emailFilter(FolderRule(condition), listOf("I")).toString())
+            assertEquals(expected, emailFilter(FolderRule(condition), listOf("I"))?.toJson().toString())
         }
     }
 
@@ -71,7 +72,7 @@ class ExistingMailTest {
     fun anEmptyMailboxScopeKeepsItsEmptyOrCondition() {
         assertEquals(
             """{"operator":"AND","conditions":[{"operator":"OR","conditions":[]},{"from":"@agency.example"}]}""",
-            emailFilter(FolderRule(agency), emptyList()).toString(),
+            emailFilter(FolderRule(agency), emptyList())?.toJson().toString(),
         )
     }
 
@@ -103,6 +104,10 @@ class ExistingMailTest {
                     calls += body
                     val reply =
                         when {
+                            "Mailbox/changes" in body -> {
+                                UNCHANGED_MAILBOXES
+                            }
+
                             "Mailbox/get" in body -> {
                                 """["Mailbox/get", {"state": "m", "list": [{"id": "I", "role": "inbox"},
                                 {"id": "A", "role": "archive"}, {"id": "P"}]}, "c0"]"""

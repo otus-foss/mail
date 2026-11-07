@@ -16,6 +16,7 @@ import com.otus.mail.feature.folders.domain.RuleFailure
 import com.otus.mail.feature.folders.domain.RuleOutcome
 import com.otus.mail.feature.folders.domain.RuleSupport
 import com.otus.mail.testing.ADA_SECRET_HEADER
+import com.otus.mail.testing.UNCHANGED_MAILBOXES
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
@@ -76,6 +77,7 @@ class JmapFolderRuleRepositoryTest {
                                 "SieveScript/get" in body -> scriptsReply(scripts)
                                 "SieveScript/validate" in body -> validateReply(validation)
                                 "SieveScript/set" in body -> """["SieveScript/set", $set, "c0"]"""
+                                "Mailbox/changes" in body -> UNCHANGED_MAILBOXES
                                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $MAILBOXES}, "c0"]"""
                                 else -> error("Unexpected call: $body")
                             }
@@ -218,6 +220,7 @@ class JmapFolderRuleRepositoryTest {
                                 "SieveScript/get" in body -> scriptsReply("[]")
                                 "SieveScript/validate" in body -> validateReply("null")
                                 "SieveScript/set" in body -> setReply
+                                "Mailbox/changes" in body -> UNCHANGED_MAILBOXES
                                 else -> """["Mailbox/get", {"state": "m", "list": $MAILBOXES}, "c0"]"""
                             }
                         respond("""{"methodResponses": [$reply]}""", HttpStatusCode.OK, json)

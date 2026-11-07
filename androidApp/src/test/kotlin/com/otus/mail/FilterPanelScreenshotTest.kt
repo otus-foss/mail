@@ -2,6 +2,7 @@ package com.otus.mail
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
@@ -43,7 +44,7 @@ class FilterPanelScreenshotTest {
     @Test
     fun panelDefault() {
         compose.showFilterPanel()
-        compose.onNodeWithText("Reset").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Reset filters").assertIsNotEnabled()
         compose.screenshot("filter_panel_default")
     }
 
@@ -94,7 +95,7 @@ class FilterPanelScreenshotTest {
     @Test
     fun noConversations() {
         compose.showFilterPanel(InboxFilters(quick = setOf(QuickFacet.Flagged)), total = 0)
-        compose.onNodeWithText("No mails").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("No mails").assertIsNotEnabled()
         compose.screenshot("filter_panel_no_conversations")
     }
 }

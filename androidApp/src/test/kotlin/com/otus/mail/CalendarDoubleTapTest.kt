@@ -42,7 +42,7 @@ class CalendarDoubleTapTest {
         compose.onNodeWithText(relativeIsoRange(date.toString(), today.toString())).assertIsDisplayed()
         compose.onNodeWithText("Done").assertIsEnabled().performClick()
         compose
-            .onNodeWithText(relativeIsoRange(date.toString(), today.toString(), "–"))
+            .appliedDateRange(date.toString(), today.toString())
             .performScrollTo()
             .assertIsDisplayed()
     }
@@ -66,7 +66,6 @@ class CalendarDoubleTapTest {
     }
 
     private fun openCalendar() {
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
     }
 }

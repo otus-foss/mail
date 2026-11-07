@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -83,8 +84,7 @@ class OptionalDayPickerTest {
                 }
             }
         }
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
         compose.onNodeWithText("Today").performClick()
         compose.onNodeWithText(todayHeading()).performClick()
         choose("Year", "2020")
@@ -103,7 +103,13 @@ class OptionalDayPickerTest {
         choose("Year", "2020")
         compose.onNodeWithText("Go").performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("Today").assertIsDisplayed()
+        compose
+            .appliedDateRange(
+                java.time.LocalDate
+                    .now()
+                    .toString(),
+            ).performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test

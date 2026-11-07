@@ -194,9 +194,9 @@ class EmailConditionsTest {
             """{"operator":"AND","conditions":[""" +
                 """{"operator":"OR","conditions":[{"inMailbox":"a"},{"inMailbox":"b"}]},""" +
                 """{"notKeyword":"${'$'}seen"}]}""",
-            filter.toString(),
+            filter.toJson().toString(),
         )
-        assertEquals("""{"inMailbox":"a"}""", mailFilter(listOf("a"), emptyList()).toString())
+        assertEquals("""{"inMailbox":"a"}""", mailFilter(listOf("a"), emptyList()).toJson().toString())
     }
 
     @Test

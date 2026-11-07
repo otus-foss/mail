@@ -50,9 +50,8 @@ class CalendarDragTest {
         compose.onNodeWithText("Done").performClick()
         val month = LocalDate.now().minusMonths(1).withDayOfMonth(1)
         compose
-            .onNodeWithText(
-                relativeIsoRange(month.withDayOfMonth(8).toString(), month.withDayOfMonth(19).toString(), "–"),
-            ).performScrollTo()
+            .appliedDateRange(month.withDayOfMonth(8).toString(), month.withDayOfMonth(19).toString())
+            .performScrollTo()
             .assertIsDisplayed()
     }
 
@@ -155,10 +154,10 @@ class CalendarDragTest {
         compose.onNodeWithText(relativeIsoRange(start.toString(), today.toString())).assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
         compose
-            .onNodeWithText("This month")
-            .assertIsOn()
+            .appliedDateRange(start.toString(), today.toString())
             .performScrollTo()
             .performClick()
+        compose.onNodeWithText("Custom…").performClick()
         compose.onNodeWithText(relativeIsoRange(start.toString(), today.toString())).assertIsDisplayed()
     }
 
@@ -202,8 +201,7 @@ class CalendarDragTest {
     }
 
     private fun openCalendar() {
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
     }
 
     private fun dragRange(

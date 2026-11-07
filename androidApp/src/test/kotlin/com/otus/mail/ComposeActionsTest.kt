@@ -22,7 +22,9 @@ import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.messages.presentation.MessageMarks
 import com.otus.mail.core.messages.presentation.MessageMoves
 import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.feature.inbox.presentation.components.ReadView
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -70,7 +72,22 @@ class ComposeActionsTest {
                 OtusTheme {
                     InboxScreen(
                         listOf(shown),
-                        context = inboxContext { onCompose = { requests += it } },
+                        context =
+                            inboxContext {
+                                onCompose = { requests += it }
+                                readView =
+                                    ReadView { opened ->
+                                        val read = readContext { onCompose = { requests += it } }
+                                        MessageScreen(
+                                            opened.message,
+                                            messageActions,
+                                            null,
+                                            read,
+                                            emptySet(),
+                                            opened.close,
+                                        )
+                                    }
+                            },
                         messageActions = messageActions,
                     )
                 }

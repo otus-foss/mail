@@ -116,7 +116,7 @@ class ReplyThreadScreenTest {
     @Test
     fun aReplyToOneMessageShowsItAsARow() {
         open(ComposeRequest.Reply(original, all = false), 1)
-        compose.onNodeWithText("11 Oct").assertExists()
+        compose.onNodeWithText("Oct 11").assertExists()
         compose.onNode(hasContentDescription("Send, to Grace Hopper") and hasClickAction()).assertIsEnabled()
         compose.screenshot("compose/reply_thread_one")
     }
@@ -132,7 +132,7 @@ class ReplyThreadScreenTest {
     fun aLongThreadFoldsIntoOneRowAndALongToLineIntoMore() {
         open(ComposeRequest.Reply(original, all = true), 5)
         compose.onNodeWithText("5 earlier messages").assertExists()
-        compose.onNodeWithText("Latest: Grace Hopper, 11 Oct").assertExists()
+        compose.onNodeWithText("Latest: Grace Hopper, Oct 11").assertExists()
         compose.onNodeWithText("+3 more").assertExists()
         compose.screenshot("compose/reply_thread_folded")
         compose.onNodeWithText("+3 more").performClick()

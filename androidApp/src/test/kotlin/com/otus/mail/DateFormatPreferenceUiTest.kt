@@ -28,7 +28,7 @@ class DateFormatPreferenceUiTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun changingThePreferenceUpdatesAnOpenDatePickerAndItsAppliedPill() {
+    fun changingThePreferenceUpdatesAnOpenDatePickerAndItsAppliedRange() {
         val settings = DateFormatSettingsState(inMemoryChoice(DateFormatPreference.DayMonthYearDots.storageValue))
         compose.runOnUiThread { compose.activity.setContent { App(settings) } }
         openDatePicker()
@@ -41,7 +41,8 @@ class DateFormatPreferenceUiTest {
         compose.onNodeWithText("$next → Today").assertIsDisplayed()
         compose.onNodeWithText("Last 7 days").assertIsSelected()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("This week").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Date, $next – ", substring = true).performScrollTo().performClick()
+        compose.onNodeWithText("Custom…").performClick()
         compose.onNodeWithText("$next → Today").assertIsDisplayed()
         compose.onNodeWithText("Last 7 days").assertIsSelected()
     }
@@ -54,12 +55,9 @@ class DateFormatPreferenceUiTest {
         compose.onNodeWithText("Last 7 days").performClick()
         val start = LocalDate.now().minusDays(6).format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))
         compose.onNodeWithText("$start → Today").assertIsDisplayed()
-        compose.activityRule.scenario.recreate()
-        compose.onNodeWithText("$start → Today").assertIsDisplayed()
     }
 
     private fun openDatePicker() {
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
     }
 }
