@@ -14,6 +14,7 @@ import com.otus.mail.feature.folders.presentation.components.FolderActions
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
 import com.otus.mail.feature.inbox.presentation.components.ReadView
+import com.otus.mail.feature.read.presentation.ReadCategories
 import com.otus.mail.feature.read.presentation.ReadContext
 import com.otus.mail.feature.read.presentation.ReadDisplay
 import com.otus.mail.feature.read.presentation.ReadEdits
@@ -53,11 +54,20 @@ internal class ReadWiring(
         )
     private val files = ReadFiles(services.attachments, services.pickers.savedFiles, services.pickers.printer)
 
-    /** The Read view of messages that [feed] lists, whose folder, when it shows one, is left out of strips. */
+    private val categories =
+        ReadCategories({ behavior.behavior.list.categories }) { address, category ->
+            behavior.updateList { it.copy(categories = it.categories.withSender(address, category)) }
+        }
+
+    /**
+     * The Read view of messages that [feed] lists, whose folder, when it shows one, is left out of
+     * strips. Only a [sorted] list, the Inbox, offers its categories in the ⋯ menu.
+     */
     fun context(
         feed: InboxFeedState,
         person: PersonSheet?,
         own: OwnAddresses,
+        sorted: Boolean,
         onCompose: (ComposeRequest) -> Unit,
     ): ReadContext =
         ReadContext(
@@ -83,6 +93,7 @@ internal class ReadWiring(
                     ReadEdits(edits, feed),
                     person,
                     files,
+                    categories.takeIf { sorted },
                 ),
             effects = effects,
             display =
@@ -96,7 +107,10 @@ internal class ReadWiring(
         )
 }
 
-/** The Read view of [feed]'s rows on [page], whose drafts close back to that page; again when the feed changes. */
+/**
+ * The Read view of [feed]'s rows on [page], whose drafts close back to that page, again when the
+ * feed changes. On a [sorted] page its ⋯ menu offers the categories.
+ */
 @Composable
 internal fun rememberReadView(
     states: MailStates,
@@ -105,10 +119,11 @@ internal fun rememberReadView(
     page: MailPage,
     actions: MessageActions,
     own: OwnAddresses,
+    sorted: Boolean,
 ): ReadView {
     val read =
-        remember(states, feed, own) {
-            states.reading.context(feed, contactSheet(states.contacts.cards, navigation), own) {
+        remember(states, feed, own, sorted) {
+            states.reading.context(feed, contactSheet(states.contacts.cards, navigation), own, sorted) {
                 navigation.go(MailPage.Compose(it, parent = page))
             }
         }

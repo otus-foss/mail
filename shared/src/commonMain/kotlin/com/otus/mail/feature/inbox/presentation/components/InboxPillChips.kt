@@ -1,10 +1,17 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_inbox
+import com.otus.designsystem.resources.symbol_label
+import com.otus.designsystem.resources.symbol_newspaper
+import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.CountBadge
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.panels.components.ContextPanelScope
+import com.otus.mail.core.categories.domain.MailCategory
+import com.otus.mail.core.categories.presentation.label
 import com.otus.mail.core.messages.domain.ReadStatus
 import com.otus.mail.core.messages.presentation.icon
 import com.otus.mail.core.messages.presentation.label
@@ -13,9 +20,12 @@ import com.otus.mail.core.settings.presentation.FolderPillOption
 import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label
+import com.otus.mail.feature.inbox.presentation.CategoryTabs
+import org.jetbrains.compose.resources.DrawableResource
 
 /**
- * The row outside search: the page's active filters first, drawn as the search pills are; pressing
+ * The row outside search: the [categories] pills first, while they are on, then the page's active
+ * filters, drawn as the search pills are; pressing
  * an on/off one removes it, and pressing one with choices opens its filter page. Then the user's
  * pills in their order. A filter pill turns its filter on, which moves it to the front; a folder
  * pill shows its folders' mail, and pressing it again returns to the page's own. The Unread pill
@@ -28,7 +38,9 @@ internal fun ContextPanelScope.InboxRowPills(
     folderPill: InboxPill.FolderPill?,
     onFolder: (InboxPill.FolderPill?) -> Unit,
     unreadCount: Int = 0,
+    categories: CategoryTabs? = null,
 ) {
+    if (categories != null) CategoryPills(categories)
     val unreadBadge = unreadCount.takeIf { it > 0 }?.badgeText()
     filters.active.forEach { facet ->
         item(facet.key) {
@@ -85,6 +97,31 @@ internal fun FolderPillChip(
         Symbol(option.icon)
     }
 }
+
+/**
+ * One pill per shown category, Primary first, the selected one on. A pill with unread mail shows
+ * the count in place of its icon.
+ */
+@Composable
+private fun ContextPanelScope.CategoryPills(tabs: CategoryTabs) {
+    tabs.settings.tabs.forEach { category ->
+        item(category) {
+            val count = tabs.unread[category]?.takeIf { it > 0 }?.badgeText()
+            Chip(category.label, { tabs.press(category) }, selected = category == tabs.selected) {
+                if (count != null) CountBadge(count) else Symbol(category.icon)
+            }
+        }
+    }
+}
+
+private val MailCategory.icon: DrawableResource
+    get() =
+        when (this) {
+            MailCategory.Primary -> Res.drawable.symbol_inbox
+            MailCategory.Transactions -> Res.drawable.symbol_label
+            MailCategory.Notifications -> Res.drawable.symbol_notifications
+            MailCategory.Newsletters -> Res.drawable.symbol_newspaper
+        }
 
 /** Counts above 99 read "99+", so the badge stays small. */
 private fun Int.badgeText(): String = if (this > MAX_BADGE) "$MAX_BADGE+" else toString()

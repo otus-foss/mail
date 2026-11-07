@@ -41,6 +41,7 @@ internal fun InboxPage(
                 states.accounts.accounts.map { MailLocation("", it.name, it.id, it.username) },
                 feed::show,
             ),
+            states.behavior.behavior.list.categories,
         ),
         states,
         dateFormatter,
