@@ -5,6 +5,7 @@ import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailLocation
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,7 +24,7 @@ class EmailDisplayTextTest {
 
     @Test
     fun serverTextReachesTheMessageWithoutHiddenCharacters() {
-        val message = hostile.toMessage("work", "Ada", "Inbox", TimeZone.UTC)
+        val message = hostile.toMessage(MailLocation("Inbox", "Ada", "work"), TimeZone.UTC)
 
         assertEquals("lapyap Support", message.sender.name)
         assertEquals("service@evil.example", message.sender.address)
@@ -38,7 +39,7 @@ class EmailDisplayTextTest {
             hostile
                 .copy(
                     from = listOf(EmailAddress("\u202E\u200F", "grace@example.org")),
-                ).toMessage("work", "Ada", "Inbox", TimeZone.UTC)
+                ).toMessage(MailLocation("Inbox", "Ada", "work"), TimeZone.UTC)
 
         assertEquals("grace@example.org", message.sender.name)
     }

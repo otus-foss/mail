@@ -30,7 +30,10 @@ data class MailFolder(
     val isBin: Boolean
         get() = role?.isBin == true
 
-    /** The name messages and search file it under: the app's for the inbox, which servers translate, else the server's. */
+    /**
+     * The name messages and search file it under: the app's for the inbox, which servers translate,
+     * else the server's.
+     */
     val mailboxName: String
         get() = if (role == MailboxRole.Inbox) role.title else name
 }

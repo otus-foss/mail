@@ -10,6 +10,7 @@ import com.otus.mail.core.messages.data.mergedByThread
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.data.toMessage
 import com.otus.mail.core.messages.domain.MailConversation
+import com.otus.mail.core.messages.domain.MailLocation
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -65,7 +66,7 @@ class ConversationRepliesTest {
         mailbox: String = "inbox",
     ): MailConversation =
         row
-            .toMessage("ada", "Ada", mailbox, TimeZone.UTC, "ada@example.org", mailbox)
+            .toMessage(MailLocation(mailbox, "Ada", "ada", "ada@example.org", mailboxId = mailbox), TimeZone.UTC)
             .inConversation(row, thread, mailbox, view, TimeZone.UTC)
             .conversation!!
 
@@ -155,11 +156,11 @@ class ConversationRepliesTest {
         val followUp = email("e3", 3, "inbox")
         val fromInbox =
             followUp
-                .toMessage("ada", "Ada", "inbox", TimeZone.UTC, "ada@example.org", "inbox")
+                .toMessage(MailLocation("inbox", "Ada", "ada", "ada@example.org", mailboxId = "inbox"), TimeZone.UTC)
                 .inConversation(followUp, listOf(question, answer, followUp), "inbox", view, TimeZone.UTC)
         val fromSent =
             answer
-                .toMessage("ada", "Ada", "sent", TimeZone.UTC, "ada@example.org", "sent")
+                .toMessage(MailLocation("sent", "Ada", "ada", "ada@example.org", mailboxId = "sent"), TimeZone.UTC)
                 .inConversation(answer, listOf(question, answer, followUp), "sent", view, TimeZone.UTC)
         val merged = listOf(fromSent, fromInbox).mergedByThread().single().conversation!!
         assertFalse(merged.awaitingReply)
@@ -177,11 +178,11 @@ class ConversationRepliesTest {
             }
         val fromInbox =
             inboxRow
-                .toMessage("ada", "Ada", "inbox", TimeZone.UTC, "ada@example.org", "inbox")
+                .toMessage(MailLocation("inbox", "Ada", "ada", "ada@example.org", mailboxId = "inbox"), TimeZone.UTC)
                 .inConversation(inboxRow, listOf(inboxRow), "inbox", view, TimeZone.UTC)
         val fromLabel =
             labelRow
-                .toMessage("ada", "Ada", "label", TimeZone.UTC, "ada@example.org", "label")
+                .toMessage(MailLocation("label", "Ada", "ada", "ada@example.org", mailboxId = "label"), TimeZone.UTC)
                 .inConversation(labelRow, listOf(labelRow, mine), "label", view, TimeZone.UTC)
         val merged = listOf(fromInbox, fromLabel).mergedByThread().single().conversation!!
         assertEquals(fromLabel.conversation!!.last, merged.last, "The newer last email wins over the newer row")

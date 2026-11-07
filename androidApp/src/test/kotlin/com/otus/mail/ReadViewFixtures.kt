@@ -188,7 +188,6 @@ internal object ReadViewFixtures {
                 known = KnownPeople { team.map { EmailAddressKey(it.address) }.toSet() },
                 allowSender = {},
             )
-        files = ReadFiles(downloads = PhotoAttachments(::photo), saved = null, printer = MessagePrinter { _, _ -> })
         services =
             ReadServices(
                 newsletters = FakeNewsletters(unsubscribed),
@@ -196,6 +195,7 @@ internal object ReadViewFixtures {
                 blocks = SenderBlocks { true },
                 edits = edits(writer, toasts),
                 person = null,
+                files = photoFiles(),
             )
         effects = ReadEffects(toasts, launch, NewsletterSteps())
         display =
@@ -204,6 +204,10 @@ internal object ReadViewFixtures {
         loadContent = { content(it) }
         block()
     }
+
+    /** Attachments that download as [photo], and a printer that prints nothing. */
+    private fun photoFiles() =
+        ReadFiles(downloads = PhotoAttachments(::photo), saved = null, printer = MessagePrinter { _, _ -> })
 
     /** Edits that [writer] saves, run on the main thread like the app's, with their toasts in [toasts]. */
     private fun edits(

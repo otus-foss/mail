@@ -14,7 +14,7 @@ internal fun emailWriter(
     connections: JmapConnections,
     cache: MailCache = InMemoryMailCache(),
     queue: EmailChangeQueue = EmailChangeQueue(connections, cache, store = null),
-): JmapEmailWriter = JmapEmailWriter(connections, cache, queue, Mailboxes(cache))
+): JmapEmailWriter = JmapEmailWriter(connections, cache, queue)
 
 /** Saving and sending over [connections], as the app builds them, with one cache for folders and marks. */
 internal fun composeMail(

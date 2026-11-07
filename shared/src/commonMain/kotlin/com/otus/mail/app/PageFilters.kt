@@ -76,7 +76,10 @@ internal fun rememberPageFilters(
     return filters
 }
 
-/** The filter choices of a page [base] names, built again when folders, accounts, colors, pins, or [applied] filters change. */
+/**
+ * The filter choices of a page [base] names, built again when folders, accounts, colors, pins, or
+ * [applied] filters change.
+ */
 @Composable
 internal fun rememberFilterOptions(
     states: MailStates,

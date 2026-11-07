@@ -177,13 +177,9 @@ class JmapMailSource(
         zone: TimeZone,
         siteOf: suspend (JmapLogin) -> String,
     ): List<ListingPage<ListedRow>> {
-        val conditions = emailConditions(query, login.id, now, zone) ?: return emptyList()
-        val check = localCheck(query, login.id, now, zone)
         val folders = mailboxes.cached(login.id)
         val site = siteOf(login)
-        return cache.withAccount(login.id) { kept ->
-            kept.cachedPages(login, folders, scope, query, conditions, zone, site, check)
-        }
+        return cache.withAccount(login.id) { kept -> kept.cachedPages(login, folders, scope, query, now, zone, site) }
     }
 
     private companion object {

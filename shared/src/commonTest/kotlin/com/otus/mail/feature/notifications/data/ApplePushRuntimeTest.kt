@@ -1,5 +1,6 @@
 package com.otus.mail.feature.notifications.data
 
+import com.otus.mail.app.MailPlatform
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,7 @@ class ApplePushRuntimeTest {
                 val jmap = fakePushServer()
                 val runtime =
                     ApplePushRuntime(host, "https://push.example", { push ->
-                        MailServices(logins, instantPush = push, createClient = { jmap })
+                        MailServices(logins, host = MailPlatform(instantPush = push), createClient = { jmap })
                     }, http)
                 runtime.use(runtime.distributors().single())
                 assertEquals(PushDeliveryStatus.Active, runtime.statuses()["ada"])

@@ -112,27 +112,6 @@ class FileDownloadFolder(
     }
 }
 
-/** Prepares [root] before the first file goes in, such as with the platform's file protection. */
-internal expect fun prepareDownloadRoot(root: Path)
-
-/** When [file] was last written or marked used, from its modification time. */
-internal expect fun modifiedAtMillis(file: Path): Long
-
-/** Sets [file]'s modification time to now, which records it as used. */
-internal expect fun markUsed(file: Path)
-
-/** Moves [source] over [destination] in the same folder. */
-internal expect fun moveFile(
-    source: Path,
-    destination: Path,
-)
-
-/** Runs [block], turning each error that means the disk failed into [failure]. */
-internal expect suspend fun <T> reportingDiskFailures(
-    failure: (Exception) -> Exception,
-    block: suspend () -> T,
-): T
-
 /** The finished file in [folder]: the one whose name does not start with a dot. */
 private fun contentOf(folder: Path): Path? =
     if (!SystemFileSystem.exists(folder)) {

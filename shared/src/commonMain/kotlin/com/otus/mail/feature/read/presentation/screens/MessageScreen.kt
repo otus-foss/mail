@@ -95,7 +95,7 @@ fun MessageScreen(
     val edits = read.services.edits
     LaunchedEffect(message.id) {
         val checkpoint = edits?.checkpoint()
-        val found = read.pages.messages(message)
+        val found = read.loads.pages.messages(message)
         state.showPages(found, checkpoint?.let(edits::since).orEmpty())?.let { pager.scrollToPage(it) }
     }
     LaunchedEffect(message.id) { state.muted = edits?.isMuted(message) }
@@ -113,7 +113,7 @@ fun MessageScreen(
     val page = state.pages[index].withContent(parts.content(state.pages[index]))
     SideEffect { state.shownId = page.id }
     val look = rememberPageLook(parts)
-    val readActions = rememberReadActions(message, page, read.own, actions, moveChoice, read.onCompose)
+    val readActions = rememberReadActions(message, page, read.replies.own, actions, moveChoice, read.replies.onCompose)
     val confirmation = rememberConfirmation()
     val menu =
         rememberReadMenu(parts, look, readActions, page, index) { action ->
@@ -137,7 +137,7 @@ fun MessageScreen(
         }
         // Over the bar too, which dims with the page while the grown list sits above it.
         if (!read.display.zen()) {
-            ReadThreadOverlay(state, index, source, read.own, barPadding, folds.thread) {
+            ReadThreadOverlay(state, index, source, read.replies.own, barPadding, folds.thread) {
                 scope.launch { pager.animateScrollToPage(it, animationSpec = turn) }
             }
         }
@@ -196,7 +196,7 @@ private fun ReadLayout(
             state,
             layout.pager,
             layout.look,
-            read.loadContent,
+            read.loads.content,
             Modifier.fillMaxSize().then(swipe).hiddenWhen(covered),
             PaddingValues(top = headerHeight.value, bottom = bottomInset),
         )

@@ -65,9 +65,9 @@ class JmapNewsletters(
         emailIds: List<String>,
     ): Boolean {
         if (emailIds.isEmpty()) return true
-        val archived =
-            jmapCallOr(null) { connections.mailAccount(accountId)?.archived(emailIds) } ?: return false
-        return archived.isEmpty() || writer.setMailboxes(accountId, archived).containsAll(archived.keys)
+        val archived = jmapCallOr(null) { connections.mailAccount(accountId)?.archived(emailIds) }
+        return archived != null &&
+            (archived.isEmpty() || writer.setMailboxes(accountId, archived).containsAll(archived.keys))
     }
 
     private suspend fun MailAccount.list(message: MailMessage): MailingList? {

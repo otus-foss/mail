@@ -30,7 +30,8 @@ internal class ReadStripActions(
 ) {
     private val toasts get() = read.effects.toasts
     private val newsletters get() = read.effects.newsletters
-    private val transfers = AttachmentTransfers(read.files.downloads, read.files.saved, toasts, read.effects.launch)
+    private val transfers =
+        AttachmentTransfers(read.services.files.downloads, read.services.files.saved, toasts, read.effects.launch)
 
     /** Opening, saving, and saving every one of [files] of [message]. */
     fun files(

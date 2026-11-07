@@ -8,6 +8,7 @@ import com.otus.mail.feature.folders.presentation.FolderColorsState
 import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.KnownAddress
+import com.otus.mail.feature.folders.presentation.account
 
 /**
  * Everything the folder popups can ask for. Folder changes go to the server. [color] offers a

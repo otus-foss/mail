@@ -44,26 +44,10 @@ internal class MessageFiling(
         copies: LabeledCopies = LabeledCopies(),
     ): List<MailMessage> {
         val trees by lazy { folders.accounts.associate { it.accountId to it.folderTree() } }
-        val labeled = messages.map { message -> copies.of(message) ?: message.labeled(trees) }
+        val labeled = messages.map { message -> copies.of(message) ?: message.labeled(trees, colors::colorOf) }
         copies.keep(messages, labeled)
         return labeled
     }
-
-    private fun MailMessage.labeled(trees: Map<String, List<FolderNode>>): MailMessage =
-        copy(
-            labels =
-                trees[location.accountId]
-                    ?.labelFolders(location.mailboxIds, location.mailboxId)
-                    ?.map {
-                        RowFolder(
-                            it.folder.id,
-                            it.folder.name,
-                            if (it.folder.role == MailboxRole.Inbox) FolderKind.Inbox else FolderKind.Folder,
-                            colors.colorOf(it.folder),
-                            it.readLater,
-                        )
-                    }.orEmpty(),
-        )
 
     /**
      * Folders of the message's account that accept mail, except the one it is in. The user's own
@@ -177,6 +161,26 @@ internal class MessageFiling(
         }
     }
 }
+
+/** The message with labels for the folders it is in besides the one shown, in [colorOf]'s colors. */
+private fun MailMessage.labeled(
+    trees: Map<String, List<FolderNode>>,
+    colorOf: (MailFolder) -> String?,
+): MailMessage =
+    copy(
+        labels =
+            trees[location.accountId]
+                ?.labelFolders(location.mailboxIds, location.mailboxId)
+                ?.map {
+                    RowFolder(
+                        it.folder.id,
+                        it.folder.name,
+                        if (it.folder.role == MailboxRole.Inbox) FolderKind.Inbox else FolderKind.Folder,
+                        colorOf(it.folder),
+                        it.readLater,
+                    )
+                }.orEmpty(),
+    )
 
 /** Rights of the folder the message is shown in. Unknown folders allow everything; the server decides. */
 internal fun FoldersState.rightsOf(message: MailMessage): FolderRights =

@@ -28,14 +28,12 @@ import kotlinx.serialization.json.put
  * which shows each one in [cache] and keeps it until the server has it. Marks set or clear one
  * keyword; a cleared keyword is removed, because keyword values must be true. Moves name only the
  * mailboxes that change, so a message keeps any other mailbox it is in. Deleting for good goes
- * straight to the server; see [EmailRemoval]. By-id changes find the account's folder by role
- * among the server's folders now, or the kept ones offline.
+ * straight to the server; see [EmailRemoval].
  */
 class JmapEmailWriter(
-    private val connections: JmapConnections,
+    connections: JmapConnections,
     cache: MailCache,
     private val queue: EmailChangeQueue,
-    private val mailboxes: Mailboxes,
 ) : EmailWriter {
     private val removal = EmailRemoval(connections, cache)
     private val muting = ConversationMuting(connections, cache)
@@ -136,79 +134,6 @@ class JmapEmailWriter(
         val patch = keywordPatch(Keywords.MUTED, muted)
         return queue.update(message.location.accountId, ids.associateWith { patch }).containsAll(ids)
     }
-
-    override suspend fun markRead(
-        loginId: String,
-        emailId: String,
-    ): Boolean = updateOne(loginId, emailId, keywordPatch(Keywords.SEEN, true))
-
-    override suspend fun flag(
-        loginId: String,
-        emailId: String,
-    ): Boolean = updateOne(loginId, emailId, keywordPatch(Keywords.FLAGGED, true))
-
-    /** Takes the email out of the Inbox and into Archive; any other mailbox, such as Read later, stays. */
-    override suspend fun archive(
-        loginId: String,
-        emailId: String,
-    ): Boolean {
-        val folders = folders(loginId)
-        val archive = folders.withRole(MailboxRole.Archive) ?: return false
-        val inboxes = folders.filter { it.role == MailboxRole.Inbox }.map { it.id }
-        return updateOne(loginId, emailId, movePatch(inboxes, archive.id))
-    }
-
-    override suspend fun trash(
-        loginId: String,
-        emailId: String,
-    ): Boolean = discard(loginId, emailId, MailboxRole.Trash)
-
-    override suspend fun reportSpam(
-        loginId: String,
-        emailId: String,
-    ): Boolean = discard(loginId, emailId, MailboxRole.Junk)
-
-    /**
-     * Puts the email in the account's mailbox with [role] alone, as the list's Delete and Spam do:
-     * it leaves every other mailbox, Read later included.
-     */
-    private suspend fun discard(
-        loginId: String,
-        emailId: String,
-        role: MailboxRole,
-    ): Boolean {
-        val bin = folders(loginId).withRole(role) ?: return false
-        return updateOne(loginId, emailId, buildJsonObject { put("mailboxIds", buildJsonObject { put(bin.id, true) }) })
-    }
-
-    private suspend fun updateOne(
-        loginId: String,
-        emailId: String,
-        patch: JsonObject,
-    ): Boolean = emailId in queue.update(loginId, mapOf(emailId to patch))
-
-    private fun List<MailFolder>.withRole(role: MailboxRole): MailFolder? = firstOrNull { it.role == role }
-
-    /**
-     * The login's folders on the server now, since another client may have added or re-roled one
-     * since the last sync; the kept ones when the server cannot be reached, so the change still
-     * waits in the queue. None when the login is gone, or neither the server nor the device can say.
-     */
-    private suspend fun folders(loginId: String): List<MailFolder> =
-        try {
-            val account = connections.mailAccount(loginId) ?: return emptyList()
-            try {
-                mailboxes.sync(account)
-            } catch (expected: JmapException) {
-                mailboxes.cached(loginId)
-            }
-        } catch (expected: JmapException) {
-            emptyList()
-        } catch (expected: LoginStoreException) {
-            emptyList()
-        } catch (expected: CacheStorageException) {
-            emptyList()
-        }
 }
 
 internal val MessageFlag.keyword: String

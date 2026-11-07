@@ -17,7 +17,9 @@ import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.core.messages.presentation.ReadLaterChange
 import com.otus.mail.core.messages.presentation.actions.ActionSubject
 import com.otus.mail.core.messages.presentation.actions.MailBar
+import com.otus.mail.core.messages.presentation.actions.MoveOptions
 import com.otus.mail.core.messages.presentation.actions.OfferedAction
+import com.otus.mail.core.messages.presentation.actions.PageSubject
 import com.otus.mail.core.messages.presentation.actions.barFor
 import com.otus.mail.core.messages.presentation.actions.offer
 import com.otus.mail.core.settings.domain.ActionBehavior
@@ -121,10 +123,8 @@ class ActionReachTest {
     ) = ActionSubject(
         actions(role),
         messages,
-        suggestion = folders.last(),
-        page = page,
-        role = role,
-        onCompose = {},
+        moves = MoveOptions(suggestion = folders.last()),
+        page = page?.let { PageSubject(it, role) {} },
     )
 
     private fun actions(role: MailboxRole) =

@@ -53,7 +53,6 @@ class OtusMailApplication :
             AndroidLoginStore(this, preferencesName = "otus_accounts", keyAlias = "otus.account.credentials"),
             avatarStore = FileAvatarStore(File(cacheDir, "avatars-v1").absolutePath),
             stores = stores,
-            instantPush = instantPush,
             pickers =
                 MailPickers(
                     AndroidSignatureImages(photoPicker),
@@ -67,6 +66,7 @@ class OtusMailApplication :
                     NightlyUpdates(installer = AndroidUpdateInstaller(this)),
                     DevicePrivacy(screen = true, keyboard = true),
                     wakeOutbox = { OutboxWorker.wake(this, it) },
+                    instantPush = instantPush,
                 ),
         )
     }

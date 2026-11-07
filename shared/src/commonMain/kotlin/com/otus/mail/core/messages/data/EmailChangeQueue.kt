@@ -122,14 +122,15 @@ class EmailChangeQueue(
                     null
                 }
             if (account == null) {
-                write(loginId, emptyMap())
-                return waiting.keys
-            }
-            waiting.entries.chunked(account.session.setBatch).forEach { batch ->
-                val (answered, notTaken) = account.sendBatch(batch.associate { it.toPair() })
-                limited = limited || answered.size < batch.size
-                left = left - answered
-                refused = refused + notTaken
+                left = emptyMap()
+                refused = waiting.keys
+            } else {
+                waiting.entries.chunked(account.session.setBatch).forEach { batch ->
+                    val (answered, notTaken) = account.sendBatch(batch.associate { it.toPair() })
+                    limited = limited || answered.size < batch.size
+                    left = left - answered
+                    refused = refused + notTaken
+                }
             }
         } catch (error: JmapException) {
             // What is left goes with the next sync or background run. Only being offline or a server

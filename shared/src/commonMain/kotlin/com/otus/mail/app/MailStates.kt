@@ -46,7 +46,7 @@ internal class MailStates(
 
     val folders: FolderStates = FolderStates(services, scope, behavior, edits)
 
-    val list: ListStates = ListStates(services, scope, behavior, edits, folders, dates, ::avatarOptions) { mailScope }
+    val list: ListStates = ListStates(services, scope, behavior, edits, folders, dates) { mailScope }
 
     val contacts =
         ContactStates(
@@ -66,7 +66,7 @@ internal class MailStates(
 
     /** The avatars of the user's own addresses; a change redraws the mail that shows them. */
     val ownAvatars =
-        OwnAvatarsState(services.ownAvatars(::avatarOptions), services.pickers.avatarPhotos, scope) {
+        OwnAvatarsState(services.ownAvatars(behavior::avatarOptions), services.pickers.avatarPhotos, scope) {
             list.refreshAll()
         }
 
@@ -81,7 +81,7 @@ internal class MailStates(
     /** Null where the platform has no instant pushes, which hides the Notifications page. */
     val notifications =
         services.instantPush?.let {
-            NotificationSettingsState(it, scope, services.stores.notificationPreviews) { accounts.accounts }
+            NotificationSettingsState(it, scope, services.stores.alerts.previews) { accounts.accounts }
         }
 
     val compose = ComposeStates(services, scope, behavior, accounts, ownAvatars, dates)
@@ -100,9 +100,9 @@ internal class MailStates(
             folderActions(folders.all, folders.colors, folders.rules) { knownAddresses(it) },
         )
 
-    /** Avatars load from outside the user's servers only while Website icons is on. */
-    internal fun avatarOptions(): AvatarOptions =
-        behavior.behavior.avatars.let { avatarOptions(it.websiteIcons, it.iconSource, it.bulwarkAddress) }
-
     suspend fun messageContent(message: MailMessage): MessageContent? = services.bodies.content(message)
 }
+
+/** Avatars load from outside the user's servers only while Website icons is on. */
+internal fun MailBehaviorState.avatarOptions(): AvatarOptions =
+    behavior.avatars.let { avatarOptions(it.websiteIcons, it.iconSource, it.bulwarkAddress) }

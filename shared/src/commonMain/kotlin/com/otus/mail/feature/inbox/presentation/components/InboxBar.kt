@@ -32,8 +32,8 @@ internal fun InboxBar(
 ) {
     val matching = state.matching
     val results = remember(messages, matching, filters) { searchMessages(messages, matching, filters) }
-    val list = ListSubject(results, matching.accounts.singleOrNull(), state::startSearch, onFilters)
-    val subject = ActionSubject(actions, list = list, onCompose = onCompose)
+    val list = ListSubject(results, matching.accounts.singleOrNull(), state::startSearch, onFilters, onCompose)
+    val subject = ActionSubject(actions, list = list)
     MailActionBar(
         actions.saved().barFor(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke(), subject::offer),
         onAction = { it.run() },

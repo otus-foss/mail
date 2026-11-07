@@ -40,8 +40,6 @@ class FoldersState(
         private set
     private val loads = LatestLoad(scope)
 
-    fun account(accountId: String): AccountFolders? = accounts.firstOrNull { it.accountId == accountId }
-
     /**
      * Whether the folders of [accountId], or of every account without one, have loaded without
      * failing, so a folder they lack is gone. An account that failed may still hold it.
@@ -168,3 +166,6 @@ fun FoldersState.placement(
     parentId: String?,
     index: Int = Int.MAX_VALUE,
 ): FolderPlacement? = account(folder.accountId)?.scopeOf(folder)?.placement(folder, parentId, index)
+
+/** The loaded folders of [accountId]; null before they load or for an unknown account. */
+fun FoldersState.account(accountId: String): AccountFolders? = accounts.firstOrNull { it.accountId == accountId }

@@ -1,18 +1,12 @@
 package com.otus.mail.feature.notifications.presentation
 
 import com.otus.mail.core.mailbox.MailboxRole
-import com.otus.mail.core.messages.domain.EmailWriter
+import com.otus.mail.core.messages.domain.EmailByIdWriter
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.presentation.actions.buttonLabel
 import com.otus.mail.core.messages.presentation.actions.offer
 import com.otus.mail.core.settings.domain.NOTIFICATION_ACTION_LIMIT
 import com.otus.mail.core.settings.domain.NotificationActionChoices
-
-/** What one account lets an alert's buttons do: the roles of its mailboxes, and whether it can send mail. */
-data class AlertAccount(
-    val mailboxRoles: Set<MailboxRole>,
-    val canSend: Boolean,
-)
 
 /**
  * The buttons an alert about mail of [account] shows: the chosen ones the account can run, in the
@@ -33,7 +27,7 @@ val MailAction.opensMailFromAlert: Boolean
  * Runs the button [action] of an alert on the email [emailId] of the login [loginId], with no list
  * row to act on; false when the message did not change.
  */
-suspend fun EmailWriter.runAlertButton(
+suspend fun EmailByIdWriter.runAlertButton(
     action: MailAction,
     loginId: String,
     emailId: String,
@@ -57,7 +51,7 @@ private fun AlertAccount.allows(action: MailAction): Boolean =
 private sealed interface AlertRun {
     class Change(
         val needs: MailboxRole?,
-        val change: suspend (EmailWriter, String, String) -> Boolean,
+        val change: suspend (EmailByIdWriter, String, String) -> Boolean,
     ) : AlertRun
 
     data object OpensReply : AlertRun
@@ -66,15 +60,15 @@ private sealed interface AlertRun {
 /** How an alert's button for this action runs; null for actions alerts never offer. */
 private fun MailAction.alertRun(): AlertRun? =
     when (this) {
-        MailAction.Trash -> AlertRun.Change(MailboxRole.Trash, EmailWriter::trash)
+        MailAction.Trash -> AlertRun.Change(MailboxRole.Trash, EmailByIdWriter::trash)
 
-        MailAction.Archive -> AlertRun.Change(MailboxRole.Archive, EmailWriter::archive)
+        MailAction.Archive -> AlertRun.Change(MailboxRole.Archive, EmailByIdWriter::archive)
 
-        MailAction.Spam -> AlertRun.Change(MailboxRole.Junk, EmailWriter::reportSpam)
+        MailAction.Spam -> AlertRun.Change(MailboxRole.Junk, EmailByIdWriter::reportSpam)
 
-        MailAction.Read -> AlertRun.Change(needs = null, EmailWriter::markRead)
+        MailAction.Read -> AlertRun.Change(needs = null, EmailByIdWriter::markRead)
 
-        MailAction.Flag -> AlertRun.Change(needs = null, EmailWriter::flag)
+        MailAction.Flag -> AlertRun.Change(needs = null, EmailByIdWriter::flag)
 
         MailAction.Reply -> AlertRun.OpensReply
 

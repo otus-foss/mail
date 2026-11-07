@@ -100,13 +100,13 @@ class MailEdits(
         }
     }
 
-    /** Shows the outcome of a move's Undo, which may outlive the screen that offered it. */
+    /**
+     * Shows the outcome of an Undo, which may outlive the screen that offered it: a done one
+     * reloads the screen shown by then, a failed one says so.
+     */
     internal fun undone(done: Boolean) {
         if (done) afterUndo() else toasts.failedUndo()
     }
-
-    /** Reloads the screen on show after work that outlived the screen that started it changed mail. */
-    internal fun reloadAfterUndo() = afterUndo()
 
     private class SavedEdit(
         val edit: MailEdit,

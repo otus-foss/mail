@@ -17,32 +17,43 @@ import org.jetbrains.compose.resources.DrawableResource
 /**
  * What the actions of one place work on. [messages] are the rows a swipe, the selection, or the
  * Read view acts on; empty on a list with nothing selected. [marks] set read and flag marks, the
- * list's own unless a place marks something else, such as one page of a conversation. [page] is
- * the open message replies answer, in a folder of [role]. [list] and [draft] are the list on screen
- * and the draft being written, for the places that show them. Drafts start through [onCompose].
+ * list's own unless a place marks something else, such as one page of a conversation. [moves]
+ * picks a folder and suggests one. [page], [list], and [draft] are the open message, the list on
+ * screen, and the draft being written, for the places that show them.
  */
 internal class ActionSubject(
     val actions: MessageActions?,
     val messages: List<MailMessage> = emptyList(),
     val marks: MessageMarks? = actions?.marks,
-    val chooseFolder: ChooseFolder = { _, _ -> },
-    val suggestion: MoveTarget? = null,
-    val page: MailMessage? = null,
-    val role: MailboxRole? = null,
+    val moves: MoveOptions = MoveOptions(),
+    val page: PageSubject? = null,
     val list: ListSubject? = null,
     val draft: DraftSubject? = null,
-    val onCompose: ((ComposeRequest) -> Unit)? = null,
+)
+
+/** How Move picks a folder, through [choose], and where Suggested move goes, the [suggestion]. */
+internal class MoveOptions(
+    val choose: ChooseFolder = { _, _ -> },
+    val suggestion: MoveTarget? = null,
+)
+
+/** The open [message] replies answer, in a folder of [role]; drafts start through [onCompose]. */
+internal class PageSubject(
+    val message: MailMessage,
+    val role: MailboxRole?,
+    val onCompose: (ComposeRequest) -> Unit,
 )
 
 /**
  * The message list with nothing selected: Mark all read marks the unread [results] on screen, and
- * New mail sends from [accountId] when the list shows one account.
+ * New mail starts through [onCompose] from [accountId] when the list shows one account.
  */
 internal class ListSubject(
     val results: List<MailMessage>,
     val accountId: String?,
     val onSearch: () -> Unit,
     val onFilters: () -> Unit,
+    val onCompose: (ComposeRequest) -> Unit = {},
 )
 
 /** The draft being written: Send and Attach stay unavailable while theirs are null. */
@@ -55,51 +66,154 @@ internal class DraftSubject(
 
 /**
  * [button] as it applies here; null when nothing here can take it. Moving needs one account,
- * because folders belong to an account. Suggested move goes to [ActionSubject.suggestion], when
- * there is one. All actions is the bar's own menu, so it is never offered.
+ * because folders belong to an account. Suggested move goes to [MoveOptions.suggestion], when
+ * there is one. All actions is the bar's own menu, so it is never offered. Every action is named
+ * once here, by what it acts on.
  */
 internal fun ActionSubject.offer(button: BarButton): OfferedAction? =
     when (button) {
         is BarButton.MoveTo -> actions?.offerMoveTo(messages, button)
-        MailAction.Read -> marks?.offer(messages, MessageFlag.Read)
-        MailAction.Flag -> marks?.offer(messages, MessageFlag.Flagged)
-        MailAction.ReadLater -> actions?.offerReadLater(messages)
-        MailAction.Archive -> actions?.offerFiling(messages, MailboxRole.Archive, button)
-        MailAction.Trash -> actions?.offerFiling(messages, MailboxRole.Trash, button)
-        MailAction.Spam -> actions?.offerFiling(messages, MailboxRole.Junk, button)
-        MailAction.NotSpam -> actions?.offerNotSpam(messages)
-        MailAction.Restore -> actions?.offerRestore(messages)
-        MailAction.DeleteForever -> actions?.offerDeleteForever(messages)
-        MailAction.Move -> actions?.offerMove(messages, chooseFolder)
-        MailAction.SuggestedMove -> suggestion?.let { actions?.offerFolder(messages, it) }
-        MailAction.RuleForSender -> actions?.offerRule(messages)
-        MailAction.Reply -> page?.let { compose(button, ComposeRequest.Reply(it.original(), all = false)) }
-        MailAction.ReplyAll -> page?.let { compose(button, ComposeRequest.Reply(it.original(), all = true)) }
-        MailAction.Forward -> page?.let { compose(button, ComposeRequest.Forward(it.original())) }
-        MailAction.FollowUp -> page?.takeIf { role == MailboxRole.Sent }?.let { compose(button, followUp(it)) }
-        MailAction.NewMail -> newMail(button)
-        MailAction.Search -> list?.let { plainOffer(button, it.onSearch) }
-        MailAction.Filters -> list?.let { plainOffer(button, it.onFilters) }
-        MailAction.MarkAllRead -> list?.let(::offerMarkAllRead)
-        MailAction.EmptyFolder -> list?.let { actions?.offerEmpty() }
-        MailAction.Send -> draft?.onSend?.let { draftOffer(button, it, sendSymbol(draft.scheduled)) }
-        MailAction.Attach -> draft?.onAttach?.let { draftOffer(button, it) }
-        MailAction.Discard -> draft?.let { draftOffer(button, it.onDiscard) }
-        MailAction.AllActions -> null
+        is MailAction -> offer(button)
     }
 
-private fun followUp(page: MailMessage) = ComposeRequest.FollowUp(page.original())
+private fun ActionSubject.offer(action: MailAction): OfferedAction? =
+    when (action) {
+        MailAction.Read, MailAction.Flag, MailAction.ReadLater, MailAction.Archive, MailAction.Trash,
+        MailAction.Spam, MailAction.NotSpam, MailAction.Restore, MailAction.DeleteForever, MailAction.Move,
+        MailAction.SuggestedMove, MailAction.RuleForSender,
+        -> {
+            offerOnMessages(action)
+        }
 
-private fun ActionSubject.compose(
-    button: BarButton,
-    request: ComposeRequest,
-): OfferedAction? = onCompose?.let { plainOffer(button) { it(request) } }
+        MailAction.Reply, MailAction.ReplyAll, MailAction.Forward, MailAction.FollowUp -> {
+            page?.offer(action)
+        }
+
+        MailAction.NewMail -> {
+            newMail(action)
+        }
+
+        MailAction.Search, MailAction.Filters, MailAction.MarkAllRead, MailAction.EmptyFolder -> {
+            list?.let { offerOnList(it, action) }
+        }
+
+        MailAction.Send, MailAction.Attach, MailAction.Discard -> {
+            draft?.offer(action)
+        }
+
+        MailAction.AllActions -> {
+            null
+        }
+    }
+
+/** The actions on [ActionSubject.messages], which [offer] routes here. */
+private fun ActionSubject.offerOnMessages(action: MailAction): OfferedAction? =
+    when (action) {
+        MailAction.Read -> {
+            marks?.offer(messages, MessageFlag.Read)
+        }
+
+        MailAction.Flag -> {
+            marks?.offer(messages, MessageFlag.Flagged)
+        }
+
+        MailAction.ReadLater -> {
+            actions?.offerReadLater(messages)
+        }
+
+        MailAction.Archive, MailAction.Trash, MailAction.Spam -> {
+            actions?.offerFiling(messages, filingRole(action), action)
+        }
+
+        MailAction.NotSpam -> {
+            actions?.offerNotSpam(messages)
+        }
+
+        MailAction.Restore -> {
+            actions?.offerRestore(messages)
+        }
+
+        MailAction.DeleteForever -> {
+            actions?.offerDeleteForever(messages)
+        }
+
+        MailAction.Move -> {
+            actions?.offerMove(messages, moves.choose)
+        }
+
+        MailAction.SuggestedMove -> {
+            moves.suggestion?.let { actions?.offerFolder(messages, it) }
+        }
+
+        MailAction.RuleForSender -> {
+            actions?.offerRule(messages)
+        }
+
+        else -> {
+            null
+        }
+    }
+
+/** The folder Archive, Trash, and Spam file into. */
+private fun filingRole(action: MailAction): MailboxRole =
+    when (action) {
+        MailAction.Trash -> MailboxRole.Trash
+        MailAction.Spam -> MailboxRole.Junk
+        else -> MailboxRole.Archive
+    }
+
+/** Replies and forwards of the open page, which [offer] routes here. */
+private fun PageSubject.offer(action: MailAction): OfferedAction? {
+    val request =
+        when (action) {
+            MailAction.Reply -> ComposeRequest.Reply(message.original(), all = false)
+            MailAction.ReplyAll -> ComposeRequest.Reply(message.original(), all = true)
+            MailAction.Forward -> ComposeRequest.Forward(message.original())
+            MailAction.FollowUp -> ComposeRequest.FollowUp(message.original()).takeIf { role == MailboxRole.Sent }
+            else -> null
+        }
+    return request?.let { plainOffer(action) { onCompose(it) } }
+}
+
+/** The list's own actions, which [offer] routes here. */
+private fun ActionSubject.offerOnList(
+    list: ListSubject,
+    action: MailAction,
+): OfferedAction? =
+    when (action) {
+        MailAction.Search -> plainOffer(action, list.onSearch)
+        MailAction.Filters -> plainOffer(action, list.onFilters)
+        MailAction.MarkAllRead -> offerMarkAllRead(list)
+        MailAction.EmptyFolder -> actions?.offerEmpty()
+        else -> null
+    }
+
+/** The draft's actions, which [offer] routes here. */
+private fun DraftSubject.offer(action: MailAction): OfferedAction? =
+    when (action) {
+        MailAction.Send -> {
+            val symbol = if (scheduled) Res.drawable.symbol_schedule_send else action.symbol
+            onSend?.let { draftOffer(action, it, symbol) }
+        }
+
+        MailAction.Attach -> {
+            onAttach?.let { draftOffer(action, it) }
+        }
+
+        MailAction.Discard -> {
+            draftOffer(action, onDiscard)
+        }
+
+        else -> {
+            null
+        }
+    }
 
 /** New mail from the open message's account, or the list's; a list of all accounts lets compose pick. */
 private fun ActionSubject.newMail(button: BarButton): OfferedAction? =
     when {
-        page != null -> compose(button, ComposeRequest.New(page.location.accountId))
-        list != null -> compose(button, ComposeRequest.New(list.accountId))
+        page != null -> plainOffer(button) { page.onCompose(ComposeRequest.New(page.message.location.accountId)) }
+        list != null -> plainOffer(button) { list.onCompose(ComposeRequest.New(list.accountId)) }
         else -> null
     }
 
@@ -110,9 +224,6 @@ private fun ActionSubject.offerMarkAllRead(list: ListSubject): OfferedAction? {
         plainOffer(MailAction.MarkAllRead) { marks.set(unread, MessageFlag.Read, true) }
     }
 }
-
-private fun sendSymbol(scheduled: Boolean) =
-    if (scheduled) Res.drawable.symbol_schedule_send else MailAction.Send.symbol
 
 /** A draft's action, which leaves the compose page. */
 private fun draftOffer(

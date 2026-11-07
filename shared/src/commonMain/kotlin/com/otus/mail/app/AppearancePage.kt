@@ -37,7 +37,10 @@ internal fun AppearancePage(
     )
 }
 
-/** The Appearance page's sections, as the page shows them and search finds them, with Mail's App icon and [mailList] rows. */
+/**
+ * The Appearance page's sections, as the page shows them and search finds them, with Mail's App
+ * icon and [mailList] rows.
+ */
 internal fun SharedSettings.mailAppearance(
     mailList: PageRowSpec,
     openTheme: (setting: String?) -> Unit,

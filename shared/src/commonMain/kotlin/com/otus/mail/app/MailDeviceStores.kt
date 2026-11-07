@@ -23,18 +23,16 @@ import kotlinx.serialization.json.JsonObject
 /**
  * App-private settings and mail kept on this device only; null where a platform keeps none. The
  * [cache] and the [downloads] folder of attachments stay in memory where a platform has no database
- * or folder. [notificationPreviews] exists only where alerts can show message content.
+ * or folder.
  */
 class MailDeviceStores(
     val folders: FolderStores = FolderStores(),
     val addressPins: DeviceStore<String, List<String>>? = null,
     val cache: MailCache = InMemoryMailCache(),
-    val notificationPreviews: NotificationPreviewStore? = null,
+    val alerts: AlertStores = AlertStores(),
     val contacts: DeviceStore<String, String>? = null,
     val waiting: WaitingStores = WaitingStores(),
     val downloads: DownloadFolder = InMemoryDownloadFolder(),
-    /** Each login's Email state from the last new-mail check. */
-    val mailStates: DeviceStore<String, String>? = null,
 ) {
     /**
      * What each store keeps of one login, dropped when its account is removed. Every store that
@@ -47,9 +45,9 @@ class MailDeviceStores(
             folders.colors?.forgetting(FolderKey::accountId),
             folders.nudges?.forgetting { it },
             addressPins?.forgetting { it },
-            notificationPreviews?.let { store -> store::forgetAccount },
+            alerts.previews?.let { store -> store::forgetAccount },
             contacts?.let { store -> { loginId: String -> store.update { ContactStore.forget(it, loginId) } } },
-            mailStates?.forgetting { it },
+            alerts.mailStates?.forgetting { it },
         )
 
     /** Drops everything these stores keep for [loginId], when its account is removed. */
@@ -71,11 +69,10 @@ class MailDeviceStores(
                 FolderStores(opened(ReadLaterStore), opened(FolderColorStore), opened(FolderNudgeStore)),
                 opened(AddressPinStore),
                 cache,
-                notificationPreviews,
+                AlertStores(notificationPreviews, opened(MailStateStore)),
                 opened(ContactStore),
                 WaitingStores(opened(OutboxStore), opened(EmailChangeStore)),
                 downloads,
-                opened(MailStateStore),
             )
         }
     }
@@ -90,6 +87,15 @@ class FolderStores(
     val readLater: DeviceStore<String, String>? = null,
     val colors: DeviceStore<FolderKey, String>? = null,
     val nudges: DeviceStore<String, List<String>>? = null,
+)
+
+/**
+ * What new-mail alerts keep: [previews], what each may show, only where alerts can show message
+ * content, and [mailStates], each login's Email state from the last new-mail check.
+ */
+class AlertStores(
+    val previews: NotificationPreviewStore? = null,
+    val mailStates: DeviceStore<String, String>? = null,
 )
 
 /** What waits on the device until the server has it: messages in [outbox], marks and moves in [changes]. */

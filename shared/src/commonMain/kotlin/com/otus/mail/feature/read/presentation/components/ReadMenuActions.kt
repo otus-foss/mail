@@ -98,19 +98,11 @@ internal class ReadMenuActions(
             }
 
             ReadMenuEntry.Print -> {
-                read.files.printer?.let { printer ->
-                    action("Print or save as PDF", Res.drawable.symbol_print) {
-                        printer.print(page.subject, printable(page, content))
-                    }
-                }
+                print()
             }
 
             ReadMenuEntry.DeleteThisMessage -> {
-                subject.actions?.shortcutTarget(page, MailboxRole.Trash)?.takeIf { edits != null }?.let { target ->
-                    action("Delete this message", Res.drawable.symbol_delete, "Only this one, not the thread") {
-                        edits?.trash(row, page, target)
-                    }
-                }
+                deleteThisMessage()
             }
 
             is ReadMenuEntry.AlwaysShowImages -> {
@@ -124,29 +116,45 @@ internal class ReadMenuActions(
             }
 
             is ReadMenuEntry.Mute -> {
-                state.muted?.takeIf { edits != null }?.let {
-                    OptionsItem.Toggle("Mute conversation", Res.drawable.symbol_notifications_off, entry.on) {
-                        mute(!entry.on)
-                    }
-                }
+                mute(entry)
             }
 
             ReadMenuEntry.SenderContact -> {
-                read.services.person?.let {
-                    action("Add to contacts", Res.drawable.symbol_person_add) {
-                        state.sheet = ReadSheet.Person(page.sender)
-                    }
-                }
+                personItem("Add to contacts", Res.drawable.symbol_person_add, ReadSheet.Person(page.sender))
             }
 
             is ReadMenuEntry.People -> {
-                read.services.person?.let {
-                    action("People (${entry.people.size})", Res.drawable.symbol_group) {
-                        state.sheet = ReadSheet.People(entry.people)
-                    }
-                }
+                personItem("People (${entry.people.size})", Res.drawable.symbol_group, ReadSheet.People(entry.people))
             }
         }
+
+    private fun print(): OptionsItem? =
+        read.services.files.printer?.let { printer ->
+            action("Print or save as PDF", Res.drawable.symbol_print) {
+                printer.print(page.subject, printable(page, content))
+            }
+        }
+
+    private fun deleteThisMessage(): OptionsItem? =
+        subject.actions?.shortcutTarget(page, MailboxRole.Trash)?.takeIf { edits != null }?.let { target ->
+            action("Delete this message", Res.drawable.symbol_delete, "Only this one, not the thread") {
+                edits?.trash(row, page, target)
+            }
+        }
+
+    private fun mute(entry: ReadMenuEntry.Mute): OptionsItem? =
+        state.muted?.takeIf { edits != null }?.let {
+            OptionsItem.Toggle("Mute conversation", Res.drawable.symbol_notifications_off, entry.on) {
+                mute(!entry.on)
+            }
+        }
+
+    /** An entry that opens [sheet] about people, where the app offers something for them. */
+    private fun personItem(
+        label: String,
+        symbol: DrawableResource,
+        sheet: ReadSheet,
+    ): OptionsItem? = read.services.person?.let { action(label, symbol) { state.sheet = sheet } }
 
     private fun offer(action: MailAction): OfferedAction? =
         if (action == MailAction.Read || action == MailAction.Flag) pageSubject.offer(action) else subject.offer(action)

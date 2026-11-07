@@ -2,6 +2,7 @@ package com.otus.mail.core.messages.data
 
 import com.otus.mail.core.mail.EmailBodyPart
 import com.otus.mail.core.mail.EmailObject
+import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.read.data.files
 import kotlinx.datetime.TimeZone
@@ -27,7 +28,8 @@ class CalendarInvitesTest {
         attachments = parts.toList(),
     )
 
-    private fun EmailObject.message(): MailMessage = toMessage("ada", "Ada", "Inbox", TimeZone.UTC, mailboxId = "inbox")
+    private fun EmailObject.message(): MailMessage =
+        toMessage(MailLocation("Inbox", "Ada", "ada", mailboxId = "inbox"), TimeZone.UTC)
 
     private fun row(
         row: EmailObject,

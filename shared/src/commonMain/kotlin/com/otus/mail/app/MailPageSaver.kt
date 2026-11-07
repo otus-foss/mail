@@ -26,17 +26,20 @@ private fun saved(page: MailPage): List<String> =
         is MailPage.ContactEditor -> listOf(CONTACT_EDITOR) + page.key?.let(::savedKey).orEmpty()
     }
 
-private fun restored(saved: List<String>): MailPage =
-    when (val name = saved.firstOrNull()) {
-        FOLDER -> MailPage.Folder(saved[1], saved[2])
-        FOLDER_DETAIL -> MailPage.FolderDetail(saved[1], saved[2], saved[3].ifEmpty { null })
-        COMBINED -> combined(saved[1])
-        SHARED -> MailPage.Shared(saved.drop(1))
-        CONTACT -> MailPage.Contact(CardKey(saved[1], saved[2], saved[3]))
-        CONTACT_EDITOR -> MailPage.ContactEditor(saved.getOrNull(1)?.let { CardKey(it, saved[2], saved[3]) })
-        SIGNATURE_EDITOR -> MailPage.SignatureEditor(saved[1], saved[2])
+private fun restored(saved: List<String>): MailPage {
+    val name = saved.firstOrNull()
+    val args = saved.drop(1)
+    return when (name) {
+        FOLDER -> MailPage.Folder(args[0], args[1])
+        FOLDER_DETAIL -> MailPage.FolderDetail(args[0], args[1], args[2].ifEmpty { null })
+        COMBINED -> combined(args[0])
+        SHARED -> MailPage.Shared(args)
+        CONTACT -> MailPage.Contact(restoredKey(args))
+        CONTACT_EDITOR -> MailPage.ContactEditor(args.takeIf { it.isNotEmpty() }?.let(::restoredKey))
+        SIGNATURE_EDITOR -> MailPage.SignatureEditor(args[0], args[1])
         else -> MailPage.fixed.firstOrNull { it.toString() == name } ?: MailPage.Inbox
     }
+}
 
 /** The combined page of the role saved; a role without one, such as the inbox, opens the Inbox. */
 private fun combined(role: String): MailPage =
@@ -46,6 +49,8 @@ private fun combined(role: String): MailPage =
         ?.let(MailPage::Combined) ?: MailPage.Inbox
 
 private fun savedKey(key: CardKey): List<String> = listOf(key.loginId, key.accountId, key.cardId)
+
+private fun restoredKey(saved: List<String>): CardKey = CardKey(saved[0], saved[1], saved[2])
 
 private const val FOLDER = "Folder"
 private const val FOLDER_DETAIL = "FolderDetail"

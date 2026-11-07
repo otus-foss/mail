@@ -5,6 +5,7 @@ import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.presentation.MoveTarget
 import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.MoveOptions
 import com.otus.mail.core.messages.presentation.actions.label
 import com.otus.mail.core.messages.presentation.actions.offer
 import kotlin.test.Test
@@ -75,7 +76,7 @@ class MoveToOffersTest {
     fun suggestedMoveGoesToTheSuggestedFolderAndIsOffOtherwise() {
         val messages = listOf(offerMessage("1", "ada"))
         assertNull(ActionSubject(actions, messages).offer(MailAction.SuggestedMove))
-        val suggested = ActionSubject(actions, messages, suggestion = targets.getValue("ada")[1])
+        val suggested = ActionSubject(actions, messages, moves = MoveOptions(suggestion = targets.getValue("ada")[1]))
         val offered = assertNotNull(suggested.offer(MailAction.SuggestedMove))
         assertEquals("Move to Acme", offered.label)
         assertEquals("Acme", offered.primaryLabel)

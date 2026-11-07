@@ -20,6 +20,7 @@ import com.otus.mail.core.messages.data.inConversation
 import com.otus.mail.core.messages.data.memberIds
 import com.otus.mail.core.messages.data.receivedAt
 import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailQuery
@@ -41,7 +42,8 @@ internal fun MailScope.listingQueries(
  * [login]'s lists of [scope] among its kept [mailboxes] as the cache holds them, one page per
  * mailbox, mapped like loaded rows, trusting DMARC results only from [serverSite] (see
  * [ServerSites]). A mailbox without a saved list for [query] shows the rows of its unfiltered list
- * that pass [check], or nothing without one. A row whose email has left the mailbox since, such
+ * that the device can check against [query] at [now], or nothing when it cannot. None show when
+ * the query reads none of the login's mail. A row whose email has left the mailbox since, such
  * as after a move, is left out. A row that no longer reads leaves the login out.
  */
 internal suspend fun MailCache.cachedPages(
@@ -49,11 +51,12 @@ internal suspend fun MailCache.cachedPages(
     mailboxes: List<MailFolder>,
     scope: MailScope,
     query: MailQuery,
-    conditions: List<JmapFilter>,
+    now: Instant,
     zone: TimeZone,
     serverSite: String,
-    check: ((ListedRow) -> Boolean)? = null,
 ): List<ListingPage<ListedRow>> {
+    val conditions = emailConditions(query, login.id, now, zone) ?: return emptyList()
+    val check = localCheck(query, login.id, now, zone)
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
     val unfiltered = chosen.map { ListingQuery(it.id, mailFilter(listOf(it.id), emptyList()), query.filters.sort) }
@@ -132,14 +135,16 @@ private class HeldMail(
         val message =
             row
                 .toMessage(
-                    login.id,
-                    login.name,
-                    list.name,
+                    MailLocation(
+                        list.name,
+                        login.name,
+                        login.id,
+                        login.username,
+                        mailboxId = list.mailbox.id,
+                        mailboxRole = list.mailbox.role,
+                    ),
                     list.zone,
-                    login.username,
-                    list.mailbox.id,
                     list.serverSite,
-                    list.mailbox.role,
                 ).inConversation(row, thread, list.mailbox.id, list.view, list.zone)
         return ListedRow(message, row.receivedTime)
     }

@@ -25,22 +25,30 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 
 /**
- * What the Read view needs beyond the list's actions: the conversation's [pages], the folders of a
- * message, the privacy setting for remote images, files, the services behind its strips and menu,
- * [effects] for toasts and work that outlives the page, and how its pages [display]. [own] are
- * the user's addresses, [loadContent] loads a page's full body, and [onCompose] opens a draft for
- * a reply or forward.
+ * What the Read view needs beyond the list's actions: how it [loads] the conversation, the folders
+ * of a message, the privacy setting for remote images, the services behind its strips and menu,
+ * [effects] for toasts and work that outlives the page, how its pages [display], and who [replies]
+ * come from and how they start.
  */
 class ReadContext(
-    val pages: ConversationMessages,
+    val loads: ReadLoads,
     val folders: ReadFolders,
     val privacy: ReadPrivacy,
-    val files: ReadFiles,
     val services: ReadServices,
     val effects: ReadEffects,
     val display: ReadDisplay,
+    val replies: ReadReplies,
+)
+
+/** The conversation's [pages], and [content], which loads a page's full body. */
+class ReadLoads(
+    val pages: ConversationMessages,
+    val content: suspend (MailMessage) -> MessageContent?,
+)
+
+/** The user's [own] addresses, which replies leave out, and [onCompose], which opens a draft for a reply or forward. */
+class ReadReplies(
     val own: OwnAddresses,
-    val loadContent: suspend (MailMessage) -> MessageContent?,
     val onCompose: (ComposeRequest) -> Unit,
 )
 
@@ -99,7 +107,7 @@ class ReadFiles(
 /**
  * The services behind the newsletter strip and the ⋯ menu, including the [edits] the view makes,
  * and [person], what tapping a person or the menu's contact entries open; each is null where none
- * is wired, and without [person] the pills stay plain.
+ * is wired, and without [person] the pills stay plain. [files] handles attachments and printing.
  */
 class ReadServices(
     val newsletters: Newsletters?,
@@ -107,6 +115,7 @@ class ReadServices(
     val blocks: SenderBlocks?,
     val edits: ReadEdits?,
     val person: PersonSheet?,
+    val files: ReadFiles,
 )
 
 /**

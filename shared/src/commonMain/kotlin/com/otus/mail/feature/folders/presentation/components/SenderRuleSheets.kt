@@ -13,6 +13,7 @@ import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.KnownAddress
 import com.otus.mail.feature.folders.presentation.RuleSheetDraft
 import com.otus.mail.feature.folders.presentation.SenderRules
+import com.otus.mail.feature.folders.presentation.account
 import com.otus.mail.feature.folders.presentation.ruleFolders
 import com.otus.mail.feature.folders.presentation.sheetActions
 

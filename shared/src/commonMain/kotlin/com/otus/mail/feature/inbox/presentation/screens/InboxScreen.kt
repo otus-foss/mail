@@ -72,7 +72,6 @@ fun InboxScreen(
     val density = LocalDensity.current
     val page = shownPage(state, context)
     val headerActions = rememberHeaderActions(state, page, filters, messages, rows, onOpenNavigation, dateFormatter)
-    val overlays = headerActions.overlays
     val selecting = rows.panelSelection(listed.messages)
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
@@ -86,7 +85,7 @@ fun InboxScreen(
                         // The control panel draws behind the status bar and pads itself.
                         .belowControlPanel()
                         // What an open message or an overlay covers, accessibility services skip too.
-                        .hiddenWhen(rows.opened != null || overlays.coverPage()),
+                        .hiddenWhen(rows.opened != null || headerActions.overlays.coverPage()),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
@@ -119,10 +118,9 @@ fun InboxScreen(
                 }
             },
         ) {
-            val mixed = state.searching || filters.applied.folders.isNotEmpty() || page.folderPill != null
-            page.readView.Show(OpenedMessage(it, status.notice, mixed, rows.close))
+            page.readView.Show(OpenedMessage(it, status.notice, state.mixesFolders(filters, page), rows.close))
         }
-        InboxLayers(page, panelHeight, overlays)
+        InboxLayers(page, panelHeight, headerActions.overlays)
     }
 }
 
@@ -247,3 +245,9 @@ private fun shownPage(
         context.copy(title = it.label, emptyTitle = "${it.label} is empty", folderPill = it)
     } ?: context
 }
+
+/** Whether search, folder filters, or a folder pill mix folders, so an opened row names none it came from. */
+private fun InboxState.mixesFolders(
+    filters: InboxFilterState,
+    page: InboxContext,
+): Boolean = searching || filters.applied.folders.isNotEmpty() || page.folderPill != null

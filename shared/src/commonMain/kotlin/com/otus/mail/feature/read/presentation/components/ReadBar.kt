@@ -18,43 +18,6 @@ import com.otus.mail.core.messages.presentation.components.MoveChoice
 import com.otus.mail.core.messages.presentation.components.rememberSuggestedMove
 import com.otus.mail.core.messages.presentation.components.replyContext
 
-/**
- * What the Read view's actions work on: filing acts on the [row], the whole conversation, while
- * replies follow the [page] on screen. The [bar] is null without [ActionSubject.actions]; then
- * only replies are offered, from the ⋯ menu.
- */
-internal class ReadActions(
-    val subject: ActionSubject,
-    val bar: MailBar?,
-)
-
-/** The Read view's actions, with the bar's big button replying to all of the [page]'s people or to its sender. */
-@Composable
-internal fun rememberReadActions(
-    row: MailMessage,
-    page: MailMessage,
-    own: OwnAddresses,
-    actions: MessageActions?,
-    moveChoice: MoveChoice,
-    onCompose: (ComposeRequest) -> Unit,
-): ReadActions {
-    val role = actions?.cleanup?.role?.invoke(row)
-    val saved = actions?.saved()
-    val wanted = saved?.showsSuggestedMove(ActionBarPlace.Message, role) == true
-    val suggestion = rememberSuggestedMove(listOf(row), actions, wanted)
-    val subject =
-        ActionSubject(
-            actions,
-            listOf(row),
-            chooseFolder = moveChoice::choose,
-            suggestion = suggestion,
-            page = page,
-            role = role,
-            onCompose = onCompose,
-        )
-    return ReadActions(subject, saved?.barFor(ActionBarPlace.Message, role, subject::offer, page.replyAction(own)))
-}
-
 /** The [bar], with the big button saying who the reply to the [page] goes to. */
 @Composable
 internal fun ReadActionBar(

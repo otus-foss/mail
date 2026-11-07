@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import com.otus.avatar.FileAvatarStore
 import com.otus.jmap.login.IosLoginStore
 import com.otus.mail.app.MailDeviceStores
+import com.otus.mail.app.MailPlatform
 import com.otus.mail.app.MailServices
 import com.otus.mail.core.cache.MailDatabase
 import com.otus.mail.core.cache.SqlMailCache
@@ -23,7 +24,6 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
     return MailServices(
         // Names kept from the first release so saved accounts keep working.
         IosLoginStore(listKey = "otus.accounts", service = "otus.mail.account"),
-        instantPush = push,
         avatarStore = FileAvatarStore("$cacheDirectory/avatars-v1"),
         stores =
             MailDeviceStores.named(
@@ -33,6 +33,7 @@ internal fun iosMailServices(push: InstantPush?): MailServices {
                 SqlMailCache(cacheDriver(cacheDirectory)),
                 FileDownloadFolder("${userDirectory(NSApplicationSupportDirectory)}/attachments"),
             ),
+        host = MailPlatform(instantPush = push),
     )
 }
 

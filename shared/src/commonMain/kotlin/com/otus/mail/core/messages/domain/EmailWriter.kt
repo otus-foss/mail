@@ -77,39 +77,6 @@ interface EmailWriter {
         message: MailMessage,
         muted: Boolean,
     ): Boolean
-
-    /**
-     * Marks the email [emailId] of the login [loginId] read, without a list row to act on, as a
-     * notification's buttons do. The same holds for [flag], [archive], [trash], and [reportSpam],
-     * which are also false when the account has no folder for the change, such as no Archive.
-     */
-    suspend fun markRead(
-        loginId: String,
-        emailId: String,
-    ): Boolean
-
-    suspend fun flag(
-        loginId: String,
-        emailId: String,
-    ): Boolean
-
-    /** Moves the email out of its inbox and into the account's Archive. */
-    suspend fun archive(
-        loginId: String,
-        emailId: String,
-    ): Boolean
-
-    /** Moves the email out of every mailbox and into the account's Trash, as the list's Delete does. */
-    suspend fun trash(
-        loginId: String,
-        emailId: String,
-    ): Boolean
-
-    /** Moves the email out of every mailbox and into the account's Spam. */
-    suspend fun reportSpam(
-        loginId: String,
-        emailId: String,
-    ): Boolean
 }
 
 /** What emptying a folder did: the server ids of the messages that left it, and whether any stayed. */

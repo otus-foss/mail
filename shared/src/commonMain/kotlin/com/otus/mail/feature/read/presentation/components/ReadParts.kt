@@ -122,14 +122,14 @@ internal fun rememberReadMenu(
         readMenu(
             ReadPage(
                 page,
-                parts.read.own,
+                parts.read.replies.own,
                 index,
                 state.pages.size,
                 newsletter = content?.unsubscribe != null,
                 imagesBlocked = look.blocked(page, state.bodies.body(page)),
                 muted = state.muted == true,
                 suggestedPath = suggested?.let(::listOf),
-                people = participants(state.pages, parts.read.own),
+                people = participants(state.pages, parts.read.replies.own),
             ),
         )
     return ReadMenuActions(actions.subject, page, content, parts.read, state, perform)

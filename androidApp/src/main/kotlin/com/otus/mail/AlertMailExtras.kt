@@ -47,8 +47,9 @@ private class AlertFields(
 private fun AlertFields.mail(): NewMail? = NewMail.decoded(string(EXTRA_MAIL)) ?: legacyMail()
 
 private fun AlertFields.legacyMail(): NewMail? {
-    val loginId = string(EXTRA_LOGIN_ID) ?: return null
-    val emailId = string(EXTRA_EMAIL_ID) ?: return null
+    val loginId = string(EXTRA_LOGIN_ID)
+    val emailId = string(EXTRA_EMAIL_ID)
+    if (loginId == null || emailId == null) return null
     return NewMail(
         loginId = loginId,
         accountName = string(LEGACY_ACCOUNT).orEmpty(),

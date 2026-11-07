@@ -7,6 +7,7 @@ import com.otus.mail.core.messages.domain.ActionBarPlace
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.MoveOptions
 import com.otus.mail.core.messages.presentation.actions.barFor
 import com.otus.mail.core.messages.presentation.actions.offer
 import com.otus.mail.core.messages.presentation.actions.showsSuggestedMove
@@ -31,7 +32,7 @@ internal fun SelectionBar(
     val role = actions.cleanup?.listRole?.invoke()
     val suggestion =
         rememberSuggestedMove(selected, actions, saved.showsSuggestedMove(ActionBarPlace.Selection, role))
-    val subject = ActionSubject(actions, selected, chooseFolder = moveChoice::choose, suggestion = suggestion)
+    val subject = ActionSubject(actions, selected, moves = MoveOptions(moveChoice::choose, suggestion))
     val bar = saved.barFor(ActionBarPlace.Selection, role, subject::offer)
     MailActionBar(
         bar,

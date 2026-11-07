@@ -28,7 +28,9 @@ import com.otus.mail.feature.read.presentation.ReadDisplay
 import com.otus.mail.feature.read.presentation.ReadEffects
 import com.otus.mail.feature.read.presentation.ReadFiles
 import com.otus.mail.feature.read.presentation.ReadFolders
+import com.otus.mail.feature.read.presentation.ReadLoads
 import com.otus.mail.feature.read.presentation.ReadPrivacy
+import com.otus.mail.feature.read.presentation.ReadReplies
 import com.otus.mail.feature.read.presentation.ReadServices
 
 @DslMarker
@@ -98,8 +100,15 @@ internal class ReadContextBuilder {
             known = KnownPeople { emptySet() },
             allowSender = {},
         )
-    var files = ReadFiles(downloads = null, saved = null, printer = null)
-    var services = ReadServices(newsletters = null, headers = null, blocks = null, edits = null, person = null)
+    var services =
+        ReadServices(
+            newsletters = null,
+            headers = null,
+            blocks = null,
+            edits = null,
+            person = null,
+            files = ReadFiles(downloads = null, saved = null, printer = null),
+        )
     var effects = ReadEffects(ToastState(), launch = {}, NewsletterSteps())
     var display =
         ReadDisplay(showQuotes = { false }, zen = { false }, quickView = { ReadQuickModule.Defaults }, setZen = {})
@@ -108,5 +117,13 @@ internal class ReadContextBuilder {
     var onCompose: (ComposeRequest) -> Unit = {}
 
     fun build(): ReadContext =
-        ReadContext(pages, folders, privacy, files, services, effects, display, own, loadContent, onCompose)
+        ReadContext(
+            ReadLoads(pages, loadContent),
+            folders,
+            privacy,
+            services,
+            effects,
+            display,
+            ReadReplies(own, onCompose),
+        )
 }

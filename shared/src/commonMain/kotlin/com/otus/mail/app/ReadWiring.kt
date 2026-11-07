@@ -9,6 +9,7 @@ import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.core.settings.domain.allowingSender
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.feature.folders.presentation.FolderDialog
+import com.otus.mail.feature.folders.presentation.account
 import com.otus.mail.feature.folders.presentation.components.FolderActions
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
@@ -18,7 +19,9 @@ import com.otus.mail.feature.read.presentation.ReadDisplay
 import com.otus.mail.feature.read.presentation.ReadEdits
 import com.otus.mail.feature.read.presentation.ReadEffects
 import com.otus.mail.feature.read.presentation.ReadFiles
+import com.otus.mail.feature.read.presentation.ReadLoads
 import com.otus.mail.feature.read.presentation.ReadPrivacy
+import com.otus.mail.feature.read.presentation.ReadReplies
 import com.otus.mail.feature.read.presentation.ReadServices
 import com.otus.mail.feature.read.presentation.components.NewFolderSheet
 import com.otus.mail.feature.read.presentation.components.PersonSheet
@@ -58,7 +61,7 @@ internal class ReadWiring(
         onCompose: (ComposeRequest) -> Unit,
     ): ReadContext =
         ReadContext(
-            pages = services.conversationMessages,
+            loads = ReadLoads(services.conversationMessages, services.bodies::content),
             folders =
                 readFolders(
                     folders.all::account,
@@ -72,9 +75,15 @@ internal class ReadWiring(
                     },
                 ),
             privacy = privacy,
-            files = files,
             services =
-                ReadServices(services.newsletters, services.headers, services.blocks, ReadEdits(edits, feed), person),
+                ReadServices(
+                    services.newsletters,
+                    services.headers,
+                    services.blocks,
+                    ReadEdits(edits, feed),
+                    person,
+                    files,
+                ),
             effects = effects,
             display =
                 ReadDisplay(
@@ -83,9 +92,7 @@ internal class ReadWiring(
                     quickView = { behavior.behavior.read.quickView },
                     setZen = { on -> behavior.updateRead { it.copy(zen = on) } },
                 ),
-            own = own,
-            loadContent = services.bodies::content,
-            onCompose = onCompose,
+            replies = ReadReplies(own, onCompose),
         )
 }
 

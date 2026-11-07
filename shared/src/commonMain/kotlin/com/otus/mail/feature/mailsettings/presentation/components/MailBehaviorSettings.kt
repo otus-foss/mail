@@ -20,15 +20,6 @@ import com.otus.settings.presentation.components.SettingRowSpec
 import com.otus.settings.presentation.components.SettingsSectionSpec
 import com.otus.settings.presentation.components.ToggleRowSpec
 
-/** The pages Mail behavior's rows open, at their top for null or with the named setting found. */
-class BehaviorPages(
-    val sidebar: (setting: String?) -> Unit,
-    val pinned: (setting: String?) -> Unit,
-    val filterPanel: (setting: String?) -> Unit,
-    val actionBar: (setting: String?) -> Unit,
-    val signatures: (setting: String?) -> Unit,
-)
-
 /**
  * Settings › Mail behavior: how Mail acts, in the order the user meets it. Inbox holds what the
  * Inbox lists and its pills, Panels the start page, the sidebar, and the filter panel, then Actions,

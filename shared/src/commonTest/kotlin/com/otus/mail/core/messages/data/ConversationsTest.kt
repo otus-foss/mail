@@ -3,6 +3,7 @@ package com.otus.mail.core.messages.data
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.Keywords
+import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.ThreadMember
 import kotlinx.datetime.TimeZone
@@ -44,7 +45,7 @@ class ConversationsTest {
         rowView: ThreadView = view,
     ): MailMessage =
         row
-            .toMessage("ada", "Ada", mailbox, TimeZone.UTC, "ada@example.org", mailbox)
+            .toMessage(MailLocation(mailbox, "Ada", "ada", "ada@example.org", mailboxId = mailbox), TimeZone.UTC)
             .inConversation(row, thread, mailbox, rowView, TimeZone.UTC)
 
     private val first = email("e1", 1, "inbox", to = listOf(ada)).copy(cc = listOf(radia))
@@ -126,7 +127,7 @@ class ConversationsTest {
 
     @Test
     fun aMessageWithoutConversationIsListedOnce() {
-        val plain = first.toMessage("ada", "Ada", "Inbox", TimeZone.UTC, mailboxId = "inbox")
+        val plain = first.toMessage(MailLocation("Inbox", "Ada", "ada", mailboxId = "inbox"), TimeZone.UTC)
         val merged = listOf(plain, plain.copy(location = plain.location.copy(mailboxId = "label"))).mergedByThread()
         assertEquals("inbox", merged.single().location.mailboxId, "The first stays")
         assertNull(merged.single().conversation)

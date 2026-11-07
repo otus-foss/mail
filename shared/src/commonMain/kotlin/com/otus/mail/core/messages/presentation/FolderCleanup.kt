@@ -8,7 +8,7 @@ import com.otus.mail.core.messages.domain.MailMessage
  * the loaded folders. Each change shows at once and is undone, with a notice, if the server refuses.
  */
 class FolderCleanup(
-    /** The role of the folder the message is shown in; null for other folders. */
+    /** The role of the folder the message is shown in; null for the user's own folders. */
     val role: (MailMessage) -> MailboxRole?,
     /** The role every folder the list shows has; null when they differ or have none. */
     val listRole: () -> MailboxRole?,

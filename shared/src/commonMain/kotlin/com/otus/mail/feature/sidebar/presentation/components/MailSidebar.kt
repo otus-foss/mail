@@ -25,21 +25,6 @@ import com.otus.mail.feature.sidebar.presentation.SidebarMailbox
 import com.otus.mail.feature.sidebar.presentation.sidebarMailboxes
 
 /**
- * What the sidebar shows for the chosen "Show mail from" scope: its [folders], the user's
- * [layout], the folders the Inbox lists ([inbox]), the scope's [header], the [counter] beside each
- * mailbox, each shared folder's color, and what a long press on a folder opens.
- */
-internal class SidebarContent(
-    val folders: List<AccountFolders>,
-    val layout: SidebarLayout,
-    val inbox: InboxContents,
-    val header: ScopeHeader,
-    val counter: SidebarCounter,
-    val colorOf: (SharedFolder) -> String?,
-    val onFolderActions: (SharedFolder) -> Unit,
-)
-
-/**
  * The scope's header over the pinned mailboxes and the user's shared folders, in the order and
  * layout the user chose. Tapping the header calls [onPickScope]. The [footer] stays at the bottom.
  */

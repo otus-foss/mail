@@ -31,6 +31,7 @@ import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.KnownAddress
+import com.otus.mail.feature.folders.presentation.account
 import com.otus.mail.feature.folders.presentation.components.AccountFolderGroup
 import com.otus.mail.feature.folders.presentation.components.FolderAccountPicker
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs

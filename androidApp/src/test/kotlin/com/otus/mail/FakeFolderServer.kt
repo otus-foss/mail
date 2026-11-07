@@ -5,6 +5,7 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
+import com.otus.mail.app.MailPlatform
 import com.otus.mail.app.MailServices
 import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.core.storage.DeviceStore
@@ -93,7 +94,7 @@ class FakeFolderServer {
         return MailServices(
             store,
             stores = MailDeviceStores(FolderStores(colors = folderColorStore)),
-            instantPush = instantPush,
+            host = MailPlatform(instantPush = instantPush),
         ) {
             JmapClient(engine)
         }

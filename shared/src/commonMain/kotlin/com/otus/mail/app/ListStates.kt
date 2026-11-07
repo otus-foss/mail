@@ -21,7 +21,7 @@ import kotlinx.coroutines.job
 
 /**
  * The Inbox's feed and every list page's feeds, the actions on their messages, and the filters
- * each page keeps. Feeds show [edits] and load avatars with [avatarOptions]; [mailScope] is whose
+ * each page keeps. Feeds show [edits] and load avatars as the [behavior] says; [mailScope] is whose
  * mail the pages show. One per [MailStates].
  */
 internal class ListStates(
@@ -31,7 +31,6 @@ internal class ListStates(
     private val edits: MailEdits,
     private val folders: FolderStates,
     private val dates: () -> DateFormatter,
-    private val avatarOptions: () -> AvatarOptions,
     mailScope: () -> MailScopeChoice,
 ) {
     val feed =
@@ -64,7 +63,7 @@ internal class ListStates(
         mailScope: MailScope,
         scope: CoroutineScope,
     ): InboxFeedState {
-        val feed = InboxFeedState(services.mail, scope, services.avatars, avatarOptions, mailScope, dates)
+        val feed = InboxFeedState(services.mail, scope, services.avatars, behavior::avatarOptions, mailScope, dates)
         val stop = edits.observe(feed.edits)
         scope.coroutineContext.job.invokeOnCompletion { stop() }
         return feed

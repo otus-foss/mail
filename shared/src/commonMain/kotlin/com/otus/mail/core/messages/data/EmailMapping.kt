@@ -8,7 +8,6 @@ import com.otus.mail.core.mail.isFlagged
 import com.otus.mail.core.mail.isForwarded
 import com.otus.mail.core.mail.isSeen
 import com.otus.mail.core.mail.receivedTime
-import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.core.messages.domain.MailAttributes
 import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
@@ -21,20 +20,17 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
 /**
- * Maps one Email in [mailbox] of [account]. Ids are prefixed so accounts cannot collide. Server
- * text loses hidden characters here, so no screen can show a spoofed sender or subject. The body
- * is the server's preview until the message opens and its body loads.
+ * Maps one Email listed at [place], whose mailboxes it fills in. Ids are prefixed with the account
+ * so accounts cannot collide. Server text loses hidden characters here, so no screen can show a
+ * spoofed sender or subject. The body is the server's preview until the message opens and its
+ * body loads.
  */
 internal fun EmailObject.toMessage(
-    accountId: String,
-    account: String,
-    mailbox: String,
+    place: MailLocation,
     zone: TimeZone,
-    accountAddress: String = "",
-    mailboxId: String = "",
     serverSite: String = "",
-    mailboxRole: MailboxRole? = null,
 ): MailMessage {
+    val accountId = place.accountId
     val shortText = preview.displayText()
     return MailMessage(
         id = "$accountId/$id",
@@ -42,16 +38,7 @@ internal fun EmailObject.toMessage(
         subject = subject.orEmpty().displayLine(),
         body = shortText,
         received = receivedAt(receivedTime, zone),
-        location =
-            MailLocation(
-                mailbox,
-                account,
-                accountId,
-                accountAddress,
-                mailboxId = mailboxId,
-                mailboxIds = mailboxIds.filterValues { it }.keys,
-                mailboxRole = mailboxRole,
-            ),
+        location = place.copy(mailboxIds = mailboxIds.filterValues { it }.keys),
         attributes =
             MailAttributes(
                 unread = !isSeen,

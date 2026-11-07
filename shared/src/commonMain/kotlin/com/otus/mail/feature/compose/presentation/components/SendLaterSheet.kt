@@ -59,20 +59,7 @@ internal fun SendLaterSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             if (chosen != null) RowGroup(listOf { GroupRow(Res.drawable.symbol_send, "Send now", { choose(null) }) })
-            RowGroup(
-                sendLaterChoices(now)
-                    .filter { it.second <= latest }
-                    .map { (choice, at) ->
-                        {
-                            GroupRow(
-                                choice.symbol,
-                                choice.label,
-                                { choose(at) },
-                                value = LocalDateFormatter.current.sendLaterLabel(at, now),
-                            )
-                        }
-                    },
-            )
+            SendLaterPresets(now, latest, choose)
             // A limit shorter than the next pickable step leaves nothing to pick.
             if (earliest <= latest) {
                 RowGroup(
@@ -127,3 +114,26 @@ private val SendLaterChoice.symbol
 
 private const val MORNING_HOUR = 8
 private val MORNING = LocalTime(MORNING_HOUR, 0)
+
+/** The send times offered after [now] up to [latest], each sending through [choose]. */
+@Composable
+private fun SendLaterPresets(
+    now: LocalDateTime,
+    latest: LocalDateTime,
+    choose: (LocalDateTime) -> Unit,
+) {
+    RowGroup(
+        sendLaterChoices(now)
+            .filter { it.second <= latest }
+            .map { (choice, at) ->
+                {
+                    GroupRow(
+                        choice.symbol,
+                        choice.label,
+                        { choose(at) },
+                        value = LocalDateFormatter.current.sendLaterLabel(at, now),
+                    )
+                }
+            },
+    )
+}

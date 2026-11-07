@@ -27,7 +27,7 @@ class AlertActionWorker(
         val action = alertButton(inputData.getString(ACTION))
         val mail = inputData.mail()
         if (action == null || mail == null) return Result.failure()
-        val writer = (applicationContext as OtusMailApplication).services.writer
+        val writer = (applicationContext as OtusMailApplication).services.byIdWriter
         return when {
             writer.runAlertButton(action, mail.loginId, mail.emailId) -> Result.success()
             runAttemptCount + 1 < MAX_ATTEMPTS -> Result.retry()

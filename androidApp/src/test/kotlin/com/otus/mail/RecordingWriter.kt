@@ -70,29 +70,4 @@ internal class RecordingWriter : EmailWriter {
         message: MailMessage,
         muted: Boolean,
     ) = true
-
-    override suspend fun markRead(
-        loginId: String,
-        emailId: String,
-    ) = true
-
-    override suspend fun flag(
-        loginId: String,
-        emailId: String,
-    ) = true
-
-    override suspend fun archive(
-        loginId: String,
-        emailId: String,
-    ) = true
-
-    override suspend fun trash(
-        loginId: String,
-        emailId: String,
-    ) = true
-
-    override suspend fun reportSpam(
-        loginId: String,
-        emailId: String,
-    ) = true
 }

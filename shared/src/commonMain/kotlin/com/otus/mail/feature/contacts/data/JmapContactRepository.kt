@@ -50,14 +50,14 @@ internal class JmapContactRepository(
                     .awaitAll()
             val failed = loaded.filter { (_, contacts) -> contacts == null }.map { it.first }
             // A login the server did not answer for shows what the device kept of it.
-            val found = loaded.mapNotNull { (_, contacts) -> contacts } + failed.mapNotNull { cachedLogin(it) }
+            val found = loaded.mapNotNull { (_, contacts) -> contacts } + failed.mapNotNull { cache.cachedLogin(it) }
             snapshot(found, failed.map { it.id })
         }
 
     override suspend fun cached(): ContactsSnapshot? =
         connections
             .savedLogins()
-            .mapNotNull { cachedLogin(it) }
+            .mapNotNull { cache.cachedLogin(it) }
             .takeIf { it.isNotEmpty() }
             ?.let { snapshot(it, failedLogins = emptyList()) }
 
@@ -170,9 +170,6 @@ internal class JmapContactRepository(
             null
         }
 
-    private suspend fun cachedLogin(login: JmapLogin): LoginContacts? =
-        cache.contacts(login.id).takeIf { it.isNotEmpty() }?.let { loginContacts(login, it) }
-
     /**
      * Runs a change. A missing connection or a sign-in the server rejects is
      * [ContactWriteFailure.Offline], so the change waits and goes again later; [writeFailure] tells
@@ -219,3 +216,7 @@ private fun snapshot(
     hasContacts = found.any { it.hasContacts } || failedLogins.isNotEmpty(),
     failedLogins = failedLogins,
 )
+
+/** [login]'s contacts as the device kept them; null when it kept none. */
+private suspend fun MailCache.cachedLogin(login: JmapLogin): LoginContacts? =
+    contacts(login.id).takeIf { it.isNotEmpty() }?.let { loginContacts(login, it) }

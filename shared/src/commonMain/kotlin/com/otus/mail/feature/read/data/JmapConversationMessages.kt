@@ -95,19 +95,10 @@ class JmapConversationMessages(
         val inRow = listed == row.location.mailboxId
         val mailbox = if (inRow) row.location.mailbox else folders[listed]?.mailboxName.orEmpty()
         val role = if (inRow) row.location.mailboxRole else folders[listed]?.role
-        val page =
-            toMessage(
-                row.location.accountId,
-                row.location.account,
-                mailbox,
-                zone(),
-                row.location.accountAddress,
-                listed,
-                sites.known(row.location.accountId),
-                role,
-            )
+        val place = row.location.copy(mailbox = mailbox, mailboxId = listed, mailboxRole = role)
+        val page = toMessage(place, zone(), sites.known(row.location.accountId))
         // The list already found the row sender's photo; pages from the same address reuse it.
         val sender = if (page.sender.address.equals(row.sender.address, ignoreCase = true)) row.sender else page.sender
-        return page.copy(sender = sender, location = page.location.copy(accountAvatar = row.location.accountAvatar))
+        return page.copy(sender = sender)
     }
 }

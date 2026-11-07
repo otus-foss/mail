@@ -83,9 +83,10 @@ internal class ReadPageLook(
     ): Boolean = hasRemote(body) && allowed(page) == false
 
     /**
-     * The banner above [page]'s text, below the sender details: images blocked with Show, or shown this time with Hide and
-     * Always for its sender; nothing once they are allowed. Zen mode hides it but keeps its space,
-     * so the text does not move and reload, and a tap on an image's placeholder still shows them.
+     * The banner above [page]'s text, below the sender details: images blocked with Show, or shown
+     * this time with Hide and Always for its sender; nothing once they are allowed. Zen mode hides
+     * it but keeps its space, so the text does not move and reload, and a tap on an image's
+     * placeholder still shows them.
      */
     @Composable
     fun Banner(

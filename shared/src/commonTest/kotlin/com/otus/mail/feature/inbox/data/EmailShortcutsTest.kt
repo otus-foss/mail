@@ -3,10 +3,12 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.core.messages.data.JmapEmailWriter
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
+import com.otus.mail.core.messages.data.JmapEmailByIdWriter
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.STALWART_SESSION
-import com.otus.mail.testing.emailWriter
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -17,7 +19,7 @@ import kotlin.test.assertTrue
 class EmailShortcutsTest {
     private val sent = mutableListOf<String>()
 
-    private fun shortcuts(mailboxes: String = MAILBOXES): JmapEmailWriter {
+    private fun shortcuts(mailboxes: String = MAILBOXES): JmapEmailByIdWriter {
         val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
         val server =
             stalwartLike(STALWART_SESSION) { body ->
@@ -28,7 +30,9 @@ class EmailShortcutsTest {
                     else -> UPDATED
                 }
             }
-        return emailWriter(JmapConnections(JmapClient(server), store))
+        val connections = JmapConnections(JmapClient(server), store)
+        val cache = InMemoryMailCache()
+        return JmapEmailByIdWriter(connections, EmailChangeQueue(connections, cache, store = null), Mailboxes(cache))
     }
 
     @Test

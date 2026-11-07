@@ -127,74 +127,6 @@ private fun KeyValueEditor.put(write: WriteBehavior) {
     put(PHOTO_CLEANING, write.photoCleaning.storageValue)
 }
 
-private fun KeyValueStore.actionBehavior(): ActionBehavior {
-    val defaults = ActionBehavior()
-    return ActionBehavior(
-        startToEnd = MailAction.decodeSwipe(string(START_TO_END), defaults.startToEnd),
-        endToStart = MailAction.decodeSwipe(string(END_TO_START), defaults.endToStart),
-        bars = ActionBarPlace.entries.associateWith { ActionBarLayout.decode(string(barKey(it)), it) },
-        barMode = ActionBarMode.fromStorageValue(string(ACTION_BAR_MODE)) ?: defaults.barMode,
-        minimizedBar = flag(MINIMIZED_BAR, defaults.minimizedBar),
-        notificationActions = decoded(NOTIFICATION_ACTIONS, defaults.notificationActions, ::decodeNotificationActions),
-    )
-}
-
-private fun KeyValueEditor.put(actions: ActionBehavior) {
-    put(START_TO_END, MailAction.encodeSwipe(actions.startToEnd))
-    put(END_TO_START, MailAction.encodeSwipe(actions.endToStart))
-    actions.bars.forEach { (place, layout) -> put(barKey(place), layout.encode()) }
-    put(ACTION_BAR_MODE, actions.barMode.storageValue)
-    put(MINIMIZED_BAR, actions.minimizedBar)
-    put(NOTIFICATION_ACTIONS, encodeNotificationActions(actions.notificationActions))
-}
-
-private fun KeyValueStore.avatarBehavior(): AvatarBehavior {
-    val defaults = AvatarBehavior()
-    return AvatarBehavior(
-        websiteIcons = flag(WEBSITE_ICONS, defaults.websiteIcons),
-        // Anyone who turned on Ask DuckDuckGo before the icon source choice existed keeps DuckDuckGo.
-        iconSource =
-            IconSource.decode(string(ICON_SOURCE))
-                ?: IconSource.DuckDuckGo.takeIf { flag(DUCKDUCKGO_ICONS, false) }
-                ?: defaults.iconSource,
-        bulwarkAddress = string(BULWARK_ADDRESS) ?: defaults.bulwarkAddress,
-        allAccountPhotos = flag(ALL_ACCOUNT_PHOTOS, defaults.allAccountPhotos),
-    )
-}
-
-private fun KeyValueEditor.put(avatars: AvatarBehavior) {
-    put(WEBSITE_ICONS, avatars.websiteIcons)
-    put(ICON_SOURCE, avatars.iconSource.storageValue)
-    put(BULWARK_ADDRESS, avatars.bulwarkAddress)
-    put(ALL_ACCOUNT_PHOTOS, avatars.allAccountPhotos)
-}
-
-private fun KeyValueStore.privacyBehavior(): PrivacyBehavior {
-    val defaults = PrivacyBehavior()
-    return PrivacyBehavior(
-        screenSecurity = flag(SCREEN_SECURITY, defaults.screenSecurity),
-        incognitoKeyboard = flag(INCOGNITO_KEYBOARD, defaults.incognitoKeyboard),
-    )
-}
-
-private fun KeyValueEditor.put(privacy: PrivacyBehavior) {
-    put(SCREEN_SECURITY, privacy.screenSecurity)
-    put(INCOGNITO_KEYBOARD, privacy.incognitoKeyboard)
-}
-
-private fun KeyValueStore.sidebarBehavior(): SidebarBehavior {
-    val defaults = SidebarBehavior()
-    return SidebarBehavior(
-        layout = decoded(SIDEBAR, defaults.layout, SidebarLayout::decode),
-        startPage = decoded(START_PAGE, SidebarPin::fromStorageValue) ?: defaults.startPage,
-    )
-}
-
-private fun KeyValueEditor.put(sidebar: SidebarBehavior) {
-    put(SIDEBAR, SidebarLayout.encode(sidebar.layout))
-    put(START_PAGE, sidebar.startPage.storageValue)
-}
-
 private val RemoteImages.storageValue: String
     get() = name.lowercase()
 
@@ -211,33 +143,15 @@ internal fun decodeRemoteImages(
     RemoteImages.entries.firstOrNull { it.storageValue == stored }
         ?: RemoteImages.Never.takeIf { it.storageValue in earlier }
 
-private fun barKey(place: ActionBarPlace) = "action_bar_${place.storageValue}"
-
-private const val START_TO_END = "swipe_start_to_end"
-private const val END_TO_START = "swipe_end_to_start"
 private const val MARK_READ_ON_OPEN = "mark_read_on_open"
 private const val READ_LATER = "read_later"
 private const val QUICK_VIEW = "quick_view_modules"
 private const val READ_QUICK_VIEW = "read_quick_view_modules"
 private const val PILLS = "inbox_pills"
-private const val SIDEBAR = "sidebar_layout"
-private const val ACTION_BAR_MODE = "action_bar_mode"
-private const val MINIMIZED_BAR = "action_bar_minimized"
 
-// Website icons moved here when they turned off by default, since the earlier key held on for
-// anyone who saved any setting.
-private const val WEBSITE_ICONS = "load_website_icons"
-private const val ICON_SOURCE = "website_icon_source"
-private const val BULWARK_ADDRESS = "bulwark_address"
-
-// Ask DuckDuckGo, a switch for sites without an icon, before the icon source choice.
-private const val DUCKDUCKGO_ICONS = "duckduckgo_icons"
-private const val ALL_ACCOUNT_PHOTOS = "all_account_photos"
 private const val SHOW_QUOTES = "show_quotes"
 private const val UPDATE_TOASTS = "update_toasts"
 private const val ZEN_READ = "read_zen"
-private const val SCREEN_SECURITY = "screen_security"
-private const val INCOGNITO_KEYBOARD = "incognito_keyboard"
 private const val PHOTO_CLEANING = "photo_cleaning"
 private const val RECENT_FROM = "recent_from"
 private const val SIGNATURE_IN_REPLIES = "signature_in_replies"
@@ -251,5 +165,3 @@ private const val REMOTE_IMAGES = "remote_images_setting"
 private const val ALWAYS_REMOTE_IMAGES = "load_remote_images"
 private const val EARLIER_REMOTE_IMAGES = "remote_images"
 private const val ALLOWED_SENDERS = "allowed_senders"
-private const val NOTIFICATION_ACTIONS = "notification_actions"
-private const val START_PAGE = "start_page"

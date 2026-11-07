@@ -100,7 +100,7 @@ internal class MessageMarking(
         val changed = outcome.changed
         if (changed.isEmpty()) return
         val back = finish(feed, begin(changed, outcome.flag, !outcome.on), outcome.flag, !outcome.on)
-        if (back.marked.isNotEmpty()) edits.reloadAfterUndo()
+        if (back.marked.isNotEmpty()) edits.undone(done = true)
     }
 
     /** Sends [failed] again; the ones it changes get their own Undo toast. */
@@ -114,7 +114,7 @@ internal class MessageMarking(
         val count = changing(outcome.messages.filter { it.id in outcome.marked }, flag, on)
         if (count == 0) return
         edits.toasts.marked(flag, on, count) { restore(feed, outcome) }
-        edits.reloadAfterUndo()
+        edits.undone(done = true)
     }
 }
 

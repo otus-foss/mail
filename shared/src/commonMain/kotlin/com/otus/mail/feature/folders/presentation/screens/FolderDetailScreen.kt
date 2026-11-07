@@ -24,6 +24,7 @@ import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.KnownAddress
 import com.otus.mail.feature.folders.presentation.RuleSheetDraft
+import com.otus.mail.feature.folders.presentation.account
 import com.otus.mail.feature.folders.presentation.canMove
 import com.otus.mail.feature.folders.presentation.components.AddRuleSheet
 import com.otus.mail.feature.folders.presentation.components.DeleteFolderRow

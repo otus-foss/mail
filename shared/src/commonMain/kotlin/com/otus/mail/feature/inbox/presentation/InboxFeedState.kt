@@ -135,7 +135,7 @@ class InboxFeedState(
         val edited = { list: List<MailMessage> -> list.map { if (it.id == id) transform(it) else it } }
         messages = edited(messages)
         recent.edit(edited)
-        return track(pending.add(id, scope = null, edit = transform)) {
+        return pending.tracked(pending.add(id, scope = null, edit = transform), { request }) {
             messages = messages.map { if (it.id == id) undo(it) else it }
         }
     }
@@ -146,24 +146,13 @@ class InboxFeedState(
         val previousScope = mailScope
         messages = messages.filterNot { it.id == id }
         recent.edit { list -> list.filterNot { it.id == id } }
-        return track(pending.add(id, previousScope) { null }) {
+        return pending.tracked(pending.add(id, previousScope) { null }, { request }) {
             // Put it back after the server refused the move, unless a reload already did.
             if (mailScope == previousScope && before != null && messages.none { it.id == before.id }) {
                 messages = messages + before
             }
         }
     }
-
-    private fun track(
-        key: Int,
-        rollBack: () -> Unit,
-    ) = LocalChange(
-        onConfirm = { pending.confirm(key, request) },
-        onRollBack = {
-            pending.drop(key)
-            rollBack()
-        },
-    )
 
     /**
      * Loads [scope] in place of the page's own messages, or returns to them when it is null. The
@@ -287,3 +276,19 @@ class InboxFeedState(
         }
     }
 }
+
+/**
+ * The change [key] adds as a [LocalChange]: confirming keeps it until the load after [request];
+ * rolling back drops it.
+ */
+private fun PendingChanges.tracked(
+    key: Int,
+    request: () -> Int,
+    rollBack: () -> Unit,
+) = LocalChange(
+    onConfirm = { confirm(key, request()) },
+    onRollBack = {
+        drop(key)
+        rollBack()
+    },
+)

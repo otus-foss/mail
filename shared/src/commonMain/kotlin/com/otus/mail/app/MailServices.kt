@@ -24,12 +24,14 @@ import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
 import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.core.messages.data.EmailChangeQueue
+import com.otus.mail.core.messages.data.JmapEmailByIdWriter
 import com.otus.mail.core.messages.data.JmapEmailWriter
 import com.otus.mail.core.messages.data.ServerSites
 import com.otus.mail.core.messages.domain.AddressBook
 import com.otus.mail.core.messages.domain.DevicePrivacy
 import com.otus.mail.core.messages.domain.DraftRepository
 import com.otus.mail.core.messages.domain.DraftSender
+import com.otus.mail.core.messages.domain.EmailByIdWriter
 import com.otus.mail.core.messages.domain.EmailWriter
 import com.otus.mail.core.messages.domain.MessageBodies
 import com.otus.mail.core.messages.domain.PeopleSearch
@@ -94,8 +96,6 @@ class MailServices(
     private val logins: LoginStore = InMemoryLoginStore(),
     avatarStore: AvatarStore = EmptyAvatarStore,
     internal val stores: MailDeviceStores = MailDeviceStores(),
-    /** Instant pushes through the selected service; null where the platform has none. */
-    internal val instantPush: InstantPush? = null,
     internal val pickers: MailPickers = MailPickers(),
     private val host: MailPlatform = MailPlatform(),
     /** Where saved logins and waiting changes are read and written, off the main thread. */
@@ -103,6 +103,8 @@ class MailServices(
     createClient: () -> JmapClient = { JmapClient() },
 ) : PushServices {
     internal val nightly: NightlyUpdates get() = host.nightly
+
+    internal val instantPush: InstantPush? get() = host.instantPush
 
     /** The screen and keyboard protections this platform can apply. */
     internal val devicePrivacy: DevicePrivacy get() = host.devicePrivacy
@@ -153,7 +155,10 @@ class MailServices(
     }
 
     /** Every change to emails, also for a notification's buttons, which act without opening Mail. */
-    val writer: EmailWriter by lazy { JmapEmailWriter(connections, cache, changes, mailboxes) }
+    val writer: EmailWriter by lazy { JmapEmailWriter(connections, cache, changes) }
+
+    /** The changes a notification's buttons make to one email. */
+    val byIdWriter: EmailByIdWriter by lazy { JmapEmailByIdWriter(connections, changes, mailboxes) }
     internal val mail: MailSource by lazy {
         JmapMailSource(connections, cache, changes, mailboxes, sites = serverSites)
     }
@@ -212,7 +217,7 @@ class MailServices(
     internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, mailboxes, changes) }
 
     /** Finds mail that arrived since the last check, for notifications, on a platform that keeps their state. */
-    fun newMail(): NewMailChecker = JmapNewMailChecker(connections, mailboxes, checkNotNull(stores.mailStates))
+    fun newMail(): NewMailChecker = JmapNewMailChecker(connections, mailboxes, checkNotNull(stores.alerts.mailStates))
 
     /** Create one per process. */
     override fun pushSubscriptions(
