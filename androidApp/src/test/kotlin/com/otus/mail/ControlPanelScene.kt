@@ -26,6 +26,7 @@ import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
+import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.read.presentation.screens.MessageScreen
@@ -35,8 +36,14 @@ private const val STATUS_BAR_DP = 40
 
 internal fun palette(base: ThemeBase): OtusPalette = ThemeChoice(base).palette
 
-/** The inbox of [ControlPanelFixtures] in [palette], with its account stack and 33 conversations to show. */
-internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(palette: OtusPalette = OtusPalette.Otus) {
+/**
+ * The inbox of [ControlPanelFixtures] in [palette], with its account stack and 33 conversations to
+ * show, whose search offers [mailboxSearch]'s accounts and mailboxes.
+ */
+internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(
+    palette: OtusPalette = OtusPalette.Otus,
+    mailboxSearch: MailboxSearch = MailboxSearch(),
+) {
     runOnUiThread {
         activity.setContent {
             val scope = rememberCoroutineScope()
@@ -50,6 +57,7 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(palette: O
                                 this.filters = filters
                                 filterOptions = FilterPanelFixtures.options
                                 this.scope = ControlPanelFixtures.scope()
+                                this.mailboxSearch = mailboxSearch
                             },
                     )
                 }

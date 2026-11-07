@@ -7,9 +7,11 @@ import com.otus.mail.core.messages.domain.MailLocation
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailScopeChoice
 import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
 import com.otus.mail.core.settings.domain.AddressPins
+import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 
@@ -44,6 +46,17 @@ internal object ControlPanelFixtures {
                 "florian@rubylabs.design",
                 listOf("florian@rubylabs.design", "florian@purbank.ch", "hi@rubylabs.design"),
             ),
+        )
+
+    /** What the search's Accounts sheet offers: both accounts, and three of their mailboxes. */
+    val mailboxSearch =
+        MailboxSearch(
+            listOf(
+                MailboxScope.Inbox,
+                MailboxScope(null, "Archive", MailboxRole.Archive),
+                MailboxScope(null, "Sent", MailboxRole.Sent),
+            ),
+            accounts.map { MailLocation("", it.name, it.accountId, it.name) },
         )
 
     /** Every account's mail, with Florian's account counting 5 unread. */

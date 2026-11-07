@@ -114,8 +114,9 @@ private fun leaveSearch(
     state: InboxState,
     closeSearch: () -> Unit,
 ) {
-    val search = state.search
-    if (search.query.isBlank() && search.senders.isEmpty()) closeSearch() else state.showResults()
+    // Where the terms match narrows nothing until there are terms.
+    val picked = state.search.copy(field = state.defaultSearch.field) != state.defaultSearch
+    if (state.search.query.isBlank() && !picked) closeSearch() else state.showResults()
 }
 
 /** What the panel grows: the quick view or search [room], then every filter. */

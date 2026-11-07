@@ -14,11 +14,8 @@ import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_calendar_today
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.controls.elements.UiAction
-import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.filters.components.FilterRowCard
 import com.otus.designsystem.shared.filters.components.FilterValueRow
-import com.otus.designsystem.shared.overlays.components.ListSheet
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.PickMark
@@ -33,7 +30,6 @@ import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
@@ -86,7 +82,11 @@ private fun DatePopup(
     PopupRow(Res.drawable.symbol_calendar_today, "Date", date) { close ->
         DateChoices(draft.date, onEdit, close) { custom = true }
     }
-    if (custom) DateRangeSheet(draft.date, dateFormatter, onEdit) { custom = false }
+    if (custom) {
+        DateRangeSheet(draft.date as? DateFilter.Range, dateFormatter, { picked ->
+            onEdit { it.copy(date = picked ?: DateFilter.Any) }
+        }) { custom = false }
+    }
 }
 
 /** A row whose tap opens a list under it; [choices] get a way to close it. */
@@ -180,39 +180,6 @@ private fun DateChoices(
             onCustom()
         },
     )
-}
-
-/** The range picker search uses, applying its range on Done; Clear and Done go back to any time. */
-@Composable
-private fun DateRangeSheet(
-    date: DateFilter,
-    dateFormatter: DateFormatter,
-    onEdit: FilterEdit,
-    onDismiss: () -> Unit,
-) {
-    val range = date as? DateFilter.Range
-    var start by rememberSaveable { mutableStateOf(range?.from?.toString()) }
-    var end by rememberSaveable { mutableStateOf(range?.to?.toString()) }
-    ListSheet(
-        "Date",
-        onDismiss,
-        done =
-            UiAction("Done", onClick = {
-                val picked = start?.let { DateFilter.Range(LocalDate.parse(it), LocalDate.parse(end ?: it)) }
-                onEdit { it.copy(date = picked ?: DateFilter.Any) }
-                onDismiss()
-            }),
-        onClear = {
-            start = null
-            end = null
-        },
-        scrolls = true,
-    ) {
-        DateRangePicker(start, end, dateFormatter) { first, last ->
-            start = first
-            end = last
-        }
-    }
 }
 
 private val DATE_PRESETS =

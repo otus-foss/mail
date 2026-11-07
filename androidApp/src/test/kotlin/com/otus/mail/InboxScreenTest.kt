@@ -108,7 +108,11 @@ class InboxScreenTest {
         compose.onNodeWithText("Unread").performClick().assertIsOn()
         compose.onNodeWithText("Weekend plans").assertDoesNotExist()
         compose.openSearch()
-        compose.onNodeWithText("Has files").performClick().assertIsOn()
+        compose
+            .onNodeWithText("Has files")
+            .performScrollTo()
+            .performClick()
+            .assertIsOn()
         compose.searchField().performImeAction()
         compose.onNodeWithText("Design review").assertIsDisplayed()
         compose.searchField().performTextInput("lake")
