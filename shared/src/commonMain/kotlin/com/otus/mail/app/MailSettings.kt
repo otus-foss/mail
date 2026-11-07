@@ -13,11 +13,13 @@ import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_visibility_off
 import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.mail.core.settings.presentation.PRIVACY_TITLE
+import com.otus.mail.feature.folders.presentation.screens.FOLDERS_TITLE
 import com.otus.mail.feature.mailsettings.presentation.components.BehaviorPages
 import com.otus.mail.feature.mailsettings.presentation.components.alertButtonsRow
 import com.otus.mail.feature.mailsettings.presentation.components.mailBehaviorSettings
 import com.otus.mail.feature.mailsettings.presentation.components.mailListRow
 import com.otus.mail.feature.mailsettings.presentation.components.privacySettings
+import com.otus.mail.feature.mailsettings.presentation.screens.MAIL_BEHAVIOR_TITLE
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.mail.feature.notifications.presentation.screens.deliveryLabel
@@ -49,7 +51,7 @@ internal fun mailSettingsIndex(
     val open = navigation::finder
     return settingsIndex {
         page(
-            "Email accounts",
+            EMAIL_ACCOUNTS_TITLE,
             open(MailPage.EmailAccounts),
             Res.drawable.symbol_alternate_email,
             summary = accountsSummary(states.accounts.accounts.size),
@@ -57,7 +59,7 @@ internal fun mailSettingsIndex(
         states.notifications?.let { notifications(it, states.behavior, states.accounts.accounts.isNotEmpty(), open) }
         appearance(settings, mailListRow(states.behavior, dateFormatter, open(MailPage.MailListSettings)), open)
         page(
-            "Mail behavior",
+            MAIL_BEHAVIOR_TITLE,
             open(MailPage.Behavior),
             Res.drawable.symbol_tune,
             summary = "Inbox, sidebar, swipes, reading, and writing",
@@ -75,7 +77,7 @@ internal fun mailSettingsIndex(
             sections(privacySettings(states.behavior, states.devicePrivacy, open(MailPage.AllowedSenders)))
         }
         page(
-            "Folders & rules",
+            FOLDERS_TITLE,
             open(MailPage.Folders),
             Res.drawable.symbol_folder,
             summary = "Nest folders and file arriving mail",

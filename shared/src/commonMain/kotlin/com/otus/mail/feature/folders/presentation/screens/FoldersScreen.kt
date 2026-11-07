@@ -74,7 +74,7 @@ fun FoldersScreen(
     val tree =
         FolderTreeState(collapsed, { collapsed = it }, state.listActions(colors, rulesOf, onOpenFolder) { dialog = it })
     Subpage(
-        "Folders & rules",
+        FOLDERS_TITLE,
         onBack,
         chips = { if (accounts.size > 1) FolderAccountPicker(accounts, one) { chosen = it } },
     ) {
@@ -184,3 +184,6 @@ private fun FoldersState.listActions(
 private const val ACCOUNT_KEY = "account:"
 
 private val KeysSaver = listSaver<Set<String>, String>(save = { it.toList() }, restore = { it.toSet() })
+
+/** The page's title, which the settings home and search also show. */
+const val FOLDERS_TITLE = "Folders & rules"

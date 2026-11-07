@@ -63,7 +63,7 @@ private fun EmailAccountsPage(
         states.accounts,
         avatars,
         { account, email, onDismiss -> OwnAvatarEditor(states.ownAvatars, account.own, email, onDismiss) },
-        "Email accounts",
+        EMAIL_ACCOUNTS_TITLE,
         MailAccountService,
         onBack = back,
     )
@@ -91,3 +91,6 @@ private fun NotificationPages(
         }
     }
 }
+
+/** The accounts page's title, which the settings home and search also show. */
+internal const val EMAIL_ACCOUNTS_TITLE = "Email accounts"

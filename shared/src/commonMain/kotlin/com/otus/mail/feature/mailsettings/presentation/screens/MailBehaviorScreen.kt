@@ -24,7 +24,10 @@ fun MailBehaviorScreen(
     onBack: () -> Unit,
 ) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    Subpage("Mail behavior", onBack) {
+    Subpage(MAIL_BEHAVIOR_TITLE, onBack) {
         SettingSections(mailBehaviorSettings(state, folderPills, startPages, rtl, pages))
     }
 }
+
+/** The page's title, which the settings home and search also show. */
+const val MAIL_BEHAVIOR_TITLE = "Mail behavior"
