@@ -29,8 +29,6 @@ import com.otus.mail.feature.notifications.presentation.short
 import com.otus.mail.feature.notifications.presentation.title
 import com.otus.settings.presentation.SettingsIndexScope
 import com.otus.settings.presentation.SettingsItem
-import com.otus.settings.presentation.appIconIndex
-import com.otus.settings.presentation.appearanceIndex
 import com.otus.settings.presentation.components.PageRowSpec
 import com.otus.settings.presentation.components.row
 import com.otus.settings.presentation.components.sections
@@ -108,10 +106,7 @@ private fun SettingsIndexScope.appearance(
         Res.drawable.symbol_palette,
         summary = "Theme, app icon, mail list, dates, and animations",
     ) {
-        appearanceIndex(settings.dateFormat, settings.theme, settings.animation, open(MailPage.ThemeSettings)) {
-            settings.appIcon?.let { appIconIndex(it) }
-            row(mailList)
-        }
+        sections(settings.mailAppearance(mailList, open(MailPage.ThemeSettings)))
     }
 }
 

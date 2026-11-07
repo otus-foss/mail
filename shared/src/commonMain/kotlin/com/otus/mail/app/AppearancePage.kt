@@ -13,11 +13,13 @@ import com.otus.mail.feature.mailsettings.presentation.screens.AllowedSendersScr
 import com.otus.mail.feature.mailsettings.presentation.screens.MailBehaviorScreen
 import com.otus.mail.feature.mailsettings.presentation.screens.MailListSettingsScreen
 import com.otus.mail.feature.mailsettings.presentation.screens.PrivacyScreen
-import com.otus.settings.presentation.components.AppIconSetting
-import com.otus.settings.presentation.components.SettingSpecRow
+import com.otus.settings.presentation.components.PageRowSpec
+import com.otus.settings.presentation.components.SettingsSectionSpec
+import com.otus.settings.presentation.components.appIconRow
+import com.otus.settings.presentation.components.appearanceSections
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
-/** Appearance, where Mail adds its app icon and mail list rows to the shared page. */
+/** Appearance, the shared page with Mail's app icon and mail list rows. */
 @Composable
 internal fun AppearancePage(
     states: MailStates,
@@ -27,17 +29,26 @@ internal fun AppearancePage(
     back: () -> Unit,
 ) {
     AppearanceSettingsScreen(
-        settings.dateFormat,
-        settings.theme,
-        settings.animation,
-        onTheme = { navigation.go(MailPage.ThemeSettings) },
+        settings.mailAppearance(
+            mailListRow(states.behavior, dateFormatter) { navigation.go(MailPage.MailListSettings) },
+            openTheme = { navigation.go(MailPage.ThemeSettings) },
+        ),
         onBack = back,
-        look = {
-            settings.appIcon?.let { AppIconSetting(it) { style -> MailAppIcon(style) } }
-            SettingSpecRow(mailListRow(states.behavior, dateFormatter) { navigation.go(MailPage.MailListSettings) })
-        },
     )
 }
+
+/** The Appearance page's sections, as the page shows them and search finds them, with Mail's App icon and [mailList] rows. */
+internal fun SharedSettings.mailAppearance(
+    mailList: PageRowSpec,
+    openTheme: (setting: String?) -> Unit,
+): List<SettingsSectionSpec> =
+    appearanceSections(
+        dateFormat,
+        theme,
+        animation,
+        openTheme,
+        look = listOfNotNull(appIcon?.let { appIconRow(it) { style -> MailAppIcon(style) } }, mailList),
+    )
 
 /** How the mail list's rows read. Its preview stays empty until the list's row can draw a sample. */
 @Composable
