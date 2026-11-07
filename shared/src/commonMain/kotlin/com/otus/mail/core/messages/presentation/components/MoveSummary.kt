@@ -1,8 +1,6 @@
 package com.otus.mail.core.messages.presentation.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import com.otus.dateformat.currentLocalDate
 import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.shared.rows.components.SummaryCard
 import com.otus.mail.core.mail.EmailAddressKey
@@ -22,7 +20,7 @@ internal fun MoveSummary(
     oneSender: Boolean,
 ) {
     val sender = messages.first().sender
-    val today = remember { currentLocalDate() }
+    val today = mailToday()
     val title =
         messages.singleOrNull()?.subject?.ifBlank { "(No subject)" } ?: "${messages.size} messages"
     if (oneSender) {

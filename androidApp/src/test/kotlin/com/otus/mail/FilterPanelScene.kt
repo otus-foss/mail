@@ -15,11 +15,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusPalette
+import com.otus.mail.core.messages.presentation.components.LocalToday
 import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 
 /**

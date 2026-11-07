@@ -28,7 +28,7 @@ import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.core.messages.domain.RowFolder
-import com.otus.mail.feature.inbox.presentation.components.LocalToday
+import com.otus.mail.core.messages.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Rule
 import org.junit.Test

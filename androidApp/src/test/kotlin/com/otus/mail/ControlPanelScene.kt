@@ -25,9 +25,9 @@ import com.otus.designsystem.theme.colors.OtusPalette
 import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.designsystem.theme.typography.panelTextStyle
+import com.otus.mail.core.messages.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
-import com.otus.mail.feature.inbox.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import com.otus.mail.feature.read.presentation.screens.MessageScreen
 
