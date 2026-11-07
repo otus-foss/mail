@@ -38,7 +38,6 @@ jobs:
         with:
           repository: reazndev/otus-meta
           path: otus-meta
-          sparse-checkout: .github/actions
           fetch-depth: 0
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
