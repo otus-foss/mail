@@ -15,8 +15,8 @@ import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.overlays.MenuTokens
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.core.messages.presentation.components.chipAvatar
@@ -94,7 +94,7 @@ private fun IdentitySection(
             ),
             { onSelect(identity) },
             detail = sender.address.takeIf { named },
-        ) { PersonAvatar(sender.chipAvatar, ComposeTokens.dropdownAvatarSize) }
+        ) { PersonAvatar(sender.chipAvatar, AvatarTokens.menuSize) }
     }
 }
 

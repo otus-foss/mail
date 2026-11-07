@@ -1,9 +1,5 @@
 package com.otus.mail.feature.read.presentation.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,19 +7,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.mail.read.components.ThreadEntry
 import com.otus.designsystem.mail.read.components.ThreadList
+import com.otus.designsystem.shared.overlays.elements.Scrim
 import com.otus.designsystem.shared.rows.components.Unfold
 import com.otus.designsystem.shared.rows.components.UnfoldingStripCard
-import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.rows.StripTokens
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.OwnAddresses
@@ -56,15 +48,7 @@ internal fun ReadThreadOverlay(
     LaunchedEffect(state.threadOpen) { unfold.animateTo(state.threadOpen) }
     val drag = rememberUnfoldDrag(unfold) { state.threadOpen = it }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        if (unfold.fraction > 0f) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(OtusColors.scrim.copy(alpha = SheetTokens.SCRIM_ALPHA * unfold.fraction))
-                    .semantics { contentDescription = "Fold messages" }
-                    .clickable(remember { MutableInteractionSource() }, indication = null, onClick = fold),
-            )
-        }
+        if (unfold.fraction > 0f) Scrim("Fold messages", unfold.fraction, fold)
         val dates = LocalDateFormatter.current
         val entries = state.pages.map { page -> threadEntry(page, own, source.today, dates) }
         val still = StripGestures(Modifier, { current.toFloat() }, Modifier)

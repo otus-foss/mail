@@ -2,7 +2,6 @@ package com.otus.mail.feature.folders.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -15,6 +14,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.overlays.components.SheetHeaderAction
+import com.otus.designsystem.shared.overlays.elements.sheetBodyInset
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
@@ -76,7 +76,7 @@ fun AddRuleSheet(
             Modifier
                 .weight(1f, fill = false)
                 .verticalScroll(rememberScrollState())
-                .padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
+                .sheetBodyInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             RuleKindChips(kind) {

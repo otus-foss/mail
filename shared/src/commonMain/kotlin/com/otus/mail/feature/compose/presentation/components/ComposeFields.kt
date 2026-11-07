@@ -15,7 +15,7 @@ import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.core.messages.domain.shownName
 import com.otus.mail.core.messages.presentation.components.chipAvatar
@@ -96,7 +96,7 @@ private fun SuggestedRecipient(
         PickMark(false, style = PickStyle.Card),
         onSelect,
         detail = person.address.takeIf { person.name.isNotBlank() },
-    ) { PersonAvatar(person.chipAvatar, ComposeTokens.dropdownAvatarSize) }
+    ) { PersonAvatar(person.chipAvatar, AvatarTokens.menuSize) }
 }
 
 private fun MailSender.recipient(): Recipient =

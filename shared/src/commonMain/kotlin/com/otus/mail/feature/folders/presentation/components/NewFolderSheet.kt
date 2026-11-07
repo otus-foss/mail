@@ -3,7 +3,6 @@ package com.otus.mail.feature.folders.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +23,7 @@ import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.folders.elements.FolderColorSwatch
 import com.otus.designsystem.shared.input.elements.InputField
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetBodyInset
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -68,7 +68,7 @@ internal fun NewFolderSheet(
             }),
     ) {
         Column(
-            Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
+            Modifier.sheetBodyInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             InputField(

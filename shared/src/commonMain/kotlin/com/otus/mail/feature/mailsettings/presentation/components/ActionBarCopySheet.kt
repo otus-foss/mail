@@ -2,7 +2,6 @@ package com.otus.mail.feature.mailsettings.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -13,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
@@ -56,7 +56,7 @@ internal fun ActionBarCopySheet(
             }),
     ) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = SheetTokens.inset),
+            Modifier.verticalScroll(rememberScrollState()).sheetInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             Caption("The ${from.title} bar", heading = false)

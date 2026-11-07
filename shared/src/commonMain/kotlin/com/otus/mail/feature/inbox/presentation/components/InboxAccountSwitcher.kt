@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.panels.components.AccountStack
 import com.otus.designsystem.shared.panels.components.PanelSheet
@@ -20,7 +21,6 @@ import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
-import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.designsystem.theme.typography.TypeScale
 import com.otus.mail.core.messages.domain.MailScopeChoice
@@ -70,7 +70,7 @@ internal fun InboxAccountSwitcher(
                     1f,
                     fill = false,
                 ).verticalScroll(rememberScrollState())
-                .padding(horizontal = SheetTokens.inset),
+                .sheetInset(),
             verticalArrangement = Arrangement.spacedBy(Spacing.iconGap),
         ) { MailScopeChoices(scope.closingOnPick(onDismiss)) }
     }

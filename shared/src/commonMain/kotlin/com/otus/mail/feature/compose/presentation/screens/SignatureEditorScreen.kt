@@ -1,6 +1,5 @@
 package com.otus.mail.feature.compose.presentation.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,11 +32,10 @@ import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.pages.components.pageSideInset
+import com.otus.designsystem.shared.pages.elements.PageSurface
 import com.otus.designsystem.shared.people.elements.rememberAvatarImage
-import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.shapes.SmoothCornerShape
-import com.otus.designsystem.theme.shapes.strokeBorder
-import com.otus.designsystem.theme.tokens.core.Sizes
+import com.otus.designsystem.theme.shapes.darkSurface
 import com.otus.designsystem.theme.tokens.editing.SignatureTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.core.messages.domain.SignatureImage
@@ -76,7 +73,7 @@ fun SignatureEditorScreen(
             keyboardUp -> SignatureBar.Formatting
             else -> null
         }
-    Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
+    PageSurface {
         ActionBarHost(
             bar = shown?.let { { SignatureBottom(editor, it) { linking = true } } },
             Modifier.belowControlPanel(),
@@ -127,8 +124,7 @@ private fun SignatureBox(editor: SignatureEditorState) {
         Modifier
             .padding(top = PageTokens.contentInset)
             .fillMaxWidth()
-            .background(OtusColors.bgDark, shape)
-            .strokeBorder(Sizes.borderWidth, OtusColors.strokeBgDark, shape)
+            .darkSurface(shape)
             .padding(bottom = PageTokens.contentInset),
         verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap),
     ) {

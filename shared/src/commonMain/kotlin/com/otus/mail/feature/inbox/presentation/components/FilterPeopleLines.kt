@@ -17,7 +17,7 @@ import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.core.messages.domain.RecipientField
 import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.core.messages.presentation.label
@@ -160,7 +160,7 @@ private fun FilterPersonChoice(
 ) {
     PickRow(person.own?.address ?: person.label, person.subline, PickMark(false, style = PickStyle.Card), onPick) {
         val avatar = chipAvatar(person.avatar, person.name, person.addresses.first())
-        PersonAvatar(avatar, ComposeTokens.dropdownAvatarSize)
+        PersonAvatar(avatar, AvatarTokens.menuSize)
     }
 }
 

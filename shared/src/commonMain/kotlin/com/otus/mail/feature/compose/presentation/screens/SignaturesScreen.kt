@@ -13,8 +13,8 @@ import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.rows.elements.listCaptionInset
 import com.otus.designsystem.shared.settings.components.SettingToggleRow
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.core.messages.domain.signature
 import com.otus.mail.core.messages.presentation.components.chipAvatar
@@ -56,6 +56,6 @@ private fun SignatureRow(
     val sender = identity.sender
     val preview = identity.signature.preview
     PersonRow(sender.address, preview.ifEmpty { "No signature" }, onClick, missing = preview.isEmpty()) {
-        PersonAvatar(chipAvatar(sender.avatar, sender.name, sender.address), ComposeTokens.dropdownAvatarSize)
+        PersonAvatar(chipAvatar(sender.avatar, sender.name, sender.address), AvatarTokens.menuSize)
     }
 }

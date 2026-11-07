@@ -6,6 +6,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
@@ -37,7 +38,7 @@ internal fun BookChoices(
                 maxLines = 1,
             )
             RowGroup(
-                modifier = Modifier.padding(horizontal = SheetTokens.inset),
+                modifier = Modifier.sheetInset(),
                 rows =
                     owned.map { book ->
                         {

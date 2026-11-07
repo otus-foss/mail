@@ -27,6 +27,7 @@ import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.controls.elements.UiAction
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.rows.components.FoldingSection
 import com.otus.designsystem.shared.rows.components.LocalEntriesOnRaised
@@ -92,7 +93,7 @@ internal fun SearchMatches(
         // Mail needs its caption only to set it apart from the people above it.
         if (people.isNotEmpty()) {
             SearchPeople(room, people, looksLikeAddress(query), fold)
-            SectionCaption("Mail", Modifier.padding(horizontal = SheetTokens.inset))
+            SectionCaption("Mail", Modifier.sheetInset())
         }
         SearchMail(room, hits, Modifier.weight(1f))
     }
@@ -111,7 +112,7 @@ private fun SearchPeople(
     fold: SectionFold,
 ) {
     val state = room.state
-    FoldingSection("People", fold, Modifier.padding(horizontal = SheetTokens.inset)) {
+    FoldingSection("People", fold, Modifier.sheetInset()) {
         ScrollingFaces(
             people.map { person ->
                 QuickFace(

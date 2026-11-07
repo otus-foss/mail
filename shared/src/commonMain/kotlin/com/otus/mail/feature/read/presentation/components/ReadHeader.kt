@@ -3,7 +3,6 @@ package com.otus.mail.feature.read.presentation.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,23 +26,19 @@ import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_bookmark_fill
 import com.otus.designsystem.resources.symbol_self_improvement
 import com.otus.designsystem.shared.controls.elements.IconPill
-import com.otus.designsystem.shared.dates.elements.DatePill
+import com.otus.designsystem.shared.dates.components.DateChip
 import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.components.PanelMotion
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.shared.people.components.PersonAvatar
-import com.otus.designsystem.shared.selection.components.Dropdown
-import com.otus.designsystem.shared.selection.components.PickMark
-import com.otus.designsystem.shared.selection.components.PickRow
-import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.core.Spacing
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.people.SenderTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.shownName
@@ -124,23 +119,7 @@ private fun SenderPill(
     val name = page.sender.shownName
     val description = if (open) "From $name. Hide details" else "From $name. Show details"
     AddressPill(name, description, onClick, labelMaxWidth = labelMax, expanded = open) {
-        PersonAvatar(page.sender.chipAvatar, ComposeTokens.fromAvatarSize)
-    }
-}
-
-@Composable
-private fun DateChip(
-    label: String,
-    full: String,
-) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        DatePill(label, full, { open = true })
-        if (open) {
-            Dropdown({ open = false }, width = ComposeTokens.fromLabelMaxWidth) {
-                PickRow(full, null, PickMark(false, style = PickStyle.Card), { open = false })
-            }
-        }
+        PersonAvatar(page.sender.chipAvatar, SenderTokens.avatarSize)
     }
 }
 
@@ -186,7 +165,7 @@ private fun senderLabelMax(
     val date = max(Sizes.touchTarget, dateText + ControlTokens.chipPadding * 2 + Sizes.borderWidth * 2)
     val pillsWidth = (Sizes.touchTarget + Spacing.inlineGap) * iconPills
     val senderChrome =
-        ComposeTokens.fromAvatarSize + Sizes.iconSize + Spacing.iconGap * SENDER_GAPS +
+        SenderTokens.avatarSize + Sizes.iconSize + Spacing.iconGap * SENDER_GAPS +
             ControlTokens.chipPadding +
             Sizes.borderWidth * 2
     return (railWidth - date - pillsWidth - Spacing.inlineGap * 2 - senderChrome).coerceAtLeast(

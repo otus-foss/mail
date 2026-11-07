@@ -2,7 +2,6 @@ package com.otus.mail.feature.compose.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.otus.dateformat.DateFormatter
@@ -12,6 +11,7 @@ import com.otus.designsystem.mail.read.components.ThreadMessageRow
 import com.otus.designsystem.mail.read.components.ThreadStrip
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetBodyInset
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.rows.elements.listCaptionInset
@@ -48,7 +48,7 @@ internal fun ThreadSheet(
 ) {
     SheetFrame("Earlier in this thread", onDismiss, done = null, closeButton = true) {
         Column(
-            Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
+            Modifier.sheetBodyInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             val dates = LocalDateFormatter.current

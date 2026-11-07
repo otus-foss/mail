@@ -2,7 +2,6 @@ package com.otus.mail.feature.mailsettings.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,6 +15,7 @@ import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.settings.components.PreviewCard
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
@@ -60,7 +60,7 @@ internal fun ActionBarEditSheet(
         },
     ) {
         Column(
-            Modifier.padding(horizontal = SheetTokens.inset),
+            Modifier.sheetInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             PreviewCard(place.marker) { ActionBarPreview(layout, { picking = it }, addSlot = true) }

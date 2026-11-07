@@ -22,8 +22,8 @@ import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.people.components.PersonAvatar
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.editing.SignatureTokens
+import com.otus.designsystem.theme.tokens.people.SenderTokens
 import com.otus.mail.core.messages.presentation.components.chipAvatar
 import com.otus.mail.feature.compose.presentation.SignatureEditorState
 import com.otus.mail.feature.compose.presentation.SignaturesState
@@ -74,7 +74,7 @@ private fun AddressChoice(
             "Signature of ${sender.address}. Change",
             { choosing = true },
             labelMaxWidth = SignatureTokens.addressLabelMaxWidth,
-        ) { PersonAvatar(sender.chipAvatar, ComposeTokens.fromAvatarSize) }
+        ) { PersonAvatar(sender.chipAvatar, SenderTokens.avatarSize) }
         if (choosing) {
             FromDropdown(
                 signatures.identities,

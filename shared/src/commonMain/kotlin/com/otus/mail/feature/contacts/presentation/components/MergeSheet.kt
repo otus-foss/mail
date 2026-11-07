@@ -29,6 +29,7 @@ import com.otus.designsystem.shared.feedback.components.InfoTip
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.OptionsMenu
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.PickMark
@@ -73,7 +74,7 @@ internal fun MergeSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             val sources = plan.cards.mapNotNull { card -> card.books.firstNotNullOfOrNull(bookOf)?.name }.distinct()
-            Row(Inset, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.sheetInset(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "From ${plan.cards.size} cards: ${sources.joinToString(", ")}",
                     Modifier.weight(1f),
@@ -88,9 +89,9 @@ internal fun MergeSheet(
                     add { BookRow(plan, books, onChange) }
                     if (plan.cards.size > 1) add { DeleteRow(plan, bookOf, onChange) }
                 },
-                Inset,
+                Modifier.sheetInset(),
             )
-            ActionButton(alternative, onAlternative, Inset.fillMaxWidth())
+            ActionButton(alternative, onAlternative, Modifier.sheetInset().fillMaxWidth())
         }
     }
 }
@@ -223,6 +224,3 @@ private val MergeInfo =
                 "in Otus.",
         ),
     )
-
-/** Text and controls that are not rows line up with the rows' content. */
-private val Inset = Modifier.padding(horizontal = SheetTokens.inset)

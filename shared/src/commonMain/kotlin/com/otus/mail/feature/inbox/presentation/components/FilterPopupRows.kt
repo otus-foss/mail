@@ -23,7 +23,7 @@ import com.otus.designsystem.shared.selection.components.Dropdown
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.core.messages.domain.DateFilter
 import com.otus.mail.core.messages.presentation.icon
 import com.otus.mail.core.messages.presentation.label
@@ -138,7 +138,7 @@ private fun AccountChoices(
             PickMark(draft.account == account.id, style = PickStyle.Card),
             { pick(account.id) },
         ) {
-            PersonAvatar(account.avatar, ComposeTokens.dropdownAvatarSize)
+            PersonAvatar(account.avatar, AvatarTokens.menuSize)
         }
     }
 }

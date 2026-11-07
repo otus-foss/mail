@@ -20,6 +20,7 @@ import com.otus.designsystem.shared.contacts.components.ContactRow
 import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.PlainAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.colors.OtusColors
@@ -65,7 +66,7 @@ internal fun PersonContactSheet(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
-            Text(person.address, Inset, color = OtusColors.text2)
+            Text(person.address, Modifier.sheetInset(), color = OtusColors.text2)
             val create = {
                 state.prefill = newDraft(person)
                 onNew()
@@ -87,7 +88,7 @@ private fun PickContact(
     onQuery: (String) -> Unit,
     onAdd: (ContactCard) -> Unit,
 ) {
-    PickerSearch(query, onQuery, "Search people…", Inset)
+    PickerSearch(query, onQuery, "Search people…", Modifier.sheetInset())
     contacts
         .filter { query.isBlank() || it.displayName.contains(query, ignoreCase = true) }
         .take(PICKER_LIMIT)
@@ -114,7 +115,7 @@ private fun NewContactOptions(
     if (match != null) {
         SectionCaption("Maybe already in your contacts", RowInset)
         CardRow(match) { onOpen(match.key) }
-        ActionButton("Add this address there", { onAdd(match) }, Inset.fillMaxWidth(), primary = true)
+        ActionButton("Add this address there", { onAdd(match) }, Modifier.sheetInset().fillMaxWidth(), primary = true)
     }
     PlainAction("New contact", Res.drawable.symbol_person_add, onNew, Modifier.fillMaxWidth())
     if (onPick != null) {
@@ -145,9 +146,6 @@ private fun newDraft(person: ContactAddress): ContactDraft {
 }
 
 private const val PICKER_LIMIT = 50
-
-/** Text and controls that are not rows line up with the rows' content. */
-private val Inset = Modifier.padding(horizontal = SheetTokens.inset)
 
 // Captions and contact rows pad their own text by the page's text inset, so they add only the rest.
 private val RowInset = Modifier.padding(horizontal = SheetTokens.inset - PageTokens.textInset)

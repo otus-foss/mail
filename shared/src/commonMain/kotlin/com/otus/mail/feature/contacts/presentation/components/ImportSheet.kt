@@ -3,7 +3,6 @@ package com.otus.mail.feature.contacts.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
@@ -16,6 +15,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.jscontact.Card
@@ -52,7 +52,7 @@ internal fun ImportSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             val cards = if (file.cards.size == 1) "1 card" else "${file.cards.size} cards"
-            Text("${file.name} · $cards", Inset, color = OtusColors.text2)
+            Text("${file.name} · $cards", Modifier.sheetInset(), color = OtusColors.text2)
             ChoiceHeading("Import into")
             BookChoices(books, book?.key) { book = it }
             val chosen = book
@@ -75,8 +75,15 @@ private fun MatchedPeople(
     if (matched == 0) return
     val people = if (matched == 1) "1 person is" else "$matched people are"
     ChoiceHeading("$people already in ${book.name}")
-    SegmentedToggle(ImportMode.entries.map { it.label }, mode.ordinal, { onMode(ImportMode.entries[it]) }, Inset)
-    Text(mode.note, Inset, color = OtusColors.text2)
+    SegmentedToggle(
+        ImportMode.entries.map {
+            it.label
+        },
+        mode.ordinal,
+        { onMode(ImportMode.entries[it]) },
+        Modifier.sheetInset(),
+    )
+    Text(mode.note, Modifier.sheetInset(), color = OtusColors.text2)
 }
 
 /** The cards the file could not read, by position when known, with why. */
@@ -86,7 +93,7 @@ private fun Failures(failures: List<Pair<Int, String>>) {
     val cards = if (failures.size == 1) "1 card can’t be read" else "${failures.size} cards can’t be read"
     ChoiceHeading(cards)
     failures.forEach { (position, reason) ->
-        Text(if (position > 0) "Card $position: $reason" else reason, Inset, color = OtusColors.text2)
+        Text(if (position > 0) "Card $position: $reason" else reason, Modifier.sheetInset(), color = OtusColors.text2)
     }
 }
 
@@ -107,13 +114,10 @@ private fun Preview(
                 ?.address
         val name = card.name?.full ?: address ?: "No name"
         val tag = mode.label.takeIf { plan?.match(card) != null }
-        Text(listOfNotNull(name, address, tag).joinToString(" · "), Inset, maxLines = 1)
+        Text(listOfNotNull(name, address, tag).joinToString(" · "), Modifier.sheetInset(), maxLines = 1)
     }
-    if (cards.size > PREVIEW) Text("and ${cards.size - PREVIEW} more", Inset, color = OtusColors.text2)
+    if (cards.size > PREVIEW) Text("and ${cards.size - PREVIEW} more", Modifier.sheetInset(), color = OtusColors.text2)
 }
 
 /** How many cards the preview lists before it sums up the rest. */
 private const val PREVIEW = 5
-
-/** Text and controls that are not rows line up with the rows' content. */
-private val Inset = Modifier.padding(horizontal = SheetTokens.inset)

@@ -22,6 +22,7 @@ import com.otus.designsystem.resources.symbol_code
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.panels.components.GrownPanelLayers
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.quickViewHeight
@@ -29,7 +30,6 @@ import com.otus.designsystem.shared.panels.components.rememberLastStopShows
 import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
-import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.core.mailbox.presentation.symbol
 import com.otus.mail.core.messages.domain.MailAction
 import com.otus.mail.core.messages.domain.MailMessage
@@ -105,7 +105,7 @@ internal fun ReadExpandedContent(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SheetTokens.inset)
+                    .sheetInset()
                     .padding(top = QuickViewTokens.moduleGap),
                 verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
             ) {
@@ -129,7 +129,7 @@ private fun ReadDetails(room: ReadRoom) {
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = SheetTokens.inset),
+            .sheetInset(),
     ) {
         room.look.Details(room.page)
         SettingPageRow(

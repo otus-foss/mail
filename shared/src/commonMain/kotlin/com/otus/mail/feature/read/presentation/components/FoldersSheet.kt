@@ -3,7 +3,6 @@ package com.otus.mail.feature.read.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -21,6 +20,7 @@ import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.IconPill
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.core.Spacing
@@ -71,7 +71,7 @@ fun FoldersSheet(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = SheetTokens.inset),
+                .sheetInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             MoveSummary(listOf(message), oneSender = true)

@@ -26,6 +26,7 @@ import com.otus.designsystem.resources.symbol_auto_filter
 import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.shared.controls.elements.IconPill
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
@@ -85,7 +86,7 @@ internal fun MoveSheet(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = SheetTokens.inset),
+                .sheetInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             MoveSummary(messages, oneSender)

@@ -14,12 +14,13 @@ import com.otus.designsystem.resources.symbol_content_copy
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.core.messages.domain.SendIdentityKey
 import com.otus.mail.core.messages.domain.signature
@@ -61,7 +62,7 @@ internal fun CopySignatureSheet(
             listOf("Copy from", "Copy to"),
             direction,
             { direction = it },
-            Modifier.padding(horizontal = SheetTokens.inset),
+            Modifier.sheetInset(),
         )
         Text(
             if (direction == FROM) {
@@ -99,7 +100,7 @@ private fun SignatureCopyRow(
         preview.ifEmpty { "No signature" },
         PickMark(chosen, multiple = multiple),
         onClick = onSelect.takeIf { multiple || preview.isNotEmpty() },
-    ) { PersonAvatar(sender.chipAvatar, ComposeTokens.dropdownAvatarSize) }
+    ) { PersonAvatar(sender.chipAvatar, AvatarTokens.menuSize) }
 }
 
 private const val FROM = 0

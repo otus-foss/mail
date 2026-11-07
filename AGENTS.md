@@ -47,7 +47,8 @@ features need moves to `core`, and a feature that shows another's screen takes a
 A shared slice of `core` may use the same `domain`/`data`/`presentation` layers, with the same
 rules.
 
-`core` cannot depend on features, design system, or app. Domain cannot depend on Compose, Android,
+`core` cannot depend on features or app. As in a feature, a core slice's `domain` and `data` cannot
+use the design system; its `presentation` draws with it. Domain cannot depend on Compose, Android,
 UIKit, networking clients, databases, presentation, or data implementations. `commonMain` cannot
 import Android/JVM/Apple-only APIs. Platform implementations belong in matching platform source
 sets. No catch-all `utils`, `helpers`, or `manager` packages.

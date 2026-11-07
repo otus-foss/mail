@@ -24,8 +24,8 @@ import com.otus.designsystem.mail.read.components.QuotedLevel
 import com.otus.designsystem.mail.read.elements.HtmlView
 import com.otus.designsystem.shared.people.components.NamedAvatar
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.content.ReadTokens
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.rows.InboxTokens
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MessageHtml
 import com.otus.mail.core.messages.presentation.components.chipAvatar
@@ -68,7 +68,7 @@ internal fun ReadPageBody(
             PaddingValues(
                 start = textSide,
                 end = textSide,
-                top = (insetTop + topHeight).toDp() + InboxTokens.itemGap,
+                top = (insetTop + topHeight).toDp() + ReadTokens.partGap,
                 bottom = insets.calculateBottomPadding(),
             )
         val bodies =
@@ -192,7 +192,7 @@ internal fun openLink(
 
 private val textSide = PageTokens.pageInset + PageTokens.textInset
 
-private val spacing = Arrangement.spacedBy(InboxTokens.itemGap)
+private val spacing = Arrangement.spacedBy(ReadTokens.partGap)
 
 private const val TOP = "top"
 private const val BODY = "body"

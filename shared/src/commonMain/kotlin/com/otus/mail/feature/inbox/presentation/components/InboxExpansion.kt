@@ -31,6 +31,7 @@ import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.panels.components.GROWN_LAST_STOP
 import com.otus.designsystem.shared.panels.components.GROWN_LAST_STOP_FROM
 import com.otus.designsystem.shared.panels.components.GrownPanelLayers
@@ -42,7 +43,6 @@ import com.otus.designsystem.shared.panels.components.rememberShownUntilClosed
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otus.designsystem.theme.tokens.overlays.ActionBarTokens
-import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.core.messages.presentation.icon
 import com.otus.mail.core.settings.domain.QuickViewModule
 import com.otus.mail.core.settings.presentation.icon
@@ -129,7 +129,7 @@ private fun QuickViewContent(inbox: ExpandedInbox) {
     val sources = inbox.sources
     val quick = sources.page.quick
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = SheetTokens.inset).padding(top = QuickViewTokens.moduleGap),
+        Modifier.fillMaxWidth().sheetInset().padding(top = QuickViewTokens.moduleGap),
         verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
     ) {
         quick.modules.forEach { module ->
@@ -171,7 +171,7 @@ private fun FiltersContent(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = SheetTokens.inset)
+            .sheetInset()
             .padding(top = QuickViewTokens.moduleGap),
     ) {
         FilterSections(

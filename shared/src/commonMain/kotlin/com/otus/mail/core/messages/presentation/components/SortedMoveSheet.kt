@@ -3,7 +3,6 @@ package com.otus.mail.core.messages.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +17,7 @@ import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetBodyInset
 import com.otus.designsystem.shared.people.components.PersonText
 import com.otus.designsystem.shared.rows.components.SummaryCard
 import com.otus.designsystem.shared.rows.elements.Caption
@@ -50,7 +50,7 @@ internal fun SortedMoveSheet(
             }),
     ) {
         Column(
-            Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
+            Modifier.sheetBodyInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             PersonText("New mail ${move.catches} will go there too.", move.person?.namedByAddress, RowTextInset)

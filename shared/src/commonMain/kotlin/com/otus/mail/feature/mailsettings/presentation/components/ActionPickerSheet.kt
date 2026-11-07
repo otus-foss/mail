@@ -2,7 +2,6 @@ package com.otus.mail.feature.mailsettings.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -16,6 +15,7 @@ import com.otus.designsystem.resources.symbol_check
 import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.selection.components.PickerSearch
@@ -61,7 +61,7 @@ internal fun ActionPickerSheet(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = SheetTokens.inset),
+                .sheetInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             PickerSearch(query, { query = it }, "Search actions…")

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,8 +28,8 @@ import com.otus.designsystem.shared.overlays.components.ConfirmDialog
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.pages.components.pageSideInset
+import com.otus.designsystem.shared.pages.elements.PageSurface
 import com.otus.designsystem.shared.rows.elements.Caption
-import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.layout.PageTokens
 import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.core.messages.domain.Draft
@@ -81,7 +80,7 @@ fun ComposeScreen(
     val discard = { exits.discarded(state.discard()) }
     val sendNow = { at: LocalDateTime? -> state.handOff()?.let { exits.send(it, at) } }
     val send: () -> Unit = { if (draft.subject.isBlank()) askingSubject = true else sendNow(state.sendAt) }
-    Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
+    PageSurface {
         ActionBarHost(
             bar = {
                 ComposeBottom(

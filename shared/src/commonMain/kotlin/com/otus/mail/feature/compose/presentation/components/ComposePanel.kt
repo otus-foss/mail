@@ -20,7 +20,7 @@ import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.people.components.PersonAvatar
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.theme.tokens.people.SenderTokens
 import com.otus.mail.core.messages.domain.SendIdentity
 import com.otus.mail.core.messages.presentation.components.OptionsButton
 import com.otus.mail.core.messages.presentation.components.chipAvatar
@@ -64,7 +64,7 @@ private fun FromPill(
     var choosing by remember { mutableStateOf(false) }
     Box {
         AddressPill(from.address, "Send from ${from.address}. Change", { choosing = true }) {
-            PersonAvatar(from.chipAvatar, ComposeTokens.fromAvatarSize)
+            PersonAvatar(from.chipAvatar, SenderTokens.avatarSize)
         }
         if (choosing && state.identities.size > 1) {
             FromDropdown(

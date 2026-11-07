@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -30,9 +29,9 @@ import com.otus.designsystem.shared.overlays.components.LocalSheetPull
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.rememberConfirmation
 import com.otus.designsystem.shared.pages.components.belowControlPanel
+import com.otus.designsystem.shared.pages.elements.PageSurface
 import com.otus.designsystem.shared.pages.elements.hiddenWhen
 import com.otus.designsystem.shared.pages.elements.holdsSpace
-import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.motion.MotionCurve
 import com.otus.designsystem.theme.motion.MotionSpeed
 import com.otus.designsystem.theme.motion.motionTween
@@ -127,7 +126,7 @@ fun MessageScreen(
     val turn = motionTween<Float>(MotionSpeed.Normal, MotionCurve.Enter)
     val folds = rememberStripFolds(state)
     val source = ReadStripSource(parts.row, look.folders, cameFrom, today)
-    Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
+    PageSurface {
         ActionBarHost(
             bar = readActions.bar?.let { bar -> { ReadActionBar(bar, page, parts::perform) } },
             // The control panel draws behind the status bar and pads itself.
