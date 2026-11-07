@@ -39,18 +39,6 @@ android {
         buildConfigField("String", "COMMIT", "\"${commit.get()}\"")
     }
     buildFeatures { buildConfig = true }
-    // CI decodes the keystore from a secret. Local nightly builds without it come out unsigned.
-    val nightlyKeystore = providers.environmentVariable("OTUS_NIGHTLY_KEYSTORE").orNull
-    val nightlySigning =
-        nightlyKeystore?.let { path ->
-            signingConfigs.create("nightly") {
-                val password = providers.environmentVariable("OTUS_NIGHTLY_KEYSTORE_PASSWORD").get()
-                storeFile = file(path)
-                storePassword = password
-                keyAlias = "otus-nightly"
-                keyPassword = password
-            }
-        }
     buildTypes {
         getByName("release") {
             buildConfigField("String", "CHANNEL", "\"Stable\"")
@@ -66,12 +54,12 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += "debug"
         }
-        // Its own app id, so it installs beside a debug build signed with a different key.
+        // Its own app id, so it installs beside a debug build signed with a different key. Gradle leaves
+        // it unsigned; the nightly workflow signs it with apksigner, so the key never reaches Gradle.
         create("nightly") {
             initWith(getByName("release"))
             applicationIdSuffix = ".nightly"
             buildConfigField("String", "CHANNEL", "\"Nightly\"")
-            signingConfig = nightlySigning
         }
     }
 }

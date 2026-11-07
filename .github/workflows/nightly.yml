@@ -76,10 +76,11 @@ jobs:
           path: otus-meta
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
-      - uses: ./otus-meta/.github/actions/setup-build
+      - id: setup
+        uses: ./otus-meta/.github/actions/setup-build
         with:
           python: "false"
-      # Without OTUS_NIGHTLY_KEYSTORE the build comes out unsigned; the next step signs it.
+      # Gradle builds the APK unsigned; the next step signs it, so the key never reaches Gradle.
       - name: Build the unsigned APK
         run: |
           # The app shows the version name, the build's date as d.m.yy, such as 18.10.26.
@@ -90,19 +91,19 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.OTUS_NIGHTLY_KEYSTORE }}
           OTUS_NIGHTLY_KEYSTORE_PASSWORD: ${{ secrets.OTUS_NIGHTLY_KEYSTORE_PASSWORD }}
+          TOOLS: ${{ steps.setup.outputs.build-tools }}
         run: |
-          tools="$ANDROID_HOME/build-tools/36.0.0"
           out=androidApp/build/outputs/apk/nightly
           # The build leaves exactly one unsigned APK; fail rather than sign the wrong file.
           set -- "$out"/*-unsigned.apk
           if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then echo "expected one unsigned APK in $out" >&2; exit 1; fi
           keystore="$RUNNER_TEMP/nightly.p12"
           echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
-          "$tools/zipalign" -P 16 -f 4 "$1" "$RUNNER_TEMP/aligned.apk"
-          "$tools/apksigner" sign --ks "$keystore" --ks-type PKCS12 --ks-key-alias otus-nightly \
+          "$TOOLS/zipalign" -P 16 -f 4 "$1" "$RUNNER_TEMP/aligned.apk"
+          "$TOOLS/apksigner" sign --ks "$keystore" --ks-type PKCS12 --ks-key-alias otus-nightly \
             --ks-pass env:OTUS_NIGHTLY_KEYSTORE_PASSWORD --key-pass env:OTUS_NIGHTLY_KEYSTORE_PASSWORD \
             --out "$out/androidApp-nightly.apk" "$RUNNER_TEMP/aligned.apk"
-          "$tools/apksigner" verify "$out/androidApp-nightly.apk"
+          "$TOOLS/apksigner" verify "$out/androidApp-nightly.apk"
       - name: Delete the signing key
         if: always()
         run: rm -f "$RUNNER_TEMP/nightly.p12"
