@@ -57,9 +57,6 @@ class ReadState(
     var loaded by mutableStateOf(false)
         private set
 
-    /** The sender details above the body. */
-    var details by mutableStateOf(false)
-
     /** The thread strip grown into the list of messages. */
     var threadOpen by mutableStateOf(false)
 
@@ -151,29 +148,22 @@ class ReadState(
         filesOpenOn = if (filesOpen(page)) null else page.id
     }
 
-    /** Folds what is open: the message list, then the files, then the details; false when nothing was. */
+    /** Folds what is open: the message list, then the files; false when nothing was. */
     fun back(): Boolean {
         when {
             threadOpen -> threadOpen = false
             filesOpenOn != null -> filesOpenOn = null
-            details -> details = false
             else -> return false
         }
         return true
     }
 
     companion object {
-        /** Keeps the details and the page on screen across a recreated screen; the pages load again. */
-        fun saver(row: MailMessage): Saver<ReadState, Any> =
+        /** Keeps the page on screen across a recreated screen; the pages load again. */
+        fun saver(row: MailMessage): Saver<ReadState, String> =
             Saver(
-                save = { listOf(it.details, it.shownId) },
-                restore = { saved ->
-                    val (details, shown) = saved as List<*>
-                    ReadState(row).apply {
-                        this.details = details == true
-                        shownId = shown as? String
-                    }
-                },
+                save = { it.shownId },
+                restore = { shown -> ReadState(row).apply { shownId = shown } },
             )
     }
 }

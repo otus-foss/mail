@@ -40,6 +40,7 @@ val EMAIL_PROPERTIES =
         "replyTo",
         "to",
         "cc",
+        "bcc",
         "messageId",
         "references",
         "subject",

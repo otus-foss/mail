@@ -10,18 +10,15 @@ enum class ReadQuickModule(
     /** Everyone in the conversation besides the user, with a dot for what they wrote that is unread. */
     Thread("thread"),
 
-    /** Who sent the message on screen, and how the user knows them. */
-    Sender("sender"),
-
     /** The conversation's messages, unread messages, files, and flags, each with its count. */
     Counts("counts"),
     ;
 
     companion object {
-        /** At most this many modules show, so the quick view keeps one height. */
-        const val LIMIT: Int = 2
+        /** One row shows, under the message's details, so the quick view stays short. */
+        const val LIMIT: Int = 1
 
-        val Defaults: List<ReadQuickModule> = listOf(Thread, Sender)
+        val Defaults: List<ReadQuickModule> = listOf(Thread)
 
         /** [modules] as one line, such as `thread,sender`. */
         fun encode(modules: List<ReadQuickModule>): String = modules.joinToString(",") { it.storageValue }

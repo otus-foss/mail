@@ -13,6 +13,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.designsystem.shared.panels.components.GROWN_EXPANDED_STOP
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.PanelMotion
 import com.otus.designsystem.shared.panels.components.PanelScrim
@@ -31,13 +32,14 @@ import kotlinx.coroutines.launch
 
 /**
  * The panel's [expansion], the quick view [modules] it shows in the user's order, how pages
- * [look], and the [pager] its modules turn.
+ * [look], the [pager] its modules turn, and its measured [height], which sets the expanded stop.
  */
 internal class ReadQuickView(
     val expansion: PanelExpansion,
     val modules: List<ReadQuickModule>,
     val look: ReadPageLook,
     val pager: PagerState,
+    val height: MutableState<Dp?>,
 )
 
 /**
@@ -84,8 +86,8 @@ internal fun ReadTop(
             page,
             text.date,
             LocalDateFormatter.current.fullLabel(page.received),
-            headerActions(parts, text.menu),
-            PanelMotion(expansion = expansion) { ReadExpandedContent(room, quick.modules) },
+            headerActions(parts, expansion, text.menu),
+            PanelMotion(expansion = expansion) { ReadExpandedContent(room, quick.modules) { quick.height.value = it } },
         )
         text.notice?.let {
             Box(Modifier.padding(PageTokens.pageInset)) {
@@ -107,14 +109,15 @@ internal fun readDetailsHeight(
 
 private fun headerActions(
     parts: ReadParts,
+    expansion: PanelExpansion,
     menu: List<OptionsItem>,
 ): ReadHeaderActions {
     val actions = parts.actions
     val read = parts.read
     return ReadHeaderActions(
         onBack = parts::close,
-        senderOpen = parts.state.details,
-        onSender = { parts.state.details = !parts.state.details },
+        senderOpen = expansion.expanded,
+        onSender = { if (expansion.expanded) expansion.collapse() else expansion.expandTo(GROWN_EXPANDED_STOP) },
         zen = read.display.zen(),
         onZen = {
             val on = !read.display.zen()

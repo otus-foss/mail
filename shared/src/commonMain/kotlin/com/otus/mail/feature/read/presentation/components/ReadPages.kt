@@ -21,6 +21,8 @@ import com.otus.designsystem.resources.symbol_hide_image
 import com.otus.designsystem.resources.symbol_image
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.pages.elements.holdsSpace
+import com.otus.designsystem.shared.rows.components.DetailLine
+import com.otus.designsystem.shared.rows.components.DetailsTable
 import com.otus.designsystem.shared.swipe.components.SwipeToDismiss
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.messages.domain.MailMessage
@@ -142,16 +144,21 @@ internal class ReadPageLook(
      */
     fun hidesQuote(index: Int): Boolean = !read.display.showQuotes() && index < state.pages.lastIndex
 
-    /** The full record under the sender pill: every folder [page] is in, the one shown included. */
+    /** [page]'s full record, with every folder it is in, the one shown included. */
     @Composable
-    fun Details(page: MailMessage) {
-        ReadSenderDetails(
+    fun detailLines(page: MailMessage): List<DetailLine> =
+        messageDetailLines(
             page,
             LocalDateFormatter.current.fullLabel(page.received),
             orderedFolders(page.location.mailboxIds, folders),
             onFolders = { state.sheet = ReadSheet.Folders },
             onPerson = read.services.person?.let { { person -> state.sheet = ReadSheet.Person(person) } },
         )
+
+    /** [page]'s full record on a card, From included, for the full stop. */
+    @Composable
+    fun Details(page: MailMessage) {
+        DetailsTable(detailLines(page))
     }
 }
 
@@ -167,6 +174,7 @@ internal fun ReadPages(
     pager: PagerState,
     look: ReadPageLook,
     loadContent: suspend (MailMessage) -> MessageContent?,
+    onDetails: () -> Unit,
     modifier: Modifier = Modifier,
     insets: PaddingValues = PaddingValues(),
 ) {
@@ -181,10 +189,9 @@ internal fun ReadPages(
         val page = state.pages.getOrNull(index) ?: return@HorizontalPager
         LaunchedEffect(page.id) { state.bodies.load(page, loadContent) }
         val body = state.bodies.body(page)
-        val showPerson = { address: String -> { state.details = true }.takeIf { page.shows(address) } }
+        val showPerson = { address: String -> onDetails.takeIf { page.shows(address) } }
         val quotes = PageQuotes(look.hidesQuote(index), showPerson)
         ReadPageBody(page, body, look.images(page, body), Modifier.fillMaxSize(), quotes, insets) {
-            if (state.details && index == pager.currentPage) look.Details(page)
             look.Banner(page, body)
         }
     }

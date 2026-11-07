@@ -7,7 +7,6 @@ import com.otus.designsystem.mail.quickview.components.QuickCounts
 import com.otus.designsystem.mail.quickview.components.QuickFace
 import com.otus.designsystem.mail.quickview.components.QuickFaceLook
 import com.otus.designsystem.mail.quickview.components.QuickFaces
-import com.otus.designsystem.mail.quickview.components.QuickPerson
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_attach_file
 import com.otus.designsystem.resources.symbol_flag
@@ -60,22 +59,6 @@ internal fun ReadThreadModule(room: ReadRoom) {
             )
         }
     QuickFaces(faces + listOfNotNull(more), slots = THREAD_FACES)
-}
-
-/** Who sent the message on screen and how much of the thread they wrote; a tap opens them. */
-@Composable
-internal fun ReadSenderModule(room: ReadRoom) {
-    val page = room.page
-    val sender = page.sender
-    val pages = room.state.pages
-    val wrote = pages.count { it.sender.address.equals(sender.address, ignoreCase = true) }
-    QuickPerson(
-        sender.chipAvatar,
-        sender.shownName,
-        sender.address,
-        if (pages.size > 1) "Wrote $wrote of ${pages.size} messages here" else "Wrote this message",
-        { room.open(ReadSheet.Person(sender)) },
-    )
 }
 
 /**

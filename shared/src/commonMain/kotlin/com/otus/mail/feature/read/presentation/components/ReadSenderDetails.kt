@@ -21,7 +21,6 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.people.components.PersonChip
 import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.designsystem.shared.rows.components.DetailLine
-import com.otus.designsystem.shared.rows.components.DetailsTable
 import com.otus.designsystem.theme.tokens.content.ReadTokens
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.rows.FolderTokens
@@ -35,31 +34,31 @@ import com.otus.mail.core.messages.presentation.components.chipAvatar
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
- * The full record of a page under the sender pill: From, To, Cc, the [fullDate], every one of its
+ * The full record of a message: From, To, Cc, Bcc, a Reply-to that differs from the sender, the [fullDate], every one of its
  * [folders] by full path, which open the folders sheet through [onFolders], and its marks. It never
  * says which of the user's addresses or accounts received it.
  */
-@Composable
-internal fun ReadSenderDetails(
+internal fun messageDetailLines(
     message: MailMessage,
     fullDate: String,
     folders: List<MessageFolder>,
     onFolders: () -> Unit,
-    modifier: Modifier = Modifier,
-    onPerson: ((MailSender) -> Unit)? = null,
-) {
-    val rows =
-        buildList {
-            add(DetailLine("From") { People(listOf(message.sender), onPerson) })
-            if (message.to.isNotEmpty()) add(DetailLine("To") { People(message.to, onPerson) })
-            if (message.cc.isNotEmpty()) add(DetailLine("Cc") { People(message.cc, onPerson) })
-            add(DetailLine("Date") { Text(fullDate, style = panelTextStyle(), fontSize = ReadTokens.previewSize) })
-            if (folders.isNotEmpty()) add(DetailLine("Folders") { FolderLines(folders, onFolders) })
-            val marks = message.marks()
-            if (marks.isNotEmpty()) add(DetailLine("Marks") { Marks(marks) })
+    onPerson: ((MailSender) -> Unit)?,
+): List<DetailLine> =
+    buildList {
+        val people = { label: String, list: List<MailSender> ->
+            if (list.isNotEmpty()) add(DetailLine(label) { People(list, onPerson) })
         }
-    DetailsTable(rows, modifier)
-}
+        people("From", listOf(message.sender))
+        people("To", message.to)
+        people("Cc", message.cc)
+        people("Bcc", message.bcc)
+        people("Reply-to", message.replyTo.filterNot { it.address.equals(message.sender.address, ignoreCase = true) })
+        add(DetailLine("Date") { Text(fullDate, style = panelTextStyle(), fontSize = ReadTokens.previewSize) })
+        if (folders.isNotEmpty()) add(DetailLine("Folders") { FolderLines(folders, onFolders) })
+        val marks = message.marks()
+        if (marks.isNotEmpty()) add(DetailLine("Marks") { Marks(marks) })
+    }
 
 @Composable
 private fun People(

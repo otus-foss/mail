@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import com.otus.dateformat.DateFormatter
+import com.otus.designsystem.shared.panels.components.GROWN_EXPANDED_STOP
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
@@ -97,7 +98,7 @@ internal fun FollowSearch(
     val inRoom by rememberUpdatedState(searching)
     LaunchedEffect(searching) {
         when {
-            searching -> if (expansion.stop <= 1) expansion.expandTo(1)
+            searching -> if (expansion.stop <= GROWN_EXPANDED_STOP) expansion.expandTo(GROWN_EXPANDED_STOP)
             expansion.expanded -> expansion.collapse()
         }
     }

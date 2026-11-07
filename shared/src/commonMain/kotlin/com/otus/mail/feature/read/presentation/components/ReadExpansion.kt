@@ -5,13 +5,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -25,9 +29,11 @@ import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.panels.components.GrownPanelLayers
 import com.otus.designsystem.shared.panels.components.PanelExpansion
+import com.otus.designsystem.shared.panels.components.grownStopHeight
 import com.otus.designsystem.shared.panels.components.quickViewHeight
 import com.otus.designsystem.shared.panels.components.rememberLastStopShows
 import com.otus.designsystem.shared.panels.components.rememberPanelExpansion
+import com.otus.designsystem.shared.rows.components.DetailRows
 import com.otus.designsystem.shared.settings.components.SettingPageRow
 import com.otus.designsystem.theme.tokens.layout.QuickViewTokens
 import com.otus.mail.core.mailbox.presentation.symbol
@@ -46,16 +52,17 @@ import com.otus.mail.feature.read.presentation.ReadSheet
 import com.otus.mail.feature.read.presentation.ReadState
 
 /**
- * How far the Read view's control panel is dragged open: its usual height, the quick view with
- * [modules] modules, and every detail of the message, [details] tall. Back steps down to the usual
- * height.
+ * How far the Read view's control panel is dragged open: regular, its usual height; expanded, the
+ * quick view, [quick] tall once measured and else as tall as [modules] modules; and full, every
+ * detail of the message, [details] tall. Back steps down to regular.
  */
 @Composable
 internal fun rememberReadExpansion(
     modules: Int,
+    quick: Dp?,
     details: Dp,
 ): PanelExpansion {
-    val expansion = rememberPanelExpansion(listOf(quickViewHeight(modules), details))
+    val expansion = rememberPanelExpansion(listOf(quick?.let(::grownStopHeight) ?: quickViewHeight(modules), details))
     NavigationBackHandler(
         rememberNavigationEventState(NavigationEventInfo.None),
         isBackEnabled = expansion.expanded,
@@ -97,22 +104,27 @@ internal class ReadRoom(
 internal fun ReadExpandedContent(
     room: ReadRoom,
     modules: List<ReadQuickModule>,
+    onQuickHeight: (Dp) -> Unit,
 ) {
+    val density = LocalDensity.current
     GrownPanelLayers(
         room.expansion,
         lastStopOpen = rememberLastStopShows(room.expansion),
         quick = {
+            // Measured at its full height, also while the panel is still opening toward it.
             Column(
                 Modifier
                     .fillMaxWidth()
+                    .wrapContentHeight(Alignment.Top, unbounded = true)
+                    .onSizeChanged { onQuickHeight(with(density) { it.height.toDp() }) }
                     .sheetInset()
                     .padding(top = QuickViewTokens.moduleGap),
                 verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
             ) {
+                DetailRows(room.look.detailLines(room.page))
                 modules.forEach { module ->
                     when (module) {
                         ReadQuickModule.Thread -> ReadThreadModule(room)
-                        ReadQuickModule.Sender -> ReadSenderModule(room)
                         ReadQuickModule.Counts -> ReadCountsModule(room)
                     }
                 }

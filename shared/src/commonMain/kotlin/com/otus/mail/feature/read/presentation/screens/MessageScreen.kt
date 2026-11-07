@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -32,6 +33,7 @@ import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.pages.elements.PageSurface
 import com.otus.designsystem.shared.pages.elements.hiddenWhen
 import com.otus.designsystem.shared.pages.elements.holdsSpace
+import com.otus.designsystem.shared.panels.components.GROWN_LAST_STOP
 import com.otus.designsystem.theme.motion.MotionCurve
 import com.otus.designsystem.theme.motion.MotionSpeed
 import com.otus.designsystem.theme.motion.motionTween
@@ -187,7 +189,9 @@ private fun ReadLayout(
     val bottomInset = padding.calculateBottomPadding() + PageTokens.pageInset * 2 + stripsHeight
     val headerHeight = remember { mutableStateOf(0.dp) }
     val modules = read.display.quickView()
-    val expansion = rememberReadExpansion(modules.size, readDetailsHeight(headerHeight.value, padding))
+    val quickHeight = remember { mutableStateOf<Dp?>(null) }
+    val expansion =
+        rememberReadExpansion(modules.size, quickHeight.value, readDetailsHeight(headerHeight.value, padding))
     // A screen reader finds only the grown panel, not the page and strips it covers.
     val covered = expansion.expanded
     Box(Modifier.fillMaxSize()) {
@@ -197,6 +201,7 @@ private fun ReadLayout(
             layout.pager,
             layout.look,
             read.loads.content,
+            { expansion.expandTo(GROWN_LAST_STOP) },
             Modifier.fillMaxSize().then(swipe).hiddenWhen(covered),
             PaddingValues(top = headerHeight.value, bottom = bottomInset),
         )
@@ -228,7 +233,7 @@ private fun ReadLayout(
         ReadTop(
             parts,
             ReadTopText(page, date, notice, layout.menu),
-            ReadQuickView(expansion, modules, layout.look, layout.pager),
+            ReadQuickView(expansion, modules, layout.look, layout.pager, quickHeight),
             headerHeight,
         )
     }

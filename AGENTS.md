@@ -97,6 +97,11 @@ it fits, such as `SharedPreferences.Editor`, Ktor request builders, and `buildJs
 intermediate value only when the code reads it more than once or the name says something the chain
 cannot.
 
+Call the three stops of a page's control panel regular, expanded, and full, in code, docs, and
+chat. Regular is its usual height (stop 0). Expanded shows the quick view (Meta's
+`GROWN_EXPANDED_STOP`). Full shows every filter in the inbox and every detail in the Read view
+(`GROWN_LAST_STOP`). Use the constants instead of stop numbers.
+
 Keep colors and all visual tokens in Meta's `designsystem/theme` and refer to named tokens.
 Feature UI belongs with its feature; reusable rendering belongs in Meta. Create folders with real code rather than placeholder files. Keep
 handwritten Kotlin files at most 300 lines and Swift files at most 200 lines, including tests,
