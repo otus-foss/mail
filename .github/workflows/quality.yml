@@ -24,10 +24,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
-  # Decides which jobs this change needs. Workflow-only and Markdown-only changes skip the build,
-  # except a change to this workflow, and changes that touch only Android code skip the macOS job.
-  # A push to main compares it with the commit before. A run started by hand runs everything. A run
-  # the ready gate stops sets no outputs, so every later job skips.
+  # Decides which jobs this change needs; see otus-meta's .github/actions/quality-changes.
+  # A run the ready gate stops sets no outputs, so every later job skips.
   changes:
     runs-on: ubicloud-standard-2
     permissions:
@@ -48,26 +46,7 @@ jobs:
         uses: ./otus-meta/.github/actions/ready-gate
       - id: files
         if: steps.gate.outputs.ready == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-          BEFORE: ${{ github.event.before }}
-          AFTER: ${{ github.sha }}
-        run: |
-          if [ -n "$PR" ]; then
-            gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename' > files.txt
-          elif [ -n "${BEFORE//0/}" ]; then
-            gh api "repos/$GITHUB_REPOSITORY/compare/$BEFORE...$AFTER" --jq '.files[].filename' > files.txt
-          fi
-          # A run by hand, a new branch, or a compare cut off at 300 files checks everything.
-          if [ ! -s files.txt ] || [ "$(wc -l < files.txt)" -ge 300 ]; then
-            printf 'build=true\nios=true\n' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          touched() { if grep -qvE "$1" files.txt || grep -qx '.github/workflows/quality.yml' files.txt; then echo true; else echo false; fi; }
-          echo "build=$(touched '^\.github/|\.md$')" >> "$GITHUB_OUTPUT"
-          echo "ios=$(touched '^\.github/|\.md$|^docs/|^androidApp/|(^|/)src/(androidMain|androidHostTest|androidUnitTest|androidTest|test)/')" >> "$GITHUB_OUTPUT"
-          cat "$GITHUB_OUTPUT"
+        uses: ./otus-meta/.github/actions/quality-changes
 
   # Each job runs one part of checkAll, so the parts run at the same time. The tests run in two
   # shards; each test class runs in exactly one of them.

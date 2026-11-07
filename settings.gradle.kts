@@ -27,12 +27,8 @@ plugins {
     id("otus.settings")
 }
 
-val otusMeta = file(providers.gradleProperty("otus.meta.path").getOrElse("../otus-meta"))
-includeBuild(otusMeta) { name = "otus-meta" }
-
 dependencyResolutionManagement {
     versionCatalogs {
-        create("libs") { from(files(otusMeta.resolve("gradle/libs.versions.toml"))) }
         create("appLibs") { from(files("gradle/app.versions.toml")) }
     }
 }
