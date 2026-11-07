@@ -33,6 +33,7 @@ import com.otus.designsystem.shared.panels.components.PanelMotion
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.shared.people.components.PersonAvatar
+import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.core.Sizes
@@ -129,7 +130,13 @@ private fun ZenPill(
     on: Boolean,
     onClick: () -> Unit,
 ) {
-    IconPill(if (on) "Leave zen mode" else "Zen mode", Res.drawable.symbol_self_improvement, on, onClick)
+    IconPill(
+        if (on) "Leave zen mode" else "Zen mode",
+        Res.drawable.symbol_self_improvement,
+        on,
+        onClick,
+        fill = OtusColors.bgDark,
+    )
 }
 
 @Composable
@@ -139,6 +146,7 @@ private fun Bookmark(change: ReadLaterChange) {
         if (change.saves) Res.drawable.symbol_bookmark else Res.drawable.symbol_bookmark_fill,
         selected = !change.saves,
         onClick = change.apply,
+        fill = OtusColors.bgDark,
     )
 }
 

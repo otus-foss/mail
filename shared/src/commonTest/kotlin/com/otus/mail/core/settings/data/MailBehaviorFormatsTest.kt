@@ -216,6 +216,12 @@ class MailBehaviorFormatsTest {
         )
 
     @Test
+    fun theUpdateToastSettingReadsItsSavedFlag() {
+        assertEquals(false, read("update_toasts" to false).updateToasts)
+        assertEquals(true, read().updateToasts)
+    }
+
+    @Test
     fun theSidebarSettingsReadTheirSavedText() {
         val sidebar =
             read(

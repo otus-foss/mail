@@ -17,6 +17,7 @@ import com.otus.designsystem.shared.contacts.components.ContactEntry
 import com.otus.designsystem.shared.contacts.components.ContactEntryEnd
 import com.otus.designsystem.shared.contacts.components.ContactRowLabel
 import com.otus.designsystem.shared.contacts.components.IndexLetter
+import com.otus.designsystem.shared.contacts.components.LetterIndexScrollGuard
 import com.otus.designsystem.shared.contacts.components.LetterIndexState
 import com.otus.designsystem.shared.contacts.components.letterIndexHandle
 import com.otus.designsystem.shared.people.components.ChipAvatar
@@ -73,6 +74,7 @@ internal fun ContactList(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    LetterIndexScrollGuard(letterIndex, listState)
     val scope = rememberCoroutineScope()
     val sections = content.people.groupBy { it.letter }
     val positions = content.letterPositions(sections)

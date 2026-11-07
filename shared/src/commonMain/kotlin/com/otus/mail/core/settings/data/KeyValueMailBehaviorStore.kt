@@ -49,6 +49,7 @@ class KeyValueMailBehaviorStore(
                 avatars = avatarBehavior(),
                 privacy = privacyBehavior(),
                 sidebar = sidebarBehavior(),
+                updateToasts = flag(UPDATE_TOASTS, MailBehavior().updateToasts),
             )
         }
 
@@ -62,6 +63,7 @@ class KeyValueMailBehaviorStore(
             put(behavior.avatars)
             put(behavior.privacy)
             put(behavior.sidebar)
+            put(UPDATE_TOASTS, behavior.updateToasts)
         }
     }
 }
@@ -232,6 +234,7 @@ private const val BULWARK_ADDRESS = "bulwark_address"
 private const val DUCKDUCKGO_ICONS = "duckduckgo_icons"
 private const val ALL_ACCOUNT_PHOTOS = "all_account_photos"
 private const val SHOW_QUOTES = "show_quotes"
+private const val UPDATE_TOASTS = "update_toasts"
 private const val ZEN_READ = "read_zen"
 private const val SCREEN_SECURITY = "screen_security"
 private const val INCOGNITO_KEYBOARD = "incognito_keyboard"

@@ -19,6 +19,7 @@ import com.otus.mail.feature.mailsettings.presentation.components.alertButtonsRo
 import com.otus.mail.feature.mailsettings.presentation.components.mailBehaviorSettings
 import com.otus.mail.feature.mailsettings.presentation.components.mailListRow
 import com.otus.mail.feature.mailsettings.presentation.components.privacySettings
+import com.otus.mail.feature.mailsettings.presentation.components.updateToastRow
 import com.otus.mail.feature.mailsettings.presentation.screens.MAIL_BEHAVIOR_TITLE
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
@@ -144,6 +145,7 @@ private fun SettingsIndexScope.notifications(
             if (hasAccounts) page("Accounts and addresses", open(MailPage.NotificationOverrides))
         }
         section("Buttons") { row(alertButtonsRow(behavior)) }
+        section("Updates") { row(updateToastRow(behavior)) }
     }
 }
 
