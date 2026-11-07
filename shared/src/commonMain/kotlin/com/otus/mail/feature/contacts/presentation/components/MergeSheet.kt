@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.shared.contacts.components.ContactValueRow
-import com.otus.designsystem.shared.controls.elements.ActionButton
+import com.otus.designsystem.shared.controls.components.ButtonPair
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.InfoText
@@ -66,11 +66,13 @@ internal fun MergeSheet(
     SheetFrame(
         "Same person?",
         onDismiss,
-        done = UiAction("Merge", enabled = plan.addresses.isNotEmpty(), onClick = { onMerge(plan) }),
         closeButton = true,
     ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             val sources = plan.cards.mapNotNull { card -> card.books.firstNotNullOfOrNull(bookOf)?.name }.distinct()
@@ -91,7 +93,11 @@ internal fun MergeSheet(
                 },
                 Modifier.sheetInset(),
             )
-            ActionButton(alternative, onAlternative, Modifier.sheetInset().fillMaxWidth())
+            ButtonPair(
+                UiAction(alternative, onClick = onAlternative),
+                UiAction("Merge", enabled = plan.addresses.isNotEmpty(), onClick = { onMerge(plan) }),
+                Modifier.sheetInset().padding(SheetTokens.inset),
+            )
         }
     }
 }
