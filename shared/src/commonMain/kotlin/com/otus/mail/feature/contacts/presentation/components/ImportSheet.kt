@@ -1,7 +1,9 @@
 package com.otus.mail.feature.contacts.presentation.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -12,11 +14,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_expand_less
+import com.otus.designsystem.resources.symbol_expand_more
+import com.otus.designsystem.shared.contacts.components.ContactValueRow
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
+import com.otus.designsystem.shared.controls.elements.IconButton
+import com.otus.designsystem.shared.controls.elements.IconButtonLook
+import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.rows.components.Collapsible
+import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.jscontact.Card
 import com.otus.mail.feature.contacts.domain.ContactBook
@@ -47,7 +61,10 @@ internal fun ImportSheet(
         SheetConfirm("Import $count", { if (plan != null) onImport(plan, mode) }, enabled = count > 0),
     ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             val cards = if (file.cards.size == 1) "1 card" else "${file.cards.size} cards"
@@ -89,7 +106,10 @@ private fun Failures(failures: List<Pair<Int, String>>) {
     }
 }
 
-/** The first few cards by name and address, tagged with [mode] where the person is already in the book. */
+/**
+ * Every card by name over address, folded away until the heading is tapped. A card whose person is
+ * already in the book carries [mode] as its label.
+ */
 @Composable
 private fun Preview(
     cards: List<Card>,
@@ -97,22 +117,47 @@ private fun Preview(
     mode: ImportMode,
 ) {
     if (cards.isEmpty()) return
-    ChoiceHeading("Preview")
-    cards.take(PREVIEW).forEach { card ->
-        val address =
-            card.emails
-                ?.values
-                ?.firstOrNull()
-                ?.address
-        val name = card.name?.full ?: address ?: "No name"
-        val tag = mode.label.takeIf { plan?.match(card) != null }
-        Text(listOfNotNull(name, address, tag).joinToString(" · "), Inset, maxLines = 1)
+    var expanded by remember { mutableStateOf(false) }
+    PreviewHeading(expanded) { expanded = !expanded }
+    Collapsible(expanded) {
+        RowGroup(cards.map { card -> { PreviewRow(card, mode.label.takeIf { plan?.match(card) != null }) } }, Inset)
     }
-    if (cards.size > PREVIEW) Text("and ${cards.size - PREVIEW} more", Inset, color = OtusColors.text2)
 }
 
-/** How many cards the preview lists before it sums up the rest. */
-private const val PREVIEW = 5
+@Composable
+private fun PreviewHeading(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    val action = if (expanded) "Hide preview" else "Show preview"
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClickLabel = action, onClick = onToggle)
+            .padding(start = SheetTokens.inset, end = PanelTokens.iconGap),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Preview", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+        IconButton(action, onToggle, look = IconButtonLook.Bare) {
+            Symbol(if (expanded) Res.drawable.symbol_expand_less else Res.drawable.symbol_expand_more)
+        }
+    }
+}
+
+/** A card's name over its first address, or the address alone when the card has no other name. */
+@Composable
+private fun PreviewRow(
+    card: Card,
+    label: String?,
+) {
+    val address =
+        card.emails
+            ?.values
+            ?.firstOrNull()
+            ?.address
+    val name = card.name?.full ?: address ?: "No name"
+    ContactValueRow(name, address.takeIf { it != name }, label = label)
+}
 
 /** Text and controls that are not rows line up with the rows' content. */
 private val Inset = Modifier.padding(horizontal = SheetTokens.inset)
