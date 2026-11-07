@@ -1,18 +1,19 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.MailAttributes
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailAttributes
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.SizeFilter
-import com.otus.mail.feature.inbox.domain.TypeFacet
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,7 +39,7 @@ class LocalConditionsTest {
             subject = "Hi",
             body = "",
             received = ReceivedAt("2026-10-27", "11:00"),
-            location = MailLocation("Inbox", "ada"),
+            location = MailLocation("Inbox", "ada", mailboxRole = MailboxRole.Inbox),
             attributes = attributes,
             to = listOf(MailSender("Ada", to)),
         ),

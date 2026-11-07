@@ -2,17 +2,24 @@ package com.otus.mail
 
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.remember
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.otus.dateformat.DateFormatPreference
 import com.otus.dateformat.DateFormatter
 import com.otus.dateformat.formatRelative
 import com.otus.mail.app.App
 import com.otus.settings.presentation.DateFormatSettingsState
+import com.otus.storage.inMemoryChoice
 import kotlinx.datetime.LocalDate
 
 /** Gesture tests select ISO explicitly so their assertions do not depend on the host locale. */
 fun MainActivity.showIsoDateApp() {
     setContent {
-        App(remember { DateFormatSettingsState(initialPreference = DateFormatPreference.YearMonthDayDashes) })
+        App(remember { DateFormatSettingsState(inMemoryChoice(DateFormatPreference.YearMonthDayDashes.storageValue)) })
     }
 }
 
@@ -29,3 +36,17 @@ fun relativeIsoRange(
         start == end && separator == "–" -> relativeIsoDate(start)
         else -> relativeIsoDate(start) + separator + relativeIsoDate(end)
     }
+
+/** Opens the range picker the filter panel's Date row offers under Custom…. */
+internal fun ComposeTestRule.openDateRange() {
+    onNodeWithContentDescription("Open filters", substring = true).performClick()
+    onNodeWithContentDescription("Date, ", substring = true).performScrollTo().performClick()
+    onNodeWithText("Custom…").performScrollTo().performClick()
+}
+
+/** The filter panel's Date row once [start] to [end] is applied, in the ISO format the tests choose. */
+internal fun ComposeTestRule.appliedDateRange(
+    start: String,
+    end: String = start,
+): SemanticsNodeInteraction =
+    onNodeWithContentDescription("Date, ${if (start == end) start else "$start – $end"},", substring = true)

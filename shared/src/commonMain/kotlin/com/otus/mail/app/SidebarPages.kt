@@ -1,23 +1,22 @@
 package com.otus.mail.app
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.CombinedFolder
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.SharedFolder
-import com.otus.mail.feature.folders.domain.sharedFolder
-import com.otus.mail.feature.folders.domain.sharedFolders
-import com.otus.mail.feature.inbox.domain.INBOX_MAILBOX
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.presentation.SidebarPinOption
-import com.otus.mail.feature.inbox.presentation.screens.PinnedSettingsScreen
-import com.otus.mail.feature.inbox.presentation.screens.SidebarSettingsScreen
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.SharedFolder
+import com.otus.mail.core.mailbox.presentation.READ_LATER_TITLE
+import com.otus.mail.core.mailbox.sharedFolder
+import com.otus.mail.core.mailbox.sharedFolders
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.settings.presentation.SidebarPinOption
+import com.otus.mail.feature.inbox.presentation.ListBase
+import com.otus.mail.feature.inbox.presentation.conversationsScope
+import com.otus.mail.feature.mailsettings.presentation.screens.PinnedSettingsScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.SidebarSettingsScreen
+import com.otus.mail.feature.sidebar.presentation.pinnableMailboxes
 
 /** Sidebar settings, or its Pinned page. */
 @Composable
@@ -27,9 +26,9 @@ internal fun SidebarSettingsPage(
     navigation: MailNavigation,
     onBack: () -> Unit,
 ) {
-    val accounts = states.folders.accounts
+    val accounts = states.folders.all.accounts
     // Not remembered: folder colors change apart from the accounts.
-    val options = sidebarPinOptions(accounts, states.folderColors::groupColorOf)
+    val options = sidebarPinOptions(accounts, states.folders.colors::groupColorOf)
     if (page == MailPage.PinnedSettings) {
         PinnedSettingsScreen(states.behavior, options, onBack)
     } else {
@@ -47,42 +46,52 @@ internal fun sidebarPinOptions(
     accounts: List<AccountFolders>,
     colorOf: (SharedFolder) -> String?,
 ): List<SidebarPinOption> =
-    pinnableMailboxes(accounts).map { (pin, mailbox) ->
+    pinnableMailboxes(accounts).map { mailbox ->
         val folder = mailbox.shared
         SidebarPinOption(
-            pin,
+            mailbox.pin,
             mailbox.title,
             mailbox.icon,
             group = if (folder == null) "Mailboxes" else "Folders",
-            path = folder?.path?.joinToString(" / ") ?: mailbox.title,
+            path = folder?.path ?: listOf(mailbox.title),
             tint = folder?.let { FolderColor.named(colorOf(it)).tint },
         )
     }
 
-/** Every account's Read later folder. */
 @Composable
 internal fun ReadLaterPage(
     states: MailStates,
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val folders = states.folders.accounts.mapNotNull { it.readLater }
-    LeaveWhenGone(states, navigation, gone = folders.isEmpty())
-    FeedPage(MailPage.ReadLater, folders.toScope(), "Read later", states, dateFormatter, navigation)
+    val folders =
+        states.folders.all.accounts
+            .mapNotNull { it.readLater }
+    LeaveWhenGone(states.folders.all, gone = folders.isEmpty()) { navigation.go(MailPage.Inbox) }
+    FeedPage(
+        MailPage.ReadLater,
+        folders.toScope(),
+        states.folderBase(READ_LATER_TITLE),
+        states,
+        dateFormatter,
+        navigation,
+    )
 }
 
-/**
- * Every conversation: each account's inbox and Sent, kept to threads where the user and someone
- * else both wrote. Sent lists what the user sent whether or not anyone answered.
- */
 @Composable
 internal fun ConversationsPage(
     states: MailStates,
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val scope = MailScope.Roles(mapOf(INBOX_ROLE to INBOX_MAILBOX, SENT_ROLE to CombinedFolder.Sent.title))
-    FeedPage(MailPage.Conversations, scope, "Convos", states, dateFormatter, navigation)
+    FeedPage(
+        MailPage.Conversations,
+        conversationsScope,
+        ListBase.conversations(states.behavior.behavior.list.pills),
+        states,
+        dateFormatter,
+        navigation,
+    )
 }
 
 /** One of the user's folders, holding each account's folder at its path. */
@@ -93,27 +102,17 @@ internal fun SharedFolderPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val accounts = states.folders.accounts
+    val accounts = states.folders.all.accounts
     val folder = remember(accounts, page) { sharedFolder(sharedFolders(accounts), page.key) }
-    LeaveWhenGone(states, navigation, gone = folder == null)
-    FeedPage(page, folder?.folders.orEmpty().toScope(), folder?.name ?: "Folder", states, dateFormatter, navigation)
-}
-
-/**
- * Opens Inbox when the page's folders are [gone], such as after a rename elsewhere, once every
- * account's folders have loaded. An account that failed to load may still hold them, so the page stays.
- */
-@Composable
-private fun LeaveWhenGone(
-    states: MailStates,
-    navigation: MailNavigation,
-    gone: Boolean,
-) {
-    val accounts = states.folders.accounts
-    val loaded = !states.folders.loading && accounts.isNotEmpty() && accounts.none { it.failure != null }
-    LaunchedEffect(loaded, gone) {
-        if (loaded && gone) navigation.go(MailPage.Inbox)
-    }
+    LeaveWhenGone(states.folders.all, gone = folder == null) { navigation.go(MailPage.Inbox) }
+    FeedPage(
+        page,
+        folder?.folders.orEmpty().toScope(),
+        states.folderBase(folder?.name ?: "Folder"),
+        states,
+        dateFormatter,
+        navigation,
+    )
 }
 
 private fun List<MailFolder>.toScope(): MailScope =

@@ -12,12 +12,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadDisplay
-import com.otus.mail.feature.inbox.presentation.RowLook
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.feature.read.presentation.ReadDisplay
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -36,15 +33,17 @@ class ReadZenTest {
     private val zen = mutableStateOf(false)
 
     private fun showDigest() {
-        val base = fixtures.read(listOf(fixtures.digest))
-        val display = ReadDisplay(zen = { zen.value }, setZen = { zen.value = it }, today = base.display.today)
-        val read = ReadContext(base.pages, base.folders, base.privacy, base.files, base.services, base.effects, display)
         val context =
-            InboxContext(
-                loadContent = { fixtures.content(it) },
-                read = read,
-                rowLook = RowLook(own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))),
-            )
+            fixtures.read(listOf(fixtures.digest), own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))) {
+                display =
+                    ReadDisplay(
+                        showQuotes = { false },
+                        zen = { zen.value },
+                        quickView = display.quickView,
+                        setZen = { zen.value = it },
+                        today = display.today,
+                    )
+            }
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
@@ -69,7 +68,7 @@ class ReadZenTest {
         assertTrue(zen.value)
         compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsNotDisplayed()
         compose.onNodeWithText("Mailing list", substring = true).assertIsNotDisplayed()
-        compose.screenshot("read-zen")
+        compose.screenshot("read/zen")
         compose.onNodeWithContentDescription("Leave zen mode").performClick()
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
         compose.onNodeWithText("Images blocked for privacy", substring = true).assertIsDisplayed()

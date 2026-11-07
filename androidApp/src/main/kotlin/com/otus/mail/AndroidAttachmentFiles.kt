@@ -6,10 +6,10 @@ import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments
-import com.otus.mail.feature.inbox.domain.AttachmentFiles
-import com.otus.mail.feature.inbox.domain.PickedFile
-import com.otus.mail.feature.inbox.domain.UploadException
-import com.otus.mail.feature.inbox.domain.UploadFailure
+import com.otus.mail.core.files.AttachmentFiles
+import com.otus.mail.core.files.PickedFile
+import com.otus.mail.core.files.UploadException
+import com.otus.mail.core.files.UploadFailure
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

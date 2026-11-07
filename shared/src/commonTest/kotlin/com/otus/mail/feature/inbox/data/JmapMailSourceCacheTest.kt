@@ -2,13 +2,16 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.SizeFilter
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.source
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -132,7 +135,7 @@ class JmapMailSourceCacheTest {
             val snapshot = source.messages(MailScope.Inbox, query)
             assertEquals(shown, snapshot.messages)
             val unavailable = snapshot.unavailable.single()
-            assertEquals("Ada" to InboxFailure.Unreachable, unavailable.name to unavailable.reason)
+            assertEquals("Ada" to MailFailure.Unreachable, unavailable.name to unavailable.reason)
             assertNotNull(unavailable.syncedAt, "The notice says when the account last loaded")
         }
 

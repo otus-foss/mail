@@ -13,7 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -30,7 +30,7 @@ import org.robolectric.annotation.GraphicsMode
 class NewFolderSheetTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer()
-    private val colors = InMemoryFolderColorStore()
+    private val colors = inMemoryFolderColorStore()
 
     private fun openNewFolder() {
         compose.runOnUiThread {
@@ -69,7 +69,7 @@ class NewFolderSheetTest {
         compose.onNodeWithText("Create").performClick()
         compose.waitForCall(server, "SieveScript/set")
         assertTrue(server.script.orEmpty(), "grace@example.org" in server.script.orEmpty())
-        assertEquals(listOf("Blue"), colors.saved.values.toList())
+        assertEquals(listOf("Blue"), colors.read().values.toList())
     }
 
     private companion object {

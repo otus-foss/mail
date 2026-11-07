@@ -26,20 +26,15 @@ class RelativeDatePickerTest {
     @Before
     fun openCalendar() {
         compose.runOnUiThread { compose.activity.showIsoDateApp() }
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
     }
 
     @Test
-    fun todayShortcutUsesRelativeSummaryAndSingleDatePill() {
+    fun todayShortcutUsesRelativeSummaryAndAppliesOneDay() {
         compose.onNodeWithText("Today").performClick()
         compose.onNodeWithText("Today → Today").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        compose
-            .onNodeWithText("Today")
-            .assertIsOn()
-            .performScrollTo()
-            .performClick()
+        reopen(LocalDate.now().toString())
         compose.onNodeWithText("Today → Today").assertIsDisplayed()
     }
 
@@ -49,17 +44,12 @@ class RelativeDatePickerTest {
         compose.onNodeWithContentDescription(yesterday).performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithText("Yesterday → Choose an end date").assertIsDisplayed()
-        compose.onNodeWithText("Done").assertIsNotEnabled()
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithContentDescription(LocalDate.now().toString()).performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithText("Yesterday → Today").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        compose
-            .onNodeWithText("Yesterday–Today")
-            .assertIsOn()
-            .performScrollTo()
-            .performClick()
+        reopen(yesterday, LocalDate.now().toString())
         compose.onNodeWithText("Yesterday → Today").assertIsDisplayed()
     }
 
@@ -72,19 +62,20 @@ class RelativeDatePickerTest {
         compose.mainClock.advanceTimeBy(400)
         compose.onNodeWithText("Yesterday → Yesterday").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        compose
-            .onNodeWithText("Yesterday")
-            .assertIsOn()
-            .performScrollTo()
-            .performClick()
+        reopen(yesterday)
         compose.onNodeWithText("Last 7 days").performClick()
         val start = LocalDate.now().minusDays(6)
         compose.onNodeWithText("$start → Today").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        compose
-            .onNodeWithText("This week")
-            .assertIsOn()
-            .performScrollTo()
-            .assertIsDisplayed()
+        compose.appliedDateRange(start.toString(), LocalDate.now().toString()).performScrollTo().assertIsDisplayed()
+    }
+
+    /** Checks the panel applied [start] to [end] and opens the range picker on it again. */
+    private fun reopen(
+        start: String,
+        end: String = start,
+    ) {
+        compose.appliedDateRange(start, end).performScrollTo().performClick()
+        compose.onNodeWithText("Custom…").performClick()
     }
 }

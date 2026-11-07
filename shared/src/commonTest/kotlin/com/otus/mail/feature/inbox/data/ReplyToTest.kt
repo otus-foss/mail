@@ -1,9 +1,12 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.original
-import com.otus.mail.feature.inbox.domain.startDraft
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.original
+import com.otus.mail.feature.compose.domain.startDraft
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -23,7 +26,7 @@ class ReplyToTest {
 
     @Test
     fun serverReplyAddressesReachTheReplyDraft() {
-        val original = email.toMessage("a", "A", "Inbox", TimeZone.UTC).original()
+        val original = email.toMessage(MailLocation("Inbox", "A", "a"), TimeZone.UTC).original()
         val draft = ComposeRequest.Reply(original, all = false).startDraft("a", listOf("me@example.com"))
         assertEquals(listOf("team@example.com", "other@example.com"), draft.to.map { it.address })
         assertEquals(emptyList(), draft.cc)
@@ -31,7 +34,7 @@ class ReplyToTest {
 
     @Test
     fun replyAllDeduplicatesReplyAddressesAndOmitsOwnAddress() {
-        val original = email.toMessage("a", "A", "Inbox", TimeZone.UTC).original()
+        val original = email.toMessage(MailLocation("Inbox", "A", "a"), TimeZone.UTC).original()
         val draft = ComposeRequest.Reply(original, all = true).startDraft("a", listOf("me@example.com"))
         assertEquals(listOf("team@example.com", "other@example.com"), draft.to.map { it.address })
         assertEquals(listOf("cc@example.com"), draft.cc.map { it.address })
@@ -39,14 +42,14 @@ class ReplyToTest {
 
     @Test
     fun missingReplyToFallsBackToTheSender() {
-        val original = email.copy(replyTo = null).toMessage("a", "A", "Inbox", TimeZone.UTC).original()
+        val original = email.copy(replyTo = null).toMessage(MailLocation("Inbox", "A", "a"), TimeZone.UTC).original()
         val draft = ComposeRequest.Reply(original, all = false).startDraft("a", emptyList())
         assertEquals(listOf("sender@example.com"), draft.to.map { it.address })
     }
 
     @Test
     fun followUpKeepsTheOriginalRecipients() {
-        val original = email.toMessage("a", "A", "Sent", TimeZone.UTC).original()
+        val original = email.toMessage(MailLocation("Sent", "A", "a"), TimeZone.UTC).original()
         val draft = ComposeRequest.FollowUp(original).startDraft("a", listOf("sender@example.com"))
         assertEquals(listOf("me@example.com", "team@example.com"), draft.to.map { it.address })
     }

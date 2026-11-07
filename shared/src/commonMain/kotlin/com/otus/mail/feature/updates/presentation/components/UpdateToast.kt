@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
 import com.otus.designsystem.shared.feedback.components.ToastState
-import com.otus.designsystem.shared.feedback.elements.ToastAction
 import com.otus.mail.feature.updates.presentation.NightlyUpdateState
 
 /**
@@ -32,6 +32,6 @@ fun UpdateToastEffect(
  * second check replace it instead of stacking another.
  */
 private fun updateToast(onView: () -> Unit): ToastMessage =
-    ToastMessage("Update available", ToastAction("View", onView), group = UPDATE_GROUP)
+    ToastMessage("Update available", UiAction("View", onClick = onView), group = UPDATE_GROUP)
 
 private const val UPDATE_GROUP = "update"

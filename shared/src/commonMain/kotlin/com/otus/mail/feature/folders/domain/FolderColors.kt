@@ -1,34 +1,12 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.preferences.StringMapStore
-
-/**
- * One account's folder: the login [accountId] and the server's [mailboxId]. Colors are keyed by it,
- * never by name or path, so a rename or move keeps the color and a folder made again with a new id
- * starts without one.
- */
-data class FolderKey(
-    val accountId: String,
-    val mailboxId: String,
-) {
-    /** The mailbox id first: JMAP ids hold only letters, digits, `-` and `_` (RFC 8620, section 1.2). */
-    val storageValue: String
-        get() = "$mailboxId$SEPARATOR$accountId"
-
-    companion object {
-        /** Null for a value [storageValue] cannot have made. */
-        fun fromStorageValue(value: String): FolderKey? {
-            val mailboxId = value.substringBefore(SEPARATOR, missingDelimiterValue = "")
-            val accountId = value.substringAfter(SEPARATOR, missingDelimiterValue = "")
-            return if (mailboxId.isEmpty() || accountId.isEmpty()) null else FolderKey(accountId, mailboxId)
-        }
-
-        private const val SEPARATOR = ':'
-    }
-}
-
-val MailFolder.key: FolderKey
-    get() = FolderKey(accountId, id)
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderKey
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.SharedFolder
+import com.otus.mail.core.mailbox.key
+import com.otus.mail.core.storage.StoreSpec
+import com.otus.mail.core.storage.TextCodec
 
 /**
  * Whether the user may color [folder]: only their own folders. Folders with a role and the Read
@@ -64,25 +42,14 @@ data class FolderColors(
     }
 
     fun without(folder: MailFolder): FolderColors = FolderColors(names - folder.key)
-
-    fun withoutAccount(accountId: String): FolderColors = FolderColors(names.filterKeys { it.accountId != accountId })
 }
 
 /**
- * App-private storage for [FolderColors]: color names by [FolderKey.storageValue]. Implementations
- * skip entries that [read] cannot parse, so unknown or blank values read as the default.
+ * App-private storage for [FolderColors]: color names by [FolderKey.storageValue]. Entries it cannot
+ * parse, and blank names, read as the default.
  */
-interface FolderColorStore : StringMapStore
-
-fun FolderColorStore.readColors(): FolderColors =
-    FolderColors(
-        read()
-            .filterValues { it.isNotBlank() }
-            .mapNotNull { (key, name) -> FolderKey.fromStorageValue(key)?.let { it to name } }
-            .toMap(),
-    )
-
-fun FolderColorStore.writeColors(colors: FolderColors) = write(colors.names.mapKeys { (key, _) -> key.storageValue })
-
-/** Forgets a removed account's colors. */
-fun FolderColorStore.forgetAccount(accountId: String) = writeColors(readColors().withoutAccount(accountId))
+object FolderColorStore : StoreSpec<FolderKey, String>(
+    "folder_colors",
+    TextCodec({ it.storageValue }, FolderKey::fromStorageValue),
+    TextCodec.NonBlank,
+)

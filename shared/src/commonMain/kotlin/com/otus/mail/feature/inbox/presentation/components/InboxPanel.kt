@@ -20,7 +20,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
-import com.otus.designsystem.resources.symbol_close
 import com.otus.designsystem.resources.symbol_filter_list
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
@@ -31,14 +30,17 @@ import com.otus.designsystem.shared.panels.components.ChipPlacement
 import com.otus.designsystem.shared.panels.components.ContextPanel
 import com.otus.designsystem.shared.panels.components.PanelExpansion
 import com.otus.designsystem.shared.panels.components.PanelMotion
-import com.otus.designsystem.shared.panels.components.PanelSearchField
 import com.otus.designsystem.shared.panels.components.PanelSearchPill
 import com.otus.designsystem.shared.panels.components.PillSearch
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelNavigationIcon
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.domain.InboxSearch
+import com.otus.mail.feature.inbox.presentation.CategoryTabs
 import com.otus.mail.feature.inbox.presentation.InboxContext
 
 /**
@@ -180,22 +182,11 @@ private fun InboxNavigation(
     )
 }
 
-/** The search field, focused with the keyboard up while [active]; the user focusing it runs [onFocus]. */
-@Composable
-internal fun InboxSearchInput(
-    query: String,
-    onChange: (String) -> Unit,
-    onSubmit: () -> Unit,
-    active: Boolean,
-) {
-    PanelSearchField(query, onChange, "Search your mailbox…", searchFieldModifier(active), onSubmit)
-}
-
 /** Focuses a search field with the keyboard up while [active]; the user focusing or tapping it runs [onFocus]. */
 @Composable
 private fun searchFieldModifier(
     active: Boolean,
-    onFocus: () -> Unit = {},
+    onFocus: () -> Unit,
 ): Modifier {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -226,13 +217,15 @@ private fun searchFieldModifier(
 /**
  * How the panel looks right now: [collapse] reads how far the list has collapsed it;
  * [unreadCount] shows on the Unread pill; [filters] are the page's active filters, which lead the
- * pill row and count on the filter button; [selecting] is set while rows are selected; and
- * [searchFocused] puts the keyboard in the panel's search field.
+ * pill row and count on the filter button; [categories] are the Inbox's category pills, which lead
+ * the row while they are on; [selecting] is set while rows are selected; and [searchFocused] puts
+ * the keyboard in the panel's search field.
  */
-class PanelLook(
+data class PanelLook(
     val collapse: () -> Float = { 0f },
     val unreadCount: Int = 0,
     val filters: ActiveFilters = ActiveFilters(),
+    val categories: CategoryTabs? = null,
     val selecting: PanelSelection? = null,
     val searchFocused: Boolean = false,
     val expansion: PanelExpansion? = null,
@@ -247,7 +240,7 @@ fun PanelLook.grownWith(
     expansion: PanelExpansion?,
     expanded: @Composable () -> Unit,
     searchFocused: Boolean,
-): PanelLook = PanelLook(collapse, unreadCount, filters, selecting, searchFocused, expansion, expanded)
+): PanelLook = copy(searchFocused = searchFocused, expansion = expansion, expanded = expanded)
 
 /** The selected rows' [count], with what ✕ and Select all do. */
 class PanelSelection(

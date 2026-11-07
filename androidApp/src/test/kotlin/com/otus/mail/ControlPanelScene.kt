@@ -20,25 +20,32 @@ import androidx.compose.ui.unit.Dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.github.takahirom.roborazzi.captureRoboImage
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusPalette
 import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.presentation.InboxContext
+import com.otus.mail.core.categories.domain.InboxCategories
+import com.otus.mail.core.messages.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.components.LocalToday
+import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 
 /** The status bar of the design's phone, which Robolectric leaves out, so the panel can fill it. */
 private const val STATUS_BAR_DP = 40
 
 internal fun palette(base: ThemeBase): OtusPalette = ThemeChoice(base).palette
 
-/** The inbox of [ControlPanelFixtures] in [palette], with its account stack and 33 conversations to show. */
-internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(palette: OtusPalette = OtusPalette.Otus) {
+/**
+ * The inbox of [ControlPanelFixtures] in [palette], with its account stack and 33 conversations to
+ * show, whose search offers [mailboxSearch]'s accounts and mailboxes, sorted into [categories]' pills.
+ */
+internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(
+    palette: OtusPalette = OtusPalette.Otus,
+    mailboxSearch: MailboxSearch = MailboxSearch(),
+    categories: InboxCategories? = null,
+) {
     runOnUiThread {
         activity.setContent {
             val scope = rememberCoroutineScope()
@@ -48,11 +55,13 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showControlInbox(palette: O
                     InboxScreen(
                         ControlPanelFixtures.messages,
                         context =
-                            InboxContext(
-                                filters = filters,
-                                filterOptions = FilterPanelFixtures.options,
-                                scope = ControlPanelFixtures.scope(),
-                            ),
+                            inboxContext {
+                                this.filters = filters
+                                filterOptions = FilterPanelFixtures.options
+                                this.scope = ControlPanelFixtures.scope()
+                                this.mailboxSearch = mailboxSearch
+                                this.categories = categories
+                            },
                     )
                 }
             }
@@ -72,7 +81,7 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showControlRead(palette: Ot
                         fixtures.threadRow,
                         fixtures.actions(),
                         null,
-                        InboxContext(loadContent = { fixtures.content(it) }, read = fixtures.read(fixtures.thread)),
+                        fixtures.read(fixtures.thread),
                         emptySet(),
                         onClose = {},
                     )
@@ -111,9 +120,6 @@ internal fun AndroidComposeTestRule<*, MainActivity>.holdScrolledBy(distance: Dp
     }
     waitForIdle()
 }
-
-internal fun AndroidComposeTestRule<*, MainActivity>.panelShot(name: String) =
-    onRoot().captureRoboImage("src/test/screenshots/control_panel/$name.png")
 
 /** Taps the search pill, which focuses the field, and on the inbox grows its search room. */
 internal fun ComposeTestRule.openSearch(prompt: String = "Search Inbox") {

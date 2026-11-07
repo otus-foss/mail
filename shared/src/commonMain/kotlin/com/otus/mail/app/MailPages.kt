@@ -7,15 +7,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.settings.components.LocalFoundSetting
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.within
-import com.otus.mail.feature.inbox.presentation.FolderPillOption
-import com.otus.mail.feature.inbox.presentation.InboxContext
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.within
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.settings.presentation.FolderPillOption
+import com.otus.mail.feature.folders.presentation.FoldersState
+import com.otus.mail.feature.folders.presentation.LabeledCopies
 import com.otus.mail.feature.inbox.presentation.InboxFeedState
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
-import com.otus.mail.feature.inbox.presentation.status
+import com.otus.mail.feature.inbox.presentation.ListBase
+import com.otus.mail.feature.inbox.presentation.folderPillOptions
 
 /** The page for [page], which flashes the setting a settings search found there, if any. */
 @Composable
@@ -58,11 +59,7 @@ private fun PageContent(
             SignatureEditorPage(page, states, back)
         }
 
-        MailPage.Settings, MailPage.EmailAccounts, MailPage.Appearance, MailPage.Behavior, MailPage.Notifications,
-        MailPage.NotificationOverrides, MailPage.SidebarSettings, MailPage.PinnedSettings, MailPage.ThemeSettings,
-        MailPage.MailListSettings, MailPage.ActionBarSettings, MailPage.FilterPanelSettings, MailPage.Folders,
-        is MailPage.FolderDetail,
-        -> {
+        is MailPage.SettingsPage -> {
             SettingsPageContent(page, states, settings, dateFormatter, navigation, back)
         }
 
@@ -91,12 +88,7 @@ private fun PageContent(
         }
 
         MailPage.Contacts, is MailPage.Contact, is MailPage.ContactEditor -> {
-            ContactsPages(
-                page,
-                states,
-                navigation,
-                back,
-            )
+            ContactsPages(page, states.contacts.cards, states.moveToasts.toasts, navigation, back)
         }
     }
 }
@@ -108,8 +100,7 @@ private fun CombinedPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val folder = page.folder
-    FeedPage(page, MailScope.Role(folder.role, folder.title), folder.title, states, dateFormatter, navigation)
+    FeedPage(page, MailScope.Role(page.role), states.folderBase(page.role.title), states, dateFormatter, navigation)
 }
 
 @Composable
@@ -119,59 +110,50 @@ private fun FolderPage(
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
-    val account = states.folders.account(page.accountId)
-    val folder = account?.folder(page.folderId)
-    // A folder deleted elsewhere leaves its page once the account's folders have loaded without it.
-    LaunchedEffect(account, folder) {
-        if (account != null && account.failure == null && folder == null) navigation.go(MailPage.Inbox)
-    }
+    val folder = states.folders.all.folder(page.accountId, page.folderId)
+    LeaveWhenGone(states.folders.all, gone = folder == null, page.accountId) { navigation.go(MailPage.Inbox) }
     FeedPage(
         page,
         MailScope.Folder(page.accountId, page.folderId),
-        folder?.name ?: "Folder",
+        states.folderBase(folder?.name ?: "Folder"),
         states,
         dateFormatter,
         navigation,
     )
 }
 
-/** The messages [mailScope] loads, on [page], which calls their folder [name]. */
+/** The messages [mailScope] loads, on [page], which [base] names. */
 @Composable
 internal fun FeedPage(
     page: MailPage,
     mailScope: MailScope,
-    name: String,
+    base: ListBase,
     states: MailStates,
     dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ) {
     val pageScope = rememberCoroutineScope()
-    val feed = remember(mailScope) { states.folderFeed(mailScope, pageScope) }
+    val feed = remember(mailScope) { states.list.feedOf(mailScope, pageScope) }
     LaunchedEffect(feed) { feed.refresh() }
-    val filters = rememberPageFilters(states, page, feed)
-    val labeled = rememberLabeled(states, feed)
-    InboxScreen(
-        labeled,
-        dateFormatter,
-        navigation.openSidebar,
-        feed.status(connected = true),
-        onRefresh = {
-            feed.refresh()
-            states.folders.refresh()
-        },
-        context =
-            InboxContext.folder(name, states.behavior.behavior.pills).copy(
-                onCompose = { navigation.go(MailPage.Compose(it, parent = page)) },
-                loadContent = states::messageContent,
-                read = rememberReadContext(states, feed, navigation),
-                filters = filters,
-                filterOptions = rememberFilterOptions(states, page, filters.applied),
-                rowLook = rememberRowLook(states),
-                nudge = rememberListNudge(states, labeled),
-                onLoadMore = feed::loadMore,
-            ),
-        messageActions = rememberMessageActions(states, feed, navigation),
-    )
+    ListPage(page, feed, base, states, dateFormatter, navigation)
+}
+
+/** A folder page called [name], with the pills the user chose. */
+internal fun MailStates.folderBase(name: String): ListBase = ListBase.folder(name, behavior.behavior.list.pills)
+
+/**
+ * Runs [leave] when the page's folders are [gone], such as after a delete or rename elsewhere,
+ * once the folders of [accountId], or of every account without one, have loaded without failing.
+ */
+@Composable
+internal fun LeaveWhenGone(
+    folders: FoldersState,
+    gone: Boolean,
+    accountId: String? = null,
+    leave: () -> Unit,
+) {
+    val settled = folders.settled(accountId)
+    LaunchedEffect(settled, gone) { if (settled && gone) leave() }
 }
 
 @Composable
@@ -181,13 +163,13 @@ internal fun rememberMessageActions(
     navigation: MailNavigation,
 ): MessageActions =
     remember(states, feed, navigation) {
-        states.messageActions(feed)
+        states.list.messageActions(feed)
     }
 
 /** The folder pills the loaded folders can fill, again whenever they change. */
 @Composable
 internal fun rememberFolderPills(states: MailStates): List<FolderPillOption> =
-    remember(states.folders.accounts) { folderPillOptions(states.folders.accounts) }
+    remember(states.folders.all.accounts) { folderPillOptions(states.folders.all.accounts) }
 
 /**
  * The feed's messages that the chosen "Show mail from" scope shows, with their other folders named,
@@ -199,8 +181,8 @@ internal fun rememberLabeled(
     feed: InboxFeedState,
 ): List<MailMessage> {
     val scope = states.mailScope
-    val colors = states.folderColors.colors to states.behavior.behavior.sidebar.folderColors
+    val colors = states.folders.colors.colors to states.behavior.behavior.sidebar.layout.folderColors
     // A message that did not change, as when another sender's avatar arrives, keeps its copy.
-    val copies = remember(states.folders.accounts, colors) { LabeledCopies() }
-    return remember(feed.messages, scope, copies) { states.filing.labeled(feed.messages.within(scope), copies) }
+    val copies = remember(states.folders.all.accounts, colors) { LabeledCopies() }
+    return remember(feed.messages, scope, copies) { states.folders.filing.labeled(feed.messages.within(scope), copies) }
 }

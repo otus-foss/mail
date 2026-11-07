@@ -11,12 +11,14 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.BarButton.MoveTo
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.BarButton.MoveTo
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -25,7 +27,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowDialog
 
 /** Move to buttons: picked for slots in the bar editor, each with its own folder, and moving the open message. */
 @RunWith(RobolectricTestRunner::class)
@@ -68,7 +69,7 @@ class MoveToButtonsTest {
         compose.onNodeWithContentDescription("Receipts, change").performClick()
         pick("Receipts / Amazon")
         done()
-        screenshot("edit-sheet")
+        compose.screenshot("messages/move_to_edit_sheet")
         done()
 
         val expected =
@@ -76,7 +77,10 @@ class MoveToButtonsTest {
                 listOf(MoveTo(listOf("Receipts", "Amazon")), MoveTo(listOf("Travel")), MailAction.Move),
                 MailAction.Reply,
             )
-        assertEquals(expected, AndroidMailBehaviorStore(compose.activity).read().savedLayout(ActionBarPlace.Message))
+        assertEquals(
+            expected,
+            AndroidMailBehaviorStore(compose.activity).read().actions.savedLayout(ActionBarPlace.Message),
+        )
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
@@ -90,12 +94,16 @@ class MoveToButtonsTest {
     @Test
     fun theMainButtonNamesItsFolderAndMovesTheMessage() {
         val bar = ActionBarLayout(listOf(MailAction.Archive, MoveTo(listOf("receipts"))), MoveTo(listOf("Travel")))
-        val behavior = MailBehavior(markReadOnOpen = false, actionBar = mapOf(ActionBarPlace.Message to bar))
+        val behavior =
+            MailBehavior(
+                read = ReadBehavior(markReadOnOpen = false),
+                actions = ActionBehavior(bars = mapOf(ActionBarPlace.Message to bar)),
+            )
         compose.showInbox(server, MailBehaviorState(initial = behavior))
         compose.onNodeWithText("Welcome").performClick()
         compose.waitForNode(hasContentDescription("Travel") and hasClickAction())
         button("Move to Receipts").assertExists()
-        screenshot("message-bar")
+        compose.screenshot("messages/move_to_message_bar")
         button("Travel").performClick()
         assertTrue(moveUpdate(), "\"mailboxIds/a\":null,\"mailboxIds/t\":true" in moveUpdate())
     }
@@ -103,15 +111,6 @@ class MoveToButtonsTest {
     private fun moveUpdate(): String {
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "mailboxIds" in it } }
         return server.calls.first { "Email/set" in it && "mailboxIds" in it }
-    }
-
-    /** Saves the sheet on top, or the page without one, to build/reports/action-targets for review. */
-    private fun screenshot(name: String) {
-        compose
-            .runOnIdle {
-                val sheet = ShadowDialog.getShownDialogs().lastOrNull { it.isShowing }
-                (sheet?.window?.decorView ?: compose.activity.window.decorView).drawnBitmap()
-            }.savePng("build/reports/action-targets/$name.png")
     }
 
     private companion object {

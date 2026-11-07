@@ -29,7 +29,7 @@ search field is open.
 - **New mail** starts a blank draft. When the list is filtered to one account, the draft sends
   from it.
 - **Search** opens the search field, as tapping the search prompt does.
-- **Filters** opens the filter sheet, as the header's filter button does.
+- **Filters** grows the control panel to every filter, as the header's filter button does.
 - **Mark all read** marks every unread message in the current results read, where the account
   allows it, in as few `Email/set` calls as each server allows. It is disabled when there is
   nothing to mark.
@@ -46,9 +46,13 @@ once. When the message has an HTML body, it replaces the text in the shared `Htm
 scrolls on its own. Remote images stay hidden until the user taps **Show images**, and a tapped
 link opens in the browser or mail app. While the page is open, accessibility services skip the list under it.
 
-The bar shows the **Open message** layout. **More actions** opens an `ActionDialog` with every
-action the message can take that the bar leaves out, Reply, Reply all, and Forward included; the
-button is hidden when there are none. An action that takes the message out of the list, such as
+The bar shows the **Open message** layout. **More actions** opens a menu in sections: what acts on
+the page's own message (the other reply, Forward, Mark read or unread, Flag, View details, Print),
+the sender (Add to contacts, Block sender, Spam), and the whole conversation (Move, Mute, Delete).
+Its last section lists every other action the bar leaves out, such as Read later, Archive, or Rule
+for sender, so each action of the open message is on the bar or in the menu. Mail's actions in the
+menu carry the same labels and symbols as on the bar, and one that asks to be confirmed, such as
+Delete forever, asks there too. An action that takes the message out of the list, such as
 Archive, closes the page first. Marks keep the page open and show their new state on the button.
 **Move** opens the Move to sheet (see [Folders and rules](folders.md)), and choosing a folder
 closes the page and moves the message.
@@ -233,6 +237,14 @@ The mode is saved as `adaptive` or `fixed` under `action_bar_mode` on Android an
 is saved as a boolean under `action_bar_minimized` on Android and `otus.mail.action_bar_minimized`
 on iOS, and is off when missing.
 
+One action model in `core/messages/presentation/actions` serves every place: `ActionSubject.offer`
+is one exhaustive `when` over `MailAction` that gives each action's label, symbol, and run for what
+the place holds (the swiped row, the selection, the open conversation and page, the list, or the
+draft), or null where it does not apply. `ActionLooks.kt` holds the labels and symbols settings
+show, `barFor` builds every bar from the saved layout and the offers, and `AlertButtons.kt` gives
+the alert buttons. The swipes, the four bars, the Read view's menu and Move row, and the alert
+buttons all draw from it, so a new `MailAction` fails to compile until each of them handles it.
+
 `MailAction` replaced `MessageSwipe`. The swipe storage values are unchanged, and a saved
 "none" still reads as no swipe, so existing swipe settings carry over.
 
@@ -251,7 +263,7 @@ Flag left the open message's bar for Reply; it is in **More actions**.
 ### Folder bars
 
 Spam, Trash, and Sent pages show their own bars. The page's folders are found by role
-(`FolderRole`: `junk`, `trash`, or `sent`), so a combined folder, one account's folder, and a
+(`MailboxRole`: `Junk`, `Trash`, or `Sent`), so a combined folder, one account's folder, and a
 folder pill all count. The open message uses the role of the folder it is shown in.
 
 | Folder | Message list | Selected messages | Open message |
@@ -309,22 +321,22 @@ at 256. Emptying first pages through the folder with `Email/query` and `Email/ge
 
 ## Validation
 
-The bar needs the Meta release that adds `ActionBar`, `ContentRow` selection, and
-`symbol_more_horiz`; Mail still pins Meta 0.7.0. `ActionBarTest` renders the bar's states and
+`ActionBarTest` renders the bar's states and
 checks that the main button's icon stays put through the transition, that a disabled action keeps
 every slot in place, that the shell is one button naming its context, and that large text grows
 the shell but not the group. `ActionBarLayoutTest` and `MailBehaviorTest` cover the layout model,
 each place's default, its storage format, mode resolution, and Read later's removal.
 `BarButtonTest` and `ActionBarLayoutTest` cover Move to's storage, the
-migration of older bars, and switching folders. `MoveToOffersTest` covers moving across accounts,
+migration of older bars, and switching folders. `ActionReachTest` checks that every action of the open message is on its bar or in its menu, and
+every selection action on the bar or in its menus, in some folder. `MoveToOffersTest` covers moving across accounts,
 the disabled button, and Suggested move, and `MoveTargetPathTest` the folder paths move targets
 carry. `MoveToButtonsTest` picks Move to buttons with different folders for two slots, switches
 one slot's folder through its `ValuePicker`, and moves the open message with one. `FolderBarsTest`
-covers each folder's default bars and when they apply, `JmapMessageCleanerTest` the Not spam
+covers each folder's default bars and when they apply, `EmailCleanupTest` the Not spam
 patch, batching, and emptying, `FolderCleaningTest` the rights checks and the rollback of kept
 messages, and `FolderActionsTest` Not spam in Spam and the Delete forever confirm in Trash.
-`JmapMessageMarkerTest` covers batched marks per account, `MessageMarkingTest` the rollback of
-refused marks and the single folder refresh, and `MarkOffersTest` that Mark all read and a
+`EmailMarksTest` covers batched marks per account, `MessageMarkingTest` the rollback of
+refused marks and the single change of folder counts, and `MarkOffersTest` that Mark all read and a
 selection mark their messages in one change.
 `InboxActionBarTest` covers the message list's bar and the **Same everywhere** mode across
 screens, `ComposeActionsTest` the draft requests and the reply context, and

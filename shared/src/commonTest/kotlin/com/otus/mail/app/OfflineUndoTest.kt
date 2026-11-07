@@ -1,8 +1,10 @@
 package com.otus.mail.app
 
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.SendCheck
-import com.otus.mail.feature.inbox.domain.SendFailure
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.SendFailure
+import com.otus.mail.feature.compose.domain.SendCheck
+import com.otus.mail.testing.OutgoingMailFixture
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -18,11 +20,11 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
     fun undoOfAHoldWithoutAnAnswerOpensTheDraftAndCancelsTheHoldLater() =
         runTest {
             serverDelaySeconds = 60
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             val outgoing = outgoing()
             outgoing.send(message)
             runCurrent()
-            assertNotNull(toasts.messages.single().action).onAction()
+            assertNotNull(toasts.messages.single().action).onClick()
             runCurrent()
             assertEquals(listOf<ComposeRequest>(message.reopen), opened, "The draft opens at once")
             advanceTimeBy(HOLD + 1)
@@ -44,7 +46,7 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
             val undo = assertNotNull(toasts.messages.single().action)
             swipeAway()
             runCurrent()
-            undo.onAction()
+            undo.onClick()
             runCurrent()
             assertEquals(listOf("Already sent"), toasts.messages.map { it.text })
             assertEquals(emptyList(), opened)
@@ -56,7 +58,7 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
             serverDelaySeconds = 60
             outgoing().send(message)
             runCurrent()
-            sendNowFailure = SendFailure.Unreachable
+            sendNowFailure = SendFailure.Mail(MailFailure.Unreachable)
             swipeAway()
             runCurrent()
             assertEquals(listOf("Will send when online"), toasts.messages.map { it.text })
@@ -71,16 +73,16 @@ internal class OfflineUndoTest : OutgoingMailFixture() {
     @Test
     fun aSendNobodyCanConfirmOffersTheMessageToOpenAtOnce() =
         runTest {
-            failure = SendFailure.Unreachable
+            failure = SendFailure.Mail(MailFailure.Unreachable)
             outgoing().send(message)
             advanceTimeBy(HOLD + 1)
             runCurrent()
             check = SendCheck.Unconfirmable
-            assertNotNull(toasts.messages.single().action).onAction()
+            assertNotNull(toasts.messages.single().action).onClick()
             runCurrent()
             val offer = toasts.messages.single()
             assertEquals("Couldn't confirm sending", offer.text)
-            assertNotNull(offer.action).onAction()
+            assertNotNull(offer.action).onClick()
             runCurrent()
             assertEquals(listOf<ComposeRequest>(message.reopen), opened)
             assertEquals(1, runs.size, "It never goes again by itself")

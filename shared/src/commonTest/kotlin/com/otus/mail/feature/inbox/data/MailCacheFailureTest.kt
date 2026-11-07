@@ -8,14 +8,19 @@ import com.otus.mail.core.cache.CacheWrite
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.feature.read.data.JmapMessageBodies
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.source
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -47,7 +52,7 @@ class MailCacheFailureTest {
                 "bodyValues": {"1": {"value": "Keep this body"}}
             }]}, "c0"]]}"""
                 }
-            val bodies = JmapMessageBodies(JmapConnections(JmapClient(engine), store), store, failingWrites())
+            val bodies = JmapMessageBodies(JmapConnections(JmapClient(engine), store), failingWrites())
             val message =
                 MailMessage(
                     "ada/e",
@@ -55,7 +60,7 @@ class MailCacheFailureTest {
                     "Subject",
                     "preview",
                     ReceivedAt("2026-10-24", "12:00"),
-                    MailLocation("Inbox", "Ada", "ada"),
+                    MailLocation("Inbox", "Ada", "ada", mailboxRole = MailboxRole.Inbox),
                     emailId = "e",
                 )
             assertEquals("Keep this body", bodies.content(message)?.text)

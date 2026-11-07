@@ -3,8 +3,9 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.inbox.domain.FoundPerson
-import com.otus.mail.feature.inbox.domain.PeopleField
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.PeopleField
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -13,7 +14,7 @@ import kotlinx.coroutines.launch
 
 /**
  * The text typed in the filter panel's From or To line and the people the server [find]s for it,
- * in [scope], [SEARCH_DELAY_MILLIS] after the last keystroke. A new text cancels the search still
+ * in [scope], [TYPING_PAUSE_MILLIS] after the last keystroke. A new text cancels the search still
  * running, and blank text finds nobody. Without a scope only the loaded mail is searched.
  */
 class FilterPeopleSearch(
@@ -53,7 +54,7 @@ class FilterPeopleSearch(
             launcher.launch {
                 var answered = false
                 try {
-                    delay(SEARCH_DELAY_MILLIS)
+                    delay(TYPING_PAUSE_MILLIS)
                     found = find(field, text.trim())
                     answered = true
                 } finally {
@@ -74,9 +75,4 @@ class FilterPeopleSearch(
 
     /** Empties the field, as when the panel closes or a person is picked. */
     fun clear() = search("")
-
-    companion object {
-        /** Typing a name searches once it pauses. */
-        const val SEARCH_DELAY_MILLIS = 300L
-    }
 }

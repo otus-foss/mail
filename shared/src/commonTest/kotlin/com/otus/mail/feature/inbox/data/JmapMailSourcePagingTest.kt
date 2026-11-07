@@ -2,11 +2,17 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.mail.core.cache.InMemoryMailCache
-import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.at
+import com.otus.mail.testing.connections
+import com.otus.mail.testing.emailWriter
+import com.otus.mail.testing.source
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
@@ -46,7 +52,7 @@ class JmapMailSourcePagingTest {
     fun aMovedRowDoesNotSkipTheNextOnes() =
         runTest {
             val first = source.messages(MailScope.Inbox, MailQuery()).messages
-            val mover = JmapMessageMover(server.connections(store), store, cache)
+            val mover = emailWriter(server.connections(store), cache)
             mover.move(first.first(), "r", leaving = setOf("a"))
             assertEquals(listOf("m2", "m3", "m4"), more())
         }
@@ -54,7 +60,7 @@ class JmapMailSourcePagingTest {
     @Test
     fun aListWithNoLoadedRowLeftLoadsAgainWithAPageMore() =
         runTest {
-            val mover = JmapMessageMover(server.connections(store), store, cache)
+            val mover = emailWriter(server.connections(store), cache)
             source.messages(MailScope.Inbox, MailQuery()).messages.forEach { mover.move(it, "r", leaving = setOf("a")) }
             assertEquals(listOf("m3", "m4", "m5", "m6"), more())
             val query = server.calls("Email/query").last()

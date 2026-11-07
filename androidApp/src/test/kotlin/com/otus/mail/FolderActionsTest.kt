@@ -8,8 +8,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -35,7 +36,10 @@ class FolderActionsTest {
             compose.activity.setContent {
                 App(
                     services = server.services(),
-                    behaviorState = MailBehaviorState(initial = MailBehavior(markReadOnOpen = false)),
+                    behaviorState =
+                        MailBehaviorState(
+                            initial = MailBehavior(read = ReadBehavior(markReadOnOpen = false)),
+                        ),
                 )
             }
         }
@@ -63,7 +67,7 @@ class FolderActionsTest {
         server.folders += """{"id": "j", "name": "Junk Mail", "role": "junk", "totalEmails": 1}"""
         server.subjects["j"] = "You won a prize"
         openMessageIn("Spam", "You won a prize")
-        screenshot("spam-bar")
+        compose.screenshot("folders/spam_bar")
         button("Delete forever").assertExists()
         button("Not spam").performClick()
         val update = lastUpdate()
@@ -79,7 +83,7 @@ class FolderActionsTest {
         server.folders += """{"id": "t", "name": "Deleted Items", "role": "trash", "totalEmails": 1}"""
         server.subjects["t"] = "Old receipt"
         openMessageIn("Trash", "Old receipt")
-        screenshot("trash-bar")
+        compose.screenshot("folders/trash_bar")
         button("Restore").assertExists()
 
         button("Delete forever").performClick()
@@ -89,18 +93,10 @@ class FolderActionsTest {
         assertTrue("Cancel deletes nothing", server.calls.none { "Email/set" in it })
 
         button("Delete forever").performClick()
-        dialogScreenshot("delete-forever-confirm")
+        compose.screenshot("folders/delete_forever_confirm")
         compose.onNodeWithText("Delete").performClick()
         val destroy = lastUpdate()
         assertTrue(destroy, "\"destroy\":[\"m1-t\"]" in destroy)
         compose.onNodeWithContentDescription("More actions").assertDoesNotExist()
     }
-
-    /** Saves the screen to build/reports/inbox for review. */
-    private fun screenshot(name: String) = compose.windowBitmap().savePng(reportPath(name))
-
-    /** Saves the dialog on top, which has its own window. */
-    private fun dialogScreenshot(name: String) = compose.dialogBitmap().savePng(reportPath(name))
-
-    private fun reportPath(name: String) = "build/reports/inbox/folder-actions-$name.png"
 }

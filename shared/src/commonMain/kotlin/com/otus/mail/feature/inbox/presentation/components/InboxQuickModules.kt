@@ -16,15 +16,17 @@ import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.designsystem.resources.symbol_flag
 import com.otus.designsystem.resources.symbol_hourglass_empty
 import com.otus.designsystem.resources.symbol_reply
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.components.firstName
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.messages.presentation.kind
+import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.SenderKey
 import com.otus.mail.feature.inbox.domain.frequentSenders
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.read.kind
 import org.jetbrains.compose.resources.DrawableResource
 
 /** Needs reply, Waiting, Flagged, and Later (Files while Read later is off), counted as the filter panel counts. */
@@ -144,15 +146,6 @@ private val QuickFacet.quickIcon: DrawableResource
             else -> Res.drawable.symbol_attach_file
         }
 
-/** The first word of the name, or the address's local part when the name is blank. */
-internal val MailSender.firstName: String
-    get() =
-        name
-            .trim()
-            .split(Regex("\\s+"))
-            .firstOrNull { it.isNotBlank() && '@' !in it }
-            ?: address.substringBefore('@')
-
 /** The address without its top-level domain, such as `otus@rubylabs`, short enough for a face. */
 private fun String.withoutTopDomain(): String =
     if ('@' in this && '.' in substringAfter('@')) substringBeforeLast('.') else this
@@ -162,4 +155,5 @@ private fun fileKind(name: String): AttachmentKind =
     AttachmentKind.valueOf(MailAttachment(name, "", 0L, "").kind().name)
 
 private const val FACE_SLOTS = 5
+
 private const val FILE_SLOTS = 4

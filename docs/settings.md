@@ -1,12 +1,8 @@
 # Settings
 
 Implemented through the shared `settings` and `accounts` libraries from otus-meta, with
-Mail-specific destination entries in `app/MailSettings.kt`. Mail pins both libraries to Meta
-0.7.0. The Appearance page's title and the removal of its `content` slot are unreleased Meta
-changes, so Mail builds against Meta's `feat/settings-layout` until the next release. Settings is
-a sidebar destination with subpages.
-
-Meta 0.7.0 includes the connection sheet and sending-address list described below.
+Mail-specific destination entries in `app/MailSettings.kt`. Settings is a sidebar destination
+with subpages.
 
 ## Pages
 
@@ -44,8 +40,10 @@ left, the control on the right, and large section titles. Search covers every pa
 - **Mail behavior** (`MailBehaviorScreen`) holds how Mail acts, in the order the user meets it:
   - **Inbox**: **Inbox shows** opens a sheet with Archive, Your folders, Spam, and Trash switches
     (see [Inbox contents](inbox.md#inbox-contents)); **Pills** opens `InboxPillsSheet`, where the
-    shown pills are reordered by their handles and others are added; the **Read later** switch
-    gives each account a Read later folder (see [Read later](folders.md#read-later)).
+    shown pills are reordered by their handles and others are added; **Categories** opens
+    `CategoriesSheet`, which turns the category pills on and shows or hides each category (see
+    [categories](categories.md)); the **Read later** switch gives each account a Read later
+    folder (see [Read later](folders.md#read-later)).
   - **Panels**: **Start page** opens a `ChoiceSheet` of the page Mail opens on: **Inbox** (the
     default, alone at the top), then every mailbox the sidebar can pin, such as Read later,
     Convos, **Contacts**, a combined system folder like Sent, or one of the user's folders shared
@@ -114,10 +112,10 @@ Every setting is one of a few kinds, so each kind reads and behaves the same on 
 - **Choice**: a `SettingRow` that shows the current value in a `ValueButton` and opens a
   `ChoiceSheet`. Choosing applies at once and moves the check; Done, the scrim, Back, or a swipe
   down closes it, and the default sits alone at the top. A choice is never a list of radio rows on
-  the page itself. Only **Icons from** uses a `RadioChoiceSheet`, which saves on Done, because its
+  the page itself. Only **Icons from** uses `ChoiceSheet(saveOnDone)`, which saves on Done, because its
   Bulwark choice needs an address that has to be valid first.
 - **Ordered list**: a `SettingRow` that shows how many are chosen, such as "4 shown", and opens
-  `OrderedChoiceSheet`, a `SelectionSheet` where chosen items are dragged by their handles or
+  Meta's `OrderedChoiceSheet`, a `ListSheet` where chosen items are dragged by their handles or
   tapped out and others are added; Done saves. Pills, the filter panel's Sections and Quick
   filters, both Quick views, and the alert buttons use it. A list with a limit, such as the three
   alert buttons, says "Take one out to add another." once it is full.
@@ -151,13 +149,22 @@ load also cancels the fallback. `StartPageTest` covers the resolution and fallba
 
 ## Search
 
-The settings home searches `mailSettingsIndex` in `app/MailSettings.kt`, which mirrors each page:
-`mailBehaviorIndex`, `mailLookIndex`, and `privacyIndex` in the inbox feature list what their
-screens show, in the same sections. A search finds a page, setting, option, or keyword, such as
-"Dark mode" for Theme, "drawer" for Sidebar, or "screenshots" for Screen security, and a query of
-several words finds a setting that holds each word somewhere, such as "swipe archive". Opening a
-result opens its page with the row flashed, and Back returns to the results. When a setting moves
-between pages, move its index entry with it; `MailSettingsIndexTest` checks where the moved ones
+The settings home searches `mailSettingsIndex` in `app/MailSettings.kt`. Each Mail page declares
+its rows once in `feature/mailsettings/presentation/components`, as Meta's `SettingsSectionSpec`
+values built from the current state: `mailListSettings`, `mailBehaviorSettings`,
+`sidebarSettings`, `pinnedSettings`, `filterPanelSettings`, `actionBarSettings`, and
+`privacySettings`, with `mailListRow` for Appearance and `alertButtonsRow` for Notifications. The
+screen shows that list with `SettingSections`, and the index walks the same list with `sections`,
+so titles, values, options, icons, and disabled reasons cannot drift apart. Previews, the Pinned
+editors, the action bar cards, and the Sidebar's reorderable sections stay in the screens around
+the list. The Signatures page belongs to the compose feature, so its Add to replies switch is
+repeated in `writingRows` for search. The top-level pages and the Notifications page's other
+rows are listed by hand in `app/MailSettings.kt`.
+
+A search finds a page, setting, option, or keyword, such as "Dark mode" for Theme, "drawer" for
+Sidebar, or "screenshots" for Screen security, and a query of several words finds a setting that
+holds each word somewhere, such as "swipe archive". Opening a result opens its page with the row
+flashed, and Back returns to the results. `MailSettingsIndexTest` checks where moved settings
 live.
 
 ## Reusable pieces
@@ -168,14 +175,13 @@ live.
 - `ChoiceSheet` (component): single-choice bottom sheet for settings; choosing applies at once.
   The default option, "Use device format" or a swipe's own default marked "Default", is listed
   first in a group of its own.
-- `ChoiceDialog` (component): single-choice popup over a scrim, for one-shot picks.
 - `DialogFrame` (component): the shared popup frame with a title and close button.
 - `SheetFrame` (component): the shared bottom sheet with a title, Done, and dismissal gestures.
 - `ConfirmDialog` (component): asks before a destructive change, with Cancel and the
   confirming action. Removing an account and deleting a folder use it.
 - `ActionDialog` and `InputDialog` (components): a confirmation or menu of `DialogAction`s, and a
   popup with one validated text field.
-- `ActionRow`, `InputField`, and `InputKind` (elements).
+- `InputField` and `InputKind` (elements).
 
 App wiring owns the page (`app/MailPage`): subpages name their parent and belong to the Settings
 sidebar entry. Each page keeps its saved state while another is shown. The password is held in

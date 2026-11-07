@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import com.otus.designsystem.shared.contacts.components.LetterIndexSide
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactCard
@@ -35,6 +36,9 @@ internal class ContactsView(
     /** The header's height, so the filter panel can start from it. */
     var panelHeight by mutableStateOf(0.dp)
 
+    /** The edge the letter index puts its letters on. */
+    var letterSide by mutableStateOf(LetterIndexSide.Start)
+
     /** The main cards of the selected people. */
     var selected by mutableStateOf(emptySet<CardKey>())
 
@@ -50,7 +54,6 @@ internal class ContactsView(
     /** Whether the list shows everything: no search and no book filter. */
     val showsAll: Boolean get() = query.isBlank() && books.isEmpty()
 
-    /** Ends the selection. */
     fun clearSelection() {
         selected = emptySet()
     }

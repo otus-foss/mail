@@ -14,9 +14,11 @@ import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.CacheWrite
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.MailboxObject
+import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.ThreadType
 import com.otus.mail.core.mail.unlessRefused
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.Mailboxes
 import kotlin.time.Instant
 
 /**
@@ -54,52 +56,42 @@ internal data class ObjectChanges(
 
 /** A login's mailboxes and what changed in its emails and threads, as one request found them. */
 internal class MailChanges(
-    private val mailboxList: MailboxList,
+    val mailboxes: List<MailFolder>,
     val emails: ObjectChanges,
     val threads: ObjectChanges,
-) {
-    val mailboxes: List<MailboxObject> get() = mailboxList.mailboxes
-
-    fun saveMailboxes(write: CacheWrite) = write.saveMailboxes(mailboxList)
-}
+)
 
 /**
- * The mailboxes and the `Email/changes` and `Thread/changes` since the login's saved states, in
- * one request; the mailboxes follow their own changes where they can. Empty `/get` calls give the
- * current states, used when there is nothing to start from. Further pages of changes take a request
- * each, up to [MAX_PAGES], and mailboxes whose changes could not be followed one more.
+ * The `Email/changes` and `Thread/changes` since the login's saved states, in one request with the
+ * calls that bring [mailboxes] up to date. Empty `/get` calls give the current states, used when
+ * there is nothing to start from. Further pages of changes take a request each, up to [MAX_PAGES].
  */
-internal suspend fun JmapConnection.mailChanges(
-    accountId: String,
+internal suspend fun MailAccount.mailChanges(
+    mailboxes: Mailboxes,
     cache: MailCache,
-    loginId: String,
 ): MailChanges {
-    val emailState = cache.value(loginId, EMAIL_STATE)
-    val threadState = cache.value(loginId, THREAD_STATE)
-    val savedMailboxes = cache.savedMailboxes(loginId)
-    lateinit var mailboxes: MailboxCalls
+    val emailState = cache.value(login.id, EMAIL_STATE)
+    val threadState = cache.value(login.id, THREAD_STATE)
     lateinit var emailsNow: JmapCall<GetResult<*>>
     lateinit var threadsNow: JmapCall<GetResult<*>>
     var emailChanges: JmapCall<ChangesResult>? = null
     var threadChanges: JmapCall<ChangesResult>? = null
-    val response =
-        send {
-            mailboxes = mailboxCalls(accountId, savedMailboxes)
-            emailsNow = call(GetMethod(EmailType, accountId, JmapIds.Of(emptyList()), listOf("id")))
-            threadsNow = call(GetMethod(ThreadType, accountId, JmapIds.Of(emptyList())))
-            emailChanges = emailState?.let { call(ChangesMethod(EmailType, accountId, it, MAX_CHANGES)) }
-            threadChanges = threadState?.let { call(ChangesMethod(ThreadType, accountId, it, MAX_CHANGES)) }
+    val (folders, response) =
+        mailboxes.sendFresh(this, reportStorage = true) {
+            emailsNow = call(GetMethod(EmailType, id, JmapIds.Of(emptyList()), listOf("id")))
+            threadsNow = call(GetMethod(ThreadType, id, JmapIds.Of(emptyList())))
+            emailChanges = emailState?.let { call(ChangesMethod(EmailType, id, it, MAX_CHANGES)) }
+            threadChanges = threadState?.let { call(ChangesMethod(ThreadType, id, it, MAX_CHANGES)) }
         }
     return MailChanges(
-        mailboxList = mailboxes.read(response) ?: allMailboxes(accountId),
-        emails = objectChanges(EmailType, accountId, response, emailsNow, emailChanges),
-        threads = objectChanges(ThreadType, accountId, response, threadsNow, threadChanges),
+        mailboxes = folders,
+        emails = connection.objectChanges(EmailType, id, response, emailsNow, emailChanges),
+        threads = connection.objectChanges(ThreadType, id, response, threadsNow, threadChanges),
     )
 }
 
-/** Saves [changes]: the mailboxes, the removal of changed and destroyed objects, and the states. */
+/** Saves [changes]: the removal of changed and destroyed objects, and the states. */
 internal fun CacheWrite.saveChanges(changes: MailChanges) {
-    changes.saveMailboxes(this)
     changes.emails.applyTo(this, CacheKind.Email, CacheKind.Member)
     changes.threads.applyTo(this, CacheKind.Thread)
     putValue(EMAIL_STATE, changes.emails.state)

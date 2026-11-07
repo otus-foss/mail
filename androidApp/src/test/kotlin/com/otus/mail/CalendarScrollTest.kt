@@ -36,8 +36,7 @@ class CalendarScrollTest {
 
     @Test
     fun verticalDragScrollsPartOfAMonthWithoutChangingTheRange() {
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
         compose.onNodeWithText("Today").performClick()
         val today = LocalDate.now()
         compose.onNodeWithContentDescription("Previous month").performClick()

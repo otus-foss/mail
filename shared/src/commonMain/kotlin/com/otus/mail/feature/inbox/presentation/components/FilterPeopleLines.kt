@@ -8,15 +8,22 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import com.otus.designsystem.mail.compose.components.AddressInput
 import com.otus.designsystem.mail.compose.components.RecipientLine
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLook
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.filters.components.FilterRowCard
 import com.otus.designsystem.shared.filters.components.FilterSection
-import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
-import com.otus.designsystem.shared.selection.components.DropdownRow
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.RecipientField
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import com.otus.mail.feature.inbox.presentation.FilterPeopleSearch
 import com.otus.mail.feature.inbox.presentation.FilterPerson
@@ -57,7 +64,12 @@ internal fun PeopleSection(
         FilterSection("Received in") {
             RecipientField.entries.forEach { field ->
                 val on = field in draft.receivedIn
-                FilterChip(field.label, on, { onEdit { it.withField(field, !on) } })
+                Chip(
+                    field.label,
+                    { onEdit { it.withField(field, !on) } },
+                    selected = on,
+                    style = ChipStyle(look = ChipLook.Raised),
+                )
             }
         }
     }
@@ -152,14 +164,9 @@ private fun FilterPersonChoice(
     person: FilterPerson,
     onPick: () -> Unit,
 ) {
-    DropdownRow(
-        person.own?.address ?: person.label,
-        selected = false,
-        onClick = onPick,
-        subtitle = person.subline,
-    ) {
+    PickRow(person.own?.address ?: person.label, person.subline, PickMark(false, style = PickStyle.Card), onPick) {
         val avatar = chipAvatar(person.avatar, person.name, person.addresses.first())
-        PersonAvatar(avatar, ComposeTokens.dropdownAvatarSize)
+        PersonAvatar(avatar, AvatarTokens.menuSize)
     }
 }
 

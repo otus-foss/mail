@@ -1,9 +1,18 @@
 package com.otus.mail.feature.notifications.domain
 
-import com.otus.mail.core.preferences.StringMapStore
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.storage.StoreSpec
+import com.otus.mail.core.storage.TextCodec
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import kotlin.time.Instant
 
-/** A message that arrived unread in an inbox since the last check. */
+/**
+ * A message that arrived unread in an inbox since the last check. An alert's buttons and their
+ * queued work carry it as [encoded].
+ */
+@Serializable
 data class NewMail(
     val loginId: String,
     val accountName: String,
@@ -17,14 +26,35 @@ data class NewMail(
      * for Bcc and list mail, for previews chosen per address.
      */
     val recipients: List<String> = emptyList(),
-    /** The lowercase roles of its account's mailboxes, such as `archive`, which decide the alert's buttons. */
-    val mailboxRoles: Set<String> = emptySet(),
+    /** The roles of its account's mailboxes, such as Archive, which decide the alert's buttons. */
+    val mailboxRoles: Set<MailboxRole> = emptySet(),
     /** Whether its account can send, so the alert can offer Reply. */
     val canSend: Boolean = false,
-)
+) {
+    /** This alert as one line of JSON. */
+    fun encoded(): String = Json.encodeToString(this)
+
+    companion object {
+        // Alerts and their queued work outlive an update, so a field another build added or dropped
+        // must not lose them.
+        private val lenient = Json { ignoreUnknownKeys = true }
+
+        /** The alert [encoded] made, by this build or another; null for anything else. */
+        fun decoded(line: String?): NewMail? =
+            line?.let {
+                try {
+                    lenient.decodeFromString<NewMail>(it)
+                } catch (_: SerializationException) {
+                    null
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            }
+    }
+}
 
 /** Each login's Email state from the last check, keyed by login id. */
-interface MailStateStore : StringMapStore
+object MailStateStore : StoreSpec<String, String>("states", TextCodec.Text, TextCodec.Text)
 
 /** A message the device has an alert for. */
 data class AlertedMail(

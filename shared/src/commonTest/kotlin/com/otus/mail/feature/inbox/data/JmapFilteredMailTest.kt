@@ -4,14 +4,18 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
-import com.otus.mail.feature.inbox.domain.FilterSort
-import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.TypeFacet
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.mailSource
+import com.otus.mail.testing.source
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.concurrent.atomics.AtomicInt
@@ -81,7 +85,7 @@ class JmapFilteredMailTest {
 
     @OptIn(ExperimentalAtomicApi::class)
     @Test
-    fun countsReadEachLoginsMailboxesOncePerSession() =
+    fun countsReadEachLoginsMailboxesOnceAndThenKeepThem() =
         runTest {
             // The fake server answers both logins at once, on different threads.
             val mailboxLoads = AtomicInt(0)
@@ -89,13 +93,9 @@ class JmapFilteredMailTest {
                 source { body ->
                     if ("Mailbox/get" in body) MAILBOX_REPLY.also { mailboxLoads.incrementAndFetch() } else COUNT
                 }
-            source.beginCounting()
             source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Unread)))
             source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Read)))
             assertEquals(2, mailboxLoads.load(), "One per login, not one per count")
-            source.beginCounting()
-            source.count(MailScope.Inbox, MailQuery(InboxFilters(status = ReadStatus.Read)))
-            assertEquals(4, mailboxLoads.load(), "A new session reads them again")
         }
 
     @Test
@@ -119,7 +119,7 @@ class JmapFilteredMailTest {
 
     private fun source(respond: (String) -> String) =
         stalwartLike(api = respond).let {
-            JmapMailSource(JmapConnections(JmapClient(it), store), store)
+            mailSource(JmapConnections(JmapClient(it), store))
         }
 
     private companion object {

@@ -24,10 +24,11 @@ import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.people.elements.Avatar
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.shapes.SmoothCornerShape
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.settings.ThemeTokens
 
 /**
@@ -37,7 +38,7 @@ import com.otus.designsystem.theme.tokens.settings.ThemeTokens
 @Composable
 fun ThemeInboxPreview() {
     Column(Modifier.clearAndSetSemantics {}, verticalArrangement = Arrangement.spacedBy(ThemeTokens.previewGap)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap)) {
             Chip("People", {}, selected = true, leading = { Symbol(Res.drawable.symbol_person) })
             Chip("Date", {}, leading = { Symbol(Res.drawable.symbol_calendar_add_on) })
         }
@@ -45,12 +46,12 @@ fun ThemeInboxPreview() {
             previewMessages.forEachIndexed { index, message -> PreviewMessage(message, selected = index == 0) }
         }
         ActionBar(
-            primary = BarAction("New mail", Res.drawable.symbol_edit) {},
+            primary = BarAction(UiAction("New mail", Res.drawable.symbol_edit) {}),
             secondary =
                 listOf(
-                    BarAction("Search", Res.drawable.symbol_search) {},
-                    BarAction("Filter", Res.drawable.symbol_filter_list) {},
-                    BarAction("Mark all read", Res.drawable.symbol_mark_email_read) {},
+                    BarAction(UiAction("Search", Res.drawable.symbol_search) {}),
+                    BarAction(UiAction("Filter", Res.drawable.symbol_filter_list) {}),
+                    BarAction(UiAction("Mark all read", Res.drawable.symbol_mark_email_read) {}),
                 ),
         )
     }

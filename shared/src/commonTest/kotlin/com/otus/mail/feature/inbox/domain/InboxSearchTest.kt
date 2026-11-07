@@ -1,5 +1,19 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.MailAttributes
+import com.otus.mail.core.messages.domain.MailConversation
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.ThreadEmail
+import com.otus.mail.core.settings.domain.InboxPill
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -14,7 +28,7 @@ class InboxSearchTest {
                 "Design review",
                 "The prototype is ready",
                 ReceivedAt("2026-10-01", "09:00"),
-                MailLocation("Inbox", "Work"),
+                MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
                 MailAttributes(true, listOf("draft.pdf")),
             ),
             MailMessage(
@@ -23,7 +37,7 @@ class InboxSearchTest {
                 "Weekend plans",
                 "A walk by the lake",
                 ReceivedAt("2026-10-03", "10:00"),
-                MailLocation("Inbox", "Personal"),
+                MailLocation("Inbox", "Personal", mailboxRole = MailboxRole.Inbox),
                 MailAttributes(flagged = true),
             ),
             MailMessage(
@@ -149,9 +163,23 @@ class InboxSearchTest {
 
     @Test
     fun mailboxSelectionIncludesAccountIdentity() {
-        assertEquals(listOf("older"), results(InboxSearch(mailboxes = setOf(MailboxScope("Work", "Inbox")))))
-        assertEquals(listOf("newer"), results(InboxSearch(mailboxes = setOf(MailboxScope("Personal", "Inbox")))))
+        assertEquals(
+            listOf("older"),
+            results(InboxSearch(mailboxes = setOf(MailboxScope("Work", "Inbox", MailboxRole.Inbox)))),
+        )
+        assertEquals(
+            listOf("newer"),
+            results(InboxSearch(mailboxes = setOf(MailboxScope("Personal", "Inbox", MailboxRole.Inbox)))),
+        )
         assertEquals(listOf("newer", "archive", "older"), results(InboxSearch(mailboxes = emptySet())))
+    }
+
+    @Test
+    fun theInboxIsFoundByRoleNotByAFolderOfTheSameName() {
+        val namedInbox = MailLocation("Inbox", "Work")
+        assertTrue(MailboxScope.Inbox.matches(MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox)))
+        assertTrue(!MailboxScope.Inbox.matches(namedInbox), "A folder of the user's named Inbox")
+        assertTrue(MailboxScope(null, "Inbox").matches(namedInbox))
     }
 
     private fun results(
@@ -175,11 +203,11 @@ class InboxSearchTest {
         )
         val withArchive = default.copy(mailboxes = default.mailboxes + MailboxScope(null, "Archive"))
         assertEquals(
-            MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox"), MailboxScope(null, "Archive"))),
+            MailScope.Mailboxes(setOf(MailboxScope.Inbox, MailboxScope(null, "Archive"))),
             withArchive.scopeToLoad(default),
         )
         assertEquals(MailScope.AllMailboxes, default.copy(mailboxes = emptySet()).scopeToLoad(default))
-        val accountMailbox = setOf(MailboxScope("Work", "Inbox"))
+        val accountMailbox = setOf(MailboxScope("Work", "Inbox", MailboxRole.Inbox))
         assertEquals(
             MailScope.Mailboxes(accountMailbox),
             default.copy(mailboxes = accountMailbox).scopeToLoad(default),

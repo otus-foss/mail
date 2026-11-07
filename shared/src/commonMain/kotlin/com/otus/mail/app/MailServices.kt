@@ -2,8 +2,6 @@ package com.otus.mail.app
 
 import com.otus.accounts.data.JmapAccountRepository
 import com.otus.accounts.domain.AccountRepository
-import com.otus.accounts.domain.AccountService
-import com.otus.accounts.domain.AccountStorageException
 import com.otus.avatar.AvatarCacheConfig
 import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
@@ -20,84 +18,79 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
-import com.otus.jmap.push.PushStateStore
 import com.otus.jmap.push.PushSubscriptions
 import com.otus.mail.core.cache.AccountMailCache
-import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.RecoveringMailCache
-import com.otus.mail.core.files.DownloadFolderException
-import com.otus.mail.core.mail.ServerChanges
-import com.otus.mail.designsystem.resources.Res
+import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
+import com.otus.mail.core.messages.data.JmapEmailByIdWriter
+import com.otus.mail.core.messages.data.JmapEmailWriter
+import com.otus.mail.core.messages.data.ServerSites
+import com.otus.mail.core.messages.domain.AddressBook
+import com.otus.mail.core.messages.domain.DevicePrivacy
+import com.otus.mail.core.messages.domain.DraftRepository
+import com.otus.mail.core.messages.domain.DraftSender
+import com.otus.mail.core.messages.domain.EmailByIdWriter
+import com.otus.mail.core.messages.domain.EmailWriter
+import com.otus.mail.core.messages.domain.MessageBodies
+import com.otus.mail.core.messages.domain.PeopleSearch
+import com.otus.mail.core.messages.domain.ScheduledSends
+import com.otus.mail.core.messages.domain.SenderBlocks
+import com.otus.mail.core.messages.presentation.MoveToasts
+import com.otus.mail.feature.compose.data.JmapAttachmentUploads
+import com.otus.mail.feature.compose.data.JmapComposeMail
+import com.otus.mail.feature.compose.data.JmapSendChecker
+import com.otus.mail.feature.compose.data.JmapSignatures
+import com.otus.mail.feature.compose.data.JmapThreadHistory
+import com.otus.mail.feature.compose.domain.AttachmentUploads
+import com.otus.mail.feature.compose.domain.MailOutbox
+import com.otus.mail.feature.compose.domain.SignatureRepository
+import com.otus.mail.feature.compose.domain.ThreadHistory
 import com.otus.mail.feature.contacts.data.JmapContactRepository
 import com.otus.mail.feature.contacts.data.JmapMailTraces
 import com.otus.mail.feature.contacts.domain.ContactRepository
 import com.otus.mail.feature.contacts.domain.MailTraceSource
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
+import com.otus.mail.feature.folders.data.JmapSenderHistory
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
-import com.otus.mail.feature.inbox.data.AttachmentCache
-import com.otus.mail.feature.inbox.data.AttachmentRetention
-import com.otus.mail.feature.inbox.data.EmailChangeQueue
+import com.otus.mail.feature.folders.domain.RuleSenderBlocks
+import com.otus.mail.feature.folders.domain.SenderHistory
+import com.otus.mail.feature.inbox.data.CategorizedMailSource
+import com.otus.mail.feature.inbox.data.CategoryRecords
 import com.otus.mail.feature.inbox.data.JmapAddressBook
-import com.otus.mail.feature.inbox.data.JmapAttachmentDownloads
-import com.otus.mail.feature.inbox.data.JmapAttachmentUploads
-import com.otus.mail.feature.inbox.data.JmapConversationMessages
-import com.otus.mail.feature.inbox.data.JmapConversationMute
-import com.otus.mail.feature.inbox.data.JmapDraftRepository
-import com.otus.mail.feature.inbox.data.JmapDraftSender
-import com.otus.mail.feature.inbox.data.JmapEmailShortcuts
-import com.otus.mail.feature.inbox.data.JmapKnownPeople
 import com.otus.mail.feature.inbox.data.JmapMailSource
-import com.otus.mail.feature.inbox.data.JmapMessageBodies
-import com.otus.mail.feature.inbox.data.JmapMessageCleaner
-import com.otus.mail.feature.inbox.data.JmapMessageHeaders
-import com.otus.mail.feature.inbox.data.JmapMessageMarker
-import com.otus.mail.feature.inbox.data.JmapMessageMover
-import com.otus.mail.feature.inbox.data.JmapNewsletters
 import com.otus.mail.feature.inbox.data.JmapPeopleSearch
-import com.otus.mail.feature.inbox.data.JmapSendChecker
-import com.otus.mail.feature.inbox.data.JmapSenderHistory
-import com.otus.mail.feature.inbox.data.JmapSignatures
-import com.otus.mail.feature.inbox.data.JmapThreadHistory
-import com.otus.mail.feature.inbox.data.ServerSites
-import com.otus.mail.feature.inbox.data.UnansweredDrafts
-import com.otus.mail.feature.inbox.domain.AddressBook
-import com.otus.mail.feature.inbox.domain.AttachmentUploads
-import com.otus.mail.feature.inbox.domain.ConversationMessages
-import com.otus.mail.feature.inbox.domain.ConversationMute
-import com.otus.mail.feature.inbox.domain.DevicePrivacy
-import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.DraftSender
-import com.otus.mail.feature.inbox.domain.EmailShortcuts
-import com.otus.mail.feature.inbox.domain.KnownPeople
-import com.otus.mail.feature.inbox.domain.MailOutbox
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.MessageBodies
-import com.otus.mail.feature.inbox.domain.MessageCleaner
-import com.otus.mail.feature.inbox.domain.MessageHeaders
-import com.otus.mail.feature.inbox.domain.MessageMarker
-import com.otus.mail.feature.inbox.domain.MessageMover
-import com.otus.mail.feature.inbox.domain.Newsletters
-import com.otus.mail.feature.inbox.domain.PeopleSearch
-import com.otus.mail.feature.inbox.domain.ScheduledSends
-import com.otus.mail.feature.inbox.domain.SenderBlocks
-import com.otus.mail.feature.inbox.domain.SenderHistory
-import com.otus.mail.feature.inbox.domain.SignatureRepository
-import com.otus.mail.feature.inbox.domain.ThreadHistory
-import com.otus.mail.feature.inbox.presentation.NewsletterSteps
+import com.otus.mail.feature.inbox.domain.category.SenderDirectory
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
+import com.otus.mail.feature.notifications.data.PushServices
 import com.otus.mail.feature.notifications.domain.InstantPush
-import com.otus.mail.feature.notifications.domain.MailStateStore
+import com.otus.mail.feature.notifications.domain.MailPush
 import com.otus.mail.feature.notifications.domain.NewMailChecker
+import com.otus.mail.feature.read.data.AttachmentCache
+import com.otus.mail.feature.read.data.AttachmentRetention
+import com.otus.mail.feature.read.data.JmapAttachmentDownloads
+import com.otus.mail.feature.read.data.JmapConversationMessages
+import com.otus.mail.feature.read.data.JmapKnownPeople
+import com.otus.mail.feature.read.data.JmapMessageBodies
+import com.otus.mail.feature.read.data.JmapMessageHeaders
+import com.otus.mail.feature.read.data.JmapNewsletters
+import com.otus.mail.feature.read.domain.ConversationMessages
+import com.otus.mail.feature.read.domain.KnownPeople
+import com.otus.mail.feature.read.domain.MessageHeaders
+import com.otus.mail.feature.read.domain.Newsletters
+import com.otus.mail.feature.read.presentation.NewsletterSteps
+import com.otus.mail.resources.Res
+import com.otus.storage.StringMapStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.withContext
-import org.jetbrains.compose.resources.ExperimentalResourceApi
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Connects data implementations to feature contracts. Create one per process: it owns the HTTP
@@ -107,13 +100,15 @@ class MailServices(
     private val logins: LoginStore = InMemoryLoginStore(),
     avatarStore: AvatarStore = EmptyAvatarStore,
     internal val stores: MailDeviceStores = MailDeviceStores(),
-    /** Instant pushes through the selected service; null where the platform has none. */
-    internal val instantPush: InstantPush? = null,
     internal val pickers: MailPickers = MailPickers(),
     private val host: MailPlatform = MailPlatform(),
+    /** Where saved logins and waiting changes are read and written, off the main thread. */
+    private val io: CoroutineContext = Dispatchers.IO,
     createClient: () -> JmapClient = { JmapClient() },
-) {
+) : PushServices {
     internal val nightly: NightlyUpdates get() = host.nightly
+
+    internal val instantPush: InstantPush? get() = host.instantPush
 
     /** The screen and keyboard protections this platform can apply. */
     internal val devicePrivacy: DevicePrivacy get() = host.devicePrivacy
@@ -127,14 +122,17 @@ class MailServices(
     /** The device's copy of each login's mail; see docs/storage.md. */
     private val accountCache = AccountMailCache(RecoveringMailCache(stores.cache))
     internal val cache: MailCache get() = accountCache
+
+    /** Each login's folders, the one keeper of them in the cache, which every feature reads. */
+    private val mailboxes by lazy { Mailboxes(cache) }
     private val client by lazy(createClient)
-    private val connections by lazy { JmapConnections(client, logins) }
+    private val connections by lazy { JmapConnections(client, logins, io) }
     private val avatarImages by lazy { HttpAvatarImageLoader() }
-    private val domains by lazy { PublicSuffixDomainResolver(::avatarSuffixRules) }
+    private val domains by lazy { PublicSuffixDomainResolver() }
     private val serverSites by lazy { ServerSites(domains) }
     internal val avatars by lazy {
         AvatarService(
-            JmapContactAvatarSource(connections, logins, avatarImages),
+            JmapContactAvatarSource(connections, avatarImages),
             avatarImages,
             domains = domains,
             cacheConfig = AvatarCacheConfig(store = avatarStore),
@@ -143,89 +141,71 @@ class MailServices(
 
     /** The avatar of each of the user's own addresses, read with [options] like any sender's. */
     internal fun ownAvatars(options: () -> AvatarOptions): JmapOwnAvatars =
-        JmapOwnAvatars(connections, logins, avatars, options)
+        JmapOwnAvatars(connections, avatars, options)
 
     internal val accounts: AccountRepository by lazy {
-        val repository =
-            JmapAccountRepository(
-                client,
-                connections,
-                logins,
-                AccountService.Mail,
-                onAccountChanged = { loginId ->
-                    val connected = withContext(Dispatchers.IO) { logins.logins().any { it.id == loginId } }
-                    // A change queued while the login was being removed must not wait for it to come back.
-                    if (connected) accountCache.connected(loginId) else changes.forget(loginId)
-                    avatars.removeAccount(loginId)
-                },
-                beforeRemove = { loginId ->
-                    instantPush?.forget(loginId)
-                    stores.forgetAccount(loginId)
-                    outbox.forget(loginId)
-                    changes.forget(loginId)
-                    try {
-                        cache.forget(loginId)
-                    } catch (error: CacheStorageException) {
-                        throw AccountStorageException(error)
-                    }
-                    try {
-                        retention.forget(loginId)
-                    } catch (error: DownloadFolderException) {
-                        throw AccountStorageException(error)
-                    }
-                },
-            )
-        CacheAccountRepository(repository, logins, accountCache)
+        JmapAccountRepository(
+            client,
+            connections,
+            logins,
+            MailAccountService,
+            listOf(DeviceAccountData(stores, outbox, instantPush), changes, accountCache, retention, avatars),
+        )
     }
 
     /** Marks and moves that wait for the server; see docs/storage.md. */
-    private val changes by lazy { EmailChangeQueue(stores.waiting.changes, host.wakeOutbox) }
-    internal val mail: MailSource by lazy {
-        JmapMailSource(connections, logins, cache, sites = serverSites, queue = changes)
+    private val changes by lazy {
+        EmailChangeQueue(connections, cache, stores.waiting.changes, host.wakeOutbox, io = io)
     }
-    internal val mover: MessageMover by lazy { JmapMessageMover(connections, logins, cache, changes) }
-    internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, logins, cache) }
-    internal val marker: MessageMarker by lazy { JmapMessageMarker(connections, logins, cache, changes) }
 
-    /** Marks and archives for a notification's buttons, which act without opening Mail. */
-    val shortcuts: EmailShortcuts by lazy { JmapEmailShortcuts(connections, logins, cache, changes) }
-    internal val cleaner: MessageCleaner by lazy { JmapMessageCleaner(connections, logins) }
-    private val unansweredDrafts = UnansweredDrafts()
-    internal val drafts: DraftRepository by lazy { JmapDraftRepository(connections, logins, unansweredDrafts) }
-    private val jmapSender by lazy { JmapDraftSender(connections, logins, unansweredDrafts) }
-    internal val sender: DraftSender get() = jmapSender
-    internal val scheduled: ScheduledSends get() = jmapSender
+    /** Every change to emails, also for a notification's buttons, which act without opening Mail. */
+    val writer: EmailWriter by lazy { JmapEmailWriter(connections, cache, changes) }
+
+    /** The changes a notification's buttons make to one email. */
+    val byIdWriter: EmailByIdWriter by lazy { JmapEmailByIdWriter(connections, changes, mailboxes) }
+    internal val mail: MailSource by lazy {
+        CategorizedMailSource(
+            JmapMailSource(connections, cache, changes, mailboxes, sites = serverSites),
+            cache,
+            CategoryRecords(::senderCategories, host.categoriesOn),
+        )
+    }
+    internal val bodies: MessageBodies by lazy { JmapMessageBodies(connections, cache) }
+    private val compose by lazy { JmapComposeMail(connections, mailboxes, changes) }
+    internal val drafts: DraftRepository get() = compose.drafts
+    internal val sender: DraftSender get() = compose.sender
+    internal val scheduled: ScheduledSends get() = compose.sender
 
     /** Messages handed over for sending, kept until the server has them; see docs/compose.md. */
     internal val outbox by lazy {
-        MailOutbox(stores.waiting.outbox, jmapSender, JmapSendChecker(connections, logins), host.wakeOutbox)
+        val checker = JmapSendChecker(connections, changes)
+        MailOutbox(stores.waiting.outbox, compose.sender, checker, host.wakeOutbox, io = io)
     }
-    internal val signatures: SignatureRepository by lazy { JmapSignatures(connections, logins) }
-    internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections, logins) }
-    internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections, logins) }
-    internal val addressBook: AddressBook by lazy { JmapAddressBook(connections, logins) }
-    internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, logins, cache) }
+    internal val signatures: SignatureRepository by lazy { JmapSignatures(connections) }
+    internal val threads: ThreadHistory by lazy { JmapThreadHistory(connections) }
+    internal val uploads: AttachmentUploads by lazy { JmapAttachmentUploads(connections) }
+    internal val addressBook: AddressBook by lazy { JmapAddressBook(connections) }
+    internal val contacts: ContactRepository by lazy { JmapContactRepository(connections, cache) }
 
     /** Each login's recent mail, for the people the user deals with most. */
-    internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections, logins) }
-    internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, logins, addressBook) }
-    internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections, logins) }
-    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, logins, cache) }
+    internal val mailTraces: MailTraceSource by lazy { JmapMailTraces(connections, mailboxes) }
+    internal val people: PeopleSearch by lazy { JmapPeopleSearch(connections, addressBook) }
+    internal val senderHistory: SenderHistory by lazy { JmapSenderHistory(connections) }
+    internal val folders: FolderRepository by lazy { JmapFolderRepository(connections, mailboxes) }
     internal val conversationMessages: ConversationMessages by lazy {
-        JmapConversationMessages(connections, logins, cache, sites = serverSites)
+        JmapConversationMessages(connections, cache, mailboxes, sites = serverSites)
     }
 
     /** Attachments streamed to the device, the ones kept offline, and when the others go; see docs/storage.md. */
     internal val retention by lazy { AttachmentRetention(stores.downloads) }
     internal val attachments by lazy {
-        AttachmentCache(JmapAttachmentDownloads(connections, logins), stores.downloads, retention)
+        AttachmentCache(JmapAttachmentDownloads(connections), stores.downloads, retention)
     }
-    internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, logins) }
+    internal val knownPeople: KnownPeople by lazy { JmapKnownPeople(connections, mailboxes) }
     internal val newsletters: Newsletters by lazy {
-        JmapNewsletters(connections, logins, drafts, sender, cache)
+        JmapNewsletters(connections, drafts, sender, writer, mailboxes)
     }
-    internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections, logins) }
-    internal val mute: ConversationMute by lazy { JmapConversationMute(connections, logins, cache) }
+    internal val headers: MessageHeaders by lazy { JmapMessageHeaders(connections) }
     internal val blocks: SenderBlocks by lazy { RuleSenderBlocks(rules, folders) }
 
     /**
@@ -242,24 +222,20 @@ class MailServices(
 
     /** Lives as long as the process, so its lock also covers the loads of a recreated activity. */
     internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
-    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, logins) }
+    internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, mailboxes, changes) }
 
-    /** Finds mail that arrived since the check that last wrote [states], for notifications. */
-    fun newMail(states: MailStateStore): NewMailChecker = JmapNewMailChecker(connections, logins, states)
+    /** Finds mail that arrived since the last check, for notifications, on a platform that keeps their state. */
+    fun newMail(): NewMailChecker = JmapNewMailChecker(connections, mailboxes, checkNotNull(stores.alerts.mailStates))
 
-    /**
-     * Keeps each login's push subscription pointed at its push endpoint, for the changes in [push].
-     * Create one per process.
-     */
-    fun pushSubscriptions(
-        states: PushStateStore,
+    /** Create one per process. */
+    override fun pushSubscriptions(
+        states: StringMapStore,
         deviceClientId: String,
         push: MailPush,
-        beforeCreate: suspend (String) -> Unit = {},
+        beforeCreate: suspend (String) -> Unit,
     ): PushSubscriptions =
         PushSubscriptions(
             connections,
-            logins,
             states,
             deviceClientId,
             push.types,
@@ -273,18 +249,17 @@ class MailServices(
      */
     suspend fun resumeOutbox(): Boolean {
         outbox.resume()
-        val changesWait = changes.flushAll(connections, logins, cache)
+        val changesWait = changes.flushAll()
         return outbox.waiting() || changesWait
     }
 
     /** The server signing key used to register directly with Google (RFC 9749). */
     suspend fun pushVapidKey(login: JmapLogin): String? = connections.connection(login).session().vapidPublicKey
 
-    /** Push cleanup must distinguish an empty account list from locked or unavailable storage. */
-    internal fun notificationLogins(): List<JmapLogin> = logins.logins()
+    override fun notificationLogins(): List<JmapLogin> = logins.logins()
 
-    /** The saved logins; none when storage cannot be read. Call it off the main thread. */
-    fun logins(): List<JmapLogin> =
+    /** Call it off the main thread. */
+    override fun logins(): List<JmapLogin> =
         try {
             logins.logins()
         } catch (_: LoginStoreException) {
@@ -292,5 +267,6 @@ class MailServices(
         }
 }
 
-@OptIn(ExperimentalResourceApi::class)
-private suspend fun avatarSuffixRules(): String = Res.readBytes("files/public_suffix_list.dat").decodeToString()
+/** The curated sender list Inbox categories start from; see docs/categories.md. */
+private suspend fun senderCategories(): SenderDirectory =
+    SenderDirectory.parse(Res.readBytes("files/sender_categories.txt").decodeToString())

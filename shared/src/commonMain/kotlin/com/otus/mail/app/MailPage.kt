@@ -1,9 +1,8 @@
 package com.otus.mail.app
 
-import androidx.compose.runtime.saveable.Saver
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.feature.contacts.domain.CardKey
-import com.otus.mail.feature.folders.domain.CombinedFolder
-import com.otus.mail.feature.inbox.domain.ComposeRequest
 
 /** Every page, including subpages. Pages without a parent are sidebar destinations. */
 internal sealed interface MailPage {
@@ -19,59 +18,65 @@ internal sealed interface MailPage {
     val depth: Int
         get() = parent?.let { it.depth + 1 } ?: 0
 
-    data object Inbox : MailPage
+    /** A page without arguments, which saves as its name. */
+    sealed interface Fixed : MailPage
 
-    data object Settings : MailPage
+    /** A page of Settings, which the settings routing draws. */
+    sealed interface SettingsPage : MailPage
 
-    data object EmailAccounts : MailPage {
+    data object Inbox : Fixed
+
+    data object Settings : Fixed, SettingsPage
+
+    data object EmailAccounts : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object Appearance : MailPage {
+    data object Appearance : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object Notifications : MailPage {
+    data object Notifications : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object NotificationOverrides : MailPage {
+    data object NotificationOverrides : Fixed, SettingsPage {
         override val parent = Notifications
     }
 
-    data object Behavior : MailPage {
+    data object Behavior : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object SidebarSettings : MailPage {
+    data object SidebarSettings : Fixed, SettingsPage {
         override val parent = Behavior
     }
 
-    data object FilterPanelSettings : MailPage {
+    data object FilterPanelSettings : Fixed, SettingsPage {
         override val parent = Behavior
     }
 
-    data object PinnedSettings : MailPage {
+    data object PinnedSettings : Fixed, SettingsPage {
         override val parent = SidebarSettings
     }
 
-    data object ThemeSettings : MailPage {
+    data object ThemeSettings : Fixed, SettingsPage {
         override val parent = Appearance
     }
 
-    data object MailListSettings : MailPage {
+    data object MailListSettings : Fixed, SettingsPage {
         override val parent = Appearance
     }
 
-    data object ActionBarSettings : MailPage {
+    data object ActionBarSettings : Fixed, SettingsPage {
         override val parent = Behavior
     }
 
-    data object Privacy : MailPage {
+    data object Privacy : Fixed {
         override val parent = Settings
     }
 
-    data object AllowedSenders : MailPage {
+    data object AllowedSenders : Fixed {
         override val parent = Privacy
     }
 
@@ -81,11 +86,11 @@ internal sealed interface MailPage {
         override val parent: MailPage = Inbox,
     ) : MailPage
 
-    data object Folders : MailPage {
+    data object Folders : Fixed, SettingsPage {
         override val parent = Settings
     }
 
-    data object Signatures : MailPage {
+    data object Signatures : Fixed {
         override val parent = Behavior
     }
 
@@ -105,7 +110,7 @@ internal sealed interface MailPage {
         val accountId: String,
         val folderId: String,
         val sharedIn: String? = null,
-    ) : MailPage {
+    ) : SettingsPage {
         override val parent = Folders
     }
 
@@ -117,14 +122,14 @@ internal sealed interface MailPage {
 
     /** One system folder of every account, such as the Trash of all of them. */
     data class Combined(
-        val folder: CombinedFolder,
+        val role: MailboxRole,
     ) : MailPage
 
     /** Every account's Read later folder. */
-    data object ReadLater : MailPage
+    data object ReadLater : Fixed
 
     /** Every thread where the user and someone else both wrote, across accounts. */
-    data object Conversations : MailPage
+    data object Conversations : Fixed
 
     /** One of the user's folders, merged across accounts; [key] is its lower-case path. */
     data class Shared(
@@ -132,7 +137,7 @@ internal sealed interface MailPage {
     ) : MailPage
 
     /** Every login's contacts. */
-    data object Contacts : MailPage
+    data object Contacts : Fixed
 
     /** One person, opened from the card [key]; a group card opens its members. */
     data class Contact(
@@ -149,7 +154,12 @@ internal sealed interface MailPage {
     }
 
     companion object {
-        private val fixed =
+        /**
+         * Every page without arguments; MailPageSaverTest checks it against the `Fixed` objects.
+         * Lazy, because the first page object to load also loads this interface, and an eager list
+         * would then hold null for that page.
+         */
+        val fixed: List<Fixed> by lazy {
             listOf(
                 Inbox,
                 Settings,
@@ -158,57 +168,20 @@ internal sealed interface MailPage {
                 Notifications,
                 NotificationOverrides,
                 Behavior,
+                SidebarSettings,
+                FilterPanelSettings,
+                PinnedSettings,
+                ThemeSettings,
+                MailListSettings,
                 ActionBarSettings,
+                Privacy,
+                AllowedSenders,
                 Folders,
+                Signatures,
                 ReadLater,
                 Conversations,
                 Contacts,
-                SidebarSettings,
-                PinnedSettings,
-                FilterPanelSettings,
-                ThemeSettings,
-                MailListSettings,
-                Privacy,
-                AllowedSenders,
             )
-
-        val Saver: Saver<MailPage, List<String>> =
-            Saver(
-                save = { page -> saved(page) },
-                restore = { saved ->
-                    when (saved.firstOrNull()) {
-                        FOLDER -> Folder(saved[1], saved[2])
-                        FOLDER_DETAIL -> FolderDetail(saved[1], saved[2], saved[3].ifEmpty { null })
-                        COMBINED -> CombinedFolder.entries.firstOrNull { it.name == saved[1] }?.let(::Combined) ?: Inbox
-                        SHARED -> Shared(saved.drop(1))
-                        CONTACT -> Contact(CardKey(saved[1], saved[2], saved[3]))
-                        CONTACT_EDITOR -> ContactEditor(saved.getOrNull(1)?.let { CardKey(it, saved[2], saved[3]) })
-                        else -> fixed.firstOrNull { it.toString() == saved.firstOrNull() } ?: Inbox
-                    }
-                },
-            )
-
-        /** A draft's request holds a whole message, so a restored app returns to the page that opened it. */
-        private fun saved(page: MailPage): List<String> =
-            when (page) {
-                is Folder -> listOf(FOLDER, page.accountId, page.folderId)
-                is FolderDetail -> listOf(FOLDER_DETAIL, page.accountId, page.folderId, page.sharedIn.orEmpty())
-                is Combined -> listOf(COMBINED, page.folder.name)
-                is Shared -> listOf(SHARED) + page.key
-                is Compose -> saved(page.parent)
-                is Contact -> listOf(CONTACT, page.key.loginId, page.key.accountId, page.key.cardId)
-                is ContactEditor -> listOf(CONTACT_EDITOR) + savedKey(page.key)
-                else -> listOf(page.toString())
-            }
-
-        private fun savedKey(key: CardKey?): List<String> =
-            key?.let { listOf(it.loginId, it.accountId, it.cardId) }.orEmpty()
-
-        private const val FOLDER = "Folder"
-        private const val FOLDER_DETAIL = "FolderDetail"
-        private const val COMBINED = "Combined"
-        private const val SHARED = "Shared"
-        private const val CONTACT = "Contact"
-        private const val CONTACT_EDITOR = "ContactEditor"
+        }
     }
 }

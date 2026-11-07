@@ -1,10 +1,11 @@
 package com.otus.mail.feature.contacts.presentation
 
-import com.otus.accounts.presentation.toChipAvatar
 import com.otus.avatar.ResolvedAvatar
 import com.otus.avatar.avatarStyle
 import com.otus.avatar.generatedAvatar
 import com.otus.avatar.isAvatarCard
+import com.otus.avatar.ui.presentation.toChipAvatar
+import com.otus.dateformat.fullName
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_badge
 import com.otus.designsystem.resources.symbol_group
@@ -14,10 +15,12 @@ import com.otus.designsystem.shared.contacts.components.ContactRowLabel
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.shared.people.components.Recipient
 import com.otus.jscontact.PartialDate
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.photo
+import kotlinx.datetime.Month
 import org.jetbrains.compose.resources.DrawableResource
 
 /** The card's look: its avatar style, else its own photo when inline, else initials colored by its first address. */
@@ -59,25 +62,9 @@ internal fun ContactBook.owner(): String = sharedBy?.let { "Shared by $it" } ?: 
 
 /** A birthday such as "9 December" or "9 December 1906". */
 internal fun PartialDate.text(): String {
-    val name = month?.let { MONTHS.getOrNull(it.toInt() - 1) }
+    val name = month?.let { Month.entries.getOrNull(it.toInt() - 1)?.fullName }
     return listOfNotNull(day?.toString(), name, year?.toString()).joinToString(" ")
 }
-
-private val MONTHS =
-    listOf(
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    )
 
 /** People counted with their noun: "1 person", "3 people". */
 internal fun peopleCount(count: Int): String = if (count == 1) "1 person" else "$count people"
@@ -92,8 +79,8 @@ internal fun initialsAvatar(
 ): ChipAvatar = ResolvedAvatar(generatedAvatar(name, address)).toChipAvatar()
 
 /** Whether one of the person's cards holds the avatar of one of the user's [own] addresses. */
-internal fun ContactPerson.isOwnAvatar(own: Set<String>): Boolean =
-    cards.any { it.card.isAvatarCard } && emails.any { it.value.lowercase() in own }
+internal fun ContactPerson.isOwnAvatar(own: Set<EmailAddressKey>): Boolean =
+    cards.any { it.card.isAvatarCard } && emails.any { EmailAddressKey(it.value) in own }
 
 /** The pill on a contact list row of a card that holds one of the user's own avatars. */
 internal val AvatarLabel = ContactRowLabel("You", Res.drawable.symbol_badge)

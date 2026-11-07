@@ -1,7 +1,10 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.BIN_ROLES
-import com.otus.mail.core.preferences.StringMapStore
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.storage.DeviceStore
+import com.otus.mail.core.storage.StoreSpec
+import com.otus.mail.core.storage.TextCodec
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -13,7 +16,7 @@ import kotlinx.coroutines.withContext
 const val READ_LATER_NAME = "Read later"
 
 /** App-private record of each account's Read later folder: mailbox ids by login id. */
-interface ReadLaterStore : StringMapStore
+object ReadLaterStore : StoreSpec<String, String>("read_later", TextCodec.Text, TextCodec.Text)
 
 /**
  * Each account's Read later folder. It is one of the user's own folders, because JMAP has no role
@@ -26,7 +29,7 @@ interface ReadLaterStore : StringMapStore
  */
 class ReadLaterFolders(
     private val repository: FolderRepository,
-    private val store: ReadLaterStore? = null,
+    private val store: DeviceStore<String, String>? = null,
 ) {
     private val lock = Mutex()
 
@@ -114,7 +117,7 @@ class ReadLaterFolders(
 private fun AccountFolders.readLaterIn(saved: Map<String, String>): MailFolder? =
     saved[accountId]
         ?.let(::folder)
-        ?.takeIf { folder -> folder.isCustom && ancestors(folders, folder).none { it.role in BIN_ROLES } }
+        ?.takeIf { folder -> folder.isCustom && !inBin(folder) }
         ?: folders.firstOrNull {
             it.isCustom && it.parentId == null &&
                 it.name.equals(READ_LATER_NAME, ignoreCase = true)

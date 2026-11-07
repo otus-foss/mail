@@ -3,6 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_folder
@@ -10,23 +11,27 @@ import com.otus.designsystem.resources.symbol_notifications
 import com.otus.designsystem.resources.symbol_palette
 import com.otus.designsystem.resources.symbol_tune
 import com.otus.designsystem.resources.symbol_visibility_off
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.PRIVACY_TITLE
-import com.otus.mail.feature.inbox.presentation.components.BehaviorIndexPages
-import com.otus.mail.feature.inbox.presentation.components.UPDATE_TOAST_TITLE
-import com.otus.mail.feature.inbox.presentation.components.mailBehaviorIndex
-import com.otus.mail.feature.inbox.presentation.components.mailLookIndex
-import com.otus.mail.feature.inbox.presentation.components.notificationActionsIndex
-import com.otus.mail.feature.inbox.presentation.components.privacyIndex
+import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.PRIVACY_TITLE
+import com.otus.mail.feature.folders.presentation.screens.FOLDERS_TITLE
+import com.otus.mail.feature.mailsettings.presentation.components.BehaviorPages
+import com.otus.mail.feature.mailsettings.presentation.components.alertButtonsRow
+import com.otus.mail.feature.mailsettings.presentation.components.mailBehaviorSettings
+import com.otus.mail.feature.mailsettings.presentation.components.mailListRow
+import com.otus.mail.feature.mailsettings.presentation.components.privacySettings
+import com.otus.mail.feature.mailsettings.presentation.components.updateToastRow
+import com.otus.mail.feature.mailsettings.presentation.screens.MAIL_BEHAVIOR_TITLE
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.presentation.NotificationSettingsState
 import com.otus.mail.feature.notifications.presentation.screens.deliveryLabel
+import com.otus.mail.feature.notifications.presentation.screens.deliverySummary
 import com.otus.mail.feature.notifications.presentation.short
 import com.otus.mail.feature.notifications.presentation.title
 import com.otus.settings.presentation.SettingsIndexScope
 import com.otus.settings.presentation.SettingsItem
-import com.otus.settings.presentation.appIconIndex
-import com.otus.settings.presentation.appearanceIndex
+import com.otus.settings.presentation.components.PageRowSpec
+import com.otus.settings.presentation.components.row
+import com.otus.settings.presentation.components.sections
 import com.otus.settings.presentation.settingsIndex
 
 /**
@@ -37,29 +42,29 @@ import com.otus.settings.presentation.settingsIndex
 internal fun mailSettingsIndex(
     states: MailStates,
     settings: SharedSettings,
+    dateFormatter: DateFormatter,
     navigation: MailNavigation,
 ): List<SettingsItem> {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val folderPills = rememberFolderPills(states)
-    val behavior = states.behavior.behavior
     val open = navigation::finder
     return settingsIndex {
         page(
-            "Email accounts",
+            EMAIL_ACCOUNTS_TITLE,
             open(MailPage.EmailAccounts),
             Res.drawable.symbol_alternate_email,
             summary = accountsSummary(states.accounts.accounts.size),
         ) { keywords("JMAP", "Server", "Sign in") }
-        states.notifications?.let { notifications(it, behavior, states.accounts.accounts.isNotEmpty(), open) }
-        appearance(settings, behavior, open)
+        states.notifications?.let { notifications(it, states.behavior, states.accounts.accounts.isNotEmpty(), open) }
+        appearance(settings, mailListRow(states.behavior, dateFormatter, open(MailPage.MailListSettings)), open)
         page(
-            "Mail behavior",
+            MAIL_BEHAVIOR_TITLE,
             open(MailPage.Behavior),
             Res.drawable.symbol_tune,
             summary = "Inbox, sidebar, swipes, reading, and writing",
         ) {
-            val startPages = sidebarPinOptions(states.folders.accounts, states.folderColors::groupColorOf)
-            mailBehaviorIndex(states.behavior, folderPills, startPages, rtl, behaviorPages(open))
+            val startPages = sidebarPinOptions(states.folders.all.accounts, states.folders.colors::groupColorOf)
+            sections(mailBehaviorSettings(states.behavior, folderPills, startPages, rtl, behaviorPages(open)))
         }
         page(
             PRIVACY_TITLE,
@@ -68,10 +73,10 @@ internal fun mailSettingsIndex(
             summary = "Remote images, avatars, and this device",
         ) {
             keywords("Security")
-            privacyIndex(behavior, states.devicePrivacy, open(MailPage.AllowedSenders))
+            sections(privacySettings(states.behavior, states.devicePrivacy, open(MailPage.AllowedSenders)))
         }
         page(
-            "Folders & rules",
+            FOLDERS_TITLE,
             open(MailPage.Folders),
             Res.drawable.symbol_folder,
             summary = "Nest folders and file arriving mail",
@@ -79,8 +84,9 @@ internal fun mailSettingsIndex(
     }
 }
 
-private fun behaviorPages(open: (MailPage) -> (String?) -> Unit): BehaviorIndexPages =
-    BehaviorIndexPages(
+/** The pages Mail behavior's rows lead to, each opened with [open]. */
+internal fun behaviorPages(open: (MailPage) -> (String?) -> Unit): BehaviorPages =
+    BehaviorPages(
         sidebar = open(MailPage.SidebarSettings),
         pinned = open(MailPage.PinnedSettings),
         filterPanel = open(MailPage.FilterPanelSettings),
@@ -88,10 +94,10 @@ private fun behaviorPages(open: (MailPage) -> (String?) -> Unit): BehaviorIndexP
         signatures = open(MailPage.Signatures),
     )
 
-/** The Appearance page, with Mail's App icon and Mail list rows among the shared ones. */
+/** The Appearance page, with Mail's App icon and [mailList] rows among the shared ones. */
 private fun SettingsIndexScope.appearance(
     settings: SharedSettings,
-    behavior: MailBehavior,
+    mailList: PageRowSpec,
     open: (MailPage) -> (String?) -> Unit,
 ) {
     page(
@@ -100,10 +106,7 @@ private fun SettingsIndexScope.appearance(
         Res.drawable.symbol_palette,
         summary = "Theme, app icon, mail list, dates, and animations",
     ) {
-        appearanceIndex(settings.dateFormat, settings.theme, settings.animation, open(MailPage.ThemeSettings)) {
-            settings.appIcon?.let { appIconIndex(it) }
-            mailLookIndex(behavior, open(MailPage.MailListSettings))
-        }
+        sections(settings.mailAppearance(mailList, open(MailPage.ThemeSettings)))
     }
 }
 
@@ -113,14 +116,16 @@ private fun SettingsIndexScope.appearance(
  */
 private fun SettingsIndexScope.notifications(
     state: NotificationSettingsState,
-    behavior: MailBehavior,
+    behavior: MailBehaviorState,
     hasAccounts: Boolean,
     open: (MailPage) -> (String?) -> Unit,
 ) {
-    val summary =
-        state.current?.let { "Delivery through ${it.name}" }
-            ?: if (state.periodicChecks) "New mail every 15 minutes" else "New-mail alerts off"
-    page("Notifications", open(MailPage.Notifications), Res.drawable.symbol_notifications, summary = summary) {
+    page(
+        "Notifications",
+        open(MailPage.Notifications),
+        Res.drawable.symbol_notifications,
+        summary = state.deliverySummary,
+    ) {
         keywords("Push", "Alerts")
         section("New mail") { setting("Instant delivery", state.deliveryLabel) }
         // The page shows previews only where they can be saved, and their overrides only with accounts.
@@ -134,8 +139,8 @@ private fun SettingsIndexScope.notifications(
             )
             if (hasAccounts) page("Accounts and addresses", open(MailPage.NotificationOverrides))
         }
-        section("Buttons") { notificationActionsIndex(behavior) }
-        section("Updates") { toggle(UPDATE_TOAST_TITLE, behavior.updateToasts, keywords = listOf("New version")) }
+        section("Buttons") { row(alertButtonsRow(behavior)) }
+        section("Updates") { row(updateToastRow(behavior)) }
     }
 }
 

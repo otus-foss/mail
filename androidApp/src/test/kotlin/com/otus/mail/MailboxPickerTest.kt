@@ -3,26 +3,22 @@ package com.otus.mail
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isDialog
-import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.MailboxScope
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.presentation.InboxContext
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals
@@ -34,6 +30,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
+/** The Inboxes under the search's accounts load mail beyond the Inbox. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w412dp-h892dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -41,47 +38,43 @@ class MailboxPickerTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     private val loaded = mutableListOf<MailScope?>()
+    private val archive = MailboxScope(null, "Archive", MailboxRole.Archive)
 
     @Before
-    fun showInbox() {
-        val context = InboxContext(mailboxSearch = MailboxSearch(listOf("Inbox", "Archive", "Sent")) { loaded += it })
-        compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(fixtures, context = context) } } }
-        compose.openSearchResults()
-        compose
-            .onNodeWithContentDescription("All accounts, Inbox")
-            .performScrollTo()
-            .assertIsOff()
-            .performClick()
+    fun openAccounts() {
+        val search =
+            MailboxSearch(listOf(MailboxScope.Inbox, archive, MailboxScope(null, "Sent", MailboxRole.Sent))) {
+                loaded += it
+            }
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                OtusTheme { InboxScreen(fixtures, context = inboxContext { mailboxSearch = search }) }
+            }
+        }
+        compose.openSearch()
+        compose.onNodeWithContentDescription("All accounts, Inbox").performScrollTo().performClick()
     }
 
     @Test
-    fun choosingAnotherInboxLoadsItAndNamesItInThePill() {
+    fun choosingAnotherInboxLoadsItAndNamesItInTheChip() {
         compose.onNodeWithText("Inboxes").assertIsDisplayed()
-        row("Inbox").assertIsOn()
-        row("Archive").performClick()
-        compose.onNodeWithText("2 selected").assertIsDisplayed()
+        compose.pickRow("Inbox").assertIsOn()
+        compose.pickRow("Archive").performClick()
         compose.onNodeWithText("Done").performClick()
         compose
             .onNodeWithContentDescription("All accounts, Inbox, Archive")
             .performScrollTo()
             .assert(hasText("All accounts") and hasText("Inbox +1"))
-            .assertIsOn()
-        compose.runOnIdle {
-            assertEquals(
-                MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox"), MailboxScope(null, "Archive"))),
-                loaded.last(),
-            )
-        }
-        compose.onNodeWithContentDescription("Back to inbox").performClick()
+        compose.runOnIdle { assertEquals(MailScope.Mailboxes(setOf(MailboxScope.Inbox, archive)), loaded.last()) }
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.runOnIdle { assertEquals("Closing search returns to the page's messages", null, loaded.last()) }
     }
 
     @Test
-    fun noInboxCheckedSearchesAllOfThem() {
-        row("Personal").performClick()
-        row("Inbox").performClick().assertIsOff()
-        compose.onNodeWithText("1 selected").assertIsDisplayed()
-        compose.onNodeWithText("Done").assertIsEnabled().performClick()
+    fun noInboxTickedSearchesAllOfThem() {
+        compose.pickRow("Personal").performClick()
+        compose.pickRow("Inbox").performClick().assertIsOff()
+        compose.onNodeWithText("Done").performClick()
         compose.runOnIdle { assertEquals(MailScope.Mailboxes(emptySet(), setOf("Personal")), loaded.last()) }
         compose
             .onNodeWithContentDescription("Personal account, All inboxes")
@@ -89,13 +82,9 @@ class MailboxPickerTest {
             .assert(hasText("Personal") and hasText("All inboxes"))
             .performClick()
         compose.onNodeWithText("Clear").performClick()
-        compose.onNodeWithText("0 selected").assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithContentDescription("All accounts, All inboxes").assertIsOn()
+        compose.onNodeWithContentDescription("All accounts, All inboxes").performScrollTo().assertIsDisplayed()
     }
-
-    /** A choice in the sheet; the pill behind it can show the same text. */
-    private fun row(name: String) = compose.onNode(hasText(name) and isToggleable() and hasAnyAncestor(isDialog()))
 
     private val fixtures =
         listOf(
@@ -105,7 +94,7 @@ class MailboxPickerTest {
                 "Meeting design",
                 "",
                 ReceivedAt("2026-10-02", "10:00"),
-                MailLocation("Inbox", "Work"),
+                MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
             ),
             MailMessage(
                 "sam",
@@ -113,7 +102,7 @@ class MailboxPickerTest {
                 "Meeting plans",
                 "",
                 ReceivedAt("2026-10-05", "10:00"),
-                MailLocation("Inbox", "Personal"),
+                MailLocation("Inbox", "Personal", mailboxRole = MailboxRole.Inbox),
             ),
         )
 }

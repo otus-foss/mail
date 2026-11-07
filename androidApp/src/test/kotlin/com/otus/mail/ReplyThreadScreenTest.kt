@@ -11,18 +11,18 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OriginalMessage
-import com.otus.mail.feature.inbox.domain.ThreadMessage
-import com.otus.mail.feature.inbox.presentation.ComposeAccount
-import com.otus.mail.feature.inbox.presentation.ComposeExits
-import com.otus.mail.feature.inbox.presentation.ComposeOrigin
-import com.otus.mail.feature.inbox.presentation.ComposeServices
-import com.otus.mail.feature.inbox.presentation.ComposeState
-import com.otus.mail.feature.inbox.presentation.OutgoingDraft
-import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OriginalMessage
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.feature.compose.domain.ThreadMessage
+import com.otus.mail.feature.compose.presentation.ComposeAccount
+import com.otus.mail.feature.compose.presentation.ComposeExits
+import com.otus.mail.feature.compose.presentation.ComposeOrigin
+import com.otus.mail.feature.compose.presentation.ComposeServices
+import com.otus.mail.feature.compose.presentation.ComposeState
+import com.otus.mail.feature.compose.presentation.OutgoingDraft
+import com.otus.mail.feature.compose.presentation.screens.ComposeScreen
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.junit.Assert.assertEquals
@@ -82,7 +82,7 @@ class ReplyThreadScreenTest {
                                 saveDelayMillis = 60_000,
                             )
                         }
-                    ComposeScreen(state, MailBehavior(), exits)
+                    ComposeScreen(state, ActionBehavior(), emptyList(), exits)
                 }
             }
         }
@@ -116,28 +116,28 @@ class ReplyThreadScreenTest {
     @Test
     fun aReplyToOneMessageShowsItAsARow() {
         open(ComposeRequest.Reply(original, all = false), 1)
-        compose.onNodeWithText("11 Oct").assertExists()
+        compose.onNodeWithText("Oct 11").assertExists()
         compose.onNode(hasContentDescription("Send, to Grace Hopper") and hasClickAction()).assertIsEnabled()
-        compose.screenshot("reply-thread-one")
+        compose.screenshot("compose/reply_thread_one")
     }
 
     @Test
     fun upToThreeMessagesShowAsRows() {
         open(ComposeRequest.Reply(original, all = false), 3)
         compose.onNodeWithText("Margaret Knuth").assertExists()
-        compose.screenshot("reply-thread-three")
+        compose.screenshot("compose/reply_thread_three")
     }
 
     @Test
     fun aLongThreadFoldsIntoOneRowAndALongToLineIntoMore() {
         open(ComposeRequest.Reply(original, all = true), 5)
         compose.onNodeWithText("5 earlier messages").assertExists()
-        compose.onNodeWithText("Latest: Grace Hopper, 11 Oct").assertExists()
+        compose.onNodeWithText("Latest: Grace Hopper, Oct 11").assertExists()
         compose.onNodeWithText("+3 more").assertExists()
-        compose.screenshot("reply-thread-folded")
+        compose.screenshot("compose/reply_thread_folded")
         compose.onNodeWithText("+3 more").performClick()
         compose.onNodeWithText("Radia Perlman").assertExists()
-        compose.screenshot("reply-to-expanded")
+        compose.screenshot("compose/reply_to_expanded")
     }
 
     @Test
@@ -145,7 +145,7 @@ class ReplyThreadScreenTest {
         open(ComposeRequest.Reply(original, all = true), 5)
         compose.onNodeWithText("5 earlier messages").performClick()
         compose.onNodeWithText("Earlier in this thread").assertExists()
-        compose.screenshot("reply-thread-sheet")
+        compose.screenshot("compose/reply_thread_sheet")
         compose.onNode(hasText("Latest only") and hasClickAction()).performClick()
         compose.waitForIdle()
         assertEquals(

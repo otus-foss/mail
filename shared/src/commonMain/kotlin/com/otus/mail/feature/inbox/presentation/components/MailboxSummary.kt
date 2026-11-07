@@ -1,5 +1,7 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxSearch
 
 /** The inboxes beside the accounts in the account pill. No name means every inbox. */

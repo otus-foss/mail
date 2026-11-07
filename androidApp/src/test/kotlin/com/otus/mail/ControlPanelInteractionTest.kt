@@ -20,6 +20,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.math.sign
 
 /** The inbox panel follows the list's scroll and settles; a subpage's search grows over its title and back. */
 @RunWith(RobolectricTestRunner::class)
@@ -37,8 +38,8 @@ class ControlPanelInteractionTest {
         compose.onRoot().performTouchInput { up() }
         compose.waitForIdle()
         assertCollapsed(true)
-        compose.onRoot().performTouchInput { swipeDown() }
-        compose.waitForIdle()
+        // Only as far back as it scrolled: further down, the list's top pulls down the quick view.
+        slowDrag(-PanelTokens.collapseDistance)
         assertCollapsed(false)
     }
 
@@ -75,9 +76,10 @@ class ControlPanelInteractionTest {
         compose.onNodeWithText("Settings").assertExists()
     }
 
+    /** Drags the list [distance] up, or down when negative, past the touch slop. */
     private fun slowDrag(distance: Dp) {
         compose.onRoot().performTouchInput {
-            val travel = distance.toPx() + viewConfiguration.touchSlop
+            val travel = distance.toPx() + viewConfiguration.touchSlop * sign(distance.value)
             swipe(center, center - Offset(0f, travel), durationMillis = SLOW_DRAG_MILLIS)
         }
         compose.waitForIdle()

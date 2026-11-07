@@ -1,6 +1,5 @@
 package com.otus.mail.app
 
-import com.otus.mail.core.mail.ServerChanges
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope

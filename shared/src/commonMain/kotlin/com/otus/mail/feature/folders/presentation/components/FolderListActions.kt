@@ -1,8 +1,8 @@
 package com.otus.mail.feature.folders.presentation.components
 
-import com.otus.designsystem.shared.filters.components.RuleChipLine
-import com.otus.designsystem.shared.overlays.components.MenuAction
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.designsystem.mail.folders.components.RuleChipLine
+import com.otus.designsystem.shared.controls.elements.UiAction
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.presentation.FolderDrop
 
 /**
@@ -18,5 +18,5 @@ class FolderListActions(
     val canDrop: (FolderDrop) -> Boolean,
     val onDrop: (FolderDrop) -> Unit,
     val onOpen: (MailFolder) -> Unit,
-    val menuOf: (MailFolder) -> List<MenuAction>,
+    val menuOf: (MailFolder) -> List<UiAction>,
 )

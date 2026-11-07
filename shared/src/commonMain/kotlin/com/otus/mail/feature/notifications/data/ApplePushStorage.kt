@@ -1,17 +1,17 @@
 package com.otus.mail.feature.notifications.data
 
-import com.otus.jmap.push.PushStateStore
+import com.otus.storage.StringMapStore
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 internal class ApplePushStorage(
     private val host: ApplePushPlatform,
-) : PushStateStore {
+) : StringMapStore {
     override fun read(): Map<String, String> =
         host.read("subscriptions")?.let { Json.decodeFromString(it) } ?: emptyMap()
 
-    override fun write(records: Map<String, String>) {
-        check(host.write("subscriptions", Json.encodeToString(records)))
+    override fun write(values: Map<String, String>) {
+        check(host.write("subscriptions", Json.encodeToString(values)))
     }
 
     fun registrations(): Map<String, AppleRegistration> =

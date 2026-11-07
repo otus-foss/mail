@@ -1,6 +1,7 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mailbox.FolderNode
+import com.otus.mail.core.mailbox.MailboxRole
 
 /**
  * The folders of an account's tree that a message in [folderIds] names on its row when shown in
@@ -13,5 +14,5 @@ fun List<FolderNode>.labelFolders(
 ): List<FolderNode> =
     filter { node ->
         val folder = node.folder
-        folder.id in folderIds && folder.id != shownId && (folder.isCustom || folder.role == INBOX_ROLE)
+        folder.id in folderIds && folder.id != shownId && (folder.isCustom || folder.role == MailboxRole.Inbox)
     }

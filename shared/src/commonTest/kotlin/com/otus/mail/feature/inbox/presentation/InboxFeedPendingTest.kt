@@ -1,15 +1,17 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailAttributes
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MessageFlag
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.withFlag
+import com.otus.mail.core.messages.presentation.move
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
-import com.otus.mail.feature.inbox.domain.MailAttributes
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.withFlag
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -129,7 +131,7 @@ class InboxFeedPendingTest {
             "Subject",
             "Body",
             ReceivedAt("2026-10-01", "12:00"),
-            MailLocation("Inbox", "Ada"),
+            MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox),
             MailAttributes(unread = true),
         )
 }

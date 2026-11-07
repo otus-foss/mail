@@ -31,7 +31,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import org.robolectric.shadows.ShadowDialog
 import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
@@ -51,7 +50,13 @@ class CalendarWeekLayoutTest {
             compose.activity.setContent {
                 val density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                    OtusTheme { InboxScreen(emptyList(), DateFormatter(DateFormatPreference.YearMonthDayDashes)) }
+                    OtusTheme {
+                        InboxScreen(
+                            emptyList(),
+                            DateFormatter(DateFormatPreference.YearMonthDayDashes),
+                            context = inboxContext(),
+                        )
+                    }
                 }
             }
         }
@@ -103,7 +108,6 @@ class CalendarWeekLayoutTest {
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("2020-12-30 → 2021-01-03").assertIsDisplayed()
         dates.drop(2).forEach { compose.onNodeWithContentDescription(it).assertIsSelected() }
-        saveScreenshot()
         calendar.performTouchInput { up() }
         compose.mainClock.autoAdvance = true
         compose.onNodeWithText("2020-12-30 → 2021-01-03").assertIsDisplayed()
@@ -123,8 +127,7 @@ class CalendarWeekLayoutTest {
     }
 
     private fun openDecember2020() {
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
         val today = LocalDate.now()
         val heading = "${today.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${today.year}"
         compose.onNode(hasText(heading) and hasClickAction()).performClick()
@@ -133,13 +136,5 @@ class CalendarWeekLayoutTest {
         compose.onNodeWithContentDescription("Month choices").performScrollToNode(hasText("December"))
         compose.onNodeWithText("December").performClick()
         compose.onNodeWithText("Go").performClick()
-    }
-
-    private fun saveScreenshot() {
-        compose
-            .runOnIdle {
-                val dialog = ShadowDialog.getShownDialogs().last { it.isShowing }
-                requireNotNull(dialog.window).decorView.drawnBitmap()
-            }.savePng("build/reports/pickers/calendar-continuous-week.png")
     }
 }

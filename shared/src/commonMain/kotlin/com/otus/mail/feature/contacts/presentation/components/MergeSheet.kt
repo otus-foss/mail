@@ -22,23 +22,23 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.shared.contacts.components.ContactValueRow
 import com.otus.designsystem.shared.controls.components.ButtonPair
-import com.otus.designsystem.shared.controls.components.PairButton
 import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.feedback.components.InfoTip
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.OptionsMenu
+import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
-import com.otus.designsystem.shared.selection.components.PickRowLayout
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.MergePlan
@@ -63,9 +63,11 @@ internal fun MergeSheet(
     onDismiss: () -> Unit,
 ) {
     val bookOf = { key: BookKey -> books.firstOrNull { it.key == key } }
-    ClosableSheet(
+    SheetFrame(
         "Same person?",
         onDismiss,
+        done = null,
+        closeButton = true,
     ) {
         Column(
             Modifier
@@ -75,7 +77,7 @@ internal fun MergeSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             val sources = plan.cards.mapNotNull { card -> card.books.firstNotNullOfOrNull(bookOf)?.name }.distinct()
-            Row(Inset, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.sheetInset(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "From ${plan.cards.size} cards: ${sources.joinToString(", ")}",
                     Modifier.weight(1f),
@@ -90,12 +92,12 @@ internal fun MergeSheet(
                     add { BookRow(plan, books, onChange) }
                     if (plan.cards.size > 1) add { DeleteRow(plan, bookOf, onChange) }
                 },
-                Inset,
+                Modifier.sheetInset(),
             )
             ButtonPair(
-                PairButton(alternative, onAlternative),
-                PairButton("Merge", { onMerge(plan) }, enabled = plan.addresses.isNotEmpty()),
-                Inset.padding(SheetTokens.inset),
+                UiAction(alternative, onClick = onAlternative),
+                UiAction("Merge", enabled = plan.addresses.isNotEmpty(), onClick = { onMerge(plan) }),
+                Modifier.sheetInset().padding(SheetTokens.inset),
             )
         }
     }
@@ -125,10 +127,13 @@ private fun NameRow(
             OptionsMenu(
                 named.map { card ->
                     OptionsItem.Action(
-                        card.displayName,
-                        Res.drawable.symbol_person,
-                        { onChange(plan.copy(name = card.key)) },
-                        current = card.key == plan.name,
+                        UiAction(
+                            card.displayName,
+                            Res.drawable.symbol_person,
+                            onClick = { onChange(plan.copy(name = card.key)) },
+                        ),
+                        current =
+                            card.key == plan.name,
                     )
                 },
             ) { open = false }
@@ -148,14 +153,14 @@ private fun AddressRow(
             .flatMap { card -> card.emails.map { card to it.value } }
             .distinctBy { it.second.lowercase() }
     FlowRow(
-        Modifier.padding(horizontal = SheetTokens.inset - PanelTokens.iconGap),
-        horizontalArrangement = Arrangement.spacedBy(PanelTokens.chipGap),
+        Modifier.padding(horizontal = SheetTokens.inset - Spacing.iconGap),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.inlineGap),
     ) {
         addresses.forEach { (card, address) ->
             val on = address in plan.addresses
             val toggled = if (on) plan.addresses - address else plan.addresses + address
             Chip(address, { onChange(plan.copy(addresses = toggled)) }, selected = on) {
-                PersonAvatar(card.pill(address).avatar, FilterTokens.chipAvatarSize)
+                PersonAvatar(card.pill(address).avatar, ControlTokens.chipAvatarSize)
             }
         }
     }
@@ -183,10 +188,9 @@ private fun BookRow(
                     listOf(OptionsItem.Caption(owner)) +
                         owned.map {
                             OptionsItem.Action(
-                                it.name,
-                                it.icon,
-                                { onChange(plan.copy(book = it.key)) },
-                                current = it.key == plan.book,
+                                UiAction(it.name, it.icon, onClick = { onChange(plan.copy(book = it.key)) }),
+                                current =
+                                    it.key == plan.book,
                             )
                         }
                 },
@@ -214,7 +218,7 @@ private fun DeleteRow(
         null,
         PickMark(plan.deleteOthers, multiple = true),
         { onChange(plan.copy(deleteOthers = !plan.deleteOthers)) },
-        layout = PickRowLayout(RowDensity.Compact),
+        density = RowDensity.Compact,
     )
 }
 
@@ -227,6 +231,3 @@ private val MergeInfo =
                 "in Otus.",
         ),
     )
-
-/** Text and controls that are not rows line up with the rows' content. */
-private val Inset = Modifier.padding(horizontal = SheetTokens.inset)

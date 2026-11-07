@@ -1,11 +1,10 @@
 package com.otus.mail.feature.folders.data
 
 import com.otus.jmap.SetMethod
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.MailboxObject
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.folderTree
 import com.otus.mail.feature.folders.domain.FolderRule
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.folderTree
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -53,11 +52,9 @@ private const val CREATION_ID = "rules"
  * folder the account no longer has come last and fall back to the inbox, as mail filed into a
  * deleted folder would.
  */
-internal fun Map<String, List<FolderRule>>.inFolderOrder(mailboxes: List<MailboxObject>): List<BlockFolder> {
-    val paths = mailboxPaths(mailboxes)
-    val ordered =
-        folderTree(mailboxes.map { MailFolder("", it.id, it.name, it.parentId, it.role, it.sortOrder) })
-            .map { it.folder.id }
+internal fun Map<String, List<FolderRule>>.inFolderOrder(folders: List<MailFolder>): List<BlockFolder> {
+    val paths = mailboxPaths(folders)
+    val ordered = folderTree(folders).map { it.folder.id }
     val known = ordered.toSet()
     return (ordered + keys.filterNot { it in known })
         .mapNotNull { id -> get(id)?.takeIf { it.isNotEmpty() }?.let { BlockFolder(id, paths[id] ?: SIEVE_INBOX, it) } }
@@ -67,19 +64,19 @@ internal fun Map<String, List<FolderRule>>.inFolderOrder(mailboxes: List<Mailbox
 private const val SIEVE_INBOX = "INBOX"
 
 /** Each mailbox's names from the top down, joined by [FOLDER_PATH_SEPARATOR]; a parent cycle stops the walk. */
-private fun mailboxPaths(mailboxes: List<MailboxObject>): Map<String, String> {
+private fun mailboxPaths(mailboxes: List<MailFolder>): Map<String, String> {
     val byId = mailboxes.associateBy { it.id }
     return mailboxes.associate { mailbox ->
         val seen = mutableSetOf<String>()
         val path =
-            if (mailbox.role == INBOX_ROLE) {
+            if (mailbox.role == MailboxRole.Inbox) {
                 SIEVE_INBOX
             } else {
                 generateSequence(mailbox) { byId[it.parentId] }
                     .takeWhile { seen.add(it.id) }
                     .toList()
                     .reversed()
-                    .joinToString(FOLDER_PATH_SEPARATOR) { if (it.role == INBOX_ROLE) SIEVE_INBOX else it.name }
+                    .joinToString(FOLDER_PATH_SEPARATOR) { if (it.role == MailboxRole.Inbox) SIEVE_INBOX else it.name }
             }
         mailbox.id to path
     }

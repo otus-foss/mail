@@ -1,7 +1,7 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.designsystem.shared.filters.components.RuleSegment
-import com.otus.designsystem.shared.filters.components.RuleSegmentStyle
+import com.otus.designsystem.mail.folders.components.RuleSegment
+import com.otus.designsystem.mail.folders.components.RuleSegmentStyle
 import com.otus.mail.core.text.sizeText
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch

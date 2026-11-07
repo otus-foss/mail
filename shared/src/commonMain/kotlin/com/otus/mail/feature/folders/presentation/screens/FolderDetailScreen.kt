@@ -9,13 +9,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
+import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.scopeOf
 import com.otus.mail.feature.folders.presentation.FolderColorsState
@@ -24,6 +24,7 @@ import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.KnownAddress
 import com.otus.mail.feature.folders.presentation.RuleSheetDraft
+import com.otus.mail.feature.folders.presentation.account
 import com.otus.mail.feature.folders.presentation.canMove
 import com.otus.mail.feature.folders.presentation.components.AddRuleSheet
 import com.otus.mail.feature.folders.presentation.components.DeleteFolderRow
@@ -166,7 +167,12 @@ private fun FolderDetailDialogs(
             rules.remove(folder, index)
             close()
         }
-        ClosableSheet("Can't edit this rule here", close, SheetConfirm("Delete rule", delete)) {
+        SheetFrame(
+            "Can't edit this rule here",
+            close,
+            done = UiAction("Delete rule", onClick = delete),
+            closeButton = true,
+        ) {
             Text(
                 "Only rules on one sender, recipient, subject, or mailing list can be edited here.",
                 Modifier.padding(SheetTokens.inset),

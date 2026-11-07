@@ -17,11 +17,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionBarMode
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.ActionBarMode
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -84,8 +84,8 @@ class ActionBarSettingsTest {
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         val expected =
             ActionBarLayout(listOf(MailAction.Spam, MailAction.Trash, MailAction.Move), MailAction.Reply)
-        assertEquals(expected, saved.barLayout(ActionBarPlace.Message))
-        assertEquals(ActionBarPlace.Selection.defaultLayout, saved.barLayout(ActionBarPlace.Selection))
+        assertEquals(expected, saved.actions.barLayout(ActionBarPlace.Message))
+        assertEquals(ActionBarPlace.Selection.defaultLayout, saved.actions.barLayout(ActionBarPlace.Selection))
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Back").performClick()
@@ -111,7 +111,7 @@ class ActionBarSettingsTest {
         compose.runOnIdle {
             assertEquals(
                 expected,
-                AndroidMailBehaviorStore(compose.activity).read().savedLayout(ActionBarPlace.Message),
+                AndroidMailBehaviorStore(compose.activity).read().actions.savedLayout(ActionBarPlace.Message),
             )
         }
     }
@@ -121,7 +121,7 @@ class ActionBarSettingsTest {
         start()
         openActionBarSettings()
         compose.onNode(hasText("Minimize") and isToggleable()).performClick().assertIsOn()
-        assertEquals(true, AndroidMailBehaviorStore(compose.activity).read().minimizedBar)
+        assertEquals(true, AndroidMailBehaviorStore(compose.activity).read().actions.minimizedBar)
 
         // Back leads to Mail behavior, then Settings.
         compose.onNodeWithContentDescription("Back").performClick()
@@ -156,17 +156,17 @@ class ActionBarSettingsTest {
         done()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
-        assertEquals(ActionBarMode.Fixed, saved.actionBarMode)
+        assertEquals(ActionBarMode.Fixed, saved.actions.barMode)
         val everywhere =
             ActionBarLayout(listOf(MailAction.Archive, MailAction.Trash, MailAction.Reply), MailAction.NewMail)
-        assertEquals(everywhere, saved.barLayout(ActionBarPlace.Inbox))
-        assertEquals(ActionBarPlace.Message.defaultLayout, saved.savedLayout(ActionBarPlace.Message))
+        assertEquals(everywhere, saved.actions.barLayout(ActionBarPlace.Inbox))
+        assertEquals(ActionBarPlace.Message.defaultLayout, saved.actions.savedLayout(ActionBarPlace.Message))
 
         compose.onNodeWithText("Same everywhere").performScrollTo().performClick()
         compose.onNodeWithText("Per screen").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.onNodeWithText("Open message").performScrollTo().assertIsDisplayed()
-        assertEquals(ActionBarMode.Adaptive, AndroidMailBehaviorStore(compose.activity).read().actionBarMode)
+        assertEquals(ActionBarMode.Adaptive, AndroidMailBehaviorStore(compose.activity).read().actions.barMode)
     }
 
     @Test
@@ -211,8 +211,8 @@ class ActionBarSettingsTest {
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
         val selection = ActionBarLayout(listOf(MailAction.Archive, MailAction.Trash), MailAction.Move)
-        assertEquals(selection, saved.savedLayout(ActionBarPlace.Selection))
-        assertEquals(ActionBarPlace.Everywhere.defaultLayout, saved.savedLayout(ActionBarPlace.Everywhere))
+        assertEquals(selection, saved.actions.savedLayout(ActionBarPlace.Selection))
+        assertEquals(ActionBarPlace.Everywhere.defaultLayout, saved.actions.savedLayout(ActionBarPlace.Everywhere))
     }
 
     private companion object {

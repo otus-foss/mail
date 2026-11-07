@@ -4,15 +4,19 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.jmapDecoding
-import com.otus.jmap.login.LoginStore
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.mail.EmailType
 import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
-import com.otus.mail.core.mail.mailCallOr
-import com.otus.mail.feature.inbox.domain.AddressBook
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.matching
+import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.messages.data.LoginLocks
+import com.otus.mail.core.messages.data.contactCards
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.AddressBook
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.matching
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration
@@ -27,7 +31,6 @@ import kotlin.time.TimeSource
  */
 class JmapAddressBook(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val limit: Int = DEFAULT_LIMIT,
     private val maxAge: Duration = 5.minutes,
     private val timeSource: TimeSource = TimeSource.Monotonic,
@@ -55,10 +58,10 @@ class JmapAddressBook(
         }
 
     private suspend fun load(accountId: String): List<MailSender>? =
-        mailCallOr(null) {
-            mailAccount(connections, logins, accountId)?.let { account ->
+        jmapCallOr(null) {
+            connections.mailAccount(accountId)?.let { account ->
                 (account.contactCards(CONTACT_SCAN) + correspondents(account))
-                    .distinctBy { it.address.lowercase() }
+                    .distinctBy { EmailAddressKey(it.address) }
                     .map { it.copy(accountKey = accountId) }
             }
         }
@@ -73,7 +76,7 @@ class JmapAddressBook(
             emails.list
                 .flatMap { it.from.orEmpty() + it.to.orEmpty() + it.cc.orEmpty() }
                 .filter { it.email.isNotBlank() }
-                .groupBy { it.email.lowercase() }
+                .groupBy { EmailAddressKey(it.email) }
                 .values
                 .sortedByDescending { it.size }
                 .map { seen ->

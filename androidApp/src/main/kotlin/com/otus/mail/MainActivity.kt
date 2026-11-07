@@ -15,13 +15,11 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
-import com.otus.dateformat.AndroidDateFormatPreferenceStore
 import com.otus.mail.app.App
 import com.otus.mail.app.IncognitoKeyboard
 import com.otus.mail.app.MailServices
 import com.otus.mail.feature.updates.domain.InstalledBuild
 import com.otus.mail.feature.updates.domain.ReleaseChannel
-import com.otus.settings.data.AndroidAnimationPreferenceStore
 import com.otus.settings.presentation.AnimationSettingsState
 import com.otus.settings.presentation.AppIconSettingsState
 import com.otus.settings.presentation.DateFormatSettingsState
@@ -38,7 +36,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val dateFormatState = DateFormatSettingsState(AndroidDateFormatPreferenceStore(this))
+        val dateFormatState = DateFormatSettingsState(dateFormatChoice())
         val app = application as OtusMailApplication
         app.photoPicker.attach(this)
         app.attachmentFiles.attach(this)
@@ -50,15 +48,15 @@ class MainActivity : ComponentActivity() {
             take(intent)
         }
         val behaviorState = app.behavior
-        themeState = ThemeSettingsState(AndroidThemePreferenceStore(this))
-        appIconState = AppIconSettingsState(AndroidAppIconPreferenceStore(this))
+        themeState = ThemeSettingsState(themeChoice())
+        appIconState = AppIconSettingsState(appIconChoice())
         // Until Compose draws, the window shows the theme's color behind the launch animation.
         window.setBackgroundDrawable(
             themeState.palette.bgDark
                 .toArgb()
                 .toDrawable(),
         )
-        val animationState = AnimationSettingsState(AndroidAnimationPreferenceStore(this))
+        val animationState = AnimationSettingsState(animationChoice())
         val build =
             InstalledBuild(
                 ReleaseChannel.valueOf(BuildConfig.CHANNEL),
@@ -75,9 +73,9 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = light
                 }
             }
-            val secure = behaviorState.behavior.screenSecurity
+            val secure = behaviorState.behavior.privacy.screenSecurity
             SideEffect { keepScreenPrivate(secure) }
-            IncognitoKeyboard(behaviorState.behavior.incognitoKeyboard) {
+            IncognitoKeyboard(behaviorState.behavior.privacy.incognitoKeyboard) {
                 App(dateFormatState, services, behaviorState, themeState, animationState, appIconState, build)
             }
         }

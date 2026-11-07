@@ -2,7 +2,15 @@ package com.otus.mail.feature.inbox.data
 
 import com.otus.mail.core.mail.EmailAddress
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.feature.inbox.domain.MailConversation
+import com.otus.mail.core.mail.Keywords
+import com.otus.mail.core.messages.data.ThreadView
+import com.otus.mail.core.messages.data.inConversation
+import com.otus.mail.core.messages.data.merged
+import com.otus.mail.core.messages.data.mergedByThread
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailConversation
+import com.otus.mail.core.messages.domain.MailLocation
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,7 +35,7 @@ class ConversationRepliesTest {
         var from: EmailAddress = grace
         var to: List<EmailAddress> = listOf(ada)
         var cc: List<EmailAddress>? = null
-        var keywords: Set<String> = setOf(SEEN_KEYWORD)
+        var keywords: Set<String> = setOf(Keywords.SEEN)
         var listId: String? = null
     }
 
@@ -58,7 +66,7 @@ class ConversationRepliesTest {
         mailbox: String = "inbox",
     ): MailConversation =
         row
-            .toMessage("ada", "Ada", mailbox, TimeZone.UTC, "ada@example.org", mailbox)
+            .toMessage(MailLocation(mailbox, "Ada", "ada", "ada@example.org", mailboxId = mailbox), TimeZone.UTC)
             .inConversation(row, thread, mailbox, view, TimeZone.UTC)
             .conversation!!
 
@@ -97,7 +105,7 @@ class ConversationRepliesTest {
         val draft =
             email("e3", 3, "drafts") {
                 from = ada
-                keywords = setOf(DRAFT_KEYWORD)
+                keywords = setOf(Keywords.DRAFT)
             }
         val deleted = email("e4", 4, "trash") { from = ada }
         val withDraft = conversation(question, listOf(question, draft, deleted))
@@ -148,11 +156,11 @@ class ConversationRepliesTest {
         val followUp = email("e3", 3, "inbox")
         val fromInbox =
             followUp
-                .toMessage("ada", "Ada", "inbox", TimeZone.UTC, "ada@example.org", "inbox")
+                .toMessage(MailLocation("inbox", "Ada", "ada", "ada@example.org", mailboxId = "inbox"), TimeZone.UTC)
                 .inConversation(followUp, listOf(question, answer, followUp), "inbox", view, TimeZone.UTC)
         val fromSent =
             answer
-                .toMessage("ada", "Ada", "sent", TimeZone.UTC, "ada@example.org", "sent")
+                .toMessage(MailLocation("sent", "Ada", "ada", "ada@example.org", mailboxId = "sent"), TimeZone.UTC)
                 .inConversation(answer, listOf(question, answer, followUp), "sent", view, TimeZone.UTC)
         val merged = listOf(fromSent, fromInbox).mergedByThread().single().conversation!!
         assertFalse(merged.awaitingReply)
@@ -170,11 +178,11 @@ class ConversationRepliesTest {
             }
         val fromInbox =
             inboxRow
-                .toMessage("ada", "Ada", "inbox", TimeZone.UTC, "ada@example.org", "inbox")
+                .toMessage(MailLocation("inbox", "Ada", "ada", "ada@example.org", mailboxId = "inbox"), TimeZone.UTC)
                 .inConversation(inboxRow, listOf(inboxRow), "inbox", view, TimeZone.UTC)
         val fromLabel =
             labelRow
-                .toMessage("ada", "Ada", "label", TimeZone.UTC, "ada@example.org", "label")
+                .toMessage(MailLocation("label", "Ada", "ada", "ada@example.org", mailboxId = "label"), TimeZone.UTC)
                 .inConversation(labelRow, listOf(labelRow, mine), "label", view, TimeZone.UTC)
         val merged = listOf(fromInbox, fromLabel).mergedByThread().single().conversation!!
         assertEquals(fromLabel.conversation!!.last, merged.last, "The newer last email wins over the newer row")

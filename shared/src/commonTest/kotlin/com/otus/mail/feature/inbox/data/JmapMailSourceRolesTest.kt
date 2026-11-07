@@ -1,8 +1,12 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.source
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,7 +28,7 @@ class JmapMailSourceRolesTest {
     fun rolesLoadEachChosenFolderUnderTheAppsName() =
         runTest {
             val store = InMemoryLoginStore().apply { save(login, "secret") }
-            val snapshot = server.source(store).messages(MailScope.Roles(mapOf("inbox" to "Inbox", "junk" to "Spam")))
+            val snapshot = server.source(store).messages(MailScope.Roles(listOf(MailboxRole.Inbox, MailboxRole.Junk)))
             assertEquals(
                 mapOf("ada/ma" to "Inbox", "ada/mj" to "Spam"),
                 snapshot.messages.associate { it.id to it.location.mailbox },

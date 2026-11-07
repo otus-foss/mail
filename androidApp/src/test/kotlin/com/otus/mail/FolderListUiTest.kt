@@ -14,7 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -56,7 +56,7 @@ class FolderListUiTest {
         openFolders(withBob = true)
         compose.onNodeWithContentDescription("All accounts").assertExists()
         assertEquals("Each account lists its folders", 2, count("Amazon"))
-        screenshot("all-accounts")
+        compose.screenshot("folders/list_all_accounts")
         compose.onNodeWithText("Ada").performClick()
         compose.waitUntil(TIMEOUT) { count("Amazon") == 1 }
 
@@ -83,7 +83,7 @@ class FolderListUiTest {
         server.sharedFolders += """{"id": "r", "name": "Design reviews", "myRights": {"mayAddItems": false}}"""
         openFolders(withBob = true)
         compose.waitUntil(TIMEOUT) { count("Design reviews") > 0 }
-        screenshot("shared")
+        compose.screenshot("folders/list_shared")
         assertEquals(1, count("Design reviews"))
         assertEquals(1, count("Shared by grace@example.org · can read"))
         assertEquals("The login's own Receipts keeps its id", 2, count("Receipts"))
@@ -165,7 +165,6 @@ class FolderListUiTest {
     }
 
     /** Saves the screen to build/reports/folders for review. */
-    private fun screenshot(name: String) = compose.windowBitmap().savePng("build/reports/folders/folder-list-$name.png")
 
     private companion object {
         const val TIMEOUT = 5_000L

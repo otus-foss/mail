@@ -5,10 +5,14 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MessageFlag
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MessageFlag
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.emailWriter
+import com.otus.mail.testing.mailSource
 import com.otus.mail.testing.stalwartLike
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest
@@ -47,7 +51,7 @@ class MailCacheWritesTest {
             return JmapConnections(JmapClient(routed), store)
         }
 
-    private fun source(limit: Int = 50) = JmapMailSource(connections, store, cache, limit, zone = { TimeZone.UTC })
+    private fun source(limit: Int = 50) = mailSource(connections, cache, limit, zone = { TimeZone.UTC })
 
     @Test
     fun rowsPastWhereAnotherAccountStopsWaitForTheNextPage() =
@@ -67,9 +71,9 @@ class MailCacheWritesTest {
         runTest {
             val source = source()
             val rows = source.messages(MailScope.Inbox, MailQuery()).messages.associateBy { it.emailId }
-            val marker = JmapMessageMarker(connections, store, cache)
-            assertEquals(setOf("ada/h1"), marker.mark(listOf(rows.getValue("h1")), MessageFlag.Read, on = true))
-            assertTrue(JmapMessageMover(connections, store, cache).move(rows.getValue("w1"), "r", leaving = setOf("a")))
+            val writer = emailWriter(connections, cache)
+            assertEquals(setOf("ada/h1"), writer.mark(listOf(rows.getValue("h1")), MessageFlag.Read, on = true))
+            assertTrue(writer.move(rows.getValue("w1"), "r", leaving = setOf("a")))
             home.down = true
             office.down = true
             val cached = source.cached(MailScope.Inbox, MailQuery()).messages.associateBy { it.emailId }

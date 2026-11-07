@@ -3,6 +3,7 @@ package com.otus.mail
 import android.content.Context
 import com.otus.mail.feature.notifications.domain.NotificationPreviewStore
 import com.otus.mail.feature.notifications.domain.PreviewChoices
+import com.otus.storage.PreferenceMap
 
 /**
  * The notification preview choices, in app-private preferences that new-mail checks read too. The

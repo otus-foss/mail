@@ -7,8 +7,8 @@ import com.otus.mail.feature.inbox.domain.InboxSearch
 import com.otus.mail.feature.inbox.presentation.InboxContext
 
 /**
- * Search filters while searching, the user's pills otherwise. A shown folder pill stays first in
- * search, in place of the inbox choice: the search covers that pill's folders.
+ * Search filters while searching, the category pills and the user's pills otherwise. A shown folder
+ * pill stays first in search, in place of the inbox choice: the search covers that pill's folders.
  */
 @Composable
 internal fun ContextPanelScope.InboxPanelChips(
@@ -26,11 +26,11 @@ internal fun ContextPanelScope.InboxPanelChips(
             if (shown != null) item(shown.pill) { FolderPillChip(shown, selected = true, actions.onFolder) }
             InboxFilter.entries.forEach { filter ->
                 item(filter) {
-                    SearchFilterChip(filter, search, context, dateFormatter, selection) { actions.onFilter(filter) }
+                    SearchFilterChip(filter, search, context, dateFormatter, selection) { actions.onEditSearch() }
                 }
             }
         } else {
-            InboxRowPills(context.pills, look.filters, shown?.pill, actions.onFolder, look.unreadCount)
+            InboxRowPills(context.pills, look.filters, shown?.pill, actions.onFolder, look.unreadCount, look.categories)
         }
     }
 }

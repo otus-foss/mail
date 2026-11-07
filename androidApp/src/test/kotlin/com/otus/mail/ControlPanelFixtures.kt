@@ -1,14 +1,19 @@
 package com.otus.mail
 
-import com.otus.mail.feature.inbox.domain.AccountAddresses
-import com.otus.mail.feature.inbox.domain.AddressPins
-import com.otus.mail.feature.inbox.domain.MailAttributes
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.presentation.components.MailScopeSwitch
+import com.otus.mail.core.categories.domain.CategoryVerdict
+import com.otus.mail.core.categories.domain.MailCategory
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.AccountAddresses
+import com.otus.mail.core.messages.domain.MailAttributes
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
+import com.otus.mail.core.settings.domain.AddressPins
+import com.otus.mail.feature.inbox.presentation.MailboxSearch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 
@@ -20,14 +25,14 @@ internal object ControlPanelFixtures {
     val messages: List<MailMessage> =
         listOf(
             message("1", "Grace Hopper", "Q4 launch plan", 0, unread = true, files = true),
-            message("2", "Acme Billing", "Invoice 1042 for September", 0),
+            message("2", "Acme Billing", "Invoice 1042 for September", 0, category = MailCategory.Transactions),
             message("3", "Mara König", "Notes from Thursday", 2, unread = true),
             message("4", "Katherine Johnson", "Re: Launch numbers", 3),
             message("5", "Legal team", "German terms review", 8),
             message("6", "Alan Turing", "Lunch on Friday?", 9),
             message("7", "Radia Perlman", "Spanning tree slides", 10),
             message("8", "Grace Hopper", "Re: COBOL review notes", 10),
-            message("9", "Sentry", "Weekly report for Otus", 11, unread = true),
+            message("9", "Sentry", "Weekly report for Otus", 11, unread = true, category = MailCategory.Notifications),
             message("10", "Donald Knuth", "TAOCP errata", 12),
             message("11", "Barbara Liskov", "Abstraction talk", 13),
             message("12", "Edsger Dijkstra", "Go To considered", 14),
@@ -43,6 +48,17 @@ internal object ControlPanelFixtures {
                 "florian@rubylabs.design",
                 listOf("florian@rubylabs.design", "florian@purbank.ch", "hi@rubylabs.design"),
             ),
+        )
+
+    /** What the search's Accounts sheet offers: both accounts, and three of their mailboxes. */
+    val mailboxSearch =
+        MailboxSearch(
+            listOf(
+                MailboxScope.Inbox,
+                MailboxScope(null, "Archive", MailboxRole.Archive),
+                MailboxScope(null, "Sent", MailboxRole.Sent),
+            ),
+            accounts.map { MailLocation("", it.name, it.accountId, it.name) },
         )
 
     /** Every account's mail, with Florian's account counting 5 unread. */
@@ -63,14 +79,16 @@ internal object ControlPanelFixtures {
         daysAgo: Int,
         unread: Boolean = false,
         files: Boolean = false,
+        category: MailCategory? = null,
     ) = MailMessage(
         id,
         MailSender(from, "${from.lowercase().replace(' ', '.')}@example.org"),
         subject,
         "A short preview of the message.",
         ReceivedAt(today.minus(DatePeriod(days = daysAgo)).toString(), "10:42"),
-        MailLocation("Inbox", "otus@rubylabs.design", accountId = "otus"),
+        MailLocation("Inbox", "otus@rubylabs.design", accountId = "otus", mailboxRole = MailboxRole.Inbox),
         MailAttributes(unread = unread, attachments = if (files) listOf("plan.pdf") else emptyList()),
         to = listOf(MailSender("", "otus@rubylabs.design")),
+        category = category?.let { CategoryVerdict(it, emptyList()) },
     )
 }

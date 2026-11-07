@@ -19,14 +19,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.mail.feature.inbox.domain.MailHeader
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.presentation.components.FoldersSheet
-import com.otus.mail.feature.inbox.presentation.components.MessageDetailsSheet
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.feature.read.domain.MailHeader
+import com.otus.mail.feature.read.presentation.components.FoldersSheet
+import com.otus.mail.feature.read.presentation.components.MessageDetailsSheet
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -56,8 +57,8 @@ class ReadSheetsTest {
         )
     private val folders =
         listOf(
-            MessageFolder("in", listOf("Inbox"), role = "inbox"),
-            MessageFolder("sp", listOf("Junk"), role = "junk"),
+            MessageFolder("in", listOf("Inbox"), role = MailboxRole.Inbox),
+            MessageFolder("sp", listOf("Junk"), role = MailboxRole.Junk),
             MessageFolder("cl", listOf("Clients"), color = "Blue"),
             MessageFolder("fi", listOf("Finance", "Invoices"), color = "Yellow"),
             MessageFolder("ft", listOf("Finance", "Taxes"), color = "Yellow"),
@@ -114,7 +115,7 @@ class ReadSheetsTest {
         folder("Clients").assertTicked(true)
         folder("Taxes").assertTicked(false)
         compose.onNodeWithText("Drafts").assertDoesNotExist()
-        compose.screenshot("2026-10-19-feat-read-view-folders-sheet")
+        compose.screenshot("read/folders_sheet")
         folder("Taxes").performClick()
         folder("Clients").performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
@@ -154,7 +155,7 @@ class ReadSheetsTest {
         }
         compose.onNodeWithText("Authentication-Results").assertIsDisplayed()
         compose.onNodeWithText("mx.example.org; dkim=pass header.d=lovelace.example").assertIsDisplayed()
-        compose.screenshot("2026-10-19-feat-read-view-details-sheet")
+        compose.screenshot("read/details_sheet")
     }
 
     @Test

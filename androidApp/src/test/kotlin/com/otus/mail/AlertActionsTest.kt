@@ -8,9 +8,10 @@ import android.content.Intent
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.WorkManager
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.domain.MailSender
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
@@ -37,7 +38,7 @@ class AlertActionsTest {
 
     private fun mail(
         id: String,
-        roles: Set<String> = setOf("inbox", "archive", "trash"),
+        roles: Set<MailboxRole> = setOf(MailboxRole.Inbox, MailboxRole.Archive, MailboxRole.Trash),
     ) = NewMail("ada", "Ada", id, "Grace", "Order shipped", "On its way", Instant.parse("2026-10-14T08:00:00Z"))
         .copy(mailboxRoles = roles, canSend = true)
 
@@ -77,7 +78,10 @@ class AlertActionsTest {
     @Test
     fun alertsShowTheChosenButtonsInOrderThatTheAccountCanRun() {
         val chosen = listOf(MailAction.Reply, MailAction.Archive, MailAction.Flag)
-        MailNotifications(app, { chosen }) { PreviewChoices() }.show(listOf(mail("m1", roles = setOf("inbox"))))
+        MailNotifications(
+            app,
+            { chosen },
+        ) { PreviewChoices() }.show(listOf(mail("m1", roles = setOf(MailboxRole.Inbox))))
         assertEquals(listOf("Reply", "Flag"), titles(posted().getValue("ada/m1")))
         MailNotifications(app, { emptyList() }) { PreviewChoices() }.show(listOf(mail("m2")))
         assertNull(posted().getValue("ada/m2").actions)
@@ -95,7 +99,7 @@ class AlertActionsTest {
 
     @Test
     fun aFailedChangeBringsTheAlertBackAndSaysSo() {
-        MailNotifications(app) { PreviewChoices() }.showFailed(mail("m1"), AlertAction.Archive)
+        MailNotifications(app) { PreviewChoices() }.showFailed(mail("m1"), MailAction.Archive)
         val back = posted().getValue("ada/m1")
         assertEquals("Archive didn't work", back.extras.getCharSequence(Notification.EXTRA_SUB_TEXT).toString())
         assertEquals(listOf("Delete", "Archive", "Mark read"), titles(back))

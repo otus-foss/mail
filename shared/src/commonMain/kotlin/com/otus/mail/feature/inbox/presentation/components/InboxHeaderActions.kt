@@ -2,12 +2,14 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.panels.components.PanelExpansion
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
@@ -28,7 +30,11 @@ private fun searchCloser(
         changes.undo(filters)
         focus.clearFocus()
     }
-    BackHandler(state.searching, closeSearch)
+    NavigationBackHandler(
+        rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = state.searching,
+        onBackCompleted = closeSearch,
+    )
     return closeSearch
 }
 
@@ -37,50 +43,36 @@ internal class InboxHeaderActions(
     val closeSearch: () -> Unit,
     val onOpenNavigation: () -> Unit,
     val overlays: InboxOverlays,
-    val expansion: PanelExpansion? = null,
-    val grown: @Composable () -> Unit = {},
-    private val searchChanges: SearchFilterChanges? = null,
+    val expansion: PanelExpansion,
+    val grown: @Composable () -> Unit,
+    private val searchChanges: SearchFilterChanges,
 ) {
     /** Whether an overlay or the grown panel covers the list. */
-    fun covers(state: InboxState): Boolean = overlays.cover(state) || expansion?.expanded == true
-
-    /** Whether the panel shows the search field: while searching if it grows a search room, else with results. */
-    fun searching(state: InboxState): Boolean = if (expansion != null) state.searching else state.resultsShown
-
-    /** Whether the search field takes the keyboard: while the search room is open, else with results. */
-    fun searchFocused(state: InboxState): Boolean =
-        if (expansion !=
-            null
-        ) {
-            state.searchSurfaceOpen
-        } else {
-            state.resultsShown
-        }
+    fun covers(state: InboxState): Boolean = overlays.cover(state) || expansion.expanded
 
     /** Whether a typed search fills the grown room, so the bar can show its results. */
-    fun showsSearchBar(state: InboxState): Boolean =
-        expansion != null && state.searchSurfaceOpen && state.search.query.isNotBlank()
+    fun showsSearchBar(state: InboxState): Boolean = state.searchSurfaceOpen && state.search.query.isNotBlank()
 
     /** Whether the panel has grown to every filter, whose own Show button stands in for the action bar. */
-    val showsFilters: Boolean get() = overlays.filtersInPanel && overlays.filters.isOpen
+    val showsFilters: Boolean get() = overlays.filters.isOpen
 
-    /** Every filter: grown inside the panel when it can grow, else the filter panel's own sheet. */
+    /** Grows the panel to every filter. */
     fun openFilters() {
-        expansion?.expandTo(Int.MAX_VALUE) ?: overlays.filters.open()
+        expansion.expandTo(Int.MAX_VALUE)
     }
 
     /** Shows the mail the panel's filters pick and brings the panel back to its usual height. */
     fun showFiltered() {
         // The filters Show applies are the user's now, also those a search turned on.
-        searchChanges?.keep()
-        expansion?.collapse()
+        searchChanges.keep()
+        expansion.collapse()
         overlays.filters.show()
     }
 }
 
 /**
- * The control panel's actions on [page], and the room it grows into while the page has a quick
- * view: the quick view's modules read [filters] and [messages] and open a file's mail by [rows].
+ * The control panel's actions on [page], and the room it grows into: the quick view's modules
+ * read [filters] and [messages] and open a file's mail by [rows].
  */
 @Composable
 internal fun rememberHeaderActions(
@@ -95,20 +87,17 @@ internal fun rememberHeaderActions(
     val focus = LocalFocusManager.current
     val changes = rememberSaveable(saver = SearchFilterChanges.saver) { SearchFilterChanges() }
     val closeSearch = searchCloser(state, filters, changes)
-    // Only a page with a quick view grows a search room; others keep their search sheet.
-    val roomHeight =
-        if (state.searchSurfaceOpen && page.quick != null) searchRoomHeight(state.search.query.isNotBlank()) else null
+    val roomHeight = if (state.searchSurfaceOpen) searchRoomHeight(state.search.query.isNotBlank()) else null
     val typed = state.search.query.isNotBlank()
     val expansion = rememberInboxExpansion(page.quick, filters, roomHeight, typed) { leaveSearch(state, closeSearch) }
-    // With a search room, results showing take the cursor from the field, so a tap on it is a fresh
-    // focus again. Without one, the results keep the field focused.
-    LaunchedEffect(state.resultsShown) { if (state.resultsShown && expansion != null) focus.clearFocus() }
-    val overlays = rememberInboxOverlays(filters, filtersInPanel = expansion != null)
-    val sources = QuickSources(filters, page, messages, rows.gestures.onOpen) { expansion?.collapse() }
+    // Results showing take the cursor from the field, so a tap on it is a fresh focus again.
+    LaunchedEffect(state.resultsShown) { if (state.resultsShown) focus.clearFocus() }
+    val overlays = rememberInboxOverlays(filters)
+    val sources = QuickSources(filters, page, messages, rows.gestures.onOpen) { expansion.collapse() }
     val room =
         SearchRoom(state, sources, rows.gestures, dateFormatter, changes) {
             focus.clearFocus()
-            expansion?.expandTo(Int.MAX_VALUE)
+            expansion.expandTo(Int.MAX_VALUE)
         }
     return InboxHeaderActions(
         closeSearch,
@@ -125,14 +114,15 @@ private fun leaveSearch(
     state: InboxState,
     closeSearch: () -> Unit,
 ) {
-    val search = state.search
-    if (search.query.isBlank() && search.senders.isEmpty()) closeSearch() else state.showResults()
+    // Where the terms match narrows nothing until there are terms.
+    val picked = state.search.copy(field = state.defaultSearch.field) != state.defaultSearch
+    if (state.search.query.isBlank() && !picked) closeSearch() else state.showResults()
 }
 
-/** What the panel grows, while it has an [expansion]: the quick view or search [room], then every filter. */
+/** What the panel grows: the quick view or search [room], then every filter. */
 private fun grownPanel(
-    expansion: PanelExpansion?,
+    expansion: PanelExpansion,
     sources: QuickSources,
     room: SearchRoom,
     dateFormatter: DateFormatter,
-): @Composable () -> Unit = { expansion?.let { ExpandedInboxContent(ExpandedInbox(it, sources, room, dateFormatter)) } }
+): @Composable () -> Unit = { ExpandedInboxContent(ExpandedInbox(expansion, sources, room, dateFormatter)) }

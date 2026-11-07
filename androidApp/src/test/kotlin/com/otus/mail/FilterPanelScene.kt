@@ -12,16 +12,14 @@ import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import com.github.takahirom.roborazzi.captureRoboImage
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusPalette
+import com.otus.mail.core.messages.presentation.components.LocalToday
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
-import com.otus.mail.feature.inbox.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 
 /**
@@ -43,18 +41,21 @@ internal fun AndroidComposeTestRule<*, MainActivity>.showFilterPanel(
                 CompositionLocalProvider(LocalToday provides PinnedToday) {
                     InboxScreen(
                         FilterPanelFixtures.messages,
-                        context = InboxContext(filters = filters, filterOptions = options),
+                        context =
+                            inboxContext {
+                                this.filters = filters
+                                filterOptions = options
+                            },
                     )
                 }
             }
         }
     }
     if (open) onNodeWithContentDescription("Open filters", substring = true).performClick()
+    // The panel counts its draft after the typing pause.
+    mainClock.advanceTimeBy(TYPING_PAUSE_MILLIS * 2)
     waitForIdle()
 }
-
-internal fun AndroidComposeTestRule<*, MainActivity>.filterShot(name: String) =
-    onRoot().captureRoboImage("src/test/screenshots/$name.png")
 
 /** A segment of the panel's Status, Sort, or Size toggle, such as "Unread". */
 internal fun SemanticsNodeInteractionsProvider.filterTab(label: String): SemanticsNodeInteraction =

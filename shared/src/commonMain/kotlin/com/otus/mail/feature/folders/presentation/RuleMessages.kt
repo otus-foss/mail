@@ -1,6 +1,6 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.feature.folders.domain.FolderFailure
+import com.otus.mail.core.mail.MailFailure
 import com.otus.mail.feature.folders.domain.RuleFailure
 
 /** Why rules could not be saved or loaded, worded for the user. [detail] is the server's explanation. */
@@ -10,13 +10,15 @@ fun RuleFailure.message(detail: String? = null): String =
         RuleFailure.Invalid -> invalidRules(detail)
         RuleFailure.TooLarge -> "These rules are too large for this server. Remove some."
         RuleFailure.TooMany -> "The server can't store another script for this account."
-        RuleFailure.NotPermitted -> "The server doesn't allow this account to change rules."
         RuleFailure.NotFound -> "That account is no longer connected."
         RuleFailure.VacationActive -> VACATION_NOTICE
-        RuleFailure.SignInRejected -> FolderFailure.SignInRejected.message()
-        RuleFailure.CredentialsUnavailable -> FolderFailure.CredentialsUnavailable.message()
-        RuleFailure.Unreachable -> "Couldn't reach the server. Try again."
-        RuleFailure.ServerProblem -> "The server returned an error. Try again."
+        is RuleFailure.Mail -> failure.ruleMessage()
+    }
+
+private fun MailFailure.ruleMessage(): String =
+    when (this) {
+        MailFailure.NotPermitted -> "The server doesn't allow this account to change rules."
+        else -> message()
     }
 
 private fun invalidRules(detail: String?): String =

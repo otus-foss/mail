@@ -1,10 +1,10 @@
 package com.otus.mail.feature.contacts.domain
 
 import com.otus.jscontact.Card
-import com.otus.jscontact.JsContactJson
+import com.otus.jscontact.toJsonObject
+import com.otus.json.types.patchTokens
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 
 /**
  * The localizations of [sources] that still fit [merged], the first source with a language
@@ -16,12 +16,12 @@ internal fun localizationsFor(
     merged: Card,
     sources: List<Card>,
 ): Map<String, JsonObject>? {
-    val target = merged.json()
+    val target = merged.toJsonObject()
     return sources
         .flatMap { source ->
-            val own = source.json()
+            val own = source.toJsonObject()
             source.localizations.orEmpty().map { (language, patch) ->
-                language to JsonObject(patch.filterKeys { pointer -> own.at(pointer) == target.at(pointer) })
+                language to JsonObject(patch.filterKeys { pointer -> own.sameAt(target, pointer) })
             }
         }.filter { (_, patch) -> patch.isNotEmpty() }
         .distinctBy { (language, _) -> language.lowercase() }
@@ -29,11 +29,22 @@ internal fun localizationsFor(
         .takeIf { it.isNotEmpty() }
 }
 
-private fun Card.json(): JsonObject = JsContactJson.encodeToJsonElement(Card.serializer(), this).jsonObject
+/** Whether both cards hold the same value at [pointer]; a pointer with a bad escape never matches. */
+private fun JsonObject.sameAt(
+    other: JsonObject,
+    pointer: String,
+): Boolean {
+    val segments =
+        try {
+            patchTokens(pointer)
+        } catch (expected: IllegalArgumentException) {
+            return false
+        }
+    return at(segments) == other.at(segments)
+}
 
 // A patch changes a property, or one entry of a map-valued property, so those two levels decide.
-private fun JsonObject.at(pointer: String): JsonElement? {
-    val segments = pointer.split("/").map { it.replace("~1", "/").replace("~0", "~") }
+private fun JsonObject.at(segments: List<String>): JsonElement? {
     val value = this[segments.first()]
     return segments.getOrNull(1)?.let { (value as? JsonObject)?.get(it) } ?: value.takeIf { segments.size == 1 }
 }

@@ -1,26 +1,20 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.jmap.GetMethod
-import com.otus.jmap.JmapCapability
-import com.otus.jmap.JmapConnection
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
+import com.otus.jmap.JmapFilter
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlin.concurrent.Volatile
 import kotlin.time.Clock
 
 /**
@@ -29,24 +23,11 @@ import kotlin.time.Clock
  */
 internal class JmapMailCounts(
     private val connections: JmapConnections,
+    private val mailboxes: Mailboxes,
     private val zone: () -> TimeZone,
     private val clock: Clock,
 ) {
-    /** Each login's mailboxes for the counts of one filter panel session. */
-    @Volatile private var mailboxes: Map<String, List<MailboxObject>> = emptyMap()
-
-    // Logins count in parallel, so their mailboxes join the map one at a time.
-    private val adding = Mutex()
-
-    /** Starts a new session: the next counts read each login's mailboxes again. */
-    fun begin() {
-        mailboxes = emptyMap()
-    }
-
-    /**
-     * Sums each of [logins]' totals; null when none could be counted. Each login's mailboxes load
-     * once until [begin].
-     */
+    /** Sums each of [logins]' totals; null when none could be counted. */
     suspend fun count(
         logins: List<JmapLogin>,
         scope: MailScope,
@@ -67,44 +48,25 @@ internal class JmapMailCounts(
         login: JmapLogin,
         scope: MailScope,
         query: MailQuery,
-        conditions: List<JsonObject>,
+        conditions: List<JmapFilter>,
     ): Long? =
         try {
-            val connection = connections.connection(login)
-            connection.session().accountFor(JmapCapability.MAIL)?.let { accountId ->
-                val ids =
-                    scope
-                        .chosen(knownMailboxes(login.id, connection, accountId), login.id, query)
-                        .map { it.id }
-                if (ids.isEmpty()) {
-                    0L
-                } else {
-                    connection
-                        .call(QueryMethod(EmailType, accountId, mailFilter(ids, conditions), limit = 0, extra = COUNT))
-                        .total
-                }
+            val account = connections.mailAccount(login)
+            val ids =
+                scope
+                    .chosen(mailboxes.of(account), login.id, query)
+                    .map { it.id }
+            if (ids.isEmpty()) {
+                0L
+            } else {
+                account.connection
+                    .call(QueryMethod(EmailType, account.id, mailFilter(ids, conditions), limit = 0, extra = COUNT))
+                    .total
             }
         } catch (expected: JmapException) {
             // A login that cannot be counted leaves the others' sum.
             null
         }
-
-    private suspend fun knownMailboxes(
-        loginId: String,
-        connection: JmapConnection,
-        accountId: String,
-    ): List<MailboxObject> {
-        val cached = mailboxes[loginId]
-        if (cached != null) return cached
-        val loaded = mailboxesOf(connection, accountId)
-        adding.withLock { mailboxes += loginId to loaded }
-        return loaded
-    }
-
-    private suspend fun mailboxesOf(
-        connection: JmapConnection,
-        accountId: String,
-    ) = connection.call(GetMethod(MailboxType, accountId, properties = listOf("id", "name", "role"))).list
 
     private companion object {
         /** Only the number of matching conversations (RFC 8620, section 5.5; RFC 8621, section 4.4.3). */

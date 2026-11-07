@@ -1,10 +1,11 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.ReceivedAt
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -22,7 +23,7 @@ class AddressBadgeTest {
         "Hi",
         "",
         ReceivedAt("2026-10-27", "11:00"),
-        MailLocation("Inbox", login, accountAddress = address),
+        MailLocation("Inbox", login, accountAddress = address, mailboxRole = MailboxRole.Inbox),
     )
 
     private val home = message("m1", "ada", "ada@home.test")

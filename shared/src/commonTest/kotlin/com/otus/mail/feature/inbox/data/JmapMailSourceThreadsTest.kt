@@ -1,9 +1,15 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
 import com.otus.mail.testing.STALWART_SESSION
+import com.otus.mail.testing.id
+import com.otus.mail.testing.ids
+import com.otus.mail.testing.source
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -67,7 +73,7 @@ class JmapMailSourceThreadsTest {
     @Test
     fun aThreadInTwoChosenFoldersIsOneRowUnderItsNewestEmail() =
         runTest {
-            val row = source.messages(MailScope.Roles(mapOf("inbox" to "Inbox", "sent" to "Sent"))).messages.single()
+            val row = source.messages(MailScope.Roles(listOf(MailboxRole.Inbox, MailboxRole.Sent))).messages.single()
             assertEquals("ada/s1", row.id)
             assertEquals("Sent", row.location.mailbox)
             assertEquals(listOf("s1", "r2", "r1"), row.conversation!!.members.map { it.emailId })

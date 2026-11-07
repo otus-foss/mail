@@ -2,6 +2,7 @@ package com.otus.mail.feature.inbox.presentation
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.Dp
+import com.otus.mail.core.messages.presentation.ListNudge
 import com.otus.mail.feature.inbox.presentation.components.CollapseLink
 
 /**

@@ -1,8 +1,8 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,7 +14,7 @@ class FolderRowsTest {
                 "ada",
                 "Ada",
                 listOf(
-                    MailFolder("ada", "i", "Inbox", role = INBOX_ROLE),
+                    MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox),
                     MailFolder("ada", "rl", "Read later"),
                     MailFolder("ada", "r", "Receipts"),
                 ),

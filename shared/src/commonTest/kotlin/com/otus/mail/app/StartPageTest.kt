@@ -1,11 +1,9 @@
 package com.otus.mail.app
 
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.SENT_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.CombinedFolder
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.inbox.domain.SidebarPin
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.settings.domain.SidebarPin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -15,8 +13,8 @@ class StartPageTest {
             "ada",
             "Ada",
             listOf(
-                MailFolder("ada", "i", "Inbox", role = INBOX_ROLE),
-                MailFolder("ada", "s", "Sent", role = SENT_ROLE),
+                MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox),
+                MailFolder("ada", "s", "Sent", role = MailboxRole.Sent),
                 MailFolder("ada", "w", "Work"),
                 MailFolder("ada", "c", "Clients", parentId = "w"),
             ),
@@ -27,7 +25,7 @@ class StartPageTest {
         assertEquals(MailPage.Inbox, launchPage(SidebarPin.Inbox))
         assertEquals(MailPage.Contacts, launchPage(SidebarPin.Contacts))
         assertEquals(MailPage.ReadLater, launchPage(SidebarPin.ReadLater))
-        assertEquals(MailPage.Combined(CombinedFolder.Sent), launchPage(SidebarPin.Role(SENT_ROLE)))
+        assertEquals(MailPage.Combined(MailboxRole.Sent), launchPage(SidebarPin.Role(MailboxRole.Sent)))
         assertEquals(
             MailPage.Shared(listOf("work", "clients")),
             launchPage(SidebarPin.Folder(listOf("work", "clients"))),
@@ -36,7 +34,7 @@ class StartPageTest {
 
     @Test
     fun aRoleMailDoesNotCombineOpensTheInbox() {
-        assertEquals(MailPage.Inbox, launchPage(SidebarPin.Role("important")))
+        assertEquals(MailPage.Inbox, launchPage(SidebarPin.Role(MailboxRole.Inbox)))
     }
 
     @Test
@@ -46,7 +44,7 @@ class StartPageTest {
             MailPage.Shared(listOf("work", "clients")),
             startPage(SidebarPin.Folder(listOf("work", "clients")), accounts),
         )
-        assertEquals(MailPage.Combined(CombinedFolder.Sent), startPage(SidebarPin.Role(SENT_ROLE), accounts))
+        assertEquals(MailPage.Combined(MailboxRole.Sent), startPage(SidebarPin.Role(MailboxRole.Sent), accounts))
         assertEquals(MailPage.Conversations, startPage(SidebarPin.Conversations, accounts))
         assertEquals(MailPage.Contacts, startPage(SidebarPin.Contacts, accounts))
     }
@@ -55,7 +53,7 @@ class StartPageTest {
     fun aMailboxNoAccountHasFallsBackToTheInbox() {
         val accounts = listOf(ada)
         assertEquals(MailPage.Inbox, startPage(SidebarPin.Folder(listOf("renamed")), accounts))
-        assertEquals(MailPage.Inbox, startPage(SidebarPin.Role("archive"), accounts))
+        assertEquals(MailPage.Inbox, startPage(SidebarPin.Role(MailboxRole.Archive), accounts))
         // Read later is off, so no account has its folder.
         assertEquals(MailPage.Inbox, startPage(SidebarPin.ReadLater, accounts))
     }

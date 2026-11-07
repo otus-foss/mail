@@ -1,7 +1,8 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -10,7 +11,7 @@ class FolderParentsTest {
     private val acme = MailFolder("ada", "a", "Acme", parentId = "c")
     private val otherAcme = MailFolder("ada", "o", "Acme")
     private val travel = MailFolder("ada", "t", "Travel")
-    private val inbox = MailFolder("ada", "i", "Inbox", role = "inbox")
+    private val inbox = MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox)
     private val account = AccountFolders("ada", "Ada", listOf(inbox, clients, acme, otherAcme, travel))
 
     @Test

@@ -4,6 +4,7 @@ import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /** Mailbox objects (RFC 8621, section 2). */
@@ -26,7 +27,8 @@ val EmailSubmissionType: JmapType<JsonObject> =
 /**
  * Email properties the inbox requests for each row (RFC 8621, section 4.1). Recipients and ids let
  * a reply quote and thread. The list shows `preview`; an open message loads its body separately.
- * The list headers tell newsletters apart.
+ * The list headers tell newsletters apart, and with [CATEGORY_HEADER_PROPERTIES] sort the Inbox's
+ * categories; see docs/categories.md.
  */
 val EMAIL_PROPERTIES =
     listOf(
@@ -38,6 +40,7 @@ val EMAIL_PROPERTIES =
         "replyTo",
         "to",
         "cc",
+        "bcc",
         "messageId",
         "references",
         "subject",
@@ -48,7 +51,7 @@ val EMAIL_PROPERTIES =
         LIST_ID_PROPERTY,
         LIST_UNSUBSCRIBE_PROPERTY,
         AUTHENTICATION_RESULTS_PROPERTY,
-    )
+    ) + CATEGORY_HEADER_PROPERTIES
 
 /** The Email properties [EmailFolders] reads. */
 val EMAIL_FOLDERS_PROPERTIES = listOf("id", "mailboxIds")
@@ -88,6 +91,16 @@ data class MailCapability(
     val maxMailboxDepth: Long? = null,
     val maxSizeMailboxName: Long? = null,
     val maxMailboxesPerEmail: Long? = null,
+)
+
+/**
+ * The submission account capability (RFC 8621, section 1.3.2): how many seconds ahead a send may
+ * be held, and the SMTP extensions the server offers, by name.
+ */
+@Serializable
+data class SubmissionCapability(
+    val maxDelayedSend: Long = 0,
+    val submissionExtensions: Map<String, JsonElement> = emptyMap(),
 )
 
 @Serializable
@@ -134,6 +147,33 @@ data class EmailObject(
     /** Every `Authentication-Results` field (RFC 8601), topmost first, which tell a DMARC pass. */
     @SerialName(AUTHENTICATION_RESULTS_PROPERTY)
     val authenticationResults: List<String>? = null,
+    /** The automation and bulk headers the Inbox's categories read. */
+    @SerialName(LIST_POST_PROPERTY)
+    val listPost: String? = null,
+    @SerialName(PRECEDENCE_PROPERTY)
+    val precedence: String? = null,
+    @SerialName(AUTO_SUBMITTED_PROPERTY)
+    val autoSubmitted: String? = null,
+    @SerialName(FEEDBACK_ID_PROPERTY)
+    val feedbackId: String? = null,
+    @SerialName(MAILCHIMP_PROPERTY)
+    val mailchimp: String? = null,
+    @SerialName(SENDGRID_PROPERTY)
+    val sendGrid: String? = null,
+    @SerialName(AMAZON_SES_PROPERTY)
+    val amazonSes: String? = null,
+    @SerialName(MAILGUN_PROPERTY)
+    val mailgun: String? = null,
+    @SerialName(CSA_PROPERTY)
+    val certifiedSender: String? = null,
+    @SerialName(GITHUB_PROPERTY)
+    val githubReason: String? = null,
+    @SerialName(GITLAB_PROPERTY)
+    val gitlabProject: String? = null,
+    @SerialName(GITEA_PROPERTY)
+    val giteaReason: String? = null,
+    @SerialName(FORGEJO_PROPERTY)
+    val forgejoReason: String? = null,
 ) {
     /** Whether a mailing list or newsletter sent it. */
     val fromList: Boolean
@@ -211,34 +251,6 @@ data class IdentityObject(
     val textSignature: String = "",
     val htmlSignature: String = "",
 )
-
-/** Contact cards suggested as recipients (RFC 9610, section 3); only their names and addresses. */
-val ContactCardType: JmapType<ContactCardObject> =
-    JmapType("ContactCard", JmapCapability.CONTACTS, ContactCardObject.serializer())
-
-@Serializable
-data class ContactCardObject(
-    val id: String,
-    val name: ContactName? = null,
-    val emails: Map<String, ContactEmailObject> = emptyMap(),
-)
-
-/** A JSContact name (RFC 9553, section 2.2.1); suggestions show only its full form. */
-@Serializable
-data class ContactName(
-    val full: String? = null,
-)
-
-@Serializable
-data class ContactEmailObject(
-    val address: String = "",
-)
-
-/**
- * Marks an email of a muted conversation. A conversation is muted while any of its emails has it,
- * so new mail in it does not notify. Not a registered keyword, so other apps ignore it.
- */
-const val MUTED_KEYWORD = "\$muted"
 
 /** Only the thread of each Email, to find the rest of a conversation (RFC 8621, section 3). */
 val EmailThreadType: JmapType<EmailThread> = JmapType("Email", JmapCapability.MAIL, EmailThread.serializer())

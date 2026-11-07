@@ -6,6 +6,8 @@ import com.otus.jmap.JmapJson
 import com.otus.jmap.JmapMethod
 import com.otus.jmap.JmapType
 import com.otus.jmap.SetError
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mail.toMailFailure
 import com.otus.mail.feature.folders.domain.RuleFailure
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -68,18 +70,18 @@ internal fun SetError.toRuleFailure(): RuleFailure =
         // Someone created or removed the script since it was loaded.
         "alreadyExists", "notFound" -> RuleFailure.ChangedElsewhere
 
-        "forbidden" -> RuleFailure.NotPermitted
+        "forbidden" -> RuleFailure.Mail(MailFailure.NotPermitted)
 
-        else -> RuleFailure.ServerProblem
+        else -> RuleFailure.Mail(MailFailure.ServerProblem)
     }
 
 internal fun JmapException.toRuleFailure(): RuleFailure =
     when {
         this is JmapException.MethodError && type == "stateMismatch" -> RuleFailure.ChangedElsewhere
-        this is JmapException.Unauthorized -> RuleFailure.SignInRejected
-        this is JmapException.Forbidden -> RuleFailure.NotPermitted
-        this is JmapException.CredentialsUnavailable -> RuleFailure.CredentialsUnavailable
-        this is JmapException.Unreachable -> RuleFailure.Unreachable
         this is JmapException.UploadTooLarge -> RuleFailure.TooLarge
-        else -> RuleFailure.ServerProblem
+        else -> toMailFailure().toRuleFailure()
     }
+
+// A missing capability here is Sieve's, not mail's, so it reads as a server problem.
+private fun MailFailure.toRuleFailure(): RuleFailure =
+    RuleFailure.Mail(if (this == MailFailure.NoMail) MailFailure.ServerProblem else this)

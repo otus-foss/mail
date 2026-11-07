@@ -17,11 +17,12 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import com.otus.avatar.IconSource
 import com.otus.mail.app.App
-import com.otus.mail.core.avatar.IconSource
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.RemoteImages
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.RemoteImages
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -40,7 +41,7 @@ class PrivacySettingsTest {
     private val server = FakeFolderServer()
     private val behavior =
         MailBehaviorState(
-            initial = MailBehavior(allowedSenders = listOf("news@sentry.io", "grace@example.org")),
+            initial = MailBehavior(read = ReadBehavior(allowedSenders = listOf("news@sentry.io", "grace@example.org"))),
         )
 
     private fun openPrivacy() {
@@ -57,12 +58,12 @@ class PrivacySettingsTest {
     @Test
     fun knownPeopleIsTheDefaultAndAChoiceAppliesAtOnce() {
         openPrivacy()
-        compose.screenshot("2026-10-19-feat-read-view-privacy")
+        compose.screenshot("settings/privacy")
         compose.onNodeWithText("Load images").performClick()
         compose.onNode(hasText("In your contacts") and isSelectable()).assertIsSelected()
         compose.onNode(hasText("Never") and isSelectable()).performClick()
         // Like every other choice sheet in settings, picking applies at once and moves the check.
-        assertEquals(RemoteImages.Never, behavior.behavior.remoteImages)
+        assertEquals(RemoteImages.Never, behavior.behavior.read.remoteImages)
         compose.onNode(hasText("Never") and isSelectable()).assertIsSelected()
         compose.onNodeWithText("Done").performClick()
         compose.waitForIdle()
@@ -76,9 +77,9 @@ class PrivacySettingsTest {
         openPrivacy()
         compose.onNodeWithText("2 senders").performClick()
         compose.onNodeWithText("news@sentry.io").assertIsDisplayed()
-        compose.screenshot("2026-10-19-feat-read-view-allowed-senders")
+        compose.screenshot("settings/allowed_senders")
         compose.onNodeWithContentDescription("Remove news@sentry.io").performClick()
-        assertEquals(listOf("grace@example.org"), behavior.behavior.allowedSenders)
+        assertEquals(listOf("grace@example.org"), behavior.behavior.read.allowedSenders)
         compose.onNodeWithContentDescription("Remove grace@example.org").performClick()
         compose
             .onNodeWithText("No allowed senders yet. Show a mail's images, then tap Always.")
@@ -95,25 +96,25 @@ class PrivacySettingsTest {
         compose.onNodeWithText("Turn on Website icons to choose").assertIsDisplayed()
         // The row's info button sits mid-row, so the switch is flipped by its action, not a tap at the center.
         compose.onNode(hasText("Website icons") and isToggleable()).performSemanticsAction(SemanticsActions.OnClick)
-        assertTrue(behavior.behavior.websiteIcons)
+        assertTrue(behavior.behavior.avatars.websiteIcons)
         compose
             .onNodeWithText("Icons from")
             .performScrollTo()
             .assertIsEnabled()
             .performClick()
         compose.onNodeWithText("Bulwark").performClick()
-        assertEquals("Nothing is saved before Done", IconSource.Websites, behavior.behavior.iconSource)
+        assertEquals("Nothing is saved before Done", IconSource.Websites, behavior.behavior.avatars.iconSource)
         compose.onNodeWithContentDescription("Bulwark address").performTextInput("mail.example.net")
         compose.onNodeWithText("Done").performClick()
         compose.waitForIdle()
-        assertEquals(IconSource.Bulwark, behavior.behavior.iconSource)
-        assertEquals("mail.example.net", behavior.behavior.bulwarkAddress)
+        assertEquals(IconSource.Bulwark, behavior.behavior.avatars.iconSource)
+        assertEquals("mail.example.net", behavior.behavior.avatars.bulwarkAddress)
         compose.onNodeWithText("No Bulwark address, so no icons load").assertDoesNotExist()
     }
 
     @Test
     fun doneOnAnotherSourceKeepsTheSavedBulwarkAddress() {
-        behavior.update {
+        behavior.updateAvatars {
             it.copy(websiteIcons = true, iconSource = IconSource.Bulwark, bulwarkAddress = "mail.example.net")
         }
         openPrivacy()
@@ -122,7 +123,7 @@ class PrivacySettingsTest {
         compose.onNodeWithText("DuckDuckGo").performClick()
         compose.onNodeWithText("Done").performClick()
         compose.waitForIdle()
-        assertEquals(IconSource.DuckDuckGo, behavior.behavior.iconSource)
-        assertEquals("mail.example.net", behavior.behavior.bulwarkAddress)
+        assertEquals(IconSource.DuckDuckGo, behavior.behavior.avatars.iconSource)
+        assertEquals("mail.example.net", behavior.behavior.avatars.bulwarkAddress)
     }
 }

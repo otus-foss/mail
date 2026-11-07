@@ -3,10 +3,11 @@ package com.otus.mail.feature.inbox.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.inbox.domain.FoundPerson
+import com.otus.mail.core.messages.domain.FoundPerson
+import com.otus.mail.core.messages.domain.PeopleField
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxStorageException
-import com.otus.mail.feature.inbox.domain.PeopleField
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,8 +29,8 @@ sealed interface FilterCount {
  * A page's [applied] filters, which the quick pills change at once, and the filter panel's
  * [draft] while it is open, which the panel and its popups edit. Opening copies the applied
  * filters into the draft; Show applies the draft, and closing drops it. Every
- * draft change counts its messages again with [counter] in [scope], [COUNT_DELAY_MILLIS] after
- * the last change, cancelling a count still running; [onOpen] starts each panel session's counts.
+ * draft change counts its messages again with [counter] in [scope], [TYPING_PAUSE_MILLIS] after
+ * the last change, cancelling a count still running.
  * [onApplied] hears every new applied value, so the page can load it and keep it. [senders] and
  * [recipients] search people for the panel's From and To lines with [findPeople].
  */
@@ -38,7 +39,6 @@ class InboxFilterState(
     private val scope: CoroutineScope? = null,
     private val counter: suspend (InboxFilters) -> Long? = { null },
     private val onApplied: (InboxFilters) -> Unit = {},
-    private val onOpen: () -> Unit = {},
     findPeople: suspend (PeopleField, String) -> List<FoundPerson> = { _, _ -> emptyList() },
 ) {
     var applied by mutableStateOf(applied)
@@ -60,7 +60,6 @@ class InboxFilterState(
     private var counting: Job? = null
 
     fun open() {
-        onOpen()
         draft = applied
         recount()
     }
@@ -73,7 +72,6 @@ class InboxFilterState(
         recipients.clear()
     }
 
-    /** Resets the draft to no filters. */
     fun reset() = edit { InboxFilters() }
 
     fun edit(transform: (InboxFilters) -> InboxFilters) {
@@ -117,14 +115,9 @@ class InboxFilterState(
         count = FilterCount.Counting
         counting =
             launcher.launch {
-                delay(COUNT_DELAY_MILLIS)
+                delay(TYPING_PAUSE_MILLIS)
                 count = countOf(filters)?.let(FilterCount::Known) ?: FilterCount.Unknown
             }
-    }
-
-    companion object {
-        /** Typing quickly through choices counts only the last one. */
-        const val COUNT_DELAY_MILLIS = 250L
     }
 }
 

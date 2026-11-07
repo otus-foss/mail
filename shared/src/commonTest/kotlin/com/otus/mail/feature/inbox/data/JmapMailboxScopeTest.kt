@@ -5,8 +5,10 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.mailSource
 import com.otus.mail.testing.stalwartLike
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -35,7 +37,7 @@ class JmapMailboxScopeTest {
                     save(ada.copy(id = "empty", name = "Empty", username = "empty@example.org"), "wrong")
                 }
             val source = source(stalwartLike(api = server::answer), store)
-            val chosen = MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox")), setOf("ada"))
+            val chosen = MailScope.Mailboxes(setOf(MailboxScope.Inbox), setOf("ada"))
             assertTrue(source.messages(chosen).unavailable.isEmpty())
             assertEquals(1, server.calls("Email/query").size)
             assertTrue(server.bodies.any { "\"inMailbox\":\"a\"" in it })
@@ -91,7 +93,7 @@ class JmapMailboxScopeTest {
     private fun source(
         engine: MockEngine,
         store: LoginStore,
-    ) = JmapMailSource(JmapConnections(JmapClient(engine), store), store)
+    ) = mailSource(JmapConnections(JmapClient(engine), store))
 
     private companion object {
         const val SESSION = """{"capabilities": {"urn:ietf:params:jmap:core": {"maxConcurrentRequests": 1},

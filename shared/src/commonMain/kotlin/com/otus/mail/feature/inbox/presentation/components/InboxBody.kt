@@ -24,13 +24,19 @@ import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.shared.feedback.components.EmptyState
 import com.otus.designsystem.shared.feedback.elements.RefreshIndicator
+import com.otus.designsystem.shared.rows.components.dragToSelect
 import com.otus.designsystem.shared.rows.components.rowSelection
 import com.otus.designsystem.shared.swipe.components.SwipeActions
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.motion.motionTween
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.designsystem.theme.tokens.rows.InboxTokens
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.swipe
+import com.otus.mail.core.messages.presentation.components.mailToday
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.presentation.ConversationRowModel
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.ListFrame
@@ -140,15 +146,18 @@ private fun LazyItemScope.ConversationItem(
 ) {
     val selection = rowSelection(ids, index, gestures.selectedIds)
     val actions = gestures.actions
-    val swipes = actions?.behavior?.invoke()
+    val swipes = actions?.saved?.invoke()
+    val subject = ActionSubject(actions, listOf(message))
     SwipeActions(
-        startToEnd = swipes?.let { actions.swipeAction(message, it.startToEnd) },
-        endToStart = swipes?.let { actions.swipeAction(message, it.endToStart) },
+        startToEnd = swipes?.let { subject.swipe(it.startToEnd) },
+        endToStart = swipes?.let { subject.swipe(it.endToStart) },
         // Inset outside the swipe, so its accent card sits exactly behind the row's card.
         modifier =
             Modifier
                 .animateItem(motionTween(), motionTween(), motionTween())
                 .padding(horizontal = InboxTokens.pageInset),
+        // A swiped row the list keeps, such as one moved but still matching a search, settles once it changes.
+        settledBy = message,
     ) {
         ConversationRow(
             message,

@@ -1,14 +1,15 @@
 package com.otus.mail.feature.inbox.presentation
 
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
 import com.otus.mail.feature.inbox.domain.InboxStorageException
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.MailboxScope
-import com.otus.mail.feature.inbox.domain.ReceivedAt
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
@@ -35,7 +36,7 @@ class InboxFeedStateTest {
                     "Subject",
                     "Body",
                     ReceivedAt("2026-10-01", "12:00"),
-                    MailLocation("Inbox", "Ada"),
+                    MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox),
                 )
             var fail = false
             val source =
@@ -96,7 +97,7 @@ class InboxFeedStateTest {
             "Subject",
             "Body",
             ReceivedAt("2026-10-01", "12:00"),
-            MailLocation("Inbox", "Ada"),
+            MailLocation("Inbox", "Ada", mailboxRole = MailboxRole.Inbox),
         )
 
     @Test

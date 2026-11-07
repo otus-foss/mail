@@ -28,15 +28,38 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
+  # Decides whether this run checks anything; see otus-meta's .github/actions/ready-gate.
+  gate:
+    runs-on: ubicloud-standard-2
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          fetch-depth: 0
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
+      - id: gate
+        uses: ./otus-meta/.github/actions/ready-gate
+
   # Runs the JVM tests once with Kover and writes the summary. A pull request's summary also covers
   # the lines it changes, so the checkout keeps the history back to the base.
   report:
-    if: >-
-      github.event_name == 'workflow_dispatch' || github.event_name == 'push' ||
-      !github.event.pull_request.draft && (
-        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
-        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
-        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
     runs-on: ubicloud-standard-2
     permissions:
       contents: read
@@ -65,65 +88,57 @@ jobs:
             --jq '"branch=\(.head.ref)"' >> "$GITHUB_OUTPUT"
           printf 'pr=%s\nbase=HEAD^1\nref=refs/pull/%s/merge\n' "$INPUT_PR" "$INPUT_PR" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ steps.target.outputs.ref }}
+          path: otus-mail
           fetch-depth: 0
           persist-credentials: false
-      # Meta publishing is paused, so build against Meta's source, as the quality workflow does.
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: reazndev/otus-meta
           path: otus-meta
           fetch-depth: 0
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
-      # Meta moves out of the workspace, so its sources don't count as Mail's.
-      - name: Use the Meta branch with this branch's name, if there is one
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
         env:
           BRANCH: ${{ steps.target.outputs.branch }}
         run: |
-          mv otus-meta "$RUNNER_TEMP/otus-meta"
-          cd "$RUNNER_TEMP/otus-meta"
           if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
-            git checkout --detach "origin/$BRANCH"
+            git checkout --quiet --detach "origin/$BRANCH"
           fi
           git log --oneline -1
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+      - uses: ./otus-meta/.github/actions/setup-build
         with:
-          distribution: temurin
-          java-version: "21"
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
-        with:
-          python-version: "3.13"
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
-        with:
-          packages: platform-tools
-      - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
-      - run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+          directory: otus-mail
+          python: "false"
       # The coverage variant runs Shared's host tests and the app's debug unit tests, screenshot
       # tests included, once each.
-      - run: >-
-          ./gradlew koverXmlReportCoverage koverHtmlReportCoverage --console=plain
-          -Potus.meta.path="$RUNNER_TEMP/otus-meta"
+      - run: ./gradlew koverXmlReportCoverage koverHtmlReportCoverage --console=plain
+        working-directory: otus-mail
       - name: Write the summary
+        working-directory: otus-mail
         env:
           BASE: ${{ steps.target.outputs.base }}
         run: |
           set -- build/reports/kover/reportCoverage.xml
           if [ -n "$BASE" ]; then set -- "$@" --base "$BASE"; fi
-          python3 tools/coverage_report.py "$@" > coverage.md
+          python3 ../otus-meta/tools/coverage_report.py "$@" > coverage.md
           cat coverage.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-report
           path: |
-            build/reports/kover/htmlCoverage
-            build/reports/kover/reportCoverage.xml
+            otus-mail/build/reports/kover/htmlCoverage
+            otus-mail/build/reports/kover/reportCoverage.xml
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-summary
-          path: coverage.md
+          path: otus-mail/coverage.md
 
   # Posts the summary as one comment per pull request, updated by later runs. Only this job can
   # write to the pull request, so no build step gets that token.

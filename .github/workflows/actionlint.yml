@@ -11,16 +11,39 @@ permissions:
   contents: read
 
 jobs:
+  # Decides whether this run checks anything; see otus-meta's .github/actions/ready-gate.
+  gate:
+    runs-on: ubicloud-standard-2
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          fetch-depth: 0
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
+      - id: gate
+        uses: ./otus-meta/.github/actions/ready-gate
+
   actionlint:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !github.event.pull_request.draft && (
-        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
-        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
-        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
     runs-on: ubicloud-standard-2
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Run actionlint

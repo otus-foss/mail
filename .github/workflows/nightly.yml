@@ -34,12 +34,12 @@ jobs:
       sha: ${{ steps.number.outputs.sha }}
     steps:
       # A re-run keeps the commit of its first attempt, so check out main's current tip instead.
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: reazndev/otus-meta
           ref: main
@@ -63,12 +63,12 @@ jobs:
       MAIL_SHA: ${{ needs.version.outputs.sha }}
       META_SHA: ${{ needs.version.outputs.meta_sha }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.version.outputs.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: reazndev/otus-meta
           ref: ${{ needs.version.outputs.meta_sha }}
@@ -76,16 +76,11 @@ jobs:
           path: otus-meta
           ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
           persist-credentials: false
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+      - id: setup
+        uses: ./otus-meta/.github/actions/setup-build
         with:
-          distribution: temurin
-          java-version: "21"
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
-        with:
-          packages: platform-tools
-      - uses: gradle/actions/setup-gradle@48b5f213c81028ace310571dc5ec0fbbca0b2947 # v4
-      - run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
-      # Without OTUS_NIGHTLY_KEYSTORE the build comes out unsigned; the next step signs it.
+          python: "false"
+      # Gradle builds the APK unsigned; the next step signs it, so the key never reaches Gradle.
       - name: Build the unsigned APK
         run: |
           # The app shows the version name, the build's date as d.m.yy, such as 18.10.26.
@@ -96,19 +91,19 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.OTUS_NIGHTLY_KEYSTORE }}
           OTUS_NIGHTLY_KEYSTORE_PASSWORD: ${{ secrets.OTUS_NIGHTLY_KEYSTORE_PASSWORD }}
+          TOOLS: ${{ steps.setup.outputs.build-tools }}
         run: |
-          tools="$ANDROID_HOME/build-tools/36.0.0"
           out=androidApp/build/outputs/apk/nightly
           # The build leaves exactly one unsigned APK; fail rather than sign the wrong file.
           set -- "$out"/*-unsigned.apk
           if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then echo "expected one unsigned APK in $out" >&2; exit 1; fi
           keystore="$RUNNER_TEMP/nightly.p12"
           echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
-          "$tools/zipalign" -P 16 -f 4 "$1" "$RUNNER_TEMP/aligned.apk"
-          "$tools/apksigner" sign --ks "$keystore" --ks-type PKCS12 --ks-key-alias otus-nightly \
+          "$TOOLS/zipalign" -P 16 -f 4 "$1" "$RUNNER_TEMP/aligned.apk"
+          "$TOOLS/apksigner" sign --ks "$keystore" --ks-type PKCS12 --ks-key-alias otus-nightly \
             --ks-pass env:OTUS_NIGHTLY_KEYSTORE_PASSWORD --key-pass env:OTUS_NIGHTLY_KEYSTORE_PASSWORD \
             --out "$out/androidApp-nightly.apk" "$RUNNER_TEMP/aligned.apk"
-          "$tools/apksigner" verify "$out/androidApp-nightly.apk"
+          "$TOOLS/apksigner" verify "$out/androidApp-nightly.apk"
       - name: Delete the signing key
         if: always()
         run: rm -f "$RUNNER_TEMP/nightly.p12"

@@ -24,12 +24,11 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.RowLook
-import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.feature.read.presentation.ReadDisplay
+import com.otus.mail.feature.read.presentation.components.NewFolderSheet
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -46,7 +45,7 @@ import org.robolectric.annotation.GraphicsMode
 class ReadViewTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val fixtures = ReadViewFixtures
-    private var applied: Pair<Set<String>, Set<String>>? = null
+    private val writer = RecordingWriter()
     private var unsubscribed = 0
 
     private fun show(
@@ -56,16 +55,11 @@ class ReadViewTest {
         newFolder: NewFolderSheet? = null,
         showQuotes: Boolean = false,
     ) {
-        val read =
-            fixtures
-                .read(pages, cameFrom, { applied = it.added to it.removed }, { unsubscribed++ }, newFolder)
-                .let { if (showQuotes) with(fixtures) { it.showingQuotes() } else it }
+        val own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))
         val context =
-            InboxContext(
-                loadContent = { fixtures.content(it) },
-                read = read,
-                rowLook = RowLook(own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))),
-            )
+            fixtures.read(pages, cameFrom, writer, { unsubscribed++ }, newFolder, own) {
+                if (showQuotes) display = quotesShown(display)
+            }
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
@@ -77,6 +71,10 @@ class ReadViewTest {
         }
         compose.waitForIdle()
     }
+
+    /** [display] with replies showing their quotes, as the "Show quotes" setting does. */
+    private fun quotesShown(display: ReadDisplay) =
+        ReadDisplay({ true }, display.zen, display.quickView, display.setZen, display.today)
 
     private fun strip(description: String): SemanticsNodeInteraction {
         val strip = hasContentDescription(description, substring = true)
@@ -95,15 +93,14 @@ class ReadViewTest {
     fun aThreadOpensOnItsNewestPageAndTheListJumpsToAnOlderOne() {
         showThread()
         strip("Grace Hopper, message 1 of 6").assertIsDisplayed()
-        compose.screenshot("read-thread-newest")
+        compose.screenshot("read/thread_newest")
         strip("Grace Hopper, message 1 of 6").performClick()
         compose.onNodeWithText("6 messages").assertIsDisplayed()
         assertTrue(exists("You"))
-        compose.screenshot("read-thread-list")
+        compose.screenshot("read/thread_list")
         compose.onNode(hasText("Margaret Knuth", substring = true) and isSelectable()).performClick()
         strip("Margaret Knuth, message 5 of 6").assertIsDisplayed()
         compose.onNodeWithContentDescription("From Margaret Knuth. Show details").assertIsDisplayed()
-        compose.screenshot("read-thread-older")
     }
 
     @Test
@@ -133,7 +130,6 @@ class ReadViewTest {
             repeat(DRAG_STEPS) { moveBy(Offset(-width / 3f / DRAG_STEPS, 0f)) }
         }
         compose.waitForIdle()
-        compose.screenshot("read-thread-strip-dragging")
         assertEquals("The card stays put while its content slides", bounds, strip.getBoundsInRoot())
         strip.performTouchInput { up() }
         strip("Alex Doe, message 2 of 6").assertIsDisplayed()
@@ -156,7 +152,7 @@ class ReadViewTest {
         val pages = List(24) { i -> fixtures.thread[i % fixtures.thread.size].copy(id = "p$i", emailId = "p$i") }
         show(fixtures.threadRow, pages)
         strip("Grace Hopper, message 1 of 24").assertIsDisplayed()
-        compose.screenshot("read-thread-many")
+        compose.screenshot("read/thread_many")
     }
 
     @Test
@@ -175,12 +171,15 @@ class ReadViewTest {
         show(fixtures.invoice, cameFrom = setOf("cl"))
         compose.onNodeWithText("Also in").assertIsDisplayed()
         assertTrue(exists("Invoices"))
-        compose.screenshot("read-also-in")
+        compose.screenshot("read/also_in")
         compose.onNodeWithText("Also in").performClick()
         compose.onNode(hasText("Freelancing") and hasClickAction()).performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
-        compose.waitUntil(TIMEOUT) { applied != null }
-        assertEquals(setOf("fr") to emptySet<String>(), applied)
+        // The edit saves on the main thread, which the idle wait runs.
+        compose.waitForIdle()
+        val after = checkNotNull(writer.refiled).getValue(fixtures.invoice.emailId)
+        assertEquals("Freelancing is added, nothing removed", setOf("fr"), after - fixtures.invoice.location.mailboxIds)
+        assertTrue(after.containsAll(fixtures.invoice.location.mailboxIds))
     }
 
     @Test
@@ -205,30 +204,30 @@ class ReadViewTest {
         strip("Grace Hopper, message 1 of 6")
         openMenu()
         listOf(
-            "Reply to Grace",
+            "Reply",
             "Forward",
-            "Mark as unread",
+            "Mark unread",
             "Grace Hopper",
             "Block sender",
             "Whole conversation",
             "Mute conversation",
         ).forEach { assertTrue(it, exists(it)) }
         assertTrue(!exists("Delete this message"))
-        compose.screenshot("read-menu")
+        compose.screenshot("read/menu")
     }
 
     @Test
     fun aNewsletterOffersUnsubscribeAndConfirmsInPlace() {
         show(fixtures.digest)
         compose.waitUntil(TIMEOUT) { exists("Images blocked for privacy") && exists("Mailing list") }
-        compose.screenshot("read-newsletter")
+        compose.screenshot("read/newsletter")
         compose.onNode(hasText("Unsubscribe") and hasClickAction()).performClick()
         compose.onNodeWithText("Unsubscribed").assertIsDisplayed()
         assertTrue(exists("23 older digests"))
-        compose.screenshot("read-newsletter-unsubscribed")
+        compose.screenshot("read/newsletter_unsubscribed")
         compose.onNode(hasText("Show") and hasClickAction()).performClick()
         compose.onNodeWithText("Images shown").assertIsDisplayed()
-        compose.screenshot("read-images-shown")
+        compose.screenshot("read/images_shown")
         compose.onNode(hasText("Hide") and hasClickAction()).performClick()
         compose.onNodeWithText("Images blocked for privacy").assertIsDisplayed()
     }
@@ -240,16 +239,16 @@ class ReadViewTest {
         compose.onNodeWithText("3 attachments", substring = true).performClick()
         compose.onNodeWithText("Save all").assertIsDisplayed()
         assertTrue(exists("whiteboard.jpg"))
-        compose.screenshot("read-attachments")
+        compose.screenshot("read/attachments")
     }
 
     @Test
     fun theSenderPillShowsTheFullRecord() {
         showThread()
         compose.onNodeWithContentDescription("From Grace Hopper. Show details").performClick()
-        compose.onNodeWithText("12 Oct 2026, 09:14").assertIsDisplayed()
+        compose.onNodeWithText("Oct 12, 2026, 09:14").assertIsDisplayed()
         compose.onNodeWithText("Folders").assertIsDisplayed()
-        compose.screenshot("read-sender-details")
+        compose.screenshot("read/sender_details")
     }
 
     @Test
@@ -267,7 +266,7 @@ class ReadViewTest {
         strip("Grace Hopper, message 1 of 6").performClick()
         compose.onNode(hasText("Katherine Johnson", substring = true) and isSelectable()).performClick()
         compose.onNodeWithText("Show quoted text").assertIsDisplayed()
-        compose.screenshot("read-quoted")
+        compose.screenshot("read/quoted")
         compose.onNodeWithText("Show quoted text").performClick()
         compose.onNodeWithText("Hide quoted text").assertIsDisplayed()
     }

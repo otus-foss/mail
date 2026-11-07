@@ -18,20 +18,20 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.AttachmentBlob
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.PhotoCleaning
-import com.otus.mail.feature.inbox.domain.PickedFile
-import com.otus.mail.feature.inbox.domain.UploadException
-import com.otus.mail.feature.inbox.domain.UploadFailure
-import com.otus.mail.feature.inbox.presentation.ComposeAccount
-import com.otus.mail.feature.inbox.presentation.ComposeExits
-import com.otus.mail.feature.inbox.presentation.ComposeOrigin
-import com.otus.mail.feature.inbox.presentation.ComposeServices
-import com.otus.mail.feature.inbox.presentation.ComposeState
-import com.otus.mail.feature.inbox.presentation.OutgoingDraft
-import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
+import com.otus.mail.core.files.PickedFile
+import com.otus.mail.core.files.UploadException
+import com.otus.mail.core.files.UploadFailure
+import com.otus.mail.core.messages.domain.AttachmentBlob
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.core.settings.domain.PhotoCleaning
+import com.otus.mail.feature.compose.presentation.ComposeAccount
+import com.otus.mail.feature.compose.presentation.ComposeExits
+import com.otus.mail.feature.compose.presentation.ComposeOrigin
+import com.otus.mail.feature.compose.presentation.ComposeServices
+import com.otus.mail.feature.compose.presentation.ComposeState
+import com.otus.mail.feature.compose.presentation.OutgoingDraft
+import com.otus.mail.feature.compose.presentation.screens.ComposeScreen
 import kotlinx.datetime.LocalDateTime
 import org.junit.Rule
 import org.junit.Test
@@ -68,7 +68,7 @@ class ComposeAttachmentScreenTest {
         compose.onNodeWithText("Whiteboard.png").assertDoesNotExist()
         compose.onNodeWithContentDescription("Whiteboard.png").performClick()
         compose.onNodeWithText("Full").assertIsSelected()
-        compose.screenshot("compose-attachments-inline")
+        compose.screenshot("compose/attachment_inline")
 
         val handle = compose.onNodeWithContentDescription("Resize image")
         handle.performTouchInput {
@@ -77,14 +77,13 @@ class ComposeAttachmentScreenTest {
         }
         // The pill under the handle and the bar's segment both name the snapped size.
         compose.onAllNodesWithText("Large").assertCountEquals(2)
-        compose.screenshot("compose-attachments-drag")
         handle.performTouchInput { up() }
 
+        // No shot here: the image under the open options renders with shading that differs from run to run.
         compose.onNodeWithContentDescription("Image options").performClick()
-        compose.screenshot("compose-attachments-image-options")
         compose.onNodeWithText("Send as file").performClick()
         compose.onNodeWithText("Whiteboard.png").assertExists()
-        compose.screenshot("compose-attachments")
+        compose.screenshot("compose/attachments")
     }
 
     @Test
@@ -104,7 +103,7 @@ class ComposeAttachmentScreenTest {
             down(center)
             moveBy(Offset(-DRAG_TO_LARGE, 0f))
         }
-        compose.screenshot("compose-attachments-drag-tall")
+        compose.screenshot("compose/attachment_drag_tall")
         handle.performTouchInput { up() }
     }
 
@@ -165,7 +164,7 @@ class ComposeAttachmentScreenTest {
                                 saveDelayMillis = 60_000,
                             )
                         }
-                    ComposeScreen(state, MailBehavior(), NoExits)
+                    ComposeScreen(state, ActionBehavior(), emptyList(), NoExits)
                 }
             }
         }

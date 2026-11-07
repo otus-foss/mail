@@ -21,12 +21,14 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.Density
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.MailAttributes
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.RowFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailAttributes
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.RowFolder
+import com.otus.mail.core.messages.presentation.components.LocalToday
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Rule
 import org.junit.Test
@@ -45,12 +47,12 @@ class InboxScreenTest {
     fun launchIsEmptyInboxAndSearchCanBeClearedAndClosed() {
         compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
         compose.onNodeWithText("Context panel playground").assertDoesNotExist()
-        screenshot("empty-inbox")
+        compose.screenshot("inbox/empty")
         compose.openSearch()
         compose.searchField().assertIsFocused().performTextInput("hello")
         compose.searchField().performImeAction()
         compose.onNodeWithText("Nothing to search yet").assertIsDisplayed()
-        screenshot("empty-search")
+        compose.screenshot("inbox/empty_search")
         compose.onNodeWithContentDescription("Clear search").performClick().assertDoesNotExist()
         compose.onNodeWithContentDescription("Back to inbox").performClick()
         compose.onNodeWithText("Your inbox is empty").assertIsDisplayed()
@@ -84,14 +86,15 @@ class InboxScreenTest {
             .onNode(hasText("Design review") and hasContentDescription("Attachment. Read later.", substring = true))
             .assertIsDisplayed()
         compose.onNode(hasText("Weekend plans")).assertIsDisplayed()
-        screenshot("inbox-fixtures")
+        compose.screenshot("inbox/list")
         compose.openSearchResults()
         compose.searchField().performTextInput("prototype")
         compose.onNodeWithText("Design review").assertIsDisplayed()
         compose.onNodeWithText("Weekend plans").assertDoesNotExist()
-        screenshot("search-fixtures")
+        compose.screenshot("inbox/search_results")
         compose.searchField().performTextReplacement("nothing matches")
         compose.onNodeWithText("No matching mail").assertIsDisplayed()
+        compose.searchField().performImeAction()
         compose.onNodeWithText("Clear search and filters").performClick()
         compose.onNodeWithText("Weekend plans").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
@@ -104,16 +107,18 @@ class InboxScreenTest {
         showFixtures()
         compose.onNodeWithText("Unread").performClick().assertIsOn()
         compose.onNodeWithText("Weekend plans").assertDoesNotExist()
-        compose.openSearchResults()
-        compose.onNodeWithText("People").performClick()
-        compose.onNode(hasText("alex@example.com") and isToggleable()).performClick()
-        compose.onNodeWithText("Done").performClick()
+        compose.openSearch()
+        compose
+            .onNodeWithText("Has files")
+            .performScrollTo()
+            .performClick()
+            .assertIsOn()
+        compose.searchField().performImeAction()
         compose.onNodeWithText("Design review").assertIsDisplayed()
-        compose.onNodeWithText("All accounts").performScrollTo().performClick()
-        compose.onNodeWithText("Personal").performClick()
-        compose.onNodeWithText("Done").performClick()
+        compose.searchField().performTextInput("lake")
+        compose.searchField().performImeAction()
         compose.onNodeWithText("No matching mail").assertIsDisplayed()
-        screenshot("narrow-filtered")
+        compose.screenshot("inbox/narrow_filtered")
     }
 
     @Test
@@ -133,15 +138,16 @@ class InboxScreenTest {
             compose.activity.setContent {
                 val density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                    OtusTheme { InboxScreen(emptyList()) }
+                    OtusTheme { InboxScreen(emptyList(), context = inboxContext()) }
                 }
             }
         }
         compose.openSearchResults()
         compose.searchField().performTextInput("hello")
+        compose.searchField().performImeAction()
         compose.onNodeWithText("Clear search and filters").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Clear search").assertDoesNotExist()
-        screenshot("large-text-empty")
+        compose.screenshot("inbox/large_text_empty")
     }
 
     private fun showFixtures() {
@@ -153,7 +159,7 @@ class InboxScreenTest {
                     "Design review",
                     "The prototype is ready",
                     ReceivedAt("2026-10-03", "10:30"),
-                    MailLocation("Inbox", "Work"),
+                    MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
                     MailAttributes(unread = true, attachments = listOf("draft.pdf")),
                     labels = listOf(RowFolder("later", "Read later", readLater = true)),
                 ),
@@ -163,11 +169,16 @@ class InboxScreenTest {
                     "Weekend plans",
                     "A walk by the lake",
                     ReceivedAt("2026-10-02", "09:00"),
-                    MailLocation("Inbox", "Personal"),
+                    MailLocation("Inbox", "Personal", mailboxRole = MailboxRole.Inbox),
                 ),
             )
-        compose.runOnUiThread { compose.activity.setContent { OtusTheme { InboxScreen(messages) } } }
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                // The rows' dates read the same in every year the screenshots are compared.
+                CompositionLocalProvider(LocalToday provides PinnedToday) {
+                    OtusTheme { InboxScreen(messages, context = inboxContext()) }
+                }
+            }
+        }
     }
-
-    private fun screenshot(name: String) = compose.windowBitmap().savePng("build/reports/inbox/$name.png")
 }

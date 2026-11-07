@@ -1,6 +1,8 @@
 package com.otus.mail.feature.folders.presentation.components
 
 import com.otus.avatar.generatedAvatar
+import com.otus.designsystem.mail.folders.components.RuleChipLine
+import com.otus.designsystem.mail.folders.components.RuleChipValue
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_attach_file
@@ -11,8 +13,6 @@ import com.otus.designsystem.resources.symbol_notes
 import com.otus.designsystem.resources.symbol_report
 import com.otus.designsystem.resources.symbol_schedule
 import com.otus.designsystem.resources.symbol_short_text
-import com.otus.designsystem.shared.filters.components.RuleChipLine
-import com.otus.designsystem.shared.filters.components.RuleChipValue
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.mail.feature.folders.presentation.ChipSlot
 import com.otus.mail.feature.folders.presentation.RuleChipText

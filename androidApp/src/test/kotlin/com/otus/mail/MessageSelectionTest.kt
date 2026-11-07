@@ -11,8 +11,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.ReadBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -32,7 +34,7 @@ class MessageSelectionTest {
     private val selectionBar get() = compose.onNode(hasContentDescription(SHELL) and hasClickAction())
 
     /** Opens the inbox once folders and rules have loaded, then long-presses the one message. */
-    private fun selectWelcome(behavior: MailBehavior = MailBehavior(markReadOnOpen = false)) {
+    private fun selectWelcome(behavior: MailBehavior = MailBehavior(read = ReadBehavior(markReadOnOpen = false))) {
         compose.showInbox(server, MailBehaviorState(initial = behavior))
         compose.onNodeWithText("Welcome").performTouchInput { longClick() }
     }
@@ -81,7 +83,9 @@ class MessageSelectionTest {
     @Test
     fun aMinimizedBarListsTheActionsItLeavesOutInAMenu() {
         server.folders += """{"id": "t", "name": "Deleted", "role": "trash"}"""
-        selectWelcome(MailBehavior(markReadOnOpen = false, minimizedBar = true))
+        selectWelcome(
+            MailBehavior(read = ReadBehavior(markReadOnOpen = false), actions = ActionBehavior(minimizedBar = true)),
+        )
         compose.onNode(hasContentDescription("Delete") and hasClickAction()).assertDoesNotExist()
         compose.onNodeWithContentDescription("More actions").performClick()
         compose.onNode(hasText("Delete") and hasClickAction()).performClick()

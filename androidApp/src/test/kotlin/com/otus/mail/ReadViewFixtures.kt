@@ -4,43 +4,52 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import com.otus.mail.feature.inbox.domain.ConversationMessages
-import com.otus.mail.feature.inbox.domain.ConversationMute
-import com.otus.mail.feature.inbox.domain.FolderChange
-import com.otus.mail.feature.inbox.domain.KnownPeople
-import com.otus.mail.feature.inbox.domain.MailAttachment
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailConversation
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.MailingList
-import com.otus.mail.feature.inbox.domain.MessageContent
-import com.otus.mail.feature.inbox.domain.MessageFolder
-import com.otus.mail.feature.inbox.domain.MessageHeaders
-import com.otus.mail.feature.inbox.domain.MessageHtml
-import com.otus.mail.feature.inbox.domain.MessagePrinter
-import com.otus.mail.feature.inbox.domain.Newsletters
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.RemoteImages
-import com.otus.mail.feature.inbox.domain.SenderBlocks
-import com.otus.mail.feature.inbox.domain.ThreadEmail
-import com.otus.mail.feature.inbox.domain.ThreadMember
-import com.otus.mail.feature.inbox.domain.Unsubscribe
-import com.otus.mail.feature.inbox.domain.UnsubscribeResult
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.MessageMarks
-import com.otus.mail.feature.inbox.presentation.MessageMoves
-import com.otus.mail.feature.inbox.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.PageChanges
-import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadDisplay
-import com.otus.mail.feature.inbox.presentation.ReadEffects
-import com.otus.mail.feature.inbox.presentation.ReadFiles
-import com.otus.mail.feature.inbox.presentation.ReadFolders
-import com.otus.mail.feature.inbox.presentation.ReadPrivacy
-import com.otus.mail.feature.inbox.presentation.ReadServices
-import com.otus.mail.feature.inbox.presentation.components.NewFolderSheet
+import com.otus.designsystem.shared.feedback.components.ToastState
+import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailAttachment
+import com.otus.mail.core.messages.domain.MailConversation
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MailingList
+import com.otus.mail.core.messages.domain.MessageContent
+import com.otus.mail.core.messages.domain.MessageFolder
+import com.otus.mail.core.messages.domain.MessageHtml
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.RemoteImages
+import com.otus.mail.core.messages.domain.SenderBlocks
+import com.otus.mail.core.messages.domain.ThreadEmail
+import com.otus.mail.core.messages.domain.ThreadMember
+import com.otus.mail.core.messages.domain.Unsubscribe
+import com.otus.mail.core.messages.presentation.MailEdits
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.MessageMarks
+import com.otus.mail.core.messages.presentation.MessageMoves
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.core.messages.presentation.MoveToasts
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.feature.inbox.domain.InboxSnapshot
+import com.otus.mail.feature.inbox.domain.MailSource
+import com.otus.mail.feature.inbox.presentation.InboxFeedState
+import com.otus.mail.feature.read.domain.ConversationMessages
+import com.otus.mail.feature.read.domain.KnownPeople
+import com.otus.mail.feature.read.domain.MessageHeaders
+import com.otus.mail.feature.read.domain.MessagePrinter
+import com.otus.mail.feature.read.domain.Newsletters
+import com.otus.mail.feature.read.domain.UnsubscribeResult
+import com.otus.mail.feature.read.presentation.NewsletterSteps
+import com.otus.mail.feature.read.presentation.ReadDisplay
+import com.otus.mail.feature.read.presentation.ReadEdits
+import com.otus.mail.feature.read.presentation.ReadEffects
+import com.otus.mail.feature.read.presentation.ReadFiles
+import com.otus.mail.feature.read.presentation.ReadFolders
+import com.otus.mail.feature.read.presentation.ReadPrivacy
+import com.otus.mail.feature.read.presentation.ReadServices
+import com.otus.mail.feature.read.presentation.components.NewFolderSheet
+import kotlinx.coroutines.MainScope
 import kotlinx.datetime.LocalDate
 
 /** Demo mail for the Read view: the Q4 launch thread, an invoice, and a Sentry digest. Alex reads it. */
@@ -61,14 +70,14 @@ internal object ReadViewFixtures {
 
     val folders =
         listOf(
-            MessageFolder("in", listOf("Inbox"), role = "inbox"),
+            MessageFolder("in", listOf("Inbox"), role = MailboxRole.Inbox),
             MessageFolder("cl", listOf("Clients"), color = "Blue"),
             MessageFolder("fn", listOf("Finance"), color = "Yellow"),
             MessageFolder("fi", listOf("Finance", "Invoices"), color = "Yellow"),
             MessageFolder("fr", listOf("Freelancing"), color = "Pink"),
             MessageFolder("ar", listOf("Archive 2025"), color = "Green"),
-            MessageFolder("sp", listOf("Junk"), role = "junk"),
-            MessageFolder("tr", listOf("Trash"), role = "trash"),
+            MessageFolder("sp", listOf("Junk"), role = MailboxRole.Junk),
+            MessageFolder("tr", listOf("Trash"), role = MailboxRole.Trash),
         )
 
     private fun message(
@@ -84,7 +93,15 @@ internal object ReadViewFixtures {
         subject,
         body,
         received,
-        MailLocation("Inbox", "Alex", "acc", "alex@otus.example", mailboxId = "in", mailboxIds = folders),
+        MailLocation(
+            "Inbox",
+            "Alex",
+            "acc",
+            "alex@otus.example",
+            mailboxId = "in",
+            mailboxIds = folders,
+            mailboxRole = MailboxRole.Inbox,
+        ),
         emailId = id,
         to = team.filter { it != from },
         preview = body.lineSequence().firstOrNull { it.isNotBlank() && it != "Hi all," }.orEmpty(),
@@ -146,44 +163,62 @@ internal object ReadViewFixtures {
             listName = "Sentry weekly digest",
         )
 
+    /**
+     * The Read view of [pages] for a user who owns [own], whose changes reach [writer], on behalf of
+     * a list that shows none. Its toasts show in [toasts], and [launch] runs the work they wait for.
+     * [block] changes the rest, such as the display.
+     */
     fun read(
         pages: List<MailMessage>,
         cameFrom: Set<String> = emptySet(),
-        applied: (FolderChange) -> Unit = {},
+        writer: RecordingWriter = RecordingWriter(),
         unsubscribed: () -> Unit = {},
         newFolder: NewFolderSheet? = null,
-        changes: PageChanges = RecordedPageChanges(),
-        effects: ReadEffects = ReadEffects(),
-    ) = ReadContext(
-        pages = ConversationMessages { pages },
-        folders =
-            ReadFolders(
-                of = { folders },
-                cameFrom = { cameFrom },
-                apply = { change, _ -> applied(change) },
-                newFolder = newFolder,
-            ),
-        privacy = ReadPrivacy({ RemoteImages.Known }, known = KnownPeople { team.map { it.address }.toSet() }),
-        files =
-            ReadFiles(
-                downloads = PhotoAttachments(::photo),
-                printer = MessagePrinter { _, _ -> },
-            ),
+        own: OwnAddresses = OwnAddresses(emptyMap()),
+        toasts: ToastState = ToastState(),
+        launch: (suspend () -> Unit) -> Unit = {},
+        block: ReadContextBuilder.() -> Unit = {},
+    ) = readContext {
+        this.pages = ConversationMessages { pages }
+        folders = ReadFolders(of = { ReadViewFixtures.folders }, cameFrom = { cameFrom }, newFolder = newFolder)
+        privacy =
+            ReadPrivacy(
+                { RemoteImages.Known },
+                allowed = { emptyList() },
+                known = KnownPeople { team.map { EmailAddressKey(it.address) }.toSet() },
+                allowSender = {},
+            )
         services =
             ReadServices(
                 newsletters = FakeNewsletters(unsubscribed),
                 headers = MessageHeaders { emptyList() },
-                mute = FakeMute(),
                 blocks = SenderBlocks { true },
-                changes = changes,
-            ),
-        effects = effects,
-        display = ReadDisplay(today = { LocalDate(2026, 10, 19) }),
-    )
+                edits = edits(writer, toasts),
+                person = null,
+                files = photoFiles(),
+                categories = null,
+            )
+        effects = ReadEffects(toasts, launch, NewsletterSteps())
+        display =
+            ReadDisplay(display.showQuotes, display.zen, display.quickView, display.setZen) { LocalDate(2026, 10, 19) }
+        this.own = own
+        loadContent = { content(it) }
+        block()
+    }
 
-    /** This context with replies showing their quotes, as the "Show quotes" setting does. */
-    fun ReadContext.showingQuotes(): ReadContext =
-        ReadContext(pages, folders, privacy, files, services, effects, ReadDisplay({ true }, today = display.today))
+    /** Attachments that download as [photo], and a printer that prints nothing. */
+    private fun photoFiles() =
+        ReadFiles(downloads = PhotoAttachments(::photo), saved = null, printer = MessagePrinter { _, _ -> })
+
+    /** Edits that [writer] saves, run on the main thread like the app's, with their toasts in [toasts]. */
+    private fun edits(
+        writer: RecordingWriter,
+        toasts: ToastState,
+    ): ReadEdits {
+        val scope = MainScope()
+        val feed = InboxFeedState(NoMail, scope)
+        return ReadEdits(MailEdits(writer, scope, MoveToasts(toasts, scope)), feed)
+    }
 
     /** A small two-tone picture as PNG bytes, standing in for a downloaded photo. */
     private fun photo(): ByteArray {
@@ -194,24 +229,22 @@ internal object ReadViewFixtures {
                 PHOTO_SIZE * 0.6f,
                 PHOTO_SIZE * 0.4f,
                 PHOTO_SIZE * 0.25f,
-                Paint().apply {
-                    color = Color.rgb(0xe8, 0xc4, 0x6a)
-                },
+                Paint().apply { color = Color.rgb(0xe8, 0xc4, 0x6a) },
             )
         }
         return bitmap.pngBytes()
     }
 
-    fun actions(
-        behavior: MailBehavior = MailBehavior(),
-        targets: List<MoveTarget> = emptyList(),
-    ) = MessageActions(
-        moves = MessageMoves(targets = { targets }, onMove = { _, _ -> }, suggested = { null }) { null },
-        marks = MessageMarks(can = { _, _ -> true }, set = { _, _, _ -> }),
-        ruleForSender = { null },
-        readLater = { null },
-        behavior = { behavior },
-    )
+    fun actions(targets: List<MoveTarget> = emptyList()) =
+        MessageActions(
+            moves = MessageMoves(targets = { targets }, onMove = { _, _ -> }, suggested = { null }) { null },
+            marks = MessageMarks(can = { _, _ -> true }, set = { _, _, _ -> }),
+            ruleForSender = { null },
+            readLater = { null },
+            saved = { ActionBehavior() },
+            markReadOnOpen = { true },
+            cleanup = null,
+        )
 
     private class FakeNewsletters(
         private val unsubscribed: () -> Unit,
@@ -233,13 +266,8 @@ internal object ReadViewFixtures {
         ) = true
     }
 
-    private class FakeMute : ConversationMute {
-        override suspend fun isMuted(message: MailMessage) = false
-
-        override suspend fun setMuted(
-            message: MailMessage,
-            muted: Boolean,
-        ) = true
+    private object NoMail : MailSource {
+        override suspend fun messages(scope: MailScope) = InboxSnapshot(emptyList())
     }
 
     private const val OLDER = 23

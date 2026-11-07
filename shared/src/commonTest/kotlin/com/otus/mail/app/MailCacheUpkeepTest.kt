@@ -6,7 +6,7 @@ import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.InMemoryMailCache
 import com.otus.mail.core.files.InMemoryDownloadFolder
 import com.otus.mail.core.files.StoredKey
-import com.otus.mail.core.files.storedName
+import com.otus.storage.storedName
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,7 +30,7 @@ class MailCacheUpkeepTest {
         }
 
     @Test
-    fun trimmingKeepsBodiesOfTheLastNinetyDays() =
+    fun trimmingKeepsBodiesAndCategoriesOfTheLastNinetyDays() =
         runTest {
             val now = Instant.parse("2026-10-18T12:00:00Z")
             val cache = InMemoryMailCache()
@@ -38,11 +38,14 @@ class MailCacheUpkeepTest {
                 put(CacheKind.Body, "old", "old", (now - 91.days).toEpochMilliseconds())
                 put(CacheKind.Body, "recent", "recent", (now - 89.days).toEpochMilliseconds())
                 put(CacheKind.Email, "old", "old", (now - 91.days).toEpochMilliseconds())
+                put(CacheKind.Category, "old", "old", (now - 91.days).toEpochMilliseconds())
+                put(CacheKind.Category, "recent", "recent", (now - 89.days).toEpochMilliseconds())
             }
 
             MailServices(stores = MailDeviceStores(cache = cache)).trimCache(now)
 
             assertEquals(setOf("recent"), cache.readAll("ada", CacheKind.Body).keys)
+            assertEquals(setOf("recent"), cache.readAll("ada", CacheKind.Category).keys)
             assertEquals(setOf("old"), cache.readAll("ada", CacheKind.Email).keys)
         }
 

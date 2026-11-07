@@ -1,10 +1,10 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
 
 /** A change shown before the server saved it. Call [confirm] when the server saves it, or [rollBack]. */
-class LocalChange internal constructor(
+internal class LocalChange(
     private val onConfirm: () -> Unit,
     private val onRollBack: () -> Unit,
 ) {

@@ -5,21 +5,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.avatar.AvatarOptions
 import com.otus.avatar.AvatarService
-import com.otus.mail.core.avatar.mailAvatarOptions
-import com.otus.mail.feature.inbox.domain.InboxFailure
+import com.otus.avatar.avatarOptions
+import com.otus.dateformat.DateFormatter
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.presentation.EditObserver
+import com.otus.mail.core.messages.presentation.EditedList
+import com.otus.mail.core.messages.presentation.MailEdit
+import com.otus.mail.core.messages.presentation.empty
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
-import com.otus.mail.feature.inbox.domain.InboxStorage
 import com.otus.mail.feature.inbox.domain.InboxStorageException
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.UnavailableAccount
-import com.otus.mail.feature.inbox.presentation.components.syncedLabel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
@@ -34,9 +34,10 @@ class InboxFeedState(
     private val source: MailSource,
     private val scope: CoroutineScope,
     avatars: AvatarService? = null,
-    private val avatarOptions: () -> AvatarOptions = { mailAvatarOptions(websiteIcons = true) },
+    private val avatarOptions: () -> AvatarOptions = { avatarOptions(websiteIcons = true) },
     defaultScope: MailScope = MailScope.Inbox,
-) {
+    private val dates: () -> DateFormatter = { DateFormatter() },
+) : EditedList {
     /**
      * The page's own messages, such as the inbox with Spam and Trash as the user chose. A new one
      * loads at once while the page shows its own messages, not while a search shows others.
@@ -64,10 +65,10 @@ class InboxFeedState(
         }
 
     /** What the list loads: the page's own messages, or what a search or folder pill shows in their place. */
-    var mailScope by mutableStateOf(defaultScope)
+    override var mailScope by mutableStateOf(defaultScope)
         private set
 
-    var messages by mutableStateOf(emptyList<MailMessage>())
+    override var messages by mutableStateOf(emptyList<MailMessage>())
         private set
     var loading by mutableStateOf(false)
         private set
@@ -91,16 +92,42 @@ class InboxFeedState(
     private var reportedNotice: String? = null
 
     /** Keeps an action failure visible through the current load, until the next refresh by the user. */
-    fun report(text: String) {
+    override fun report(text: String) {
         reportedNotice = text
         notice = text
     }
 
     /**
-     * Shows [transform] of the loaded message with [id] before the server saves it. Loads keep the
-     * change until it is confirmed; rolling it back applies [undo].
+     * Shows each edit before the server saves it: a row that leaves this list's scope goes, and a
+     * changed row changes. Loads keep the edit until it is kept; a rollback undoes it, and puts a
+     * row that left back only while the list still shows that scope.
      */
-    fun change(
+    internal val edits: EditObserver =
+        object : EditObserver {
+            private val shown = mutableMapOf<MailEdit, LocalChange>()
+
+            override fun shown(edit: MailEdit) {
+                val row = edit.row
+                val local =
+                    when {
+                        edit.leaves != null -> if (edit.leaves == mailScope) remove(edit.rowId) else null
+                        row != null -> change(edit.rowId, row, edit.undo)
+                        else -> null
+                    }
+                if (local != null) shown[edit] = local
+            }
+
+            override fun settled(
+                edit: MailEdit,
+                kept: Boolean,
+            ) {
+                val local = shown.remove(edit) ?: return
+                if (kept) local.confirm() else local.rollBack()
+            }
+        }
+
+    /** Shows [transform] of the row [id] until rolled back, which applies [undo]; see [edits]. */
+    internal fun change(
         id: String,
         transform: (MailMessage) -> MailMessage,
         undo: (MailMessage) -> MailMessage,
@@ -108,35 +135,24 @@ class InboxFeedState(
         val edited = { list: List<MailMessage> -> list.map { if (it.id == id) transform(it) else it } }
         messages = edited(messages)
         recent.edit(edited)
-        return track(pending.add(id, scope = null, edit = transform)) {
+        return pending.tracked(pending.add(id, scope = null, edit = transform), { request }) {
             messages = messages.map { if (it.id == id) undo(it) else it }
         }
     }
 
-    /** Takes [id] off the list before the server moves it. Rolling back restores it only in the same scope. */
-    fun remove(id: String): LocalChange {
+    /** Takes the row [id] off the list until rolled back; see [edits]. */
+    internal fun remove(id: String): LocalChange {
         val before = messages.firstOrNull { it.id == id }
         val previousScope = mailScope
         messages = messages.filterNot { it.id == id }
         recent.edit { list -> list.filterNot { it.id == id } }
-        return track(pending.add(id, previousScope) { null }) {
+        return pending.tracked(pending.add(id, previousScope) { null }, { request }) {
             // Put it back after the server refused the move, unless a reload already did.
             if (mailScope == previousScope && before != null && messages.none { it.id == before.id }) {
                 messages = messages + before
             }
         }
     }
-
-    private fun track(
-        key: Int,
-        rollBack: () -> Unit,
-    ) = LocalChange(
-        onConfirm = { pending.confirm(key, request) },
-        onRollBack = {
-            pending.drop(key)
-            rollBack()
-        },
-    )
 
     /**
      * Loads [scope] in place of the page's own messages, or returns to them when it is null. The
@@ -159,6 +175,8 @@ class InboxFeedState(
      * the device kept, while [loading] stays true, unless the server answers first. With
      * [keepReport], as for a reload after a change on the server, a reported failure stays.
      */
+    override fun refresh() = refresh(cachedFirst = messages.isEmpty())
+
     fun refresh(
         cachedFirst: Boolean = messages.isEmpty(),
         keepReport: Boolean = false,
@@ -250,51 +268,27 @@ class InboxFeedState(
         if (fromServer) {
             load.served = true
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val unavailable = snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.notice(now) }
+            val unavailable =
+                snapshot.unavailable.takeIf { it.isNotEmpty() }?.joinToString(
+                    " ",
+                ) { it.notice(now, dates()) }
             notice = loadNotice(reportedNotice, unavailable)
         }
     }
 }
 
-private const val MAX_AUTO_PAGES = 4
-
-/** One load's request number and inputs. [served] once the server's snapshot shows. */
-private class FeedLoad(
-    val number: Int,
-    val scope: MailScope,
-    val query: MailQuery,
-    val options: AvatarOptions,
-) {
-    var served = false
-}
-
-/** Why the account did not load, and when the mail it shows last matched the server. */
-private fun UnavailableAccount.notice(now: LocalDateTime): String {
-    val updated =
-        syncedAt
-            ?.toLocalDateTime(TimeZone.currentSystemDefault())
-            ?.let { " Last updated ${it.syncedLabel(now)}." }
-    return reasonNotice() + updated.orEmpty()
-}
-
-private fun UnavailableAccount.reasonNotice(): String =
-    when (reason) {
-        InboxFailure.SignInRejected -> "$name: the server rejected the sign-in. Reconnect it in Settings."
-        InboxFailure.NotPermitted -> "$name: the server doesn't allow this account to read mail."
-        InboxFailure.CredentialsUnavailable -> "$name: the saved password couldn't be read. Reconnect it in Settings."
-        InboxFailure.NoMail -> "$name: this account doesn't offer mail over JMAP."
-        InboxFailure.Unreachable -> "$name: couldn't reach the server."
-        InboxFailure.ServerProblem -> "$name: the server returned an error."
-    }
-
-private fun loadNotice(
-    reported: String?,
-    loading: String?,
-): String? = listOfNotNull(reported, loading).distinct().joinToString(" ").ifEmpty { null }
-
-private val InboxStorage.notice: String
-    get() =
-        when (this) {
-            InboxStorage.Accounts -> "Couldn't load saved accounts. Try again in Settings."
-            InboxStorage.Cache -> "Couldn't save cached mail. Refresh to try again."
-        }
+/**
+ * The change [key] adds as a [LocalChange]: confirming keeps it until the load after [request];
+ * rolling back drops it.
+ */
+private fun PendingChanges.tracked(
+    key: Int,
+    request: () -> Int,
+    rollBack: () -> Unit,
+) = LocalChange(
+    onConfirm = { confirm(key, request()) },
+    onRollBack = {
+        drop(key)
+        rollBack()
+    },
+)

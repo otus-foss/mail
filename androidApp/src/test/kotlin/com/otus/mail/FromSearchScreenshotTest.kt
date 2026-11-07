@@ -9,22 +9,20 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.captureScreenRoboImage
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.ScheduledSends
-import com.otus.mail.feature.inbox.domain.SentMessage
-import com.otus.mail.feature.inbox.presentation.ComposeAccount
-import com.otus.mail.feature.inbox.presentation.ComposeExits
-import com.otus.mail.feature.inbox.presentation.ComposeOrigin
-import com.otus.mail.feature.inbox.presentation.ComposeServices
-import com.otus.mail.feature.inbox.presentation.ComposeState
-import com.otus.mail.feature.inbox.presentation.OutgoingDraft
-import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.ScheduledSends
+import com.otus.mail.core.messages.domain.SentMessage
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.feature.compose.presentation.ComposeAccount
+import com.otus.mail.feature.compose.presentation.ComposeExits
+import com.otus.mail.feature.compose.presentation.ComposeOrigin
+import com.otus.mail.feature.compose.presentation.ComposeServices
+import com.otus.mail.feature.compose.presentation.ComposeState
+import com.otus.mail.feature.compose.presentation.OutgoingDraft
+import com.otus.mail.feature.compose.presentation.screens.ComposeScreen
 import kotlinx.datetime.LocalDateTime
 import org.junit.Rule
 import org.junit.Test
@@ -48,7 +46,6 @@ class FromSearchScreenshotTest {
     @Test
     fun searchStaysAboveScrolledAddressesBlack() = scrolledShot("compose_from_search_scrolled_black", ThemeBase.Black)
 
-    @OptIn(ExperimentalRoborazziApi::class)
     private fun scrolledShot(
         name: String,
         theme: ThemeBase,
@@ -57,8 +54,7 @@ class FromSearchScreenshotTest {
         compose.onNode(hasContentDescription("Send from this@companya.com. Change") and hasClickAction()).performClick()
         compose.onNodeWithText("otus@rubylabs.design").performScrollTo()
         compose.onNodeWithText("Search 13 addresses").assertExists()
-        compose.waitForIdle()
-        captureScreenRoboImage("src/test/screenshots/$name.png")
+        compose.screenshot(name)
     }
 
     private fun open(theme: ThemeBase) {
@@ -81,7 +77,7 @@ class FromSearchScreenshotTest {
                                 saveDelayMillis = 60_000,
                             )
                         }
-                    ComposeScreen(state, MailBehavior(recentFrom = listOf("this@companya.com")), NoExits)
+                    ComposeScreen(state, ActionBehavior(), listOf("this@companya.com"), NoExits)
                 }
             }
         }

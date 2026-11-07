@@ -7,20 +7,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.filters.components.FilterFolderRow
-import com.otus.designsystem.shared.filters.components.FolderCheck
-import com.otus.designsystem.shared.filters.components.TreeFolder
-import com.otus.designsystem.shared.filters.elements.FilterChip
+import com.otus.designsystem.mail.folders.components.FilterFolderRow
+import com.otus.designsystem.mail.folders.components.FolderCheck
+import com.otus.designsystem.mail.folders.components.TreeFolder
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLook
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.folders.elements.FolderGlyph
+import com.otus.designsystem.shared.overlays.components.ListSheet
 import com.otus.designsystem.shared.rows.components.AccountGroupRow
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.shared.selection.components.ScopeSheet
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
+import com.otus.mail.core.mailbox.FolderKey
+import com.otus.mail.core.mailbox.pathText
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterFolder
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import com.otus.mail.feature.inbox.presentation.FolderKey
 import com.otus.mail.feature.inbox.presentation.check
 import com.otus.mail.feature.inbox.presentation.includeSubfolders
 import com.otus.mail.feature.inbox.presentation.key
@@ -43,11 +49,7 @@ internal fun FolderPickerSheet(
     var query by remember { mutableStateOf("") }
     var collapsed by remember { mutableStateOf(emptySet<FolderKey>()) }
     var foldedAccounts by remember { mutableStateOf(emptySet<String>()) }
-    ScopeSheet(
-        "Folders",
-        onDismiss,
-        search = { PickerSearch(query, { query = it }, "Search folders") },
-    ) {
+    ListSheet("Folders", onDismiss, search = { PickerSearch(query, { query = it }, "Search folders") }) {
         options.accounts.forEach { account ->
             val open = account.id !in foldedAccounts
             if (options.accounts.size > 1) {
@@ -77,14 +79,14 @@ private fun FolderRows(
     val searching = query.isNotBlank()
     account.shownFolders(query, collapsed).forEach { folder ->
         val check = draft.check(folder, options)
-        val path = folder.ancestors.takeIf { searching && it.isNotEmpty() }?.joinToString(" / ")
+        val path = folder.ancestors.takeIf { searching && it.isNotEmpty() }?.pathText()
         FilterFolderRow(
             TreeFolder(folder.name, if (searching) 0 else folder.depth, path),
             check,
             onCheck = { onEdit { it.toggle(folder) } },
             expanded = (folder.key !in collapsed).takeIf { folder.hasChildren && !searching },
             onExpandedChange = { onCollapse(folder.key, !it) },
-        ) { FolderGlyph(folder.color, icon = folder.icon, size = FilterTokens.chipIconSize) }
+        ) { FolderGlyph(folder.color, icon = folder.icon, size = ControlTokens.chipIconSize) }
         if (check == FolderCheck.On && folder.hasChildren) OnlyThisFolder(folder, draft, onEdit)
     }
 }
@@ -97,10 +99,11 @@ private fun OnlyThisFolder(
     onEdit: FilterEdit,
 ) {
     val only = draft.folders.firstOrNull { it.key == folder.key }?.includeSubfolders == false
-    FilterChip(
+    Chip(
         "Only this folder",
-        only,
         { onEdit { it.includeSubfolders(folder, include = only) } },
         Modifier.padding(start = FilterTokens.folderIndent * (folder.depth + 1) + FilterTokens.folderRowHeight),
+        selected = only,
+        style = ChipStyle(look = ChipLook.Raised),
     )
 }

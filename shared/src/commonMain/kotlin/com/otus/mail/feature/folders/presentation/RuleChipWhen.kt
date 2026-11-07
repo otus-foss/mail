@@ -1,10 +1,11 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.dateformat.clockTime
+import com.otus.dateformat.shortWeekday
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.domain.WEEKDAYS
 import com.otus.mail.feature.folders.domain.WEEKEND
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalTime
 
 /**
  * A time range is bright, with "outside" before it and the days after a dot, both dim, as in
@@ -21,7 +22,7 @@ internal fun RuleCondition.When.whenChip(): RuleChipText {
     } else {
         val words = if (outside) "outside " else ""
         val dayWords = if (days.isEmpty()) "" else " · " + daysText(days)
-        val time = "${timeText(timeRange.start)}–${timeText(timeRange.end)}"
+        val time = "${clockTime(timeRange.start)}–${clockTime(timeRange.end)}"
         RuleChipText("When", ChipSlot.Icon(RuleIcon.Schedule), dim(words) + bright(time) + dim(dayWords))
     }
 }
@@ -32,12 +33,5 @@ private fun daysText(days: Set<DayOfWeek>): String =
         WEEKDAYS -> "weekdays"
         WEEKEND -> "weekends"
         emptySet<DayOfWeek>(), DayOfWeek.entries.toSet() -> "every day"
-        else -> days.sorted().joinToString(", ") { it.shortName() }
+        else -> days.sorted().joinToString(", ") { shortWeekday(it) }
     }
-
-private fun DayOfWeek.shortName(): String = name.take(SHORT_DAY).lowercase().replaceFirstChar { it.uppercase() }
-
-private const val SHORT_DAY = 3
-
-/** Hours without a leading zero, as in "9:00". */
-private fun timeText(time: LocalTime): String = "${time.hour}:${time.minute.toString().padStart(2, '0')}"

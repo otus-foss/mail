@@ -4,17 +4,17 @@ import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapCapability
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
-import com.otus.jmap.JmapJson
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailAccounts
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.MailboxType
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.feature.folders.domain.AccountFolderRules
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
-import com.otus.mail.feature.folders.domain.FolderStorageException
 import com.otus.mail.feature.folders.domain.RuleAvailability
 import com.otus.mail.feature.folders.domain.RuleFailure
 import com.otus.mail.feature.folders.domain.RuleOutcome
@@ -34,20 +34,20 @@ import kotlin.time.Clock
  * made meanwhile on another device is refused instead of overwritten.
  */
 class JmapFolderRuleRepository(
-    connections: JmapConnections,
-    logins: LoginStore,
+    private val connections: JmapConnections,
+    private val mailboxes: Mailboxes,
+    changes: EmailChangeQueue,
     /** The UTC offset, such as `+0200`, that day and time conditions are written in. */
     private val zone: () -> String = ::deviceZone,
 ) : FolderRuleRepository {
-    private val accounts = MailAccounts(connections, logins, ::FolderStorageException)
-    private val existing = ExistingMail(accounts)
+    private val existing = ExistingMail(connections, mailboxes, changes)
 
     override suspend fun accounts(): List<AccountFolderRules> =
-        coroutineScope { accounts.logins().map { async { load(it) } }.awaitAll() }
+        coroutineScope { folderStorage { connections.savedLogins() }.map { async { load(it) } }.awaitAll() }
 
     private suspend fun load(login: JmapLogin): AccountFolderRules =
         try {
-            val account = accounts.open(login)
+            val account = connections.mailAccount(login)
             when (val availability = availability(account)) {
                 is RuleAvailability.Available -> loadRules(account, availability)
                 else -> AccountFolderRules(login.id, login.name, availability)
@@ -90,9 +90,10 @@ class JmapFolderRuleRepository(
         account: AccountFolderRules,
         rules: Map<String, List<FolderRule>>,
     ): RuleOutcome {
-        val support = account.support ?: return RuleOutcome.Failed(RuleFailure.NotPermitted)
+        val support = account.support ?: return RuleOutcome.Failed(RuleFailure.Mail(MailFailure.NotPermitted))
         return try {
-            accounts.open(account.accountId)?.let { write(it, support, account.script?.state, rules) }
+            folderStorage { connections.mailAccount(account.accountId) }
+                ?.let { write(it, support, account.script?.state, rules) }
                 ?: RuleOutcome.Failed(RuleFailure.NotFound)
         } catch (error: JmapException) {
             RuleOutcome.Failed(error.toRuleFailure())
@@ -140,9 +141,10 @@ class JmapFolderRuleRepository(
         support: RuleSupport,
     ): ScriptRead {
         val scripts = account.connection.call(GetMethod(SieveScriptType, account.id, properties = SCRIPT_PROPERTIES))
-        val mailboxes = account.connection.call(GetMethod(MailboxType, account.id, properties = MAILBOX_PROPERTIES))
+        // Fresh folders, so a rule for a folder made on another device keeps its path.
+        val folders = mailboxes.sync(account)
         val plan = planScript(scripts.list, support) { download(account, it, support) }
-        return ScriptRead(scripts.state, mailboxes.list, plan)
+        return ScriptRead(scripts.state, folders, plan)
     }
 
     private suspend fun download(
@@ -171,26 +173,22 @@ class JmapFolderRuleRepository(
 
     private class ScriptRead(
         val state: String,
-        val folders: List<MailboxObject>,
+        val folders: List<MailFolder>,
         val plan: ScriptPlan?,
     )
 
     private companion object {
         const val MAX_SCRIPT_BYTES = 1024L * 1024
         val SCRIPT_PROPERTIES = listOf("id", "name", "blobId", "isActive")
-        val MAILBOX_PROPERTIES = listOf("id", "name", "parentId", "role", "sortOrder")
     }
 }
 
 /** Rules need Sieve with `fileinto`; other extensions only unlock more conditions and filing by id. */
 private fun availability(account: MailAccount): RuleAvailability {
-    val sieve =
-        account.session.accounts[account.id]
-            ?.capabilityObjects
-            ?.get(JmapCapability.SIEVE)
+    val capability =
+        account.capability(JmapCapability.SIEVE, SieveCapability.serializer())
             ?: return RuleAvailability.RulesUnavailable
-    val capability = runCatching { JmapJson.decodeFromJsonElement(SieveCapability.serializer(), sieve) }.getOrNull()
-    val support = RuleSupport(capability?.sieveExtensions.orEmpty().toSet(), capability?.maxSizeScript)
+    val support = RuleSupport(capability.sieveExtensions.toSet(), capability.maxSizeScript)
     return if ("fileinto" in support.extensions) {
         RuleAvailability.Available(support)
     } else {

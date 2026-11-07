@@ -13,9 +13,16 @@ the mail account with a `Mailbox/get`, and saves the login; reconnecting the sam
 `OtusMailApplication` owns one `MailServices` per process. Mail and the first release use the same
 storage names, so earlier accounts keep working.
 
-`core/mail` also holds what the features' data layers share. `MailAccounts` resolves a saved login
-to the JMAP account that holds its mail. `NEWEST_FIRST` and `inMailbox` are the `Email/query` sort
-and mailbox filter, and `pointer` escapes ids in `Email/set` patch paths (RFC 6901).
+`core/mail` also holds what the features' data layers share. `JmapConnections.mailAccount` resolves
+a saved login to the JMAP account that holds its mail, through otus-meta's account lookup.
+`NEWEST_FIRST` and `inMailbox` are the `Email/query` sort and mailbox filter; every other filter is
+a `JmapFilter`. `MailFailure` and `toMailFailure` read a JMAP failure once for every feature; the
+folder, rule, send, and draft failures start from it. Batches use the session's `getBatch`,
+`setBatch`, and `callBatch`, and optional calls `jmapCallOr`.
+
+Account removal follows otus-meta's `LoginLifecycle`: the cache, the waiting changes, downloaded
+attachments, device settings and push (`DeviceAccountData`), and avatars each delete their part
+while the login's credentials still exist, and the cache opens again if removal stops.
 
 The inbox's filters run on the server. `emailConditions` turns a page's `InboxFilters` into one
 list of `Email/query` conditions per login, joined with `AND` and with the page's mailboxes.
@@ -90,9 +97,11 @@ When an `htmlBody` part is `text/html`, the reader shows the HTML body instead o
 it keeps the text body. Plain parts between HTML parts keep their line breaks, and parts without a
 value, such as inline `cid:` images, are left out. A failed load also keeps the text body.
 
-Drafts (`JmapDraftRepository`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:
+Drafts (`JmapComposeMail`, RFC 8621 sections 2, 4.6, and 6) live in the mail account:
 
-- Saving finds the mailbox with role `drafts` through `Mailbox/query`, then sends an `Email/set`.
+- Saving finds the folder with role `drafts` in the kept folders (`Mailboxes`), then sends an
+  `Email/set`. Saving and sending share the copies whose save lost its answer and the uploaded
+  signature images.
   It creates the Email with keywords `$draft` and `$seen`, the addresses, the subject,
   `inReplyTo` and `references` when set, and a single `text/plain` body (`bodyValues` and
   `textBody`). Email content cannot change, so a second `Email/set` destroys the previous copy.
@@ -160,8 +169,10 @@ such as after a move, is left out. When several listings are loaded, the list hi
 earliest point where a listing with more stops, in the chosen sort order, so a later page never
 adds rows above ones already shown. `hasMore` is true while any listing has more. Logins load in
 parallel and fail alone, with a reason; a login that fails still shows its cached rows. Marks and
-moves (`JmapMessageMarker`, `JmapMessageMover`) apply the `Email/set` patch the server accepted to
-the cached emails, so lists match before the next refresh reads the change back.
+moves go through `JmapEmailWriter`, the one writer of emails, which applies each `Email/set` patch to
+the cached emails at once and keeps it in the change queue until the server answers, so lists match
+before the next refresh reads the change back. Deleting for good asks the server first and then
+takes the destroyed emails out of the cache.
 
 ## Checks
 

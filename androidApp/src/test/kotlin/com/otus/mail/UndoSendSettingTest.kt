@@ -13,8 +13,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
-import com.otus.mail.feature.inbox.presentation.components.WritingSettings
+import com.otus.mail.core.settings.presentation.MailBehaviorState
+import com.otus.mail.feature.mailsettings.presentation.components.writingRows
+import com.otus.settings.presentation.components.SettingSections
+import com.otus.settings.presentation.components.SettingsSectionSpec
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -39,15 +41,15 @@ class UndoSendSettingTest {
                     Surface(Modifier.fillMaxSize(), color = OtusColors.bgRegular) {
                         Column(
                             Modifier.verticalScroll(rememberScrollState()),
-                        ) { WritingSettings(state, onOpenSignatures = {}) }
+                        ) { SettingSections(listOf(SettingsSectionSpec("Writing", writingRows(state) {}))) }
                     }
                 }
             }
         }
         compose.onNodeWithText("15 seconds").performScrollTo().performClick()
-        compose.screenshot("undo-send-setting")
+        compose.screenshot("settings/undo_send")
         compose.onNodeWithText("Off").performClick()
         compose.waitForIdle()
-        assertEquals(0, state.behavior.undoSendSeconds)
+        assertEquals(0, state.behavior.write.undoSendSeconds)
     }
 }

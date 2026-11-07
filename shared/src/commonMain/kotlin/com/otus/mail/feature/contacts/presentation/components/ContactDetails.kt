@@ -20,8 +20,8 @@ import com.otus.designsystem.resources.symbol_notes
 import com.otus.designsystem.shared.contacts.components.ContactEntry
 import com.otus.designsystem.shared.contacts.components.ContactHeader
 import com.otus.designsystem.shared.contacts.components.ContactValueRow
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.InfoStrip
-import com.otus.designsystem.shared.feedback.components.StripAction
 import com.otus.designsystem.shared.overlays.components.OptionsItem
 import com.otus.designsystem.shared.overlays.components.OptionsMenu
 import com.otus.designsystem.shared.pages.components.PageNote
@@ -85,7 +85,7 @@ private fun RefusedStrip(
         "Not saved",
         reason.text(),
         facts.saveElsewhere?.let {
-            StripAction("Save to ${it.name}", Res.drawable.symbol_drive_file_move, onSaveElsewhere)
+            UiAction("Save to ${it.name}", Res.drawable.symbol_drive_file_move, onClick = onSaveElsewhere)
         },
     )
 }
@@ -211,7 +211,12 @@ private fun GroupMember(
             EntryTaps({ onOpen(person.main.key) }, onRemove?.let { { open = true } }),
         )
         if (open && onRemove != null) {
-            val remove = OptionsItem.Action("Remove from group", Res.drawable.symbol_group_remove, { onRemove(person) })
+            val remove =
+                OptionsItem.Action(
+                    UiAction("Remove from group", Res.drawable.symbol_group_remove, onClick = {
+                        onRemove(person)
+                    }),
+                )
             OptionsMenu(listOf(remove)) { open = false }
         }
     }

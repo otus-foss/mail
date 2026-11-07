@@ -1,9 +1,9 @@
 package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.otus.accounts.presentation.components.AvatarSheet
 import com.otus.avatar.ContactAvatar
 import com.otus.avatar.ResolvedAvatar
+import com.otus.avatar.ui.presentation.components.AvatarSheet
 
 /**
  * The avatar editor for a contact named [name], the same one the user's own addresses use: a

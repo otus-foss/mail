@@ -6,9 +6,14 @@ script, so they keep working while the app is closed.
 
 ## Folders
 
-- Loaded per account with `Mailbox/get` (RFC 8621, section 2): hierarchy, role, sort order,
-  counts, and `myRights`. Accounts load in parallel and fail alone.
-- Each load saves the login's own mailboxes in the device's mail cache, which the inbox shares.
+- Loaded per account through `core/mailbox/Mailboxes` (RFC 8621, section 2): hierarchy, role,
+  sort order, counts, and `myRights`. Accounts load in parallel and fail alone. The first load
+  reads every mailbox with `Mailbox/get`; later loads ask `Mailbox/changes` from the saved state.
+- Each load saves the login's own mailboxes and their `Mailbox` state in the device's mail cache.
+  One `Mailboxes`, built by `MailServices`, is the only writer of both; the inbox sync asks it for
+  its mailbox calls. The inbox, rules, drafts, sending, notifications, and the other features read
+  the folders there. A notification's Archive, Delete, and Spam, and "Move the N already here",
+  ask the server for its folders first, since another client may have added or re-roled one.
   While no folders show, as at launch, a load first shows the cached ones with their counts, so the
   sidebar fills before the server answers. Loading stays on until the server's folders replace
   them. The cache keeps no shared mailboxes or server limits, so those arrive with the server load.
@@ -238,8 +243,8 @@ row background, and selected state keep their usual look. Default keeps the plai
   A rename or move keeps the color. A folder deleted and made again gets a new id and starts
   without one.
 - RFC 8621, section 2 gives a Mailbox no color property, so the app does not write one to the
-  server. Colors stay on the device in `AndroidFolderColorStore` (SharedPreferences) or
-  `IosFolderColorStore` (NSUserDefaults) and do not sync. The store keeps the color's name, such
+  server. Colors stay on the device in the `FolderColorStore` (SharedPreferences on Android,
+  NSUserDefaults on iOS) and do not sync. The store keeps the color's name, such
   as `Teal`. The design system's `FolderColor.named` turns it into a tint for the current theme,
   and an unknown or missing name reads as Default.
 - A [shared folder](#shared-folders) row has one color. Setting it writes the same name for every
@@ -463,8 +468,9 @@ line, get those rules converted on the first load. The first save writes them in
 Sieve sees mail only as it arrives. Once typing pauses, the sheet asks how much mail in the Inbox
 and Archive the rule matches, with `Email/query` and `calculateTotal`. When there is some, the
 switch "Move the N that are already here", "From Inbox and Archive", appears. It starts on, as in
-the design. While it is on, a saved rule moves that mail with `Email/set` patches of `mailboxIds`, in batches within
-`maxObjectsInSet`.
+the design. While it is on, a saved rule moves that mail with `Email/set` patches of `mailboxIds`
+through the waiting-changes queue, in batches within `maxObjectsInSet`, so the lists show the
+moves at once. It reads the Inbox and Archive from the server's folders at that moment.
 
 The query maps conditions to `Email/query` filters (RFC 8621, section 4.4.1): addresses to `from`,
 `to`, or `cc` text, subject and body "contains" to `subject` and `body`, headers "contains" and
@@ -500,8 +506,8 @@ Rule for sender flow. Chips, the Add rule chip, and the sheet come from the desi
   `ReadLaterFoldersTest` (saved, adopted, and created folders; saved folders moved into Trash or
   given a role; overlapping and replaced loads; the switch turning off during a load),
   `MessageFoldersTest` (saving, removing, or moving into Read later; which folders label a row),
-  `CombinedFolderTest` (one entry per role any account has, with every account's folder, in sidebar
-  order), `FolderPlacementTest` (numbers between neighbors, renumbering only what changes, nesting,
+  `MailboxRoleTest` (one entry per role any account has, with every account's folder, in sidebar
+  order; roles read in any case), `FolderPlacementTest` (numbers between neighbors, renumbering only what changes, nesting,
   refused drops), `SharedMailboxesTest` (a shared mailbox shows once, under a connected owner, as
   shared by that owner), `SharedFolderTest` (folders merged by path in any case, system folders
   and Read later lifted, Trash left out).
@@ -512,7 +518,7 @@ Rule for sender flow. Chips, the Add rule chip, and the sheet come from the desi
   leading ones, a block at the top moved, other bytes kept, CRLF), `LegacyRulesTest` (what the v1 migration converts and drops),
   `JmapFolderRuleRepositoryTest` (validate before save, `ifInState`, activation, the vacation
   script, migration), `ExistingMailTest` (the `Email/query` filters and batched moves),
-  `JmapMessageMoverTest`.
+  `EmailMovesTest`.
 - Folder colors: `FolderColorsTest` (keys, shared-folder groups, defaults for unknown names),
   `FolderColorsStateTest` (the switch hides colors without forgetting them, role folders and Read
   later stay plain, deletes and account removal forget colors), `FolderColorRemovalTest`,

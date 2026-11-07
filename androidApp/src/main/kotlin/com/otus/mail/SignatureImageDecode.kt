@@ -2,9 +2,9 @@ package com.otus.mail
 
 import android.graphics.Bitmap
 import androidx.core.graphics.scale
-import com.otus.mail.feature.inbox.domain.SignatureImage
-import com.otus.mail.feature.inbox.domain.SignatureImagePick
-import com.otus.mail.feature.inbox.domain.SignatureImages
+import com.otus.mail.core.messages.domain.SignatureImage
+import com.otus.mail.core.messages.domain.SignatureImagePick
+import com.otus.mail.core.messages.domain.SignatureImages
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream

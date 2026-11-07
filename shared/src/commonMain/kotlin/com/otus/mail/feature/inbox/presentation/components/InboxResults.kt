@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.panels.components.rememberPanelCollapse
+import com.otus.designsystem.shared.rows.components.LoadMoreNearEnd
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus

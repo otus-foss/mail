@@ -1,10 +1,10 @@
 package com.otus.mail.app
 
 import com.otus.avatar.AvatarPhotoPicker
-import com.otus.mail.feature.inbox.domain.AttachmentFiles
-import com.otus.mail.feature.inbox.domain.MessagePrinter
-import com.otus.mail.feature.inbox.domain.SavedFiles
-import com.otus.mail.feature.inbox.domain.SignatureImages
+import com.otus.mail.core.files.AttachmentFiles
+import com.otus.mail.core.files.SavedFiles
+import com.otus.mail.core.messages.domain.SignatureImages
+import com.otus.mail.feature.read.domain.MessagePrinter
 
 /**
  * The platform's pickers and file handling: [signatureImages] picks and shrinks signature images,

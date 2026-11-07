@@ -16,7 +16,7 @@ import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
-import com.otus.designsystem.shared.overlays.components.MenuAction
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.presentation.avatar
@@ -36,15 +36,15 @@ internal class ListBarActions(
 internal fun ContactsListBar(actions: ListBarActions) {
     val more =
         listOfNotNull(
-            actions.onNewGroup?.let { MenuAction("New group", Res.drawable.symbol_group_add, it) },
+            actions.onNewGroup?.let { UiAction("New group", Res.drawable.symbol_group_add, onClick = it) },
             actions.onFindDuplicates?.let {
-                MenuAction("Find duplicates (${actions.duplicates})", Res.drawable.symbol_person_search, it)
+                UiAction("Find duplicates (${actions.duplicates})", Res.drawable.symbol_person_search, onClick = it)
             },
-            actions.onImport?.let { MenuAction("Import from a file", Res.drawable.symbol_download, it) },
-            actions.onExport?.let { MenuAction("Export as vCard", Res.drawable.symbol_upload, it) },
+            actions.onImport?.let { UiAction("Import from a file", Res.drawable.symbol_download, onClick = it) },
+            actions.onExport?.let { UiAction("Export as vCard", Res.drawable.symbol_upload, onClick = it) },
         )
     ActionBar(
-        BarAction("New contact", Res.drawable.symbol_person_add, onClick = actions.onNew),
+        BarAction(UiAction("New contact", Res.drawable.symbol_person_add, onClick = actions.onNew)),
         secondary = moreOptions(more),
     )
 }
@@ -82,13 +82,18 @@ internal fun ContactsSelectionBar(
     val merge = actions.onMerge?.takeIf { actions.sharedAddress }
     val primary =
         if (merge != null) {
-            BarAction("Merge", Res.drawable.symbol_call_merge, onClick = merge)
+            BarAction(UiAction("Merge", Res.drawable.symbol_call_merge, onClick = merge))
         } else {
             BarAction(
-                "Write",
-                Res.drawable.symbol_edit,
-                enabled = chosen.any { it.emails.isNotEmpty() },
-                onClick = actions.onWrite,
+                UiAction(
+                    "Write",
+                    Res.drawable.symbol_edit,
+                    enabled =
+                        chosen.any {
+                            it.emails.isNotEmpty()
+                        },
+                    onClick = actions.onWrite,
+                ),
             )
         }
     val single = chosen.singleOrNull()
@@ -101,17 +106,17 @@ internal fun ContactsSelectionBar(
     val mergeItem =
         actions.onMerge
             ?.takeIf { merge == null }
-            ?.let { MenuAction("Merge into one", Res.drawable.symbol_call_merge, it) }
+            ?.let { UiAction("Merge into one", Res.drawable.symbol_call_merge, onClick = it) }
     val groupItems =
         actions.grouping.groups.map { group ->
-            MenuAction("Add to ${group.displayName}", Res.drawable.symbol_group) { actions.grouping.onAdd(group) }
+            UiAction("Add to ${group.displayName}", Res.drawable.symbol_group) { actions.grouping.onAdd(group) }
         }
     val more =
         listOfNotNull(mergeItem) + groupItems +
             listOfNotNull(
-                MenuAction("New group…", Res.drawable.symbol_group_add, actions.grouping.onNew),
-                MenuAction("Export as vCard", Res.drawable.symbol_upload, actions.onExport),
-                actions.onDelete?.let { MenuAction("Delete", Res.drawable.symbol_delete, it) },
+                UiAction("New group…", Res.drawable.symbol_group_add, onClick = actions.grouping.onNew),
+                UiAction("Export as vCard", Res.drawable.symbol_upload, onClick = actions.onExport),
+                actions.onDelete?.let { UiAction("Delete", Res.drawable.symbol_delete, onClick = it) },
             )
     ActionBar(
         primary,
@@ -124,7 +129,10 @@ private fun mergeContext(count: Int): BarContext =
     BarContext("2 cards, same address", BarToken.Count(count), "Merge 2 cards that share an address")
 
 /** The bar's ⋯ button with every secondary action in its menu, or no button when there are none. */
-internal fun moreOptions(items: List<MenuAction>): List<BarAction> =
+internal fun moreOptions(items: List<UiAction>): List<BarAction> =
     listOfNotNull(
-        BarAction("More options", Res.drawable.symbol_more_horiz, menu = items) {}.takeIf { items.isNotEmpty() },
+        BarAction(
+            UiAction("More options", Res.drawable.symbol_more_horiz) {},
+            menu = items,
+        ).takeIf { items.isNotEmpty() },
     )

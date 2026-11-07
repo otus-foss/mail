@@ -3,7 +3,6 @@ package com.otus.mail.feature.contacts.presentation
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactAddress
 
-/** Where the Contacts page leads. */
 internal class ContactsNavigation(
     val onOpenNavigation: () -> Unit,
     val onOpen: (CardKey) -> Unit,

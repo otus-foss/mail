@@ -25,12 +25,13 @@ import com.otus.designsystem.shared.controls.components.SegmentedToggle
 import com.otus.designsystem.shared.controls.elements.IconButton
 import com.otus.designsystem.shared.controls.elements.IconButtonLook
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
+import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.rows.components.Collapsible
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.theme.colors.OtusColors
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.jscontact.Card
 import com.otus.mail.feature.contacts.domain.ContactBook
@@ -55,10 +56,11 @@ internal fun ImportSheet(
     var mode by remember { mutableStateOf(ImportMode.Merge) }
     val plan = book?.let { ImportPlan(file.cards, it.key, existing, file.failures) }
     val count = plan?.count(mode) ?: 0
-    ClosableSheet(
+    SheetFrame(
         "Import contacts",
         onDismiss,
-        SheetConfirm("Import $count", { if (plan != null) onImport(plan, mode) }, enabled = count > 0),
+        done = UiAction("Import $count", enabled = count > 0, onClick = { if (plan != null) onImport(plan, mode) }),
+        closeButton = true,
     ) {
         Column(
             Modifier
@@ -68,7 +70,7 @@ internal fun ImportSheet(
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             val cards = if (file.cards.size == 1) "1 card" else "${file.cards.size} cards"
-            Text("${file.name} · $cards", Inset, color = OtusColors.text2)
+            Text("${file.name} · $cards", Modifier.sheetInset(), color = OtusColors.text2)
             ChoiceHeading("Import into")
             BookChoices(books, book?.key) { book = it }
             val chosen = book
@@ -91,8 +93,15 @@ private fun MatchedPeople(
     if (matched == 0) return
     val people = if (matched == 1) "1 person is" else "$matched people are"
     ChoiceHeading("$people already in ${book.name}")
-    SegmentedToggle(ImportMode.entries.map { it.label }, mode.ordinal, { onMode(ImportMode.entries[it]) }, Inset)
-    Text(mode.note, Inset, color = OtusColors.text2)
+    SegmentedToggle(
+        ImportMode.entries.map {
+            it.label
+        },
+        mode.ordinal,
+        { onMode(ImportMode.entries[it]) },
+        Modifier.sheetInset(),
+    )
+    Text(mode.note, Modifier.sheetInset(), color = OtusColors.text2)
 }
 
 /** The cards the file could not read, by position when known, with why. */
@@ -102,7 +111,7 @@ private fun Failures(failures: List<Pair<Int, String>>) {
     val cards = if (failures.size == 1) "1 card can’t be read" else "${failures.size} cards can’t be read"
     ChoiceHeading(cards)
     failures.forEach { (position, reason) ->
-        Text(if (position > 0) "Card $position: $reason" else reason, Inset, color = OtusColors.text2)
+        Text(if (position > 0) "Card $position: $reason" else reason, Modifier.sheetInset(), color = OtusColors.text2)
     }
 }
 
@@ -120,7 +129,12 @@ private fun Preview(
     var expanded by remember { mutableStateOf(false) }
     PreviewHeading(expanded) { expanded = !expanded }
     Collapsible(expanded) {
-        RowGroup(cards.map { card -> { PreviewRow(card, mode.label.takeIf { plan?.match(card) != null }) } }, Inset)
+        RowGroup(
+            cards.map { card ->
+                { PreviewRow(card, mode.label.takeIf { plan?.match(card) != null }) }
+            },
+            Modifier.sheetInset(),
+        )
     }
 }
 
@@ -134,7 +148,7 @@ private fun PreviewHeading(
         Modifier
             .fillMaxWidth()
             .clickable(onClickLabel = action, onClick = onToggle)
-            .padding(start = SheetTokens.inset, end = PanelTokens.iconGap),
+            .padding(start = SheetTokens.inset, end = Spacing.iconGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("Preview", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
@@ -158,6 +172,3 @@ private fun PreviewRow(
     val name = card.name?.full ?: address ?: "No name"
     ContactValueRow(name, address.takeIf { it != name }, label = label)
 }
-
-/** Text and controls that are not rows line up with the rows' content. */
-private val Inset = Modifier.padding(horizontal = SheetTokens.inset)

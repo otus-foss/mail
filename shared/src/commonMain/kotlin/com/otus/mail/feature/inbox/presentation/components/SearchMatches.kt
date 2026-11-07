@@ -26,6 +26,8 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_search
 import com.otus.designsystem.shared.actionbar.components.ActionBar
 import com.otus.designsystem.shared.actionbar.components.BarAction
+import com.otus.designsystem.shared.controls.elements.UiAction
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.rows.components.FoldingSection
 import com.otus.designsystem.shared.rows.components.LocalEntriesOnRaised
@@ -35,12 +37,15 @@ import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.rows.EntryTokens
 import com.otus.designsystem.theme.tokens.rows.InboxTokens
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
+import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.shownName
+import com.otus.mail.core.messages.presentation.components.chipAvatar
+import com.otus.mail.core.messages.presentation.components.firstName
 import com.otus.mail.feature.inbox.domain.SearchField
 import com.otus.mail.feature.inbox.domain.looksLikeAddress
 import com.otus.mail.feature.inbox.domain.searchMessages
-import com.otus.mail.feature.inbox.domain.shownName
 import com.otus.mail.feature.inbox.presentation.FilterCount
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.conversationRows
@@ -78,9 +83,9 @@ internal fun SearchMatches(
         remember(hits, query, own, accounts, field) {
             // A search in the subject or body is not looking for anyone.
             if (field != SearchField.Anywhere) return@remember emptyList()
-            val addresses = accounts.flatMap { it.addresses }.map(String::lowercase).toSet()
+            val addresses = accounts.flatMap { it.addresses }.map { EmailAddressKey(it) }.toSet()
             matchingPeople(hits, query, limit = Int.MAX_VALUE).filterNot {
-                own.isMineAnywhere(it.address) || it.address.lowercase() in addresses
+                own.isMineAnywhere(it.address) || EmailAddressKey(it.address) in addresses
             }
         }
     val fold = rememberSectionFold()
@@ -88,7 +93,7 @@ internal fun SearchMatches(
         // Mail needs its caption only to set it apart from the people above it.
         if (people.isNotEmpty()) {
             SearchPeople(room, people, looksLikeAddress(query), fold)
-            SectionCaption("Mail", Modifier.padding(horizontal = SheetTokens.inset))
+            SectionCaption("Mail", Modifier.sheetInset())
         }
         SearchMail(room, hits, Modifier.weight(1f))
     }
@@ -107,7 +112,7 @@ private fun SearchPeople(
     fold: SectionFold,
 ) {
     val state = room.state
-    FoldingSection("People", fold, Modifier.padding(horizontal = SheetTokens.inset)) {
+    FoldingSection("People", fold, Modifier.sheetInset()) {
         ScrollingFaces(
             people.map { person ->
                 QuickFace(
@@ -181,10 +186,12 @@ internal fun SearchResultsBar(
         remember(listed, state.matching) { searchMessages(listed.messages, state.matching, listed.filters).size }
     ActionBar(
         BarAction(
-            FilterCount.Known(count.toLong()).showLabel,
-            Res.drawable.symbol_search,
-            enabled = count > 0,
-            onClick = state::showResults,
+            UiAction(
+                FilterCount.Known(count.toLong()).showLabel,
+                Res.drawable.symbol_search,
+                enabled = count > 0,
+                onClick = state::showResults,
+            ),
         ),
     )
 }
@@ -200,3 +207,21 @@ private fun keyboardHolds(): Boolean {
 }
 
 private const val EMPTY_KEY = "empty"
+
+/** The senders of [hits] whose name or address holds every term of [query], at most [limit] of them. */
+internal fun matchingPeople(
+    hits: List<MailMessage>,
+    query: String,
+    limit: Int = FIRST_PEOPLE,
+): List<MailSender> =
+    hits
+        .map { it.sender }
+        .distinctBy { EmailAddressKey(it.address) }
+        .filter { sender ->
+            query
+                .trim()
+                .split(Regex("\\s+"))
+                .all { sender.name.contains(it, true) || sender.address.contains(it, true) }
+        }.take(limit)
+
+private const val FIRST_PEOPLE = 2

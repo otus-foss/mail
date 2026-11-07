@@ -1,5 +1,9 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderLimits
+import com.otus.mail.core.mailbox.FolderRights
+import com.otus.mail.core.mailbox.MailFolder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

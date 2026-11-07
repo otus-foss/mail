@@ -19,9 +19,10 @@ import androidx.compose.ui.test.swipeRight
 import com.otus.designsystem.theme.motion.Motion
 import com.otus.designsystem.theme.motion.MotionSpeed
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -104,7 +105,7 @@ class SwipeActionsTest {
     @Test
     fun aSwipeSetToReadLaterSavesTheMessageAndLabelsItsRow() {
         server.folders += """{"id": "l", "name": "Read later"}"""
-        start(MailBehavior(endToStart = MailAction.ReadLater, readLater = true))
+        start(MailBehavior(readLater = true, actions = ActionBehavior(endToStart = MailAction.ReadLater)))
         waitForSwipe("Read later")
         compose.onNodeWithText("Welcome").performTouchInput { swipeLeft() }
         compose.waitUntil(TIMEOUT) { updates().isNotEmpty() }
@@ -120,7 +121,7 @@ class SwipeActionsTest {
     @Test
     fun aSwipeSetToNothingOrWithoutAFolderLeavesTheRowStill() {
         // No folder has the archive role, and the other side is turned off.
-        start(MailBehavior(startToEnd = null, endToStart = MailAction.Archive))
+        start(MailBehavior(actions = ActionBehavior(startToEnd = null, endToStart = MailAction.Archive)))
         compose.waitForText("Welcome")
         compose.waitForCall(server, "Mailbox/get")
         compose.waitForIdle()
@@ -143,9 +144,9 @@ class SwipeActionsTest {
         compose.onNodeWithText("Mark as read when opened").performScrollTo().performClick()
 
         val saved = AndroidMailBehaviorStore(compose.activity).read()
-        assertEquals(MailAction.Archive, saved.endToStart)
-        assertEquals(MailAction.Read, saved.startToEnd)
-        assertFalse(saved.markReadOnOpen)
+        assertEquals(MailAction.Archive, saved.actions.endToStart)
+        assertEquals(MailAction.Read, saved.actions.startToEnd)
+        assertFalse(saved.read.markReadOnOpen)
     }
 
     private companion object {

@@ -45,14 +45,13 @@ class CalendarDragTest {
     fun draggingAcrossWeeksUpdatesWhileHeldAndSupportsReverseDirection() {
         openCalendar()
         compose.onNodeWithContentDescription("Previous month").performClick()
-        dragRange(3, 12, "calendar-drag-forward")
-        dragRange(19, 8, "calendar-drag-backward")
+        dragRange(3, 12)
+        dragRange(19, 8)
         compose.onNodeWithText("Done").performClick()
         val month = LocalDate.now().minusMonths(1).withDayOfMonth(1)
         compose
-            .onNodeWithText(
-                relativeIsoRange(month.withDayOfMonth(8).toString(), month.withDayOfMonth(19).toString(), "–"),
-            ).performScrollTo()
+            .appliedDateRange(month.withDayOfMonth(8).toString(), month.withDayOfMonth(19).toString())
+            .performScrollTo()
             .assertIsDisplayed()
     }
 
@@ -61,7 +60,7 @@ class CalendarDragTest {
     fun narrowCalendarAllowsVerticalDragAcrossWeeksWithoutScrollingSheet() {
         openCalendar()
         compose.onNodeWithContentDescription("Previous month").performClick()
-        dragRange(4, 18, "calendar-narrow-drag")
+        dragRange(4, 18)
     }
 
     @Test
@@ -77,7 +76,6 @@ class CalendarDragTest {
         compose.onNodeWithText("February").performClick()
         compose.onNodeWithContentDescription("Day choices").performScrollToNode(hasText("1"))
         compose.onNode(hasText("1") and hasAnyAncestor(hasContentDescription("Day choices"))).performClick()
-        saveScreenshot("month-year-picker")
         compose.onNodeWithText("Go").performClick()
         compose.onNode(hasText("February 2020") and hasClickAction()).assertIsDisplayed()
         compose.onNodeWithText("2020-02-01 → Choose an end date").assertIsDisplayed()
@@ -156,10 +154,10 @@ class CalendarDragTest {
         compose.onNodeWithText(relativeIsoRange(start.toString(), today.toString())).assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
         compose
-            .onNodeWithText("This month")
-            .assertIsOn()
+            .appliedDateRange(start.toString(), today.toString())
             .performScrollTo()
             .performClick()
+        compose.onNodeWithText("Custom…").performClick()
         compose.onNodeWithText(relativeIsoRange(start.toString(), today.toString())).assertIsDisplayed()
     }
 
@@ -175,7 +173,6 @@ class CalendarDragTest {
         compose.onNodeWithText("Today").assertIsNotSelected()
         compose.onNodeWithText("Last 30 days").performClick().assertIsSelected()
         compose.onNodeWithText("Last 7 days").assertIsNotSelected()
-        saveScreenshot("date-quick-range-active")
         val today = LocalDate.now().toString()
         compose.onNodeWithContentDescription(today).performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(400)
@@ -204,14 +201,12 @@ class CalendarDragTest {
     }
 
     private fun openCalendar() {
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
     }
 
     private fun dragRange(
         from: Int,
         to: Int,
-        screenshot: String,
     ) {
         val month = LocalDate.now().minusMonths(1).withDayOfMonth(1)
         val start = month.withDayOfMonth(from).toString()
@@ -240,11 +235,8 @@ class CalendarDragTest {
         compose.onNodeWithContentDescription(start).assertIsSelected()
         compose.onNodeWithContentDescription(end).assertIsSelected()
         compose.onNodeWithText("Done").assertIsEnabled()
-        saveScreenshot(screenshot)
         calendar.performTouchInput { up() }
         compose.mainClock.autoAdvance = true
         compose.onNodeWithText(relativeIsoRange(minOf(start, end), maxOf(start, end))).assertIsDisplayed()
     }
-
-    private fun saveScreenshot(name: String) = compose.dialogBitmap().savePng("build/reports/pickers/$name.png")
 }

@@ -12,8 +12,8 @@ import com.otus.designsystem.shared.actionbar.components.BarAction
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarMinimized
 import com.otus.designsystem.shared.actionbar.components.BarToken
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.input.elements.isKeyboardUp
-import com.otus.designsystem.shared.overlays.components.MenuAction
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactDraft
@@ -36,13 +36,11 @@ internal fun ContactEditorBar(
 ) {
     ActionBar(
         BarAction(
-            "Save",
-            Res.drawable.symbol_check,
-            enabled = draft.canSave && context != null,
-        ) { onSave(false) },
+            UiAction("Save", Res.drawable.symbol_check, enabled = draft.canSave && context != null) { onSave(false) },
+        ),
         secondary =
             listOfNotNull(
-                BarAction("Discard", Res.drawable.symbol_delete, onClick = onDiscard),
+                BarAction(UiAction("Discard", Res.drawable.symbol_delete, onClick = onDiscard)),
                 moreAction(draft, onSave, onImport).takeIf { isNew },
             ),
         context = context,
@@ -56,15 +54,14 @@ private fun moreAction(
     onSave: (andNext: Boolean) -> Unit,
     onImport: (() -> Unit)?,
 ) = BarAction(
-    "More options",
-    Res.drawable.symbol_more_horiz,
+    UiAction("More options", Res.drawable.symbol_more_horiz) {},
     menu =
         listOfNotNull(
-            MenuAction("Save and add another", Res.drawable.symbol_person_add) { onSave(true) }
+            UiAction("Save and add another", Res.drawable.symbol_person_add) { onSave(true) }
                 .takeIf { draft.canSave },
-            onImport?.let { MenuAction("Import from a vCard file", Res.drawable.symbol_download, onClick = it) },
+            onImport?.let { UiAction("Import from a vCard file", Res.drawable.symbol_download, onClick = it) },
         ),
-) {}
+)
 
 /**
  * The bar's context: the [chosen] book among [books], shown with the draft's name or first address,
@@ -91,7 +88,7 @@ internal fun editorBarContext(
             choices =
                 books
                     .filter { it.key != chosen }
-                    .map { other -> MenuAction("Save to ${other.name}", other.icon) { onChoose(other.key) } },
+                    .map { other -> UiAction("Save to ${other.name}", other.icon) { onChoose(other.key) } },
         )
     }
 }

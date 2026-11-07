@@ -1,7 +1,8 @@
 package com.otus.mail.feature.inbox.presentation
 
-import com.otus.designsystem.shared.filters.components.FolderCheck
-import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.designsystem.mail.folders.components.FolderCheck
+import com.otus.mail.core.mailbox.FolderKey
+import com.otus.mail.core.messages.domain.FolderRef
 import com.otus.mail.feature.inbox.domain.InboxFilters
 
 /** [folder]'s checkbox: its own choice, or included by a parent chosen with its subfolders. */
@@ -19,7 +20,7 @@ private fun FolderRef.includes(
     folder: FilterFolder,
     options: FilterOptions,
 ): Boolean =
-    includeSubfolders && loginId == folder.key.loginId &&
+    includeSubfolders && loginId == folder.key.accountId &&
         options.folder(key)?.descendants?.contains(folder.key.mailboxId) == true
 
 /**
@@ -28,9 +29,9 @@ private fun FolderRef.includes(
  */
 fun InboxFilters.toggle(folder: FilterFolder): InboxFilters {
     val chosen = folders.firstOrNull { it.key == folder.key }
-    val ref = FolderRef(folder.key.loginId, folder.key.mailboxId, includeSubfolders = folder.hasChildren)
+    val ref = FolderRef(folder.key.accountId, folder.key.mailboxId, includeSubfolders = folder.hasChildren)
     if (chosen != null) return withFolder(chosen, on = false)
-    val covered = folders.filter { it.loginId == folder.key.loginId && it.mailboxId in folder.descendants }
+    val covered = folders.filter { it.loginId == folder.key.accountId && it.mailboxId in folder.descendants }
     return covered.fold(this) { filters, child -> filters.withFolder(child, on = false) }.withFolder(ref, on = true)
 }
 

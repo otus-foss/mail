@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.pages.components.belowControlPanel
 import com.otus.designsystem.shared.panels.components.AccountStack
 import com.otus.designsystem.shared.panels.components.PanelSheet
@@ -18,10 +19,15 @@ import com.otus.designsystem.shared.panels.components.PanelSheetHeader
 import com.otus.designsystem.shared.panels.elements.PanelNavigation
 import com.otus.designsystem.shared.panels.elements.PanelTitle
 import com.otus.designsystem.theme.colors.OtusColors
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PanelTokens
-import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
-import com.otus.mail.feature.inbox.domain.MailScopeChoice
+import com.otus.designsystem.theme.typography.TypeScale
+import com.otus.mail.core.messages.domain.MailScopeChoice
+import com.otus.mail.core.messages.presentation.components.MailScopeChoices
+import com.otus.mail.core.messages.presentation.components.MailScopeSwitch
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.label
 
 /**
  * The account switcher, unfolded from the inbox's control panel [collapsedHeight] tall: All mail,
@@ -50,7 +56,7 @@ internal fun InboxAccountSwitcher(
             ) {
                 Column(Modifier.padding(start = PanelTokens.titleStart)) {
                     PanelTitle(pageTitle)
-                    Text(header.title, color = OtusColors.text2, fontSize = PanelTokens.countSize)
+                    Text(header.title, color = OtusColors.text2, fontSize = TypeScale.label)
                 }
             }
         },
@@ -64,8 +70,8 @@ internal fun InboxAccountSwitcher(
                     1f,
                     fill = false,
                 ).verticalScroll(rememberScrollState())
-                .padding(horizontal = SheetTokens.inset),
-            verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
+                .sheetInset(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.iconGap),
         ) { MailScopeChoices(scope.closingOnPick(onDismiss)) }
     }
 }

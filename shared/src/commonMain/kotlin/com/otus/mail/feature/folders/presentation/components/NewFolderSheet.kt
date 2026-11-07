@@ -3,7 +3,6 @@ package com.otus.mail.feature.folders.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,14 +19,17 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_filter_alt
 import com.otus.designsystem.shared.controls.elements.ActionButton
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.folders.elements.FolderColorSwatch
 import com.otus.designsystem.shared.input.elements.InputField
+import com.otus.designsystem.shared.input.elements.InputNote
 import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetBodyInset
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.core.mailbox.AccountFolders
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.folderNameProblem
 import com.otus.mail.feature.folders.presentation.RuleSheetActions
@@ -60,15 +62,14 @@ internal fun NewFolderSheet(
     SheetFrame(
         parent?.let { "New folder in ${it.name}" } ?: "New folder",
         onDismiss,
-        onDone = {
-            actions.onCreate(account.accountId, name, parentId, setup)
-            onDismiss()
-        },
-        doneEnabled = problem == null,
-        doneLabel = "Create",
+        done =
+            UiAction("Create", enabled = problem == null, onClick = {
+                actions.onCreate(account.accountId, name, parentId, setup)
+                onDismiss()
+            }),
     ) {
         Column(
-            Modifier.padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
+            Modifier.sheetBodyInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             InputField(
@@ -76,7 +77,7 @@ internal fun NewFolderSheet(
                 name,
                 { name = it },
                 Modifier.focusRequester(focus),
-                supportingText = problem.takeIf { name.isNotEmpty() },
+                note = problem.takeIf { name.isNotEmpty() }?.let(::InputNote),
             )
             SetupControls(
                 setup,
@@ -150,7 +151,7 @@ private fun SetupButton(
     ActionButton(label, onClick, modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(PanelTokens.iconGap),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.iconGap),
         ) {
             leading()
             Text(label, style = panelTextStyle())

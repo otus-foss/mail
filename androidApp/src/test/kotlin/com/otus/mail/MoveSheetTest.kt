@@ -77,7 +77,7 @@ class MoveSheetTest {
         openMoveSheet()
         val suggestion = "Move to Receipts / Amazon, where Grace Hopper's mail usually goes"
         compose.waitForNode(hasContentDescription(suggestion))
-        screenshot("move-sheet")
+        compose.screenshot("messages/move_sheet")
         compose.onNodeWithContentDescription(suggestion).performClick()
         val move = moveUpdate()
         assertTrue(move, "\"update\":{\"m1\":{\"mailboxIds/a\":null,\"mailboxIds/z\":true}}" in move)
@@ -93,7 +93,7 @@ class MoveSheetTest {
         compose.onNodeWithContentDescription("Move").performClick()
         val current = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Current folder")
         compose.waitForNode(current)
-        screenshot("move-sheet-current-folder")
+        compose.screenshot("messages/move_sheet_current_folder")
         compose.onNode(current).assertIsDisplayed()
         compose.onNodeWithText("Amazon").assertIsDisplayed()
     }
@@ -142,10 +142,10 @@ class MoveSheetTest {
         openMoveSheet()
         compose.onNodeWithText("New rule").assertDoesNotExist()
         compose.onNodeWithContentDescription("Also sort future mail").performClick()
-        screenshot("move-sheet-sorting")
+        compose.screenshot("messages/move_sheet_sorting")
         compose.onNodeWithContentDescription("From grace@example.org, change").performClick()
         compose.onNodeWithText("Sort mail that…").assertIsDisplayed()
-        screenshot("move-sheet-conditions")
+        compose.screenshot("messages/move_sheet_conditions")
         compose.onNodeWithText("Anyone at this company").performClick()
         // The condition sheet opened last, so its Done is the last one.
         compose.onAllNodesWithText("Done").onLast().performClick()
@@ -166,7 +166,7 @@ class MoveSheetTest {
         moveAndSort()
         compose.waitForText("2 older messages match")
         compose.onNodeWithText("New mail from grace@example.org will go there too.").assertIsDisplayed()
-        screenshot("sorted-move")
+        compose.screenshot("messages/sorted_move")
         compose.onNodeWithText("Move 2 too").performClick()
         compose.waitUntil(TIMEOUT) { server.calls.any { "Email/set" in it && "\"o1\"" in it } }
         val move = server.calls.first { "Email/set" in it && "\"o1\"" in it }
@@ -186,7 +186,6 @@ class MoveSheetTest {
     }
 
     /** Saves the sheet on top to build/reports/inbox for review. */
-    private fun screenshot(name: String) = compose.dialogBitmap().savePng("build/reports/inbox/$name.png")
 
     private companion object {
         const val TIMEOUT = 5_000L

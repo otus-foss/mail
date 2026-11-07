@@ -2,7 +2,7 @@ package com.otus.mail
 
 import android.content.pm.PackageManager
 import com.otus.jmap.push.PushEndpoint
-import com.otus.jmap.push.PushStatus
+import com.otus.mail.feature.notifications.data.delivery
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
 import com.otus.mail.feature.notifications.domain.PushDistributor
@@ -46,13 +46,7 @@ class AndroidInstantPush(
 
     override suspend fun statuses(): Map<String, PushDeliveryStatus> =
         withContext(Dispatchers.IO) {
-            app.push.status().mapValues { (_, status) ->
-                when (status) {
-                    PushStatus.Active -> PushDeliveryStatus.Active
-                    PushStatus.Refused -> PushDeliveryStatus.ServerRefused
-                    PushStatus.Off, PushStatus.Waiting -> PushDeliveryStatus.Connecting
-                }
-            } + registration.problems()
+            app.push.status().mapValues { (_, status) -> status.delivery } + registration.problems()
         }
 
     override suspend fun forget(loginId: String) {

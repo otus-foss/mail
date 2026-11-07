@@ -1,52 +1,62 @@
 package com.otus.mail.feature.inbox.data
 
 import com.otus.jmap.JmapException
+import com.otus.jmap.JmapFilter
 import com.otus.jmap.jmapDecoding
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.MailCache
-import com.otus.mail.core.mail.BIN_ROLES
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.SENT_ROLE
 import com.otus.mail.core.mail.ThreadObject
-import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.objects
-import com.otus.mail.feature.inbox.domain.MailMessage
+import com.otus.mail.core.mail.receivedTime
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.data.ListingPage
+import com.otus.mail.core.messages.data.ServerSites
+import com.otus.mail.core.messages.data.ThreadView
+import com.otus.mail.core.messages.data.boxes
+import com.otus.mail.core.messages.data.inConversation
+import com.otus.mail.core.messages.data.memberIds
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.data.toMessage
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.MailScope
 import kotlinx.datetime.TimeZone
-import kotlinx.serialization.json.JsonObject
 import kotlin.time.Instant
 
 /** The list of each mailbox of [scope] among [mailboxes] that [query] keeps, with its [conditions]. */
 internal fun MailScope.listingQueries(
-    mailboxes: List<MailboxObject>,
+    mailboxes: List<MailFolder>,
     loginId: String,
     query: MailQuery,
-    conditions: List<JsonObject>,
+    conditions: List<JmapFilter>,
 ): List<ListingQuery> =
     chosen(mailboxes, loginId, query).map { mailbox ->
         ListingQuery(mailbox.id, mailFilter(listOf(mailbox.id), conditions), query.filters.sort)
     }
 
 /**
- * [login]'s lists of [scope] as the cache holds them, one page per mailbox, mapped like loaded
- * rows, trusting DMARC results only from [serverSite] (see [ServerSites]). A mailbox without a saved
- * list for [query] shows the rows of its unfiltered list that pass [check], or nothing without
- * one. A row whose email has left the mailbox since, such as after a move, is left out. A row that
- * no longer reads leaves the login out.
+ * [login]'s lists of [scope] among its kept [mailboxes] as the cache holds them, one page per
+ * mailbox, mapped like loaded rows, trusting DMARC results only from [serverSite] (see
+ * [ServerSites]). A mailbox without a saved list for [query] shows the rows of its unfiltered list
+ * that the device can check against [query] at [now], or nothing when it cannot. None show when
+ * the query reads none of the login's mail. A row whose email has left the mailbox since, such
+ * as after a move, is left out. A row that no longer reads leaves the login out.
  */
 internal suspend fun MailCache.cachedPages(
     login: JmapLogin,
+    mailboxes: List<MailFolder>,
     scope: MailScope,
     query: MailQuery,
-    conditions: List<JsonObject>,
+    now: Instant,
     zone: TimeZone,
     serverSite: String,
-    check: ((ListedRow) -> Boolean)? = null,
 ): List<ListingPage<ListedRow>> {
-    val mailboxes = mailboxes(login.id)
+    val conditions = emailConditions(query, login.id, now, zone) ?: return emptyList()
+    val check = localCheck(query, login.id, now, zone)
     val chosen = scope.chosen(mailboxes, login.id, query)
     val queries = scope.listingQueries(mailboxes, login.id, query, conditions)
     val unfiltered = chosen.map { ListingQuery(it.id, mailFilter(listOf(it.id), emptyList()), query.filters.sort) }
@@ -59,15 +69,15 @@ internal suspend fun MailCache.cachedPages(
     val view =
         ThreadView(
             shown = chosen.map { it.id }.toSet(),
-            trashAndJunk = mailboxes.filter { it.role in BIN_ROLES }.map { it.id }.toSet(),
-            sent = mailboxes.filter { it.role == SENT_ROLE }.map { it.id }.toSet(),
+            trashAndJunk = mailboxes.filter { it.isBin }.map { it.id }.toSet(),
+            sent = mailboxes.filter { it.role == MailboxRole.Sent }.map { it.id }.toSet(),
             own = query.addresses[login.id].orEmpty() + login.username,
         )
     return try {
         jmapDecoding {
             chosen.indices.mapNotNull { index ->
                 val mailbox = chosen[index]
-                val list = ListedMailbox(login, mailbox.id, scope.nameOf(mailbox), view, zone, serverSite)
+                val list = ListedMailbox(login, mailbox, scope.nameOf(mailbox), view, zone, serverSite)
                 val listing = listings[queries[index].key]
                 when {
                     listing != null -> held.page(listing, list)
@@ -90,7 +100,7 @@ internal class ListedRow(
 /** The mailbox a list shows, and what its rows are mapped with. */
 private class ListedMailbox(
     val login: JmapLogin,
-    val mailboxId: String,
+    val mailbox: MailFolder,
     val name: String,
     val view: ThreadView,
     val zone: TimeZone,
@@ -119,14 +129,24 @@ private class HeldMail(
         id: String,
         list: ListedMailbox,
     ): ListedRow? {
-        val row = rows[id]?.takeIf { list.mailboxId in it.boxes } ?: return null
+        val row = rows[id]?.takeIf { list.mailbox.id in it.boxes } ?: return null
         val thread = threads[row.threadId]?.emailIds.orEmpty().mapNotNull { members[it] }
         val login = list.login
         val message =
             row
-                .toMessage(login.id, login.name, list.name, list.zone, login.username, list.mailboxId, list.serverSite)
-                .inConversation(row, thread, list.mailboxId, list.view, list.zone)
-        return ListedRow(message, Instant.parse(row.receivedAt))
+                .toMessage(
+                    MailLocation(
+                        list.name,
+                        login.name,
+                        login.id,
+                        login.username,
+                        mailboxId = list.mailbox.id,
+                        mailboxRole = list.mailbox.role,
+                    ),
+                    list.zone,
+                    list.serverSite,
+                ).inConversation(row, thread, list.mailbox.id, list.view, list.zone)
+        return ListedRow(message, row.receivedTime)
     }
 }
 

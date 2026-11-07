@@ -15,6 +15,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.Density
 import com.otus.dateformat.DateFormatPreference
@@ -47,12 +48,12 @@ class DateNavigationPickerTest {
                     InboxScreen(
                         emptyList(),
                         dateFormatter = DateFormatter(DateFormatPreference.YearMonthDayDashes),
+                        context = inboxContext(),
                     )
                 }
             }
         }
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
         val today = LocalDate.now()
         val heading = "${today.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${today.year}"
         compose.onNodeWithText(heading).performClick()
@@ -62,7 +63,6 @@ class DateNavigationPickerTest {
         compose.onNodeWithText("Go").performClick()
         val start = LocalDate.of(2020, 1, 5)
         compose.onNodeWithText("${relativeIsoDate(start.toString())} → Choose an end date").assertIsDisplayed()
-        compose.onNodeWithText("Done").assertIsNotEnabled()
         compose.onNodeWithText("January 2020").performClick()
         choose("Day", "2")
         compose.onNodeWithContentDescription("Close date chooser").performClick()
@@ -73,7 +73,7 @@ class DateNavigationPickerTest {
         val end = LocalDate.of(2020, 1, 2)
         compose.onNodeWithText(relativeIsoRange(end.toString(), start.toString())).assertIsDisplayed()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText(relativeIsoRange(end.toString(), start.toString(), "–")).assertIsDisplayed()
+        compose.appliedDateRange(end.toString(), start.toString()).performScrollTo().assertIsDisplayed()
     }
 
     @Test

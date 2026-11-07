@@ -29,10 +29,10 @@ fits without overlapping the number.
 
 ## Shared controls
 
-`SelectionSheet` is a design-system bottom sheet built on the same `SheetFrame` as `ChoiceSheet`:
+`ListSheet` is a design-system bottom sheet built on the same `SheetFrame` as `ChoiceSheet`:
 a grab handle, a centered title with Clear before it and Done after it, an optional search slot,
 and a scrollable content area. `PickerSearch` composes the existing `SearchField` element; its
-text is independent of the mail query. `SelectionRow` is an element.
+text is independent of the mail query. Rows are `PickRow`s.
 They share clipped press feedback with pills and icon buttons, including keyboard focus feedback.
 All colors use the supplied dark palette; text uses Figtree and the existing symbols use Material
 Symbols Rounded. `SheetTokens` owns sheet geometry. No new palette colors or icon assets are added.

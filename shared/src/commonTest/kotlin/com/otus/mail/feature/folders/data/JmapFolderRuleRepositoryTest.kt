@@ -4,6 +4,9 @@ import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.EmailChangeQueue
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.FolderRule
@@ -13,6 +16,7 @@ import com.otus.mail.feature.folders.domain.RuleFailure
 import com.otus.mail.feature.folders.domain.RuleOutcome
 import com.otus.mail.feature.folders.domain.RuleSupport
 import com.otus.mail.testing.ADA_SECRET_HEADER
+import com.otus.mail.testing.UNCHANGED_MAILBOXES
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
@@ -73,6 +77,7 @@ class JmapFolderRuleRepositoryTest {
                                 "SieveScript/get" in body -> scriptsReply(scripts)
                                 "SieveScript/validate" in body -> validateReply(validation)
                                 "SieveScript/set" in body -> """["SieveScript/set", $set, "c0"]"""
+                                "Mailbox/changes" in body -> UNCHANGED_MAILBOXES
                                 "Mailbox/get" in body -> """["Mailbox/get", {"state": "m", "list": $MAILBOXES}, "c0"]"""
                                 else -> error("Unexpected call: $body")
                             }
@@ -81,7 +86,13 @@ class JmapFolderRuleRepositoryTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store), store) { "+0200" }
+        val connections = JmapConnections(JmapClient(engine), store)
+        val cache = InMemoryMailCache()
+        return JmapFolderRuleRepository(
+            connections,
+            Mailboxes(cache),
+            EmailChangeQueue(connections, cache, store = null),
+        ) { "+0200" }
     }
 
     @Test
@@ -209,6 +220,7 @@ class JmapFolderRuleRepositoryTest {
                                 "SieveScript/get" in body -> scriptsReply("[]")
                                 "SieveScript/validate" in body -> validateReply("null")
                                 "SieveScript/set" in body -> setReply
+                                "Mailbox/changes" in body -> UNCHANGED_MAILBOXES
                                 else -> """["Mailbox/get", {"state": "m", "list": $MAILBOXES}, "c0"]"""
                             }
                         respond("""{"methodResponses": [$reply]}""", HttpStatusCode.OK, json)
@@ -216,7 +228,13 @@ class JmapFolderRuleRepositoryTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapFolderRuleRepository(JmapConnections(JmapClient(engine), store), store) { "+0200" }
+        val connections = JmapConnections(JmapClient(engine), store)
+        val cache = InMemoryMailCache()
+        return JmapFolderRuleRepository(
+            connections,
+            Mailboxes(cache),
+            EmailChangeQueue(connections, cache, store = null),
+        ) { "+0200" }
     }
 
     private val support = RuleSupport(setOf("fileinto", "mailboxid"))

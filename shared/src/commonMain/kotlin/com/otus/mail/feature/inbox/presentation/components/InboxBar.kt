@@ -2,14 +2,19 @@ package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.ListSubject
+import com.otus.mail.core.messages.presentation.actions.barFor
+import com.otus.mail.core.messages.presentation.actions.offer
+import com.otus.mail.core.messages.presentation.components.MailActionBar
+import com.otus.mail.core.messages.presentation.components.Minimized
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.barLayout
 import com.otus.mail.feature.inbox.domain.searchMessages
 import com.otus.mail.feature.inbox.presentation.InboxState
-import com.otus.mail.feature.inbox.presentation.MessageActions
 
 /**
  * The message list's bar while nothing is selected. Search opens the search field, Filters runs
@@ -27,14 +32,11 @@ internal fun InboxBar(
 ) {
     val matching = state.matching
     val results = remember(messages, matching, filters) { searchMessages(messages, matching, filters) }
-    val list = ListActions(results, matching.accounts.singleOrNull(), actions, state::startSearch, onFilters, onCompose)
-    val behavior = actions.behavior()
-    val layout = behavior.barLayout(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke())
+    val list = ListSubject(results, matching.accounts.singleOrNull(), state::startSearch, onFilters, onCompose)
+    val subject = ActionSubject(actions, list = list)
     MailActionBar(
-        layout,
-        list::offer,
+        actions.saved().barFor(ActionBarPlace.Inbox, actions.cleanup?.listRole?.invoke(), subject::offer),
         onAction = { it.run() },
-        Minimized(hidden = state.searching).takeIf { behavior.minimizedBar },
-        everyAction = behavior.everyAction(ActionBarPlace.Inbox, list::offer),
+        minimized = Minimized(hidden = state.searching),
     )
 }

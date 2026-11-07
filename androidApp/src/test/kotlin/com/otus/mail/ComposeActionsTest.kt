@@ -8,21 +8,23 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.original
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.MessageMarks
-import com.otus.mail.feature.inbox.presentation.MessageMoves
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.original
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.MessageMarks
+import com.otus.mail.core.messages.presentation.MessageMoves
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.feature.inbox.presentation.components.ReadView
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -45,31 +47,48 @@ class ComposeActionsTest {
             "Compilers",
             "Hello",
             ReceivedAt("2026-10-04", "09:30"),
-            MailLocation("Inbox", "Work", "work", "me@example.org"),
+            MailLocation("Inbox", "Work", "work", "me@example.org", mailboxRole = MailboxRole.Inbox),
             emailId = "m1",
             to = listOf(MailSender("Me", "ME@example.org"), MailSender("Ada", "ada@example.org")),
             cc = listOf(MailSender("Grace", "grace@example.org"), MailSender("Alan", "alan@example.org")),
         )
 
     private fun start(
-        behavior: MailBehavior = MailBehavior(),
+        actions: ActionBehavior = ActionBehavior(),
         shown: MailMessage = message,
     ) {
-        val actions =
+        val messageActions =
             MessageActions(
                 moves = MessageMoves(targets = { emptyList() }, onMove = { _, _ -> }, suggested = { null }) { null },
                 marks = MessageMarks(can = { _, _ -> false }, set = { _, _, _ -> }),
                 ruleForSender = { null },
                 readLater = { null },
-                behavior = { behavior },
+                saved = { actions },
+                markReadOnOpen = { true },
+                cleanup = null,
             )
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
                     InboxScreen(
                         listOf(shown),
-                        context = InboxContext(onCompose = { requests += it }),
-                        messageActions = actions,
+                        context =
+                            inboxContext {
+                                onCompose = { requests += it }
+                                readView =
+                                    ReadView { opened ->
+                                        val read = readContext { onCompose = { requests += it } }
+                                        MessageScreen(
+                                            opened.message,
+                                            messageActions,
+                                            null,
+                                            read,
+                                            emptySet(),
+                                            opened.close,
+                                        )
+                                    }
+                            },
+                        messageActions = messageActions,
                     )
                 }
             }
@@ -98,7 +117,7 @@ class ComposeActionsTest {
     @Test
     fun replyAllCountsEveryoneElseOnceAndForwardIsInTheMenu() {
         val replyAll = ActionBarLayout(listOf(MailAction.Archive), MailAction.ReplyAll)
-        start(MailBehavior(actionBar = MailBehavior().actionBar + (ActionBarPlace.Message to replyAll)))
+        start(ActionBehavior(bars = ActionBehavior().bars + (ActionBarPlace.Message to replyAll)))
         compose.onNodeWithText("Compilers").performClick()
         // Grace, Ada, and Alan; the account's own address is left out.
         button("Reply all, to 3 people").performClick()

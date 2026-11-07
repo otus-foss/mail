@@ -72,4 +72,29 @@ class ChangeGroupTest {
             changesIn(builds),
         )
     }
+
+    /**
+     * The lines nightly.yml's `sed` filter keeps, as tools/tests/test_nightly_notes.py lists them:
+     * each must become a change here too, or the notes show a build with nothing in it.
+     */
+    @Test
+    fun everyLineTheNightlyFilterKeepsBecomesAChange() {
+        val kept =
+            listOf(
+                "- feat(inbox): add filters (#177)",
+                "- fix: close the sheet",
+                "- perf(design-system): draw less",
+                "- feat(accounts)!: change account setup",
+                "- fix!: change defaults",
+            )
+        assertEquals(
+            listOf(
+                ChangeGroup("Inbox", listOf("Add filters")),
+                ChangeGroup("General", listOf("Close the sheet", "Change defaults")),
+                ChangeGroup("Design system", listOf("Draw less")),
+                ChangeGroup("Accounts", listOf("Change account setup")),
+            ),
+            changesIn(listOf(NightlyBuild(142, "", kept))),
+        )
+    }
 }

@@ -8,12 +8,15 @@ import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.QueryMethod
 import com.otus.jmap.SetMethod
+import com.otus.jmap.contacts.ContactCardFilter
 import com.otus.jmap.contacts.ContactCardType
+import com.otus.jmap.contacts.cardPatch
 import com.otus.jmap.contacts.toCreation
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jscontact.Card
 import com.otus.jscontact.Media
+import com.otus.mail.core.cache.CacheStorageException
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.cache.withAccount
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -28,7 +31,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 /**
@@ -37,24 +39,25 @@ import kotlinx.serialization.json.put
  */
 internal class JmapContactRepository(
     private val connections: JmapConnections,
-    private val logins: LoginStore,
     private val cache: MailCache,
 ) : ContactRepository {
     override suspend fun load(): ContactsSnapshot =
         coroutineScope {
             val loaded =
-                withContext(Dispatchers.IO) { logins.logins() }
-                    .map { login -> async { login to runCatching { loadLogin(login) } } }
+                connections
+                    .savedLogins()
+                    .map { login -> async { login to loadedOrNull(login) } }
                     .awaitAll()
-            val failed = loaded.filter { (_, result) -> result.isFailure }.map { it.first }
+            val failed = loaded.filter { (_, contacts) -> contacts == null }.map { it.first }
             // A login the server did not answer for shows what the device kept of it.
-            val found = loaded.mapNotNull { (_, result) -> result.getOrNull() } + failed.mapNotNull { cachedLogin(it) }
+            val found = loaded.mapNotNull { (_, contacts) -> contacts } + failed.mapNotNull { cache.cachedLogin(it) }
             snapshot(found, failed.map { it.id })
         }
 
     override suspend fun cached(): ContactsSnapshot? =
-        withContext(Dispatchers.IO) { logins.logins() }
-            .mapNotNull { cachedLogin(it) }
+        connections
+            .savedLogins()
+            .mapNotNull { cache.cachedLogin(it) }
             .takeIf { it.isNotEmpty() }
             ?.let { snapshot(it, failedLogins = emptyList()) }
 
@@ -104,7 +107,7 @@ internal class JmapContactRepository(
         before: Card,
         after: Card,
     ) {
-        val patch = patch(before, after)
+        val patch = cardPatch(before, after)
         if (patch.isEmpty()) return
         val result =
             write(key.loginId) { connection ->
@@ -157,8 +160,15 @@ internal class JmapContactRepository(
             loginContacts(login, now)
         }
 
-    private suspend fun cachedLogin(login: JmapLogin): LoginContacts? =
-        cache.contacts(login.id).takeIf { it.isNotEmpty() }?.let { loginContacts(login, it) }
+    /** [loadLogin], or null when the server did not answer or the device could not keep its answer. */
+    private suspend fun loadedOrNull(login: JmapLogin): LoginContacts? =
+        try {
+            loadLogin(login)
+        } catch (expected: JmapException) {
+            null
+        } catch (expected: CacheStorageException) {
+            null
+        }
 
     /**
      * Runs a change. A missing connection or a sign-in the server rejects is
@@ -170,7 +180,7 @@ internal class JmapContactRepository(
         block: suspend (JmapConnection) -> T,
     ): T {
         val login =
-            withContext(Dispatchers.IO) { logins.logins().firstOrNull { it.id == loginId } }
+            connections.savedLogins().firstOrNull { it.id == loginId }
                 ?: throw ContactWriteException(ContactWriteFailure.Refused)
         return try {
             block(connections.connection(login))
@@ -190,11 +200,7 @@ private suspend fun JmapConnection.cardsWithUid(
     book: BookKey,
     uid: String,
 ): List<Card> {
-    val filter =
-        buildJsonObject {
-            put("inAddressBook", book.bookId)
-            put("uid", uid)
-        }
+    val filter = ContactCardFilter(inAddressBook = book.bookId, uid = uid).toFilter()
     return request {
         val query = call(QueryMethod(ContactCardType, book.accountId, filter))
         call(GetMethod(ContactCardType, book.accountId, JmapIds.Result(query.resultOf("/ids"))))
@@ -210,3 +216,7 @@ private fun snapshot(
     hasContacts = found.any { it.hasContacts } || failedLogins.isNotEmpty(),
     failedLogins = failedLogins,
 )
+
+/** [login]'s contacts as the device kept them; null when it kept none. */
+private suspend fun MailCache.cachedLogin(login: JmapLogin): LoginContacts? =
+    contacts(login.id).takeIf { it.isNotEmpty() }?.let { loginContacts(login, it) }

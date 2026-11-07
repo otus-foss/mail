@@ -12,10 +12,17 @@ current English label, and shows a sample date for each choice. Translate the la
 app's string resources when localization is added. The screen calls `state.select(choice)`;
 persistence stays outside the selection controls.
 
-At the platform entry point, construct the state with `AndroidDateFormatPreferenceStore(context)`
-or `IosDateFormatPreferenceStore()`. App wiring uses `rememberDateFormatter(state)` and passes the
-formatter to screens. Changing `state.preference` through `select` updates the composition. Preview
-and test compositions can use a state without a store.
+At the platform entry point, construct the state with `dateFormatChoice()`, the `StoredChoice` in
+the file `otus_date_format` on Android and the key `otus.date_format` on iOS. App wiring uses
+otus-meta's `rememberDateFormatter(state)`, passes the formatter to the pages, and provides it as
+`LocalDateFormatter`. Changing `state.preference` through `select` updates the composition. Preview
+and test compositions pass `inMemoryChoice()`.
+
+Weekdays, month names, times, and "Yesterday" come from otus-meta's `dateformat`
+(`formatNamedDay`, `shortWeekday`, `clockTime`, `formatRecentDay`). Named dates put the day first
+when the date format or the device locale does, so an en-US device shows "Oct 12" in the Read view
+where it showed "12 Oct" before 2026-11-06, and a day-first format shows "8 Oct" in the list where
+it showed "Oct 8". Quote headers keep the day first, since they are read while a message is parsed.
 
 ## Integration and validation
 

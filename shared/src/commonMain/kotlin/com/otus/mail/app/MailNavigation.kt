@@ -61,14 +61,14 @@ internal data class FoundSetting(
     val setting: String?,
 ) {
     companion object {
-        /** Saves the setting first, empty for none, then the page as [MailPage.Saver] does. */
+        /** Saves the setting first, empty for none, then the page as [MailPageSaver] does. */
         val Saver: Saver<FoundSetting?, List<String>> =
             Saver(
                 save = { found ->
-                    found?.let { listOf(it.setting.orEmpty()) + with(MailPage.Saver) { save(it.page) }.orEmpty() }
+                    found?.let { listOf(it.setting.orEmpty()) + with(MailPageSaver) { save(it.page) }.orEmpty() }
                 },
                 restore = { saved ->
-                    MailPage.Saver.restore(saved.drop(1))?.let { FoundSetting(it, saved.first().ifEmpty { null }) }
+                    MailPageSaver.restore(saved.drop(1))?.let { FoundSetting(it, saved.first().ifEmpty { null }) }
                 },
             )
     }

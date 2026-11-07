@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.accounts.presentation.toChipAvatar
+import com.otus.avatar.ui.presentation.toChipAvatar
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_call
 import com.otus.designsystem.shared.contacts.components.ContactFieldLook

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
+<!-- Written by otus-meta's tools/launch_colors.py from the Otus theme; do not edit. -->
 <resources>
-  <color name="otus_bg_regular">#202021</color>
+  <color name="otus_bg_regular">#161617</color>
   <color name="otus_text_1">#EBECED</color>
-  <color name="otus_accent_regular">#4D6F92</color>
+  <color name="otus_accent_regular">#5A7EA4</color>
 </resources>

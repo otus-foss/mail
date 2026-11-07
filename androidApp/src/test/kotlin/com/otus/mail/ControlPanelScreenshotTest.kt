@@ -30,14 +30,14 @@ class ControlPanelScreenshotTest {
     fun inboxInEveryTheme() =
         ThemeBase.entries.forEach { base ->
             compose.showControlInbox(palette(base))
-            compose.panelShot("inbox_top_${base.name.lowercase()}")
+            compose.screenshot("control_panel/inbox_top_${base.name.lowercase()}")
         }
 
     @Test
     fun inboxHalfCollapsed() {
         compose.showControlInbox()
         compose.holdScrolledBy(PanelTokens.collapseDistance / 2)
-        compose.panelShot("inbox_collapse_50")
+        compose.screenshot("control_panel/inbox_collapse_50")
     }
 
     @Test
@@ -45,7 +45,7 @@ class ControlPanelScreenshotTest {
         compose.showControlInbox()
         compose.onRoot().performTouchInput { swipeUp(startY = centerY + 300, endY = centerY - 300) }
         compose.waitForIdle()
-        compose.panelShot("inbox_scrolled")
+        compose.screenshot("control_panel/inbox_scrolled")
     }
 
     @Test
@@ -54,7 +54,7 @@ class ControlPanelScreenshotTest {
         compose.onNodeWithContentDescription("Search Inbox").performClick()
         compose.searchField().performTextInput("launch")
         compose.waitForIdle()
-        compose.panelShot("search")
+        compose.screenshot("control_panel/search")
     }
 
     @Test
@@ -62,7 +62,7 @@ class ControlPanelScreenshotTest {
         compose.showControlInbox()
         compose.onNodeWithContentDescription("Open filters", substring = true).performClick()
         compose.waitForIdle()
-        compose.panelShot("filters")
+        compose.screenshot("control_panel/filters")
     }
 
     @Test
@@ -72,7 +72,7 @@ class ControlPanelScreenshotTest {
         compose.onNodeWithText("Notes from Thursday").performClick()
         compose.onNodeWithText("Launch numbers").performClick()
         compose.waitForIdle()
-        compose.panelShot("selecting")
+        compose.screenshot("control_panel/selecting")
     }
 
     @Test
@@ -80,14 +80,14 @@ class ControlPanelScreenshotTest {
         compose.showControlInbox()
         compose.onNode(hasContentDescription("Showing mail from", substring = true)).performClick()
         compose.waitForIdle()
-        compose.panelShot("accounts")
+        compose.screenshot("control_panel/accounts")
     }
 
     @Test
     fun readInEveryTheme() =
         ThemeBase.entries.forEach { base ->
             compose.showControlRead(palette(base))
-            compose.panelShot("read_${base.name.lowercase()}")
+            compose.screenshot("control_panel/read_${base.name.lowercase()}")
         }
 
     @Test
@@ -96,14 +96,14 @@ class ControlPanelScreenshotTest {
         compose.onNodeWithContentDescription("Open navigation").performClick()
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.waitForIdle()
-        compose.panelShot("settings")
+        compose.screenshot("control_panel/settings")
         compose.mainClock.autoAdvance = false
         compose.onNodeWithContentDescription("Search settings").performClick()
         compose.mainClock.advanceTimeBy(SEARCH_HALF_MILLIS)
-        compose.panelShot("settings_search_50")
+        compose.screenshot("control_panel/settings_search_50")
         compose.mainClock.autoAdvance = true
         compose.waitForIdle()
-        compose.panelShot("settings_search_100")
+        compose.screenshot("control_panel/settings_search_100")
     }
 
     private companion object {

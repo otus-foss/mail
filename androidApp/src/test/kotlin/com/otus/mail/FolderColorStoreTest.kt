@@ -1,11 +1,9 @@
 package com.otus.mail
 
 import android.content.Context
+import com.otus.mail.core.mailbox.FolderKey
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderColors
-import com.otus.mail.feature.folders.domain.FolderKey
-import com.otus.mail.feature.folders.domain.MailFolder
-import com.otus.mail.feature.folders.domain.readColors
-import com.otus.mail.feature.folders.domain.writeColors
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,8 +22,18 @@ class FolderColorStoreTest {
         val ada = MailFolder("ada https://mail.example.org/jmap/session", "M1", "Clients")
         val bob = MailFolder("bob https://mail.example.com/jmap/session", "M1", "Clients")
         val saved = FolderColors().with(listOf(ada), "Red").with(listOf(bob), "Blue")
-        AndroidFolderColorStore(context).writeColors(saved)
-        assertEquals(saved, AndroidFolderColorStore(context).readColors())
+        testStores(context)
+            .folders.colors
+            .let(::checkNotNull)
+            .write(saved.names)
+        assertEquals(
+            saved,
+            testStores(context)
+                .folders.colors
+                .let(::checkNotNull)
+                .read()
+                .let(::FolderColors),
+        )
     }
 
     @Test
@@ -39,6 +47,12 @@ class FolderColorStoreTest {
             .putString("M2:ada", "")
             .putString("M3:ada", "Green")
             .apply()
-        assertEquals(mapOf(FolderKey("ada", "M3") to "Green"), AndroidFolderColorStore(context).readColors().names)
+        assertEquals(
+            mapOf(FolderKey("ada", "M3") to "Green"),
+            testStores(context)
+                .folders.colors
+                .let(::checkNotNull)
+                .read(),
+        )
     }
 }

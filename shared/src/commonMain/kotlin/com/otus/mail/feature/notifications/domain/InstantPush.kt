@@ -1,5 +1,13 @@
 package com.otus.mail.feature.notifications.domain
 
+import kotlin.time.Duration.Companion.minutes
+
+/**
+ * How often Mail checks for new mail where it has no pushes: Android's shortest period for
+ * repeating work, which Doze and app standby can stretch.
+ */
+val PERIODIC_CHECK = 15.minutes
+
 /** A push service, either built into Mail or supplied by an installed app. */
 data class PushDistributor(
     val id: String,

@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.otus.mail.feature.notifications.domain.AlertedMail
+import com.otus.mail.feature.notifications.presentation.opensMailFromAlert
 
 /**
  * Hears an alert's button that changes its message without opening Mail: the alert goes at once,
@@ -14,7 +15,7 @@ class AlertActionReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        val action = AlertAction.named(intent.action)?.takeIf { it != AlertAction.Reply } ?: return
+        val action = alertButton(intent.action)?.takeIf { !it.opensMailFromAlert } ?: return
         val mail = intent.mail() ?: return
         MailNotifications(context).clear(listOf(AlertedMail(mail.loginId, mail.emailId)))
         AlertActionWorker.enqueue(context, action, mail)

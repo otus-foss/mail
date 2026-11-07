@@ -2,8 +2,6 @@ package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -11,21 +9,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.paneTitle
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_contacts
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLook
+import com.otus.designsystem.shared.controls.elements.ChipRole
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FilterPanel
 import com.otus.designsystem.shared.filters.components.FilterPanelFooter
 import com.otus.designsystem.shared.filters.components.FilterPanelTitle
 import com.otus.designsystem.shared.filters.components.FilterResetAction
 import com.otus.designsystem.shared.filters.components.FilterSection
-import com.otus.designsystem.shared.filters.elements.FilterChip
-import com.otus.designsystem.shared.filters.elements.FilterChipRole
 import com.otus.designsystem.shared.pages.components.belowControlPanel
-import com.otus.designsystem.theme.tokens.layout.PageTokens
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
 import com.otus.mail.feature.contacts.domain.BookKey
 import com.otus.mail.feature.contacts.domain.ContactBook
@@ -76,15 +74,22 @@ internal fun ContactsFilterPanel(
             verticalArrangement = Arrangement.spacedBy(FilterTokens.sectionGap),
         ) {
             FilterSection("Show") {
-                FilterChip("All contacts", draft.isEmpty(), { draft = emptySet() }, role = FilterChipRole.Radio) {
-                    Symbol(Res.drawable.symbol_contacts, size = FilterTokens.chipIconSize)
+                Chip("All contacts", {
+                    draft = emptySet()
+                }, selected = draft.isEmpty(), style = ChipStyle(ChipRole.Radio, ChipLook.Raised)) {
+                    Symbol(Res.drawable.symbol_contacts, size = ControlTokens.chipIconSize)
                 }
             }
             books.groupBy { it.owner() }.forEach { (owner, owned) ->
                 FilterSection(owner) {
                     owned.forEach { book ->
-                        FilterChip(book.name, book.key in draft, { draft = draft.toggled(book.key) }) {
-                            Symbol(book.icon, size = FilterTokens.chipIconSize)
+                        Chip(
+                            book.name,
+                            { draft = draft.toggled(book.key) },
+                            selected = book.key in draft,
+                            style = ChipStyle(look = ChipLook.Raised),
+                        ) {
+                            Symbol(book.icon, size = ControlTokens.chipIconSize)
                         }
                     }
                 }

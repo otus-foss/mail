@@ -1,13 +1,18 @@
 package com.otus.mail.feature.folders.domain
 
-import com.otus.mail.core.mail.INBOX_ROLE
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderLimits
+import com.otus.mail.core.mailbox.FolderRights
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.folderTree
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class MessageFoldersTest {
-    private val inbox = MailFolder("ada", "i", "Inbox", role = INBOX_ROLE)
-    private val sent = MailFolder("ada", "s", "Sent", role = "sent")
+    private val inbox = MailFolder("ada", "i", "Inbox", role = MailboxRole.Inbox)
+    private val sent = MailFolder("ada", "s", "Sent", role = MailboxRole.Sent)
     private val later = MailFolder("ada", "l", "Read later")
     private val receipts = MailFolder("ada", "r", "Receipts")
 

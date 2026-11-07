@@ -3,7 +3,7 @@ package com.otus.mail.app
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.inbox.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.ComposeRequest
 import com.otus.mail.feature.inbox.presentation.OpenRequest
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import kotlinx.coroutines.CoroutineScope

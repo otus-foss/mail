@@ -2,18 +2,19 @@ package com.otus.mail
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.otus.designsystem.theme.colors.ThemeBase
 import com.otus.designsystem.theme.colors.ThemeChoice
-import com.otus.mail.feature.inbox.domain.DateFilter
-import com.otus.mail.feature.inbox.domain.FilterSort
-import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.SizeFilter
-import com.otus.mail.feature.inbox.domain.TypeFacet
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,38 +44,38 @@ class FilterPanelScreenshotTest {
     @Test
     fun panelDefault() {
         compose.showFilterPanel()
-        compose.onNodeWithText("Reset").assertIsNotEnabled()
-        compose.filterShot("filter_panel_default")
+        compose.onNodeWithContentDescription("Reset filters").assertIsNotEnabled()
+        compose.screenshot("filter_panel_default")
     }
 
     @Test
     fun panelDefaultLight() {
         compose.showFilterPanel(palette = light)
-        compose.filterShot("filter_panel_default_light")
+        compose.screenshot("filter_panel_default_light")
     }
 
     @Test
     fun panelDefaultBlack() {
         compose.showFilterPanel(palette = black)
-        compose.filterShot("filter_panel_default_black")
+        compose.screenshot("filter_panel_default_black")
     }
 
     @Test
     fun panelWithSelections() {
         compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts)
-        compose.filterShot("filter_panel_selections")
+        compose.screenshot("filter_panel_selections")
     }
 
     @Test
     fun panelWithSelectionsLight() {
         compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts, palette = light)
-        compose.filterShot("filter_panel_selections_light")
+        compose.screenshot("filter_panel_selections_light")
     }
 
     @Test
     fun panelWithSelectionsBlack() {
         compose.showFilterPanel(selections, options = FilterPanelFixtures.twoAccounts, palette = black)
-        compose.filterShot("filter_panel_selections_black")
+        compose.screenshot("filter_panel_selections_black")
     }
 
     @Test
@@ -88,13 +89,13 @@ class FilterPanelScreenshotTest {
                 sort = FilterSort.OldestFirst,
             )
         compose.showFilterPanel(applied, open = false, options = FilterPanelFixtures.twoAccounts)
-        compose.filterShot("filter_pills_active")
+        compose.screenshot("filter_pills_active")
     }
 
     @Test
     fun noConversations() {
         compose.showFilterPanel(InboxFilters(quick = setOf(QuickFacet.Flagged)), total = 0)
-        compose.onNodeWithText("No mails").assertIsNotEnabled()
-        compose.filterShot("filter_panel_no_conversations")
+        compose.onNodeWithContentDescription("No mails").assertIsNotEnabled()
+        compose.screenshot("filter_panel_no_conversations")
     }
 }

@@ -17,6 +17,7 @@ class NightlyNotesTests(unittest.TestCase):
         ).splitlines()
 
     def test_keeps_features_fixes_and_performance_changes(self):
+        # ChangeGroupTest.everyLineTheNightlyFilterKeepsBecomesAChange parses these same lines.
         notes = [
             "- feat(inbox): add filters (#177)",
             "- fix: close the sheet",

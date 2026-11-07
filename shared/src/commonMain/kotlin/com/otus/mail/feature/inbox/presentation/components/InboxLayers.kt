@@ -1,40 +1,17 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
 import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.InboxState
 
-/**
- * The [overlays] over the inbox of [listed] mail, each grown out of the control panel's place that
- * [anchor] measures on [page]. A search hit opens through [rows], as a row in the list would.
- */
+/** The account switcher over [page], grown out of the control panel's [panelHeight]. */
 @Composable
 internal fun InboxLayers(
-    state: InboxState,
-    listed: ListedMail,
-    anchor: FilterAnchor,
     page: InboxContext,
-    dates: HitDates,
+    panelHeight: Dp,
     overlays: InboxOverlays,
-    rows: InboxRows,
 ) {
-    if (!overlays.filtersInPanel) {
-        InboxFilterLayer(
-            overlays.filters,
-            listed.messages,
-            dates.formatter,
-            anchor,
-            page.title,
-        )
-    }
     page.scope?.let {
-        InboxAccountSwitcher(it, page.title, overlays.accountsOpen, anchor.height()) { overlays.accountsOpen = false }
-    }
-    // A page whose panel grows searches in it; others keep the search surface over the panel.
-    if (!overlays.filtersInPanel) InboxSearchLayer(state, listed, anchor.height(), dates) { rows.gestures.onOpen(it) }
-    overlays.filter?.let { selected ->
-        InboxFilterSheet(selected, listed.messages, state.search, page, dates.formatter, state::update) {
-            overlays.filter = null
-        }
+        InboxAccountSwitcher(it, page.title, overlays.accountsOpen, panelHeight) { overlays.accountsOpen = false }
     }
 }

@@ -13,10 +13,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.mail.app.App
-import com.otus.mail.feature.inbox.domain.FilterLayout
-import com.otus.mail.feature.inbox.domain.FilterSection
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.domain.FilterLayout
+import com.otus.mail.core.settings.domain.FilterSection
+import com.otus.mail.core.settings.domain.ListBehavior
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,7 +55,9 @@ class DependentSettingsTest {
     @Test
     fun quickFiltersWaitUntilThePanelShowsTheirSection() {
         val sections = FilterSection.entries - FilterSection.Quick
-        openSettings(MailBehaviorState(initial = MailBehavior(filters = FilterLayout(sections = sections))))
+        openSettings(
+            MailBehaviorState(initial = MailBehavior(list = ListBehavior(filters = FilterLayout(sections = sections)))),
+        )
         compose.onNodeWithText("Mail behavior").performClick()
         row("Filter panel").performScrollTo().performClick()
         waiting("Quick filters", QUICK_REASON).assertIsDisplayed().assertIsNotEnabled()

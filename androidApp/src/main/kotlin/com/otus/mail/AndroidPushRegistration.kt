@@ -7,6 +7,7 @@ import com.otus.jmap.login.LoginStoreException
 import com.otus.jmap.push.PushStatus
 import com.otus.jmap.push.PushSubscriptions
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
+import com.otus.storage.PreferenceMap
 import org.unifiedpush.android.connector.UnifiedPush
 import org.unifiedpush.android.connector.keys.DefaultKeyManager
 import org.unifiedpush.android.connector.keys.KeyManager

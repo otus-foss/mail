@@ -43,7 +43,8 @@ the app.
 
 ## Boundaries
 
-`feature/inbox/domain` owns message values and matching. `presentation` owns screen input state.
+`core/messages/domain` owns message values shared with other features; `feature/inbox/domain` owns
+search, filters, and matching. `presentation` owns screen input state.
 Feature components receive values/callbacks; they reuse the design-system panel, pills, input,
 icons, and avatar from Meta. App wiring connects `InboxFeedState` to the domain's `MailSource`
 contract and the `JmapMailSource` data implementation, then supplies messages to `InboxScreen`.
@@ -164,7 +165,9 @@ search; scrolling a search near its end loads more pages of the same mailboxes.
 A folder opened from the sidebar uses the same screen. `InboxContext` gives it its default scope
 (every message of that folder, not the Inbox scope), its search prompt ("Search <folder>"), and its
 empty-state title. Closing search and clearing filters return to that default. Folder pages offer
-no inbox choices. `MailSource.messages(MailScope)` loads named mailboxes across accounts, folders
+no inbox choices. `ListPage` builds the inputs of the Inbox and of every folder page, so a folder
+page pulls down into the same quick view, searches in the same search room, grows the same
+filters, and has the same scope switcher as the Inbox. `MailSource.messages(MailScope)` loads named mailboxes across accounts, folders
 with a shared role through `MailScope.Role`, or selected folders from their own accounts. The
 unified inbox uses the inbox role. [Combined folders](folders.md#combined-folders) use the other
 system roles, and [shared folders](folders.md#shared-folders) load each account's folder at their
@@ -192,6 +195,9 @@ the open message's **More actions** menu show them; see [action bar](action-bar.
   refused messages again, and the ones it changes get their own Undo. A refused Undo offers
   Retry the same way. `MarkOutcome` works out what Undo and Retry send, and `MessageMarking` runs
   them in the toasts' process-wide scope, so they still reach the server after a rotation.
+- Every mark, move, and cleanup is a `MailEdits` edit: each list and the open Read view show it at
+  once and take it back when the server refuses, and folder counts reload once the server saved
+  an edit that changes them.
 - Archive, Trash, and Spam move the message to the account's folder with the `archive`, `trash`,
   or `junk` role, found by role because servers name these folders differently. Each is offered
   only when that folder exists and the message is not already in it. Archive also takes the
@@ -240,7 +246,7 @@ storage.
 
 ## Message rows
 
-Each row is Meta's `ContentRow`. The first line is the subject, bold while unread, with when the
+Each row is Meta's `CompactContentRow`. The first line is the subject, bold while unread, with when the
 message arrived: the time today, "Yesterday", the weekday within the last week, and the saved date
 format before that (`receivedLabel`). The second line is the sender's name, or the address when
 the message has none.
@@ -289,7 +295,7 @@ are mark read or unread on a swipe right and delete on a swipe left. Right-to-le
 ## Inbox pills
 
 The row under the search prompt shows the user's pills in the user's order. **Mail behavior
-› Pills** opens a `SelectionSheet` that starts with the shown pills in row order. Dragging
+› Pills** opens an `OrderedChoiceSheet` that starts with the shown pills in row order. Dragging
 a pill's handle moves it, using Meta's `ReorderableColumn`, and tapping a shown pill takes it off
 the row. TalkBack and VoiceOver offer Move up and Move down on each shown pill. Below follow the
 pills to add, grouped as filters, folders every account has, and each account's own folders;
@@ -323,3 +329,11 @@ header; search still shows its own filters.
   under the pill. A message in two of the folders is listed once.
 - `MailBehaviorStore` saves the row as one value with a pill per line. Lines this version doesn't
   know are skipped.
+
+## Categories
+
+With **Mail behavior › Inbox › Categories** on, the pill row starts with the category pills:
+Primary, Transactions, Notifications, and Newsletters & promotions, each with its unread count.
+Mail sorts every message on the device from its headers, the sender, and the text it has, and the
+⋯ menu says why a message is where it is and can put all of a sender's mail in another category.
+See [categories](categories.md).

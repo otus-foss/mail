@@ -1,5 +1,7 @@
 package com.otus.mail.core.cache
 
+import com.otus.jmap.login.LoginLifecycle
+import com.otus.jmap.login.LoginLifecycleException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -15,7 +17,8 @@ import kotlinx.coroutines.withContext
  */
 internal class AccountMailCache(
     private val storage: MailCache,
-) : MailCache by storage {
+) : MailCache by storage,
+    LoginLifecycle {
     private val lock = Mutex()
     private val accounts = mutableMapOf<String, Account>()
 
@@ -52,10 +55,18 @@ internal class AccountMailCache(
      * Replacing credentials starts a new generation even when the login ID is unchanged. The login ID
      * names the same user on the same server, so the cached mail stays and nothing touches storage.
      */
-    suspend fun connected(loginId: String) = invalidate(loginId) { it.active = true }
+    override suspend fun connected(loginId: String) = invalidate(loginId) { it.active = true }
+
+    override suspend fun removing(loginId: String) {
+        try {
+            forget(loginId)
+        } catch (error: CacheStorageException) {
+            throw LoginLifecycleException(error)
+        }
+    }
 
     /** A failed removal keeps the login, but requests from before removal remain invalid. */
-    suspend fun restore(loginId: String) {
+    override suspend fun removeFailed(loginId: String) {
         val account = account(loginId)
         account.lock.withLock { account.active = true }
     }

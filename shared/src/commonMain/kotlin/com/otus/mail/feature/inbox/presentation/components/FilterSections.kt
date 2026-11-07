@@ -10,17 +10,24 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
+import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLook
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FilterSection
-import com.otus.designsystem.shared.filters.elements.FilterChip
 import com.otus.designsystem.shared.overlays.components.onPressDown
+import com.otus.designsystem.theme.tokens.controls.ControlTokens
 import com.otus.designsystem.theme.tokens.selection.FilterTokens
-import com.otus.mail.feature.inbox.domain.FilterSection
-import com.otus.mail.feature.inbox.domain.FilterSort
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.TypeFacet
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.domain.FilterSection
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.SizeFilter
-import com.otus.mail.feature.inbox.domain.TypeFacet
 import com.otus.mail.feature.inbox.presentation.FilterOptions
 import org.jetbrains.compose.resources.DrawableResource
 
@@ -119,7 +126,7 @@ private fun <T> SegmentSection(
             choices.map(label),
             choices.indexOf(selected),
             { onSelect(choices[it]) },
-            height = FilterTokens.segmentHeight,
+            height = ControlTokens.segmentHeight,
         )
     }
 }
@@ -164,5 +171,7 @@ private fun QuickChip(
     on: Boolean,
     onClick: () -> Unit,
 ) {
-    FilterChip(label, on, onClick) { Symbol(icon, size = FilterTokens.chipIconSize) }
+    Chip(label, onClick, selected = on, style = ChipStyle(look = ChipLook.Raised)) {
+        Symbol(icon, size = ControlTokens.chipIconSize)
+    }
 }

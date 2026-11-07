@@ -10,29 +10,32 @@ import com.otus.designsystem.mail.inbox.components.RowLine
 import com.otus.designsystem.mail.inbox.components.RowMark
 import com.otus.designsystem.mail.inbox.components.RowTextPart
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_reply
-import com.otus.designsystem.shared.folders.elements.FolderGlyphKind
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.feature.inbox.domain.FolderKind
-import com.otus.mail.feature.inbox.domain.ListOrder
-import com.otus.mail.feature.inbox.domain.MailListLayout
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.domain.PreviewLines
-import com.otus.mail.feature.inbox.domain.RowFolder
-import com.otus.mail.feature.inbox.domain.SenderLine
-import com.otus.mail.feature.inbox.domain.lastReceived
-import com.otus.mail.feature.inbox.domain.receivedOn
-import com.otus.mail.feature.inbox.domain.senderLine
-import com.otus.mail.feature.inbox.domain.threadSubject
+import com.otus.mail.core.mail.EmailAddressKey
+import com.otus.mail.core.messages.domain.FolderKind
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.domain.RowFolder
+import com.otus.mail.core.messages.domain.SenderLine
+import com.otus.mail.core.messages.domain.lastReceived
+import com.otus.mail.core.messages.domain.receivedOn
+import com.otus.mail.core.messages.domain.senderLine
+import com.otus.mail.core.messages.domain.threadSubject
+import com.otus.mail.core.messages.presentation.avatar
+import com.otus.mail.core.messages.presentation.listDateLabel
+import com.otus.mail.core.settings.domain.ListOrder
+import com.otus.mail.core.settings.domain.MailListLayout
+import com.otus.mail.core.settings.domain.PreviewLines
 import kotlinx.datetime.LocalDate
 
 /** How a list draws its rows: the user's Mail list settings and the user's own addresses. */
 data class RowLook(
     val layout: MailListLayout = MailListLayout(),
     val own: OwnAddresses = OwnAddresses(emptyMap()),
-    /** The avatar of each own address, by login id and lowercase address. */
-    val ownAvatars: Map<Pair<String, String>, ResolvedAvatar> = emptyMap(),
+    /** The avatar of each own address, by login id and address. */
+    val ownAvatars: Map<Pair<String, EmailAddressKey>, ResolvedAvatar> = emptyMap(),
 )
 
 /**
@@ -122,7 +125,7 @@ private fun MailMessage.rowModel(
         read = !attributes.unread,
         badge =
             receivedOn?.let {
-                look.ownAvatars[location.accountId to it.lowercase()]
+                look.ownAvatars[location.accountId to EmailAddressKey(it)]
                     ?: ResolvedAvatar(generatedAvatar(location.account, it))
             },
     )
@@ -155,16 +158,8 @@ private fun Int.morePart(): List<RowTextPart> =
 
 private fun RowFolder.icon(): RowFolderIcon =
     when (kind) {
-        FolderKind.Inbox -> {
-            RowFolderIcon(FolderGlyphKind.Inbox, color = null)
-        }
-
-        FolderKind.Folder -> {
-            RowFolderIcon(
-                FolderGlyphKind.Folder,
-                FolderColor.named(color).takeIf { it != FolderColor.Default },
-            )
-        }
+        FolderKind.Inbox -> RowFolderIcon(color = null, icon = Res.drawable.symbol_inbox)
+        FolderKind.Folder -> RowFolderIcon(FolderColor.named(color).takeIf { it != FolderColor.Default })
     }
 
 /** What TalkBack reads for the row, built from what it shows. */

@@ -6,8 +6,8 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.PeopleField
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.PeopleField
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -21,7 +21,7 @@ class JmapPeopleSearchTest {
             val store = FailsAfterFirstList(InMemoryLoginStore().apply { save(ada, "secret") })
             val engine = MockEngine { error("The search must not reach the server") }
             val grace = MailSender("Grace Hopper", "grace@navy.example")
-            val search = JmapPeopleSearch(JmapConnections(JmapClient(engine), store), store, { _, _ -> listOf(grace) })
+            val search = JmapPeopleSearch(JmapConnections(JmapClient(engine), store), { _, _ -> listOf(grace) })
             assertEquals(listOf(grace), search.find(PeopleField.From, "gra", logins = null).map { it.person })
         }
 

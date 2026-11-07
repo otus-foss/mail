@@ -2,11 +2,13 @@ package com.otus.mail.testing
 
 import com.otus.jmap.login.JmapLogin
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+import kotlinx.coroutines.CoroutineDispatcher
 
 /** Ada's login at the mock server, which accepts her with the password `secret`. */
 val ADA_LOGIN = JmapLogin("ada", "https://mail.example.org/.well-known/jmap", "ada@example.org", "Ada")
@@ -54,38 +56,47 @@ fun stalwartLike(
     api: (String) -> String = { error("unexpected API call: $it") },
 ): MockEngine = stalwartLike(session, emptyMap(), api)
 
-/** [stalwartLike] that also serves [files], by blob id, at [DOWNLOAD_SESSION]'s download URL. */
+/**
+ * [stalwartLike] that also serves [files], by blob id, at [DOWNLOAD_SESSION]'s download URL. It
+ * answers on [dispatcher], or on Ktor's IO threads without one.
+ */
 fun stalwartLike(
     session: String,
     files: Map<String, ByteArray>,
     api: (String) -> String,
+    dispatcher: CoroutineDispatcher? = null,
 ): MockEngine =
-    MockEngine { request ->
-        val json = headersOf(HttpHeaders.ContentType, "application/json")
-        when {
-            request.headers[HttpHeaders.Authorization] != ADA_SECRET_HEADER -> {
-                respond("", HttpStatusCode.Unauthorized)
-            }
+    MockEngine(
+        MockEngineConfig().apply {
+            this.dispatcher = dispatcher
+            addHandler { request ->
+                val json = headersOf(HttpHeaders.ContentType, "application/json")
+                when {
+                    request.headers[HttpHeaders.Authorization] != ADA_SECRET_HEADER -> {
+                        respond("", HttpStatusCode.Unauthorized)
+                    }
 
-            request.url.encodedPath == "/.well-known/jmap" -> {
-                respond("", HttpStatusCode.TemporaryRedirect, headersOf(HttpHeaders.Location, "/jmap/session"))
-            }
+                    request.url.encodedPath == "/.well-known/jmap" -> {
+                        respond("", HttpStatusCode.TemporaryRedirect, headersOf(HttpHeaders.Location, "/jmap/session"))
+                    }
 
-            request.url.encodedPath == "/jmap/session" -> {
-                respond(session, HttpStatusCode.OK, json)
-            }
+                    request.url.encodedPath == "/jmap/session" -> {
+                        respond(session, HttpStatusCode.OK, json)
+                    }
 
-            request.url.encodedPath == "/jmap/" -> {
-                respond(api((request.body as TextContent).text), HttpStatusCode.OK, json)
-            }
+                    request.url.encodedPath == "/jmap/" -> {
+                        respond(api((request.body as TextContent).text), HttpStatusCode.OK, json)
+                    }
 
-            request.url.encodedPath.startsWith("/download/") -> {
-                val blob = files[request.url.encodedPath.split('/')[3]]
-                if (blob == null) respond("", HttpStatusCode.NotFound) else respond(blob, HttpStatusCode.OK)
-            }
+                    request.url.encodedPath.startsWith("/download/") -> {
+                        val blob = files[request.url.encodedPath.split('/')[3]]
+                        if (blob == null) respond("", HttpStatusCode.NotFound) else respond(blob, HttpStatusCode.OK)
+                    }
 
-            else -> {
-                respond("", HttpStatusCode.NotFound)
+                    else -> {
+                        respond("", HttpStatusCode.NotFound)
+                    }
+                }
             }
-        }
-    }
+        },
+    )

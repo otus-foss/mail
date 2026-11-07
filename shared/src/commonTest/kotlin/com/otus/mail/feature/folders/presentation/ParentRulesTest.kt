@@ -1,9 +1,9 @@
 package com.otus.mail.feature.folders.presentation
 
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.AddressField
 import com.otus.mail.feature.folders.domain.AddressMatch
 import com.otus.mail.feature.folders.domain.FolderRule
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.RuleCondition
 import kotlin.test.Test
 import kotlin.test.assertEquals

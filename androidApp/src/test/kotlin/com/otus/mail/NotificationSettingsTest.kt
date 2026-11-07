@@ -7,9 +7,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import com.github.takahirom.roborazzi.captureRoboImage
 import com.otus.mail.app.App
 import com.otus.mail.feature.notifications.domain.InstantPush
 import com.otus.mail.feature.notifications.domain.PushDeliveryStatus
@@ -40,7 +38,7 @@ class NotificationSettingsTest {
     fun choosingAPushAppConnectsEachAccount() {
         val push = FakeNotificationPush(listOf(ntfy))
         open(push)
-        compose.onNodeWithText("New mail every 15 minutes").assertIsDisplayed()
+        compose.onNodeWithText("Off, checks about every 15 minutes").assertIsDisplayed()
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithText("Off, checks about every 15 minutes").assertIsDisplayed()
         compose.onNodeWithText("Instant delivery").performClick()
@@ -83,8 +81,8 @@ class NotificationSettingsTest {
                 status = PushDeliveryStatus.VapidRequired
             }
         open(push)
-        compose.onNodeWithText("Delivery through Google Play services").assertIsDisplayed()
-        compose.onRoot().captureRoboImage("src/test/screenshots/notifications/google-settings.png")
+        compose.onNodeWithText("Through Google Play services").assertIsDisplayed()
+        compose.screenshot("notifications/google-settings")
         compose.onNodeWithText("Notifications").performClick()
         compose.onNodeWithText("The server doesn't support Google delivery.").assertIsDisplayed()
         compose.onAllNodesWithText("Connecting").assertCountEquals(0)
@@ -100,7 +98,7 @@ class NotificationSettingsTest {
                 "For instant delivery, enable Google Play services or install a UnifiedPush app such as ntfy.",
             ).assertIsDisplayed()
         compose.onAllNodesWithText("Accounts").assertCountEquals(0)
-        compose.onRoot().captureRoboImage("src/test/screenshots/notifications/google-unavailable.png")
+        compose.screenshot("notifications/google-unavailable")
     }
 
     @Test

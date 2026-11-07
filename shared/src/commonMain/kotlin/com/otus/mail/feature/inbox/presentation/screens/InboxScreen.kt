@@ -11,49 +11,44 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.dp
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.actionbar.components.ActionBarHost
 import com.otus.designsystem.shared.pages.components.SlidingOverlay
 import com.otus.designsystem.shared.pages.components.belowControlPanel
-import com.otus.designsystem.shared.panels.components.PanelExpansion
+import com.otus.designsystem.shared.pages.elements.hiddenWhen
 import com.otus.designsystem.theme.typography.panelTextStyle
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.InboxSearch
-import com.otus.mail.feature.inbox.domain.MailMessage
 import com.otus.mail.feature.inbox.domain.scopeToLoad
 import com.otus.mail.feature.inbox.presentation.InboxContext
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import com.otus.mail.feature.inbox.presentation.InboxState
 import com.otus.mail.feature.inbox.presentation.InboxStatus
-import com.otus.mail.feature.inbox.presentation.MessageActions
-import com.otus.mail.feature.inbox.presentation.components.BackHandler
-import com.otus.mail.feature.inbox.presentation.components.ExpandedInbox
-import com.otus.mail.feature.inbox.presentation.components.ExpandedInboxContent
-import com.otus.mail.feature.inbox.presentation.components.HitDates
+import com.otus.mail.feature.inbox.presentation.components.CategoryView
 import com.otus.mail.feature.inbox.presentation.components.InboxEmptyState
 import com.otus.mail.feature.inbox.presentation.components.InboxHeaderActions
 import com.otus.mail.feature.inbox.presentation.components.InboxLayers
-import com.otus.mail.feature.inbox.presentation.components.InboxOverlays
 import com.otus.mail.feature.inbox.presentation.components.InboxPanel
 import com.otus.mail.feature.inbox.presentation.components.InboxPanelActions
 import com.otus.mail.feature.inbox.presentation.components.InboxResults
-import com.otus.mail.feature.inbox.presentation.components.InboxRows
-import com.otus.mail.feature.inbox.presentation.components.ListedMail
+import com.otus.mail.feature.inbox.presentation.components.OpenedMessage
 import com.otus.mail.feature.inbox.presentation.components.PanelLook
 import com.otus.mail.feature.inbox.presentation.components.PanelOpens
 import com.otus.mail.feature.inbox.presentation.components.PanelOverList
-import com.otus.mail.feature.inbox.presentation.components.QuickSources
 import com.otus.mail.feature.inbox.presentation.components.SearchFieldActions
 import com.otus.mail.feature.inbox.presentation.components.grownWith
 import com.otus.mail.feature.inbox.presentation.components.inboxBar
 import com.otus.mail.feature.inbox.presentation.components.panelSelection
-import com.otus.mail.feature.inbox.presentation.components.rememberFilterAnchor
+import com.otus.mail.feature.inbox.presentation.components.rememberActiveFilters
+import com.otus.mail.feature.inbox.presentation.components.rememberCategoryView
 import com.otus.mail.feature.inbox.presentation.components.rememberFilterSelection
 import com.otus.mail.feature.inbox.presentation.components.rememberHeaderActions
-import com.otus.mail.feature.inbox.presentation.components.rememberInboxExpansion
-import com.otus.mail.feature.inbox.presentation.components.rememberInboxOverlays
 import com.otus.mail.feature.inbox.presentation.components.rememberInboxRows
 import com.otus.mail.feature.inbox.presentation.components.rememberUnreadCount
 import com.otus.mail.feature.inbox.presentation.listFrame
@@ -65,36 +60,38 @@ fun InboxScreen(
     onOpenNavigation: () -> Unit = {},
     status: InboxStatus = InboxStatus(),
     onRefresh: () -> Unit = {},
-    context: InboxContext = InboxContext(),
+    context: InboxContext,
     messageActions: MessageActions? = null,
 ) {
     val state = rememberInboxState(context.defaultSearch)
     val rows = rememberInboxRows(messages, messageActions, context.opening)
     val filters = context.filters ?: remember { InboxFilterState() }
-    val listed = ListedMail(messages, filters.applied)
-    val unreadCount = rememberUnreadCount(listed, status.loading)
-    val anchor = rememberFilterAnchor(filters, context.filterOptions, messages, dateFormatter)
-    val page = shownPage(state, context)
+    val sorted = rememberCategoryView(context, state, messages, status, filters)
+    val unreadCount = rememberUnreadCount(sorted.listed, status.loading)
+    val activeFilters = rememberActiveFilters(filters, context.filterOptions, messages, dateFormatter)
+    var panelHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+    val page = shownPage(state, context).sortedInto(sorted)
     val headerActions = rememberHeaderActions(state, page, filters, messages, rows, onOpenNavigation, dateFormatter)
-    val overlays = headerActions.overlays
-    val selecting = rows.panelSelection(listed.messages)
+    val selecting = rows.panelSelection(sorted.listed.messages)
     ProvideTextStyle(panelTextStyle()) {
         SlidingOverlay(
             rows.opened,
             Modifier.fillMaxSize(),
             base = {
                 ActionBarHost(
-                    bar = inboxBar(listed, state, rows, messageActions, context.onCompose, headerActions),
+                    bar = inboxBar(sorted.listed, state, rows, messageActions, context.onCompose, headerActions),
                     Modifier
                         .fillMaxSize()
                         // The control panel draws behind the status bar and pads itself.
                         .belowControlPanel()
-                        .hiddenWhenCovered(rows.opened != null || overlays.coverPage(state)),
+                        // What an open message or an overlay covers, accessibility services skip too.
+                        .hiddenWhen(rows.opened != null || headerActions.overlays.coverPage()),
                 ) { barPadding ->
                     // Message rows reach the screen edges so a swipe's color does; everything else keeps the inset.
                     PanelOverList(
                         status.loading,
-                        rowsShown = messages.isNotEmpty(),
+                        rowsShown = sorted.messages.isNotEmpty(),
                         onRefresh,
                         holdInset = selecting != null,
                         expansion = headerActions.expansion,
@@ -105,25 +102,26 @@ fun InboxScreen(
                                 page,
                                 dateFormatter,
                                 headerActions,
-                                PanelLook(collapse, unreadCount, anchor.filters, selecting),
-                                anchor.measure.then(modifier),
+                                PanelLook(collapse, unreadCount, activeFilters, sorted.tabs, selecting),
+                                Modifier
+                                    .onSizeChanged { panelHeight = with(density) { it.height.toDp() } }
+                                    .then(modifier),
                             )
                         },
                     ) { topInset, collapse ->
-                        val frame = context.listFrame(state.searching, topInset, barPadding, collapse)
-                        Box(Modifier.hiddenWhenCovered(headerActions.covers(state))) {
-                            InboxResults(listed, status, state, dateFormatter, rows.gestures, frame) {
-                                InboxEmptyContent(messages, status, state, page, filters, onRefresh)
+                        val frame = page.listFrame(state.searching, topInset, barPadding, collapse)
+                        Box(Modifier.hiddenWhen(headerActions.covers(state))) {
+                            InboxResults(sorted.listed, status, state, dateFormatter, rows.gestures, frame) {
+                                InboxEmptyContent(sorted.messages, status, state, page, filters, onRefresh)
                             }
                         }
                     }
                 }
             },
         ) {
-            val cameFrom = page.cameFrom(it, state.searching || filters.applied.folders.isNotEmpty())
-            MessageScreen(it, messageActions, status.notice, page, cameFrom, rows.close)
+            page.readView.Show(OpenedMessage(it, status.notice, state.mixesFolders(filters, page), rows.close))
         }
-        InboxLayers(state, listed, anchor, page, HitDates(dateFormatter, context.rowLook.layout), overlays, rows)
+        InboxLayers(page, panelHeight, headerActions.overlays)
     }
 }
 
@@ -135,28 +133,6 @@ private fun rememberInboxState(defaultSearch: InboxSearch): InboxState =
         saver = InboxState.saver(defaultSearch),
     ) { InboxState(defaultSearch = defaultSearch) }
 
-/**
- * An open message, an overlay, or the grown panel covers what is under it, so accessibility
- * services skip it too. An overlay of its own hides the whole page; under the grown panel only the
- * list hides, as the panel holds the search and the filters.
- */
-private fun Modifier.hiddenWhenCovered(covered: Boolean): Modifier = if (covered) clearAndSetSemantics {} else this
-
-/**
- * The folders this page shows [message] from. Search, folder pills, and the filter panel's folder
- * choices, which [filtered] says are on, mix folders, so they give none.
- */
-private fun InboxContext.cameFrom(
-    message: MailMessage,
-    filtered: Boolean,
-): Set<String> =
-    read
-        ?.folders
-        ?.cameFrom
-        ?.invoke(message)
-        ?.takeIf { !filtered && folderPill == null }
-        .orEmpty()
-
 @Composable
 private fun inboxPanelActions(
     state: InboxState,
@@ -166,9 +142,9 @@ private fun inboxPanelActions(
     return InboxPanelActions(
         onChange = state::update,
         onSearchingChange = { searching -> if (searching) state.startSearch() else actions.closeSearch() },
-        onFilter = {
+        onEditSearch = {
             focus.clearFocus()
-            actions.overlays.filter = it
+            state.editSearch()
         },
         onOpenFilters = {
             focus.clearFocus()
@@ -180,8 +156,8 @@ private fun inboxPanelActions(
                     focus.clearFocus()
                     if (state.searchSurfaceOpen) state.showResults()
                 },
-                // Over the results, a page whose panel grows opens the search room again.
-                onFocus = { if (actions.expansion != null) state.editSearch() },
+                // Over the results, focusing the field opens the search room again.
+                onFocus = state::editSearch,
             ),
         onFolder = state::showFolder,
         opens =
@@ -204,7 +180,7 @@ private fun InboxHeader(
 ) {
     Box(modifier) {
         InboxPanel(
-            actions.searching(state),
+            state.searching,
             state.search,
             dateFormatter,
             context,
@@ -212,9 +188,9 @@ private fun InboxHeader(
             rememberFilterSelection(messages, state.search, context.mailboxSearch.accounts),
             look.grownWith(
                 // Over a search's results the panel does not drag open, but the filter button still grows it.
-                actions.expansion.takeIf { !state.resultsShown || it?.expanded == true },
+                actions.expansion.takeIf { !state.resultsShown || it.expanded },
                 actions.grown,
-                actions.searchFocused(state),
+                state.searchSurfaceOpen,
             ),
         )
     }
@@ -270,3 +246,13 @@ private fun shownPage(
         context.copy(title = it.label, emptyTitle = "${it.label} is empty", folderPill = it)
     } ?: context
 }
+
+/** This page naming an empty category pill, and paging for the pill's share of the mail. */
+private fun InboxContext.sortedInto(view: CategoryView): InboxContext =
+    copy(emptyTitle = view.tabs?.emptyTitle ?: emptyTitle, onLoadMore = view.onLoadMore)
+
+/** Whether search, folder filters, or a folder pill mix folders, so an opened row names none it came from. */
+private fun InboxState.mixesFolders(
+    filters: InboxFilterState,
+    page: InboxContext,
+): Boolean = searching || filters.applied.folders.isNotEmpty() || page.folderPill != null

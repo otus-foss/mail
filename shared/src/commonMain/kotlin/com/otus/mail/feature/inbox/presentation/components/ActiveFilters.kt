@@ -1,5 +1,11 @@
 package com.otus.mail.feature.inbox.presentation.components
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
@@ -8,13 +14,19 @@ import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_calendar_today
 import com.otus.designsystem.resources.symbol_straighten
 import com.otus.designsystem.resources.symbol_swap_vert
-import com.otus.mail.feature.inbox.domain.DateFilter
-import com.otus.mail.feature.inbox.domain.FilterSort
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.SizeFilter
 import com.otus.mail.feature.inbox.presentation.FilterOptions
+import com.otus.mail.feature.inbox.presentation.InboxFilterState
 
 /** One applied choice as its [pill], and what a tap on it does: [tap] removes it. */
 internal class ActiveFacet(
@@ -105,4 +117,29 @@ class ActiveFilters(
         pill: ActivePill,
         remove: (InboxFilters) -> InboxFilters,
     ) = ActiveFacet(key, { onChange(remove(applied)) }, pill)
+}
+
+/** The applied filters of [state] for the pill row, whose filter button gets focus back once the filters close. */
+@Composable
+internal fun rememberActiveFilters(
+    state: InboxFilterState,
+    options: FilterOptions,
+    messages: List<MailMessage>,
+    dateFormatter: DateFormatter,
+): ActiveFilters {
+    val button = remember { FocusRequester() }
+    var wasOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isOpen) {
+        // The button is missing only while the page is leaving, when focus does not matter.
+        if (wasOpen && !state.isOpen) button.runCatching { requestFocus() }
+        wasOpen = state.isOpen
+    }
+    return ActiveFilters(
+        state.applied,
+        options,
+        dateFormatter,
+        state::update,
+        button,
+        people = rememberFilterPeople(state, options, messages),
+    )
 }

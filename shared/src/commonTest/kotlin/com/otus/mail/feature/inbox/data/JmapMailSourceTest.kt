@@ -6,11 +6,17 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginSecret
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.feature.inbox.domain.InboxFailure
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailboxScope
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.data.receivedAt
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailboxScope
 import com.otus.mail.feature.inbox.domain.UnavailableAccount
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.FakeMailServer
+import com.otus.mail.testing.id
+import com.otus.mail.testing.mailSource
+import com.otus.mail.testing.source
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -98,7 +104,7 @@ class JmapMailSourceTest {
             val source = server.source(store())
             val snapshot =
                 source.messages(
-                    MailScope.Mailboxes(setOf(MailboxScope(null, "Inbox"), MailboxScope(null, "Receipts"))),
+                    MailScope.Mailboxes(setOf(MailboxScope.Inbox, MailboxScope(null, "Receipts"))),
                 )
             assertEquals(listOf("ada/m1", "ada/m2"), snapshot.messages.map { it.id })
             assertEquals(
@@ -138,7 +144,7 @@ class JmapMailSourceTest {
                     save(login, "secret")
                     save(login.copy(id = "work", name = "Work"), "secret")
                 }
-            val snapshot = server.source(store).messages(MailScope.Role("junk", "Spam"))
+            val snapshot = server.source(store).messages(MailScope.Role(MailboxRole.Junk))
             assertTrue(snapshot.unavailable.isEmpty())
             assertEquals(setOf("ada", "work"), snapshot.messages.map { it.location.accountId }.toSet())
             assertTrue(snapshot.messages.all { it.location.mailbox == "Spam" && it.location.mailboxId == "j" })
@@ -148,7 +154,7 @@ class JmapMailSourceTest {
     fun aLoginThatFailsIsReportedWithoutHidingOthers() =
         runTest {
             val snapshot = inbox.source(store(other)).messages(MailScope.Inbox)
-            assertEquals(listOf(UnavailableAccount("Grace", InboxFailure.SignInRejected)), snapshot.unavailable)
+            assertEquals(listOf(UnavailableAccount("Grace", MailFailure.SignInRejected)), snapshot.unavailable)
             assertEquals(2, snapshot.messages.size)
         }
 
@@ -157,11 +163,8 @@ class JmapMailSourceTest {
         runTest {
             val withoutSecret = SecretlessStore(login)
             val snapshot =
-                JmapMailSource(
-                    JmapConnections(JmapClient(stalwartLike()), withoutSecret),
-                    withoutSecret,
-                ).messages(MailScope.Inbox)
-            assertEquals(listOf(UnavailableAccount("Ada", InboxFailure.CredentialsUnavailable)), snapshot.unavailable)
+                mailSource(JmapConnections(JmapClient(stalwartLike()), withoutSecret)).messages(MailScope.Inbox)
+            assertEquals(listOf(UnavailableAccount("Ada", MailFailure.CredentialsUnavailable)), snapshot.unavailable)
         }
 
     private companion object {

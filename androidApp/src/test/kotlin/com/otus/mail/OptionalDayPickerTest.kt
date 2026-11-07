@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -43,7 +44,7 @@ class OptionalDayPickerTest {
     fun openingAndChangingMonthAndYearLeavesDayUnselected() {
         showPicker()
         choice("Day", "Any").assertIsSelected()
-        screenshot("choose-date-optional-day")
+        compose.screenshot("pickers/optional_day")
         choose("Month", "February")
         choose("Year", "2021")
         choice("Day", "Any").assertIsSelected()
@@ -75,12 +76,15 @@ class OptionalDayPickerTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
-                    InboxScreen(emptyList(), dateFormatter = DateFormatter(DateFormatPreference.YearMonthDayDashes))
+                    InboxScreen(
+                        emptyList(),
+                        dateFormatter = DateFormatter(DateFormatPreference.YearMonthDayDashes),
+                        context = inboxContext(),
+                    )
                 }
             }
         }
-        compose.openSearchResults()
-        compose.onNodeWithText("Date").performClick()
+        compose.openDateRange()
         compose.onNodeWithText("Today").performClick()
         compose.onNodeWithText(todayHeading()).performClick()
         choose("Year", "2020")
@@ -99,7 +103,13 @@ class OptionalDayPickerTest {
         choose("Year", "2020")
         compose.onNodeWithText("Go").performClick()
         compose.onNodeWithText("Done").performClick()
-        compose.onNodeWithText("Today").assertIsDisplayed()
+        compose
+            .appliedDateRange(
+                java.time.LocalDate
+                    .now()
+                    .toString(),
+            ).performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test
@@ -109,7 +119,7 @@ class OptionalDayPickerTest {
         choice("Day", "Any").assertIsSelected().assertIsDisplayed()
         compose.onNodeWithContentDescription("Close date chooser").assertIsDisplayed()
         compose.onNodeWithText("Go").assertIsDisplayed()
-        screenshot("choose-date-small-large-text")
+        compose.screenshot("pickers/optional_day_large_text")
     }
 
     private fun showPicker(fontScale: Float = 1f) {
@@ -147,6 +157,4 @@ class OptionalDayPickerTest {
         column: String,
         value: String,
     ) = compose.onNode(hasText(value) and hasAnyAncestor(hasContentDescription("$column choices")))
-
-    private fun screenshot(name: String) = compose.dialogBitmap().savePng("build/reports/pickers/$name.png")
 }

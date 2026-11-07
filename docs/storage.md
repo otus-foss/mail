@@ -14,6 +14,8 @@ strings. It knows nothing of JMAP; the callers encode and decode the objects.
 - Address books and contact cards of every account the login reaches, by account and id.
 - Sync values per login, such as the `Email` and `Thread` states and the loaded listings, and
   each contacts account's name, sharing, and `AddressBook` and `ContactCard` states.
+- The Inbox category of each listed email, with its reasons and the classifier's version; see
+  [categories](categories.md).
 
 ## Where it lives
 
@@ -33,15 +35,16 @@ secrets never go in it; they stay in the platform's protected login store.
 
 ## Attachments on the device
 
-Attachments are files on disk, not cache rows. `AttachmentCache` in `feature/inbox/data` streams
+Attachments are files on disk, not cache rows. `AttachmentCache` in `feature/read/data` streams
 each one from the account's `downloadUrl` (RFC 8620, section 6.2) through Meta's
 `JmapConnection.downloadStream`, which hands over 64 KiB pieces as they arrive. No piece outlives
 its write, so a file of any size downloads without the JMAP client's 16 MiB response limit. A
 server that sends more than the size the message gives for the part, its decoded size (RFC 8621,
 section 4.1.4), is stopped, so it cannot fill the disk.
 
-- `core/files/DownloadFolder` is the platform contract. A file lives in `<group>/<id>/` under its
-  own name, so the app that opens it sees that name. The group is the SHA-256 of the login id and
+- `core/files/DownloadFolder` is the contract, and `FileDownloadFolder` keeps it on disk on both
+  platforms through kotlinx-io; each platform adds only file times, its folder setup, and which
+  errors mean the disk failed. A file lives in `<group>/<id>/` under its own name, so the app that opens it sees that name. The group is the SHA-256 of the login id and
   the id the SHA-256 of the blob id and file name, so names from the sender never become paths.
 - While a file downloads, its bytes go to a `.partial` file that nothing else reads. A failure,
   a cancel, or a server that sends too much deletes it and keeps any earlier copy. One file
@@ -89,7 +92,12 @@ into the waiting patch. The patches only set or remove keys, so sending one twic
 more.
 
 - The waiting changes go to the server before each refresh, and after it they show again on top
-  of what the server sent.
+  of what the server sent. A refresh holds the login's queue lock while it runs, so a mark made
+  meanwhile waits for it and a confirmed mark never shows reverted.
+- After a failure, the queue wakes the background job again only when the network or the server
+  was at fault; a rejected sign-in or a missing secret waits for the next refresh.
+- The mark a send gives the message it answers, and the moves of "Move the N already here", go
+  through the queue too.
 - A change the server refuses is dropped, and its email leaves the cache, so the next refresh
   reads it again. A server that is down for now (`serverUnavailable`, `serverFail`, or
   `serverPartialFail`, RFC 8620, section 3.6.2) refuses nothing: the change waits. So does an
@@ -125,9 +133,9 @@ already in the target book counts as that card, like a matching address.
 
 ## Retention and removal
 
-At each start the app removes cached bodies of mail received more than 90 days ago
-(`trimCache` in `app/CacheUpkeep.kt`). Opening such a message fetches its body again. The other kinds stay
-until sync replaces or destroys them.
+At each start the app removes cached bodies and Inbox categories of mail received more than 90 days
+ago (`trimCache` in `app/MailCacheUpkeep.kt`). Opening such a message fetches its body again, and a
+list that shows it sorts it again. The other kinds stay until sync replaces or destroys them.
 
 The same start-up trim, `AttachmentRetention.trim`, deletes `.partial` files that an earlier process left, and downloaded
 attachments that are not kept offline and were last used more than 7 days ago. Opening or

@@ -2,6 +2,7 @@ package com.otus.mail.feature.notifications.presentation
 
 import com.otus.accounts.domain.ConnectedAccount
 import com.otus.designsystem.shared.feedback.components.InfoText
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.notifications.domain.NotificationPreviews
 import com.otus.mail.feature.notifications.domain.PreviewChoices
 
@@ -77,7 +78,7 @@ internal sealed interface PreviewTarget {
 
 /** The user's own addresses of [account]: its identities, else its sign-in name when that is one. */
 internal val ConnectedAccount.addresses: List<String>
-    get() = emailAddresses.ifEmpty { listOf(username).filter { '@' in it } }.distinctBy { it.lowercase() }
+    get() = emailAddresses.ifEmpty { listOf(username).filter { '@' in it } }.distinctBy { EmailAddressKey(it) }
 
 /**
  * How many of [accounts] and their addresses have a choice of their own, such as "1 account and

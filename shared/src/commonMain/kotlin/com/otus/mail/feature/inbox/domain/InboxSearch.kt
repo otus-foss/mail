@@ -1,11 +1,22 @@
 package com.otus.mail.feature.inbox.domain
 
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.MailboxScope
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.TypeFacet
+import com.otus.mail.core.messages.domain.lastReceived
+
 data class InboxSearch(
     val query: String = "",
     val senders: Set<String> = emptySet(),
     val dateStart: String? = null,
     val dateEnd: String? = null,
-    val mailboxes: Set<MailboxScope> = setOf(MailboxScope(null, INBOX_MAILBOX)),
+    val mailboxes: Set<MailboxScope> = setOf(MailboxScope.Inbox),
     val accounts: Set<String> = emptySet(),
     /** Where the terms must match. */
     val field: SearchField = SearchField.Anywhere,
@@ -110,15 +121,6 @@ fun selectedAccounts(
         known[id]?.let { it.copy(accountAvatar = loaded[id]?.accountAvatar ?: it.accountAvatar) }
             ?: MailLocation("", id, id)
     }
-}
-
-/** A null account scopes the mailbox name across accounts, as used by the default Inbox. */
-data class MailboxScope(
-    val account: String?,
-    val name: String,
-) {
-    fun matches(location: MailLocation): Boolean =
-        location.mailbox == name && (account == null || location.accountId == account)
 }
 
 /** Whether [query] is being typed as an email address: one word with an @ in it. */

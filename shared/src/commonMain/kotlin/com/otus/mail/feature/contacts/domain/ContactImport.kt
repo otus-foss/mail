@@ -1,6 +1,7 @@
 package com.otus.mail.feature.contacts.domain
 
 import com.otus.jscontact.Card
+import com.otus.mail.core.mail.EmailAddressKey
 
 /** What an import does with a card whose address is already in the target book. */
 enum class ImportMode(
@@ -22,10 +23,10 @@ data class ImportPlan(
     val existing: List<ContactCard>,
     val failures: List<Pair<Int, String>> = emptyList(),
 ) {
-    private val byAddress: Map<String, ContactCard> =
+    private val byAddress: Map<EmailAddressKey, ContactCard> =
         existing
             .filter { book in it.books }
-            .flatMap { card -> card.emails.map { it.value.lowercase() to card } }
+            .flatMap { card -> card.emails.map { EmailAddressKey(it.value) to card } }
             .toMap()
 
     private val inBook: Map<String, ContactCard> =
@@ -47,7 +48,7 @@ data class ImportPlan(
             ?: card.emails
                 .orEmpty()
                 .values
-                .firstNotNullOfOrNull { byAddress[it.address.lowercase()] }
+                .firstNotNullOfOrNull { byAddress[EmailAddressKey(it.address)] }
 
     val newCards: List<Card> get() = cards.filter { match(it) == null }
     val matched: List<Card> get() = cards.filter { match(it) != null }
@@ -106,12 +107,18 @@ private fun List<Card>.withFreeUids(
  * not have yet, under keys it does not use. Its books and everything it has stay as they are.
  */
 private fun Card.mergedWith(file: Card): Card {
+    val known =
+        emails
+            .orEmpty()
+            .values
+            .map { EmailAddressKey(it.address) }
+            .toSet()
     val newEmails =
         file.emails
             .orEmpty()
             .values
-            .filter { email -> emails.orEmpty().values.none { it.address.equals(email.address, ignoreCase = true) } }
-            .distinctBy { it.address.lowercase() }
+            .filter { EmailAddressKey(it.address) !in known }
+            .distinctBy { EmailAddressKey(it.address) }
     val newPhones =
         file.phones
             .orEmpty()

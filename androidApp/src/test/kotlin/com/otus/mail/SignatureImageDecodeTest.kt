@@ -1,8 +1,8 @@
 package com.otus.mail
 
 import android.graphics.Bitmap
-import com.otus.mail.feature.inbox.domain.SignatureImagePick
-import com.otus.mail.feature.inbox.domain.SignatureImages
+import com.otus.mail.core.messages.domain.SignatureImagePick
+import com.otus.mail.core.messages.domain.SignatureImages
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

@@ -3,11 +3,13 @@ package com.otus.mail.feature.inbox.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.core.messages.data.JmapEmailWriter
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.testing.ADA_LOGIN
+import com.otus.mail.testing.emailWriter
 import com.otus.mail.testing.stalwartLike
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -108,7 +110,7 @@ class MessageDeletionStateTest {
     private fun cleaner(
         mailboxes: String,
         stateMismatch: Boolean = false,
-    ): JmapMessageCleaner {
+    ): JmapEmailWriter {
         val engine =
             stalwartLike { body ->
                 val calls =
@@ -152,7 +154,7 @@ class MessageDeletionStateTest {
                 }
             }
         val store = InMemoryLoginStore().apply { save(login, "secret") }
-        return JmapMessageCleaner(JmapConnections(JmapClient(engine), store), store)
+        return emailWriter(JmapConnections(JmapClient(engine), store))
     }
 
     private fun queryReply(): String {

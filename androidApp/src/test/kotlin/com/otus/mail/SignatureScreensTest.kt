@@ -20,18 +20,18 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.DraftRepository
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.SendIdentity
-import com.otus.mail.feature.inbox.domain.Signature
-import com.otus.mail.feature.inbox.domain.SignatureImage
-import com.otus.mail.feature.inbox.domain.SignatureParts
-import com.otus.mail.feature.inbox.presentation.ComposeAccount
-import com.otus.mail.feature.inbox.presentation.SignatureEditorState
-import com.otus.mail.feature.inbox.presentation.SignaturesState
-import com.otus.mail.feature.inbox.presentation.screens.SignatureEditorScreen
-import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.DraftRepository
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.SendIdentity
+import com.otus.mail.core.messages.domain.Signature
+import com.otus.mail.core.messages.domain.SignatureImage
+import com.otus.mail.core.messages.domain.SignatureParts
+import com.otus.mail.feature.compose.presentation.ComposeAccount
+import com.otus.mail.feature.compose.presentation.SignatureEditorState
+import com.otus.mail.feature.compose.presentation.SignaturesState
+import com.otus.mail.feature.compose.presentation.screens.SignatureEditorScreen
+import com.otus.mail.feature.compose.presentation.screens.SignaturesScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -104,7 +104,7 @@ class SignatureScreensTest {
         compose.onNodeWithText("Add to replies").assertExists()
         compose.onNodeWithText("Alex Rivera · Product lead · Company A").assertExists()
         compose.onNodeWithText("Rubylabs").assertExists()
-        compose.screenshot("signatures-list")
+        compose.screenshot("compose/signatures_list")
     }
 
     @Test
@@ -120,10 +120,10 @@ class SignatureScreensTest {
         }
         compose.onNodeWithContentDescription("Signature image").performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Medium").assertExists()
-        compose.screenshot("signature-editor")
+        compose.screenshot("compose/signature_editor")
         compose.onNodeWithText("Medium").performClick().assertIsSelected()
         compose.onNodeWithContentDescription("Image options").performClick()
-        compose.screenshot("signature-image-size")
+        compose.screenshot("compose/signature_image_size")
         compose.onNodeWithText("Remove image").assertExists()
     }
 
@@ -139,7 +139,7 @@ class SignatureScreensTest {
         compose.onNodeWithText("Replaces the signature of this@companya.com.").assertExists()
         compose.onNode(hasText("Copy") and hasClickAction()).assertIsNotEnabled()
         compose.onNodeWithText("otus@rubylabs.design").performClick()
-        compose.screenshot("signature-copy")
+        compose.screenshot("compose/signature_copy")
         compose.onNode(hasText("Copy") and hasClickAction()).assertIsEnabled().performClick()
         compose.waitUntil(TIMEOUT) { copied }
         assertEquals("this@companya.com" to Signature("<p>Alex</p>", "Alex\nRubylabs"), saved.first())

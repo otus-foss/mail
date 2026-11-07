@@ -8,14 +8,16 @@ import com.otus.avatar.AvatarOrigin
 import com.otus.avatar.AvatarService
 import com.otus.avatar.AvatarStore
 import com.otus.avatar.StoredAvatar
-import com.otus.mail.core.avatar.photoSource
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailScope
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.presentation.avatar
 import com.otus.mail.feature.inbox.domain.InboxSnapshot
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailScope
-import com.otus.mail.feature.inbox.domain.MailSender
 import com.otus.mail.feature.inbox.domain.MailSource
-import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.testing.photoSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -233,7 +235,8 @@ class InboxAvatarTest {
                 AvatarService(
                     photoSource { request, _ -> image.takeIf { request.email == "me@work.example" } },
                 )
-            val location = MailLocation("Inbox", "Work", accountAddress = "me@work.example")
+            val location =
+                MailLocation("Inbox", "Work", accountAddress = "me@work.example", mailboxRole = MailboxRole.Inbox)
             val source =
                 object : MailSource {
                     override suspend fun messages(scope: MailScope) =
@@ -252,6 +255,6 @@ class InboxAvatarTest {
             "Subject",
             "Body",
             ReceivedAt("2026-10-05", "09:00"),
-            MailLocation("Inbox", "Work"),
+            MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
         )
 }

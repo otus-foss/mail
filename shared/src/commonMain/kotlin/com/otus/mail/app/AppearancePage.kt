@@ -3,39 +3,55 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.otus.dateformat.DateFormatter
-import com.otus.mail.feature.folders.domain.SharedFolder
-import com.otus.mail.feature.folders.domain.sharedFolders
+import com.otus.designsystem.mail.brand.elements.MailAppIcon
+import com.otus.mail.core.mailbox.SharedFolder
+import com.otus.mail.core.mailbox.sharedFolders
 import com.otus.mail.feature.inbox.presentation.components.MailListPreview
-import com.otus.mail.feature.inbox.presentation.components.MailLookSettings
-import com.otus.mail.feature.inbox.presentation.screens.ActionBarSettingsScreen
-import com.otus.mail.feature.inbox.presentation.screens.AllowedSendersScreen
-import com.otus.mail.feature.inbox.presentation.screens.BehaviorPage
-import com.otus.mail.feature.inbox.presentation.screens.MailBehaviorScreen
-import com.otus.mail.feature.inbox.presentation.screens.MailListSettingsScreen
-import com.otus.mail.feature.inbox.presentation.screens.PrivacyScreen
-import com.otus.settings.presentation.components.AppIconSetting
+import com.otus.mail.feature.mailsettings.presentation.components.mailListRow
+import com.otus.mail.feature.mailsettings.presentation.screens.ActionBarSettingsScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.AllowedSendersScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.MailBehaviorScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.MailListSettingsScreen
+import com.otus.mail.feature.mailsettings.presentation.screens.PrivacyScreen
+import com.otus.settings.presentation.components.PageRowSpec
+import com.otus.settings.presentation.components.SettingsSectionSpec
+import com.otus.settings.presentation.components.appIconRow
+import com.otus.settings.presentation.components.appearanceSections
 import com.otus.settings.presentation.screens.AppearanceSettingsScreen
 
-/** Appearance, where Mail adds its app icon and mail list rows to the shared page. */
+/** Appearance, the shared page with Mail's app icon and mail list rows. */
 @Composable
 internal fun AppearancePage(
     states: MailStates,
     settings: SharedSettings,
+    dateFormatter: DateFormatter,
     navigation: MailNavigation,
     back: () -> Unit,
 ) {
     AppearanceSettingsScreen(
-        settings.dateFormat,
-        settings.theme,
-        settings.animation,
-        onTheme = { navigation.go(MailPage.ThemeSettings) },
+        settings.mailAppearance(
+            mailListRow(states.behavior, dateFormatter) { navigation.go(MailPage.MailListSettings) },
+            openTheme = { navigation.go(MailPage.ThemeSettings) },
+        ),
         onBack = back,
-        look = {
-            settings.appIcon?.let { AppIconSetting(it) }
-            MailLookSettings(states.behavior.behavior) { navigation.go(MailPage.MailListSettings) }
-        },
     )
 }
+
+/**
+ * The Appearance page's sections, as the page shows them and search finds them, with Mail's App
+ * icon and [mailList] rows.
+ */
+internal fun SharedSettings.mailAppearance(
+    mailList: PageRowSpec,
+    openTheme: (setting: String?) -> Unit,
+): List<SettingsSectionSpec> =
+    appearanceSections(
+        dateFormat,
+        theme,
+        animation,
+        openTheme,
+        look = listOfNotNull(appIcon?.let { appIconRow(it) { style -> MailAppIcon(style) } }, mailList),
+    )
 
 /** How the mail list's rows read. Its preview stays empty until the list's row can draw a sample. */
 @Composable
@@ -63,20 +79,11 @@ internal fun MailBehaviorPage(
         states.behavior,
         rememberFolderPills(states),
         // Not remembered: folder colors change apart from the accounts.
-        sidebarPinOptions(states.folders.accounts, states.folderColors::groupColorOf),
-        open = { page -> navigation.go(page.mailPage) },
+        sidebarPinOptions(states.folders.all.accounts, states.folders.colors::groupColorOf),
+        behaviorPages { page -> { navigation.go(page) } },
         onBack = back,
     )
 }
-
-private val BehaviorPage.mailPage: MailPage
-    get() =
-        when (this) {
-            BehaviorPage.Sidebar -> MailPage.SidebarSettings
-            BehaviorPage.FilterPanel -> MailPage.FilterPanelSettings
-            BehaviorPage.ActionBar -> MailPage.ActionBarSettings
-            BehaviorPage.Signatures -> MailPage.Signatures
-        }
 
 /** Settings › Privacy & security, or its Allowed senders page. */
 @Composable
@@ -108,7 +115,7 @@ internal fun ActionBarSettingsPage(
     ActionBarSettingsScreen(
         states.behavior,
         shared.map { it.path },
-        folderColor = { path -> shared.firstOrNull { it.path == path }?.let(states.folderColors::groupColorOf) },
+        folderColor = { path -> shared.firstOrNull { it.path == path }?.let(states.folders.colors::groupColorOf) },
         onBack = back,
     )
 }
@@ -116,4 +123,4 @@ internal fun ActionBarSettingsPage(
 /** Every account's own folders, nested ones included, for Move to buttons. */
 @Composable
 private fun rememberSharedFolders(states: MailStates): List<SharedFolder> =
-    remember(states.folders.accounts) { sharedFolders(states.folders.accounts).flatMap { it.flatten() } }
+    remember(states.folders.all.accounts) { sharedFolders(states.folders.all.accounts).flatMap { it.flatten() } }

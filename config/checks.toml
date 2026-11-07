@@ -1,0 +1,4 @@
+# What otus-meta's tools/check_architecture.py checks this repository as.
+namespace = "com.otus.mail"
+kind = "app"
+layers = ["app", "core", "feature"]

@@ -15,9 +15,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.InboxPills
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -48,16 +48,15 @@ class InboxHeaderActionsTest {
         compose.runOnUiThread {
             compose.activity.setContent {
                 CompositionLocalProvider(LocalSoftwareKeyboardController provides keyboard) {
-                    OtusTheme { InboxScreen(emptyList()) }
+                    OtusTheme { InboxScreen(emptyList(), context = inboxContext()) }
                 }
             }
         }
-        compose.openSearchResults()
+        compose.openSearch()
         compose.searchField().assertIsFocused()
-        compose.onNodeWithText("People").assertIsDisplayed()
-        compose.onNodeWithText("Date").assertIsDisplayed()
-        compose.onNodeWithText("All accounts").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Inboxes").assertDoesNotExist()
+        compose.onNodeWithText("Subject").assertIsDisplayed()
+        compose.onNodeWithText("Has files").assertIsDisplayed()
+        compose.onNodeWithContentDescription("All filters").assertIsDisplayed()
         compose.runOnIdle { assertTrue("Opening search requests the software keyboard", keyboardRequested) }
     }
 
@@ -77,7 +76,7 @@ class InboxHeaderActionsTest {
         fun show(pills: List<InboxPill>) =
             compose.runOnUiThread {
                 compose.activity.setContent {
-                    OtusTheme { InboxScreen(emptyList(), context = InboxContext(pills = InboxPills(pills))) }
+                    OtusTheme { InboxScreen(emptyList(), context = inboxContext { this.pills = InboxPills(pills) }) }
                 }
             }
 

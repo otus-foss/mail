@@ -12,15 +12,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.mail.folders.components.RuleChipLine
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.shared.actionbar.elements.BarIconButton
-import com.otus.designsystem.shared.filters.components.RuleChipLine
 import com.otus.designsystem.shared.pages.components.PageNote
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.rows.components.TrailingIcons
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.canCreateIn
 import com.otus.mail.feature.folders.domain.placeableChildren
 import com.otus.mail.feature.folders.domain.scopeOf
@@ -31,6 +31,7 @@ import com.otus.mail.feature.folders.presentation.FolderListRow
 import com.otus.mail.feature.folders.presentation.FolderRulesState
 import com.otus.mail.feature.folders.presentation.FoldersState
 import com.otus.mail.feature.folders.presentation.KnownAddress
+import com.otus.mail.feature.folders.presentation.account
 import com.otus.mail.feature.folders.presentation.components.AccountFolderGroup
 import com.otus.mail.feature.folders.presentation.components.FolderAccountPicker
 import com.otus.mail.feature.folders.presentation.components.FolderDialogs
@@ -74,7 +75,7 @@ fun FoldersScreen(
     val tree =
         FolderTreeState(collapsed, { collapsed = it }, state.listActions(colors, rulesOf, onOpenFolder) { dialog = it })
     Subpage(
-        "Folders & rules",
+        FOLDERS_TITLE,
         onBack,
         chips = { if (accounts.size > 1) FolderAccountPicker(accounts, one) { chosen = it } },
     ) {
@@ -184,3 +185,6 @@ private fun FoldersState.listActions(
 private const val ACCOUNT_KEY = "account:"
 
 private val KeysSaver = listSaver<Set<String>, String>(save = { it.toList() }, restore = { it.toSet() })
+
+/** The page's title, which the settings home and search also show. */
+const val FOLDERS_TITLE = "Folders & rules"

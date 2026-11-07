@@ -16,12 +16,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.RowLook
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,18 +36,18 @@ class ReadQuickViewTest {
     private val fixtures = ReadViewFixtures
     private val targets =
         listOf(
-            MoveTarget("in", "Inbox", FolderShortcut.Inbox),
-            MoveTarget("ar", "Archive", FolderShortcut.Archive),
-            MoveTarget("tr", "Trash", FolderShortcut.Trash),
-            MoveTarget("pr", "Projects", own = true),
+            MoveTarget("in", listOf("Inbox"), MailboxRole.Inbox),
+            MoveTarget("ar", listOf("Archive"), MailboxRole.Archive),
+            MoveTarget("tr", listOf("Trash"), MailboxRole.Trash),
+            MoveTarget("pr", listOf("Projects"), own = true),
         )
 
     private fun showThread() {
         val context =
-            InboxContext(
-                loadContent = { fixtures.content(it) },
-                read = fixtures.read(fixtures.thread, setOf("in")),
-                rowLook = RowLook(own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address)))),
+            fixtures.read(
+                fixtures.thread,
+                setOf("in"),
+                own = OwnAddresses(mapOf("acc" to listOf(fixtures.alex.address))),
             )
         compose.runOnUiThread {
             compose.activity.setContent {
@@ -85,14 +83,14 @@ class ReadQuickViewTest {
     fun pullingDownShowsTheQuickViewThenEveryDetail() {
         showThread()
         compose.waitUntil(TIMEOUT) { exists("Let's lock it in") }
-        compose.screenshot("read-quick-view-regular")
+        compose.screenshot("read/quick_view_regular")
         pull(QUICK_PULL)
-        compose.screenshot("read-quick-view-quick")
+        compose.screenshot("read/quick_view_quick")
         compose.onNodeWithText("Archive").assertIsDisplayed()
         compose.onNodeWithContentDescription("All folders").assertIsDisplayed()
         pull(DETAILS_PULL)
         compose.onNodeWithText("Show original").assertIsDisplayed()
-        compose.screenshot("read-quick-view-details")
+        compose.screenshot("read/quick_view_details")
     }
 
     @Test
@@ -103,7 +101,7 @@ class ReadQuickViewTest {
         compose.onNodeWithContentDescription("All folders").performClick()
         compose.waitUntil(TIMEOUT) { exists("Projects") && !exists("Show original") }
         compose.onNodeWithText("This message has no headers", substring = true).assertDoesNotExist()
-        compose.screenshot("read-quick-view-move-sheet")
+        compose.screenshot("read/quick_view_move_sheet")
     }
 
     private companion object {

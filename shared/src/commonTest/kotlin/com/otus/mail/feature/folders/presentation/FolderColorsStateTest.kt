@@ -1,15 +1,17 @@
 package com.otus.mail.feature.folders.presentation
 
-import com.otus.mail.core.mail.TRASH_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.core.mail.MailFailure
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.sharedFolders
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.folders.domain.FolderColorStore
-import com.otus.mail.feature.folders.domain.FolderFailure
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.READ_LATER_NAME
-import com.otus.mail.feature.folders.domain.sharedFolders
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
@@ -20,9 +22,9 @@ import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FolderColorsStateTest {
-    private class MemoryStore :
-        MemoryMapStore(),
-        FolderColorStore
+    private class MemoryStore : MemoryMapStore() {
+        val typed = DeviceStore(this, FolderColorStore)
+    }
 
     /** Deletes every folder unless [refuse] is set. */
     private class Deletes(
@@ -45,11 +47,15 @@ class FolderColorsStateTest {
         override suspend fun place(placement: FolderPlacement) = FolderOutcome.Done(placement.folder.id)
 
         override suspend fun delete(folder: MailFolder) =
-            if (refuse) FolderOutcome.Failed(FolderFailure.NotPermitted) else FolderOutcome.Done(folder.id)
+            if (refuse) {
+                FolderOutcome.Failed(FolderFailure.Mail(MailFailure.NotPermitted))
+            } else {
+                FolderOutcome.Done(folder.id)
+            }
     }
 
     private val clients = MailFolder("ada", "M1", "Clients")
-    private val trash = MailFolder("ada", "M0", "Trash", role = TRASH_ROLE)
+    private val trash = MailFolder("ada", "M0", "Trash", role = MailboxRole.Trash)
     private val readLater = MailFolder("ada", "M2", READ_LATER_NAME)
     private val ada = AccountFolders("ada", "Ada", listOf(trash, clients, readLater), readLaterId = "M2")
 
@@ -57,7 +63,7 @@ class FolderColorsStateTest {
     fun theSwitchHidesColorsWithoutForgettingThem() {
         val store = MemoryStore()
         var shown = true
-        val state = FolderColorsState(store, { listOf(ada) }) { shown }
+        val state = FolderColorsState(store.typed, { listOf(ada) }) { shown }
         state.setColor(listOf(clients), "Orange")
         val group = sharedFolders(listOf(ada)).single()
         assertEquals("Orange", state.colorOf(clients))
@@ -66,13 +72,13 @@ class FolderColorsStateTest {
         shown = false
         assertNull(state.colorOf(clients))
         assertNull(state.groupColorOf(group))
-        assertEquals("Orange", FolderColorsState(store, { listOf(ada) }).colorOf(clients))
+        assertEquals("Orange", FolderColorsState(store.typed, { listOf(ada) }).colorOf(clients))
     }
 
     @Test
     fun roleFoldersAndReadLaterStayUncolored() {
         val store = MemoryStore()
-        val state = FolderColorsState(store, { listOf(ada) })
+        val state = FolderColorsState(store.typed, { listOf(ada) })
         state.setColor(listOf(trash, readLater, clients), "Red")
         assertNull(state.colorOf(trash))
         assertNull(state.colorOf(readLater))
@@ -83,7 +89,7 @@ class FolderColorsStateTest {
     @Test
     fun choosingTheDefaultForgetsTheColor() {
         val store = MemoryStore()
-        val state = FolderColorsState(store, { listOf(ada) })
+        val state = FolderColorsState(store.typed, { listOf(ada) })
         state.setColor(listOf(clients), "Teal")
         state.setColor(listOf(clients), null)
         assertNull(state.colorOf(clients))
@@ -94,7 +100,7 @@ class FolderColorsStateTest {
     fun aChangeAfterAnAccountIsRemovedDoesNotBringBackItsColors() {
         val store = MemoryStore()
         val bobClients = MailFolder("bob", "M1", "Clients")
-        val state = FolderColorsState(store)
+        val state = FolderColorsState(store.typed)
         state.setColor(listOf(bobClients), "Blue")
         store.saved = emptyMap()
         state.setColor(listOf(clients), "Red")
@@ -109,7 +115,7 @@ class FolderColorsStateTest {
             lateinit var colors: FolderColorsState
             val repository = Deletes(listOf(ada), refuse = true)
             val folders = FoldersState(repository, this, onDeleted = { colors.forget(it) }) { repository.accounts() }
-            colors = FolderColorsState(store, { folders.accounts })
+            colors = FolderColorsState(store.typed, { folders.accounts })
             colors.setColor(listOf(clients), "Pink")
 
             folders.delete(clients)

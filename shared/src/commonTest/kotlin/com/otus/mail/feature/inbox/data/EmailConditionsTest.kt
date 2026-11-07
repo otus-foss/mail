@@ -1,17 +1,17 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.mail.feature.inbox.domain.DateFilter
-import com.otus.mail.feature.inbox.domain.FilterSort
-import com.otus.mail.feature.inbox.domain.FolderRef
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.FilterSort
+import com.otus.mail.core.messages.domain.FolderRef
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.QuickFacet
+import com.otus.mail.core.messages.domain.ReadStatus
+import com.otus.mail.core.messages.domain.RecipientField
+import com.otus.mail.core.messages.domain.SenderKey
+import com.otus.mail.core.messages.domain.SizeFilter
+import com.otus.mail.core.messages.domain.TypeFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.domain.MailQuery
-import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.QuickFacet
-import com.otus.mail.feature.inbox.domain.ReadStatus
-import com.otus.mail.feature.inbox.domain.RecipientField
-import com.otus.mail.feature.inbox.domain.SenderKey
-import com.otus.mail.feature.inbox.domain.SizeFilter
-import com.otus.mail.feature.inbox.domain.TypeFacet
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonArray
@@ -29,7 +29,10 @@ class EmailConditionsTest {
     private fun conditions(
         query: MailQuery,
         login: String = "ada",
-    ): String? = emailConditions(query, login, now, zurich)?.let { JsonArray(it).toString() }
+    ): String? =
+        emailConditions(query, login, now, zurich)?.let { filters ->
+            JsonArray(filters.map { it.toJson() }).toString()
+        }
 
     private fun conditions(filters: InboxFilters): String? = conditions(MailQuery(filters, addresses = own))
 
@@ -191,9 +194,9 @@ class EmailConditionsTest {
             """{"operator":"AND","conditions":[""" +
                 """{"operator":"OR","conditions":[{"inMailbox":"a"},{"inMailbox":"b"}]},""" +
                 """{"notKeyword":"${'$'}seen"}]}""",
-            filter.toString(),
+            filter.toJson().toString(),
         )
-        assertEquals("""{"inMailbox":"a"}""", mailFilter(listOf("a"), emptyList()).toString())
+        assertEquals("""{"inMailbox":"a"}""", mailFilter(listOf("a"), emptyList()).toJson().toString())
     }
 
     @Test

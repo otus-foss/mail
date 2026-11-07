@@ -1,26 +1,34 @@
 package com.otus.mail.feature.inbox.data
 
-import com.otus.jmap.JmapConnection
 import com.otus.mail.core.cache.CacheKind
 import com.otus.mail.core.cache.MailCache
 import com.otus.mail.core.mail.EmailObject
-import com.otus.mail.core.mail.MailboxObject
+import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.ThreadObject
-import com.otus.mail.core.mail.mailboxes
 import com.otus.mail.core.mail.objects
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.messages.data.WantedMail
+import com.otus.mail.core.messages.data.boxes
+import com.otus.mail.core.messages.data.fetchMail
+import com.otus.mail.core.messages.data.memberIds
+import com.otus.mail.core.messages.data.saveMail
 
 /** The lists a load keeps for a login, given its mailboxes. */
-internal typealias ListingsOf = (List<MailboxObject>) -> List<ListingQuery>
+internal typealias ListingsOf = (List<MailFolder>) -> List<ListingQuery>
 
-/** One login's mail account, and how many rows a page of its lists holds. */
+/** One login's mail [account], its kept [mailboxes], and how many rows a page of its lists holds. */
 internal class MailAccountLists(
-    private val connection: JmapConnection,
-    private val accountId: String,
-    private val loginId: String,
+    private val account: MailAccount,
+    private val mailboxes: Mailboxes,
     private val cache: MailCache,
     private val page: Int,
     private val now: () -> Long,
 ) {
+    private val connection = account.connection
+    private val accountId = account.id
+    private val loginId = account.login.id
+
     /**
      * Brings the login's cache up to date: the changes since the saved states, then each list of
      * [listingsOf], by its changes where the server can say them, or again, as long as it has
@@ -28,7 +36,7 @@ internal class MailAccountLists(
      * changed.
      */
     suspend fun refresh(listingsOf: ListingsOf) {
-        val changes = connection.mailChanges(accountId, cache, loginId)
+        val changes = account.mailChanges(mailboxes, cache)
         val queries = listingsOf(changes.mailboxes)
         val saved = cache.listings(loginId, queries)
         val pages = queries.map { PageRequest(it, position = 0, limit = maxOf(page, saved[it.key]?.ids?.size ?: 0)) }
@@ -42,7 +50,7 @@ internal class MailAccountLists(
      * room for newer ones, loads its first page. Only a login without cached mailboxes refreshes.
      */
     suspend fun more(listingsOf: ListingsOf) {
-        val queries = listingsOf(cache.mailboxes(loginId))
+        val queries = listingsOf(mailboxes.cached(loginId))
         if (queries.isEmpty()) return refresh(listingsOf)
         val saved = cache.listings(loginId, queries)
         val growing = queries.filter { saved[it.key]?.hasMore != false }

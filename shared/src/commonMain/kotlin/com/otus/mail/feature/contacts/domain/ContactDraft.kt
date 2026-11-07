@@ -5,6 +5,7 @@ import com.otus.avatar.AvatarStyle
 import com.otus.avatar.ContactAvatar
 import com.otus.avatar.avatarStyle
 import com.otus.avatar.isAvatarCard
+import com.otus.avatar.toMedia
 import com.otus.avatar.withAvatarStyle
 import com.otus.avatar.withoutAvatarStyle
 import com.otus.jscontact.Anniversary
@@ -169,10 +170,13 @@ internal fun Card.withPhoto(photo: Media?): Card {
         media
             .orEmpty()
             .filterValues { it.kind != MediaKind.Photo }
-            .plus(listOfNotNull(photo?.let { (if (avatar) AVATAR_PHOTO_KEY else PHOTO_KEY) to it }))
+            .plus(listOfNotNull(photo?.let { photoKey to it }))
             .takeIf { it.isNotEmpty() }
     return copy(media = photos).let { if (avatar && photo != null) it.withoutAvatarStyle() else it }
 }
+
+/** Where this card keeps its photo: under the avatar key on an avatar card, so it stays one. */
+internal val Card.photoKey: String get() = if (isAvatarCard) AVATAR_PHOTO_KEY else PHOTO_KEY
 
 private const val PHOTO_KEY = "photo"
 

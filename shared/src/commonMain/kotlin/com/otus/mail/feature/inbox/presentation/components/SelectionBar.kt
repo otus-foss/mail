@@ -3,12 +3,18 @@ package com.otus.mail.feature.inbox.presentation.components
 import androidx.compose.runtime.Composable
 import com.otus.designsystem.shared.actionbar.components.BarContext
 import com.otus.designsystem.shared.actionbar.components.BarToken
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.BarButton
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.barLayout
-import com.otus.mail.feature.inbox.presentation.MessageActions
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.presentation.MessageActions
+import com.otus.mail.core.messages.presentation.actions.ActionSubject
+import com.otus.mail.core.messages.presentation.actions.MoveOptions
+import com.otus.mail.core.messages.presentation.actions.barFor
+import com.otus.mail.core.messages.presentation.actions.offer
+import com.otus.mail.core.messages.presentation.actions.showsSuggestedMove
+import com.otus.mail.core.messages.presentation.components.MailActionBar
+import com.otus.mail.core.messages.presentation.components.Minimized
+import com.otus.mail.core.messages.presentation.components.rememberMoveChoice
+import com.otus.mail.core.messages.presentation.components.rememberSuggestedMove
 
 /**
  * The bar for [selected] messages, which names their number beside the primary. An action they
@@ -22,23 +28,19 @@ internal fun SelectionBar(
     onDone: () -> Unit,
 ) {
     val moveChoice = rememberMoveChoice(onDone)
-    val behavior = actions.behavior()
+    val saved = actions.saved()
     val role = actions.cleanup?.listRole?.invoke()
-    val layout = behavior.barLayout(ActionBarPlace.Selection, role)
-    val suggestion = rememberSuggestedMove(selected, actions, wanted = MailAction.SuggestedMove in layout.buttons)
-    val offer = { button: BarButton -> actions.offer(selected, button, moveChoice::choose, suggestion) }
+    val suggestion =
+        rememberSuggestedMove(selected, actions, saved.showsSuggestedMove(ActionBarPlace.Selection, role))
+    val subject = ActionSubject(actions, selected, moves = MoveOptions(moveChoice::choose, suggestion))
+    val bar = saved.barFor(ActionBarPlace.Selection, role, subject::offer)
     MailActionBar(
-        layout,
-        offer = offer,
+        bar,
         onAction = { action ->
             action.run()
             if (!action.asks) onDone()
         },
-        minimized =
-            Minimized(
-                more = behavior.overflow(ActionBarPlace.Selection, offer, role),
-            ).takeIf { behavior.minimizedBar },
-        everyAction = behavior.everyAction(ActionBarPlace.Selection, offer),
+        minimized = Minimized(more = bar.more()),
         context = selectionContext(selected.size),
     )
     moveChoice.Sheet(actions)

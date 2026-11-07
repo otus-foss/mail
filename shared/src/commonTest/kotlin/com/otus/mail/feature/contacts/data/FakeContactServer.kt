@@ -3,9 +3,9 @@ package com.otus.mail.feature.contacts.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.feature.inbox.data.ids
-import com.otus.mail.feature.inbox.data.resolved
 import com.otus.mail.testing.CONTACTS_ONLY_SESSION
+import com.otus.mail.testing.ids
+import com.otus.mail.testing.resolved
 import com.otus.mail.testing.stalwartLike
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json

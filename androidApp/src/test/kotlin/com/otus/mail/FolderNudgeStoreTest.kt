@@ -1,9 +1,7 @@
 package com.otus.mail
 
-import com.otus.mail.feature.folders.domain.FolderKey
+import com.otus.mail.core.mailbox.FolderKey
 import com.otus.mail.feature.folders.domain.FolderNudges
-import com.otus.mail.feature.folders.domain.readNudges
-import com.otus.mail.feature.folders.domain.writeNudges
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,7 +25,17 @@ class FolderNudgeStoreTest {
                     FolderKey("bob https://mail.example.com/jmap/session", "M1"),
                 ),
             )
-        AndroidFolderNudgeStore(context).writeNudges(saved)
-        assertEquals(saved, AndroidFolderNudgeStore(context).readNudges())
+        testStores(context)
+            .folders.nudges
+            .let(::checkNotNull)
+            .write(saved.byLogin())
+        assertEquals(
+            saved,
+            testStores(context)
+                .folders.nudges
+                .let(::checkNotNull)
+                .read()
+                .let(FolderNudges::of),
+        )
     }
 }

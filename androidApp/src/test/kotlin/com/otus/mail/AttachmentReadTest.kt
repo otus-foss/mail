@@ -1,7 +1,7 @@
 package com.otus.mail
 
-import com.otus.mail.feature.inbox.domain.UploadException
-import com.otus.mail.feature.inbox.domain.UploadFailure
+import com.otus.mail.core.files.UploadException
+import com.otus.mail.core.files.UploadFailure
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals

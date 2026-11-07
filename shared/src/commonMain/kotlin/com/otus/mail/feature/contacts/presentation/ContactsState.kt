@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.otus.avatar.AvatarPhotoPicker
 import com.otus.avatar.ContactAvatar
+import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactDraft
@@ -36,8 +37,8 @@ internal class ContactsState(
     pickers: ContactPickers = ContactPickers(),
     private val frequent: FrequentContacts? = null,
     private val avatars: ContactAvatarUpdates? = null,
-    /** The user's own addresses, lowercase, which tell their avatar cards from other contacts. */
-    val ownAddresses: () -> Set<String> = { emptySet() },
+    /** The user's own addresses, which tell their avatar cards from other contacts. */
+    val ownAddresses: () -> Set<EmailAddressKey> = { emptySet() },
 ) {
     var snapshot by mutableStateOf<ContactsSnapshot?>(null)
         private set
@@ -90,8 +91,10 @@ internal class ContactsState(
     val mostFrequent: List<ContactPerson> by derivedStateOf {
         val scores = frequent?.scores.orEmpty()
         people
-            .map { person -> person to (person.emails.maxOfOrNull { scores[it.value.lowercase()] ?: 0.0 } ?: 0.0) }
-            .filter { (_, score) -> score > 0 }
+            .map { person ->
+                person to
+                    (person.emails.maxOfOrNull { scores[EmailAddressKey(it.value).value] ?: 0.0 } ?: 0.0)
+            }.filter { (_, score) -> score > 0 }
             .sortedByDescending { it.second }
             .take(FREQUENT_SHOWN)
             .map { it.first }

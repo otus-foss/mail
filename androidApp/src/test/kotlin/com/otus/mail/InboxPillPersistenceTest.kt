@@ -2,17 +2,22 @@ package com.otus.mail
 
 import android.content.Context
 import androidx.core.content.edit
-import com.otus.mail.core.avatar.IconSource
-import com.otus.mail.feature.inbox.domain.ActionBarLayout
-import com.otus.mail.feature.inbox.domain.ActionBarMode
-import com.otus.mail.feature.inbox.domain.ActionBarPlace
-import com.otus.mail.feature.inbox.domain.InboxPill
-import com.otus.mail.feature.inbox.domain.MailAction
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailboxStyle
-import com.otus.mail.feature.inbox.domain.SidebarCount
-import com.otus.mail.feature.inbox.domain.SidebarLayout
-import com.otus.mail.feature.inbox.domain.SidebarSection
+import com.otus.avatar.IconSource
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.ActionBarLayout
+import com.otus.mail.core.messages.domain.ActionBarMode
+import com.otus.mail.core.messages.domain.ActionBarPlace
+import com.otus.mail.core.messages.domain.MailAction
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.core.settings.domain.AvatarBehavior
+import com.otus.mail.core.settings.domain.InboxPill
+import com.otus.mail.core.settings.domain.ListBehavior
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.MailboxStyle
+import com.otus.mail.core.settings.domain.SidebarBehavior
+import com.otus.mail.core.settings.domain.SidebarCount
+import com.otus.mail.core.settings.domain.SidebarLayout
+import com.otus.mail.core.settings.domain.SidebarSection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,7 +40,7 @@ class InboxPillPersistenceTest {
             .putBoolean("read_later", true)
             .apply()
         val restored = AndroidMailBehaviorStore(context).read()
-        assertEquals(InboxPill.defaults(readLater = true), restored.pills)
+        assertEquals(InboxPill.defaults(readLater = true), restored.list.pills)
     }
 
     @Test
@@ -44,33 +49,51 @@ class InboxPillPersistenceTest {
         val saved =
             MailBehavior(
                 readLater = true,
-                pills = listOf(InboxPill.Role("archive"), InboxPill.Filter.Flagged, InboxPill.ReadLater),
+                list =
+                    ListBehavior(
+                        listOf(InboxPill.Role(MailboxRole.Archive), InboxPill.Filter.Flagged, InboxPill.ReadLater),
+                    ),
                 sidebar =
-                    SidebarLayout(
-                        sections = listOf(SidebarSection.Folders, SidebarSection.Mailboxes),
-                        hidden = setOf(SidebarSection.Mailboxes),
-                        mailboxes = MailboxStyle.Rows,
-                        counts = SidebarCount.Total,
+                    SidebarBehavior(
+                        SidebarLayout(
+                            sections = listOf(SidebarSection.Folders, SidebarSection.Mailboxes),
+                            hidden = setOf(SidebarSection.Mailboxes),
+                            mailboxes = MailboxStyle.Rows,
+                            counts = SidebarCount.Total,
+                        ),
                     ),
             )
         AndroidMailBehaviorStore(context).write(saved)
         assertEquals(saved, AndroidMailBehaviorStore(context).read())
-        AndroidMailBehaviorStore(context).write(saved.copy(pills = emptyList()))
-        assertEquals(saved.copy(pills = emptyList()), AndroidMailBehaviorStore(context).read())
+        AndroidMailBehaviorStore(context).write(saved.copy(list = saved.list.copy(pills = emptyList())))
+        assertEquals(saved.copy(list = saved.list.copy(pills = emptyList())), AndroidMailBehaviorStore(context).read())
     }
 
     @Test
     fun eachPlacesActionBarAndTheModeSurviveReopeningTheStore() {
         val context = RuntimeEnvironment.getApplication()
         val saved =
-            MailBehavior(readLater = true, actionBarMode = ActionBarMode.Fixed).copy(
-                actionBar =
-                    mapOf(
-                        ActionBarPlace.Inbox to ActionBarLayout(listOf(MailAction.Filters), MailAction.Search),
-                        ActionBarPlace.Message to ActionBarLayout(listOf(MailAction.Spam), MailAction.ReadLater),
-                        ActionBarPlace.Selection to ActionBarLayout(emptyList(), MailAction.Read),
-                        ActionBarPlace.Compose to ActionBarLayout(listOf(MailAction.Discard), MailAction.Send),
-                        ActionBarPlace.Everywhere to ActionBarLayout(listOf(MailAction.Reply), MailAction.Trash),
+            MailBehavior(
+                readLater = true,
+                actions =
+                    ActionBehavior(
+                        barMode = ActionBarMode.Fixed,
+                        bars =
+                            mapOf(
+                                ActionBarPlace.Inbox to ActionBarLayout(listOf(MailAction.Filters), MailAction.Search),
+                                ActionBarPlace.Message to
+                                    ActionBarLayout(
+                                        listOf(MailAction.Spam),
+                                        MailAction.ReadLater,
+                                    ),
+                                ActionBarPlace.Selection to ActionBarLayout(emptyList(), MailAction.Read),
+                                ActionBarPlace.Compose to ActionBarLayout(listOf(MailAction.Discard), MailAction.Send),
+                                ActionBarPlace.Everywhere to
+                                    ActionBarLayout(
+                                        listOf(MailAction.Reply),
+                                        MailAction.Trash,
+                                    ),
+                            ),
                     ),
             )
         AndroidMailBehaviorStore(context).write(saved)
@@ -85,15 +108,22 @@ class InboxPillPersistenceTest {
             .edit()
             .clear()
             .apply()
-        assertFalse(AndroidMailBehaviorStore(context).read().websiteIcons)
-        assertEquals(IconSource.Websites, AndroidMailBehaviorStore(context).read().iconSource)
+        assertFalse(AndroidMailBehaviorStore(context).read().avatars.websiteIcons)
+        assertEquals(IconSource.Websites, AndroidMailBehaviorStore(context).read().avatars.iconSource)
         val bulwark =
-            MailBehavior(websiteIcons = true, iconSource = IconSource.Bulwark, bulwarkAddress = "mail.example.net")
+            MailBehavior(
+                avatars =
+                    AvatarBehavior(
+                        websiteIcons = true,
+                        iconSource = IconSource.Bulwark,
+                        bulwarkAddress = "mail.example.net",
+                    ),
+            )
         AndroidMailBehaviorStore(context).write(bulwark)
         val read = AndroidMailBehaviorStore(context).read()
-        assertTrue(read.websiteIcons)
-        assertEquals(IconSource.Bulwark, read.iconSource)
-        assertEquals("mail.example.net", read.bulwarkAddress)
+        assertTrue(read.avatars.websiteIcons)
+        assertEquals(IconSource.Bulwark, read.avatars.iconSource)
+        assertEquals("mail.example.net", read.avatars.bulwarkAddress)
     }
 
     @Test
@@ -103,7 +133,7 @@ class InboxPillPersistenceTest {
             clear()
             putBoolean("duckduckgo_icons", true)
         }
-        assertEquals(IconSource.DuckDuckGo, AndroidMailBehaviorStore(context).read().iconSource)
+        assertEquals(IconSource.DuckDuckGo, AndroidMailBehaviorStore(context).read().avatars.iconSource)
     }
 
     @Test
@@ -115,6 +145,6 @@ class InboxPillPersistenceTest {
             .clear()
             .putBoolean("website_icons", true)
             .apply()
-        assertFalse(AndroidMailBehaviorStore(context).read().websiteIcons)
+        assertFalse(AndroidMailBehaviorStore(context).read().avatars.websiteIcons)
     }
 }

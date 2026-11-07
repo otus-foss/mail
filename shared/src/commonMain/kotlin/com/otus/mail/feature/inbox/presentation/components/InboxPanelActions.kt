@@ -1,16 +1,16 @@
 package com.otus.mail.feature.inbox.presentation.components
 
-import com.otus.mail.feature.inbox.domain.InboxPill
+import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.feature.inbox.domain.InboxSearch
 
 /**
- * Everything the inbox panel can ask its screen to do. [onFilter] opens a search filter's sheet,
- * [onOpenFilters] the filter panel, and [onFolder] shows a folder pill's mail, or none.
+ * Everything the inbox panel can ask its screen to do. [onEditSearch] opens the search room again
+ * from a search filter's chip, [onOpenFilters] grows every filter, and [onFolder] shows a folder pill's mail, or none.
  */
 class InboxPanelActions(
     val onChange: (InboxSearch) -> Unit,
     val onSearchingChange: (Boolean) -> Unit,
-    val onFilter: (InboxFilter) -> Unit,
+    val onEditSearch: () -> Unit,
     val onOpenFilters: () -> Unit,
     val field: SearchFieldActions,
     val onFolder: (InboxPill.FolderPill?) -> Unit,

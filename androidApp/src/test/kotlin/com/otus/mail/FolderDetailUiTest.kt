@@ -10,8 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.otus.mail.app.App
-import com.otus.mail.feature.folders.domain.readColors
-import com.otus.mail.feature.inbox.presentation.MailBehaviorState
+import com.otus.mail.core.settings.presentation.MailBehaviorState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -28,7 +27,7 @@ import org.robolectric.annotation.GraphicsMode
 class FolderDetailUiTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val server = FakeFolderServer()
-    private val store = InMemoryFolderColorStore()
+    private val store = inMemoryFolderColorStore()
 
     private fun openFolder(name: String) {
         compose.runOnUiThread {
@@ -77,7 +76,7 @@ class FolderDetailUiTest {
         openFolder("Receipts")
         compose.onNode(hasText("Color") and hasClickAction()).performClick()
         compose.onNode(hasText("Green") and isSelectable()).performClick()
-        assertEquals(mapOf("r" to "Green"), store.readColors().names.mapKeys { it.key.mailboxId })
+        assertEquals(mapOf("r" to "Green"), store.read().mapKeys { it.key.mailboxId })
         compose.onNodeWithText("Done").performClick()
         compose.waitUntil(TIMEOUT) { count("Done") == 0 }
         compose.onNode(hasText("Color") and hasText("Green") and hasClickAction()).assertExists()

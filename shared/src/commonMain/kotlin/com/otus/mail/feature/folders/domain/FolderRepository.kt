@@ -1,18 +1,8 @@
 package com.otus.mail.feature.folders.domain
 
-enum class FolderFailure {
-    AlreadyExists,
-    NotPermitted,
-    Invalid,
-    HasSubfolders,
-    HasMail,
-    NotFound,
-    NoMail,
-    SignInRejected,
-    CredentialsUnavailable,
-    Unreachable,
-    ServerProblem,
-}
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.FolderFailure
+import com.otus.mail.core.mailbox.MailFolder
 
 enum class FolderNameProblem { Empty, TooLong, Taken }
 

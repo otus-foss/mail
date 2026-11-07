@@ -23,17 +23,14 @@ import com.otus.designsystem.shared.feedback.components.ToastHost
 import com.otus.designsystem.shared.feedback.components.ToastState
 import com.otus.designsystem.theme.OtusTheme
 import com.otus.designsystem.theme.typography.panelTextStyle
-import com.otus.mail.feature.inbox.domain.FolderChange
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MessageFlag
-import com.otus.mail.feature.inbox.domain.OwnAddresses
-import com.otus.mail.feature.inbox.presentation.FolderShortcut
-import com.otus.mail.feature.inbox.presentation.InboxContext
-import com.otus.mail.feature.inbox.presentation.MoveTarget
-import com.otus.mail.feature.inbox.presentation.ReadContext
-import com.otus.mail.feature.inbox.presentation.ReadEffects
-import com.otus.mail.feature.inbox.presentation.RowLook
-import com.otus.mail.feature.inbox.presentation.screens.MessageScreen
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MessageFlag
+import com.otus.mail.core.messages.domain.OwnAddresses
+import com.otus.mail.core.messages.presentation.MoveTarget
+import com.otus.mail.feature.read.presentation.ReadContext
+import com.otus.mail.feature.read.presentation.ReadEffects
+import com.otus.mail.feature.read.presentation.screens.MessageScreen
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -51,9 +48,8 @@ import org.robolectric.annotation.Config
 class ReadPageActionsTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val fixtures = ReadViewFixtures
-    private val changes = RecordedPageChanges()
+    private val writer = RecordingWriter()
     private val toasts = ToastState()
-    private var applied: FolderChange? = null
     private var unsubscribed = 0
 
     private fun show(
@@ -61,18 +57,17 @@ class ReadPageActionsTest {
         pages: List<MailMessage>,
     ) {
         // Work that waits for a toast runs at once, so the test sees when it was sent.
-        val effects = ReadEffects(toasts, launch = { work -> runBlocking { work() } })
-        val read: ReadContext =
+        val context =
             fixtures.read(
                 pages,
                 setOf("in"),
-                { applied = it },
+                writer,
                 { unsubscribed++ },
-                changes = changes,
-                effects = effects,
+                own = OWN,
+                toasts = toasts,
+                launch = { work -> runBlocking { work() } },
             )
-        val context = InboxContext(loadContent = { fixtures.content(it) }, read = read, rowLook = RowLook(own = OWN))
-        val actions = fixtures.actions(targets = listOf(MoveTarget("tr", "Trash", FolderShortcut.Trash)))
+        val actions = fixtures.actions(targets = listOf(MoveTarget("tr", listOf("Trash"), MailboxRole.Trash)))
         compose.runOnUiThread {
             compose.activity.setContent {
                 OtusTheme {
@@ -110,9 +105,10 @@ class ReadPageActionsTest {
     fun marksOnAnOlderPageGoToItsOwnEmailOnly() {
         openPage("Radia Perlman")
         strip("Radia Perlman, message 3 of 6")
-        menu("Mark as unread")
+        menu("Mark unread")
         menu("Flag")
-        assertEquals(listOf("r" to MessageFlag.Read, "r" to MessageFlag.Flagged), changes.marks)
+        compose.waitForIdle()
+        assertEquals(listOf("r" to MessageFlag.Read, "r" to MessageFlag.Flagged), writer.marks)
     }
 
     @Test
@@ -120,9 +116,14 @@ class ReadPageActionsTest {
         openPage("Margaret Knuth")
         strip("Margaret Knuth, message 5 of 6")
         menu("Delete this message")
-        assertEquals(listOf("m"), changes.trashed)
-        strip("message 5 of 5")
-        compose.runOnUiThread { changes.undo() }
+        // The toast closes on its timer, which an idle wait would run out.
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(FRAME)
+        compose.onNode(hasContentDescription("message 5 of 5", substring = true)).assertExists()
+        compose.onNode(hasText("Undo") and hasClickAction()).performClick()
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertEquals(listOf("m"), writer.moved)
         strip(" of 6")
     }
 
@@ -138,11 +139,12 @@ class ReadPageActionsTest {
         compose.onNode(hasText("Inbox") and isToggleable()).performClick()
         compose.onNode(hasText("Clients") and hasClickAction()).performScrollTo().performClick()
         compose.onNode(hasText("Done") and hasClickAction()).performClick()
-        compose.waitUntil(TIMEOUT) { applied != null }
-        val change = checkNotNull(applied)
-        assertEquals(fixtures.thread.map { it.emailId }.toSet(), change.before.keys)
-        assertEquals(setOf("in", "fi", "cl"), change.after.getValue("g"))
-        assertEquals(setOf("in", "cl"), change.after.getValue("k"))
+        // The edit saves on the main thread, which the idle wait runs.
+        compose.waitForIdle()
+        val after = checkNotNull(writer.refiled)
+        assertEquals(fixtures.thread.map { it.emailId }.toSet(), after.keys)
+        assertEquals(setOf("in", "fi", "cl"), after.getValue("g"))
+        assertEquals(setOf("in", "cl"), after.getValue("k"))
     }
 
     @Test

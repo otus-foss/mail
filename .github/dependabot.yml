@@ -19,9 +19,25 @@ updates:
     groups:
       gradle:
         patterns: ["*"]
-    # com.otus libraries come from otus-meta's own releases, which the apps pin by hand.
-    ignore:
-      - dependency-name: "com.otus:*"
+    commit-message:
+      prefix: build
+      include: scope
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      pip:
+        patterns: ["*"]
+    commit-message:
+      prefix: build
+      include: scope
+  # requirements-quality.txt includes push_bridge/requirements.txt, so the pip entry covers the
+  # bridge's packages; this one covers its base image.
+  - package-ecosystem: docker
+    directory: /push_bridge
+    schedule:
+      interval: weekly
     commit-message:
       prefix: build
       include: scope

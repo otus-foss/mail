@@ -1,5 +1,9 @@
 package com.otus.mail.feature.folders.domain
 
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.folderTree
+
 /**
  * Where a dragged [folder] lands: under [parentId], or the top level when it is null, with the new
  * `sortOrder` (RFC 8621, section 2) of every folder whose number changes. One `Mailbox/set` saves it.

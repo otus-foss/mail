@@ -35,19 +35,6 @@ internal fun <T> CacheWrite.putObject(
     put(kind, id, JmapJson.encodeToString(serializer, value), receivedMillis)
 }
 
-/** The login's cached mailboxes, as the last full `Mailbox/get` saved them. */
-internal suspend fun MailCache.mailboxes(loginId: String): List<MailboxObject> =
-    allObjects(loginId, CacheKind.Mailbox, MailboxObject.serializer()).values.toList()
-
-/**
- * Replaces the login's cached mailboxes with [mailboxes], which must be fetched with
- * [MAILBOX_PROPERTIES]: the inbox and the folders share them, so neither may save fewer properties.
- */
-internal fun CacheWrite.replaceMailboxes(mailboxes: List<MailboxObject>) {
-    clear(CacheKind.Mailbox)
-    mailboxes.forEach { putObject(CacheKind.Mailbox, it.id, MailboxObject.serializer(), it) }
-}
-
 internal fun <T> Map<String, String>.decoded(serializer: KSerializer<T>): Map<String, T> =
     mapNotNull { (id, json) ->
         try {

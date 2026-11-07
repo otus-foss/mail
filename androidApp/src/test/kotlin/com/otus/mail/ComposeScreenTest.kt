@@ -22,21 +22,21 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.ComposeRequest
-import com.otus.mail.feature.inbox.domain.Draft
-import com.otus.mail.feature.inbox.domain.MailBehavior
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OriginalMessage
-import com.otus.mail.feature.inbox.domain.ScheduledSends
-import com.otus.mail.feature.inbox.domain.SentMessage
-import com.otus.mail.feature.inbox.domain.earliestPick
-import com.otus.mail.feature.inbox.presentation.ComposeAccount
-import com.otus.mail.feature.inbox.presentation.ComposeExits
-import com.otus.mail.feature.inbox.presentation.ComposeOrigin
-import com.otus.mail.feature.inbox.presentation.ComposeServices
-import com.otus.mail.feature.inbox.presentation.ComposeState
-import com.otus.mail.feature.inbox.presentation.OutgoingDraft
-import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
+import com.otus.mail.core.messages.domain.ComposeRequest
+import com.otus.mail.core.messages.domain.Draft
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OriginalMessage
+import com.otus.mail.core.messages.domain.ScheduledSends
+import com.otus.mail.core.messages.domain.SentMessage
+import com.otus.mail.core.settings.domain.ActionBehavior
+import com.otus.mail.feature.compose.domain.earliestPick
+import com.otus.mail.feature.compose.presentation.ComposeAccount
+import com.otus.mail.feature.compose.presentation.ComposeExits
+import com.otus.mail.feature.compose.presentation.ComposeOrigin
+import com.otus.mail.feature.compose.presentation.ComposeServices
+import com.otus.mail.feature.compose.presentation.ComposeState
+import com.otus.mail.feature.compose.presentation.OutgoingDraft
+import com.otus.mail.feature.compose.presentation.screens.ComposeScreen
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -97,7 +97,8 @@ class ComposeScreenTest {
                             }
                         ComposeScreen(
                             state,
-                            MailBehavior(recentFrom = listOf("this@companya.com")),
+                            ActionBehavior(),
+                            listOf("this@companya.com"),
                             object : ComposeExits {
                                 override fun close() {
                                     shown = false
@@ -142,7 +143,7 @@ class ComposeScreenTest {
         compose.onNodeWithText("New message").assertExists()
         button("Send from this@companya.com. Change").assertExists()
         button("Send").assertIsNotEnabled()
-        compose.screenshot("compose-new-empty")
+        compose.screenshot("compose/new_empty")
     }
 
     @Test
@@ -154,7 +155,7 @@ class ComposeScreenTest {
         button("Send, to Grace Hopper").assertIsEnabled()
         compose.onNodeWithText("Grace Hopper").assertExists()
         button("Attach").assertIsNotEnabled()
-        compose.screenshot("compose-new-filled")
+        compose.screenshot("compose/new_filled")
 
         button("Add Cc").performClick()
         type("Cc", "bob@example.com")
@@ -198,7 +199,7 @@ class ComposeScreenTest {
         button("Send from this@companya.com. Change").performClick()
         compose.onNodeWithText("Recent").assertExists()
         compose.onNodeWithText("Rubylabs").assertExists()
-        compose.screenshot("compose-from-dropdown")
+        compose.screenshot("compose/from_dropdown")
         compose.onNodeWithText("otus@rubylabs.design").performClick()
         compose.waitForIdle()
         button("Send from otus@rubylabs.design. Change").assertExists()
@@ -208,7 +209,7 @@ class ComposeScreenTest {
     fun theMoreMenuAddsBccAndDiscards() {
         open()
         button("More options").performClick()
-        compose.screenshot("compose-more-options")
+        compose.screenshot("compose/more_options")
         compose.onNodeWithText("Add Bcc").performClick()
         compose.onNodeWithContentDescription("Bcc").assertExists()
         button("More options").performClick()
@@ -222,17 +223,14 @@ class ComposeScreenTest {
     fun scheduleSendPicksATimeThatShowsUntilSendSchedulesIt() {
         open(ComposeRequest.Reply(original, all = false))
         button("More options").performClick()
-        compose.screenshot("compose-more-options-reply")
         compose.onNodeWithText("Schedule send").performClick()
         compose.onNodeWithText("Send later").assertExists()
         compose.onNodeWithText("Pick date and time").assertExists()
-        compose.screenshot("compose-send-later")
         compose.onNodeWithText("Tomorrow morning").performClick()
         compose.waitForIdle()
         assertFalse("Choosing a time does not send", closed)
         compose.onNodeWithText("Scheduled for", substring = true).assertExists()
         compose.onNode(hasText("Change") and hasClickAction()).assertExists()
-        compose.screenshot("compose-scheduled")
 
         compose.onNode(hasContentDescription("Send, to Grace Hopper") and hasClickAction()).performClick()
         compose.waitUntil(TIMEOUT) { closed }
@@ -247,7 +245,6 @@ class ComposeScreenTest {
         compose.onNodeWithText("Pick date and time").performClick()
         compose.onNode(hasText("Go") and hasClickAction()).performClick()
         compose.onNodeWithText("Choose time").assertExists()
-        compose.screenshot("compose-pick-time")
         // The date chooser starts on the first day with a time left, so its first hour is the earliest's.
         // The wheel opens on 08:00 when that is still ahead, so scroll it to its first hour first.
         val earliest = earliestPick(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()))

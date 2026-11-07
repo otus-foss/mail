@@ -3,12 +3,12 @@ package com.otus.mail.feature.folders.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.mail.feature.folders.domain.AccountFolders
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
 import com.otus.mail.feature.folders.domain.FolderOutcome
 import com.otus.mail.feature.folders.domain.FolderPlacement
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderStorageException
-import com.otus.mail.feature.folders.domain.MailFolder
 import com.otus.mail.feature.folders.domain.placed
 import com.otus.mail.feature.folders.domain.placement
 import com.otus.mail.feature.folders.domain.scopeOf
@@ -40,7 +40,14 @@ class FoldersState(
         private set
     private val loads = LatestLoad(scope)
 
-    fun account(accountId: String): AccountFolders? = accounts.firstOrNull { it.accountId == accountId }
+    /**
+     * Whether the folders of [accountId], or of every account without one, have loaded without
+     * failing, so a folder they lack is gone. An account that failed may still hold it.
+     */
+    fun settled(accountId: String? = null): Boolean {
+        val loaded = if (accountId == null) accounts else listOfNotNull(account(accountId))
+        return !loading && loaded.isNotEmpty() && loaded.none { it.failure != null }
+    }
 
     /** The folder with [folderId] in [accountId]'s own folders, or in the shared account [sharedIn]. */
     fun folder(
@@ -159,3 +166,6 @@ fun FoldersState.placement(
     parentId: String?,
     index: Int = Int.MAX_VALUE,
 ): FolderPlacement? = account(folder.accountId)?.scopeOf(folder)?.placement(folder, parentId, index)
+
+/** The loaded folders of [accountId]; null before they load or for an unknown account. */
+fun FoldersState.account(accountId: String): AccountFolders? = accounts.firstOrNull { it.accountId == accountId }

@@ -12,12 +12,13 @@ import com.otus.designsystem.resources.symbol_short_text
 import com.otus.designsystem.resources.symbol_work
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.dates.components.YearlyDate
 import com.otus.designsystem.shared.feedback.components.InfoText
 import com.otus.designsystem.shared.input.elements.FieldLabel
 import com.otus.designsystem.shared.overlays.components.OptionsItem
+import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.designsystem.theme.tokens.layout.PanelTokens
 import com.otus.jscontact.PartialDate
 import com.otus.mail.feature.contacts.domain.ContactLabel
 import com.otus.mail.feature.contacts.domain.DraftValue
@@ -38,13 +39,13 @@ internal fun labelChoices(
     fun choice(
         label: ContactLabel,
         icon: DrawableResource,
-    ) = OptionsItem.Action(label.text, icon, { onPick(label) }, current = label == current)
+    ) = OptionsItem.Action(UiAction(label.text, icon, onClick = { onPick(label) }), current = label == current)
     return listOf(
         choice(ContactLabel.Work, Res.drawable.symbol_work),
         choice(ContactLabel.Personal, Res.drawable.symbol_person),
         choice(ContactLabel.Other, Res.drawable.symbol_short_text),
     ) + known.map { choice(ContactLabel.Custom(it), Res.drawable.symbol_label) } +
-        OptionsItem.Action("Manage labels…", Res.drawable.symbol_settings, onManage, opens = true)
+        OptionsItem.Action(UiAction("Manage labels…", Res.drawable.symbol_settings, onClick = onManage), opens = true)
 }
 
 /** A chip with a + that adds the field it names. */
@@ -85,7 +86,7 @@ internal fun FieldGroup(
     action: (@Composable () -> Unit)? = null,
     fields: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(PanelTokens.iconGap)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.iconGap)) {
         FieldLabel(label, action = action)
         Column(verticalArrangement = Arrangement.spacedBy(PageTokens.rowGap)) { fields() }
     }

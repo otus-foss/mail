@@ -4,15 +4,13 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.otus.jscontact.JsContactJson
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.contacts.domain.ContactStore
 import com.otus.mail.feature.contacts.domain.FrequentScan
 import com.otus.mail.feature.contacts.domain.MailTraceSource
 import com.otus.mail.feature.contacts.domain.frequencyScores
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -24,11 +22,11 @@ import kotlin.time.Instant
  */
 internal class FrequentContacts(
     private val source: MailTraceSource,
-    private val store: ContactStore?,
+    private val store: DeviceStore<String, String>?,
     private val scope: CoroutineScope,
     private val now: () -> Instant = { Clock.System.now() },
 ) {
-    private var scans by mutableStateOf(decode(store?.read()?.get(ContactStore.FREQUENT)))
+    private var scans by mutableStateOf(store?.read()?.let(ContactStore.FREQUENT::of).orEmpty())
     private var scanning = false
 
     /** Every login's scores together, by lowercase address. */
@@ -57,20 +55,14 @@ internal class FrequentContacts(
                             }
                         }
                 scans = (scans + fresh).filterKeys { it in logins }
-                if (store != null) store.write(store.read() + (ContactStore.FREQUENT to encode(scans)))
+                store?.update { it + ContactStore.FREQUENT.entry(scans) }
             } finally {
                 scanning = false
             }
         }
     }
 
-    private companion object {
-        val MAX_AGE = 1.days.inWholeMilliseconds
-        val serializer = MapSerializer(String.serializer(), FrequentScan.serializer())
-
-        fun encode(scans: Map<String, FrequentScan>): String = JsContactJson.encodeToString(serializer, scans)
-
-        fun decode(saved: String?): Map<String, FrequentScan> =
-            saved?.let { runCatching { JsContactJson.decodeFromString(serializer, it) }.getOrNull() }.orEmpty()
+    companion object {
+        private val MAX_AGE = 1.days.inWholeMilliseconds
     }
 }

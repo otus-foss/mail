@@ -3,9 +3,10 @@ package com.otus.mail.feature.notifications.data
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections
 import com.otus.jmap.login.InMemoryLoginStore
+import com.otus.mail.core.cache.InMemoryMailCache
+import com.otus.mail.core.mailbox.Mailboxes
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
-import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.stalwartLike
@@ -19,15 +20,7 @@ class NewMailAccountRemovalTest {
     fun anAccountRemovedDuringTheCheckGetsNoAlert() =
         runTest {
             val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-            var saved = mapOf("ada" to "e1")
-            val states =
-                object : MailStateStore {
-                    override fun read() = saved
-
-                    override fun write(values: Map<String, String>) {
-                        saved = values
-                    }
-                }
+            val states = States(mapOf("ada" to "e1"))
             val shown = mutableListOf<NewMail>()
             val alerts =
                 object : MailAlerts {
@@ -54,8 +47,12 @@ class NewMailAccountRemovalTest {
                              "preview": "Preview", "receivedAt": "2026-10-14T08:00:00Z"}]}, "c1"]]}"""
                     }
                 })
-            JmapNewMailChecker(JmapConnections(JmapClient(server), store), store, states).check(alerts)
+            JmapNewMailChecker(
+                JmapConnections(JmapClient(server), store),
+                Mailboxes(InMemoryMailCache()),
+                states.typed,
+            ).check(alerts)
             assertEquals(emptyList(), shown)
-            assertEquals(emptyMap(), saved)
+            assertEquals(emptyMap(), states.saved)
         }
 }

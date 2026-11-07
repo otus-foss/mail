@@ -3,9 +3,9 @@ package com.otus.mail.feature.folders.presentation
 import com.otus.designsystem.shared.reorder.components.TreeDropTarget
 import com.otus.designsystem.shared.reorder.components.TreeDropTarget.Before
 import com.otus.designsystem.shared.reorder.components.TreeDropTarget.Into
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.feature.folders.domain.AccountFolders
-import com.otus.mail.feature.folders.domain.MailFolder
+import com.otus.mail.core.mailbox.AccountFolders
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
 import com.otus.mail.feature.folders.domain.placeableChildren
 import com.otus.mail.feature.folders.domain.placed
 import com.otus.mail.feature.folders.domain.placement
@@ -20,7 +20,7 @@ class FolderTreeDropTest {
         order: Long,
         parentId: String? = null,
         name: String = id,
-        role: String? = null,
+        role: MailboxRole? = null,
     ) = MailFolder("ada", id, name, parentId, role, order)
 
     private fun account(vararg folders: MailFolder) = AccountFolders("ada", "Ada", folders.toList())
@@ -28,7 +28,7 @@ class FolderTreeDropTest {
     // Rows: A, A1 and A2 inside A, B, C.
     private val ada =
         account(
-            folder("inbox", 0, role = INBOX_ROLE),
+            folder("inbox", 0, role = MailboxRole.Inbox),
             folder("A", 10),
             folder("A1", 10, parentId = "A"),
             folder("A2", 20, parentId = "A"),

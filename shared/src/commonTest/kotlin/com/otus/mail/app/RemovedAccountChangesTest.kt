@@ -2,7 +2,8 @@ package com.otus.mail.app
 
 import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.LoginStore
-import com.otus.mail.feature.inbox.domain.EmailChangeStore
+import com.otus.mail.core.messages.domain.EmailChangeStore
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.testing.ADA_LOGIN
 import com.otus.mail.testing.MemoryMapStore
 import kotlinx.coroutines.test.runTest
@@ -11,15 +12,11 @@ import kotlin.test.assertEquals
 
 /** Marks and moves of a removed account, which must not reach the account if it is added again. */
 class RemovedAccountChangesTest {
-    private class Changes :
-        MemoryMapStore(),
-        EmailChangeStore
-
     @Test
     fun aChangeQueuedWhileTheAccountIsRemovedGoesWithIt() =
         runTest {
             val saved = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
-            val changes = Changes()
+            val changes = MemoryMapStore()
             val store =
                 object : LoginStore by saved {
                     override fun remove(id: String) {
@@ -28,7 +25,8 @@ class RemovedAccountChangesTest {
                         saved.remove(id)
                     }
                 }
-            val services = MailServices(store, stores = MailDeviceStores(waiting = WaitingStores(changes = changes)))
+            val waiting = WaitingStores(changes = DeviceStore(changes, EmailChangeStore))
+            val services = MailServices(store, stores = MailDeviceStores(waiting = waiting))
             services.accounts.remove(ADA_LOGIN.id)
             assertEquals(emptyMap(), changes.saved)
         }

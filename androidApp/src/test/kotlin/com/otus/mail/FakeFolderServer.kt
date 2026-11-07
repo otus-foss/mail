@@ -5,8 +5,10 @@ import com.otus.jmap.login.InMemoryLoginStore
 import com.otus.jmap.login.JmapLogin
 import com.otus.mail.app.FolderStores
 import com.otus.mail.app.MailDeviceStores
+import com.otus.mail.app.MailPlatform
 import com.otus.mail.app.MailServices
-import com.otus.mail.feature.folders.domain.FolderColorStore
+import com.otus.mail.core.mailbox.FolderKey
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.notifications.domain.InstantPush
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -81,7 +83,7 @@ class FakeFolderServer {
     /** Signs in as Ada, and also as Bob when [withBob], who shares Ada's mailboxes and identity. */
     fun services(
         instantPush: InstantPush? = null,
-        folderColorStore: FolderColorStore? = null,
+        folderColorStore: DeviceStore<FolderKey, String>? = null,
         withBob: Boolean = false,
     ): MailServices {
         val store = InMemoryLoginStore()
@@ -92,7 +94,7 @@ class FakeFolderServer {
         return MailServices(
             store,
             stores = MailDeviceStores(FolderStores(colors = folderColorStore)),
-            instantPush = instantPush,
+            host = MailPlatform(instantPush = instantPush),
         ) {
             JmapClient(engine)
         }

@@ -3,16 +3,17 @@ package com.otus.mail.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.feedback.components.ToastMessage
-import com.otus.designsystem.shared.feedback.elements.ToastAction
-import com.otus.mail.feature.inbox.domain.SendIdentityKey
-import com.otus.mail.feature.inbox.presentation.ComposeExits
-import com.otus.mail.feature.inbox.presentation.OutgoingDraft
-import com.otus.mail.feature.inbox.presentation.SignatureEditorState
-import com.otus.mail.feature.inbox.presentation.reopening
-import com.otus.mail.feature.inbox.presentation.screens.ComposeScreen
-import com.otus.mail.feature.inbox.presentation.screens.SignatureEditorScreen
-import com.otus.mail.feature.inbox.presentation.screens.SignaturesScreen
+import com.otus.mail.core.messages.domain.SendIdentityKey
+import com.otus.mail.feature.compose.presentation.ComposeExits
+import com.otus.mail.feature.compose.presentation.Outgoing
+import com.otus.mail.feature.compose.presentation.OutgoingDraft
+import com.otus.mail.feature.compose.presentation.SignatureEditorState
+import com.otus.mail.feature.compose.presentation.reopening
+import com.otus.mail.feature.compose.presentation.screens.ComposeScreen
+import com.otus.mail.feature.compose.presentation.screens.SignatureEditorScreen
+import com.otus.mail.feature.compose.presentation.screens.SignaturesScreen
 import kotlinx.datetime.LocalDateTime
 
 /**
@@ -26,7 +27,7 @@ internal fun ComposePage(
     states: MailStates,
     onClose: () -> Unit,
 ) {
-    val compose = remember(page) { states.compose(page.request) } ?: return LaunchedEffect(page) { onClose() }
+    val compose = remember(page) { states.compose.draft(page.request) } ?: return LaunchedEffect(page) { onClose() }
     val exits =
         remember(compose) {
             object : ComposeExits {
@@ -34,7 +35,7 @@ internal fun ComposePage(
 
                 override fun discarded(delete: () -> Unit) {
                     val pages = states.requests.pages
-                    val undo = ToastAction("Undo") { pages.showLater(page.copy(request = compose.reopening())) }
+                    val undo = UiAction("Undo") { pages.showLater(page.copy(request = compose.reopening())) }
                     states.moveToasts.toasts.show(ToastMessage("Draft discarded", undo, onClose = delete))
                     onClose()
                 }
@@ -45,12 +46,12 @@ internal fun ComposePage(
                 ) {
                     val outgoing =
                         Outgoing(draft, compose.reopening()) { states.requests.pages.show(page.copy(request = it)) }
-                    if (at == null) states.outgoing.send(outgoing) else states.outgoing.schedule(outgoing, at)
+                    with(states.compose.outgoing) { if (at == null) send(outgoing) else schedule(outgoing, at) }
                     onClose()
                 }
             }
         }
-    ComposeScreen(compose, states.behavior.behavior, exits)
+    ComposeScreen(compose, states.behavior.behavior.actions, states.behavior.behavior.write.recentFrom, exits)
 }
 
 /** Settings › Mail behavior › Signatures; tapping an address opens its signature. */
@@ -61,9 +62,9 @@ internal fun SignaturesPage(
     onBack: () -> Unit,
 ) {
     SignaturesScreen(
-        states.signatures,
-        states.behavior.behavior.signatureInReplies,
-        onInRepliesChange = { on -> states.behavior.update { it.copy(signatureInReplies = on) } },
+        states.compose.signatures,
+        states.behavior.behavior.write.signatureInReplies,
+        onInRepliesChange = { on -> states.behavior.updateWrite { it.copy(signatureInReplies = on) } },
         onBack = onBack,
     ) { navigation.go(MailPage.SignatureEditor(it.accountId, it.id)) }
 }
@@ -75,7 +76,7 @@ internal fun SignatureEditorPage(
     states: MailStates,
     onBack: () -> Unit,
 ) {
-    val signatures = states.signatures
+    val signatures = states.compose.signatures
     val key = SendIdentityKey(page.accountId, page.identityId)
     LaunchedEffect(page) { if (signatures.identity(key) == null) signatures.load() }
     val identity = signatures.identity(key) ?: return

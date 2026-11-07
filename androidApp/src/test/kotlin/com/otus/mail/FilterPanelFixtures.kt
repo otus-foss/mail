@@ -7,18 +7,19 @@ import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_send
 import com.otus.designsystem.shared.people.components.ChipAvatar
 import com.otus.designsystem.theme.colors.FolderColor
-import com.otus.mail.feature.inbox.domain.MailAttributes
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.OwnAddress
-import com.otus.mail.feature.inbox.domain.ReceivedAt
-import com.otus.mail.feature.inbox.domain.SenderKey
+import com.otus.mail.core.mailbox.FolderKey
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailAttributes
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.OwnAddress
+import com.otus.mail.core.messages.domain.ReceivedAt
+import com.otus.mail.core.messages.domain.SenderKey
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterAddress
 import com.otus.mail.feature.inbox.presentation.FilterFolder
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import com.otus.mail.feature.inbox.presentation.FolderKey
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import org.jetbrains.compose.resources.DrawableResource
@@ -123,7 +124,7 @@ internal object FilterPanelFixtures {
         subject,
         "A short preview of the message.",
         ReceivedAt(today.minus(DatePeriod(days = daysAgo)).toString(), "09:30"),
-        MailLocation("Inbox", "Ada", accountId = "ada"),
+        MailLocation("Inbox", "Ada", accountId = "ada", mailboxRole = MailboxRole.Inbox),
         MailAttributes(unread = unread),
         to = listOf(MailSender("", "otus@rubylabs.design")),
     )

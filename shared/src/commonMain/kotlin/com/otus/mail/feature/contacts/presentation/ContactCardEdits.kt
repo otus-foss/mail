@@ -1,6 +1,7 @@
 package com.otus.mail.feature.contacts.presentation
 
 import com.otus.avatar.ContactAvatar
+import com.otus.avatar.withAvatar
 import com.otus.jscontact.Card
 import com.otus.jscontact.CardKind
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -10,7 +11,7 @@ import com.otus.mail.feature.contacts.domain.ContactDraft
 import com.otus.mail.feature.contacts.domain.ContactEdit
 import com.otus.mail.feature.contacts.domain.DraftValue
 import com.otus.mail.feature.contacts.domain.MergePlan
-import com.otus.mail.feature.contacts.domain.withAvatar
+import com.otus.mail.feature.contacts.domain.photoKey
 
 /**
  * Saves [draft] over [existing], or as a new card in [book]. Returns the card's key, which for a
@@ -92,7 +93,7 @@ internal fun ContactsState.discard(key: CardKey) = sync.drop(key)
 internal fun ContactsState.setAvatar(
     card: ContactCard,
     avatar: ContactAvatar?,
-) = update(card, card.card.withAvatar(avatar))
+) = update(card, card.card.withAvatar(avatar, card.card.photoKey))
 
 /** Adds [address] to [card], keeping its other addresses and which one is preferred. */
 internal fun ContactsState.addAddress(

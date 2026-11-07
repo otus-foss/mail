@@ -16,113 +16,70 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Counts changed lines outside tests and screenshots, unless the pull request changes only those.
-  size:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !github.event.pull_request.draft && (
-        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
-        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
-        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
+  # Decides whether this run checks anything; see otus-meta's .github/actions/ready-gate.
+  gate:
+    runs-on: ubicloud-standard-2
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          fetch-depth: 0
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
+          fi
+          git log --oneline -1
+      - id: gate
+        uses: ./otus-meta/.github/actions/ready-gate
+
+  # The size label and the screenshot comment; see otus-meta's .github/actions/size-label and
+  # screenshot-comment.
+  facts:
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
     runs-on: ubicloud-standard-2
     permissions:
+      contents: read
       issues: write
       pull-requests: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
-      PR: ${{ github.event.pull_request.number }}
     steps:
-      - name: Label the size
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          fetch-depth: 0
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
+      # Meta's branch with this branch's name when there is one, else main, so every Meta action
+      # and the build come from the Meta that lands with this change.
+      - name: Use the Meta partner branch
+        working-directory: otus-meta
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
-          gh api --paginate "repos/$GH_REPO/pulls/$PR/files" \
-            --jq '.[] | "\(.additions + .deletions) \(.filename)"' > files.txt
-          tests='(^|/)src/[A-Za-z]*Test/|(^|/)src/test/|\.png$'
-          lines=$(grep -vE "$tests" files.txt | awk '{ n += $1 } END { print n + 0 }')
-          if ! grep -qvE "$tests" files.txt; then lines=$(awk '{ n += $1 } END { print n + 0 }' files.txt); fi
-          if [ "$lines" -lt 20 ]; then size=XS
-          elif [ "$lines" -lt 60 ]; then size=S
-          elif [ "$lines" -lt 200 ]; then size=M
-          elif [ "$lines" -lt 1000 ]; then size=L
-          else size=XL; fi
-          echo "$lines changed lines: size:$size"
-          gh label create size:XS --force --color 0e8a16 --description "Under 20 changed lines, tests left out"
-          gh label create size:S --force --color 5ebd3e --description "20 to 59 changed lines, tests left out"
-          gh label create size:M --force --color fbca04 --description "60 to 199 changed lines, tests left out"
-          gh label create size:L --force --color fe7d37 --description "200 to 999 changed lines, tests left out"
-          gh label create size:XL --force --color d93f0b --description "1000 or more changed lines, tests left out"
-          stale=$(gh pr view "$PR" --json labels \
-            --jq "[.labels[].name | select(startswith(\"size:\") and . != \"size:$size\")] | join(\",\")")
-          if [ -n "$stale" ]; then gh pr edit "$PR" --remove-label "$stale"; fi
-          gh pr edit "$PR" --add-label "size:$size"
-
-  # Shows each screenshot the pull request adds or changes, old beside new, from the commits
-  # themselves, so the images stay put after a merge.
-  screenshots:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !github.event.pull_request.draft && (
-        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
-        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
-        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
-    runs-on: ubicloud-standard-2
-    permissions:
-      pull-requests: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
-      PR: ${{ github.event.pull_request.number }}
-      BASE: ${{ github.event.pull_request.base.sha }}
-      HEAD: ${{ github.event.pull_request.head.sha }}
-    steps:
-      - name: Comment the changed screenshots
-        run: |
-          gh api --paginate "repos/$GH_REPO/pulls/$PR/files" \
-            --jq '.[] | "\(.status) \(.filename) \(.previous_filename // .filename)"' > files.txt
-          shots=$(grep -E '^[a-z]+ [^ ]*screenshots/[^ ]*\.png ' files.txt || true)
-          marker="<!-- otus-screenshots -->"
-          comment=$(gh api "repos/$GH_REPO/issues/$PR/comments" --paginate \
-            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)
-          if [ -z "$shots" ]; then
-            if grep -qE '^[a-z]+ [^ ]*src/commonMain/[^ ]*(presentation|designsystem)/[^ ]*\.kt ' files.txt; then
-              echo "::warning title=No screenshots::This pull request changes UI code but no screenshot. Add or re-record a screenshot test for the changed screen."
-            fi
-            if [ -n "$comment" ]; then gh api -X DELETE "repos/$GH_REPO/issues/comments/$comment"; fi
-            exit 0
+          if git rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
+            git checkout --quiet --detach "origin/$BRANCH"
           fi
-          url="https://github.com/$GH_REPO/blob"
-          {
-            echo "$marker"
-            echo "### Screenshots"
-            echo
-            echo "| Screen | Before | After |"
-            echo "| --- | --- | --- |"
-            echo "$shots" | head -40 | while read -r status file previous; do
-              name=$(basename "$file" .png)
-              case "$status" in
-                added) echo "| $name, new | | ![]($url/$HEAD/$file?raw=true) |" ;;
-                removed) echo "| $name, removed | ![]($url/$BASE/$file?raw=true) | |" ;;
-                *) echo "| $name | ![]($url/$BASE/$previous?raw=true) | ![]($url/$HEAD/$file?raw=true) |" ;;
-              esac
-            done
-            total=$(echo "$shots" | wc -l)
-            if [ "$total" -gt 40 ]; then echo; echo "And $((total - 40)) more in the Files tab."; fi
-          } > body.md
-          if [ -n "$comment" ]; then
-            gh api -X PATCH "repos/$GH_REPO/issues/comments/$comment" -F body=@body.md > /dev/null
-          else
-            gh pr comment "$PR" --body-file body.md
-          fi
+          git log --oneline -1
+      - uses: ./otus-meta/.github/actions/size-label
+      - uses: ./otus-meta/.github/actions/screenshot-comment
 
   # Quality builds against the Meta branch with this branch's name when there is one, so the pair has
   # to land together, Meta first. The label says so before anyone merges this alone.
   meta-partner:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      !github.event.pull_request.draft && (
-        github.event.action == 'opened' || github.event.action == 'ready_for_review' ||
-        github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ci on every push') ||
-        github.event.action == 'labeled' && github.event.label.name == 'ci on every push')
+    needs: gate
+    if: needs.gate.outputs.ready == 'true'
     runs-on: ubicloud-standard-2
     permissions:
       issues: write
@@ -133,28 +90,18 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
       BRANCH: ${{ github.head_ref }}
     steps:
-      - name: Look for a Meta branch with this branch's name
-        id: meta
-        env:
-          DEPLOY_KEY: ${{ secrets.OTUS_META_DEPLOY_KEY }}
-        run: |
-          key="$RUNNER_TEMP/meta_key"
-          printf '%s\n' "$DEPLOY_KEY" > "$key"
-          chmod 600 "$key"
-          export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
-          if git ls-remote --exit-code --heads git@github.com:reazndev/otus-meta.git "$BRANCH" > /dev/null; then
-            echo "partner=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "partner=false" >> "$GITHUB_OUTPUT"
-          fi
-          rm -f "$key"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: reazndev/otus-meta
+          path: otus-meta
+          fetch-depth: 0
+          ssh-key: ${{ secrets.OTUS_META_DEPLOY_KEY }}
+          persist-credentials: false
       - name: Label the pull request
-        env:
-          PARTNER: ${{ steps.meta.outputs.partner }}
         run: |
           gh label create "needs meta" --force --color 5319e7 \
             --description "Builds against a Meta branch of the same name; merge that first"
-          if [ "$PARTNER" = true ]; then
+          if git -C otus-meta rev-parse --verify --quiet "origin/$BRANCH" > /dev/null; then
             echo "::notice title=Needs Meta::Merge reazndev/otus-meta branch $BRANCH first."
             gh pr edit "$PR" --add-label "needs meta"
           else

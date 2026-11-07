@@ -9,24 +9,27 @@ import com.otus.jmap.JmapConnections
 import com.otus.jmap.JmapException
 import com.otus.jmap.JmapIds
 import com.otus.jmap.JmapResponse
+import com.otus.jmap.jmapCallOr
 import com.otus.jmap.login.JmapLogin
 import com.otus.jmap.login.LoginStore
 import com.otus.jmap.login.LoginStoreException
 import com.otus.mail.core.mail.DELIVERED_TO_PROPERTY
 import com.otus.mail.core.mail.EmailObject
 import com.otus.mail.core.mail.EmailType
-import com.otus.mail.core.mail.INBOX_ROLE
-import com.otus.mail.core.mail.MUTED_KEYWORD
 import com.otus.mail.core.mail.MailAccount
-import com.otus.mail.core.mail.MailAccounts
-import com.otus.mail.core.mail.MailboxObject
-import com.otus.mail.core.mail.MailboxType
 import com.otus.mail.core.mail.ORIGINAL_TO_PROPERTY
 import com.otus.mail.core.mail.ThreadType
-import com.otus.mail.core.mail.mailCallOr
+import com.otus.mail.core.mail.isDraft
+import com.otus.mail.core.mail.isMuted
+import com.otus.mail.core.mail.isSeen
+import com.otus.mail.core.mail.mailAccount
+import com.otus.mail.core.mail.received
+import com.otus.mail.core.mailbox.MailFolder
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.mailbox.Mailboxes
+import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.notifications.domain.AlertedMail
 import com.otus.mail.feature.notifications.domain.MailAlerts
-import com.otus.mail.feature.notifications.domain.MailStateStore
 import com.otus.mail.feature.notifications.domain.NewMail
 import com.otus.mail.feature.notifications.domain.NewMailChecker
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +39,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 /**
  * Reads `Email/changes` since each login's saved state (RFC 8620, section 5.2) and reports created
@@ -46,16 +48,14 @@ import kotlin.time.Instant
  * next one tries again.
  */
 class JmapNewMailChecker(
-    connections: JmapConnections,
-    logins: LoginStore,
-    private val states: MailStateStore,
+    private val connections: JmapConnections,
+    private val mailboxes: Mailboxes,
+    private val states: DeviceStore<String, String>,
 ) : NewMailChecker {
-    private val accounts = MailAccounts(connections, logins)
-
     override suspend fun check(alerts: MailAlerts) {
         val logins =
             try {
-                accounts.logins()
+                connections.savedLogins()
             } catch (_: LoginStoreException) {
                 return
             }
@@ -66,7 +66,7 @@ class JmapNewMailChecker(
         // An account removed while its check ran gets no alert, and its state is not written back.
         val remaining =
             try {
-                accounts.logins().map { it.id }.toSet()
+                connections.savedLogins().map { it.id }.toSet()
             } catch (_: LoginStoreException) {
                 return
             }
@@ -91,8 +91,8 @@ class JmapNewMailChecker(
         since: String?,
         showing: List<String>,
     ): LoginCheck =
-        mailCallOr(LoginCheck(login.id, state = null, mail = emptyList())) {
-            val account = accounts.open(login)
+        jmapCallOr(LoginCheck(login.id, state = null, mail = emptyList())) {
+            val account = connections.mailAccount(login)
             since?.let { changesSince(account, it, showing) } ?: startFromNow(account)
         }
 
@@ -142,14 +142,13 @@ class JmapNewMailChecker(
         ids: List<String>,
     ): List<AlertedMail> {
         if (ids.isEmpty()) return emptyList()
-        lateinit var mailboxes: JmapCall<GetResult<MailboxObject>>
         lateinit var emails: JmapCall<GetResult<EmailObject>>
-        val response =
-            account.connection.send {
-                mailboxes = call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
-                emails = call(GetMethod(EmailType, account.id, JmapIds.Of(ids), ALERTED_PROPERTIES))
+        val (folders, response) =
+            mailboxes.send(account) {
+                emails =
+                    call(GetMethod(EmailType, account.id, JmapIds.Of(ids), ALERTED_PROPERTIES))
             }
-        val inboxes = inboxIds(response[mailboxes])
+        val inboxes = inboxIds(folders)
         val waiting =
             response[emails]
                 .list
@@ -166,12 +165,10 @@ class JmapNewMailChecker(
         ids: List<String>,
     ): List<NewMail> {
         if (ids.isEmpty()) return emptyList()
-        lateinit var mailboxes: JmapCall<GetResult<MailboxObject>>
         lateinit var emails: JmapCall<GetResult<EmailObject>>
         lateinit var members: JmapCall<GetResult<EmailObject>>
-        val response =
-            account.connection.send {
-                mailboxes = call(GetMethod(MailboxType, account.id, properties = listOf("id", "role")))
+        val (folders, response) =
+            mailboxes.send(account) {
                 emails = call(GetMethod(EmailType, account.id, JmapIds.Of(ids), EMAIL_PROPERTIES))
                 val threads =
                     call(GetMethod(ThreadType, account.id, JmapIds.Result(emails.resultOf("/list/*/threadId"))))
@@ -186,8 +183,8 @@ class JmapNewMailChecker(
                     )
             }
         val muted = mutedThreads(response, members) ?: mutedThreads(response, emails).orEmpty()
-        val inboxes = inboxIds(response[mailboxes])
-        val roles = response[mailboxes].list.mapNotNull { it.role?.lowercase() }.toSet()
+        val inboxes = inboxIds(folders)
+        val roles = folders.mapNotNull { it.role }.toSet()
         val canSend =
             JmapCapability.SUBMISSION in
                 account.session.accounts[account.id]
@@ -213,7 +210,7 @@ class JmapNewMailChecker(
         try {
             response[found]
                 .list
-                .filter { it.keywords[MUTED_KEYWORD] == true }
+                .filter { it.isMuted }
                 .map { it.threadId }
                 .toSet()
         } catch (expected: JmapException) {
@@ -256,18 +253,17 @@ class JmapNewMailChecker(
     }
 }
 
-private fun inboxIds(mailboxes: GetResult<MailboxObject>): Set<String> =
-    mailboxes
-        .list
-        .filter { it.role?.lowercase() == INBOX_ROLE }
+private fun inboxIds(folders: List<MailFolder>): Set<String> =
+    folders
+        .filter { it.role == MailboxRole.Inbox }
         .map { it.id }
         .toSet()
 
 /** Unread, not a draft, and in one of [inboxes]: mail worth an alert. */
 private fun EmailObject.waitsIn(inboxes: Set<String>): Boolean =
     mailboxIds.any { it.value && it.key in inboxes } &&
-        keywords["\$seen"] != true &&
-        keywords["\$draft"] != true
+        !isSeen &&
+        !isDraft
 
 private fun EmailObject.toNewMail(account: MailAccount): NewMail {
     val from = from?.firstOrNull()
@@ -279,7 +275,7 @@ private fun EmailObject.toNewMail(account: MailAccount): NewMail {
         subject = subject.orEmpty(),
         preview = preview,
         // One malformed date must not stop every later check.
-        receivedAt = Instant.parseOrNull(receivedAt) ?: Clock.System.now(),
+        receivedAt = received ?: Clock.System.now(),
         recipients = (to.orEmpty() + cc.orEmpty()).map { it.email } + deliveredAddresses,
     )
 }

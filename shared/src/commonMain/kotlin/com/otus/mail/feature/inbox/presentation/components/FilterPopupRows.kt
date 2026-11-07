@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
@@ -13,19 +14,22 @@ import com.otus.designsystem.resources.symbol_all_inbox
 import com.otus.designsystem.resources.symbol_calendar_today
 import com.otus.designsystem.resources.symbol_folder
 import com.otus.designsystem.shared.controls.elements.Symbol
-import com.otus.designsystem.shared.dates.components.DateRangePicker
 import com.otus.designsystem.shared.filters.components.FilterRowCard
 import com.otus.designsystem.shared.filters.components.FilterValueRow
-import com.otus.designsystem.shared.overlays.components.SelectionSheet
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.Dropdown
-import com.otus.designsystem.shared.selection.components.DropdownRow
-import com.otus.designsystem.theme.tokens.editing.ComposeTokens
-import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.designsystem.shared.selection.components.PickMark
+import com.otus.designsystem.shared.selection.components.PickRow
+import com.otus.designsystem.shared.selection.components.PickStyle
+import com.otus.designsystem.theme.tokens.people.AvatarTokens
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.presentation.icon
+import com.otus.mail.core.messages.presentation.label
+import com.otus.mail.core.settings.presentation.icon
+import com.otus.mail.core.settings.presentation.label
 import com.otus.mail.feature.inbox.domain.InboxFilters
 import com.otus.mail.feature.inbox.presentation.FilterAccount
 import com.otus.mail.feature.inbox.presentation.FilterOptions
-import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
@@ -74,11 +78,15 @@ private fun DatePopup(
     onEdit: FilterEdit,
 ) {
     val date = FilterRowValue(dateValue(draft.date, dateFormatter), draft.date != DateFilter.Any)
-    var custom by remember { mutableStateOf(false) }
+    var custom by rememberSaveable { mutableStateOf(false) }
     PopupRow(Res.drawable.symbol_calendar_today, "Date", date) { close ->
         DateChoices(draft.date, onEdit, close) { custom = true }
     }
-    if (custom) DateRangeSheet(draft.date, dateFormatter, onEdit) { custom = false }
+    if (custom) {
+        DateRangeSheet(draft.date as? DateFilter.Range, dateFormatter, { picked ->
+            onEdit { it.copy(date = picked ?: DateFilter.Any) }
+        }) { custom = false }
+    }
 }
 
 /** A row whose tap opens a list under it; [choices] get a way to close it. */
@@ -117,16 +125,21 @@ private fun AccountChoices(
         onEdit { it.copy(account = account) }
         close()
     }
-    DropdownRow(
+    PickRow(
         "All accounts",
-        draft.account == null,
+        "${options.accounts.size} accounts · ${options.addresses.size} addresses",
+        PickMark(draft.account == null, style = PickStyle.Card),
         { pick(null) },
-        subtitle = "${options.accounts.size} accounts · ${options.addresses.size} addresses",
     ) { Symbol(Res.drawable.symbol_all_inbox) }
     options.accounts.forEach { account ->
         val (title, subtitle) = account.lines(options)
-        DropdownRow(title, draft.account == account.id, { pick(account.id) }, subtitle = subtitle) {
-            PersonAvatar(account.avatar, ComposeTokens.dropdownAvatarSize)
+        PickRow(
+            title,
+            subtitle,
+            PickMark(draft.account == account.id, style = PickStyle.Card),
+            { pick(account.id) },
+        ) {
+            PersonAvatar(account.avatar, AvatarTokens.menuSize)
         }
     }
 }
@@ -148,46 +161,25 @@ private fun DateChoices(
     onCustom: () -> Unit,
 ) {
     DATE_PRESETS.forEach { preset ->
-        DropdownRow(preset.label, date == preset, {
-            onEdit { it.copy(date = preset) }
+        PickRow(
+            preset.label,
+            null,
+            PickMark(date == preset, style = PickStyle.Card),
+            {
+                onEdit { it.copy(date = preset) }
+                close()
+            },
+        )
+    }
+    PickRow(
+        "Custom…",
+        null,
+        PickMark(date is DateFilter.Range, style = PickStyle.Card),
+        {
             close()
-        })
-    }
-    DropdownRow("Custom…", date is DateFilter.Range, {
-        close()
-        onCustom()
-    })
-}
-
-/** The range picker search uses, applying its range on Done; Clear and Done go back to any time. */
-@Composable
-private fun DateRangeSheet(
-    date: DateFilter,
-    dateFormatter: DateFormatter,
-    onEdit: FilterEdit,
-    onDismiss: () -> Unit,
-) {
-    val range = date as? DateFilter.Range
-    var start by remember { mutableStateOf(range?.from?.toString()) }
-    var end by remember { mutableStateOf(range?.to?.toString()) }
-    SelectionSheet(
-        "Date",
-        onDismiss,
-        onClear = {
-            start = null
-            end = null
+            onCustom()
         },
-        onApply = {
-            val picked = start?.let { DateFilter.Range(LocalDate.parse(it), LocalDate.parse(end ?: it)) }
-            onEdit { it.copy(date = picked ?: DateFilter.Any) }
-            onDismiss()
-        },
-    ) {
-        DateRangePicker(start, end, dateFormatter) { first, last ->
-            start = first
-            end = last
-        }
-    }
+    )
 }
 
 private val DATE_PRESETS =

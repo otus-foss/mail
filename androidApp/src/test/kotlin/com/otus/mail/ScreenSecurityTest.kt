@@ -3,7 +3,8 @@ package com.otus.mail
 import android.content.Context
 import android.os.Looper
 import android.view.WindowManager
-import com.otus.mail.feature.inbox.domain.MailBehavior
+import com.otus.mail.core.settings.domain.MailBehavior
+import com.otus.mail.core.settings.domain.PrivacyBehavior
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,7 +36,7 @@ class ScreenSecurityTest {
             .apply()
         assertFalse(secure())
         // The app holds one behavior state for the process, so a setting changes through it, as in Settings.
-        (context as OtusMailApplication).behavior.update { it.copy(screenSecurity = true) }
+        (context as OtusMailApplication).behavior.updatePrivacy { it.copy(screenSecurity = true) }
         assertTrue(secure())
     }
 
@@ -47,9 +48,9 @@ class ScreenSecurityTest {
             .clear()
             .apply()
         val defaults = AndroidMailBehaviorStore(context).read()
-        assertTrue(defaults.incognitoKeyboard)
-        assertFalse(defaults.screenSecurity)
-        val saved = MailBehavior(screenSecurity = true, incognitoKeyboard = false)
+        assertTrue(defaults.privacy.incognitoKeyboard)
+        assertFalse(defaults.privacy.screenSecurity)
+        val saved = MailBehavior(privacy = PrivacyBehavior(screenSecurity = true, incognitoKeyboard = false))
         AndroidMailBehaviorStore(context).write(saved)
         assertEquals(saved, AndroidMailBehaviorStore(context).read())
     }

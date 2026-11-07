@@ -90,12 +90,10 @@ The repository name appears in the workflow and in `GitHubNightlyFeed`. Change b
 ## Local build
 
 ```sh
-OTUS_NIGHTLY_KEYSTORE=otus-nightly.p12 OTUS_NIGHTLY_KEYSTORE_PASSWORD=... \
-  ./gradlew :androidApp:assembleNightly -Potus.versionCode=1 -Potus.versionName=18.10.26
+./gradlew :androidApp:assembleNightly -Potus.versionCode=1 -Potus.versionName=18.10.26
 ```
 
-Without `OTUS_NIGHTLY_KEYSTORE`, the build is unsigned and Android will not install it. To sign such
-a build as the workflow does:
+The build is unsigned, and Android will not install it. To sign it as the workflow does:
 
 ```sh
 apksigner sign --ks otus-nightly.p12 --ks-key-alias otus-nightly \

@@ -2,7 +2,6 @@ package com.otus.mail.feature.folders.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -12,10 +11,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.overlays.components.SheetHeaderAction
+import com.otus.designsystem.shared.overlays.elements.sheetBodyInset
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
+import com.otus.mail.core.text.TYPING_PAUSE_MILLIS
 import com.otus.mail.feature.folders.domain.FolderRule
 import com.otus.mail.feature.folders.domain.RuleCondition
 import com.otus.mail.feature.folders.presentation.KnownAddress
@@ -53,14 +55,13 @@ fun AddRuleSheet(
     SheetFrame(
         "Sort into $folderName",
         actions.onDismiss,
-        onDone = {
-            when {
-                deleting -> actions.onDelete?.invoke()
-                chosen != null -> actions.onSave(FolderRule(chosen), moveExisting && (existing ?: 0) > 0)
-            }
-        },
-        doneEnabled = chosen != null,
-        doneLabel = if (start.editing == null) "Add" else "Save",
+        done =
+            UiAction(if (start.editing == null) "Add" else "Save", enabled = chosen != null, onClick = {
+                when {
+                    deleting -> actions.onDelete?.invoke()
+                    chosen != null -> actions.onSave(FolderRule(chosen), moveExisting && (existing ?: 0) > 0)
+                }
+            }),
         leadingAction =
             actions.onDelete?.let {
                 { done ->
@@ -75,7 +76,7 @@ fun AddRuleSheet(
             Modifier
                 .weight(1f, fill = false)
                 .verticalScroll(rememberScrollState())
-                .padding(start = SheetTokens.inset, end = SheetTokens.inset, bottom = SheetTokens.inset),
+                .sheetBodyInset(),
             verticalArrangement = Arrangement.spacedBy(SheetTokens.gap),
         ) {
             RuleKindChips(kind) {
@@ -103,12 +104,9 @@ private fun rememberExistingCount(
     LaunchedEffect(condition) {
         found = null
         if (condition != null) {
-            delay(COUNT_PAUSE_MILLIS)
+            delay(TYPING_PAUSE_MILLIS)
             found = count(FolderRule(condition))
         }
     }
     return found
 }
-
-/** Typing pauses this long before the server counts the matching mail. */
-private const val COUNT_PAUSE_MILLIS = 400L

@@ -1,7 +1,6 @@
 package com.otus.mail.feature.contacts.presentation.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -10,13 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.otus.designsystem.shared.overlays.components.ClosableSheet
-import com.otus.designsystem.shared.overlays.components.SheetConfirm
+import com.otus.designsystem.shared.controls.elements.UiAction
+import com.otus.designsystem.shared.overlays.components.SheetFrame
+import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickerSearch
-import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.designsystem.theme.tokens.people.AvatarTokens
 import com.otus.mail.feature.contacts.domain.CardKey
 import com.otus.mail.feature.contacts.domain.ContactPerson
@@ -36,12 +35,13 @@ internal fun AddPeopleSheet(
     var query by remember { mutableStateOf("") }
     var picked by remember { mutableStateOf(emptySet<CardKey>()) }
     val chosen = people.filter { it.main.key in picked }
-    ClosableSheet(
+    SheetFrame(
         "Add people",
         onDismiss,
-        SheetConfirm("Add ${peopleCount(chosen.size)}", { onAdd(chosen) }, enabled = chosen.isNotEmpty()),
+        done = UiAction("Add ${peopleCount(chosen.size)}", enabled = chosen.isNotEmpty(), onClick = { onAdd(chosen) }),
+        closeButton = true,
     ) {
-        PickerSearch(query, { query = it }, "Search people…", Modifier.padding(horizontal = SheetTokens.inset))
+        PickerSearch(query, { query = it }, "Search people…", Modifier.sheetInset())
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
             val shown = people.filter { query.isBlank() || it.matches(query) }
             items(shown, key = { it.main.key.cardId + it.main.key.accountId }) { person ->

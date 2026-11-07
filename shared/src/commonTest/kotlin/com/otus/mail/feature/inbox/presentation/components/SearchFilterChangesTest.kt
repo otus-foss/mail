@@ -1,9 +1,9 @@
 package com.otus.mail.feature.inbox.presentation.components
 
 import androidx.compose.runtime.saveable.SaverScope
-import com.otus.mail.feature.inbox.domain.DateFilter
+import com.otus.mail.core.messages.domain.DateFilter
+import com.otus.mail.core.messages.domain.QuickFacet
 import com.otus.mail.feature.inbox.domain.InboxFilters
-import com.otus.mail.feature.inbox.domain.QuickFacet
 import com.otus.mail.feature.inbox.presentation.InboxFilterState
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -14,7 +14,7 @@ class ContactCacheSyncTest {
     private val store = InMemoryLoginStore().apply { save(ADA_LOGIN, "secret") }
     private val cache = InMemoryMailCache()
     private val server = FakeContactServer().apply { put("c1", "Ada") }
-    private val repository = JmapContactRepository(server.connections(store), store, cache)
+    private val repository = JmapContactRepository(server.connections(store), cache)
 
     private suspend fun names() = repository.load().cards.map { it.displayName }
 

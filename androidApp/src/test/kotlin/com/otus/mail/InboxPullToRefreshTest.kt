@@ -14,10 +14,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import com.otus.designsystem.theme.OtusTheme
-import com.otus.mail.feature.inbox.domain.MailLocation
-import com.otus.mail.feature.inbox.domain.MailMessage
-import com.otus.mail.feature.inbox.domain.MailSender
-import com.otus.mail.feature.inbox.domain.ReceivedAt
+import com.otus.mail.core.mailbox.MailboxRole
+import com.otus.mail.core.messages.domain.MailLocation
+import com.otus.mail.core.messages.domain.MailMessage
+import com.otus.mail.core.messages.domain.MailSender
+import com.otus.mail.core.messages.domain.ReceivedAt
 import com.otus.mail.feature.inbox.presentation.InboxStatus
 import com.otus.mail.feature.inbox.presentation.screens.InboxScreen
 import org.junit.Assert.assertEquals
@@ -63,7 +64,6 @@ class InboxPullToRefreshTest {
             down(center)
             repeat(PULL_STEPS) { moveBy(Offset(0f, height * 0.25f / PULL_STEPS)) }
         }
-        screenshot("pull-to-refresh-held")
         assertEquals(0, refreshes)
         node.performTouchInput { up() }
         compose.waitForIdle()
@@ -80,13 +80,12 @@ class InboxPullToRefreshTest {
                     "Design review",
                     "The prototype is ready",
                     ReceivedAt("2026-10-03", "10:30"),
-                    MailLocation("Inbox", "Work"),
+                    MailLocation("Inbox", "Work", mailboxRole = MailboxRole.Inbox),
                 ),
             ),
         )
         pull("Design review", distance = 0.9f)
         assertEquals(1, refreshes)
-        screenshot("pull-to-refresh-loading")
     }
 
     private fun show(messages: List<MailMessage>) {
@@ -97,6 +96,7 @@ class InboxPullToRefreshTest {
                         InboxScreen(
                             messages,
                             status = InboxStatus(connected = true, loading = loading),
+                            context = inboxContext(),
                             onRefresh = {
                                 refreshes++
                                 loading = true
@@ -119,8 +119,6 @@ class InboxPullToRefreshTest {
         }
         compose.waitForIdle()
     }
-
-    private fun screenshot(name: String) = compose.windowBitmap().savePng("build/reports/inbox/$name.png")
 }
 
 private const val PULL_STEPS = 10
