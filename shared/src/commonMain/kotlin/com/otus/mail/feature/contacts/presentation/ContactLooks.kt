@@ -5,6 +5,7 @@ import com.otus.avatar.avatarStyle
 import com.otus.avatar.generatedAvatar
 import com.otus.avatar.isAvatarCard
 import com.otus.avatar.ui.presentation.toChipAvatar
+import com.otus.dateformat.fullName
 import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_badge
 import com.otus.designsystem.resources.symbol_group
@@ -19,6 +20,7 @@ import com.otus.mail.feature.contacts.domain.ContactBook
 import com.otus.mail.feature.contacts.domain.ContactCard
 import com.otus.mail.feature.contacts.domain.ContactPerson
 import com.otus.mail.feature.contacts.domain.photo
+import kotlinx.datetime.Month
 import org.jetbrains.compose.resources.DrawableResource
 
 /** The card's look: its avatar style, else its own photo when inline, else initials colored by its first address. */
@@ -60,25 +62,9 @@ internal fun ContactBook.owner(): String = sharedBy?.let { "Shared by $it" } ?: 
 
 /** A birthday such as "9 December" or "9 December 1906". */
 internal fun PartialDate.text(): String {
-    val name = month?.let { MONTHS.getOrNull(it.toInt() - 1) }
+    val name = month?.let { Month.entries.getOrNull(it.toInt() - 1)?.fullName }
     return listOfNotNull(day?.toString(), name, year?.toString()).joinToString(" ")
 }
-
-private val MONTHS =
-    listOf(
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    )
 
 /** People counted with their noun: "1 person", "3 people". */
 internal fun peopleCount(count: Int): String = if (count == 1) "1 person" else "$count people"
