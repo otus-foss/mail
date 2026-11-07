@@ -1,6 +1,8 @@
 package com.otus.mail.core.mailbox.presentation
 
 import com.otus.designsystem.mail.folders.elements.folderSymbol
+import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_bookmark
 import com.otus.mail.core.mailbox.FolderNode
 import com.otus.mail.core.mailbox.MailboxRole
 import org.jetbrains.compose.resources.DrawableResource
@@ -14,4 +16,4 @@ val MailboxRole?.symbol: DrawableResource
 
 /** System folders and Read later have their own symbols; the user's other folders share one. */
 val FolderNode.symbol: DrawableResource
-    get() = folderSymbol(folder.role?.wire, readLater)
+    get() = if (readLater) Res.drawable.symbol_bookmark else folderSymbol(folder.role?.wire)

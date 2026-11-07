@@ -10,8 +10,8 @@ import com.otus.designsystem.mail.inbox.components.RowLine
 import com.otus.designsystem.mail.inbox.components.RowMark
 import com.otus.designsystem.mail.inbox.components.RowTextPart
 import com.otus.designsystem.resources.Res
+import com.otus.designsystem.resources.symbol_inbox
 import com.otus.designsystem.resources.symbol_reply
-import com.otus.designsystem.shared.folders.elements.FolderGlyphKind
 import com.otus.designsystem.theme.colors.FolderColor
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.messages.domain.FolderKind
@@ -158,16 +158,8 @@ private fun Int.morePart(): List<RowTextPart> =
 
 private fun RowFolder.icon(): RowFolderIcon =
     when (kind) {
-        FolderKind.Inbox -> {
-            RowFolderIcon(FolderGlyphKind.Inbox, color = null)
-        }
-
-        FolderKind.Folder -> {
-            RowFolderIcon(
-                FolderGlyphKind.Folder,
-                FolderColor.named(color).takeIf { it != FolderColor.Default },
-            )
-        }
+        FolderKind.Inbox -> RowFolderIcon(color = null, icon = Res.drawable.symbol_inbox)
+        FolderKind.Folder -> RowFolderIcon(FolderColor.named(color).takeIf { it != FolderColor.Default })
     }
 
 /** What TalkBack reads for the row, built from what it shows. */
