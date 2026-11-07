@@ -76,6 +76,7 @@ private fun KeyValueStore.listBehavior(readLater: Boolean): ListBehavior {
         filters = decoded(FILTERS, defaults.filters, FilterLayout::decode),
         quickView = decoded(QUICK_VIEW, defaults.quickView, QuickViewModule::decode),
         layout = decoded(LIST, defaults.layout, MailListLayout::decode),
+        categories = inboxCategories(),
     )
 }
 
@@ -85,6 +86,7 @@ private fun KeyValueEditor.put(list: ListBehavior) {
     put(FILTERS, FilterLayout.encode(list.filters))
     put(QUICK_VIEW, QuickViewModule.encode(list.quickView))
     put(LIST, MailListLayout.encode(list.layout))
+    put(list.categories)
 }
 
 private fun KeyValueStore.readBehavior(): ReadBehavior {
