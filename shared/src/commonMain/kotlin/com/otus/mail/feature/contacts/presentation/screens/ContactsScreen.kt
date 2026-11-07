@@ -51,7 +51,7 @@ internal fun ContactsScreen(
     val letterIndex = rememberLetterIndexState()
     val chosen = state.people.filter { it.main.key in view.selected }
     ProvideTextStyle(panelTextStyle()) {
-        LetterIndex(letterIndex, Modifier.fillMaxSize()) {
+        LetterIndex(letterIndex, view.letterSide, { view.letterSide = it }, Modifier.fillMaxSize()) {
             ActionBarHost(
                 bar = { ContactsPageBar(state, view, chosen, navigation) },
                 Modifier.fillMaxSize().belowControlPanel(),
