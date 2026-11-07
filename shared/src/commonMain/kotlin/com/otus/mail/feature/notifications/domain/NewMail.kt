@@ -35,11 +35,15 @@ data class NewMail(
     fun encoded(): String = Json.encodeToString(this)
 
     companion object {
-        /** The alert [encoded] made; null for anything else, such as a field an older build left out. */
+        // Alerts and their queued work outlive an update, so a field another build added or dropped
+        // must not lose them.
+        private val lenient = Json { ignoreUnknownKeys = true }
+
+        /** The alert [encoded] made, by this build or another; null for anything else. */
         fun decoded(line: String?): NewMail? =
             line?.let {
                 try {
-                    Json.decodeFromString<NewMail>(it)
+                    lenient.decodeFromString<NewMail>(it)
                 } catch (_: SerializationException) {
                     null
                 } catch (_: IllegalArgumentException) {
