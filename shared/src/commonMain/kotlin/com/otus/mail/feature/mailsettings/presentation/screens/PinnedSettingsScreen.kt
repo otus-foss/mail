@@ -7,12 +7,12 @@ import com.otus.designsystem.resources.Res
 import com.otus.designsystem.resources.symbol_add
 import com.otus.designsystem.shared.controls.elements.LocalIconTint
 import com.otus.designsystem.shared.controls.elements.Symbol
+import com.otus.designsystem.shared.folders.elements.nestedByPath
 import com.otus.designsystem.shared.pages.components.Subpage
 import com.otus.designsystem.shared.rows.elements.nestIndent
 import com.otus.designsystem.shared.settings.components.SettingRow
 import com.otus.designsystem.shared.settings.components.SettingsSection
 import com.otus.designsystem.theme.tokens.layout.PageTokens
-import com.otus.mail.core.messages.presentation.nestedByPath
 import com.otus.mail.core.settings.domain.MailboxStyle
 import com.otus.mail.core.settings.domain.PinSize
 import com.otus.mail.core.settings.presentation.MailBehaviorState

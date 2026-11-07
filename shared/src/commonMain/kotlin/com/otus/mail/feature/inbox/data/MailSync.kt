@@ -77,7 +77,7 @@ internal suspend fun MailAccount.mailChanges(
     var emailChanges: JmapCall<ChangesResult>? = null
     var threadChanges: JmapCall<ChangesResult>? = null
     val (folders, response) =
-        mailboxes.sendFresh(this) {
+        mailboxes.sendFresh(this, reportStorage = true) {
             emailsNow = call(GetMethod(EmailType, id, JmapIds.Of(emptyList()), listOf("id")))
             threadsNow = call(GetMethod(ThreadType, id, JmapIds.Of(emptyList())))
             emailChanges = emailState?.let { call(ChangesMethod(EmailType, id, it, MAX_CHANGES)) }

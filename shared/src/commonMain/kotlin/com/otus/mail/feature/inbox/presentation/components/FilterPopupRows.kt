@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.resources.Res
@@ -81,7 +82,7 @@ private fun DatePopup(
     onEdit: FilterEdit,
 ) {
     val date = FilterRowValue(dateValue(draft.date, dateFormatter), draft.date != DateFilter.Any)
-    var custom by remember { mutableStateOf(false) }
+    var custom by rememberSaveable { mutableStateOf(false) }
     PopupRow(Res.drawable.symbol_calendar_today, "Date", date) { close ->
         DateChoices(draft.date, onEdit, close) { custom = true }
     }
@@ -190,8 +191,8 @@ private fun DateRangeSheet(
     onDismiss: () -> Unit,
 ) {
     val range = date as? DateFilter.Range
-    var start by remember { mutableStateOf(range?.from?.toString()) }
-    var end by remember { mutableStateOf(range?.to?.toString()) }
+    var start by rememberSaveable { mutableStateOf(range?.from?.toString()) }
+    var end by rememberSaveable { mutableStateOf(range?.to?.toString()) }
     ListSheet(
         "Date",
         onDismiss,

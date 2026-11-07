@@ -41,23 +41,29 @@ class Mailboxes(
         calls: JmapRequestBuilder.() -> Unit,
     ): Pair<List<MailFolder>, JmapResponse> {
         val kept = keptOrNull { cached(account.login.id) }.orEmpty()
-        if (kept.isEmpty()) return request(account, saved = null, calls)
+        if (kept.isEmpty()) return request(account, saved = null, reportStorage = false, calls)
         return kept to account.connection.send(calls)
     }
 
-    /** Sends [calls] to [account] with the calls that bring its folders up to date, and gives both. */
+    /**
+     * Sends [calls] to [account] with the calls that bring its folders up to date, and gives both.
+     * With [reportStorage], a device that cannot keep the folders throws [CacheStorageException],
+     * as the inbox reports it; otherwise the server's folders are used without keeping them.
+     */
     internal suspend fun sendFresh(
         account: MailAccount,
+        reportStorage: Boolean = false,
         calls: JmapRequestBuilder.() -> Unit,
     ): Pair<List<MailFolder>, JmapResponse> {
         val loginId = account.login.id
         val saved = cache.withAccount(loginId) { keptOrNull { it.savedMailboxes(loginId) } }
-        return request(account, saved, calls)
+        return request(account, saved, reportStorage, calls)
     }
 
     private suspend fun request(
         account: MailAccount,
         saved: MailboxList?,
+        reportStorage: Boolean,
         calls: JmapRequestBuilder.() -> Unit,
     ): Pair<List<MailFolder>, JmapResponse> {
         lateinit var mailboxes: MailboxCalls
@@ -67,16 +73,18 @@ class Mailboxes(
                 calls()
             }
         val list = mailboxes.read(response) ?: account.connection.allMailboxes(account.id)
-        return keep(account, list) to response
+        return keep(account, list, reportStorage) to response
     }
 
     private suspend fun keep(
         account: MailAccount,
         list: MailboxList,
+        reportStorage: Boolean,
     ): List<MailFolder> {
         val loginId = account.login.id
         cache.withAccount(loginId) { accountCache ->
-            keptOrNull { accountCache.write(loginId) { saveMailboxes(list) } }
+            val write = suspend { accountCache.write(loginId) { saveMailboxes(list) } }
+            if (reportStorage) write() else keptOrNull(write)
         }
         return list.mailboxes.map { it.toFolder(loginId) }
     }

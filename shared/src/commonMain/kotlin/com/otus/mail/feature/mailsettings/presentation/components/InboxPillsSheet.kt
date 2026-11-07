@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import com.otus.designsystem.shared.selection.components.OrderedChoice
 import com.otus.designsystem.shared.selection.components.OrderedChoiceSheet
 import com.otus.mail.core.mailbox.pathText
-import com.otus.mail.core.messages.presentation.nestedByPath
 import com.otus.mail.core.settings.domain.InboxPill
 import com.otus.mail.core.settings.presentation.FolderPillOption
 import com.otus.mail.core.settings.presentation.icon
@@ -20,20 +19,15 @@ internal fun InboxPillsSheet(
 ) {
     val choices =
         InboxPill.Filter.entries.map { OrderedChoice(it, it.storageValue, it.label, it.icon, "Filters") } +
-            folders
-                .groupBy { it.group }
-                .values
-                .flatMap { group -> group.nestedByPath { it.path } }
-                .map { (folder, name, depth) ->
-                    OrderedChoice(
-                        folder.pill,
-                        folder.pill.storageValue,
-                        folder.path.pathText(),
-                        folder.icon,
-                        folder.group,
-                        name,
-                        depth,
-                    )
-                }
+            folders.map { folder ->
+                OrderedChoice(
+                    folder.pill,
+                    folder.pill.storageValue,
+                    folder.path.pathText(),
+                    folder.icon,
+                    folder.group,
+                    folder.path,
+                )
+            }
     OrderedChoiceSheet("Pills", selected, choices, InboxPill::storageValue, onApply, onDismiss)
 }

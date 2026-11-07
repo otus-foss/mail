@@ -154,8 +154,12 @@ internal sealed interface MailPage {
     }
 
     companion object {
-        /** Every page without arguments; MailPageSaverTest checks it against the `Fixed` objects. */
-        val fixed: List<Fixed> =
+        /**
+         * Every page without arguments; MailPageSaverTest checks it against the `Fixed` objects.
+         * Lazy, because the first page object to load also loads this interface, and an eager list
+         * would then hold null for that page.
+         */
+        val fixed: List<Fixed> by lazy {
             listOf(
                 Inbox,
                 Settings,
@@ -178,5 +182,6 @@ internal sealed interface MailPage {
                 Conversations,
                 Contacts,
             )
+        }
     }
 }
