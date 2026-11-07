@@ -15,6 +15,7 @@ import com.otus.designsystem.resources.symbol_contacts
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.ChipLook
 import com.otus.designsystem.shared.controls.elements.ChipRole
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FilterPanel
 import com.otus.designsystem.shared.filters.components.FilterPanelFooter
@@ -75,7 +76,7 @@ internal fun ContactsFilterPanel(
             FilterSection("Show") {
                 Chip("All contacts", {
                     draft = emptySet()
-                }, role = ChipRole.Radio, selected = draft.isEmpty(), look = ChipLook.Raised) {
+                }, selected = draft.isEmpty(), style = ChipStyle(ChipRole.Radio, ChipLook.Raised)) {
                     Symbol(Res.drawable.symbol_contacts, size = ControlTokens.chipIconSize)
                 }
             }
@@ -86,7 +87,7 @@ internal fun ContactsFilterPanel(
                             book.name,
                             { draft = draft.toggled(book.key) },
                             selected = book.key in draft,
-                            look = ChipLook.Raised,
+                            style = ChipStyle(look = ChipLook.Raised),
                         ) {
                             Symbol(book.icon, size = ControlTokens.chipIconSize)
                         }

@@ -22,6 +22,7 @@ import com.otus.settings.presentation.components.PageRowSpec
 import com.otus.settings.presentation.components.SettingRowSpec
 import com.otus.settings.presentation.components.SettingsSectionSpec
 import com.otus.settings.presentation.components.ToggleRowSpec
+import com.otus.settings.presentation.components.waitingOn
 
 /** Mail's row in the Appearance page's Look section, which [open]s the Mail list page. */
 fun mailListRow(
@@ -61,16 +62,14 @@ private fun rowSettings(state: MailBehaviorState): List<SettingRowSpec> {
             list.order.label,
             { OrderSheet(state, it) },
             ListOrder.entries.map { it.label },
-            unavailable = waiting,
-        ),
+        ).waitingOn(waiting),
         ChoiceRowSpec(
             "Preview",
             list.preview.label,
             { PreviewSheet(state, it) },
             PreviewLines.entries.map { it.label },
             keywords = listOf("Snippet", "Lines"),
-            unavailable = waiting,
-        ),
+        ).waitingOn(waiting),
         ToggleRowSpec("Folder icons", list.folderIcons, { on -> state.changeList { it.copy(folderIcons = on) } }),
     )
 }

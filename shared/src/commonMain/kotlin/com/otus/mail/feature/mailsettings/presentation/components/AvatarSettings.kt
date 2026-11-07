@@ -12,6 +12,7 @@ import com.otus.mail.core.settings.presentation.MailBehaviorState
 import com.otus.settings.presentation.components.ChoiceRowSpec
 import com.otus.settings.presentation.components.SettingsSectionSpec
 import com.otus.settings.presentation.components.ToggleRowSpec
+import com.otus.settings.presentation.components.waitingOn
 
 /**
  * Whether avatars load website icons and contacts from every account. Icons from names where the
@@ -39,8 +40,7 @@ internal fun avatarSettings(state: MailBehaviorState): SettingsSectionSpec {
                 IconSource.entries.map { it.title },
                 Res.drawable.symbol_public,
                 description = "No Bulwark address, so no icons load".takeIf { unset },
-                unavailable = ICONS_UNAVAILABLE.takeUnless { avatars.websiteIcons },
-            ),
+            ).waitingOn(ICONS_UNAVAILABLE.takeUnless { avatars.websiteIcons }),
             ToggleRowSpec(
                 "Photos from all accounts",
                 avatars.allAccountPhotos,

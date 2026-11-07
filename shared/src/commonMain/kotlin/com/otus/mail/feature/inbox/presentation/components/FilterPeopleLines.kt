@@ -10,6 +10,7 @@ import com.otus.designsystem.mail.compose.components.AddressInput
 import com.otus.designsystem.mail.compose.components.RecipientLine
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.ChipLook
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.filters.components.FilterRowCard
 import com.otus.designsystem.shared.filters.components.FilterSection
 import com.otus.designsystem.shared.people.components.PersonAvatar
@@ -63,7 +64,12 @@ internal fun PeopleSection(
         FilterSection("Received in") {
             RecipientField.entries.forEach { field ->
                 val on = field in draft.receivedIn
-                Chip(field.label, { onEdit { it.withField(field, !on) } }, selected = on, look = ChipLook.Raised)
+                Chip(
+                    field.label,
+                    { onEdit { it.withField(field, !on) } },
+                    selected = on,
+                    style = ChipStyle(look = ChipLook.Raised),
+                )
             }
         }
     }

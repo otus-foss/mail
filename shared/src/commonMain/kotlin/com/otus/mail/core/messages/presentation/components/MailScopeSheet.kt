@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.otus.designsystem.shared.overlays.components.ListSheet
+import com.otus.designsystem.shared.overlays.components.SheetFootnote
 import com.otus.designsystem.shared.rows.elements.SectionCaption
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.shared.selection.components.ScopeOption
@@ -36,8 +37,10 @@ fun MailScopeSheet(
             } else {
                 null
             },
-        footnote = "Long-press to pin.",
-    ) { MailScopeChoices(switch, query) }
+    ) {
+        MailScopeChoices(switch, query)
+        SheetFootnote("Long-press to pin.")
+    }
 }
 
 /**

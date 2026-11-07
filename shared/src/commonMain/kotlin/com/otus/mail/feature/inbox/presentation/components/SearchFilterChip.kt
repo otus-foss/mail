@@ -10,6 +10,7 @@ import com.otus.designsystem.resources.symbol_alternate_email
 import com.otus.designsystem.resources.symbol_calendar_add_on
 import com.otus.designsystem.resources.symbol_person
 import com.otus.designsystem.shared.controls.elements.Chip
+import com.otus.designsystem.shared.controls.elements.ChipLabel
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.mail.core.messages.presentation.label
 import com.otus.mail.core.settings.presentation.label
@@ -57,11 +58,10 @@ fun SearchFilterChip(
         }
     val label = filterLabel(filter, search, selected, dateFormatter)
     Chip(
-        label,
+        ChipLabel(label, detail = mailboxes?.label),
         onClick,
         Modifier.mailboxDescription(label, mailboxes),
         selected = selected,
-        detail = mailboxes?.label,
     ) { Symbol(filterIcon(filter)) }
 }
 

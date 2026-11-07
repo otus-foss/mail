@@ -23,6 +23,7 @@ import com.otus.mail.core.settings.presentation.icon
 import com.otus.mail.core.settings.presentation.label
 import com.otus.settings.presentation.components.ChoiceRowSpec
 import com.otus.settings.presentation.components.SettingsSectionSpec
+import com.otus.settings.presentation.components.waitingOn
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
@@ -46,8 +47,7 @@ internal fun filterPanelSettings(state: MailBehaviorState): List<SettingsSection
                 shownCount(layout.quick.size),
                 { QuickChoices(state, it) },
                 icon = Res.drawable.symbol_mark_email_unread,
-                unavailable = QUICK_FILTERS_UNAVAILABLE.takeUnless { FilterSection.Quick in layout.sections },
-            ),
+            ).waitingOn(QUICK_FILTERS_UNAVAILABLE.takeUnless { FilterSection.Quick in layout.sections }),
         )
     val pullDown =
         ChoiceRowSpec(

@@ -12,6 +12,7 @@ import com.otus.dateformat.DateFormatter
 import com.otus.designsystem.shared.controls.components.SegmentedToggle
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.ChipLook
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.controls.elements.Symbol
 import com.otus.designsystem.shared.filters.components.FilterSection
 import com.otus.designsystem.shared.overlays.components.onPressDown
@@ -170,5 +171,7 @@ private fun QuickChip(
     on: Boolean,
     onClick: () -> Unit,
 ) {
-    Chip(label, onClick, selected = on, look = ChipLook.Raised) { Symbol(icon, size = ControlTokens.chipIconSize) }
+    Chip(label, onClick, selected = on, style = ChipStyle(look = ChipLook.Raised)) {
+        Symbol(icon, size = ControlTokens.chipIconSize)
+    }
 }

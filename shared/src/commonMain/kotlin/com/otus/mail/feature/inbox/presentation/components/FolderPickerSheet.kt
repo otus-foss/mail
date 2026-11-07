@@ -12,6 +12,7 @@ import com.otus.designsystem.mail.folders.components.FolderCheck
 import com.otus.designsystem.mail.folders.components.TreeFolder
 import com.otus.designsystem.shared.controls.elements.Chip
 import com.otus.designsystem.shared.controls.elements.ChipLook
+import com.otus.designsystem.shared.controls.elements.ChipStyle
 import com.otus.designsystem.shared.folders.elements.FolderGlyph
 import com.otus.designsystem.shared.overlays.components.ListSheet
 import com.otus.designsystem.shared.rows.components.AccountGroupRow
@@ -103,6 +104,6 @@ private fun OnlyThisFolder(
         { onEdit { it.includeSubfolders(folder, include = only) } },
         Modifier.padding(start = FilterTokens.folderIndent * (folder.depth + 1) + FilterTokens.folderRowHeight),
         selected = only,
-        look = ChipLook.Raised,
+        style = ChipStyle(look = ChipLook.Raised),
     )
 }

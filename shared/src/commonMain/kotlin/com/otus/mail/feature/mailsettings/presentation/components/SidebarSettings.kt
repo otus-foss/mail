@@ -23,6 +23,7 @@ import com.otus.settings.presentation.components.PageRowSpec
 import com.otus.settings.presentation.components.SettingRowSpec
 import com.otus.settings.presentation.components.SettingsSectionSpec
 import com.otus.settings.presentation.components.ToggleRowSpec
+import com.otus.settings.presentation.components.waitingOn
 
 /** Everything the Sidebar page holds: its sections, then [sidebarLayoutSettings]. */
 internal fun sidebarSettings(
@@ -66,15 +67,14 @@ private fun pinnedRow(
     state: MailBehaviorState,
     pins: List<SidebarPinOption>,
     openPinned: (setting: String?) -> Unit,
-): PageRowSpec {
+): SettingRowSpec {
     val layout = state.behavior.sidebar.layout
     return PageRowSpec(
         "Mailboxes and folders",
         openPinned,
         value = pinnedSummary(layout.mailboxes, layout.pinned.count { pin -> pins.any { it.pin == pin } }),
         keywords = listOf("Tiles", "Shortcuts"),
-        unavailable = PINNED_UNAVAILABLE.takeIf { SidebarSection.Mailboxes in layout.hidden },
-    ) { pinnedSettings(state) }
+    ) { pinnedSettings(state) }.waitingOn(PINNED_UNAVAILABLE.takeIf { SidebarSection.Mailboxes in layout.hidden })
 }
 
 private fun layoutRows(state: MailBehaviorState): List<SettingRowSpec> {

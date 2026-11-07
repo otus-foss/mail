@@ -31,12 +31,12 @@ import com.otus.designsystem.shared.overlays.components.OptionsMenu
 import com.otus.designsystem.shared.overlays.components.SheetFrame
 import com.otus.designsystem.shared.overlays.elements.sheetInset
 import com.otus.designsystem.shared.people.components.PersonAvatar
+import com.otus.designsystem.shared.rows.components.RowDensity
 import com.otus.designsystem.shared.rows.components.RowGroup
 import com.otus.designsystem.shared.selection.components.PickMark
 import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.theme.colors.OtusColors
 import com.otus.designsystem.theme.tokens.controls.ControlTokens
-import com.otus.designsystem.theme.tokens.core.Sizes
 import com.otus.designsystem.theme.tokens.core.Spacing
 import com.otus.designsystem.theme.tokens.overlays.SheetTokens
 import com.otus.mail.feature.contacts.domain.BookKey
@@ -211,7 +211,7 @@ private fun DeleteRow(
         null,
         PickMark(plan.deleteOthers, multiple = true),
         { onChange(plan.copy(deleteOthers = !plan.deleteOthers)) },
-        height = Sizes.touchTarget,
+        density = RowDensity.Compact,
     )
 }
 

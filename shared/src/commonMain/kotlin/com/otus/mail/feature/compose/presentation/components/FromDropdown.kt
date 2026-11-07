@@ -11,8 +11,8 @@ import com.otus.designsystem.shared.people.components.PersonAvatar
 import com.otus.designsystem.shared.rows.elements.Caption
 import com.otus.designsystem.shared.rows.elements.listCaptionInset
 import com.otus.designsystem.shared.selection.components.Dropdown
+import com.otus.designsystem.shared.selection.components.PersonPickRow
 import com.otus.designsystem.shared.selection.components.PickMark
-import com.otus.designsystem.shared.selection.components.PickRow
 import com.otus.designsystem.shared.selection.components.PickStyle
 import com.otus.designsystem.shared.selection.components.PickerSearch
 import com.otus.designsystem.theme.tokens.overlays.MenuTokens
@@ -84,16 +84,15 @@ private fun IdentitySection(
     identities.forEach { identity ->
         val sender = identity.sender
         val named = sender.name.isNotBlank() && sender.name != sender.address
-        PickRow(
+        PersonPickRow(
             if (named) sender.name else sender.address,
-            null,
+            sender.address.takeIf { named },
             PickMark(
                 selected != null && sender.accountKey == selected.accountKey &&
                     sender.address.equals(selected.address, ignoreCase = true),
                 style = PickStyle.Card,
             ),
             { onSelect(identity) },
-            detail = sender.address.takeIf { named },
         ) { PersonAvatar(sender.chipAvatar, AvatarTokens.menuSize) }
     }
 }
