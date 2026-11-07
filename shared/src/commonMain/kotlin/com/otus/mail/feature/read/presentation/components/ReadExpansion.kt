@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -97,8 +100,9 @@ internal class ReadRoom(
 }
 
 /**
- * The Read view's grown room: the quick view's [modules] and the Move to row around the first stop,
- * then every detail of the message toward the last, each fading with how far the panel is open.
+ * The Read view's grown room: the message's details at both stops, which stay still between them;
+ * under them the quick view's [modules] and the Move to row around the expanded stop, then the
+ * message's source toward the full stop, each fading with how far the panel is open.
  */
 @Composable
 internal fun ReadExpandedContent(
@@ -107,6 +111,11 @@ internal fun ReadExpandedContent(
     onQuickHeight: (Dp) -> Unit,
 ) {
     val density = LocalDensity.current
+    var detailsHeight by remember { mutableStateOf(0.dp) }
+    var restHeight by remember { mutableStateOf(0.dp) }
+    LaunchedEffect(detailsHeight, restHeight) {
+        if (detailsHeight > 0.dp && restHeight > 0.dp) onQuickHeight(detailsHeight + restHeight)
+    }
     GrownPanelLayers(
         room.expansion,
         lastStopOpen = rememberLastStopShows(room.expansion),
@@ -116,12 +125,11 @@ internal fun ReadExpandedContent(
                 Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(Alignment.Top, unbounded = true)
-                    .onSizeChanged { onQuickHeight(with(density) { it.height.toDp() }) }
+                    .onSizeChanged { restHeight = with(density) { it.height.toDp() } }
                     .sheetInset()
                     .padding(top = QuickViewTokens.moduleGap),
                 verticalArrangement = Arrangement.spacedBy(QuickViewTokens.moduleGap),
             ) {
-                DetailRows(room.look.detailLines(room.page))
                 modules.forEach { module ->
                     when (module) {
                         ReadQuickModule.Thread -> ReadThreadModule(room)
@@ -132,9 +140,20 @@ internal fun ReadExpandedContent(
             }
         },
         lastStop = { ReadDetails(room) },
+        shared = {
+            DetailRows(
+                room.look.detailLines(room.page),
+                Modifier
+                    .wrapContentHeight(Alignment.Top, unbounded = true)
+                    .onSizeChanged { detailsHeight = with(density) { it.height.toDp() } }
+                    .sheetInset()
+                    .padding(top = QuickViewTokens.moduleGap),
+            )
+        },
     )
 }
 
+/** What the full stop adds under the details: the message's original source. */
 @Composable
 private fun ReadDetails(room: ReadRoom) {
     Column(
@@ -143,7 +162,6 @@ private fun ReadDetails(room: ReadRoom) {
             .verticalScroll(rememberScrollState())
             .sheetInset(),
     ) {
-        DetailRows(room.look.detailLines(room.page), Modifier.padding(top = QuickViewTokens.moduleGap))
         SettingPageRow(
             "Show original",
             { room.open(ReadSheet.Details(room.page)) },

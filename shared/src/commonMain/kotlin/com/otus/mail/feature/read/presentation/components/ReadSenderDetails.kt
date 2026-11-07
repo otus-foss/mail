@@ -2,7 +2,6 @@ package com.otus.mail.feature.read.presentation.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,9 +33,10 @@ import com.otus.mail.core.messages.presentation.components.chipAvatar
 import org.jetbrains.compose.resources.DrawableResource
 
 /**
- * The full record of a message: From, To, Cc, Bcc, a Reply-to that differs from the sender, the [fullDate], every one of its
- * [folders] by full path, which open the folders sheet through [onFolders], and its marks. It never
- * says which of the user's addresses or accounts received it.
+ * The full record of a message: From, To, Cc, Bcc, a Reply-to that differs from the sender, the
+ * [fullDate], every one of its [folders] by full path, side by side while they fit, which open the
+ * folders sheet through [onFolders], and its marks. It never says which of the user's addresses or
+ * accounts received it.
  */
 internal fun messageDetailLines(
     message: MailMessage,
@@ -84,8 +84,9 @@ private fun FolderLines(
     folders: List<MessageFolder>,
     onClick: () -> Unit,
 ) {
-    Column(
+    FlowRow(
         Modifier.fillMaxWidth().clickable(onClickLabel = "Change folders", role = Role.Button, onClick = onClick),
+        horizontalArrangement = Arrangement.spacedBy(StripTokens.gap),
         verticalArrangement = Arrangement.spacedBy(Spacing.iconGap),
     ) {
         folders.forEach { FolderHint(listOf(folderName(it)), fontSize = ReadTokens.previewSize) }
