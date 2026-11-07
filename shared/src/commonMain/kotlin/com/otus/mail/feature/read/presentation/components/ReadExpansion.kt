@@ -143,7 +143,7 @@ private fun ReadDetails(room: ReadRoom) {
             .verticalScroll(rememberScrollState())
             .sheetInset(),
     ) {
-        room.look.Details(room.page)
+        DetailRows(room.look.detailLines(room.page), Modifier.padding(top = QuickViewTokens.moduleGap))
         SettingPageRow(
             "Show original",
             { room.open(ReadSheet.Details(room.page)) },

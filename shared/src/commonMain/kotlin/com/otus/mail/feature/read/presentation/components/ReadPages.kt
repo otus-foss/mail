@@ -22,7 +22,6 @@ import com.otus.designsystem.resources.symbol_image
 import com.otus.designsystem.shared.controls.elements.UiAction
 import com.otus.designsystem.shared.pages.elements.holdsSpace
 import com.otus.designsystem.shared.rows.components.DetailLine
-import com.otus.designsystem.shared.rows.components.DetailsTable
 import com.otus.designsystem.shared.swipe.components.SwipeToDismiss
 import com.otus.mail.core.mail.EmailAddressKey
 import com.otus.mail.core.messages.domain.MailMessage
@@ -154,12 +153,6 @@ internal class ReadPageLook(
             onFolders = { state.sheet = ReadSheet.Folders },
             onPerson = read.services.person?.let { { person -> state.sheet = ReadSheet.Person(person) } },
         )
-
-    /** [page]'s full record on a card, From included, for the full stop. */
-    @Composable
-    fun Details(page: MailMessage) {
-        DetailsTable(detailLines(page))
-    }
 }
 
 /**
