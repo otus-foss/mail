@@ -9,6 +9,7 @@ import com.otus.avatar.IconSource
 import com.otus.avatar.bulwarkBase
 import com.otus.designsystem.shared.input.elements.InputField
 import com.otus.designsystem.shared.input.elements.InputKind
+import com.otus.designsystem.shared.input.elements.InputNote
 import com.otus.designsystem.shared.selection.components.ChoiceOptions
 import com.otus.designsystem.shared.selection.components.ChoiceRow
 import com.otus.designsystem.shared.selection.components.ChoiceSheet
@@ -54,12 +55,14 @@ private fun BulwarkAddress(
         draft,
         onChange,
         placeholder = "mail.example.com",
-        supportingText =
-            if (usable) {
-                "The Bulwark webmail beside your Stalwart server. Stalwart has no icon service."
-            } else {
-                "Use a public HTTPS address on the standard port."
-            },
+        note =
+            InputNote(
+                if (usable) {
+                    "The Bulwark webmail beside your Stalwart server. Stalwart has no icon service."
+                } else {
+                    "Use a public HTTPS address on the standard port."
+                },
+            ),
         kind = InputKind.Url,
     )
 }
