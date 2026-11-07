@@ -27,8 +27,9 @@ import kotlinx.serialization.json.put
  * Every email change as `Email/set` patches (RFC 8621, sections 4.1.1 and 4.6) through [queue],
  * which shows each one in [cache] and keeps it until the server has it. Marks set or clear one
  * keyword; a cleared keyword is removed, because keyword values must be true. Moves name only the
- * mailboxes that change, so a message keeps any other mailbox it is in. Deleting for good goes
- * straight to the server; see [EmailRemoval].
+ * mailboxes that change, so a message keeps any other mailbox it is in. Deleting for good first
+ * sends the waiting changes, so it never destroys a message the user moved out of the folder
+ * offline, then goes straight to the server; see [EmailRemoval].
  */
 class JmapEmailWriter(
     connections: JmapConnections,
@@ -115,14 +116,14 @@ class JmapEmailWriter(
             .groupBy { it.location.accountId }
             .flatMap { (loginId, group) ->
                 val stored = group.flatMap { it.listedMembers() }.distinctBy { it.emailId }
-                val removed = removal.remove(loginId) { stored }.emailIds
+                val removed = queue.syncing(loginId) { removal.remove(loginId) { stored } }.emailIds
                 group.filter { row -> removed.containsAll(row.listedMembers().map { it.emailId }) }.map { it.id }
             }.toSet()
 
     override suspend fun empty(
         accountId: String,
         folderId: String,
-    ): Deletion = removal.remove(accountId) { folderEmails(folderId) }
+    ): Deletion = queue.syncing(accountId) { removal.remove(accountId) { folderEmails(folderId) } }
 
     override suspend fun isMuted(message: MailMessage): Boolean = muting.isMuted(message)
 
