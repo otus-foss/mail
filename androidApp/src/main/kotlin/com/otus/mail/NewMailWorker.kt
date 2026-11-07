@@ -36,7 +36,7 @@ class NewMailWorker(
                     pushed,
                 )
             ) {
-                app.services.newMail(checkNotNull(app.stores.mailStates)).check(MailNotifications(app))
+                app.services.newMail().check(MailNotifications(app))
             }
         }
         // The periodic run also renews push subscriptions and registers new accounts.

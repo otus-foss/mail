@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.data
+package com.otus.mail.feature.folders.data
 
 import com.otus.jmap.JmapClient
 import com.otus.jmap.JmapConnections

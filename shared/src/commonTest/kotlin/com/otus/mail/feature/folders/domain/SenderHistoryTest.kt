@@ -1,4 +1,4 @@
-package com.otus.mail.core.messages.domain
+package com.otus.mail.feature.folders.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

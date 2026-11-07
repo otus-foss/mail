@@ -1,4 +1,6 @@
-package com.otus.mail.core.messages.domain
+package com.otus.mail.feature.folders.domain
+
+import com.otus.mail.core.messages.domain.MailMessage
 
 /** Where a sender's earlier mail was filed, read from the server rather than stored by the app. */
 interface SenderHistory {

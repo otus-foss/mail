@@ -1,4 +1,4 @@
-package com.otus.mail.feature.inbox.data
+package com.otus.mail.feature.folders.data
 
 import com.otus.jmap.GetMethod
 import com.otus.jmap.JmapConnections
@@ -13,7 +13,7 @@ import com.otus.mail.core.mail.MailAccount
 import com.otus.mail.core.mail.NEWEST_FIRST
 import com.otus.mail.core.mail.mailAccount
 import com.otus.mail.core.messages.domain.MailMessage
-import com.otus.mail.core.messages.domain.SenderHistory
+import com.otus.mail.feature.folders.domain.SenderHistory
 import kotlinx.serialization.json.JsonPrimitive
 
 /**

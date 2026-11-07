@@ -35,9 +35,7 @@ import com.otus.mail.core.messages.domain.MessageBodies
 import com.otus.mail.core.messages.domain.PeopleSearch
 import com.otus.mail.core.messages.domain.ScheduledSends
 import com.otus.mail.core.messages.domain.SenderBlocks
-import com.otus.mail.core.messages.domain.SenderHistory
 import com.otus.mail.core.messages.presentation.MoveToasts
-import com.otus.mail.core.storage.DeviceStore
 import com.otus.mail.feature.compose.data.JmapAttachmentUploads
 import com.otus.mail.feature.compose.data.JmapComposeMail
 import com.otus.mail.feature.compose.data.JmapSendChecker
@@ -53,14 +51,15 @@ import com.otus.mail.feature.contacts.domain.ContactRepository
 import com.otus.mail.feature.contacts.domain.MailTraceSource
 import com.otus.mail.feature.folders.data.JmapFolderRepository
 import com.otus.mail.feature.folders.data.JmapFolderRuleRepository
+import com.otus.mail.feature.folders.data.JmapSenderHistory
 import com.otus.mail.feature.folders.domain.FolderRepository
 import com.otus.mail.feature.folders.domain.FolderRuleRepository
 import com.otus.mail.feature.folders.domain.ReadLaterFolders
 import com.otus.mail.feature.folders.domain.RuleSenderBlocks
+import com.otus.mail.feature.folders.domain.SenderHistory
 import com.otus.mail.feature.inbox.data.JmapAddressBook
 import com.otus.mail.feature.inbox.data.JmapMailSource
 import com.otus.mail.feature.inbox.data.JmapPeopleSearch
-import com.otus.mail.feature.inbox.data.JmapSenderHistory
 import com.otus.mail.feature.inbox.domain.MailSource
 import com.otus.mail.feature.notifications.data.JmapNewMailChecker
 import com.otus.mail.feature.notifications.data.PushServices
@@ -212,9 +211,8 @@ class MailServices(
     internal val readLater by lazy { ReadLaterFolders(folders, stores.folders.readLater) }
     internal val rules: FolderRuleRepository by lazy { JmapFolderRuleRepository(connections, mailboxes, changes) }
 
-    /** Finds mail that arrived since the check that last wrote [states], for notifications. */
-    fun newMail(states: DeviceStore<String, String>): NewMailChecker =
-        JmapNewMailChecker(connections, mailboxes, states)
+    /** Finds mail that arrived since the last check, for notifications, on a platform that keeps their state. */
+    fun newMail(): NewMailChecker = JmapNewMailChecker(connections, mailboxes, checkNotNull(stores.mailStates))
 
     /** Create one per process. */
     override fun pushSubscriptions(

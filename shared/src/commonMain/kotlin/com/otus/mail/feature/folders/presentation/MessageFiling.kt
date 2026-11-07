@@ -10,8 +10,6 @@ import com.otus.mail.core.messages.domain.FolderKind
 import com.otus.mail.core.messages.domain.MailMessage
 import com.otus.mail.core.messages.domain.MessageFlag
 import com.otus.mail.core.messages.domain.RowFolder
-import com.otus.mail.core.messages.domain.SenderHistory
-import com.otus.mail.core.messages.domain.suggestedFolder
 import com.otus.mail.core.messages.presentation.EditedList
 import com.otus.mail.core.messages.presentation.MailEdits
 import com.otus.mail.core.messages.presentation.MoveTarget
@@ -22,8 +20,10 @@ import com.otus.mail.core.messages.presentation.moveWithUndo
 import com.otus.mail.core.messages.presentation.ownFolders
 import com.otus.mail.core.messages.presentation.setInFolder
 import com.otus.mail.feature.folders.domain.ReadLaterStep
+import com.otus.mail.feature.folders.domain.SenderHistory
 import com.otus.mail.feature.folders.domain.labelFolders
 import com.otus.mail.feature.folders.domain.readLaterStep
+import com.otus.mail.feature.folders.domain.suggestedFolder
 
 /**
  * Files messages into folders and in and out of Read later, as [edits] that show at once and are
